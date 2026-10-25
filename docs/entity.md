@@ -304,6 +304,7 @@ Offered only with a village within 128 blocks of the home.
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
+| `scan_village` | 2 | Nothing the target sees: the lodger looks the village over once, so it knows its doors and its bell. The host's scan, forty blocks around the village's middle. | A village in the surroundings. |
 | `bell` | 2 | A bell rings once, at night. Witnesses hear this one: it is a real bell. | A bell within 48 blocks. |
 | `villager_at_door` | 3 | A villager stands outside the target's door at night, facing it, and is back home by morning. | A villager and night. |
 | `golem_turned` | 3 | The iron golem faces the target's house all night and all the next day, wherever it stands. | An iron golem. |
@@ -319,6 +320,7 @@ Offered with water within 32 blocks of the home or the route.
 | --- | --- | --- | --- |
 | `boat_moved` | 2 | The target's boat is on the other bank, or their minecart at the other end of its track. | A boat or minecart the target used. |
 | `boat_adrift` | 3 | The boat is in the middle of the water, still, going nowhere. | A boat and open water. |
+| `boat_drifts` | 2 | While the target watches from the shore, the boat drifts off on its own, slowly, away from them. (Owner's idea, 2026-11-09: "boats and minecarts move on their own".) | A boat on the water and the target outdoors. |
 | `boat_waiting` | 3 | The boat is at the shore the target is walking toward, before they get there. | A boat and the target travelling. |
 | `bucket_floor` | 3 | One block of water in the house's floor, in a corner. | A bucket in a chest and a floor block out of the way. |
 | `ice_path` | 3 | A line of ice across the water from the far shore toward the house, in summer. | Still water of 8 or more blocks across. |

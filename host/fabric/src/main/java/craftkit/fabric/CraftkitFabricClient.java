@@ -5,6 +5,7 @@ import craftkit.host.Host;
 import craftkit.host.client.Glitches;
 import craftkit.host.client.Hints;
 import craftkit.host.client.TitleGate;
+import craftkit.host.client.debug.DebugHud;
 import craftkit.host.client.debug.DebugScreen;
 import craftkit.host.net.DebugAskPayload;
 import craftkit.host.net.DebugTellPayload;
@@ -27,6 +28,7 @@ import net.minecraft.resources.Identifier;
  */
 public final class CraftkitFabricClient implements ClientModInitializer {
 	private static KeyMapping debugKey;
+	private static KeyMapping hudKey;
 
 	@Override
 	public void onInitializeClient() {
@@ -39,15 +41,22 @@ public final class CraftkitFabricClient implements ClientModInitializer {
 		DebugScreen.sendWith(ClientPlayNetworking::send);
 
 		debugKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.craftkit.debug", InputConstants.Type.KEYBOARD, InputConstants.KEY_F8, KeyMapping.Category.MISC));
+		hudKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.craftkit.hud", InputConstants.Type.KEYBOARD, InputConstants.KEY_F9, KeyMapping.Category.MISC));
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			Glitches.tick(client);
+			DebugHud.tick(client);
 			while (debugKey.consumeClick()) {
 				DebugScreen.open(firstMod());
 			}
+			while (hudKey.consumeClick()) {
+				DebugHud.toggle(firstMod());
+			}
 		});
 
-		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(Host.MOD_ID, "glitches"),
-				(graphics, tickCounter) -> Glitches.render(graphics, graphics.guiWidth(), graphics.guiHeight()));
+		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(Host.MOD_ID, "glitches"), (graphics, tickCounter) -> {
+			Glitches.render(graphics, graphics.guiWidth(), graphics.guiHeight());
+			DebugHud.render(graphics, net.minecraft.client.Minecraft.getInstance().font, graphics.guiWidth(), graphics.guiHeight());
+		});
 		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, crosshair -> (graphics, tickCounter) -> {
 			if (!Glitches.hideCrosshair()) {
 				crosshair.extractRenderState(graphics, tickCounter);

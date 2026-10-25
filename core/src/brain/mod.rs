@@ -61,11 +61,37 @@ pub struct Brain {
     pub pending: Vec<Pending>,
     pub later: Vec<Later>,
     pub next_plan_tick: u64,
+    /// The tick the surroundings may be asked for again, so an unanswered pass is retried, not
+    /// repeated every tick.
+    pub next_survey_tick: u64,
     pub next_command_id: u64,
     pub rng: Rng,
     /// Decisions made, for the status line.
     pub decisions: u64,
+    /// The last decisions in full, newest last, for the debug screen's story: what was offered,
+    /// what was chosen and why (the situation as read), and what came of it.
+    pub story: Vec<Decision>,
 }
+
+/// One decision as the debug screen tells it.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Decision {
+    pub day: f32,
+    pub stage: u8,
+    /// Which brain answered: `rules` today, `model` in phase 4.
+    pub brain: String,
+    pub menu: Vec<String>,
+    pub chosen: String,
+    pub pos: Option<BlockPos>,
+    /// The situation lines the choice was made on.
+    pub situation: Vec<String>,
+    /// What came of it: empty until the plan ran or lapsed, then `done`, or why not.
+    pub outcome: String,
+}
+
+/// How many decisions the story keeps.
+const MOST_STORY: usize = 24;
 
 impl Brain {
     pub fn new(seed: u64) -> Self {
@@ -110,6 +136,24 @@ impl Brain {
             return commands;
         }
 
+        // The surroundings, once a day around the home, and again when the home moved: the
+        // host's pass is sliced over ticks and answers as an observation.
+        if let Some(home) = &memory.home {
+            let moved = memory
+                .surroundings
+                .as_ref()
+                .map(|s| crate::memory::distance(s.around, home.center) > 16.0)
+                .unwrap_or(false);
+            if (memory.surroundings_due(day) || moved) && now.tick >= self.next_survey_tick {
+                self.next_survey_tick = now.tick + 6_000;
+                commands.push(Command::Surroundings {
+                    id: self.id(),
+                    around: home.center,
+                    radius: 96,
+                });
+            }
+        }
+
         if self.plan.is_none() && now.tick >= self.next_plan_tick {
             self.next_plan_tick = now.tick + config.brain.plan_every as u64 * TPS;
             self.decide(now, day, memory, arc, config, log);
@@ -118,6 +162,7 @@ impl Brain {
         if let Some(plan) = self.plan.clone() {
             if now.tick > plan.until_tick {
                 memory.record(&plan.event, plan.pos, day, false, "its moment never came");
+                self.outcome(&plan.event, "its moment never came");
                 self.plan = None;
             } else if now.tick >= plan.from_tick {
                 if let Some(event) = events::find(&plan.event) {
@@ -144,6 +189,16 @@ impl Brain {
                                     );
                                 }
                                 log.acted(&plan.event, plan.pos, made.len());
+                                if !plan.forced {
+                                    self.outcome(
+                                        &plan.event,
+                                        if made.is_empty() {
+                                            "nothing to do it with"
+                                        } else {
+                                            "sent to the world"
+                                        },
+                                    );
+                                }
                                 for (command, later_ticks) in made {
                                     let id = command.id();
                                     self.pending.push(Pending {
@@ -168,6 +223,7 @@ impl Brain {
                             }
                             Err(refused) => {
                                 memory.record(&plan.event, plan.pos, day, false, refused.words());
+                                self.outcome(&plan.event, refused.words());
                                 self.plan = None;
                             }
                         }
@@ -206,6 +262,23 @@ impl Brain {
         let pos = act::place(chosen, memory, &mut self.rng);
         let lines = memory.describe(day);
         log.decided(arc.stage, day, &lines, &menu, chosen.id, pos);
+        self.story.push(Decision {
+            day,
+            stage: arc.stage,
+            brain: "rules".to_string(),
+            menu: menu.iter().map(|e| e.id.to_string()).collect(),
+            chosen: chosen.id.to_string(),
+            pos,
+            situation: lines,
+            outcome: if chosen.id == "wait" {
+                "waited".to_string()
+            } else {
+                String::new()
+            },
+        });
+        if self.story.len() > MOST_STORY {
+            self.story.remove(0);
+        }
 
         if chosen.id == "wait" {
             return;
@@ -227,6 +300,15 @@ impl Brain {
             decided_day: day,
             forced: false,
         });
+    }
+
+    /// Writes what came of the newest decision for this event that has no final outcome yet.
+    fn outcome(&mut self, event: &str, outcome: &str) {
+        if let Some(decision) = self.story.iter_mut().rev().find(|d| {
+            d.chosen == event && (d.outcome.is_empty() || d.outcome == "sent to the world")
+        }) {
+            decision.outcome = outcome.to_string();
+        }
     }
 
     /// Queues an event to happen on the next tick, whatever the rules say: the debug screen's
@@ -288,6 +370,10 @@ impl Brain {
                         &report.reason,
                     );
                     log.reported(&pending.event, report.done, &report.reason);
+                    self.outcome(
+                        &pending.event,
+                        if report.done { "done" } else { &report.reason },
+                    );
                     if !report.done {
                         self.pending
                             .retain(|p| !(p.event == pending.event && p.day == pending.day));

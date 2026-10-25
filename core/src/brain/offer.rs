@@ -73,6 +73,18 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Field => false,
         Need::Animals => memory.creatures("").count() >= 3,
         Need::Kills => memory.most_killed().is_some(),
+        Need::Around(kind) => memory.feature(kind).is_some(),
+        Need::Vehicle => !memory.vehicles.is_empty(),
+        Need::TargetUnderground => last.online && last.underground,
+        Need::TargetAte => {
+            last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
+        }
+        Need::TargetApproachingDoor => memory
+            .home
+            .as_ref()
+            .map(|h| h.doors.iter().any(|d| memory.approaching(*d, 6.0)))
+            .unwrap_or(false),
+        Need::Scanned(kind) => memory.scanned(kind).next().is_some(),
         Need::Water => false,
     }
 }

@@ -80,9 +80,10 @@ public final class DebugScreen extends Screen {
 		this.mod = mod;
 	}
 
-	/** The loader tells the screen how to reach the server. */
+	/** The loader tells the screen (and the HUD overlay) how to reach the server. */
 	public static void sendWith(Consumer<DebugAskPayload> send) {
 		sender = send;
+		DebugHud.sendWith(send);
 	}
 
 	/** Opens the screen for a mod; an empty id asks the server which mods there are and takes the first. */
@@ -104,12 +105,13 @@ public final class DebugScreen extends Screen {
 			return;
 		}
 
+		DebugModel parsed = DebugModel.parse(tell.json());
+		DebugHud.latest(tell.mod(), parsed);
 		DebugScreen screen = open;
 		if (screen == null || Minecraft.getInstance().gui.screen() != screen) {
 			return;
 		}
 
-		DebugModel parsed = DebugModel.parse(tell.json());
 		if (!parsed.message.isEmpty()) {
 			screen.flash = parsed.message;
 			screen.flashUntil = System.currentTimeMillis() + 4000;
@@ -209,6 +211,14 @@ public final class DebugScreen extends Screen {
 			}));
 			x += w + 4;
 		}
+		{
+			String hud = DebugHud.enabled() ? "HUD: on" : "HUD: off";
+			int w = this.font.width(hud) + 12;
+			graphics.fill(x, tabY, x + w, tabY + 14, DebugHud.enabled() ? PANEL : BAR_BACK);
+			graphics.text(this.font, hud, x + 6, tabY + 3, DebugHud.enabled() ? YELLOW : GREY);
+			hits.add(new Hit(x, tabY, w, 14, () -> DebugHud.toggle(mod)));
+			x += w + 4;
+		}
 		if (model.mods.size() > 1) {
 			String picker = "mod: " + mod + " (click to switch)";
 			int w = this.font.width(picker) + 8;
@@ -231,6 +241,7 @@ public final class DebugScreen extends Screen {
 		graphics.enableScissor(PAD, top, this.width - PAD, bottom);
 		int y = top + 2 - scroll;
 		int start = y;
+		int headerHits = hits.size();
 		switch (tab) {
 			case SENSES -> y = senses(graphics, y);
 			case MIND -> y = mind(graphics, y);
@@ -239,7 +250,14 @@ public final class DebugScreen extends Screen {
 		}
 		contentHeight = y - start + 4;
 		graphics.disableScissor();
-		hits.removeIf(hit -> hit.y() + hit.h() < top || hit.y() > bottom);
+		// Body rows scrolled out of the clip take no clicks; the header's hits stay.
+		List<Hit> body = new ArrayList<>(hits.subList(headerHits, hits.size()));
+		hits.subList(headerHits, hits.size()).clear();
+		for (Hit hit : body) {
+			if (hit.y() + hit.h() >= top && hit.y() <= bottom) {
+				hits.add(hit);
+			}
+		}
 
 		if (contentHeight > bottom - top) {
 			// A scroll bar.

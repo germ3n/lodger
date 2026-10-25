@@ -85,7 +85,7 @@ ABI 3 (2026-11-09) added `warm`, `status` and `InitReply.resources`. ABI 4 (2026
 the six world functions and `sdk/src/world.rs`, the per-world shapes. ABI 5 (2026-11-09) added
 `craftkit_world_debug` and `sdk/src/debug.rs`, nine commands (`open_lid`, `rotate_frame`,
 `swap_painting`, `pose_stand`, `name_entity`, `dye_sheep`, `move_entity`, `player_list`,
-`game_message`), `set_block.replace` and the `killed` event.
+`game_message`, and `push_entity` the same night), `set_block.replace` and the `killed` event.
 
 ## Resources
 
@@ -150,9 +150,11 @@ written 2026-11-09 from the lodger's needs and generalized as a second mod needs
     whether it is hostile; and on request (a `Scan` command, answered next tick) a summary of
     blocks in a box: counts by kind, the positions of named kinds (doors, chests, beds, torches,
     ores), light levels, whether a position is in view of a player;
-  - *the surroundings,* once an in-game day within 128 blocks of a point the mod names: water
-    bodies and their extent, snow and sand, villages with their doors and bell, fields, pens with
-    their animals, caves not visited, tunnels dug by players with their sizes, structures.
+  - *the surroundings,* once an in-game day within 160 blocks at most of a point the mod names
+    (the lodger asks 96 around the home): surface water and how wide, lava, snow, sand, trees,
+    crops, lights, beds, containers, doors, a bell, and the generated structures here by tag
+    (`village`, `mineshaft`, `ruined_portal`, `shipwreck`, `ocean_ruin`), each at its middle.
+    Pens with their animals, caves not visited and tunnels dug by players are the todo's.
 
   The per-tick payload stays small because the world's state comes on request and on a
   schedule, not every tick: a quiet tick carries a player's position and nothing else.
@@ -170,7 +172,8 @@ written 2026-11-09 from the lodger's needs and generalized as a second mod needs
   and put items, drop an item that does not despawn, write a sign, cancel or refuse a player's
   sleep, turn an entity's head for a while, turn an armour stand's head or have it follow a
   player, turn an item frame's item, swap a painting for another of its size, name an entity,
-  dye a sheep, move an entity, show a second entry with a player's own name in their player
+  dye a sheep, move an entity, push an entity (a velocity: a boat drifts, a minecart rolls),
+  show a second entry with a player's own name in their player
   list for a while, send a line in the game's own words to one player (`joined`, `left`, `says`
   in their own name, `whisper` from themselves, `sleepers` on the action bar), spawn and drive a
   figure in a player's skin (phase 5). Each has a `fits` the host's executor checks before

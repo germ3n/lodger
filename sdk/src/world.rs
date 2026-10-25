@@ -362,6 +362,12 @@ pub enum Command {
         entity: u32,
         to: Pos,
     },
+    /// Give an entity a velocity, blocks a tick: a minecart rolls, a boat drifts.
+    PushEntity {
+        id: u64,
+        entity: u32,
+        velocity: Pos,
+    },
     /// A second entry with the player's own name in that player's player list, for `seconds`,
     /// seen by that player alone.
     PlayerList {
@@ -471,6 +477,7 @@ impl Command {
             | Command::NameEntity { id, .. }
             | Command::DyeSheep { id, .. }
             | Command::MoveEntity { id, .. }
+            | Command::PushEntity { id, .. }
             | Command::PlayerList { id, .. }
             | Command::GameMessage { id, .. }
             | Command::MoveItem { id, .. }

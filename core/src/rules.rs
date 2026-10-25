@@ -96,6 +96,10 @@ pub fn check(
             | crate::events::Action::Whisper
             | crate::events::Action::RepeatsYou
             | crate::events::Action::MoveCreature(_, crate::events::Where::OutsideDoor)
+            | crate::events::Action::MiningSounds
+            | crate::events::Action::PushVehicle(_)
+            | crate::events::Action::DoorAhead
+            | crate::events::Action::ScanVillage
     );
 
     if let Some(pos) = pos {

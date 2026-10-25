@@ -14,5 +14,6 @@
 	"key.craftkit.debug": "craftkit debug screen",
 	"craftkit.debug.title": "craftkit debug: %s",
 	"craftkit.debug.filter": "filter events",
-	"craftkit.debug.no_screen": "that needs a player; the console can use show, force, stage and action"
+	"craftkit.debug.no_screen": "that needs a player; the console can use show, force, stage and action",
+	"key.craftkit.hud": "craftkit debug overlay"
 }

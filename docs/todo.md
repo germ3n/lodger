@@ -455,14 +455,22 @@ because it can be built and tested without a game, and because the model layer i
 - [ ] **A Minecraft version bump, rehearsed:** take the host to the next snapshot once, by the
   process in [Upgrading](upgrading.md) (written 2026-11-09 at the owner's ask), and fix
   whatever it missed; add the bump to its history table.
-- [ ] **The surroundings in the mind** (owner, 2026-11-09: "you're also detecting structures
-  nearby and have code to determine where their house is?"): the home is found today from the
-  bed, placed doors and lights, and where the target stands still; the host's surroundings
-  pass (water, village, field, pen, tunnel, cave, snow, sand) exists but the mind never asks for
-  it. Ask it once a day around the home, keep the features as the memory's `Surroundings`
-  piece, turn `Need::Water`, `Field`, `Route` on, and add the structure lookup to the pass
-  (`ServerLevel.structureManager()` for villages, mineshafts, ruins near the home) so the
-  village and mine events have what they need.
+- [x] **The surroundings in the mind** (owner, 2026-11-09: "you're also detecting structures
+  nearby and have code to determine where their house is?"). Done 2026-11-09: the brain asks
+  the host's pass once a day 96 blocks around the home, and again when the home moves 16
+  blocks; the host's pass gained the bell and the generated structures by tag (village,
+  mineshaft, ruined portal, shipwreck, ocean ruin) at their middles; the memory keeps the
+  features (`Surround`), the vehicles near the home and the village scan's doors and bell;
+  `Need::Around(kind)`, `Vehicle`, `TargetUnderground`, `TargetAte`, `TargetApproachingDoor`,
+  `Scanned(kind)`; sixteen rows over them: `boat_moved`, `boat_adrift`, `boat_drifts` and
+  `minecart_rolls` (owner: "boats and minecarts move on their own", a `push_entity` command),
+  `bucket_floor`, `snow_cleared`, `trample`, `harvest_one`, `mining_sounds`, `echo_steps`,
+  `late_eating`, `scan_village`, `village_doors`, `lamps_noon`, `plate_laid`,
+  `door_opens_itself`. The debug screen's Story section tells each decision with its menu, its
+  situation and its outcome, and the HUD overlay (F9) shows the essentials while playing. Was:
+  ask once a day, keep the features, turn `Need::Water`, `Field`, `Route` on, add the structure
+  lookup. Still to do: pens, caves and the target's tunnels in the pass; `Need::Route`; the
+  harvest reads ripeness (today any crop block of the kind is taken).
 - [ ] **A game test for `tab_entry`'s packet** (the player-list entry is set by reflection in
   `Executors.withEntries`; a version bump can break it silently) and for the chest lid's block
   event.

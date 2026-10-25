@@ -42,6 +42,8 @@ public final class Surroundings {
 		int x;
 		int z;
 		final TreeMap<String, int[]> features = new TreeMap<>();
+		/** Chunks whose structures were looked up already: a structure start is per chunk. */
+		final java.util.Set<Long> chunksChecked = new java.util.HashSet<>();
 
 		Pass(ServerLevel level, LoadedMod mod, long id, BlockPos around, int radius, Senses senses) {
 			this.level = level;
@@ -71,10 +73,20 @@ public final class Surroundings {
 			return z > radius;
 		}
 
+		/** The structures the pass names, by the tag that groups them and the plain word the mod reads. */
+		private static final java.util.Map<net.minecraft.tags.TagKey<net.minecraft.world.level.levelgen.structure.Structure>, String> STRUCTURES = java.util.Map.of(
+				net.minecraft.tags.StructureTags.VILLAGE, "village",
+				net.minecraft.tags.StructureTags.MINESHAFT, "mineshaft",
+				net.minecraft.tags.StructureTags.RUINED_PORTAL, "ruined_portal",
+				net.minecraft.tags.StructureTags.SHIPWRECK, "shipwreck",
+				net.minecraft.tags.StructureTags.OCEAN_RUIN, "ocean_ruin");
+
 		private void column(BlockPos at) {
 			if (!level.isLoaded(at)) {
 				return;
 			}
+
+			structures(at);
 
 			BlockPos surface = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, at);
 			BlockState top = level.getBlockState(surface.below());
@@ -103,7 +115,9 @@ public final class Surroundings {
 
 			for (int dy = -1; dy <= 3; dy++) {
 				BlockState state = level.getBlockState(surface.offset(0, dy, 0));
-				if (state.is(Blocks.TORCH) || state.is(Blocks.WALL_TORCH) || state.is(Blocks.LANTERN) || state.is(Blocks.SOUL_LANTERN)) {
+				if (state.is(Blocks.BELL)) {
+					count("bell", surface);
+				} else if (state.is(Blocks.TORCH) || state.is(Blocks.WALL_TORCH) || state.is(Blocks.LANTERN) || state.is(Blocks.SOUL_LANTERN)) {
 					count("lights", surface);
 				} else if (state.is(BlockTags.BEDS)) {
 					count("beds", surface);
@@ -113,6 +127,29 @@ public final class Surroundings {
 					count("doors", surface);
 				}
 			}
+		}
+
+		/** Once per chunk: which named structures stand here, counted at their bounding box's middle. */
+		private void structures(BlockPos at) {
+			long chunk = new net.minecraft.world.level.ChunkPos(at.getX() >> 4, at.getZ() >> 4).pack();
+			if (!chunksChecked.add(chunk)) {
+				return;
+			}
+
+			var registry = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.STRUCTURE);
+			STRUCTURES.forEach((tag, word) -> registry.get(tag).ifPresent(set -> {
+				net.minecraft.world.level.levelgen.structure.StructureStart start = level.structureManager().getStructureAt(at, set);
+				if (start.isValid()) {
+					BlockPos center = start.getBoundingBox().getCenter();
+					int[] entry = features.computeIfAbsent(word, k -> new int[4]);
+					if (entry[0] == 0) {
+						entry[0] = 1;
+						entry[1] = center.getX();
+						entry[2] = center.getY();
+						entry[3] = center.getZ();
+					}
+				}
+			}));
 		}
 
 		private void count(String kind, BlockPos at) {

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import craftkit.host.Host;
 import craftkit.host.LoadedMod;
 import craftkit.host.client.Glitches;
+import craftkit.host.client.debug.DebugHud;
 import craftkit.host.client.debug.DebugScreen;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -22,6 +23,7 @@ import net.neoforged.neoforge.common.NeoForge;
  */
 final class CraftkitNeoForgeClient {
 	private static KeyMapping debugKey;
+	private static KeyMapping hudKey;
 
 	private CraftkitNeoForgeClient() {
 	}
@@ -34,11 +36,15 @@ final class CraftkitNeoForgeClient {
 		});
 		modBus.addListener((RegisterKeyMappingsEvent event) -> {
 			debugKey = new KeyMapping("key.craftkit.debug", InputConstants.Type.KEYBOARD, InputConstants.KEY_F8, KeyMapping.Category.MISC);
+			hudKey = new KeyMapping("key.craftkit.hud", InputConstants.Type.KEYBOARD, InputConstants.KEY_F9, KeyMapping.Category.MISC);
 			event.register(debugKey);
+			event.register(hudKey);
 		});
 		modBus.addListener((RegisterGuiLayersEvent event) -> {
-			event.registerAboveAll(Identifier.fromNamespaceAndPath(Host.MOD_ID, "glitches"),
-					(graphics, tickCounter) -> Glitches.render(graphics, graphics.guiWidth(), graphics.guiHeight()));
+			event.registerAboveAll(Identifier.fromNamespaceAndPath(Host.MOD_ID, "glitches"), (graphics, tickCounter) -> {
+				Glitches.render(graphics, graphics.guiWidth(), graphics.guiHeight());
+				DebugHud.render(graphics, Minecraft.getInstance().font, graphics.guiWidth(), graphics.guiHeight());
+			});
 			event.wrapLayer(VanillaGuiLayers.CROSSHAIR, crosshair -> (graphics, tickCounter) -> {
 				if (!Glitches.hideCrosshair()) {
 					crosshair.render(graphics, tickCounter);
@@ -47,8 +53,12 @@ final class CraftkitNeoForgeClient {
 		});
 		NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
 			Glitches.tick(Minecraft.getInstance());
+			DebugHud.tick(Minecraft.getInstance());
 			while (debugKey != null && debugKey.consumeClick()) {
 				DebugScreen.open(firstMod());
+			}
+			while (hudKey != null && hudKey.consumeClick()) {
+				DebugHud.toggle(firstMod());
 			}
 		});
 	}

@@ -313,6 +313,58 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             })
             .collect(),
     ));
+    // The story: each decision, newest first, with what it saw, what it was offered, what it
+    // chose and what came of it (owner, 2026-11-09: "show events that happened, what is about
+    // to happen, why it happened").
+    let mut story = Vec::new();
+    if let Some(plan) = &brain.plan {
+        story.push(format!(
+            "NEXT: {}{} {}",
+            plan.event,
+            plan.pos
+                .map(|p| format!(" at ({},{},{})", p[0], p[1], p[2]))
+                .unwrap_or_default(),
+            if plan.forced {
+                "on the next tick (forced)".to_string()
+            } else if plan.from_tick > now.tick {
+                format!(
+                    "in about {}s, once its moment comes",
+                    (plan.from_tick - now.tick) / 20
+                )
+            } else {
+                "as soon as its moment comes".to_string()
+            }
+        ));
+    } else {
+        story.push(format!(
+            "NEXT: a decision in about {}s",
+            brain.next_plan_tick.saturating_sub(now.tick) / 20
+        ));
+    }
+    for decision in brain.story.iter().rev().take(12) {
+        story.push(format!(
+            "day {:.2}, stage {}: chose {}{} from [{}] -> {}",
+            decision.day,
+            decision.stage,
+            decision.chosen,
+            decision
+                .pos
+                .map(|p| format!(" at ({},{},{})", p[0], p[1], p[2]))
+                .unwrap_or_default(),
+            decision.menu.join(" "),
+            if decision.outcome.is_empty() {
+                "waiting for its moment"
+            } else {
+                &decision.outcome
+            }
+        ));
+        if decision.chosen != "wait" {
+            for line in decision.situation.iter().take(4) {
+                story.push(format!("    because: {line}"));
+            }
+        }
+    }
+    sections.insert(1, Section::new("Story", story));
     sections.push(Section::new(
         "Never forgotten",
         memory
@@ -428,6 +480,41 @@ mod tests {
         assert!(music.offered, "{}", music.why);
         assert!(reply.sections.iter().any(|s| s.title == "Plan"));
         assert_eq!(reply.gauges[0].text, "stage 2 of 5");
+        let story = reply.sections.iter().find(|s| s.title == "Story").unwrap();
+        assert!(story.lines[0].starts_with("NEXT:"), "{:?}", story.lines);
+    }
+
+    #[test]
+    fn the_story_keeps_each_decision_with_its_menu_and_outcome() {
+        let mut stay = stay();
+        let mut config = Config::default();
+        config.stages.start_after_days = 0;
+        config.brain.plan_every = 1;
+        let mut log = Log::new(None, 16, true);
+        stay.memory.last.online = false;
+        let mut now = Now::default();
+        for _ in 0..400 {
+            stay.tick(&now, &config, &mut log);
+            now.tick += 20;
+            if stay.brain.story.len() >= 3 {
+                break;
+            }
+        }
+        assert!(
+            stay.brain.story.len() >= 3,
+            "{} decisions",
+            stay.brain.story.len()
+        );
+        let first = &stay.brain.story[0];
+        assert!(first.menu.contains(&"wait".to_string()));
+        assert!(!first.situation.is_empty());
+        let reply = answer(&mut stay, &DebugRequest::Snapshot, &config, &mut log, &now);
+        let story = reply.sections.iter().find(|s| s.title == "Story").unwrap();
+        assert!(
+            story.lines.iter().any(|l| l.contains("chose")),
+            "{:?}",
+            story.lines
+        );
     }
 
     #[test]
@@ -465,14 +552,15 @@ mod tests {
             &config,
             &mut log,
         );
+        // The daily survey of the surroundings may come first; the forced door is among them.
         assert!(
-            matches!(
-                commands[0],
+            commands.iter().any(|c| matches!(
+                c,
                 craftkit::world::Command::ToggleBlock {
                     pos: [3, 64, 0],
                     ..
                 }
-            ),
+            )),
             "{commands:?}"
         );
         assert!(stay.brain.plan.is_none());

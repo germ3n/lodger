@@ -2,7 +2,7 @@
 //! lines the brain reads. See `docs/memory.md`; this is the first cut, the pieces the first
 //! events need. Positions are block positions; times are the stay's in-game day as a fraction.
 
-use craftkit::world::{BlockPos, EventKind, ItemStack, Observations, Player};
+use craftkit::world::{BlockPos, EventKind, Feature, ItemStack, Observations, Player};
 use serde::{Deserialize, Serialize};
 
 /// How far from the home's center the home reaches.
@@ -92,6 +92,16 @@ pub struct Milestone {
     pub detail: String,
 }
 
+/// What is around the home, from the host's daily pass: water and how wide, snow, sand, trees,
+/// crops, a village or a mineshaft, and where each is. Rewritten each day.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Surround {
+    pub day: f32,
+    pub around: BlockPos,
+    pub features: Vec<Feature>,
+}
+
 /// An animal or villager near the target, from the last entity pass.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -140,6 +150,10 @@ pub struct Snapshot {
     pub creatures_near: Vec<Creature>,
     pub look_backs: u32,
     pub raining: bool,
+    /// Under the ground: no sky light and below the surface.
+    pub underground: bool,
+    /// The day they last ate, for the sound that answers it.
+    pub ate_day: f32,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -177,6 +191,14 @@ pub struct Memory {
     pub landmarks: Vec<Done>,
     /// What happened to the target, kept for the whole stay.
     pub milestones: Vec<Milestone>,
+    /// What is around the home, from the host's pass, once a day.
+    pub surroundings: Option<Surround>,
+    /// Boats and minecarts near the home, from the last entity pass.
+    pub vehicles: Vec<Creature>,
+    /// Blocks a scan found near the village (doors, the bell), for the village events.
+    pub scanned: Vec<(String, BlockPos)>,
+    /// The day as of the last observation, so the offer can read "just now" without a clock.
+    pub today: f32,
 }
 
 /// Caps, with the reason beside each.
@@ -194,6 +216,8 @@ const MOST_CREATURES: usize = 48;
 const MOST_TALLY: usize = 32; // the least-hit kind dropped first
 const MOST_LANDMARKS: usize = 512; // a stay never reaches it
 const MOST_MILESTONES: usize = 128;
+const MOST_SCANNED: usize = 64;
+const MOST_VEHICLES: usize = 8;
 
 /// The plain kind of a placed block an event can use, or none.
 fn fixture_kind(id: &str) -> Option<&'static str> {
@@ -267,6 +291,7 @@ impl Memory {
     /// Takes in a tick's observations. The target is the first player seen until the brain picks
     /// another (multiplayer, a later phase).
     pub fn observe(&mut self, observations: &Observations, day: f32) {
+        self.today = day;
         if self.target.is_none() {
             if let Some(first) = observations.players.first() {
                 self.target = Some(first.index);
@@ -277,6 +302,23 @@ impl Memory {
 
         if let Some(world) = &observations.world {
             self.last.raining = world.raining;
+        }
+
+        if let Some(around) = &observations.surroundings {
+            self.surroundings = Some(Surround {
+                day,
+                around: around.around,
+                features: around.features.clone(),
+            });
+        }
+
+        for scan in &observations.scans {
+            self.scanned = scan
+                .positions
+                .iter()
+                .take(MOST_SCANNED)
+                .map(|(kind, pos)| (kind.rsplit(':').next().unwrap_or(kind).to_string(), *pos))
+                .collect();
         }
 
         let Some(index) = self.target else { return };
@@ -320,6 +362,24 @@ impl Memory {
             // the ids last only while the world is loaded.
             if let Some(home) = &self.home {
                 let center = home.center;
+                self.vehicles = observations
+                    .entities
+                    .iter()
+                    .filter(|e| {
+                        (e.kind.ends_with("boat")
+                            || e.kind.ends_with("minecart")
+                            || e.kind.ends_with("raft"))
+                            && distance(block(e.pos), center) <= 64.0
+                    })
+                    .take(MOST_VEHICLES)
+                    .map(|e| Creature {
+                        id: e.id,
+                        kind: e.kind.rsplit(':').next().unwrap_or(&e.kind).to_string(),
+                        pos: e.pos,
+                        named: false,
+                        pet: false,
+                    })
+                    .collect();
                 self.decor = observations
                     .entities
                     .iter()
@@ -413,6 +473,9 @@ impl Memory {
                 EventKind::ChangedDimension => {
                     self.milestone("crossed", day, event.pos, &event.detail);
                 }
+                EventKind::Ate => {
+                    self.last.ate_day = day;
+                }
                 EventKind::Hit | EventKind::Killed => {
                     let kind = event
                         .detail
@@ -489,6 +552,7 @@ impl Memory {
         self.last.indoors = player.sky_light < 8;
         self.last.sleeping = player.sleeping;
         self.last.walking = player.movement.pace > 0.5;
+        self.last.underground = player.sky_light == 0 && player.pos[1] < 56.0;
         self.last.main_hand = player.main_hand.id.clone();
         self.last.look_backs = player.movement.look_backs;
 
@@ -673,6 +737,45 @@ impl Memory {
             .creatures_near
             .iter()
             .filter(move |c| kind.is_empty() || c.kind == kind)
+    }
+
+    /// A feature of the surroundings by kind (`water`, `crops`, `snow`, `village`), if the
+    /// pass found one.
+    pub fn feature(&self, kind: &str) -> Option<&Feature> {
+        self.surroundings
+            .as_ref()?
+            .features
+            .iter()
+            .find(|f| f.kind == kind)
+    }
+
+    /// Whether the surroundings are due: none yet, or a day old.
+    pub fn surroundings_due(&self, day: f32) -> bool {
+        self.surroundings
+            .as_ref()
+            .map(|s| day - s.day >= 1.0)
+            .unwrap_or(true)
+    }
+
+    /// Where the village's blocks of a kind are, from the last scan (`door`, `bell`).
+    pub fn scanned<'a>(&'a self, kind: &'a str) -> impl Iterator<Item = BlockPos> + 'a {
+        self.scanned
+            .iter()
+            .filter(move |(k, _)| k.ends_with(kind))
+            .map(|(_, p)| *p)
+    }
+
+    /// Whether the target is within `blocks` of `pos` and walking toward it.
+    pub fn approaching(&self, pos: BlockPos, blocks: f64) -> bool {
+        if !self.last.online || !self.last.walking {
+            return false;
+        }
+        let at = block(self.last.pos);
+        if distance(at, pos) > blocks || distance(at, pos) < 2.0 {
+            return false;
+        }
+
+        self.in_view(pos, blocks)
     }
 
     /// The kind the target has killed most, with its count, once they have killed three.
@@ -862,6 +965,44 @@ impl Memory {
                     .map(|(p, h)| format!(", {}", place_words(Some(h), p)))
                     .unwrap_or_default()
             ));
+        }
+
+        if let Some(around) = &self.surroundings {
+            let mut parts = Vec::new();
+            for kind in [
+                "water",
+                "village",
+                "mineshaft",
+                "crops",
+                "snow",
+                "sand",
+                "trees",
+            ] {
+                if let Some(feature) = around.features.iter().find(|f| f.kind == kind) {
+                    let words = match kind {
+                        "water" => format!("water {} blocks across", feature.size),
+                        "village" => "a village".to_string(),
+                        "mineshaft" => "an old mine".to_string(),
+                        "crops" => "a field".to_string(),
+                        "snow" => "snow".to_string(),
+                        "sand" => "sand".to_string(),
+                        _ => "trees".to_string(),
+                    };
+                    if let Some(home) = &self.home {
+                        parts.push(format!(
+                            "{} {}",
+                            words,
+                            place_words(Some(home), feature.pos)
+                        ));
+                    } else {
+                        parts.push(words);
+                    }
+                }
+            }
+            if !parts.is_empty() {
+                parts.truncate(3);
+                lines.push(format!("Around the house: {}.", parts.join("; ")));
+            }
         }
 
         if let Some(tally) = self.most_killed() {

@@ -94,6 +94,7 @@ public final class Executors {
 				case "name_entity" -> nameEntity(level, command.get("entity").getAsInt(), command.get("name").getAsString(), id);
 				case "dye_sheep" -> dyeSheep(level, command.get("entity").getAsInt(), command.get("colour").getAsString(), id);
 				case "move_entity" -> moveEntity(level, command, id);
+				case "push_entity" -> pushEntity(level, command, id);
 				case "player_list" -> playerList(level, command, id, context);
 				case "game_message" -> gameMessage(level, command, id, context);
 				case "move_item" -> moveItem(level, command, id);
@@ -203,7 +204,7 @@ public final class Executors {
 		}
 
 		// Campfires and candles: lit or not. Never a furnace, whose LIT the game owns.
-		if (state.hasProperty(BlockStateProperties.LIT) && (Senses.blockId(state).contains("campfire") || Senses.blockId(state).contains("candle"))) {
+		if (state.hasProperty(BlockStateProperties.LIT) && (Senses.blockId(state).contains("campfire") || Senses.blockId(state).contains("candle") || Senses.blockId(state).contains("redstone_lamp"))) {
 			level.setBlock(pos, state.cycle(BlockStateProperties.LIT), Block.UPDATE_ALL);
 			return report(id, true, "");
 		}
@@ -341,6 +342,19 @@ public final class Executors {
 
 		JsonArray to = command.getAsJsonArray("to");
 		entity.teleportTo(to.get(0).getAsDouble(), to.get(1).getAsDouble(), to.get(2).getAsDouble());
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject pushEntity(ServerLevel level, JsonObject command, long id) {
+		Entity entity = level.getEntity(command.get("entity").getAsInt());
+		if (entity == null || entity instanceof ServerPlayer) {
+			return report(id, false, "no pushable entity with that id here");
+		}
+
+		JsonArray v = command.getAsJsonArray("velocity");
+		entity.setDeltaMovement(v.get(0).getAsDouble(), v.get(1).getAsDouble(), v.get(2).getAsDouble());
+		entity.needsSync = true;
 
 		return report(id, true, "");
 	}
