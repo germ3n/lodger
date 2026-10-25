@@ -11,8 +11,8 @@ scoring, the same queue, the same download, behind the mind's C ABI instead of a
 
 | `model.size` | File | RAM while loaded | A question of four choices on two threads | For |
 | --- | --- | --- | --- | --- |
-| `0.5b`, the default | `qwen2.5-0.5b-instruct-q4_k_m.gguf`, 491 MB | about 700 MB | tens to a few hundred milliseconds | every machine; the file `~/engine` runs, byte for byte |
-| `1.5b` | `qwen2.5-1.5b-instruct-q4_k_m.gguf`, 1.1 GB | about 1.6 GB | a few times slower | a machine with memory to spare and a player who wants sharper judgment |
+| `0.5b` | `qwen2.5-0.5b-instruct-q4_k_m.gguf`, 491 MB | about 700 MB | tens to a few hundred milliseconds | a small machine; the file `~/engine` runs, byte for byte; the dev client's choice |
+| `1.5b`, the default | `qwen2.5-1.5b-instruct-q4_k_m.gguf`, 1.1 GB | about 1.6 GB | a few times slower | most machines; the owner's default (2026-11-09) for sharper judgment and for writing its own few words (`brain.text`) |
 | `3b` | `qwen2.5-3b-instruct-q4_k_m.gguf`, 2.0 GB | about 3 GB | slower again, a second or more | a dedicated server with the headroom |
 
 All three are Apache-2.0 from the same repository family, and the scoring code is the same for
@@ -21,10 +21,13 @@ new file at the next start (the title screen gate again) and keeps the old one u
 The timings are the engine's experience with the small one and estimates for the others; the
 measure item in the todo replaces them with numbers.
 
-- **Why this size:** it scores a 300-token situation and four questions of four choices in tens
-  to a few hundred milliseconds on two CPU threads, with about 700 MB resident, which a server
-  can spare and a player's own machine running an integrated server can spare. The next size
-  up, 1.5B, is three times the memory and time for judgment the lodger does not need.
+- **Why this size:** 0.5B scores a 300-token situation and four questions of four choices in
+  tens to a few hundred milliseconds on two CPU threads, with about 700 MB resident, which any
+  server can spare, and was the first default. The owner moved the default to 1.5B (2026-11-09)
+  with the decision that the model writes its own sign and chat words: three times the memory
+  and time, still well inside a tick budget on a worker thread, for judgment that holds up over
+  a longer situation text and words that read as words. 0.5B stays a setting for a small
+  machine.
 - **Why Qwen:** Apache-2.0, so a player may download it without a licence click; GGUF builds by
   Qwen themselves; and it is what the engine already runs, so the scoring code is known to work
   on it. Qwen3-0.6B is also Apache-2.0 and a todo item is to score both on the same log and

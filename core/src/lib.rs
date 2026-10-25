@@ -11,6 +11,7 @@
 pub mod arc;
 pub mod brain;
 pub mod config;
+pub mod debug;
 pub mod events;
 pub mod memory;
 pub mod model;
@@ -19,8 +20,8 @@ pub mod stay;
 
 use config::{Config, ModelSize};
 use craftkit::{
-    Command, Init, InitReply, License, Mod, ModInfo, Now, Observations, Report, Resource, Status,
-    WorldInfo,
+    Command, DebugReply, DebugRequest, Init, InitReply, License, Mod, ModInfo, Now, Observations,
+    Report, Resource, Status, WorldInfo,
 };
 use model::{Model, Settings};
 use stay::Stay;
@@ -118,7 +119,7 @@ impl Mod for Lodger {
                 required: true,
                 license: License {
                     name: "Apache License 2.0".to_string(),
-                    url: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/blob/main/LICENSE"
+                    url: "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/blob/main/LICENSE"
                         .to_string(),
                     text: MODEL_LICENSE_TEXT.to_string(),
                 },
@@ -189,6 +190,13 @@ impl Mod for Lodger {
 
     fn save(&self, world: &Stay) -> Vec<u8> {
         world.save()
+    }
+
+    fn debug(&self, world: &mut Stay, request: &DebugRequest) -> DebugReply {
+        let mut log = self.log.lock().unwrap_or_else(|err| err.into_inner());
+        let now = world.last_now.clone();
+
+        debug::answer(world, request, &self.config, &mut log, &now)
     }
 }
 
@@ -262,10 +270,10 @@ mod tests {
         assert_eq!(resource["id"], "model");
         assert_eq!(
             resource["path"],
-            "/game/config/lodger/models/qwen2.5-0.5b-q4_k_m.gguf"
+            "/game/config/lodger/models/qwen2.5-1.5b-q4_k_m.gguf"
         );
-        assert_eq!(resource["size_hint"], 491_400_032u64);
-        assert!(resource["title"].as_str().unwrap().contains("491 MB"));
+        assert_eq!(resource["size_hint"], 1_117_000_000u64);
+        assert!(resource["title"].as_str().unwrap().contains("1117 MB"));
         assert_eq!(resource["magic"], "GGUF");
         assert_eq!(resource["required"], true);
         assert_eq!(resource["license"]["name"], "Apache License 2.0");
@@ -347,9 +355,11 @@ mod tests {
         let by_size = Config::parse("").unwrap();
         assert_eq!(
             model_path(&by_size, &init),
-            PathBuf::from("/game/config/lodger/models/qwen2.5-0.5b-q4_k_m.gguf")
+            PathBuf::from("/game/config/lodger/models/qwen2.5-1.5b-q4_k_m.gguf")
         );
-        assert!(model_url(&by_size).contains("0.5B"));
+        assert!(model_url(&by_size).contains("1.5B"));
+        let small = Config::parse(r#"{ "model": { "size": "0.5b" } }"#).unwrap();
+        assert!(model_path(&small, &init).ends_with("qwen2.5-0.5b-q4_k_m.gguf"));
 
         let large = Config::parse(r#"{ "model": { "size": "3b" } }"#).unwrap();
         assert!(model_path(&large, &init).ends_with("qwen2.5-3b-q4_k_m.gguf"));

@@ -38,40 +38,9 @@ API available without flags; a Minecraft that still ran Java 21 would need JNI.
 
 ## Updating Minecraft
 
-The SDK is built to move to a new Minecraft version with the Rust side untouched (owner,
-2026-11-09): nothing in `sdk/` or `core/` names a Minecraft class, and the protocol is JSON with
-defaults on every field, so a new game version changes the host alone, and only its
-Minecraft-facing edge. That edge is kept to a few known places, which is the rule for anyone
-adding to the host:
-
-| Where | What touches the game there |
-| --- | --- |
-| `host/common/.../senses/Senses.java` | Reading players, entities, blocks, light, biomes into observations. |
-| `host/common/.../world/Executors.java`, `Looks.java`, `Surroundings.java` | Carrying commands out: blocks, containers, signs, items, sounds, mobs' looks, the surroundings pass. |
-| `host/common/.../world/WorldData.java` | Saved data. |
-| `host/common/.../client/` | Screens and renderers. |
-| `host/fabric/`, `host/neoforge/` | Each loader's events, networking and the Fabric mixin for block placement. |
-| `host/common/.../Host.java`'s command | `/craftkit status`. |
-
-Everything else in the host (`Native`, `LoadedMod`, `Manifest`, `Downloader`, `Preparation`,
-`Acceptance`, `Natives`, the menu) is plain Java and compiles against no game version. A mod's
-jar names the Minecraft range it was built for in its manifests; a host built for the next
-version runs the same Rust mods unchanged, since the library speaks the ABI, not the game.
-
-The checklist for a new version, in order:
-
-1. `host/gradle.properties`: `minecraft_version`, `minecraft_version_range`, `neo_form_version`,
-   `fabric_version`, `fabric_loader_version`, `neoforge_version`, and Loom and ModDevGradle if the
-   new version needs them; the same four game and loader values in `mod/gradle.properties`.
-   `VersionsTest` fails until the docs' table and the README agree.
-2. `./gradlew build` in `host/`. What breaks is in the table above and nowhere else; the
-   decompiled sources ModDevGradle writes to `host/neoforge/build/moddev/artifacts/*-sources.jar`
-   are where the new names are found (grep them, as 26.3's were).
-3. `./gradlew test`, then the real-native tests, then a dev server with the lodger's jar and a
-   dev client for the screens.
-4. The lodger's jars rebuilt (`mod/`), which changes nothing in `core/` unless the protocol
-   gained a field the new senses can fill.
-5. A line in [Todo](todo.md) under Done with the date, the versions and what moved.
+A new Minecraft, Fabric, NeoForge or Java version changes the host alone, and inside the host
+only its Minecraft-facing edge. The whole process, the table of where that edge is, what a
+version is most likely to break and the history of bumps are in [Upgrading](upgrading.md).
 
 ## Building the native
 
@@ -120,11 +89,33 @@ through the loader, not a path. Without a lodger jar, the host starts, loads not
 
 A stay takes weeks of play by design. For development:
 
-- `stages.start_after_days: 0` and `stages.least_days: [0, 0, 0, 0, 0]` in the dev config, so
-  stages move as soon as their conditions allow;
-- `/lodger decisions` after each thing that happens;
+- `stages.start_after_days: 0`, `stages.least_days: [0, 0, 0, 0, 0]`, `most_days: [1, 1, 1, 1,
+  1]`, `events_per_day: [40, 40, 40, 40, 0]`, `brain.plan_every: 15` and
+  `events.cooldown_scale: 0.05` in the dev config, so stages move as soon as their conditions
+  allow and the lodger acts every few minutes; `model.size: "0.5b"` so the dev client keeps the
+  small file;
+- **the debug screen**, F8 in a world (rebindable under Controls, Miscellaneous), or
+  `/craftkit lodger debug`: the Senses tab is the host's reading of you (pace, stops, turns,
+  look-backs, backing away, a fear meter, light, health, the clock), the Mind tab the lodger's
+  gauges (stage, days in stage, the day's budget, the plan, decisions, what the memory holds,
+  kills), its situation lines, its plan, what it did lately, what it never forgets, the last
+  decision log entries, and buttons (move in, next stage, decide now, drop the plan, forget
+  cooldowns, forget everything); the Events tab every event with whether it is offered right now
+  and the first reason it is not, a filter, and a Fire button that forces it on the next tick
+  past every rule; the Log tab the last events the senses took in and the last commands carried
+  out with their reports. Operators and the owner of a singleplayer world (cheats on or off).
+  The same from chat: `/craftkit lodger show`, `force <event>`, `stage <n>`, `action <id>`,
+  which a dedicated server's console can use;
+- `-Dcraftkit.debug=true` (on in the dev client's run config) logs every event the senses take
+  in and every command carried out;
 - `/time add 24000` to move days;
 - the mind's scripted-player tests, which run a whole stay in under a second (below).
+
+The dev client: `./gradlew :fabric:runClient` in `host/`, with `mod/build/libs/lodger-fabric-*.jar`
+copied to `host/fabric/runs/client/mods/` and its `META-INF/jars/` and the `jars` entry of its
+`fabric.mod.json` removed (the dev run has the host from its classes; a second host inside the
+jar would load twice), the model under `runs/client/config/lodger/models/`, and the dev config
+above as `runs/client/config/lodger.json`.
 
 ## Tests
 

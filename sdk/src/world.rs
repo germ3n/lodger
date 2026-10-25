@@ -200,6 +200,8 @@ pub enum EventKind {
     ChangedDimension,
     /// Hit an entity; `detail` is its kind, `pos` where it stood.
     Hit,
+    /// Killed an entity; `detail` is its kind, `pos` where it died.
+    Killed,
 }
 
 /// A chat line a player typed.
@@ -304,12 +306,77 @@ pub enum Command {
         from: BlockPos,
         to: BlockPos,
     },
-    /// Set a block, with an optional state string the host parses.
+    /// Set a block, with an optional state string the host parses. Only where there is nothing,
+    /// unless the block there is one of `replace` (block ids): the way a path is worn into grass
+    /// or a hole dug in natural ground, and never through anything a player placed, which the
+    /// mod keeps out of `replace` by never naming built blocks.
     SetBlock {
         id: u64,
         pos: BlockPos,
         block: String,
         state: String,
+        #[serde(default)]
+        replace: Vec<String>,
+    },
+    /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
+    OpenLid {
+        id: u64,
+        pos: BlockPos,
+        seconds: f32,
+    },
+    /// Turn an item frame's item: to `rotation` (0 to 7), or one notch on when absent.
+    RotateFrame {
+        id: u64,
+        entity: u32,
+        rotation: Option<u32>,
+    },
+    /// Hang another painting of the same size in a painting's place.
+    SwapPainting {
+        id: u64,
+        entity: u32,
+    },
+    /// Turn an armour stand's head: toward `at` once, or to follow player `follow` for
+    /// `seconds`, holding still while that player looks straight at it.
+    PoseStand {
+        id: u64,
+        entity: u32,
+        at: Option<Pos>,
+        follow: Option<u32>,
+        seconds: f32,
+    },
+    /// Name an entity, as a name tag would.
+    NameEntity {
+        id: u64,
+        entity: u32,
+        name: String,
+    },
+    /// Dye a sheep, by colour name (`red`, `light_blue`).
+    DyeSheep {
+        id: u64,
+        entity: u32,
+        colour: String,
+    },
+    /// Move an entity to a position, as if it had walked there.
+    MoveEntity {
+        id: u64,
+        entity: u32,
+        to: Pos,
+    },
+    /// A second entry with the player's own name in that player's player list, for `seconds`,
+    /// seen by that player alone.
+    PlayerList {
+        id: u64,
+        player: u32,
+        seconds: f32,
+    },
+    /// A line in one player's chat or action bar in the game's own words: `joined` and `left`
+    /// (`<name> joined the game`), `says` (`<name> text`, as if they typed it), `whisper`
+    /// (`<name> whispers to you: text`), `sleepers` (`1/2 players sleeping` on the action bar).
+    GameMessage {
+        id: u64,
+        player: u32,
+        message: String,
+        text: String,
     },
     /// Move items between two containers, or within one.
     MoveItem {
@@ -397,6 +464,15 @@ impl Command {
             | Command::ToggleBlock { id, .. }
             | Command::MoveBlock { id, .. }
             | Command::SetBlock { id, .. }
+            | Command::OpenLid { id, .. }
+            | Command::RotateFrame { id, .. }
+            | Command::SwapPainting { id, .. }
+            | Command::PoseStand { id, .. }
+            | Command::NameEntity { id, .. }
+            | Command::DyeSheep { id, .. }
+            | Command::MoveEntity { id, .. }
+            | Command::PlayerList { id, .. }
+            | Command::GameMessage { id, .. }
             | Command::MoveItem { id, .. }
             | Command::TakeItem { id, .. }
             | Command::PutItem { id, .. }
@@ -464,6 +540,23 @@ mod tests {
         assert_eq!(command.id(), 9);
         let back: Command = serde_json::from_str(&text).unwrap();
         assert_eq!(back, command);
+    }
+
+    #[test]
+    fn a_set_block_without_replace_reads_as_replacing_nothing() {
+        let text =
+            r#"{"kind":"set_block","id":1,"pos":[0,0,0],"block":"minecraft:torch","state":""}"#;
+        let command: Command = serde_json::from_str(text).unwrap();
+        assert!(matches!(command, Command::SetBlock { ref replace, .. } if replace.is_empty()));
+
+        let message = Command::GameMessage {
+            id: 2,
+            player: 0,
+            message: "joined".to_string(),
+            text: String::new(),
+        };
+        let text = serde_json::to_string(&message).unwrap();
+        assert!(text.contains(r#""kind":"game_message""#), "{text}");
     }
 
     #[test]

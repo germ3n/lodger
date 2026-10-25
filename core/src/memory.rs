@@ -11,6 +11,7 @@ pub const HOME_RADIUS: i32 = 16;
 pub const CELL: i32 = 4;
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Home {
     /// Where they sleep, if they have.
     pub bed: Option<BlockPos>,
@@ -23,14 +24,89 @@ pub struct Home {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Container {
     pub pos: BlockPos,
+    /// The block id: `minecraft:chest`, `minecraft:furnace`, `minecraft:barrel`.
+    pub kind: String,
     pub opens: u32,
     pub last_opened_day: f32,
     pub contents: Vec<ItemStack>,
 }
 
+impl Container {
+    pub fn is_furnace(&self) -> bool {
+        self.kind.ends_with("furnace") || self.kind.ends_with("smoker")
+    }
+
+    /// The slots that hold nothing, for a chest-sized container (27) or a furnace (3).
+    pub fn empty_slots(&self) -> Vec<u32> {
+        let size = if self.is_furnace() { 3 } else { 27 };
+        let used: Vec<u32> = self.contents.iter().map(|s| s.slot).collect();
+
+        (0..size).filter(|slot| !used.contains(slot)).collect()
+    }
+}
+
+/// A block the target placed that an event can use: a fence gate, a window pane, a lever, a
+/// campfire, a cauldron, a crafting table, a note block, a bell, a jukebox, a lectern, an anvil,
+/// a carpet, a sign. `kind` is the plain word, not the block id, so `oak_fence_gate` and
+/// `spruce_fence_gate` are both `fence_gate`.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Fixture {
+    pub kind: String,
+    pub pos: BlockPos,
+}
+
+/// A hanging or standing thing near the home: an item frame, a painting, an armour stand. Seen
+/// in the entity pass; the id is the server's and lasts while the world is loaded.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Decor {
+    pub kind: String,
+    pub id: u32,
+    pub pos: BlockPos,
+}
+
+/// What the target has done to one kind of mob: how often they hit it and how many they killed.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Tally {
+    /// `cow`, `zombie`: the kind without its namespace.
+    pub kind: String,
+    pub hits: u32,
+    pub kills: u32,
+}
+
+/// Something that happened to the target that the lodger never forgets: where they died, the
+/// first night they slept, the first of a kind they killed, a dimension crossed.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Milestone {
+    /// `died`, `first_sleep`, `first_kill`, `crossed`.
+    pub kind: String,
+    pub day: f32,
+    pub pos: Option<BlockPos>,
+    /// What it concerned: the mob kind, the dimension.
+    pub detail: String,
+}
+
+/// An animal or villager near the target, from the last entity pass.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Creature {
+    pub id: u32,
+    /// `cow`, `sheep`, `villager`, `iron_golem`, `wolf`: the id without its namespace.
+    pub kind: String,
+    pub pos: [f64; 3],
+    pub named: bool,
+    /// Tamed by the target.
+    pub pet: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Held {
     pub item: ItemStack,
     pub from: BlockPos,
@@ -40,6 +116,7 @@ pub struct Held {
 
 /// An event that landed, or did not.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Done {
     pub event: String,
     pub pos: Option<BlockPos>,
@@ -50,6 +127,7 @@ pub struct Done {
 
 /// The target as last seen.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Snapshot {
     pub pos: [f64; 3],
     pub yaw: f32,
@@ -58,15 +136,18 @@ pub struct Snapshot {
     pub sleeping: bool,
     pub walking: bool,
     pub main_hand: String,
-    /// Ids of animals and villagers within 32 blocks, from the last entity pass.
-    pub creatures_near: Vec<u32>,
+    /// Animals and villagers within 32 blocks, from the last entity pass.
+    pub creatures_near: Vec<Creature>,
     pub look_backs: u32,
+    pub raining: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Memory {
     pub target: Option<u32>,
     pub target_name: String,
+    pub target_uuid: String,
     pub home: Option<Home>,
     pub containers: Vec<Container>,
     /// Item ids and how often they were in the target's main hand, most first.
@@ -83,6 +164,19 @@ pub struct Memory {
     pub place: Option<BlockPos>,
     /// Blocks the target placed that the lodger must never break: everything they placed.
     pub placed: Vec<BlockPos>,
+    /// Placed blocks an event can use, by plain kind.
+    pub fixtures: Vec<Fixture>,
+    /// Frames, paintings and stands near the home, from the last entity pass.
+    pub decor: Vec<Decor>,
+    /// The last thing the target said in chat, whatever it was about.
+    pub last_said: String,
+    /// What they hit and killed, by kind, most killed first.
+    pub tally: Vec<Tally>,
+    /// The events the target would have noticed (the catalogue's bold rows), kept for the
+    /// whole stay where `done` trims: what it took and where it left things is never forgotten.
+    pub landmarks: Vec<Done>,
+    /// What happened to the target, kept for the whole stay.
+    pub milestones: Vec<Milestone>,
 }
 
 /// Caps, with the reason beside each.
@@ -94,6 +188,53 @@ const MOST_CHAT: usize = 8;
 const MOST_PLACED: usize = 2048; // a whole house; older ones fall off, which is the risk the docs name
 const MOST_LIGHTS: usize = 64;
 const MOST_DOORS: usize = 16;
+const MOST_FIXTURES: usize = 128; // oldest dropped first
+const MOST_DECOR: usize = 32;
+const MOST_CREATURES: usize = 48;
+const MOST_TALLY: usize = 32; // the least-hit kind dropped first
+const MOST_LANDMARKS: usize = 512; // a stay never reaches it
+const MOST_MILESTONES: usize = 128;
+
+/// The plain kind of a placed block an event can use, or none.
+fn fixture_kind(id: &str) -> Option<&'static str> {
+    const KINDS: &[&str] = &[
+        "fence_gate",
+        "glass_pane",
+        "glass",
+        "lever",
+        "campfire",
+        "cauldron",
+        "crafting_table",
+        "note_block",
+        "bell",
+        "jukebox",
+        "lectern",
+        "anvil",
+        "carpet",
+        "sign",
+        "trapdoor",
+        "pressure_plate",
+        "button",
+        "flower_pot",
+        "composter",
+    ];
+    let name = id.rsplit(':').next().unwrap_or(id);
+
+    KINDS
+        .iter()
+        .find(|kind| name == **kind || name.ends_with(&format!("_{kind}")))
+        .copied()
+}
+
+fn is_decor(kind: &str) -> bool {
+    matches!(
+        kind,
+        "minecraft:item_frame"
+            | "minecraft:glow_item_frame"
+            | "minecraft:painting"
+            | "minecraft:armor_stand"
+    )
+}
 
 fn block(pos: [f64; 3]) -> BlockPos {
     [
@@ -118,6 +259,10 @@ fn is_door(id: &str) -> bool {
     id.ends_with("_door") && !id.contains("trapdoor")
 }
 
+fn is_bed(id: &str) -> bool {
+    id.ends_with("_bed")
+}
+
 impl Memory {
     /// Takes in a tick's observations. The target is the first player seen until the brain picks
     /// another (multiplayer, a later phase).
@@ -126,7 +271,12 @@ impl Memory {
             if let Some(first) = observations.players.first() {
                 self.target = Some(first.index);
                 self.target_name = first.name.clone();
+                self.target_uuid = first.uuid.clone();
             }
+        }
+
+        if let Some(world) = &observations.world {
+            self.last.raining = world.raining;
         }
 
         let Some(index) = self.target else { return };
@@ -143,10 +293,52 @@ impl Memory {
                 .entities
                 .iter()
                 .filter(|e| {
-                    !e.hostile && e.kind != "minecraft:item" && distance(block(e.pos), at) <= 32.0
+                    !e.hostile
+                        && !is_decor(&e.kind)
+                        && !matches!(
+                            e.kind.as_str(),
+                            "minecraft:item"
+                                | "minecraft:player"
+                                | "minecraft:experience_orb"
+                                | "minecraft:arrow"
+                                | "minecraft:boat"
+                                | "minecraft:minecart"
+                        )
+                        && distance(block(e.pos), at) <= 32.0
                 })
-                .map(|e| e.id)
+                .take(MOST_CREATURES)
+                .map(|e| Creature {
+                    id: e.id,
+                    kind: e.kind.rsplit(':').next().unwrap_or(&e.kind).to_string(),
+                    pos: e.pos,
+                    named: !e.name.is_empty(),
+                    pet: !e.owner.is_empty() && e.owner == self.target_uuid,
+                })
                 .collect();
+
+            // Decor is what hangs or stands near the home; the pass replaces the list, since
+            // the ids last only while the world is loaded.
+            if let Some(home) = &self.home {
+                let center = home.center;
+                self.decor = observations
+                    .entities
+                    .iter()
+                    .filter(|e| {
+                        is_decor(&e.kind) && distance(block(e.pos), center) <= HOME_RADIUS as f64
+                    })
+                    .take(MOST_DECOR)
+                    .map(|e| Decor {
+                        kind: e
+                            .kind
+                            .rsplit(':')
+                            .next()
+                            .unwrap_or(&e.kind)
+                            .replace("glow_", ""),
+                        id: e.id,
+                        pos: block(e.pos),
+                    })
+                    .collect();
+            }
         }
 
         for event in &observations.events {
@@ -157,10 +349,13 @@ impl Memory {
             match event.kind {
                 EventKind::OpenedContainer => {
                     if let Some(pos) = event.pos {
-                        self.container_opened(pos, &event.contents, day);
+                        self.container_opened(pos, &event.detail, &event.contents, day);
                     }
                 }
                 EventKind::SleptBegan => {
+                    if !self.milestones.iter().any(|m| m.kind == "first_sleep") {
+                        self.milestone("first_sleep", day, event.pos, "");
+                    }
                     if let Some(pos) = event.pos {
                         let home = self.home.get_or_insert_with(|| Home {
                             center: pos,
@@ -175,6 +370,29 @@ impl Memory {
                 EventKind::PlacedBlock => {
                     if let Some(pos) = event.pos {
                         push_capped(&mut self.placed, pos, MOST_PLACED);
+                        // A bed placed is as good a sign of home as a bed slept in, and comes
+                        // hours sooner: a player cannot sleep before night.
+                        if is_bed(&event.detail) {
+                            let home = self.home.get_or_insert_with(|| Home {
+                                center: pos,
+                                floor_y: pos[1],
+                                ..Home::default()
+                            });
+                            home.bed = Some(pos);
+                            home.center = pos;
+                            home.floor_y = pos[1];
+                        }
+                        if let Some(kind) = fixture_kind(&event.detail) {
+                            self.fixtures.retain(|f| f.pos != pos);
+                            push_capped(
+                                &mut self.fixtures,
+                                Fixture {
+                                    kind: kind.to_string(),
+                                    pos,
+                                },
+                                MOST_FIXTURES,
+                            );
+                        }
                         if is_light(&event.detail) || is_door(&event.detail) {
                             let home = self.home.get_or_insert_with(|| Home {
                                 center: pos,
@@ -189,6 +407,55 @@ impl Memory {
                         }
                     }
                 }
+                EventKind::Died => {
+                    self.milestone("died", day, event.pos, "");
+                }
+                EventKind::ChangedDimension => {
+                    self.milestone("crossed", day, event.pos, &event.detail);
+                }
+                EventKind::Hit | EventKind::Killed => {
+                    let kind = event
+                        .detail
+                        .rsplit(':')
+                        .next()
+                        .unwrap_or(&event.detail)
+                        .to_string();
+                    if kind.is_empty() || kind == "player" {
+                        continue;
+                    }
+                    let killed = event.kind == EventKind::Killed;
+                    if killed && !self.tally.iter().any(|t| t.kind == kind && t.kills > 0) {
+                        self.milestone("first_kill", day, event.pos, &kind);
+                    }
+                    match self.tally.iter_mut().find(|t| t.kind == kind) {
+                        Some(tally) => {
+                            if killed {
+                                tally.kills += 1;
+                            } else {
+                                tally.hits += 1;
+                            }
+                        }
+                        None => {
+                            self.tally.push(Tally {
+                                kind,
+                                hits: u32::from(!killed),
+                                kills: u32::from(killed),
+                            });
+                            if self.tally.len() > MOST_TALLY {
+                                let least = self
+                                    .tally
+                                    .iter()
+                                    .enumerate()
+                                    .min_by_key(|(_, t)| t.hits + t.kills)
+                                    .map(|(i, _)| i)
+                                    .unwrap_or(0);
+                                self.tally.remove(least);
+                            }
+                        }
+                    }
+                    self.tally
+                        .sort_by_key(|t| std::cmp::Reverse((t.kills, t.hits)));
+                }
                 EventKind::BrokeBlock => {
                     if let Some(pos) = event.pos {
                         self.placed.retain(|p| *p != pos);
@@ -197,6 +464,7 @@ impl Memory {
                             home.doors.retain(|p| *p != pos);
                         }
                         self.containers.retain(|c| c.pos != pos);
+                        self.fixtures.retain(|f| f.pos != pos);
                     }
                 }
                 _ => {}
@@ -204,7 +472,11 @@ impl Memory {
         }
 
         for line in &observations.chat {
-            if line.player == index && about_the_lodger(&line.text) {
+            if line.player != index {
+                continue;
+            }
+            self.last_said = line.text.clone();
+            if about_the_lodger(&line.text) {
                 push_capped(&mut self.chat, line.text.clone(), MOST_CHAT);
             }
         }
@@ -277,16 +549,18 @@ impl Memory {
         }
     }
 
-    fn container_opened(&mut self, pos: BlockPos, contents: &[ItemStack], day: f32) {
+    fn container_opened(&mut self, pos: BlockPos, kind: &str, contents: &[ItemStack], day: f32) {
         match self.containers.iter_mut().find(|c| c.pos == pos) {
             Some(container) => {
                 container.opens += 1;
                 container.last_opened_day = day;
                 container.contents = contents.to_vec();
+                container.kind = kind.to_string();
             }
             None => {
                 self.containers.push(Container {
                     pos,
+                    kind: kind.to_string(),
                     opens: 1,
                     last_opened_day: day,
                     contents: contents.to_vec(),
@@ -305,24 +579,121 @@ impl Memory {
         }
     }
 
-    /// Records an event's outcome.
+    /// Records an event's outcome. One the target would notice (a bold row) that landed is a
+    /// landmark too, kept for the whole stay.
     pub fn record(&mut self, event: &str, pos: Option<BlockPos>, day: f32, ok: bool, reason: &str) {
+        let done = Done {
+            event: event.to_string(),
+            pos,
+            day,
+            ok,
+            reason: reason.to_string(),
+        };
+        if ok
+            && crate::events::find(event)
+                .map(|e| !e.small)
+                .unwrap_or(false)
+        {
+            push_capped(&mut self.landmarks, done.clone(), MOST_LANDMARKS);
+        }
+        push_capped(&mut self.done, done, MOST_DONE);
+    }
+
+    fn milestone(&mut self, kind: &str, day: f32, pos: Option<BlockPos>, detail: &str) {
         push_capped(
-            &mut self.done,
-            Done {
-                event: event.to_string(),
-                pos,
+            &mut self.milestones,
+            Milestone {
+                kind: kind.to_string(),
                 day,
-                ok,
-                reason: reason.to_string(),
+                pos,
+                detail: detail.to_string(),
             },
-            MOST_DONE,
+            MOST_MILESTONES,
         );
     }
 
-    /// The container the target opens most.
+    /// How many times an event landed in this stay: from `done`, or from the landmarks when
+    /// `done` has trimmed, whichever remembers more.
+    pub fn times(&self, event: &str) -> usize {
+        let recent = self
+            .done
+            .iter()
+            .filter(|d| d.event == event && d.ok)
+            .count();
+        let kept = self.landmarks.iter().filter(|d| d.event == event).count();
+
+        recent.max(kept)
+    }
+
+    /// The container the target opens most: a chest or barrel, never a furnace, which has its
+    /// own events.
     pub fn used_container(&self) -> Option<&Container> {
-        self.containers.iter().max_by_key(|c| c.opens)
+        self.containers
+            .iter()
+            .filter(|c| !c.is_furnace())
+            .max_by_key(|c| c.opens)
+    }
+
+    /// The second chest the target opens, if there is one.
+    pub fn other_container(&self) -> Option<&Container> {
+        let used = self.used_container()?.pos;
+
+        self.containers
+            .iter()
+            .filter(|c| !c.is_furnace() && c.pos != used)
+            .max_by_key(|c| c.opens)
+    }
+
+    /// The furnace the target used most.
+    pub fn furnace(&self) -> Option<&Container> {
+        self.containers
+            .iter()
+            .filter(|c| c.is_furnace())
+            .max_by_key(|c| c.opens)
+    }
+
+    /// The fixtures of a plain kind (`fence_gate`), oldest first.
+    pub fn fixtures<'a>(&'a self, kind: &'a str) -> impl Iterator<Item = &'a Fixture> + 'a {
+        self.fixtures.iter().filter(move |f| f.kind == kind)
+    }
+
+    /// Whether any fixture of this kind is known.
+    pub fn has_fixture(&self, kind: &str) -> bool {
+        self.fixtures(kind).next().is_some()
+    }
+
+    /// The decor of a kind (`item_frame`, `painting`, `armor_stand`).
+    pub fn decor<'a>(&'a self, kind: &'a str) -> impl Iterator<Item = &'a Decor> + 'a {
+        self.decor.iter().filter(move |d| d.kind == kind)
+    }
+
+    /// The creatures of a kind near the target (`sheep`, `villager`), or every one for "".
+    pub fn creatures<'a>(&'a self, kind: &'a str) -> impl Iterator<Item = &'a Creature> + 'a {
+        self.last
+            .creatures_near
+            .iter()
+            .filter(move |c| kind.is_empty() || c.kind == kind)
+    }
+
+    /// The kind the target has killed most, with its count, once they have killed three.
+    pub fn most_killed(&self) -> Option<&Tally> {
+        self.tally.first().filter(|t| t.kills >= 3)
+    }
+
+    /// The target's tamed animals near them.
+    pub fn pets(&self) -> impl Iterator<Item = &Creature> {
+        self.last.creatures_near.iter().filter(|c| c.pet)
+    }
+
+    /// A stack in the used container matching `test`, with the container.
+    pub fn in_used_container(
+        &self,
+        test: impl Fn(&str) -> bool,
+    ) -> Option<(&Container, &ItemStack)> {
+        let container = self.used_container()?;
+        let stack = container.contents.iter().find(|s| test(&s.id))?;
+
+        Some((container, stack))
     }
 
     /// The favourite item that sits in a used container, with the container and the slot.
@@ -428,6 +799,77 @@ impl Memory {
                 crate::events::find(&done.event)
                     .map(|e| e.menu_words())
                     .unwrap_or(&done.event)
+            ));
+        }
+
+        // The oldest landmark not among the recent lines: what it did that they would remember.
+        if let Some(landmark) = self
+            .landmarks
+            .iter()
+            .rev()
+            .find(|l| !self.recent(3).any(|d| d.day == l.day && d.event == l.event))
+        {
+            let ago = (day - landmark.day).max(0.0);
+            lines.push(format!(
+                "{} it {}{}.",
+                if ago < 1.0 {
+                    "Earlier today".to_string()
+                } else {
+                    format!("{} days ago", ago.floor() as u32)
+                },
+                crate::events::find(&landmark.event)
+                    .map(|e| e.menu_words())
+                    .unwrap_or(&landmark.event),
+                landmark
+                    .pos
+                    .zip(self.home.as_ref())
+                    .map(|(p, h)| format!(", {}", place_words(Some(h), p)))
+                    .unwrap_or_default()
+            ));
+        }
+
+        if let Some(milestone) = self.milestones.last() {
+            let ago = (day - milestone.day).max(0.0);
+            let when = if ago < 1.0 {
+                "Today".to_string()
+            } else {
+                format!("{} days ago", ago.floor() as u32)
+            };
+            let what = match milestone.kind.as_str() {
+                "died" => "they died".to_string(),
+                "first_sleep" => "they slept for the first time".to_string(),
+                "first_kill" => format!(
+                    "they killed their first {}",
+                    milestone.detail.replace('_', " ")
+                ),
+                "crossed" => format!(
+                    "they went to {}",
+                    milestone
+                        .detail
+                        .rsplit(':')
+                        .next()
+                        .unwrap_or(&milestone.detail)
+                        .replace('_', " ")
+                ),
+                other => other.to_string(),
+            };
+            lines.push(format!(
+                "{when} {what}{}.",
+                milestone
+                    .pos
+                    .zip(self.home.as_ref())
+                    .filter(|_| milestone.kind == "died")
+                    .map(|(p, h)| format!(", {}", place_words(Some(h), p)))
+                    .unwrap_or_default()
+            ));
+        }
+
+        if let Some(tally) = self.most_killed() {
+            lines.push(format!(
+                "They have killed {} {}{} so far.",
+                tally.kills,
+                tally.kind.replace('_', " "),
+                if tally.kills == 1 { "" } else { "s" }
             ));
         }
 
@@ -615,6 +1057,28 @@ mod tests {
     }
 
     #[test]
+    fn a_bed_placed_is_the_home_before_anyone_sleeps_in_it() {
+        let mut memory = Memory::default();
+        memory.observe(
+            &obs(
+                vec![player(0, [5.0, 64.0, 5.0], 0.0)],
+                vec![Event {
+                    player: 0,
+                    kind: EventKind::PlacedBlock,
+                    pos: Some([7, 64, 5]),
+                    detail: "minecraft:red_bed".to_string(),
+                    ..Event::default()
+                }],
+            ),
+            0.0,
+        );
+
+        let home = memory.home.as_ref().unwrap();
+        assert_eq!(home.bed, Some([7, 64, 5]));
+        assert_eq!(home.center, [7, 64, 5]);
+    }
+
+    #[test]
     fn standing_still_makes_a_home_without_a_bed_and_the_cells_are_capped() {
         let mut memory = Memory::default();
         for _ in 0..30 {
@@ -693,5 +1157,63 @@ mod tests {
         assert_eq!(memory.done.len(), MOST_DONE);
         assert_eq!(plain("minecraft:iron_pickaxe"), "an iron pickaxe");
         assert_eq!(plain("minecraft:torch"), "a torch");
+    }
+
+    #[test]
+    fn bold_events_and_the_target_s_milestones_are_never_forgotten() {
+        let mut memory = Memory::default();
+        memory.record("take", Some([2, 64, 0]), 1.0, true, "");
+        memory.record("knock", None, 1.1, true, "");
+        for i in 0..300 {
+            memory.record("wait", None, 2.0 + i as f32, true, "");
+        }
+
+        assert!(
+            memory.done.iter().all(|d| d.event != "take"),
+            "trimmed from done"
+        );
+        assert_eq!(memory.landmarks.len(), 1, "a small knock is no landmark");
+        assert_eq!(memory.landmarks[0].event, "take");
+        assert_eq!(memory.times("take"), 1);
+
+        memory.observe(&obs(vec![player(0, [0.0, 64.0, 0.0], 0.0)], vec![]), 0.0);
+        memory.observe(
+            &obs(
+                vec![player(0, [0.0, 64.0, 0.0], 0.0)],
+                vec![
+                    Event {
+                        player: 0,
+                        kind: EventKind::Killed,
+                        pos: Some([5, 64, 5]),
+                        detail: "minecraft:cow".to_string(),
+                        ..Event::default()
+                    },
+                    Event {
+                        player: 0,
+                        kind: EventKind::Killed,
+                        pos: Some([6, 64, 5]),
+                        detail: "minecraft:cow".to_string(),
+                        ..Event::default()
+                    },
+                    Event {
+                        player: 0,
+                        kind: EventKind::Died,
+                        pos: Some([40, 60, 0]),
+                        ..Event::default()
+                    },
+                ],
+            ),
+            3.0,
+        );
+        let kinds: Vec<&str> = memory.milestones.iter().map(|m| m.kind.as_str()).collect();
+        assert_eq!(kinds, ["first_kill", "died"], "one first kill per kind");
+        assert_eq!(memory.tally[0].kills, 2);
+
+        let lines = memory.describe(5.0);
+        assert!(lines.iter().any(|l| l.contains("they died")), "{lines:?}");
+        assert!(
+            lines.iter().any(|l| l.contains("take one thing they use")),
+            "{lines:?}"
+        );
     }
 }

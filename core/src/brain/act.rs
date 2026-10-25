@@ -3,18 +3,91 @@
 //! `fits` is the host's check when the command arrives, and `ready` is the mind's check that the
 //! moment has come.
 
-use crate::events::{Action, Event, Need};
+use crate::brain::text::{self, Kind};
+use crate::events::{Action, Event, Need, Where};
 use crate::memory::{Held, Memory};
 use crate::model::Rng;
-use craftkit::world::{BlockPos, Command, ItemStack, Now};
+use craftkit::world::{BlockPos, Command, ItemStack, Now, Pos};
 
 /// Whether the event's moment is here: its needs still hold.
 pub fn ready(event: &Event, memory: &Memory, _config: &crate::config::Config) -> bool {
     let now = Now::default();
-    event
-        .needs
-        .iter()
-        .all(|need| *need == Need::Night || super::offer::meets(*need, memory, &now))
+    event.needs.iter().all(|need| {
+        matches!(*need, Need::Night | Need::Day) || super::offer::meets(*need, memory, &now)
+    })
+}
+
+/// Whether an item id is something a furnace turns into something else.
+pub fn smeltable(id: &str) -> bool {
+    id.starts_with("minecraft:raw_")
+        || id.ends_with("_ore")
+        || matches!(
+            id,
+            "minecraft:beef"
+                | "minecraft:porkchop"
+                | "minecraft:chicken"
+                | "minecraft:mutton"
+                | "minecraft:rabbit"
+                | "minecraft:cod"
+                | "minecraft:salmon"
+                | "minecraft:potato"
+                | "minecraft:kelp"
+                | "minecraft:cobblestone"
+                | "minecraft:sand"
+                | "minecraft:red_sand"
+                | "minecraft:clay_ball"
+                | "minecraft:cactus"
+                | "minecraft:netherrack"
+                | "minecraft:wet_sponge"
+        )
+}
+
+/// Whether an item id burns in a furnace.
+pub fn fuel(id: &str) -> bool {
+    id.ends_with("_log")
+        || id.ends_with("_planks")
+        || id.ends_with("_wood")
+        || id.ends_with("_sapling")
+        || matches!(
+            id,
+            "minecraft:coal"
+                | "minecraft:charcoal"
+                | "minecraft:coal_block"
+                | "minecraft:stick"
+                | "minecraft:blaze_rod"
+                | "minecraft:lava_bucket"
+                | "minecraft:dried_kelp_block"
+                | "minecraft:bamboo"
+        )
+}
+
+fn block_center(p: BlockPos) -> Pos {
+    [p[0] as f64 + 0.5, p[1] as f64 + 0.5, p[2] as f64 + 0.5]
+}
+
+fn block_of(p: Pos) -> BlockPos {
+    [
+        p[0].floor() as i32,
+        p[1].floor() as i32,
+        p[2].floor() as i32,
+    ]
+}
+
+/// The lodger's spot: its chosen place, or a point eight to twelve blocks from the home's
+/// center, away from the door, picked once from the seed so it stays the same spot.
+fn spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
+    if let Some(place) = memory.place {
+        return Some(place);
+    }
+    let home = memory.home.as_ref()?;
+    let angle = (rng.next_u64() % 8) as f64 * std::f64::consts::FRAC_PI_4;
+    let distance = 8.0 + (rng.next_u64() % 5) as f64;
+
+    Some([
+        home.center[0] + (distance * angle.cos()).round() as i32,
+        home.floor_y,
+        home.center[2] + (distance * angle.sin()).round() as i32,
+    ])
 }
 
 /// The place the event happens, from the memory, or none for a thing with no place.
@@ -26,8 +99,47 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::Hint(_, _)
         | Action::RefuseRest
         | Action::Stare
-        | Action::SoundAtTarget(_) => None,
-        Action::ToggleDoor => home.and_then(|h| pick(&h.doors, rng)),
+        | Action::SoundAtTarget(_)
+        | Action::SoundFar(_)
+        | Action::TabEntry
+        | Action::Message(_)
+        | Action::Says
+        | Action::SaysKills
+        | Action::Whisper
+        | Action::RepeatsYou
+        | Action::NameAnimal
+        | Action::DyeSheep
+        | Action::GolemTurned
+        | Action::StandWatch
+        | Action::FramesTurn
+        | Action::ToggleCandles
+        | Action::CarpetShift
+        | Action::LightPath => None,
+        Action::ToggleDoor | Action::Wake | Action::PathWorn | Action::KillSign => {
+            home.and_then(|h| pick(&h.doors, rng))
+        }
+        Action::ToggleFixture(kind) | Action::SoundAtFixture(kind, _) => pick_ref(
+            memory
+                .fixtures(kind)
+                .map(|f| f.pos)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            rng,
+        ),
+        Action::Taps(kind, _, _) => {
+            if kind.is_empty() {
+                home.and_then(|h| pick(&h.doors, rng))
+            } else {
+                pick_ref(
+                    memory
+                        .fixtures(kind)
+                        .map(|f| f.pos)
+                        .collect::<Vec<_>>()
+                        .as_slice(),
+                    rng,
+                )
+            }
+        }
         Action::Sound(_) => home.map(|h| {
             // Another room: six blocks off the center, a random way.
             let angle = rng.next_f64() * std::f64::consts::TAU;
@@ -37,9 +149,15 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 h.center[2] + (6.0 * angle.sin()).round() as i32,
             ]
         }),
-        Action::ChestSounds | Action::ShuffleContainer | Action::SplitStack => {
-            memory.used_container().map(|c| c.pos)
-        }
+        Action::OpenLid
+        | Action::ShuffleContainer
+        | Action::SplitStack
+        | Action::TidyContainer
+        | Action::SwapStacks
+        | Action::FillGap => memory.used_container().map(|c| c.pos),
+        Action::CookOne | Action::TakeOutput => memory.furnace().map(|f| f.pos),
+        Action::ItemOnTable => memory.fixtures("crafting_table").next().map(|f| f.pos),
+        Action::EggOnBed => home.and_then(|h| h.bed),
         Action::Take => memory.favourite_in_container().map(|(c, _)| c.pos),
         Action::ReturnTaken => memory.held.as_ref().map(|h| h.from),
         Action::PlaceTaken => memory
@@ -52,6 +170,33 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             let dz = (rng.next_u64() % 7) as i32 - 3;
             [h.center[0] + dx, h.floor_y, h.center[2] + dz]
         }),
+        Action::Hole | Action::Cairn | Action::Sapling | Action::Sign | Action::Grave => {
+            spot(memory, rng)
+        }
+        Action::Cauldron => memory.fixtures("cauldron").next().map(|f| f.pos),
+        Action::RotateFrame => pick_ref(
+            memory
+                .decor("item_frame")
+                .map(|d| d.pos)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            rng,
+        ),
+        Action::SwapPainting => pick_ref(
+            memory
+                .decor("painting")
+                .map(|d| d.pos)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            rng,
+        ),
+        Action::StandTurn => memory.decor("armor_stand").next().map(|d| d.pos),
+        Action::PetGrowl => memory.pets().next().map(|p| block_of(p.pos)),
+        Action::MoveCreature(_, Where::Home) => home.map(|h| h.center),
+        Action::MoveCreature(_, Where::OutsideDoor) => home.and_then(|h| pick(&h.doors, rng)),
+        Action::MoveCreature(_, Where::Corner) => {
+            home.map(|h| [h.center[0] + 3, h.floor_y, h.center[2] + 3])
+        }
     }
 }
 
@@ -61,6 +206,106 @@ fn pick<T: Copy>(list: &[T], rng: &mut Rng) -> Option<T> {
     } else {
         Some(list[(rng.next_u64() % list.len() as u64) as usize])
     }
+}
+
+fn pick_ref(list: &[BlockPos], rng: &mut Rng) -> Option<BlockPos> {
+    pick(list, rng)
+}
+
+fn sound_at(
+    ids: &mut impl FnMut() -> u64,
+    target: u32,
+    sound: &str,
+    pos: Pos,
+    volume: f32,
+) -> Command {
+    Command::PlaySound {
+        id: ids(),
+        player: target,
+        sound: sound.to_string(),
+        pos,
+        volume,
+        pitch: 1.0,
+    }
+}
+
+fn set(ids: &mut impl FnMut() -> u64, pos: BlockPos, block: &str, replace: &[&str]) -> Command {
+    Command::SetBlock {
+        id: ids(),
+        pos,
+        block: block.to_string(),
+        state: String::new(),
+        replace: replace.iter().map(|r| r.to_string()).collect(),
+    }
+}
+
+/// Natural ground the lodger may wear, dig or build on; never anything a player builds with.
+const GROUND: &[&str] = &[
+    "minecraft:grass_block",
+    "minecraft:dirt",
+    "minecraft:coarse_dirt",
+    "minecraft:podzol",
+    "minecraft:stone",
+    "minecraft:gravel",
+    "minecraft:sand",
+    "minecraft:snow",
+    "minecraft:short_grass",
+    "minecraft:tall_grass",
+    "minecraft:fern",
+];
+
+/// A step of one block from `from` toward `to`, along the longer axis.
+fn step_toward(from: BlockPos, to: BlockPos) -> [i32; 2] {
+    let dx = to[0] - from[0];
+    let dz = to[2] - from[2];
+    if dx.abs() >= dz.abs() {
+        [dx.signum(), 0]
+    } else {
+        [0, dz.signum()]
+    }
+}
+
+/// The moves that sort a container by item id into the first slots, each as (from, to, count),
+/// using one empty slot as the hand. None when there is no empty slot or it is sorted already.
+pub fn tidy_moves(contents: &[ItemStack], size: u32) -> Vec<(u32, u32, u32)> {
+    let mut slots: Vec<Option<ItemStack>> = vec![None; size as usize];
+    for stack in contents {
+        if (stack.slot as usize) < slots.len() {
+            slots[stack.slot as usize] = Some(stack.clone());
+        }
+    }
+    let mut wanted: Vec<ItemStack> = contents.to_vec();
+    wanted.sort_by(|a, b| a.id.cmp(&b.id).then(b.count.cmp(&a.count)));
+
+    let mut moves = Vec::new();
+    for (target, stack) in wanted.iter().enumerate() {
+        let target = target as u32;
+        let from = slots
+            .iter()
+            .position(|s| {
+                s.as_ref()
+                    .map(|s| s.id == stack.id && s.count == stack.count)
+                    .unwrap_or(false)
+            })
+            .map(|i| i as u32);
+        let Some(from) = from else { continue };
+        if from == target {
+            continue;
+        }
+        if slots[target as usize].is_some() {
+            let Some(empty) = slots.iter().position(|s| s.is_none()) else {
+                return Vec::new();
+            };
+            let moved = slots[target as usize].take().unwrap();
+            moves.push((target, empty as u32, moved.count));
+            slots[empty] = Some(moved);
+        }
+        let moved = slots[from as usize].take().unwrap();
+        moves.push((from, target, moved.count));
+        slots[target as usize] = Some(moved);
+    }
+
+    moves
 }
 
 /// The commands for the event at `pos`, each with the ticks to wait before sending it (0 for
@@ -73,65 +318,61 @@ pub fn commands(
     _now: &Now,
 ) -> Vec<(Command, u64)> {
     let target = memory.target.unwrap_or(0);
-    let at = |p: BlockPos| [p[0] as f64 + 0.5, p[1] as f64 + 0.5, p[2] as f64 + 0.5];
+    let at = block_center;
+    let seed = pos
+        .map(|p| (p[0] + p[2]).unsigned_abs() as usize)
+        .unwrap_or(0)
+        + memory.done.len();
 
     match event.action {
         Action::Wait => vec![],
-        Action::ToggleDoor => pos
+        Action::ToggleDoor | Action::ToggleFixture(_) => pos
             .map(|p| vec![(Command::ToggleBlock { id: ids(), pos: p }, 0)])
             .unwrap_or_default(),
-        Action::Sound(sound) => pos
+        Action::ToggleCandles => memory
+            .fixtures("candle")
+            .map(|f| {
+                (
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: f.pos,
+                    },
+                    0,
+                )
+            })
+            .collect(),
+        Action::Sound(sound) | Action::SoundAtFixture(_, sound) => pos
+            .map(|p| vec![(sound_at(ids, target, sound, at(p), 1.0), 0)])
+            .unwrap_or_default(),
+        Action::SoundAtTarget(sound) => {
+            vec![(sound_at(ids, target, sound, memory.last.pos, 0.8), 10)]
+        }
+        Action::SoundFar(sound) => {
+            let angle = (seed % 8) as f64 * std::f64::consts::FRAC_PI_4;
+            let far = [
+                memory.last.pos[0] + 36.0 * angle.cos(),
+                memory.last.pos[1],
+                memory.last.pos[2] + 36.0 * angle.sin(),
+            ];
+            vec![(sound_at(ids, target, sound, far, 2.0), 0)]
+        }
+        Action::Taps(_, sound, count) => pos
+            .map(|p| {
+                (0..count)
+                    .map(|i| (sound_at(ids, target, sound, at(p), 0.9), i as u64 * 10))
+                    .collect()
+            })
+            .unwrap_or_default(),
+        Action::OpenLid => pos
             .map(|p| {
                 vec![(
-                    Command::PlaySound {
+                    Command::OpenLid {
                         id: ids(),
-                        player: target,
-                        sound: sound.to_string(),
-                        pos: at(p),
-                        volume: 1.0,
-                        pitch: 1.0,
+                        pos: p,
+                        seconds: 1.5,
                     },
                     0,
                 )]
-            })
-            .unwrap_or_default(),
-        Action::SoundAtTarget(sound) => vec![(
-            Command::PlaySound {
-                id: ids(),
-                player: target,
-                sound: sound.to_string(),
-                pos: memory.last.pos,
-                volume: 0.8,
-                pitch: 1.0,
-            },
-            10,
-        )],
-        Action::ChestSounds => pos
-            .map(|p| {
-                vec![
-                    (
-                        Command::PlaySound {
-                            id: ids(),
-                            player: target,
-                            sound: "minecraft:block.chest.open".to_string(),
-                            pos: at(p),
-                            volume: 0.7,
-                            pitch: 1.0,
-                        },
-                        0,
-                    ),
-                    (
-                        Command::PlaySound {
-                            id: ids(),
-                            player: target,
-                            sound: "minecraft:block.chest.close".to_string(),
-                            pos: at(p),
-                            volume: 0.7,
-                            pitch: 1.0,
-                        },
-                        30,
-                    ),
-                ]
             })
             .unwrap_or_default(),
         Action::MoveLight => pos
@@ -157,26 +398,36 @@ pub fn commands(
             })
             .unwrap_or_default(),
         Action::AddTorch => pos
-            .map(|p| {
-                vec![(
-                    Command::SetBlock {
-                        id: ids(),
-                        pos: [p[0], p[1] + 1, p[2]],
-                        block: "minecraft:torch".to_string(),
-                        state: String::new(),
-                    },
-                    0,
-                )]
-            })
+            .map(|p| vec![(set(ids, [p[0], p[1] + 1, p[2]], "minecraft:torch", &[]), 0)])
             .unwrap_or_default(),
+        Action::LightPath => {
+            let Some(home) = memory.home.as_ref() else {
+                return vec![];
+            };
+            let Some(spot) = memory
+                .place
+                .or_else(|| Some([home.center[0] + 10, home.floor_y, home.center[2] + 10]))
+            else {
+                return vec![];
+            };
+            let count = 3 + (seed % 5) as i32;
+            let mut made = Vec::new();
+            let mut p = home.center;
+            for i in 0..count {
+                let step = step_toward(p, spot);
+                p = [p[0] + step[0] * 3, p[1], p[2] + step[1] * 3];
+                made.push((
+                    set(ids, [p[0], p[1] + 1, p[2]], "minecraft:torch", &[]),
+                    i as u64 * 20,
+                ));
+            }
+            made
+        }
         Action::ShuffleContainer => match (pos, memory.used_container()) {
             (Some(p), Some(container)) if !container.contents.is_empty() => {
-                let used: Vec<u32> = container.contents.iter().map(|s| s.slot).collect();
-                let empty = (0..27u32).find(|slot| !used.contains(slot));
-                match empty {
-                    Some(to_slot) => {
-                        let stack = &container.contents
-                            [(p[0] + p[2]).rem_euclid(container.contents.len() as i32) as usize];
+                match container.empty_slots().first() {
+                    Some(&to_slot) => {
+                        let stack = &container.contents[seed % container.contents.len()];
                         vec![(
                             Command::MoveItem {
                                 id: ids(),
@@ -196,10 +447,11 @@ pub fn commands(
         },
         Action::SplitStack => match (pos, memory.used_container()) {
             (Some(p), Some(container)) => {
-                let used: Vec<u32> = container.contents.iter().map(|s| s.slot).collect();
-                let empty = (0..27u32).find(|slot| !used.contains(slot));
-                match (container.contents.iter().find(|s| s.count >= 2), empty) {
-                    (Some(stack), Some(to_slot)) => vec![(
+                match (
+                    container.contents.iter().find(|s| s.count >= 2),
+                    container.empty_slots().first(),
+                ) {
+                    (Some(stack), Some(&to_slot)) => vec![(
                         Command::MoveItem {
                             id: ids(),
                             from: p,
@@ -215,6 +467,195 @@ pub fn commands(
             }
             _ => vec![],
         },
+        Action::TidyContainer => match (pos, memory.used_container()) {
+            (Some(p), Some(container)) => tidy_moves(&container.contents, 27)
+                .into_iter()
+                .enumerate()
+                .map(|(i, (from_slot, to_slot, count))| {
+                    (
+                        Command::MoveItem {
+                            id: ids(),
+                            from: p,
+                            from_slot,
+                            to: p,
+                            to_slot,
+                            count,
+                        },
+                        i as u64,
+                    )
+                })
+                .collect(),
+            _ => vec![],
+        },
+        Action::SwapStacks => match (memory.used_container(), memory.other_container()) {
+            (Some(a), Some(b)) => {
+                let (Some(sa), Some(sb)) = (a.contents.first(), b.contents.first()) else {
+                    return vec![];
+                };
+                let (Some(&ea), Some(&eb)) = (a.empty_slots().first(), b.empty_slots().first())
+                else {
+                    return vec![];
+                };
+                vec![
+                    (
+                        Command::MoveItem {
+                            id: ids(),
+                            from: a.pos,
+                            from_slot: sa.slot,
+                            to: b.pos,
+                            to_slot: eb,
+                            count: sa.count,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::MoveItem {
+                            id: ids(),
+                            from: b.pos,
+                            from_slot: sb.slot,
+                            to: a.pos,
+                            to_slot: ea,
+                            count: sb.count,
+                        },
+                        1,
+                    ),
+                ]
+            }
+            _ => vec![],
+        },
+        Action::FillGap => match (memory.used_container(), memory.other_container()) {
+            (Some(a), Some(b)) => {
+                let Some(biggest) = a
+                    .contents
+                    .iter()
+                    .filter(|s| s.count >= 2)
+                    .max_by_key(|s| s.count)
+                else {
+                    return vec![];
+                };
+                let Some(&empty) = b.empty_slots().first() else {
+                    return vec![];
+                };
+                vec![(
+                    Command::MoveItem {
+                        id: ids(),
+                        from: a.pos,
+                        from_slot: biggest.slot,
+                        to: b.pos,
+                        to_slot: empty,
+                        count: biggest.count / 2,
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
+        Action::CookOne => {
+            let (Some(furnace), Some((chest, raw)), Some((_, burn))) = (
+                memory.furnace(),
+                memory.in_used_container(smeltable),
+                memory.in_used_container(fuel),
+            ) else {
+                return vec![];
+            };
+            let mut made = vec![(
+                Command::MoveItem {
+                    id: ids(),
+                    from: chest.pos,
+                    from_slot: raw.slot,
+                    to: furnace.pos,
+                    to_slot: 0,
+                    count: 1,
+                },
+                0,
+            )];
+            if !furnace.contents.iter().any(|s| s.slot == 1) {
+                made.push((
+                    Command::MoveItem {
+                        id: ids(),
+                        from: chest.pos,
+                        from_slot: burn.slot,
+                        to: furnace.pos,
+                        to_slot: 1,
+                        count: 1,
+                    },
+                    1,
+                ));
+            }
+            made
+        }
+        Action::TakeOutput => match (memory.furnace(), memory.used_container()) {
+            (Some(furnace), Some(chest)) => {
+                let (Some(out), Some(&empty)) = (
+                    furnace.contents.iter().find(|s| s.slot == 2),
+                    chest.empty_slots().first(),
+                ) else {
+                    return vec![];
+                };
+                vec![(
+                    Command::MoveItem {
+                        id: ids(),
+                        from: furnace.pos,
+                        from_slot: 2,
+                        to: chest.pos,
+                        to_slot: empty,
+                        count: out.count,
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
+        Action::ItemOnTable => match (pos, memory.favourite_in_container()) {
+            (Some(table), Some((container, stack))) => vec![
+                (
+                    Command::TakeItem {
+                        id: ids(),
+                        from: container.pos,
+                        slot: stack.slot,
+                        count: 1,
+                    },
+                    0,
+                ),
+                (
+                    Command::DropItem {
+                        id: ids(),
+                        pos: [
+                            table[0] as f64 + 0.5,
+                            table[1] as f64 + 1.1,
+                            table[2] as f64 + 0.5,
+                        ],
+                        item: ItemStack {
+                            id: stack.id.clone(),
+                            count: 1,
+                            slot: 0,
+                        },
+                    },
+                    1,
+                ),
+            ],
+            _ => vec![],
+        },
+        Action::EggOnBed => pos
+            .map(|bed| {
+                vec![(
+                    Command::DropItem {
+                        id: ids(),
+                        pos: [
+                            bed[0] as f64 + 0.5,
+                            bed[1] as f64 + 0.7,
+                            bed[2] as f64 + 0.5,
+                        ],
+                        item: ItemStack {
+                            id: "minecraft:egg".to_string(),
+                            count: 1,
+                            slot: 0,
+                        },
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::Take => match memory.favourite_in_container() {
             Some((container, stack)) => vec![(
                 Command::TakeItem {
@@ -250,17 +691,33 @@ pub fn commands(
             )],
             _ => vec![],
         },
-        Action::Hint(kind, seconds) => vec![(
-            Command::Hint {
-                id: ids(),
-                player: target,
-                hint: kind.to_string(),
-                pos: None,
-                seconds,
-                detail: String::new(),
-            },
-            0,
-        )],
+        Action::Hint(kind, seconds) => {
+            let detail = match kind {
+                "hotbar_slip" => memory
+                    .favourites
+                    .first()
+                    .map(|(id, _)| id.clone())
+                    .unwrap_or_default(),
+                _ => String::new(),
+            };
+            let hint_pos = match kind {
+                "camera_nudge" => memory
+                    .place
+                    .or_else(|| memory.home.as_ref().map(|h| h.center)),
+                _ => None,
+            };
+            vec![(
+                Command::Hint {
+                    id: ids(),
+                    player: target,
+                    hint: kind.to_string(),
+                    pos: hint_pos,
+                    seconds,
+                    detail,
+                },
+                0,
+            )]
+        }
         Action::RefuseRest => vec![(
             Command::CancelSleep {
                 id: ids(),
@@ -269,16 +726,34 @@ pub fn commands(
             },
             0,
         )],
+        Action::Wake => {
+            let mut made = vec![(
+                Command::CancelSleep {
+                    id: ids(),
+                    player: target,
+                    seconds: 0.0,
+                },
+                0,
+            )];
+            if let Some(door) = pos {
+                made.push((
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: door,
+                    },
+                    5,
+                ));
+            }
+            made
+        }
         Action::Stare => memory
-            .last
-            .creatures_near
-            .iter()
+            .creatures("")
             .take(8)
-            .map(|entity| {
+            .map(|creature| {
                 (
                     Command::LookAt {
                         id: ids(),
-                        entity: *entity,
+                        entity: creature.id,
                         at: memory.last.pos,
                         seconds: 20.0,
                     },
@@ -286,7 +761,429 @@ pub fn commands(
                 )
             })
             .collect(),
+        Action::Hole => pos
+            .map(|p| {
+                let mut made: Vec<(Command, u64)> = (0..3)
+                    .map(|depth| {
+                        (
+                            set(ids, [p[0], p[1] - depth, p[2]], "minecraft:air", GROUND),
+                            depth as u64 * 15,
+                        )
+                    })
+                    .collect();
+                made.push((set(ids, [p[0], p[1] - 2, p[2]], "minecraft:torch", &[]), 50));
+                made
+            })
+            .unwrap_or_default(),
+        Action::Cairn => pos
+            .map(|p| {
+                (0..3)
+                    .map(|height| {
+                        (
+                            set(
+                                ids,
+                                [p[0], p[1] + 1 + height, p[2]],
+                                "minecraft:cobblestone",
+                                &[],
+                            ),
+                            height as u64 * 15,
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        Action::Sapling => match (pos, memory.in_used_container(|id| id.ends_with("sapling"))) {
+            (Some(p), Some((container, stack))) => vec![
+                (
+                    Command::TakeItem {
+                        id: ids(),
+                        from: container.pos,
+                        slot: stack.slot,
+                        count: 1,
+                    },
+                    0,
+                ),
+                (
+                    set(
+                        ids,
+                        [p[0], p[1] + 1, p[2]],
+                        &stack.id,
+                        &["minecraft:short_grass"],
+                    ),
+                    1,
+                ),
+            ],
+            _ => vec![],
+        },
+        Action::Sign => pos
+            .map(|p| {
+                let word = text::pick(Kind::SignWord, seed, "", 0);
+                sign_at(ids, [p[0], p[1] + 1, p[2]], vec![String::new(), word])
+            })
+            .unwrap_or_default(),
+        Action::KillSign => match (pos, memory.most_killed()) {
+            (Some(door), Some(tally)) => {
+                let Some(home) = memory.home.as_ref() else {
+                    return vec![];
+                };
+                // Two blocks out from the door, away from the house.
+                let step = step_toward(home.center, door);
+                let p = [door[0] + step[0] * 2, door[1], door[2] + step[1] * 2];
+                sign_at(
+                    ids,
+                    p,
+                    vec![text::pick(Kind::KillSign, seed, &tally.kind, tally.kills)],
+                )
+            }
+            _ => vec![],
+        },
+        Action::Grave => match (pos, memory.most_killed()) {
+            (Some(p), Some(tally)) => {
+                let mut made = vec![
+                    (
+                        set(ids, [p[0], p[1] + 1, p[2]], "minecraft:cobblestone", &[]),
+                        0,
+                    ),
+                    (
+                        set(ids, [p[0], p[1] + 2, p[2]], "minecraft:cobblestone", &[]),
+                        15,
+                    ),
+                ];
+                made.extend(
+                    sign_at(
+                        ids,
+                        [p[0] + 1, p[1] + 1, p[2]],
+                        vec![text::pick(Kind::GraveSign, seed, &tally.kind, tally.kills)],
+                    )
+                    .into_iter()
+                    .map(|(c, t)| (c, t + 30)),
+                );
+                made
+            }
+            _ => vec![],
+        },
+        Action::PathWorn => match (pos, memory.home.as_ref()) {
+            (Some(door), Some(home)) => {
+                let spot = memory.place.unwrap_or([
+                    home.center[0] + 10,
+                    home.floor_y,
+                    home.center[2] + 10,
+                ]);
+                let mut p = [door[0], door[1] - 1, door[2]];
+                let step = step_toward(home.center, door);
+                p = [p[0] + step[0], p[1], p[2] + step[1]];
+                let count = 6 + (seed % 5) as i32;
+                let mut made = Vec::new();
+                for i in 0..count {
+                    let step = step_toward(p, [spot[0], p[1], spot[2]]);
+                    if step == [0, 0] {
+                        break;
+                    }
+                    p = [p[0] + step[0], p[1], p[2] + step[1]];
+                    made.push((
+                        set(ids, p, "minecraft:dirt_path", &["minecraft:grass_block"]),
+                        i as u64 * 10,
+                    ));
+                }
+                made
+            }
+            _ => vec![],
+        },
+        Action::CarpetShift => {
+            let carpets: Vec<BlockPos> = memory.fixtures("carpet").map(|f| f.pos).collect();
+            let mut sorted = carpets.clone();
+            // The farthest along x moves first, so none lands on another.
+            sorted.sort_by_key(|p| std::cmp::Reverse(p[0]));
+            sorted
+                .into_iter()
+                .enumerate()
+                .map(|(i, p)| {
+                    (
+                        Command::MoveBlock {
+                            id: ids(),
+                            from: p,
+                            to: [p[0] + 1, p[1], p[2]],
+                        },
+                        i as u64,
+                    )
+                })
+                .collect()
+        }
+        Action::Cauldron => pos
+            .map(|p| {
+                vec![
+                    (
+                        set(ids, p, "minecraft:water_cauldron", &["minecraft:cauldron"]),
+                        0,
+                    ),
+                    (
+                        set(ids, p, "minecraft:cauldron", &["minecraft:water_cauldron"]),
+                        1,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
+        Action::RotateFrame => pos
+            .and_then(|p| memory.decor("item_frame").find(|d| d.pos == p))
+            .map(|frame| {
+                vec![(
+                    Command::RotateFrame {
+                        id: ids(),
+                        entity: frame.id,
+                        rotation: None,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::FramesTurn => {
+            let rotation = (seed % 8) as u32;
+            memory
+                .decor("item_frame")
+                .map(|frame| {
+                    (
+                        Command::RotateFrame {
+                            id: ids(),
+                            entity: frame.id,
+                            rotation: Some(rotation),
+                        },
+                        0,
+                    )
+                })
+                .collect()
+        }
+        Action::SwapPainting => pos
+            .and_then(|p| memory.decor("painting").find(|d| d.pos == p))
+            .map(|painting| {
+                vec![(
+                    Command::SwapPainting {
+                        id: ids(),
+                        entity: painting.id,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::StandTurn => {
+            let Some(stand) = memory.decor("armor_stand").next() else {
+                return vec![];
+            };
+            let look = memory
+                .home
+                .as_ref()
+                .and_then(|h| h.doors.first().copied().or(h.bed))
+                .map(at)
+                .unwrap_or(memory.last.pos);
+            vec![(
+                Command::PoseStand {
+                    id: ids(),
+                    entity: stand.id,
+                    at: Some(look),
+                    follow: None,
+                    seconds: 0.0,
+                },
+                0,
+            )]
+        }
+        Action::StandWatch => memory
+            .decor("armor_stand")
+            .map(|stand| {
+                (
+                    Command::PoseStand {
+                        id: ids(),
+                        entity: stand.id,
+                        at: None,
+                        follow: Some(target),
+                        seconds: 90.0,
+                    },
+                    0,
+                )
+            })
+            .collect(),
+        Action::NameAnimal => memory
+            .creatures("")
+            .find(|c| !c.named && c.kind != "villager")
+            .map(|c| {
+                vec![(
+                    Command::NameEntity {
+                        id: ids(),
+                        entity: c.id,
+                        name: text::pick(Kind::AnimalName, seed, "", 0),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::DyeSheep => {
+            const COLOURS: &[&str] = &["red", "black", "light_blue", "purple", "lime", "pink"];
+            memory
+                .creatures("sheep")
+                .next()
+                .map(|sheep| {
+                    vec![(
+                        Command::DyeSheep {
+                            id: ids(),
+                            entity: sheep.id,
+                            colour: COLOURS[seed % COLOURS.len()].to_string(),
+                        },
+                        0,
+                    )]
+                })
+                .unwrap_or_default()
+        }
+        Action::PetGrowl => memory
+            .pets()
+            .next()
+            .map(|pet| {
+                let sound = if pet.kind == "cat" {
+                    "minecraft:entity.cat.hiss"
+                } else {
+                    "minecraft:entity.wolf.growl"
+                };
+                vec![
+                    (sound_at(ids, target, sound, pet.pos, 1.0), 0),
+                    (sound_at(ids, target, sound, pet.pos, 1.0), 25),
+                ]
+            })
+            .unwrap_or_default(),
+        Action::MoveCreature(kind, _) => {
+            let creature = if kind.is_empty() {
+                if event.id == "pet_moved" {
+                    memory.pets().next()
+                } else {
+                    memory
+                        .creatures("")
+                        .find(|c| !c.pet && c.kind != "villager")
+                }
+            } else {
+                memory.creatures(kind).next()
+            };
+            match (creature, pos) {
+                (Some(c), Some(p)) => {
+                    let mut made = vec![(
+                        Command::MoveEntity {
+                            id: ids(),
+                            entity: c.id,
+                            to: [p[0] as f64 + 0.5, p[1] as f64 + 1.0, p[2] as f64 + 0.5],
+                        },
+                        0,
+                    )];
+                    if let Some(home) = memory.home.as_ref() {
+                        made.push((
+                            Command::LookAt {
+                                id: ids(),
+                                entity: c.id,
+                                at: at(home.center),
+                                seconds: 600.0,
+                            },
+                            1,
+                        ));
+                    }
+                    made
+                }
+                _ => vec![],
+            }
+        }
+        Action::GolemTurned => {
+            match (memory.creatures("iron_golem").next(), memory.home.as_ref()) {
+                (Some(golem), Some(home)) => vec![(
+                    Command::LookAt {
+                        id: ids(),
+                        entity: golem.id,
+                        at: at(home.center),
+                        seconds: 1200.0,
+                    },
+                    0,
+                )],
+                _ => vec![],
+            }
+        }
+        Action::TabEntry => vec![(
+            Command::PlayerList {
+                id: ids(),
+                player: target,
+                seconds: 60.0,
+            },
+            0,
+        )],
+        Action::Message(kind) => vec![(
+            Command::GameMessage {
+                id: ids(),
+                player: target,
+                message: kind.to_string(),
+                text: String::new(),
+            },
+            0,
+        )],
+        Action::Says => vec![(
+            Command::GameMessage {
+                id: ids(),
+                player: target,
+                message: "says".to_string(),
+                text: text::pick(Kind::ChatLine, seed, "", 0),
+            },
+            0,
+        )],
+        Action::SaysKills => memory
+            .most_killed()
+            .map(|tally| {
+                vec![(
+                    Command::GameMessage {
+                        id: ids(),
+                        player: target,
+                        message: "says".to_string(),
+                        text: text::pick(Kind::KillLine, seed, &tally.kind, tally.kills),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::Whisper => vec![(
+            Command::GameMessage {
+                id: ids(),
+                player: target,
+                message: "whisper".to_string(),
+                text: text::pick(Kind::Whisper, seed, "", 0),
+            },
+            0,
+        )],
+        Action::RepeatsYou => {
+            if memory.last_said.is_empty() {
+                return vec![];
+            }
+            vec![(
+                Command::GameMessage {
+                    id: ids(),
+                    player: target,
+                    message: "says".to_string(),
+                    text: memory.last_said.clone(),
+                },
+                0,
+            )]
+        }
     }
+}
+
+/// A sign placed and written: the block now, the text a tick later.
+fn sign_at(
+    ids: &mut impl FnMut() -> u64,
+    pos: BlockPos,
+    lines: Vec<String>,
+) -> Vec<(Command, u64)> {
+    vec![
+        (
+            set(ids, pos, "minecraft:oak_sign", &["minecraft:short_grass"]),
+            0,
+        ),
+        (
+            Command::SetSign {
+                id: ids(),
+                pos,
+                lines,
+            },
+            2,
+        ),
+    ]
 }
 
 /// The host took the favourite: the memory holds it now and the container's contents lose it.
@@ -326,8 +1223,16 @@ pub fn took(memory: &mut Memory, pos: Option<BlockPos>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::events::find;
-    use crate::memory::{Container, Home};
+    use crate::events::{find, CATALOGUE};
+    use crate::memory::{Container, Creature, Decor, Fixture, Home, Tally};
+
+    fn stack(id: &str, count: u32, slot: u32) -> ItemStack {
+        ItemStack {
+            id: id.to_string(),
+            count,
+            slot,
+        }
+    }
 
     fn memory() -> Memory {
         let mut memory = Memory {
@@ -347,21 +1252,94 @@ mod tests {
             .push(("minecraft:iron_pickaxe".to_string(), 9));
         memory.containers.push(Container {
             pos: [2, 64, 0],
+            kind: "minecraft:chest".to_string(),
             opens: 5,
             last_opened_day: 0.0,
             contents: vec![
-                ItemStack {
-                    id: "minecraft:iron_pickaxe".to_string(),
-                    count: 1,
-                    slot: 4,
-                },
-                ItemStack {
-                    id: "minecraft:cobblestone".to_string(),
-                    count: 40,
-                    slot: 5,
-                },
+                stack("minecraft:iron_pickaxe", 1, 4),
+                stack("minecraft:cobblestone", 40, 5),
+                stack("minecraft:raw_iron", 6, 6),
+                stack("minecraft:coal", 9, 7),
+                stack("minecraft:oak_sapling", 2, 8),
             ],
         });
+        memory
+    }
+
+    /// The memory with everything the catalogue could ask for.
+    fn rich_memory() -> Memory {
+        let mut memory = memory();
+        memory.containers.push(Container {
+            pos: [-2, 64, 0],
+            kind: "minecraft:chest".to_string(),
+            opens: 2,
+            last_opened_day: 0.0,
+            contents: vec![stack("minecraft:dirt", 12, 0)],
+        });
+        memory.containers.push(Container {
+            pos: [0, 64, 2],
+            kind: "minecraft:furnace".to_string(),
+            opens: 3,
+            last_opened_day: 0.0,
+            contents: vec![stack("minecraft:iron_ingot", 3, 2)],
+        });
+        for (kind, pos) in [
+            ("crafting_table", [1, 64, 2]),
+            ("anvil", [-1, 64, 2]),
+            ("lectern", [-1, 64, -2]),
+            ("glass_pane", [0, 65, -3]),
+            ("carpet", [1, 64, 1]),
+            ("carpet", [2, 64, 1]),
+            ("carpet", [3, 64, 1]),
+            ("campfire", [6, 64, 6]),
+            ("cauldron", [-2, 64, -2]),
+            ("fence_gate", [8, 64, 0]),
+            ("bell", [10, 65, 0]),
+            ("note_block", [0, 64, -4]),
+            ("lever", [2, 65, -2]),
+            ("candle", [0, 65, 1]),
+        ] {
+            memory.fixtures.push(Fixture {
+                kind: kind.to_string(),
+                pos,
+            });
+        }
+        for (kind, id, pos) in [
+            ("item_frame", 101, [0, 66, -3]),
+            ("item_frame", 102, [1, 66, -3]),
+            ("item_frame", 103, [2, 66, -3]),
+            ("painting", 104, [-2, 66, -3]),
+            ("armor_stand", 105, [-2, 64, 2]),
+        ] {
+            memory.decor.push(Decor {
+                kind: kind.to_string(),
+                id,
+                pos,
+            });
+        }
+        for (kind, id, pet, named) in [
+            ("cow", 201, false, false),
+            ("sheep", 202, false, false),
+            ("chicken", 203, false, false),
+            ("villager", 204, false, false),
+            ("iron_golem", 205, false, false),
+            ("wolf", 206, true, true),
+        ] {
+            memory.last.creatures_near.push(Creature {
+                id,
+                kind: kind.to_string(),
+                pos: [10.0, 64.0, 10.0],
+                named,
+                pet,
+            });
+        }
+        memory.tally.push(Tally {
+            kind: "cow".to_string(),
+            hits: 20,
+            kills: 14,
+        });
+        memory.last_said = "who is there".to_string();
+        memory.last.raining = true;
         memory
     }
 
@@ -374,7 +1352,7 @@ mod tests {
     }
 
     #[test]
-    fn a_door_toggles_a_chest_sounds_twice_and_a_take_removes_the_favourite() {
+    fn a_door_toggles_a_chest_opens_its_lid_and_a_take_removes_the_favourite() {
         let memory = memory();
         let mut rng = Rng::new(1);
 
@@ -398,8 +1376,17 @@ mod tests {
             &mut ids(),
             &Now::default(),
         );
-        assert_eq!(made.len(), 2);
-        assert_eq!(made[1].1, 30, "the close comes a second and a half later");
+        assert!(
+            matches!(
+                made[0].0,
+                Command::OpenLid {
+                    pos: [2, 64, 0],
+                    ..
+                }
+            ),
+            "{:?}",
+            made[0].0
+        );
 
         let take = find("take").unwrap();
         let made = commands(
@@ -478,7 +1465,7 @@ mod tests {
                 from, to, to_slot, ..
             } => {
                 assert_eq!(from, to);
-                assert!(![4, 5].contains(to_slot));
+                assert!(![4, 5, 6, 7, 8].contains(to_slot));
             }
             other => panic!("{other:?}"),
         }
@@ -500,6 +1487,282 @@ mod tests {
                     ..
                 }
             ),
+            "{:?}",
+            made[0].0
+        );
+    }
+
+    #[test]
+    fn tidying_sorts_a_chest_into_its_first_slots_with_one_empty_slot_as_the_hand() {
+        let contents = vec![
+            stack("minecraft:torch", 5, 0),
+            stack("minecraft:apple", 3, 1),
+            stack("minecraft:cobblestone", 40, 9),
+        ];
+        let moves = tidy_moves(&contents, 27);
+
+        // Replay the moves and check the order that comes out.
+        let mut slots: Vec<Option<ItemStack>> = vec![None; 27];
+        for s in &contents {
+            slots[s.slot as usize] = Some(s.clone());
+        }
+        for (from, to, _) in &moves {
+            assert!(slots[*to as usize].is_none(), "move onto a full slot");
+            slots[*to as usize] = slots[*from as usize].take();
+        }
+        let ids: Vec<&str> = slots
+            .iter()
+            .take(3)
+            .map(|s| s.as_ref().unwrap().id.as_str())
+            .collect();
+        assert_eq!(
+            ids,
+            [
+                "minecraft:apple",
+                "minecraft:cobblestone",
+                "minecraft:torch"
+            ]
+        );
+
+        let full: Vec<ItemStack> = (0..27).map(|i| stack("minecraft:dirt", 1, i)).collect();
+        assert!(tidy_moves(&full, 27).is_empty(), "no hand, no tidying");
+    }
+
+    #[test]
+    fn cooking_moves_a_raw_thing_and_a_fuel_and_taking_output_empties_the_furnace() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(1);
+
+        let cook = find("cook_one").unwrap();
+        let made = commands(
+            cook,
+            place(cook, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+        );
+        assert_eq!(made.len(), 2);
+        assert!(
+            matches!(
+                made[0].0,
+                // Cobblestone, in slot 5, is the first smeltable thing in the chest.
+                Command::MoveItem {
+                    from_slot: 5,
+                    to_slot: 0,
+                    count: 1,
+                    ..
+                }
+            ),
+            "{:?}",
+            made[0].0
+        );
+        assert!(
+            matches!(
+                made[1].0,
+                Command::MoveItem {
+                    from_slot: 7,
+                    to_slot: 1,
+                    count: 1,
+                    ..
+                }
+            ),
+            "{:?}",
+            made[1].0
+        );
+
+        let out = find("take_output").unwrap();
+        let made = commands(
+            out,
+            place(out, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+        );
+        assert!(
+            matches!(
+                made[0].0,
+                Command::MoveItem {
+                    from: [0, 64, 2],
+                    from_slot: 2,
+                    to: [2, 64, 0],
+                    count: 3,
+                    ..
+                }
+            ),
+            "{:?}",
+            made[0].0
+        );
+    }
+
+    #[test]
+    fn a_kill_sign_counts_the_kills_and_a_grave_names_the_kind() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(1);
+
+        let sign = find("kill_sign").unwrap();
+        let made = commands(
+            sign,
+            place(sign, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+        );
+        assert!(
+            matches!(
+                made[0].0,
+                Command::SetBlock {
+                    pos: [5, 64, 0],
+                    ..
+                }
+            ),
+            "{:?}",
+            made[0].0
+        );
+        match &made[1].0 {
+            Command::SetSign { lines, .. } => assert!(
+                lines[0].contains("14") || lines[0].contains("cow"),
+                "{lines:?}"
+            ),
+            other => panic!("{other:?}"),
+        }
+
+        let grave = find("grave").unwrap();
+        let made = commands(
+            grave,
+            place(grave, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+        );
+        assert_eq!(made.len(), 4);
+        assert!(
+            matches!(&made[3].0, Command::SetSign { lines, .. } if lines[0].contains("cow") || lines[0] == "rest")
+        );
+
+        let line = find("kill_line").unwrap();
+        let made = commands(line, None, &memory, &mut ids(), &Now::default());
+        assert!(
+            matches!(&made[0].0, Command::GameMessage { message, text, .. } if message == "says" && text.contains("cow"))
+        );
+    }
+
+    #[test]
+    fn a_worn_path_replaces_grass_only_and_a_hole_digs_natural_ground_only() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(1);
+
+        let path = find("path_worn").unwrap();
+        let made = commands(
+            path,
+            place(path, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+        );
+        assert!(made.len() >= 6, "{} blocks of path", made.len());
+        for (command, _) in &made {
+            match command {
+                Command::SetBlock { block, replace, .. } => {
+                    assert_eq!(block, "minecraft:dirt_path");
+                    assert_eq!(replace, &["minecraft:grass_block".to_string()]);
+                }
+                other => panic!("{other:?}"),
+            }
+        }
+
+        let hole = find("hole").unwrap();
+        let made = commands(
+            hole,
+            place(hole, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+        );
+        assert_eq!(made.len(), 4);
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { block, replace, .. } if block == "minecraft:air" && replace.contains(&"minecraft:grass_block".to_string()) && !replace.iter().any(|r| r.contains("planks")))
+        );
+        assert!(
+            matches!(&made[3].0, Command::SetBlock { block, .. } if block == "minecraft:torch")
+        );
+    }
+
+    #[test]
+    fn every_event_makes_at_least_one_command_when_the_memory_has_everything() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(7);
+        let now = Now::default();
+
+        for event in CATALOGUE {
+            if event.id == "wait" || event.id == "return_taken" || event.id == "place_taken" {
+                continue;
+            }
+            let pos = place(event, &memory, &mut rng);
+            let made = commands(event, pos, &memory, &mut ids(), &now);
+            assert!(!made.is_empty(), "{} makes no command", event.id);
+            for (command, _) in &made {
+                assert!(command.id() > 1, "{} gave a command no id", event.id);
+            }
+        }
+    }
+
+    #[test]
+    fn frames_turn_the_same_way_stands_follow_the_target_and_the_pet_moves_to_a_corner() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(2);
+        let now = Now::default();
+
+        let frames = find("frames_turn").unwrap();
+        let made = commands(frames, None, &memory, &mut ids(), &now);
+        assert_eq!(made.len(), 3);
+        let rotations: Vec<Option<u32>> = made
+            .iter()
+            .map(|(c, _)| match c {
+                Command::RotateFrame { rotation, .. } => *rotation,
+                other => panic!("{other:?}"),
+            })
+            .collect();
+        assert!(rotations.iter().all(|r| r.is_some() && *r == rotations[0]));
+
+        let watch = find("stand_watch").unwrap();
+        let made = commands(watch, None, &memory, &mut ids(), &now);
+        assert!(
+            matches!(
+                made[0].0,
+                Command::PoseStand {
+                    entity: 105,
+                    follow: Some(0),
+                    ..
+                }
+            ),
+            "{:?}",
+            made[0].0
+        );
+
+        let pet = find("pet_moved").unwrap();
+        let made = commands(
+            pet,
+            place(pet, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &now,
+        );
+        assert!(
+            matches!(made[0].0, Command::MoveEntity { entity: 206, .. }),
+            "{:?}",
+            made[0].0
+        );
+
+        let villager = find("villager_at_door").unwrap();
+        let made = commands(
+            villager,
+            place(villager, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &now,
+        );
+        assert!(
+            matches!(made[0].0, Command::MoveEntity { entity: 204, .. }),
             "{:?}",
             made[0].0
         );

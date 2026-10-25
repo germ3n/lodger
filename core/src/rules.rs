@@ -59,14 +59,10 @@ pub fn check(
     }
 
     let cooldown = event.cooldown_days * config.events.cooldown_scale as f32;
-    let mut times = 0;
+    let times = memory.times(event.id);
     for done in &memory.done {
         if done.event != event.id {
             continue;
-        }
-
-        if done.ok {
-            times += 1;
         }
 
         if day - done.day < cooldown && (done.ok || done.pos == pos) {
@@ -74,7 +70,7 @@ pub fn check(
         }
     }
 
-    if times >= event.most_per_stay {
+    if times >= event.most_per_stay as usize {
         return Err(Refused::Capped);
     }
 
@@ -83,10 +79,23 @@ pub fn check(
         event.action,
         crate::events::Action::Sound(_)
             | crate::events::Action::SoundAtTarget(_)
-            | crate::events::Action::ChestSounds
+            | crate::events::Action::SoundFar(_)
+            | crate::events::Action::SoundAtFixture(_, _)
+            | crate::events::Action::Taps(_, _, _)
+            | crate::events::Action::OpenLid
             | crate::events::Action::Hint(_, _)
             | crate::events::Action::RefuseRest
+            | crate::events::Action::Wake
             | crate::events::Action::Stare
+            | crate::events::Action::StandWatch
+            | crate::events::Action::PetGrowl
+            | crate::events::Action::TabEntry
+            | crate::events::Action::Message(_)
+            | crate::events::Action::Says
+            | crate::events::Action::SaysKills
+            | crate::events::Action::Whisper
+            | crate::events::Action::RepeatsYou
+            | crate::events::Action::MoveCreature(_, crate::events::Where::OutsideDoor)
     );
 
     if let Some(pos) = pos {

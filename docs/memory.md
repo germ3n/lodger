@@ -11,7 +11,13 @@ order to understand a choice, so it is plain data, plainly described.
 | --- | --- | --- |
 | **Home** | Where the target sleeps and where they spend most of their time standing still: a bed position, a center and a radius, and the blocks around it counted by kind (doors, lights, walls, containers). Re-estimated daily. | One. |
 | **Routes** | Paths the target walked, as position lists at one point a second, downsampled to a point every two blocks, cut where the target stands still for a minute. Kept are the ones walked most alike more than once: the way home, the way to the mine, the way to the field. | 64 routes of at most 256 points. The least-repeated route is dropped first. |
-| **Containers** | Every container the target opened: position, how many times, when last, and what was in it the last three times, by item id and count. | 32 containers, 27 stacks each. Least-opened dropped first. |
+| **Containers** | Every container the target opened: position, its kind (a chest, a barrel, a furnace), how many times, when last, and what was in it last, by item id, count and slot. The used container is the chest opened most; the furnace has its own events. | 32 containers, 27 stacks each. Least-opened dropped first. |
+| **Fixtures** | Blocks the target placed that an event can use, by plain kind: fence gates, glass panes, levers, campfires, cauldrons, crafting tables, note blocks, bells, jukeboxes, lecterns, anvils, carpets, signs, trapdoors, plates, buttons, pots, composters. Learned from the placed-block event, forgotten when broken. | 128, oldest dropped. |
+| **Decor** | Item frames, paintings and armour stands within the home's radius, with the server's entity ids. Rewritten by every entity pass, since the ids last only while the world is loaded. | 32. |
+| **Creatures near** | Animals and villagers within 32 blocks of the target as of the last entity pass: id, kind, position, whether named, whether tamed by the target. | 48. |
+| **Tally** | What the target has hit and killed, by mob kind, most killed first. The kill events (`kill_sign`, `grave`, `kill_line`) read it, and `describe` names the kind they kill most once it reaches three. | 32 kinds, the least-hit dropped first. |
+| **Landmarks** | Every event that landed which the target would have noticed (the catalogue's bold rows: a take, a grave, a sign), kept for the whole stay where `done` trims, so what it took and where it left things is never forgotten and the caps per stay hold. | 512, which a stay never reaches. |
+| **Milestones** | What happened to the target: where they died, the first night they slept, the first of each kind they killed, a dimension crossed. One line of the situation text is the latest. | 128. |
 | **Favourites** | Item kinds ranked by how often they are in the container opened first after login and in the target's main hand when they place or break: the target's tool, their block, their food. | 8 kinds. |
 | **Hours** | When the target logs in and out, in real and game time, the last 30 sessions, and how long they idle. From these: the usual hour, the usual length, whether they play at night. | 30 sessions. |
 | **Reactions** | What the target did after each event landed: lit the area (lights placed within 16 blocks within a day), walled (solid blocks placed around the spot), watched (stood facing the spot for a minute), chased (moved toward a figure), ignored, returned the item, left the world within a minute. One row per event. | 128 rows, oldest dropped. |
@@ -38,16 +44,23 @@ whole memory goes into `lodger.dat` on every world save, so it must stay the siz
 NBT compound, not a database. Routes are the largest piece and the reason for the downsampling.
 
 Forgetting is by the caps alone. Nothing decays with time, because a lodger that remembers your
-first week in your third is the design.
+first week in your third is the design. The landmarks and the milestones are the pieces that
+hold the rest to that (owner, 2026-11-09: "certain actions are always remembered, where it makes
+sense"): `done` is a ring of the last 256 outcomes for the rules, the landmarks are the ones
+that mattered, for good.
 
 ## Serialization
 
-The mind serializes the stay, memory included, with `bincode` behind a one-byte format version,
-and the body stores the bytes as a byte array in `lodger.dat`. A newer mind reads older formats
-and writes the newest; an older mind refuses a newer format, logs it, and runs a fresh stay
-without overwriting the bytes, so downgrading loses nothing but the lodger until the mod is
-upgraded again. There is no NBT in the mind, so the memory's layout is the mind's business and
-the body never has to change for it.
+The mind serializes the stay, memory included, as JSON (`serde_json`) behind a one-byte format
+version (3 since 2026-11-09; 1 and 2 were `bincode` from development builds and only their
+counts are read), and the body stores the bytes as base64 in the world's saved data
+(`<world>/dimensions/<ns>/<dim>/data/craftkit/lodger.dat`). JSON because every struct carries
+`#[serde(default)]`: a field added to the memory reads an older save with its default and
+costs no migration, which `bincode`'s positional layout could not give. A newer mind reads
+older formats and writes the newest; an older mind refuses a newer format, logs it, and runs
+a fresh stay without overwriting the bytes, so downgrading loses nothing but the lodger until
+the mod is upgraded again. There is no NBT in the mind, so the memory's layout is the mind's
+business and the body never has to change for it.
 
 ## Describing
 

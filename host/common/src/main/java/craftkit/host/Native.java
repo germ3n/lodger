@@ -22,7 +22,7 @@ import java.nio.file.Path;
  */
 public final class Native implements AutoCloseable {
 	/** The ABI this host speaks; a library built against another is refused. Bumped with {@code sdk/src/lib.rs}'s {@code ABI_VERSION}. */
-	public static final int ABI_VERSION = 4;
+	public static final int ABI_VERSION = 5;
 
 	private static final Linker LINKER = Linker.nativeLinker();
 
@@ -38,6 +38,7 @@ public final class Native implements AutoCloseable {
 	private final MethodHandle worldObserve;
 	private final MethodHandle worldTick;
 	private final MethodHandle worldReport;
+	private final MethodHandle worldDebug;
 	private final MethodHandle worldSave;
 	private final MethodHandle worldClose;
 
@@ -55,6 +56,7 @@ public final class Native implements AutoCloseable {
 		worldObserve = LINKER.downcallHandle(symbol(lookup, "craftkit_world_observe"), handleAndText);
 		worldTick = LINKER.downcallHandle(symbol(lookup, "craftkit_world_tick"), handleAndText);
 		worldReport = LINKER.downcallHandle(symbol(lookup, "craftkit_world_report"), handleAndText);
+		worldDebug = LINKER.downcallHandle(symbol(lookup, "craftkit_world_debug"), handleAndText);
 		FunctionDescriptor handleOnly = FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG);
 		worldSave = LINKER.downcallHandle(symbol(lookup, "craftkit_world_save"), handleOnly);
 		worldClose = LINKER.downcallHandle(symbol(lookup, "craftkit_world_close"), handleOnly);
@@ -84,6 +86,11 @@ public final class Native implements AutoCloseable {
 
 	public String worldReport(long handle, String json) {
 		return handleAndText(worldReport, "craftkit_world_report", handle, json);
+	}
+
+	/** A {@code DebugReply} to a {@code DebugRequest}, for the debug screen, or an error. */
+	public String worldDebug(long handle, String requestJson) {
+		return handleAndText(worldDebug, "craftkit_world_debug", handle, requestJson);
 	}
 
 	/** {@code {"bytes": "<base64>"}} or an error. */

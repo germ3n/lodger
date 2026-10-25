@@ -47,6 +47,7 @@ public final class CraftkitNeoForge {
 
 		if (FMLEnvironment.getDist() == Dist.CLIENT) {
 			NeoForge.EVENT_BUS.addListener(this::screenInit);
+			CraftkitNeoForgeClient.install(modBus);
 		}
 
 		host.worlds().senses().mods(new NeoForgePlatform().loadedMods());
@@ -88,6 +89,13 @@ public final class CraftkitNeoForge {
 			// Being registered is the whole message.
 		});
 		registrar.playToClient(HintPayload.TYPE, HintPayload.CODEC, (payload, context) -> Hints.show(payload));
+		registrar.playToClient(craftkit.host.net.DebugTellPayload.TYPE, craftkit.host.net.DebugTellPayload.CODEC,
+				(payload, context) -> craftkit.host.client.debug.DebugScreen.receive(payload));
+		registrar.playToServer(craftkit.host.net.DebugAskPayload.TYPE, craftkit.host.net.DebugAskPayload.CODEC, (payload, context) -> {
+			if (context.player() instanceof ServerPlayer player) {
+				context.enqueueWork(() -> host.debugAsked(player, payload));
+			}
+		});
 	}
 
 	/** The game's events into the senses. NeoForge's side of the Minecraft-facing edge. */
@@ -126,6 +134,8 @@ public final class CraftkitNeoForge {
 		NeoForge.EVENT_BUS.addListener((LivingDeathEvent event) -> {
 			if (event.getEntity() instanceof ServerPlayer player) {
 				senses.noticedDied(player);
+			} else if (event.getSource().getEntity() instanceof ServerPlayer killer) {
+				senses.noticedKilled(killer, event.getEntity());
 			}
 		});
 		NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerRespawnEvent event) -> {

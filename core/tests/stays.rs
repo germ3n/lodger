@@ -271,15 +271,45 @@ fn a_saved_stay_reopens_where_it_was() {
 
 #[test]
 fn the_same_event_never_lands_twice_in_a_row() {
-    let run = run(10, r#"{ "stages": { "start_after_days": 0 } }"#);
-    let mut last = String::new();
-    for (_, command) in &run.commands {
-        let kind = kind(command);
-        if kind == "PlaySound" {
-            // A chest's open and close are one event, and two sounds may follow each other.
-            continue;
+    let _turn = TURN.lock().unwrap_or_else(|err| err.into_inner());
+    let harness = craftkit::harness!().unwrap();
+    harness.init(r#"{ "stages": { "start_after_days": 0 } }"#);
+    let info = WorldInfo {
+        id: "minecraft:overworld".to_string(),
+        seed: 5,
+        name: "scripted".to_string(),
+    };
+    let world = harness.open_world(&info, &[]).unwrap();
+    let mut script = Script::new();
+    while script.tick < 6 * 24_000 {
+        world.observe(&script.observations());
+        let commands = world.tick(&script.now());
+        let reports: Vec<Report> = commands
+            .iter()
+            .map(|command| Report {
+                id: command.id(),
+                done: true,
+                reason: String::new(),
+            })
+            .collect();
+        if !reports.is_empty() {
+            world.report(&reports);
         }
-        assert_ne!(kind, last, "{kind} twice in a row");
-        last = kind;
+        script.tick += 5;
     }
+
+    // The rule is about events, not commands: two different events may both move items.
+    let stay = lodger_core::stay::Stay::open(&info, &world.save()).unwrap();
+    let landed: Vec<&str> = stay
+        .memory
+        .done
+        .iter()
+        .filter(|d| d.ok && d.event != "wait")
+        .map(|d| d.event.as_str())
+        .collect();
+    assert!(landed.len() >= 3, "too few events to judge: {landed:?}");
+    for pair in landed.windows(2) {
+        assert_ne!(pair[0], pair[1], "{} twice in a row in {landed:?}", pair[0]);
+    }
+    world.close();
 }

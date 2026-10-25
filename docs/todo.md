@@ -149,12 +149,27 @@ because it can be built and tested without a game, and because the model layer i
   measured, and on the SDK side as typed structs with a `describe` that turns any of them into
   the plain lines a model can read. The harness gets a `World` builder so a test can say
   "a plains biome, a lake 20 blocks north, three cows, night, raining" in a line.
-- [ ] **The menu** (owner, 2026-11-09): `Menu` in the protocol (pages, fields, actions), the
-  host rendering it as `/craftkit <id> ...` commands and as a client screen, operator-only,
-  with the config write-back; `MenuAction` commands back to the mod. The lodger's three pages
-  (status, config, debug) declared in `core/`, with the debug actions (force stage, force event,
-  dump memory, rule brain on, replay last decision) wired as the stay grows. Tests: the command
-  tree generated from a menu matches the pages; a field change round-trips to the config file.
+- [x] **The menu, its debug half** (owner, 2026-11-09: "a ui we can pull up with command/key
+  that lets us spawn events", "meters showing different senses, gauges, full debug suite").
+  Done 2026-11-09 as the debug screen: `sdk/src/debug.rs` (`DebugRequest`: snapshot, force,
+  set_stage, action; `DebugReply`: message, gauges, sections, events with offered/why/times,
+  actions), `Mod::debug` with a default, `craftkit_world_debug` (ABI 5), the harness's
+  `World::debug`; the host's `DebugAskPayload`/`DebugTellPayload`, `Worlds.debug` (the host's
+  panel from `Senses.panel` plus the mod's reply), `Host.mayDebug` (operators, or the owner of
+  a singleplayer world), `/craftkit <id> debug|show|force|stage|action`; the client's
+  `DebugScreen` (Senses, Mind, Events, Log tabs; meters as bars; a filter; a Fire button per
+  event; the mod's buttons; a half-second refresh) and `DebugModel` (plain Java, tested) with
+  the F8 key on both loaders; the lodger's `core/src/debug.rs` (gauges for stage, days in
+  stage, budget, plan, decisions, memory, kills; sections for the situation, the plan, done
+  lately, known blocks, creatures, never forgotten, the decision log; every catalogue row with
+  the first unmet need or the refusing rule; six actions) and `Brain::force` (a forced plan
+  runs on the next tick past needs, view and rules and costs no budget). Tests: the SDK's
+  round trip through the ABI, the lodger's snapshot/force/stage/actions, `DebugModelTest`.
+  Was: `Menu` in the protocol (pages, fields, actions), the host rendering it as `/craftkit
+  <id> ...` commands and as a client screen, operator-only, with the config write-back;
+  `MenuAction` commands back to the mod. The lodger's three pages (status, config, debug).
+  Still to do: the config page (every key of the mod's config file, written back on change) on
+  the same screen.
 - [x] **Presets** (owner, 2026-11-09: "3-4 presets, like a calm one, then aggressive; start off
   balanced"). Done 2026-11-09: `preset` in the config, `calm`, `balanced`, `intense`,
   `relentless` as `Preset` in `config.rs` with the table in [Config](config.md#presets), the
@@ -168,7 +183,9 @@ because it can be built and tested without a game, and because the model layer i
 - [x] **Three model sizes** (owner, 2026-11-09). Done 2026-11-09: `model.size` of `0.5b`,
   `1.5b` or `3b`, each Qwen's own `q4_k_m` file with its URL, file name and size for the bar,
   `model.url` and `model.path` empty by default and derived from the size; the table in
-  [Which model](model.md#which-model).
+  [Which model](model.md#which-model). The default moved to `1.5b` the same evening (owner:
+  "make the 1.5b model the default"); the dev client's config keeps `0.5b` so no download
+  starts there.
 - [x] **Seeded picking** (owner, 2026-11-09: "on startup the model would give the same answers
   to the same questions"). Done 2026-11-09: the pick is a draw weighted by
   `softmax(scores / brain.temperature)` from a SplitMix64 seeded per start (the clock and the
@@ -179,7 +196,9 @@ because it can be built and tested without a game, and because the model layer i
 - [x] **`Stay`, the lodger's `World`.** Done 2026-11-09: `core/src/stay.rs`, `bincode` behind a
   format byte, refusing a newer format or another world's save by name, counting ticks,
   players and reports; the model reseeded with the world's seed on open; tests through the
-  ABI and direct.
+  ABI and direct. Format 3 (the same evening) is JSON with `#[serde(default)]` on every
+  struct, so a field added to the memory reads an older save without a migration; formats 1
+  and 2 open with their counts and a fresh mind.
 - [x] **Memory, first cut.** Done 2026-11-09: `core/src/memory.rs` with the target (the first
   player seen), the home (the bed slept in, or the densest cell they stand still in; doors and
   lights from blocks placed; the floor), the containers opened with their contents and slots,
@@ -198,6 +217,40 @@ because it can be built and tested without a game, and because the model layer i
   with tests on the exact wording, and the truncation from the bottom at a measured token
   count (the model's tokenizer; without a model, words times 1.4). The first cut writes eight
   of the lines.
+- [x] **The catalogue, the second cut** (owner, 2026-11-09: "flesh out the events"). Done
+  2026-11-09: 87 rows in `events.rs` over the host's commands, with needs that carry data
+  (`Fixture("fence_gate")`, `Decor("painting")`, `Creature("sheep")`, `InChest("sapling")`,
+  `Fixtures(kind, n)`) and the first unmet one named for the debug screen: furnaces (`cook_one`,
+  `take_output`, `item_on_table`, `anvil_sound`, `page_turn`), the tidy and the two-chest
+  events, the house (`window_tap`, `carpet_shift`, `hole`, `cairn`, `sapling`, `sign`,
+  `path_worn`), lights and fire (`light_path`, the campfire, the candles, the cauldron), rest
+  (`wake`, `egg_on_bed`), decoration (`frame_rotate`, `frames_turn`, `painting_change`,
+  `armor_stand_turn`, `stand_watch`, `named_animal`), the farm (`open_gate`, `sheep_dyed`,
+  `pet_growl`, `pet_moved`, `animal_indoors`, `villager_at_door`, `golem_turned`), chat and the
+  player list (`tab_entry`, `joined`, `left`, `sleepers_wrong`, `says_back`, `says_first`,
+  `whisper_from_you`, `repeats_you`), the bell, the note block, the lever, eight more sounds,
+  and eight more glitches the client now renders (`client/Glitches.java`). The memory grew
+  fixtures, decor, creatures by kind, container kinds, weather and the last chat line for
+  them. Tests: every event makes at least one command from a full memory, the tidy algorithm,
+  cooking, the kill sign and grave, the worn path and the hole replacing natural ground only,
+  frames, stands and the pet. Still to do: the rows that need the figure (phase 5), the
+  surroundings (water, fields, villages, mines), routes, redstone, and the endings.
+- [x] **What they kill** (owner, 2026-11-09: "keep track of mobs hit/killed and do something with
+  that"). Done 2026-11-09: the `killed` event from both loaders (the damage source's attacker),
+  `Memory.tally` by mob kind (hits, kills), `most_killed` at three kills, a line of the
+  situation text, and `kill_sign`, `grave` and `kill_line` over `brain/text.rs`'s `KillSign`,
+  `GraveSign` and `KillLine` banks.
+- [x] **Never forgotten** (owner, 2026-11-09: "certain actions are always remembered, where it
+  makes sense"). Done 2026-11-09: `Memory.landmarks` (every bold event that landed, kept for
+  the stay; the caps per stay count from it when `done` has trimmed) and `Memory.milestones`
+  (where they died, the first sleep, the first kill of each kind, a dimension crossed), each
+  with a line in `describe` and a section on the debug screen.
+- [x] **Text by kind** (owner, 2026-11-09: "it should generate, with examples correlating to
+  specific actions"). Done 2026-11-09, the bank half: `brain/text.rs` with a `Kind` per place
+  words go (sign word, chat line, kill line, kill sign, whisper, animal name, grave sign), each
+  with its examples and its most words, `fill` for `{kind}` and `{n}`; `brain.text` defaults to
+  `generate`, which until phase 4 picks from the bank like `bank` does. Phase 4's item below
+  wires the model in with these banks as its examples.
 - [x] **Events as data, the rules, the arc, the rule brain, the log.** Done 2026-11-09:
   `events.rs` with 22 rows the host's commands can carry out today (containers, the door, the
   lights, rest, animals, the sounds, three glitches), each with its stages, needs, cooldown,
@@ -292,11 +345,14 @@ because it can be built and tested without a game, and because the model layer i
   wrong. Read them for repetition above all: anything that happened three times in a stay, or
   twice in a row, is a cooldown or a cap to move. Keep the before-and-after logs under
   `docs/calibration/` with a paragraph on what moved and why.
-- [ ] **The phrase bank and `brain.text`** (owner, 2026-11-09: "use the model for sign text"):
-  `brain/text.rs` with a few hundred lines by want, stage and place; the `What does the sign
-  say?` ask over eight drawn lines; and the `generate` experiment: a letters-and-spaces token
-  mask in `infer.rs`, three words at most, a blocklist, a log line, the bank as the fallback.
-  Judged in calibration round two: does `generate` read better than the bank over ten stays?
+- [ ] **`brain.text = generate`, the model half** (owner, 2026-11-09: "use the model for sign
+  text", then "yes it should generate, maybe with examples and those examples correlating to
+  specific actions"): a `generate` function in `infer.rs` beside the scorer, decoding a token
+  at a time under a letters-digits-spaces mask, stopped at a newline or the kind's most words;
+  the prompt built from the situation text and the kind's bank as examples (`text::Kind`); a
+  blocklist; a log line per generated text with the situation; the bank as the fallback on any
+  failed check; the `What does the sign say?` ask over eight bank lines for `bank`. Judged in
+  calibration round two: does `generate` read better than the bank over ten stays?
 - [ ] **Chat and the player list** (owner, 2026-11-09): the chat sense (the target's lines and
   witnesses' within 32 blocks, matched for lines about the lodger, eight kept) and the events
   of [Chat and the player list](entity.md#chat-and-the-player-list), as host commands: a
@@ -389,15 +445,27 @@ because it can be built and tested without a game, and because the model layer i
 
 ### After every phase
 
-- [ ] **A debug UI for events, senses and the brain** (owner, 2026-11-09): once the phases are
-  in, a proper in-game screen over the menu's debug page: the live observations as the mind
-  sees them (the players' lines, the entities, the movement reading), the memory's lines, the
-  last decisions with their menus and confidences, the open chains and the temper, and buttons
-  to force an event, a stage or a want, with the world's reaction shown as it lands. Built on the
-  menu system, so any Rust mod gets the frame and the lodger fills it.
+- [x] **A debug UI for events, senses and the brain** (owner, 2026-11-09). Done 2026-11-09,
+  earlier than planned, as the debug screen above (phase 2's menu item): the senses as meters,
+  the memory's lines, the plan and the last decisions, every event with a Fire button, the
+  world's reaction in the Log tab. Was: once the phases are in, a proper in-game screen over the
+  menu's debug page, with the open chains and the temper and a want button. Still to do as the
+  mind grows: the model's menus and confidences per decision (phase 4), the chains and the
+  temper, the want.
 - [ ] **A Minecraft version bump, rehearsed:** take the host to the next snapshot once, by the
-  checklist in [Updating Minecraft](development.md#updating-minecraft), and fix whatever the
-  checklist missed.
+  process in [Upgrading](upgrading.md) (written 2026-11-09 at the owner's ask), and fix
+  whatever it missed; add the bump to its history table.
+- [ ] **The surroundings in the mind** (owner, 2026-11-09: "you're also detecting structures
+  nearby and have code to determine where their house is?"): the home is found today from the
+  bed, placed doors and lights, and where the target stands still; the host's surroundings
+  pass (water, village, field, pen, tunnel, cave, snow, sand) exists but the mind never asks for
+  it. Ask it once a day around the home, keep the features as the memory's `Surroundings`
+  piece, turn `Need::Water`, `Field`, `Route` on, and add the structure lookup to the pass
+  (`ServerLevel.structureManager()` for villages, mineshafts, ruins near the home) so the
+  village and mine events have what they need.
+- [ ] **A game test for `tab_entry`'s packet** (the player-list entry is set by reflection in
+  `Executors.withEntries`; a version bump can break it silently) and for the chest lid's block
+  event.
 
 ### Later, or maybe never
 
@@ -421,10 +489,12 @@ because it can be built and tested without a game, and because the model layer i
 
 Things considered and set aside, kept so they are not reconsidered from scratch.
 
-- **Letting the model write the signs.** Three words from a 0.5B model about a player's chest are
-  three words of nonsense a third of the time, and once it writes one thing a player finds
-  cruel the mod is over. The fixed word lists are the design, not a limitation. The model picks
-  *which*; it never writes.
+- **Letting the model write the signs.** Set aside at first: three words from a 0.5B model
+  about a player's chest are three words of nonsense a third of the time, and once it writes one
+  thing a player finds cruel the mod is over. Reopened by the owner (2026-11-09): the model
+  writes, with the bank for that kind of line as its examples, under a token mask, a word count,
+  a blocklist and a log, with the bank as the fallback, and the default model is the 1.5B. The
+  caution stands as the checks; the calibration round reads every generated line.
 - **A Rust Minecraft server (Pumpkin, Valence) instead of a Fabric mod,** so the whole thing is
   Rust. Vanilla clients could then play with no mod. But the figure in your skin, the late
   footsteps and the music cut all need the client to do something vanilla does not, and a
@@ -443,5 +513,11 @@ Things considered and set aside, kept so they are not reconsidered from scratch.
 
 ## Done
 
-Nothing yet. The docs were written 2026-11-08 from `~/chainv4`'s style and `~/engine`'s AI
-layer; the first `[x]` is the first build.
+The `[x]` lines above, each dated. Summary by day:
+
+- **2026-11-08:** the docs, from `~/chainv4`'s style and `~/engine`'s AI layer.
+- **2026-11-09:** phases 0 to 2 (the SDK, the ABI, the host for both loaders, the content jars,
+  the download with the license screen, the model layer), phase 3's host side (the senses, the
+  executors), the mind's first and second cuts (the memory, 87 events, the rules, the arc, the
+  rule brain, the log, scripted stays), the debug screen, the glitch renderers, the kill tally,
+  the landmarks, the text banks, the upgrade guide. First seen in a dev client the same day.

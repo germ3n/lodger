@@ -13,11 +13,12 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
     let last = &memory.last;
     let home_pos = memory.home.as_ref().map(|h| h.center);
     let away = |pos| memory.target_away_from(pos, 24.0);
+    let night = now.day_time >= 13_000 && now.day_time <= 23_000;
 
     match need {
         Need::Home => memory.home.is_some(),
         Need::UsedContainer => memory.used_container().is_some(),
-        Need::TwoContainers => memory.containers.len() >= 2,
+        Need::TwoContainers => memory.other_container().is_some(),
         Need::Door => memory
             .home
             .as_ref()
@@ -28,6 +29,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .as_ref()
             .map(|h| !h.lights.is_empty())
             .unwrap_or(false),
+        Need::Candle => memory.has_fixture("candle"),
         Need::Bed => memory
             .home
             .as_ref()
@@ -35,22 +37,55 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .unwrap_or(false),
         Need::Held => memory.held.is_some(),
         Need::FavouriteInContainer => memory.favourite_in_container().is_some(),
+        Need::InChest(suffix) => memory
+            .in_used_container(|id| id.ends_with(suffix))
+            .is_some(),
+        Need::Furnace => memory.furnace().is_some(),
+        Need::Smeltable => {
+            memory.furnace().is_some()
+                && memory
+                    .in_used_container(crate::brain::act::smeltable)
+                    .is_some()
+                && memory.in_used_container(crate::brain::act::fuel).is_some()
+        }
+        Need::FurnaceOutput => memory
+            .furnace()
+            .map(|f| f.contents.iter().any(|s| s.slot == 2))
+            .unwrap_or(false),
+        Need::Fixture(kind) => memory.has_fixture(kind),
+        Need::Fixtures(kind, n) => memory.fixtures(kind).count() >= n,
+        Need::Decor(kind) => memory.decor(kind).next().is_some(),
+        Need::Decors(kind, n) => memory.decor(kind).count() >= n,
+        Need::Creature(kind) => memory.creatures(kind).next().is_some(),
+        Need::Pet => memory.pets().next().is_some(),
         Need::TargetAwayOrAsleep => home_pos.map(away).unwrap_or(!last.online || last.sleeping),
         Need::TargetOnline => last.online,
         Need::TargetIndoors => last.online && last.indoors,
+        Need::TargetOutdoors => last.online && !last.indoors && !last.sleeping,
         Need::TargetWalking => last.online && last.walking,
         Need::TargetInBed => last.online && last.sleeping,
-        Need::Night => now.day_time >= 13_000 && now.day_time <= 23_000,
+        Need::TargetSaid => !memory.last_said.is_empty(),
+        Need::Night => night,
+        Need::Day => !night,
+        Need::Raining => last.raining,
+        Need::NotRaining => !last.raining,
         Need::Route => false,
         Need::Field => false,
-        Need::Animals => last.creatures_near.len() >= 3,
+        Need::Animals => memory.creatures("").count() >= 3,
+        Need::Kills => memory.most_killed().is_some(),
         Need::Water => false,
     }
 }
 
-/// The events this stage offers whose needs are met and whose cooldown, cap and last-event
-/// rules allow, drawn down to `config.events.offered` with a weight that favours what has not
-/// happened in the stay. `wait` is always first.
+/// The first need an event lacks right now, in words, or none.
+pub fn unmet(event: &Event, memory: &Memory, now: &Now) -> Option<String> {
+    event
+        .needs
+        .iter()
+        .find(|need| !meets(**need, memory, now))
+        .map(|need| need.words())
+}
+
 pub fn offer<'a>(
     catalogue: &'a [Event],
     stage: u8,
@@ -79,11 +114,7 @@ pub fn offer<'a>(
             continue;
         }
 
-        let times = memory
-            .done
-            .iter()
-            .filter(|d| d.event == event.id && d.ok)
-            .count();
+        let times = memory.times(event.id);
         let weight = 1.0 / (1.0 + times as f64);
         eligible.push((event, weight));
     }

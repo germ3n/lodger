@@ -1,5 +1,6 @@
 //! A mod of a few lines, exported and driven through the harness: the path every real mod takes.
 
+use craftkit::debug::{DebugReply, DebugRequest, Gauge};
 use craftkit::{Command, Init, InitReply, Mod, ModInfo, Now, Observations, Report, WorldInfo};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
@@ -94,9 +95,61 @@ impl Mod for Tiny {
     fn save(&self, world: &Counter) -> Vec<u8> {
         world.ticks.to_le_bytes().to_vec()
     }
+
+    fn debug(&self, world: &mut Counter, request: &DebugRequest) -> DebugReply {
+        match request {
+            DebugRequest::Snapshot => DebugReply {
+                gauges: vec![Gauge::new(
+                    "ticks",
+                    world.ticks as f32,
+                    100.0,
+                    format!("{} ticks", world.ticks),
+                )],
+                ..DebugReply::default()
+            },
+            DebugRequest::Action { id } if id == "reset" => {
+                world.ticks = 0;
+                DebugReply::message("the count is zero again")
+            }
+            other => DebugReply::message(format!("tiny cannot {other:?}")),
+        }
+    }
 }
 
 craftkit::export_mod!(Tiny);
+
+#[test]
+fn the_debug_screen_s_questions_reach_the_mod_s_world_and_come_back_as_a_reply() {
+    let _turn = turn();
+    let harness = craftkit::harness!().unwrap();
+    harness.init("{}");
+    let world = harness
+        .open_world(
+            &WorldInfo {
+                id: "minecraft:overworld".to_string(),
+                seed: 1,
+                name: "w".to_string(),
+            },
+            &[],
+        )
+        .unwrap();
+    world.tick(&Now::default());
+    world.tick(&Now::default());
+
+    let panel = world.debug(&DebugRequest::Snapshot);
+    assert_eq!(panel.gauges[0].text, "2 ticks");
+    assert_eq!(panel.gauges[0].value, 2.0);
+
+    let reply = world.debug(&DebugRequest::Action {
+        id: "reset".to_string(),
+    });
+    assert_eq!(reply.message, "the count is zero again");
+    assert_eq!(world.debug(&DebugRequest::Snapshot).gauges[0].value, 0.0);
+
+    let refused = world.debug(&DebugRequest::SetStage { stage: 3 });
+    assert!(refused.message.starts_with("tiny cannot"));
+    world.close();
+}
 
 #[test]
 fn a_mod_is_loaded_asked_and_shut_down_through_the_abi() {

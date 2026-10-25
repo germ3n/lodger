@@ -50,7 +50,10 @@ class NativeRealTest {
 		}
 	}
 
-	/** The server's own layout: an empty config, the model at the default path under the game directory. */
+	/**
+	 * The server's own layout: a config naming the small model, the model at that size's default
+	 * path under the game directory. (The default size is 1.5b; the test file is the 0.5b.)
+	 */
 	@Test
 	void with_the_model_at_its_default_path_warm_loads_it_too(@TempDir Path game) throws Exception {
 		Path model = Repo.root().resolve("core").resolve("models").resolve("qwen.gguf");
@@ -62,7 +65,7 @@ class NativeRealTest {
 
 		try (Native lodger = Native.load(library())) {
 			JsonObject init = new JsonObject();
-			init.addProperty("config", "");
+			init.addProperty("config", "{ \"model\": { \"size\": \"0.5b\" } }");
 			init.addProperty("game_dir", game.toString());
 			init.addProperty("config_dir", game.resolve("config").toString());
 			init.addProperty("id", "lodger");

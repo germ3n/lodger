@@ -38,8 +38,13 @@ public final class Worlds {
 	private final Map<ServerLevel, Map<LoadedMod, Open>> open = new HashMap<>();
 	private final Senses senses = new Senses();
 	private final Looks looks = new Looks();
+	private final Later later = new Later();
+	private final Poses poses = new Poses();
 	private final BiConsumer<ServerPlayer, HintPayload> sendHint;
 	private int ticks;
+	/** The last commands carried out and how they went, newest last, for the debug screen. */
+	private final java.util.ArrayDeque<String> recentCommands = new java.util.ArrayDeque<>();
+	private static final int MOST_RECENT = 40;
 
 	private record Open(long handle, WorldData data) {
 	}
@@ -110,8 +115,10 @@ public final class Worlds {
 		ticks++;
 		long realMillis = System.currentTimeMillis();
 		looks.tick();
+		later.tick();
+		poses.tick();
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();
@@ -133,7 +140,9 @@ public final class Worlds {
 
 				JsonArray reports = new JsonArray();
 				for (JsonElement element : commands.getAsJsonArray()) {
-					reports.add(Executors.run(mod, level, element.getAsJsonObject(), context));
+					JsonObject report = Executors.run(mod, level, element.getAsJsonObject(), context);
+					reports.add(report);
+					remember(mod, element.getAsJsonObject(), report);
 				}
 
 				if (!reports.isEmpty()) {
@@ -148,6 +157,79 @@ public final class Worlds {
 				}
 			});
 		});
+	}
+
+	private void remember(LoadedMod mod, JsonObject command, JsonObject report) {
+		String kind = command.has("kind") ? command.get("kind").getAsString() : "?";
+		String line = mod.id() + ": " + kind + (report.get("done").getAsBoolean() ? " done" : " not done, " + report.get("reason").getAsString());
+		if (Senses.DEBUG) {
+			Log.LOGGER.info("did: {} {}", line, command);
+		}
+		recentCommands.addLast(line);
+		while (recentCommands.size() > MOST_RECENT) {
+			recentCommands.removeFirst();
+		}
+	}
+
+	/** The mods with an open world, by id, for the debug screen's picker. */
+	public List<String> openModIds(ServerLevel level) {
+		Map<LoadedMod, Open> perMod = open.get(level);
+		if (perMod == null) {
+			return List.of();
+		}
+
+		return perMod.keySet().stream().map(LoadedMod::id).sorted().toList();
+	}
+
+	/**
+	 * The debug screen's question about one mod in the player's level: the host's own panel
+	 * (the senses as they read this player, the last commands) and the mod's {@code DebugReply},
+	 * as one JSON object. On the server thread. An unknown mod or a closed world is an error.
+	 */
+	public JsonObject debug(ServerPlayer player, String modId, JsonObject request) {
+		JsonObject answer = new JsonObject();
+		if (!(player.level() instanceof ServerLevel level)) {
+			answer.addProperty("error", "the player is in no level");
+			return answer;
+		}
+
+		JsonArray ids = new JsonArray();
+		openModIds(level).forEach(ids::add);
+		answer.add("mods", ids);
+		answer.add("host", hostPanel(level, player));
+
+		Map<LoadedMod, Open> perMod = open.get(level);
+		LoadedMod mod = perMod == null ? null : perMod.keySet().stream().filter(m -> m.id().equals(modId)).findFirst().orElse(null);
+		if (mod == null) {
+			answer.addProperty("error", modId.isEmpty() ? "" : "no open world for " + modId + " here");
+			return answer;
+		}
+
+		// A force names the player by the index the senses gave them, which the client does not know.
+		if ("force".equals(request.has("kind") ? request.get("kind").getAsString() : "")) {
+			request.addProperty("player", senses.indexOf(player));
+		}
+
+		JsonElement reply = JsonParser.parseString(mod.library().get().worldDebug(perMod.get(mod).handle(), request.toString()));
+		if (reply.isJsonObject() && reply.getAsJsonObject().has("error") && !reply.getAsJsonObject().has("gauges")) {
+			answer.addProperty("error", reply.getAsJsonObject().get("error").getAsString());
+		} else {
+			answer.add("mod", reply);
+		}
+
+		return answer;
+	}
+
+	private JsonObject hostPanel(ServerLevel level, ServerPlayer player) {
+		JsonObject panel = senses.panel(level, player);
+		JsonArray commands = new JsonArray();
+		recentCommands.descendingIterator().forEachRemaining(commands::add);
+		panel.add("commands", commands);
+		panel.addProperty("looks", looks.count());
+		panel.addProperty("later", later.count());
+		panel.addProperty("poses", poses.count());
+
+		return panel;
 	}
 
 	private void save(LoadedMod mod, Open world) {

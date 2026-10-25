@@ -13,10 +13,12 @@
 
 pub mod abi;
 pub mod base64;
+pub mod debug;
 pub mod harness;
 pub mod protocol;
 pub mod world;
 
+pub use debug::{DebugReply, DebugRequest};
 pub use protocol::{Init, InitReply, License, ModInfo, Resource, Status};
 pub use world::{Command, Now, Observations, Report, WorldInfo};
 
@@ -25,7 +27,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The version of the C ABI. The host refuses a library built against another one, so a change
 /// to any exported function's signature or any JSON shape bumps this and `docs/sdk.md`'s table.
-pub const ABI_VERSION: u32 = 4;
+pub const ABI_VERSION: u32 = 5;
 
 /// What a Rust mod implements. One value per process, made by [`Mod::init`] when the host
 /// starts the mod, and asked by the host through the functions [`export_mod!`] exports.
@@ -79,6 +81,16 @@ pub trait Mod: Sized + Send + Sync + 'static {
     /// The world unloaded. The default drops it.
     fn close(&self, world: Self::World) {
         drop(world);
+    }
+
+    /// The debug screen's question about one world ([`debug`]): its panel, or an event forced,
+    /// a stage set, a button pressed. The default has no page; the host's own panel still shows.
+    fn debug(&self, world: &mut Self::World, request: &DebugRequest) -> DebugReply {
+        let _ = world;
+        match request {
+            DebugRequest::Snapshot => DebugReply::default(),
+            _ => DebugReply::message("this mod has no debug page"),
+        }
     }
 }
 
@@ -272,6 +284,25 @@ macro_rules! export_mod {
                 })?;
 
                 Ok($crate::abi::Ok::yes())
+            })
+        }
+
+        /// Answers a `DebugReply` to a `DebugRequest`.
+        /// # Safety
+        /// `json` points to `len` readable bytes of a `DebugRequest`.
+        #[no_mangle]
+        pub unsafe extern "C" fn craftkit_world_debug(
+            handle: u64,
+            json: *const u8,
+            len: usize,
+        ) -> *mut ::std::ffi::c_char {
+            $crate::abi::answer(|| {
+                let request: $crate::DebugRequest =
+                    $crate::abi::parse(unsafe { $crate::abi::text(json, len) }?)?;
+
+                craftkit_with_world(handle, |made, world| {
+                    <$mod as $crate::Mod>::debug(made, world, &request)
+                })
             })
         }
 

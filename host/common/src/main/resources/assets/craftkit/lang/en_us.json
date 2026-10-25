@@ -10,5 +10,9 @@
 	"craftkit.preparing.quit": "Quit game",
 	"craftkit.preparing.terms": "Before downloading %s",
 	"craftkit.preparing.accept": "I accept",
-	"craftkit.preparing.read": "Read the full terms in a browser"
+	"craftkit.preparing.read": "Read the full terms in a browser",
+	"key.craftkit.debug": "craftkit debug screen",
+	"craftkit.debug.title": "craftkit debug: %s",
+	"craftkit.debug.filter": "filter events",
+	"craftkit.debug.no_screen": "that needs a player; the console can use show, force, stage and action"
 }

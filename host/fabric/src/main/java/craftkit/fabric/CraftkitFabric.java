@@ -35,6 +35,10 @@ public final class CraftkitFabric implements ModInitializer {
 
 		PayloadTypeRegistry.clientboundConfiguration().register(Hello.TYPE, Hello.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(HintPayload.TYPE, HintPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(craftkit.host.net.DebugTellPayload.TYPE, craftkit.host.net.DebugTellPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(craftkit.host.net.DebugAskPayload.TYPE, craftkit.host.net.DebugAskPayload.CODEC);
+		net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.registerGlobalReceiver(craftkit.host.net.DebugAskPayload.TYPE,
+				(payload, context) -> context.server().execute(() -> host.debugAsked(context.player(), payload)));
 		host.worlds().senses().mods(new FabricPlatform().loadedMods());
 		hookSenses(host.worlds().senses());
 		ServerConfigurationConnectionEvents.CONFIGURE.register((handler, server) -> {
@@ -78,6 +82,8 @@ public final class CraftkitFabric implements ModInitializer {
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof ServerPlayer serverPlayer) {
 				senses.noticedDied(serverPlayer);
+			} else if (source.getEntity() instanceof ServerPlayer killer) {
+				senses.noticedKilled(killer, entity);
 			}
 		});
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> senses.noticedRespawned(newPlayer));

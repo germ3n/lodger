@@ -1,6 +1,7 @@
 //! One lodger in one world: the `World` the host opens, observes and ticks. The stay owns the
-//! memory, the arc and the brain, saves itself as `bincode` behind a format byte, so a save
-//! written by this version is read by the next and a newer one refused rather than misread,
+//! memory, the arc and the brain, saves itself as JSON behind a format byte, so a save written
+//! by this version is read by the next (a field added with `#[serde(default)]` costs no
+//! migration) and a newer format is refused rather than misread,
 //! and does the per-tick work: take the observations in, advance the stage, let the brain
 //! decide and act, hand back the commands.
 
@@ -12,9 +13,12 @@ use craftkit::world::{Command, Now, Observations, Report, WorldInfo};
 use serde::{Deserialize, Serialize};
 
 /// The first byte of every save. Bumped when the layout changes; a newer byte is refused.
-pub const FORMAT: u8 = 2;
+/// The save's format byte. Format 3 is JSON after the byte; formats 1 and 2 were bincode and
+/// came from development builds alone, so only their counts are read.
+pub const FORMAT: u8 = 3;
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Stay {
     /// The dimension's id, so a stay saved in one world is not opened for another.
     pub world: String,
@@ -31,17 +35,63 @@ pub struct Stay {
     pub brain: Brain,
     /// The in-game day the stay began, so its days count from its own start.
     pub first_day: Option<u64>,
+    /// The clock as of the last tick, for the debug screen's questions between ticks. Not
+    /// saved: a reopened stay reads the clock again on its first tick.
+    #[serde(skip)]
+    pub last_now: Now,
 }
 
-/// The stay's layout in format 1, kept so those saves open.
-#[derive(Deserialize)]
-struct StayV1 {
+/// The first bincode layout's leading fields, which formats 1 and 2 both began with.
+struct StayOld {
     world: String,
     seed: i64,
     ticks: u64,
     players: u32,
     done: u64,
     not_done: u64,
+}
+
+/// Reads the leading fields of a bincode save (formats 1 and 2): little-endian lengths and
+/// integers, as bincode 1 wrote them. The rest of a format 2 save, the mind, is left behind.
+fn read_old(body: &[u8]) -> Result<StayOld, String> {
+    fn u64_at(body: &[u8], at: &mut usize) -> Result<u64, String> {
+        let bytes: [u8; 8] = body
+            .get(*at..*at + 8)
+            .ok_or_else(|| "the save is damaged: too short".to_string())?
+            .try_into()
+            .unwrap();
+        *at += 8;
+        Ok(u64::from_le_bytes(bytes))
+    }
+    let mut at = 0;
+    let len = u64_at(body, &mut at)? as usize;
+    let world = std::str::from_utf8(
+        body.get(at..at + len)
+            .ok_or_else(|| "the save is damaged: too short".to_string())?,
+    )
+    .map_err(|_| "the save is damaged: the world is not text".to_string())?
+    .to_string();
+    at += len;
+    let seed = u64_at(body, &mut at)? as i64;
+    let ticks = u64_at(body, &mut at)?;
+    let players = u32::from_le_bytes(
+        body.get(at..at + 4)
+            .ok_or_else(|| "the save is damaged: too short".to_string())?
+            .try_into()
+            .unwrap(),
+    );
+    at += 4;
+    let done = u64_at(body, &mut at)?;
+    let not_done = u64_at(body, &mut at)?;
+
+    Ok(StayOld {
+        world,
+        seed,
+        ticks,
+        players,
+        done,
+        not_done,
+    })
 }
 
 impl Stay {
@@ -68,13 +118,12 @@ impl Stay {
 
         let stay: Self = match *format {
             FORMAT => {
-                bincode::deserialize(body).map_err(|err| format!("the save is damaged: {err}"))?
+                serde_json::from_slice(body).map_err(|err| format!("the save is damaged: {err}"))?
             }
-            1 => {
-                // Format 1 was the stay before it had a memory, an arc and a brain: the counts
-                // alone. They carry over; the rest starts fresh, which is what it would have been.
-                let old: StayV1 = bincode::deserialize(body)
-                    .map_err(|err| format!("the save is damaged: {err}"))?;
+            1 | 2 => {
+                // Formats 1 and 2 were bincode from development builds: the counts carry over
+                // and the rest starts fresh, which for format 1 is what it would have been.
+                let old = read_old(body)?;
                 let mut stay = Self::new(&WorldInfo {
                     id: old.world.clone(),
                     seed: old.seed,
@@ -106,7 +155,7 @@ impl Stay {
     /// The save: the format byte, then the stay.
     pub fn save(&self) -> Vec<u8> {
         let mut bytes = vec![FORMAT];
-        bytes.extend(bincode::serialize(self).expect("a stay serializes"));
+        bytes.extend(serde_json::to_vec(self).expect("a stay serializes"));
 
         bytes
     }
@@ -126,6 +175,7 @@ impl Stay {
     /// One tick. The lodger's config and log come from the mod, which is one per process.
     pub fn tick(&mut self, now: &Now, config: &Config, log: &mut Log) -> Vec<Command> {
         self.ticks += 1;
+        self.last_now = now.clone();
         if self.first_day.is_none() {
             self.first_day = Some(now.day);
         }
@@ -246,28 +296,19 @@ mod tests {
     }
 
     #[test]
-    fn a_format_one_save_opens_with_its_counts_and_a_fresh_mind() {
-        #[derive(Serialize)]
-        struct Old {
-            world: String,
-            seed: i64,
-            ticks: u64,
-            players: u32,
-            done: u64,
-            not_done: u64,
-        }
-        let mut bytes = vec![1u8];
-        bytes.extend(
-            bincode::serialize(&Old {
-                world: "minecraft:overworld".to_string(),
-                seed: 7,
-                ticks: 400,
-                players: 1,
-                done: 3,
-                not_done: 1,
-            })
-            .unwrap(),
-        );
+    fn a_bincode_save_of_format_one_or_two_opens_with_its_counts_and_a_fresh_mind() {
+        // What bincode 1 wrote for the leading fields: a length-prefixed string and
+        // little-endian integers.
+        let mut bytes = vec![2u8];
+        let world = b"minecraft:overworld";
+        bytes.extend((world.len() as u64).to_le_bytes());
+        bytes.extend(world);
+        bytes.extend(7i64.to_le_bytes());
+        bytes.extend(400u64.to_le_bytes());
+        bytes.extend(1u32.to_le_bytes());
+        bytes.extend(3u64.to_le_bytes());
+        bytes.extend(1u64.to_le_bytes());
+        bytes.extend([0u8; 40]); // the mind that follows is left behind
 
         let stay = Stay::open(&info(), &bytes).unwrap();
         assert_eq!(stay.ticks, 400);
@@ -292,6 +333,24 @@ mod tests {
         assert!(Stay::open(&info(), &[FORMAT, 1, 2])
             .unwrap_err()
             .contains("damaged"));
+        assert!(Stay::open(&info(), &[2, 1, 2])
+            .unwrap_err()
+            .contains("damaged"));
+    }
+
+    #[test]
+    fn a_save_with_a_field_this_lodger_does_not_know_still_opens() {
+        let mut stay = Stay::new(&info());
+        stay.ticks = 9;
+        let mut value: serde_json::Value = serde_json::from_slice(&stay.save()[1..]).unwrap();
+        value["memory"]["something_newer"] = serde_json::json!(1);
+        value["memory"].as_object_mut().unwrap().remove("tally");
+        let mut bytes = vec![FORMAT];
+        bytes.extend(serde_json::to_vec(&value).unwrap());
+
+        let back = Stay::open(&info(), &bytes).unwrap();
+        assert_eq!(back.ticks, 9);
+        assert!(back.memory.tally.is_empty());
     }
 
     #[test]

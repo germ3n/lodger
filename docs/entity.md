@@ -206,6 +206,18 @@ Blocks the target placed, moved within reach, never broken for good.
 | `tree_grown` | 3 | The sapling by the door is a tree in the morning. | A sapling the target planted and bone meal in a chest. |
 | `pumpkin_face` | 3 | A pumpkin the target grew is carved, and faces the door. | A pumpkin within 16 blocks and shears in a chest. |
 
+### What they kill
+
+The senses report every mob the target hits and kills, and the memory keeps a tally by kind
+(see [Memory](memory.md#what-is-kept)). The lodger has opinions about it (owner's idea,
+2026-11-09: "signs saying you like to kill, you killed y of z").
+
+| Event | Stages | What happens | Needs |
+| --- | --- | --- | --- |
+| `kill_sign` | 2 | A sign two blocks out from the door: `14 cows`, or `14 so far`. The count is the memory's. | Three or more kills of one kind, a door. |
+| `grave` | 3 | Two cobblestone stacked at the lodger's place with a sign beside them naming the kind they kill most: `cow`, or `rest`. | Three or more kills of one kind, a home. |
+| `kill_line` | 3 | A chat line in the target's own name about it, at night: `i saw what you did to the cows`, `the cows remember`, `14 cows`. | Three or more kills of one kind, night. |
+
 ### Lights and fire
 
 | Event | Stages | What happens | Needs |

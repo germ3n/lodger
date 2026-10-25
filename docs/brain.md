@@ -152,19 +152,22 @@ read as one story rather than a list.
 ## Text
 
 Signs, books, named animals and, with `events.chat`, chat lines in the target's name need words.
-Two ways, by `brain.text`:
+Two ways, by `brain.text`, and the owner's call (2026-11-09: "yes it should generate, maybe with
+examples and those examples correlating to specific actions") made `generate` the default:
 
-- **`bank`, the default.** The mod's phrase bank (`brain/text.rs`): hundreds of short lines,
-  one to four words, written by hand and grouped by want, stage and place (`for a sign by the
-  door in stage two when it wants a place`). The model is asked `What does the sign say?` with
-  eight lines drawn from the group as the choices, and scores them as it scores everything. The
-  lodger never writes, and still every sign is its choice among many, for this player, now.
-- **`generate`, an experiment.** The model writes the words itself: up to three, decoded one
-  token at a time with every token outside letters and spaces masked out, stopped at a newline,
-  passed through a blocklist and a length check, logged with the situation, and dropped (the
-  bank used instead) if any check fails. A 0.5B model writes three plausible words most of the
-  time and something wrong some of the time; the calibration pass (todo) reads the log of a few
-  stays and decides whether `generate` becomes the default or stays an experiment.
+- **`generate`, the default.** The model writes the line itself, shown the bank for that kind
+  of line as its examples first: a sign after a kill is shown kill signs, a whisper is shown
+  whispers, a name for an animal is shown names (`brain/text.rs`, `Kind`: `SignWord`,
+  `ChatLine`, `KillLine`, `KillSign`, `Whisper`, `AnimalName`, `GraveSign`, each with its bank
+  and its most words). The line is decoded a token at a time with every token outside letters,
+  digits and spaces masked out, stopped at a newline or the kind's word count, passed through a
+  blocklist and a length check, logged with the situation, and dropped (the bank used instead)
+  if any check fails. Phase 4 wires the model in; until then `generate` picks from the bank
+  like `bank` does, so the words a player sees today are the handwritten ones.
+- **`bank`.** A line is picked from the kind's bank by the stay's seed, the model asked `What
+  does the sign say?` over eight drawn lines once it is in the loop. The lodger never writes,
+  and still every sign is its choice among many, for this player, now. The fallback of
+  `generate`, and the setting for a server that wants nothing the author did not write.
 
 Either way the words go only where the catalogue puts words: signs, books, a name tag, a chat
 line to the target in the target's own name. Never a message to a witness, never another

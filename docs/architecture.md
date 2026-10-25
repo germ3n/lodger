@@ -122,13 +122,20 @@ As little as possible, because the mod is about not knowing:
 
 - the figure's entity, when the server spawns one, and which skin to use;
 - a sound to play at a position, by id, once;
-- a hint, with a duration and a place: fog for a moment, the music cut, the cave sounds
-  silenced, and the glitches of [Events](entity.md#the-sky-and-the-light): a light flickering or every light
-  in a room dark, a painting rendered upside down, the sun gone, the rain red, a compass pointing
-  somewhere, footprints drawn on the snow. The client renders the hint and then stops; the world
-  the server holds never changed;
+- a hint, with a duration and a place, which the client renders and then stops; the world the
+  server holds never changed. The kinds the client renders today (`client/Glitches.java`,
+  2026-11-09): `cut_music` (the music stops and stays stopped), `silence` (ambient, weather and
+  hostile sounds stopped as they start), `flicker` (the screen darkens in flickers),
+  `lights_fail` (dark, then back), `sun_blink` (black for a blink, twice), `lightning_silent`
+  (a white flash), `red_rain` (a red cast), `crosshair_gone`, `hotbar_slip` (the selected slot
+  jumps to the favourite tool once), `camera_nudge` (two degrees toward the place, once),
+  `fov_pull` (the field of view narrows over the hint's time and snaps back). Still to come:
+  a painting rendered upside down, a compass pointing somewhere, footprints on the snow, fog;
 - whether this player is the target, so a witness's client drops sounds and figures aimed at
   someone else. The server never sends them to a witness anyway; the flag is a second guard.
 
 The client never knows the stage, the memory or the plan, so a client-side reading of the mod's
-state shows nothing worth knowing. The mind's bytes live on the server only.
+state shows nothing worth knowing. The mind's bytes live on the server only. The one exception
+is the debug screen (`client/debug/`), which asks the server every half second and gets an
+answer only if the server says the player may: an operator, or the owner of a singleplayer
+world. A player on someone else's server sees nothing through it.

@@ -45,7 +45,7 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 
 | Key | Default | What it changes |
 | --- | --- | --- |
-| `model.size` | `"0.5b"` | Which Qwen2.5-Instruct to run: `0.5b` (491 MB, about 700 MB of RAM, tens of milliseconds a question), `1.5b` (1.1 GB, about 1.6 GB of RAM, a few times slower) or `3b` (2.0 GB, about 3 GB of RAM, slower again). Changing it downloads the new file at the next start; the old one stays until deleted. See [Which model](model.md#which-model). |
+| `model.size` | `"1.5b"` | Which Qwen2.5-Instruct to run: `1.5b` (1.1 GB, about 1.6 GB of RAM, a few hundred milliseconds a question; the default since 2026-11-09, the owner's call, for sharper judgment and better words), `0.5b` (491 MB, about 700 MB of RAM, tens of milliseconds) or `3b` (2.0 GB, about 3 GB of RAM, slower again). Changing it downloads the new file at the next start; the old one stays until deleted. See [Which model](model.md#which-model). |
 | `model.url` | empty | Where to fetch from. Empty means Qwen's own `q4_k_m` file for `model.size` on Hugging Face. |
 | `model.path` | empty | Where the model is kept. Empty means `config/lodger/models/<the size's file name>`. Relative to the game directory unless absolute. Must be a loose file: llama.cpp maps it. |
 | `model.threads` | `2` | Threads llama.cpp uses while scoring. More is faster and takes more from the game. |
@@ -63,7 +63,7 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 | `brain.queue` | `64` | The most questions waiting. A full queue refuses; the rule brain answers. |
 | `brain.force_rules` | `false` | Uses the rule brain even with a model loaded. For comparing the two from the log. |
 | `brain.temperature` | `0.7` | How the answer is picked from the model's scores. `0`: always the best choice, so the same situation gets the same answer every time, as the engine did. Above `0`: a seeded draw weighted by the scores, sharper near `0`, the model's own odds at `1`, flatter above. The seed is logged with every decision so a run can be replayed. See [Picking](brain.md#picking). |
-| `brain.text` | `"bank"` | How signs, books and chat lines get their words. `bank`: the model scores phrases from the mod's bank, hundreds of short handwritten lines by want and stage. `generate`: the model writes up to three words itself, letters and spaces only, through a blocklist, every line logged. An experiment; see [Text](brain.md#text). |
+| `brain.text` | `"generate"` | How signs, chat lines and names get their words. `generate` (the default since 2026-11-09, the owner's call): the model writes the line itself, shown the bank for that kind of line as examples, a few words at most, letters and spaces only, through a blocklist, every line logged, and the bank used when a check fails. `bank`: a line is picked from the bank for its kind (`brain/text.rs`), which is what both settings do until phase 4 wires the model in. See [Text](brain.md#text). |
 
 ## Stages
 

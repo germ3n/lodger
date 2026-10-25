@@ -25,7 +25,6 @@ craftkit = { path = "../sdk" }
 serde.workspace = true
 serde_json.workspace = true
 # The stay's save, behind a format byte (docs/memory.md, Serialization).
-bincode = "1.3"
 log = "0.4"
 # The same version ~/engine runs the same model with, so the scoring code ports as it is.
 llama-cpp-2 = { version = "0.1.158", default-features = false, optional = true }

@@ -6,6 +6,7 @@ pub mod act;
 pub mod log;
 pub mod offer;
 pub mod rules_brain;
+pub mod text;
 
 use crate::arc::Arc;
 use crate::config::Config;
@@ -21,6 +22,7 @@ pub const TPS: u64 = 20;
 
 /// One decided event, waiting for its moment.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Plan {
     pub event: String,
     pub pos: Option<BlockPos>,
@@ -29,10 +31,15 @@ pub struct Plan {
     /// The tick it is dropped at if its conditions never came.
     pub until_tick: u64,
     pub decided_day: f32,
+    /// Forced from the debug screen: it happens on the next tick, whatever the needs, the view
+    /// and the rules say, and costs the day's budget nothing.
+    #[serde(default)]
+    pub forced: bool,
 }
 
 /// A command sent and not yet reported.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Pending {
     pub id: u64,
     pub event: String,
@@ -48,6 +55,7 @@ pub struct Later {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Brain {
     pub plan: Option<Plan>,
     pub pending: Vec<Pending>,
@@ -113,12 +121,28 @@ impl Brain {
                 self.plan = None;
             } else if now.tick >= plan.from_tick {
                 if let Some(event) = events::find(&plan.event) {
-                    if act::ready(event, memory, config) {
-                        match rules::check(event, plan.pos, memory, arc.stage, day, config) {
+                    if plan.forced || act::ready(event, memory, config) {
+                        let checked = if plan.forced {
+                            Ok(())
+                        } else {
+                            rules::check(event, plan.pos, memory, arc.stage, day, config)
+                        };
+                        match checked {
                             Ok(()) => {
                                 let mut ids = || self.id();
                                 let made = act::commands(event, plan.pos, memory, &mut ids, now);
-                                arc.spend(event.cost());
+                                if !plan.forced {
+                                    arc.spend(event.cost());
+                                }
+                                if plan.forced && made.is_empty() {
+                                    memory.record(
+                                        &plan.event,
+                                        plan.pos,
+                                        day,
+                                        false,
+                                        "nothing to do it with",
+                                    );
+                                }
                                 log.acted(&plan.event, plan.pos, made.len());
                                 for (command, later_ticks) in made {
                                     let id = command.id();
@@ -137,7 +161,7 @@ impl Brain {
                                         });
                                     }
                                 }
-                                if self.pending.is_empty() {
+                                if self.pending.is_empty() && !plan.forced {
                                     memory.record(&plan.event, plan.pos, day, true, "");
                                 }
                                 self.plan = None;
@@ -192,15 +216,58 @@ impl Brain {
             return;
         }
 
-        // Soon: within the next ten minutes, when its conditions hold; dropped after a day.
-        let delay = self.rng.next_u64() % (10 * 60 * TPS);
+        // Soon: within four planning intervals (six minutes at the default `plan_every`, a
+        // minute in a dev config), when its conditions hold; dropped a day after that.
+        let delay = self.rng.next_u64() % (4 * config.brain.plan_every as u64 * TPS).max(1);
         self.plan = Some(Plan {
             event: chosen.id.to_string(),
             pos,
             from_tick: now.tick + delay,
-            until_tick: now.tick + 24_000,
+            until_tick: now.tick + delay + 24_000,
             decided_day: day,
+            forced: false,
         });
+    }
+
+    /// Queues an event to happen on the next tick, whatever the rules say: the debug screen's
+    /// `Force`. Answers what was queued, or why nothing could be.
+    pub fn force(
+        &mut self,
+        event: &Event,
+        memory: &Memory,
+        day: f32,
+        log: &mut log::Log,
+    ) -> String {
+        let pos = act::place(event, memory, &mut self.rng);
+        let mut ids = || 0u64;
+        let made = act::commands(event, pos, memory, &mut ids, &Now::default());
+        if made.is_empty() {
+            let why = offer::unmet(event, memory, &Now::default())
+                .unwrap_or_else(|| "nothing in the memory to do it with".to_string());
+            return format!("{} cannot happen: {why}", event.id);
+        }
+
+        self.plan = Some(Plan {
+            event: event.id.to_string(),
+            pos,
+            from_tick: 0,
+            until_tick: u64::MAX,
+            decided_day: day,
+            forced: true,
+        });
+        log.note(&format!("forced {}", event.id));
+
+        match pos {
+            Some(p) => format!(
+                "{} queued at ({},{},{}), {} command(s)",
+                event.id,
+                p[0],
+                p[1],
+                p[2],
+                made.len()
+            ),
+            None => format!("{} queued, {} command(s)", event.id, made.len()),
+        }
     }
 
     /// How the last tick's commands went.
@@ -251,4 +318,51 @@ pub fn offered_now(
     rng: &mut Rng,
 ) -> Vec<&'static Event> {
     offer::offer(events::CATALOGUE, arc.stage, memory, now, day, config, rng)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::memory::Home;
+
+    #[test]
+    fn a_plan_s_moment_is_within_four_planning_intervals() {
+        let mut config = Config::default();
+        config.brain.plan_every = 15;
+        config.stages.start_after_days = 0;
+        let mut memory = Memory {
+            target: Some(0),
+            ..Memory::default()
+        };
+        memory.home = Some(Home {
+            bed: Some([0, 64, 0]),
+            center: [0, 64, 0],
+            floor_y: 64,
+            doors: vec![[3, 64, 0]],
+            lights: vec![],
+        });
+        memory.last.online = false;
+        let mut arc = Arc::default();
+        arc.tick(0.0, &memory, &config);
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+
+        // Decide until something other than wait is planned.
+        let mut now = Now::default();
+        for _ in 0..200 {
+            brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log);
+            if brain.plan.is_some() {
+                break;
+            }
+            now.tick += 15 * TPS;
+        }
+
+        let plan = brain.plan.as_ref().expect("a plan");
+        assert!(
+            plan.from_tick - now.tick <= 4 * 15 * TPS,
+            "{} ticks ahead",
+            plan.from_tick - now.tick
+        );
+        assert_eq!(plan.until_tick, plan.from_tick + 24_000);
+    }
 }

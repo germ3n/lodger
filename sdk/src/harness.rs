@@ -18,6 +18,7 @@ pub struct Exports {
     pub world_observe: unsafe extern "C" fn(u64, *const u8, usize) -> *mut c_char,
     pub world_tick: unsafe extern "C" fn(u64, *const u8, usize) -> *mut c_char,
     pub world_report: unsafe extern "C" fn(u64, *const u8, usize) -> *mut c_char,
+    pub world_debug: unsafe extern "C" fn(u64, *const u8, usize) -> *mut c_char,
     pub world_save: extern "C" fn(u64) -> *mut c_char,
     pub world_close: extern "C" fn(u64) -> *mut c_char,
     pub shutdown: extern "C" fn(),
@@ -144,6 +145,25 @@ impl World<'_> {
         }
     }
 
+    /// Asks the debug question as the screen does and answers the reply, or panics on an error
+    /// answer.
+    pub fn debug(&self, request: &crate::DebugRequest) -> crate::DebugReply {
+        let text = serde_json::to_string(request).expect("DebugRequest serializes");
+        let answer = unsafe {
+            crate::abi::take((self.harness.exports.world_debug)(
+                self.handle,
+                text.as_ptr(),
+                text.len(),
+            ))
+        };
+
+        if let Some(error) = answer.get("error") {
+            panic!("debug failed: {error}");
+        }
+
+        serde_json::from_value(answer).expect("a DebugReply")
+    }
+
     /// The world's saved bytes, decoded from the ABI's base64.
     pub fn save(&self) -> Vec<u8> {
         let answer = unsafe { crate::abi::take((self.harness.exports.world_save)(self.handle)) };
@@ -170,6 +190,7 @@ macro_rules! harness {
             world_observe: craftkit_world_observe,
             world_tick: craftkit_world_tick,
             world_report: craftkit_world_report,
+            world_debug: craftkit_world_debug,
             world_save: craftkit_world_save,
             world_close: craftkit_world_close,
             shutdown: craftkit_shutdown,
@@ -218,6 +239,7 @@ mod tests {
             world_observe: no_world,
             world_tick: no_world,
             world_report: no_world,
+            world_debug: no_world,
             world_save: no_handle,
             world_close: no_handle,
             shutdown: nothing,

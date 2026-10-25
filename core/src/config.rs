@@ -313,7 +313,7 @@ impl Default for Log {
 impl Default for Model {
     fn default() -> Self {
         Self {
-            size: "0.5b".to_string(),
+            size: "1.5b".to_string(),
             url: String::new(),
             path: String::new(),
             threads: 2,
@@ -332,7 +332,7 @@ impl Default for Brain {
             react_threshold: 0.55,
             queue: 64,
             force_rules: false,
-            text: "bank".to_string(),
+            text: "generate".to_string(),
             temperature: 0.7,
         }
     }

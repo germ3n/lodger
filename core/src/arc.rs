@@ -6,6 +6,7 @@ use crate::memory::Memory;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Arc {
     /// 0 before it moves in, 1 to 5 during the stay, 6 when it is over.
     pub stage: u8,

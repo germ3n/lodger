@@ -76,12 +76,16 @@ so the Java side is a handful of method handles and no struct layouts. Errors ar
 | `craftkit_world_report(handle, json, len) -> json` | ABI 4 | How last tick's commands went, a `Report` list. |
 | `craftkit_world_save(handle) -> json` | ABI 4 | `{"bytes": "<base64>"}`, the world's state for the save. |
 | `craftkit_world_close(handle) -> json` | ABI 4 | The world unloaded. `craftkit_shutdown` closes any still open. |
+| `craftkit_world_debug(handle, json, len) -> json` | ABI 5 | The debug screen's question about one world, a `DebugRequest` (`snapshot`, `force`, `set_stage`, `action`); a `DebugReply` back (a message, gauges, sections, every event with whether it is offered and why not, buttons). `Mod::debug` has a default that has no page. |
 
 A change to any signature or JSON shape bumps `ABI_VERSION` in `sdk/src/lib.rs` and
 `Native.ABI_VERSION` in the host together (`VersionsTest` checks they agree), and this table.
 ABI 2 (2026-11-09) gave `init` the directories and the id; ABI 1 took the config text alone.
 ABI 3 (2026-11-09) added `warm`, `status` and `InitReply.resources`. ABI 4 (2026-11-09) added
-the six world functions and `sdk/src/world.rs`, the per-world shapes.
+the six world functions and `sdk/src/world.rs`, the per-world shapes. ABI 5 (2026-11-09) added
+`craftkit_world_debug` and `sdk/src/debug.rs`, nine commands (`open_lid`, `rotate_frame`,
+`swap_painting`, `pose_stand`, `name_entity`, `dye_sheep`, `move_entity`, `player_list`,
+`game_message`), `set_block.replace` and the `killed` event.
 
 ## Resources
 
@@ -158,12 +162,20 @@ written 2026-11-09 from the lodger's needs and generalized as a second mod needs
   bringing answers back inside `tick`.
 - **Commands:** log a line, scan a box for block kinds, look around a point for the
   surroundings' features, play a sound to a player at a place, send a client hint (a kind, a
-  place, a duration), send a system message, toggle a door, trapdoor, gate or lever, move a
-  block within reach, set a block, move items between containers, drop an item that does not
-  despawn, write a sign, cancel or refuse a player's sleep, turn an entity's head for a while,
-  spawn and drive a figure in a player's skin. Each has a `fits` the host's executor checks
-  before running (see [Events re-check](entity.md#events-re-check-before-they-happen)), and an
-  unknown command is reported as such rather than dropped.
+  place, a duration; the kinds the client renders are in [Glitches](architecture.md#what-the-client-knows)),
+  send a system message, toggle a door, trapdoor, gate, lever, campfire or candle, move a
+  block within reach, set a block where there is nothing or over one of the natural blocks the
+  command names (`replace`: a path worn into grass, a hole in the ground, never through a
+  block with contents), open a chest's lid for a moment, move items between containers, take
+  and put items, drop an item that does not despawn, write a sign, cancel or refuse a player's
+  sleep, turn an entity's head for a while, turn an armour stand's head or have it follow a
+  player, turn an item frame's item, swap a painting for another of its size, name an entity,
+  dye a sheep, move an entity, show a second entry with a player's own name in their player
+  list for a while, send a line in the game's own words to one player (`joined`, `left`, `says`
+  in their own name, `whisper` from themselves, `sleepers` on the action bar), spawn and drive a
+  figure in a player's skin (phase 5). Each has a `fits` the host's executor checks before
+  running (see [Events re-check](entity.md#events-re-check-before-they-happen)), and an unknown
+  command is reported as such rather than dropped.
 - **Reports:** per command, `done` or `did not fit` with why.
 - **Now:** the tick, the world's time, the real clock, so a mod never reads a clock itself.
 - **Integrations:** the host knows which other mods are loaded (`Observations.mods`, the ids
@@ -171,16 +183,20 @@ written 2026-11-09 from the lodger's needs and generalized as a second mod needs
   check, so a Rust mod can ask for "dynamic lights off for a minute" and get it where the mod
   exists and nothing where it does not. The list is [Other mods](ideas.md#other-mods); each one
   built is a line in this page.
-- **The menu,** for setup and debugging: a mod declares pages of fields and actions once
-  (`Menu` in `init`'s reply), and the host renders them twice over, as a chat command tree
-  under `/craftkit <id> ...` and as a GUI screen a client opens with `/craftkit <id> menu`. A
-  field is a toggle, a number with bounds, a choice, or a read-only line the mod refreshes; an
-  action is a button that sends the mod a `MenuAction` command next tick. The lodger's pages:
-  status (stage, target, want, model loaded, last decisions), config (every key of
-  `lodger.json`, written back on change), debug (force a stage, force an event now, dump the
-  memory's lines, run the rule brain, replay the last situation through the model). The host
-  owns rendering, permissions (operators only) and the config write-back; the mod owns what is
-  on the pages. A mod with no menu gets the host's status line alone.
+- **The debug screen** (`sdk/src/debug.rs`, 2026-11-09): the host owns a screen any Rust mod
+  gets (the debug key, F8 unless rebound, or `/craftkit <id> debug`), with its own Senses and
+  Log tabs filled from the host's side (the asking player's movement and state as meters, the
+  entities near, the last events sensed, the last commands carried out), and a Mind and an
+  Events tab the mod fills through `Mod::debug`: asked a `Snapshot` every half second it
+  answers a `DebugReply` of gauges (a label, a value over a max, words), titled sections of
+  lines, every event with its stages, whether it is offered right now, why not, and how often
+  it happened, and buttons; asked `Force { event, player }`, `SetStage { stage }` or
+  `Action { id }` it does the thing and answers a message. Operators and the owner of a
+  singleplayer world alone; the server checks. The same requests are chat commands,
+  `/craftkit <id> show|force <event>|stage <n>|action <id>`, for a console. A mod with no debug
+  page leaves the default and the host's tabs still show. The config pages of the menu as first
+  designed (every key of the mod's config file, written back on change) are still to come and
+  will sit on the same screen.
 
 Positions are block positions as three integers, items are ids as strings, players are indices
 into the observation's player list. Nothing in the protocol is a Minecraft class.
@@ -191,8 +207,9 @@ The host owns the Minecraft side so a mod never has to: the FFM binding, the per
 the senses (the observations above, the scans and the daily surroundings pass, sliced over ticks
 so none of it shows in a tick profile), the saved data (a mod's world bytes as a byte array in
 the world's saved data), the executors for every command and their `fits` checks, the client
-side (figure renderers, sounds, hints, the menu screen) and the packets to carry them, the
-commands (`/craftkit status`, and each mod's menu as `/craftkit <id> ...`), and the handshake. A
+side (the glitch renderers for hints, sounds, the debug screen, figure renderers in phase 5)
+and the packets to carry them, the commands (`/craftkit status`, and each mod's debug commands
+as `/craftkit <id> ...`), and the handshake. A
 new command is a row in the protocol, an executor in `host/common`, a game test for it, and a
 line in this page.
 

@@ -53,7 +53,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses) {
 	}
 
 	private Executors() {
@@ -86,7 +86,16 @@ public final class Executors {
 				}
 				case "toggle_block" -> toggleBlock(level, blockPos(command.getAsJsonArray("pos")), id);
 				case "move_block" -> moveBlock(level, blockPos(command.getAsJsonArray("from")), blockPos(command.getAsJsonArray("to")), id);
-				case "set_block" -> setBlock(level, blockPos(command.getAsJsonArray("pos")), command.get("block").getAsString(), id);
+				case "set_block" -> setBlock(level, blockPos(command.getAsJsonArray("pos")), command.get("block").getAsString(), replaceable(command), id);
+				case "open_lid" -> openLid(level, blockPos(command.getAsJsonArray("pos")), command.get("seconds").getAsFloat(), id, context);
+				case "rotate_frame" -> rotateFrame(level, command, id);
+				case "swap_painting" -> swapPainting(level, command.get("entity").getAsInt(), id);
+				case "pose_stand" -> poseStand(level, command, id, context);
+				case "name_entity" -> nameEntity(level, command.get("entity").getAsInt(), command.get("name").getAsString(), id);
+				case "dye_sheep" -> dyeSheep(level, command.get("entity").getAsInt(), command.get("colour").getAsString(), id);
+				case "move_entity" -> moveEntity(level, command, id);
+				case "player_list" -> playerList(level, command, id, context);
+				case "game_message" -> gameMessage(level, command, id, context);
 				case "move_item" -> moveItem(level, command, id);
 				case "take_item" -> takeItem(level, command, id);
 				case "put_item" -> putItem(level, command, id);
@@ -193,7 +202,220 @@ public final class Executors {
 			return report(id, true, "");
 		}
 
+		// Campfires and candles: lit or not. Never a furnace, whose LIT the game owns.
+		if (state.hasProperty(BlockStateProperties.LIT) && (Senses.blockId(state).contains("campfire") || Senses.blockId(state).contains("candle"))) {
+			level.setBlock(pos, state.cycle(BlockStateProperties.LIT), Block.UPDATE_ALL);
+			return report(id, true, "");
+		}
+
 		return report(id, false, Senses.blockId(state) + " has nothing to toggle");
+	}
+
+	/** The block ids a {@code set_block} may replace, beyond air; empty for air alone. */
+	private static List<String> replaceable(JsonObject command) {
+		List<String> ids = new ArrayList<>();
+		if (command.has("replace") && command.get("replace").isJsonArray()) {
+			for (JsonElement id : command.getAsJsonArray("replace")) {
+				ids.add(id.getAsString());
+			}
+		}
+
+		return ids;
+	}
+
+	private static JsonObject openLid(ServerLevel level, BlockPos pos, float seconds, long id, Context context) {
+		BlockState state = level.getBlockState(pos);
+		if (!(level.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity)) {
+			return report(id, false, "no chest there");
+		}
+
+		// Block event 1 is the chest's opener count: the clients animate the lid from it.
+		level.blockEvent(pos, state.getBlock(), 1, 1);
+		level.playSound(null, pos, net.minecraft.sounds.SoundEvents.CHEST_OPEN, SoundSource.BLOCKS, 0.5f, level.getRandom().nextFloat() * 0.1f + 0.9f);
+		context.later().at(seconds, () -> {
+			if (level.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity) {
+				level.blockEvent(pos, level.getBlockState(pos).getBlock(), 1, 0);
+				level.playSound(null, pos, net.minecraft.sounds.SoundEvents.CHEST_CLOSE, SoundSource.BLOCKS, 0.5f, level.getRandom().nextFloat() * 0.1f + 0.9f);
+			}
+		});
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject rotateFrame(ServerLevel level, JsonObject command, long id) {
+		if (!(level.getEntity(command.get("entity").getAsInt()) instanceof net.minecraft.world.entity.decoration.ItemFrame frame)) {
+			return report(id, false, "no item frame with that id here");
+		}
+		if (frame.getItem().isEmpty()) {
+			return report(id, false, "the frame is empty");
+		}
+
+		int rotation = command.has("rotation") && !command.get("rotation").isJsonNull()
+				? command.get("rotation").getAsInt() % 8
+				: (frame.getRotation() + 1) % 8;
+		frame.setRotation(rotation);
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject swapPainting(ServerLevel level, int entityId, long id) {
+		if (!(level.getEntity(entityId) instanceof net.minecraft.world.entity.decoration.painting.Painting painting)) {
+			return report(id, false, "no painting with that id here");
+		}
+
+		Holder<net.minecraft.world.entity.decoration.painting.PaintingVariant> current = painting.getVariant();
+		net.minecraft.core.Registry<net.minecraft.world.entity.decoration.painting.PaintingVariant> registry = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.PAINTING_VARIANT);
+		List<Holder.Reference<net.minecraft.world.entity.decoration.painting.PaintingVariant>> same = registry.listElements()
+				.filter(variant -> variant.value().width() == current.value().width() && variant.value().height() == current.value().height() && !variant.equals(current))
+				.toList();
+		if (same.isEmpty()) {
+			return report(id, false, "no other painting of that size");
+		}
+
+		// A new painting in the old one's place: the variant is final on the entity.
+		Holder<net.minecraft.world.entity.decoration.painting.PaintingVariant> chosen = same.get(level.getRandom().nextInt(same.size()));
+		net.minecraft.world.entity.decoration.painting.Painting replacement = new net.minecraft.world.entity.decoration.painting.Painting(level, painting.getPos(), painting.getDirection(), chosen);
+		painting.discard();
+		level.addFreshEntity(replacement);
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject poseStand(ServerLevel level, JsonObject command, long id, Context context) {
+		if (!(level.getEntity(command.get("entity").getAsInt()) instanceof net.minecraft.world.entity.decoration.ArmorStand stand)) {
+			return report(id, false, "no armour stand with that id here");
+		}
+
+		if (command.has("follow") && !command.get("follow").isJsonNull()) {
+			ServerPlayer player = context.senses().player(level, command.get("follow").getAsInt());
+			if (player == null) {
+				return report(id, false, "the player is not here");
+			}
+			context.poses().add(stand, player, command.get("seconds").getAsFloat());
+
+			return report(id, true, "");
+		}
+
+		if (command.has("at") && !command.get("at").isJsonNull()) {
+			JsonArray at = command.getAsJsonArray("at");
+			stand.setHeadPose(Poses.headToward(stand, new Vec3(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble())));
+
+			return report(id, true, "");
+		}
+
+		return report(id, false, "neither a place to face nor a player to follow");
+	}
+
+	private static JsonObject nameEntity(ServerLevel level, int entityId, String name, long id) {
+		Entity entity = level.getEntity(entityId);
+		if (entity == null) {
+			return report(id, false, "no entity with that id here");
+		}
+
+		entity.setCustomName(Component.literal(name));
+		entity.setCustomNameVisible(true);
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject dyeSheep(ServerLevel level, int entityId, String colour, long id) {
+		if (!(level.getEntity(entityId) instanceof net.minecraft.world.entity.animal.sheep.Sheep sheep)) {
+			return report(id, false, "no sheep with that id here");
+		}
+
+		net.minecraft.world.item.DyeColor dye = net.minecraft.world.item.DyeColor.byName(colour, null);
+		if (dye == null) {
+			return report(id, false, "no colour called " + colour);
+		}
+
+		sheep.setColor(dye);
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject moveEntity(ServerLevel level, JsonObject command, long id) {
+		Entity entity = level.getEntity(command.get("entity").getAsInt());
+		if (entity == null || entity instanceof ServerPlayer) {
+			return report(id, false, "no movable entity with that id here");
+		}
+
+		JsonArray to = command.getAsJsonArray("to");
+		entity.teleportTo(to.get(0).getAsDouble(), to.get(1).getAsDouble(), to.get(2).getAsDouble());
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject playerList(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+
+		java.util.UUID ghost = java.util.UUID.randomUUID();
+		com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(ghost, player.getGameProfile().name());
+		var entry = new net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Entry(
+				ghost, profile, true, 0, net.minecraft.world.level.GameType.SURVIVAL, null, true, 0, null);
+		var packet = new net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket(
+				java.util.EnumSet.of(net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER,
+						net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED,
+						net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY),
+				List.of());
+		// The packet's entries are built from players; a ghost has none, so it is set by hand.
+		packet = withEntries(packet, List.of(entry));
+		player.connection.send(packet);
+		context.later().at(command.get("seconds").getAsFloat(), () -> {
+			if (!player.isRemoved()) {
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket(List.of(ghost)));
+			}
+		});
+
+		return report(id, true, "");
+	}
+
+	/** A player-info packet with these entries, written through its own codec since the entries field is private. */
+	private static net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket withEntries(
+			net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket packet,
+			List<net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Entry> entries) {
+		try {
+			java.lang.reflect.Field field = null;
+			for (java.lang.reflect.Field candidate : packet.getClass().getDeclaredFields()) {
+				if (List.class.isAssignableFrom(candidate.getType())) {
+					field = candidate;
+				}
+			}
+			if (field == null) {
+				throw new IllegalStateException("no entries field");
+			}
+			field.setAccessible(true);
+			field.set(packet, entries);
+
+			return packet;
+		} catch (ReflectiveOperationException e) {
+			throw new IllegalStateException("could not set the player list entries", e);
+		}
+	}
+
+	private static JsonObject gameMessage(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+
+		String message = command.get("message").getAsString();
+		String text = command.has("text") ? command.get("text").getAsString() : "";
+		Component name = player.getName();
+		switch (message) {
+			case "joined" -> player.sendSystemMessage(Component.translatable("multiplayer.player.joined", name).withStyle(net.minecraft.ChatFormatting.YELLOW));
+			case "left" -> player.sendSystemMessage(Component.translatable("multiplayer.player.left", name).withStyle(net.minecraft.ChatFormatting.YELLOW));
+			case "says" -> player.sendSystemMessage(Component.translatable("chat.type.text", name, Component.literal(text)));
+			case "whisper" -> player.sendSystemMessage(Component.translatable("commands.message.display.incoming", name, Component.literal(text)).withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.ITALIC));
+			case "sleepers" -> player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(Component.translatable("sleep.players_sleeping", 1, 2)));
+			default -> {
+				return report(id, false, "no message kind called " + message);
+			}
+		}
+
+		return report(id, true, "");
 	}
 
 	private static JsonObject moveBlock(ServerLevel level, BlockPos from, BlockPos to, long id) {
@@ -216,15 +438,20 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
-	private static JsonObject setBlock(ServerLevel level, BlockPos pos, String blockId, long id) {
+	private static JsonObject setBlock(ServerLevel level, BlockPos pos, String blockId, List<String> replace, long id) {
 		Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(blockId));
 		if (block.isEmpty()) {
 			return report(id, false, "no such block");
 		}
 
-		// Nothing is ever destroyed: a block goes only where there is nothing.
-		if (!level.getBlockState(pos).isAir() && !block.get().value().defaultBlockState().isAir()) {
-			return report(id, false, "the place is not empty");
+		// Nothing a player built is ever destroyed: a block goes where there is nothing, or
+		// over one of the blocks the mod named, which it keeps to natural ground.
+		BlockState there = level.getBlockState(pos);
+		if (!there.isAir() && !replace.contains(Senses.blockId(there))) {
+			return report(id, false, "the place holds " + Senses.blockId(there));
+		}
+		if (level.getBlockEntity(pos) != null) {
+			return report(id, false, "a block with contents is never replaced");
 		}
 
 		level.setBlock(pos, block.get().value().defaultBlockState(), Block.UPDATE_ALL);

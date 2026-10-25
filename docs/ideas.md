@@ -923,6 +923,8 @@ in it, in the one minute you are there:
 - `other_return` you wake in your own bed, the door open, one thing moved [4]
 - `other_witness` in multiplayer, a witness sees you asleep the whole minute [4]
 - `other_memory` the copy is your house as it was on the first day of the stay, not as it is now [5]
+- `follow_in_the_dark` (owner, 2026-11-09): a pitch-black dimension with no sky and no light but the figure's, which stands forty blocks off holding a torch; walk toward it and at a fixed distance it is gone and lit again forty blocks further on, the same way each time, six or eight times, until the last light is a chest on the ground with one thing in it (the held item, or a sign with the word), and when you take it the dark is your bedroom at dawn. Run back and the way you came is gone. Stage 4 or the last night; one visit, like the other house [4]
+- `follow_in_the_dark_variants` the figure is only a sound of footsteps ahead; the figure's torch goes out each time you stop walking; the distances shorten; the chest is empty and the figure stands behind you when you close it; two lights, one yours and one not, and the wrong one leads to a drop [4]
 
 ## Time, habits and rituals
 

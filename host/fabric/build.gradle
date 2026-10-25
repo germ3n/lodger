@@ -16,6 +16,8 @@ loom {
 			setConfigName('Fabric Client')
 			ideConfigGenerated(true)
 			runDir('runs/client')
+			// The dev client traces what the senses take in; see Senses.DEBUG.
+			vmArg('-Dcraftkit.debug=true')
 		}
 		server {
 			server()

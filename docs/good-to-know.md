@@ -5,13 +5,16 @@ pages explain each part in full; this one is the short list to keep in mind.
 
 ## The model
 
-- **The model never writes anything.** It is asked questions with fixed choices and scores each
-  choice; the best one wins. It cannot say a word the mod did not write, cannot invent an event,
-  and cannot be talked to. Everything a player ever sees or hears was written by hand and only
-  *chosen* by the model. See [Brain](brain.md#why-scoring-and-not-generation).
-- **The model is downloaded, not shipped, and the game waits for it.** It is 491 MB, Qwen's
-  own `q4_k_m` GGUF of Qwen2.5-0.5B-Instruct, the same file `~/engine` uses. The first start
-  shows a progress bar over the title screen, fetches it to `config/lodger/models/qwen.gguf`,
+- **The model decides by scoring, and writes only a few words.** Every event is a fixed choice
+  the model scores; it cannot invent an event and cannot be talked to. The one place it writes
+  is the words on a sign, a name tag or a chat line in your own name (`brain.text`, `generate`
+  by default since 2026-11-09): a few words, letters and spaces only, shown handwritten examples
+  of that kind of line first, through a blocklist, logged, and replaced by a handwritten line if
+  any check fails. See [Brain](brain.md#why-scoring-and-not-generation) and [Text](brain.md#text).
+- **The model is downloaded, not shipped, and the game waits for it.** It is 1.1 GB, Qwen's
+  own `q4_k_m` GGUF of Qwen2.5-1.5B-Instruct (`model.size` picks 0.5B at 491 MB or 3B at 2 GB
+  instead). The first start shows Qwen's terms, then a progress bar over the title screen,
+  fetches it to `config/lodger/models/<size>.gguf`,
   loads it, and only then lets the player in; a dedicated server does the same at startup with
   progress in its log. A file that does not start with the GGUF magic is refused and nothing is
   left behind. `model.url` in the config says where from. The host does the fetching, for any
@@ -29,7 +32,13 @@ pages explain each part in full; this one is the short list to keep in mind.
 - **The model's answer is not the last word.** The rules in [What it never does](#what-it-never-does)
   are checked after every decision, and an event they forbid is replaced by `wait`. Nothing in the
   situation text, the config or the memory can turn a rule off.
-- **It costs CPU on the server.** Two threads while scoring, about 700 MB of RAM while loaded.
+- **There is a debug screen, for operators.** F8 in a world (or `/craftkit lodger debug`)
+  shows what the host senses of you as meters, what the mind holds, every event with whether it
+  could happen right now and why not, a Fire button on each, and what landed. Players without
+  operator level on a server cannot open it; the owner of a singleplayer world can, cheats or
+  not. See [Running a stay quickly](development.md#running-a-stay-quickly).
+- **It costs CPU on the server.** Two threads while scoring, about 1.6 GB of RAM while the
+  default model is loaded (700 MB for the small one).
   It loads when a target is online and unloads after `model.idle_minutes` with no one to think
   about. A client connected to someone else's server pays nothing.
 - **Decisions are logged.** `config/lodger/decisions.log`, and `/lodger decisions`, show every

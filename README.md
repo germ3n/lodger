@@ -7,7 +7,7 @@ it noticed: a thing of yours is gone and turns up somewhere that means something
 not place lights the way to somewhere, and a figure far off, wearing your skin, walks the path you
 walked yesterday.
 
-What it does next is decided by a small language model, Qwen2.5 0.5B, running on the server's own
+What it does next is decided by a small language model, Qwen2.5 1.5B, running on the server's own
 CPU. The model never writes text and never invents an action. It reads a short plain-English
 account of what the lodger knows and picks from a fixed list of choices, the way the AI in
 `~/engine` scores NPC decisions. Every choice the model can make is one the mod wrote and bounded
@@ -34,9 +34,10 @@ can be Rust is Rust (see [The SDK](docs/sdk.md) and [Architecture](docs/architec
 - One jar for your loader, `lodger-fabric-26.3-<version>.jar` or
   `lodger-neoforge-26.3-<version>.jar`, with the craftkit host nested inside it. Nothing else.
 - **The first start downloads the model.** The title screen waits behind a progress bar for the
-  491 MB model (from Hugging Face, Qwen's own file), then loads it, then lets you in. Once. A
+  1.1 GB model (from Hugging Face, Qwen's own file; `model.size` picks the 491 MB one instead),
+  then loads it, then lets you in. Once. A
   dedicated server does the same at its first startup, with progress in its log.
-- About 700 MB of RAM on the server for the model, two CPU threads while it thinks, and 491 MB
+- About 1.6 GB of RAM on the server for the model, two CPU threads while it thinks, and 1.1 GB
   of disk for the model file, which the first start downloads (see [Model](docs/model.md)).
 - Without the model the mod still runs, on a rule-based brain. It is less interesting, not
   broken.
@@ -48,7 +49,7 @@ All of them are for operators, since the point of the mod is not knowing.
 | Command | What it does |
 | --- | --- |
 | `/craftkit status` | The host's: every Rust mod loaded, its version and native, or why it did not load. |
-| `/craftkit lodger menu` | Opens the lodger's menu: status, every config key, and the debug page (force a stage or an event, dump the memory, replay the last decision). Every field is also a subcommand, `/craftkit lodger config brain.plan_every 30`. |
+| `/craftkit lodger debug` | Opens the debug screen (also F8 in a world): the host's senses of you as meters, the lodger's gauges, memory and plan, every event with whether it could happen now and a Fire button, and what landed. `/craftkit lodger show`, `force <event>`, `stage <n>` and `action <id>` do the same from chat or a console. The config pages are still to come. |
 | `/lodger status` | Which stage the lodger is in, whom it is attached to, when it last acted, whether the model is loaded. |
 | `/lodger model status` | Whether the file is there, its size, and whether it is loaded. A missing file is fetched again by the next start; `model.url` in the config says where from. |
 | `/lodger decisions [n]` | The last n decisions: the situation text, each question, the choice and its confidence. |
@@ -63,6 +64,6 @@ How each part works and why it is built that way is in [docs/](docs/README.md). 
 
 ## License
 
-MIT for the mod. The model, Qwen2.5-0.5B-Instruct, is Apache-2.0 and is downloaded by the
+MIT for the mod. The model, Qwen2.5-Instruct (1.5B by default), is Apache-2.0 and is downloaded by the
 player, not distributed with the mod. llama.cpp, which runs it, is MIT, and its notice ships
 with the natives in the jar (see [Development](docs/development.md#third-party-notices)).

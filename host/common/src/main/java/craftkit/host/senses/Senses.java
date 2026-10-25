@@ -47,6 +47,8 @@ public final class Senses {
 	/** How far around a player entities and blocks are looked at. */
 	public static final double REACH = 64;
 	private static final double LOOK_RANGE = 8;
+	/** `-Dcraftkit.debug=true` logs every event the senses take in, for tracing what reaches a mod. */
+	public static final boolean DEBUG = Boolean.getBoolean("craftkit.debug");
 
 	private final Map<UUID, Integer> indices = new LinkedHashMap<>();
 	private final Map<UUID, MovementTracker> movement = new HashMap<>();
@@ -62,6 +64,11 @@ public final class Senses {
 	private boolean modsSent;
 	private final List<JsonObject> mods = new ArrayList<>();
 	private long tick;
+	/** The last events taken in, newest last, for the debug screen. */
+	private final java.util.ArrayDeque<String> recentEvents = new java.util.ArrayDeque<>();
+	private static final int MOST_RECENT = 30;
+	/** The last observation of each player, kept for the debug screen's meters. */
+	private final Map<UUID, JsonObject> lastSeen = new HashMap<>();
 
 	/** The index the SDK names a player by, stable for the server's life. */
 	public int indexOf(ServerPlayer player) {
@@ -103,6 +110,10 @@ public final class Senses {
 	public void noticedUsedBlock(ServerPlayer player, BlockPos pos) {
 		BlockEntity entity = player.level().getBlockEntity(pos);
 
+		if (DEBUG) {
+			craftkit.host.Log.LOGGER.info("sense: used {} at {} ({})", blockId(player.level().getBlockState(pos)), pos.toShortString(), entity == null ? "no block entity" : entity.getClass().getSimpleName());
+		}
+
 		if (entity instanceof Container container) {
 			event(player, "opened_container", pos, blockId(player.level().getBlockState(pos)), contents(container));
 		}
@@ -134,6 +145,11 @@ public final class Senses {
 
 	public void noticedHit(ServerPlayer player, Entity target) {
 		event(player, "hit", target.blockPosition(), entityId(target), null);
+	}
+
+	/** A player killed something: the attacker of the killing blow was the player. */
+	public void noticedKilled(ServerPlayer player, Entity victim) {
+		event(player, "killed", victim.blockPosition(), entityId(victim), null);
 	}
 
 	public void noticedChat(ServerPlayer player, String text) {
@@ -313,6 +329,7 @@ public final class Senses {
 		move.addProperty("sprint_bursts", tracker.sprintBursts());
 		move.addProperty("still_seconds", tracker.stillSeconds());
 		p.add("movement", move);
+		lastSeen.put(uuid, p);
 
 		return p;
 	}
@@ -403,6 +420,51 @@ public final class Senses {
 		if (player.level() instanceof ServerLevel level) {
 			events.computeIfAbsent(level, l -> new ArrayList<>()).add(event);
 		}
+
+		recentEvents.addLast(String.format("%d %s%s%s", tick, kind, pos == null ? "" : " at " + pos.toShortString(), detail.isEmpty() ? "" : " " + detail));
+		while (recentEvents.size() > MOST_RECENT) {
+			recentEvents.removeFirst();
+		}
+
+		if (DEBUG) {
+			craftkit.host.Log.LOGGER.info("sense: {}", event);
+		}
+	}
+
+	/**
+	 * The senses' own page for the debug screen: this player's last observation as meters and
+	 * lines, the entities near them by kind, the world's state, the last events taken in. The
+	 * client lays it out; see {@code client/debug/DebugModel}.
+	 */
+	public JsonObject panel(ServerLevel level, ServerPlayer player) {
+		JsonObject panel = new JsonObject();
+		JsonObject seen = lastSeen.getOrDefault(player.getUUID(), new JsonObject());
+		panel.add("player", seen);
+		panel.addProperty("index", indexOf(player));
+		panel.addProperty("tick", tick);
+		long time = level.getLevelData().getGameTime();
+		panel.addProperty("day_time", time % 24000L);
+		panel.addProperty("day", time / 24000L);
+		panel.addProperty("raining", level.isRaining());
+		panel.addProperty("thundering", level.isThundering());
+		panel.addProperty("players", level.players().size());
+
+		java.util.Map<String, Integer> kinds = new java.util.TreeMap<>();
+		for (Entity entity : level.getEntities(player, player.getBoundingBox().inflate(REACH), e -> !(e instanceof ServerPlayer))) {
+			kinds.merge(entityId(entity).replace("minecraft:", ""), 1, Integer::sum);
+		}
+		JsonArray near = new JsonArray();
+		kinds.entrySet().stream()
+				.sorted((a, b) -> b.getValue() - a.getValue())
+				.limit(12)
+				.forEach(entry -> near.add(entry.getValue() + " " + entry.getKey()));
+		panel.add("entities", near);
+
+		JsonArray events = new JsonArray();
+		recentEvents.descendingIterator().forEachRemaining(events::add);
+		panel.add("events", events);
+
+		return panel;
 	}
 
 	static JsonArray contents(Container container) {
@@ -443,6 +505,11 @@ public final class Senses {
 		array.add(pos.getZ());
 
 		return array;
+	}
+
+	/** `minecraft:iron_pickaxe`, or empty for nothing; the id the protocol carries. */
+	public static String itemId(ItemStack stack) {
+		return stack.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
 	}
 
 	public static JsonObject stack(ItemStack stack) {
