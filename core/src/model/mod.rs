@@ -47,7 +47,7 @@ pub struct Settings {
 
 /// A small, fast generator for the draws (SplitMix64): no dependency, a few instructions a
 /// number, and the same sequence from the same seed on every machine, which a replay needs.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Rng(u64);
 
 impl Rng {

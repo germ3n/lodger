@@ -88,6 +88,8 @@ public final class Executors {
 				case "move_block" -> moveBlock(level, blockPos(command.getAsJsonArray("from")), blockPos(command.getAsJsonArray("to")), id);
 				case "set_block" -> setBlock(level, blockPos(command.getAsJsonArray("pos")), command.get("block").getAsString(), id);
 				case "move_item" -> moveItem(level, command, id);
+				case "take_item" -> takeItem(level, command, id);
+				case "put_item" -> putItem(level, command, id);
 				case "drop_item" -> dropItem(level, command, id);
 				case "set_sign" -> setSign(level, command, id);
 				case "cancel_sleep" -> cancelSleep(level, command, id, context);
@@ -220,6 +222,11 @@ public final class Executors {
 			return report(id, false, "no such block");
 		}
 
+		// Nothing is ever destroyed: a block goes only where there is nothing.
+		if (!level.getBlockState(pos).isAir() && !block.get().value().defaultBlockState().isAir()) {
+			return report(id, false, "the place is not empty");
+		}
+
 		level.setBlock(pos, block.get().value().defaultBlockState(), Block.UPDATE_ALL);
 
 		return report(id, true, "");
@@ -257,6 +264,72 @@ public final class Executors {
 		}
 		from.setChanged();
 		to.setChanged();
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject takeItem(ServerLevel level, JsonObject command, long id) {
+		Container from = container(level, blockPos(command.getAsJsonArray("from")));
+		if (from == null) {
+			return report(id, false, "no container at the source");
+		}
+
+		int slot = command.get("slot").getAsInt();
+		int count = command.get("count").getAsInt();
+		if (slot < 0 || slot >= from.getContainerSize()) {
+			return report(id, false, "no such slot");
+		}
+
+		ItemStack source = from.getItem(slot);
+		if (source.isEmpty() || source.getCount() < count) {
+			return report(id, false, "the slot has too few");
+		}
+
+		source.shrink(count);
+		from.setChanged();
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject putItem(ServerLevel level, JsonObject command, long id) {
+		Container into = container(level, blockPos(command.getAsJsonArray("into")));
+		if (into == null) {
+			return report(id, false, "no container at the destination");
+		}
+
+		JsonObject item = command.getAsJsonObject("item");
+		Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(item.get("id").getAsString()));
+		if (kind.isEmpty()) {
+			return report(id, false, "no such item");
+		}
+
+		ItemStack stack = new ItemStack(kind.get().value(), item.get("count").getAsInt());
+		int slot = -1;
+		if (command.has("slot") && !command.get("slot").isJsonNull()) {
+			slot = command.get("slot").getAsInt();
+			if (slot < 0 || slot >= into.getContainerSize()) {
+				return report(id, false, "no such slot");
+			}
+			if (!into.getItem(slot).isEmpty()) {
+				slot = -1;
+			}
+		}
+
+		if (slot < 0) {
+			for (int candidate = 0; candidate < into.getContainerSize(); candidate++) {
+				if (into.getItem(candidate).isEmpty()) {
+					slot = candidate;
+					break;
+				}
+			}
+		}
+
+		if (slot < 0) {
+			return report(id, false, "the container is full");
+		}
+
+		into.setItem(slot, stack);
+		into.setChanged();
 
 		return report(id, true, "");
 	}

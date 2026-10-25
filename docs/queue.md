@@ -63,11 +63,11 @@ Phases 0 to 2 of [Todo](todo.md) are done and phase 3's host side is in:
    in a world, the observations of a real player (log them once behind a debug flag), the hint
    path with a `hint` command from a test mod or a temporary lodger line. Fix what the client
    shows that the server could not. Then NeoForge the same.
-2. **Phase 3's mind side:** `events.rs` as data (the catalogue's rows with needs, cooldowns,
-   caps), the `Memory` with its bounds and `describe`, the surroundings and activity and
-   movement pieces fed from the observations, `brain/offer.rs` with the six filters, the rule
-   brain, the decision log, and `Stay` doing the per-tick work. Scripted-stay tests in
-   `core/tests/stays.rs`. This is where the lodger starts to exist.
+2. **Phase 3's mind side, the rest:** the first cut is in (2026-11-09 evening: 22 events as
+   data, the memory's first pieces, the offer, the rule brain, the log, a `Stay` that plans and
+   acts, four scripted stays). Left: the memory's routes, hours, reactions, surroundings and
+   activity pieces; the rest of the catalogue as rows; the remaining six scripted-stay tests;
+   and seeing it act in a real world with a player (item 1).
 3. **The menu** (phase 2's last item): `Menu` in the protocol, the host's command tree and
    screen, the lodger's three pages.
 4. **Phase 4:** the brain on the model, the want and target asks, calibration round one.

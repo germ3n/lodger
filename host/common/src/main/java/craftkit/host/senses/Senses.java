@@ -410,7 +410,9 @@ public final class Senses {
 		for (int slot = 0; slot < container.getContainerSize(); slot++) {
 			ItemStack stack = container.getItem(slot);
 			if (!stack.isEmpty()) {
-				array.add(stack(stack));
+				JsonObject entry = stack(stack);
+				entry.addProperty("slot", slot);
+				array.add(entry);
 			}
 		}
 

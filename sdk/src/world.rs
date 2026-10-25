@@ -126,13 +126,15 @@ pub enum Target {
     Entity { id: u32, entity: String },
 }
 
-/// An item and how many.
+/// An item and how many, and in a container's contents which slot it sits in.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ItemStack {
     /// `minecraft:iron_pickaxe`; empty for nothing.
     pub id: String,
     pub count: u32,
+    /// The slot, where it matters (a container's contents); 0 otherwise.
+    pub slot: u32,
 }
 
 /// An entity near a player.
@@ -318,6 +320,22 @@ pub enum Command {
         to_slot: u32,
         count: u32,
     },
+    /// Take `count` of a container's slot away. The mod keeps what it took in its own memory;
+    /// nothing in the world holds it until a `DropItem` or `MoveItem` puts it somewhere.
+    TakeItem {
+        id: u64,
+        from: BlockPos,
+        slot: u32,
+        count: u32,
+    },
+    /// Put an item into a container: the slot given, or the first empty one when `slot` is
+    /// absent. The mod gives back what it took this way.
+    PutItem {
+        id: u64,
+        into: BlockPos,
+        slot: Option<u32>,
+        item: ItemStack,
+    },
     /// Drop an item at a position, as an item entity that does not despawn.
     DropItem {
         id: u64,
@@ -380,6 +398,8 @@ impl Command {
             | Command::MoveBlock { id, .. }
             | Command::SetBlock { id, .. }
             | Command::MoveItem { id, .. }
+            | Command::TakeItem { id, .. }
+            | Command::PutItem { id, .. }
             | Command::DropItem { id, .. }
             | Command::SetSign { id, .. }
             | Command::CancelSleep { id, .. }

@@ -180,21 +180,45 @@ because it can be built and tested without a game, and because the model layer i
   format byte, refusing a newer format or another world's save by name, counting ticks,
   players and reports; the model reseeded with the world's seed on open; tests through the
   ABI and direct.
-- [ ] **Memory.** Every piece in [What is kept](memory.md#what-is-kept) with its bound, and the
-  test that a million observations stay under 256 KiB. Routes' downsampling and matching
-  (which walks are "the same way"). The surroundings and the activity, from the host's daily
-  scan and the last minute of observations.
+- [x] **Memory, first cut.** Done 2026-11-09: `core/src/memory.rs` with the target (the first
+  player seen), the home (the bed slept in, or the densest cell they stand still in; doors and
+  lights from blocks placed; the floor), the containers opened with their contents and slots,
+  the favourites (what is in their hand), the held item, what was done and how it went, the
+  target's last state (position, facing, indoors, asleep, walking, creatures near, look-backs),
+  chat lines about the lodger, and the placed blocks, each capped with its reason; `in_view`
+  and `target_away_from`; `describe` as a handful of template lines. Six tests. Was: every piece
+  of [What is kept](memory.md#what-is-kept) with its bound and the size test. Still to do: the
+  routes, the hours, the reactions, the figures seen, the surroundings and activity pieces, the
+  temper and the chains, and the 256 KiB test.
 - [ ] **The offer** (`brain/offer.rs`): the six filters of
   [What is offered when](entity.md#what-is-offered-when), with a test per filter (no water, no
   boats; asleep, no `late_steps`; stage one, nothing from stage two) and a test that a hundred
   draws from one situation offer every eligible event at least once.
-- [ ] **`Memory::describe`.** The twelve lines, with tests on the exact wording, and the
-  truncation from the bottom at a measured token count. Token counting needs the model's
-  tokenizer; without a model, count words times 1.4 and say so in the log.
-- [ ] **Events as data, the rules, the arc.** `events.rs`, `rules.rs`, `arc.rs` as the docs have
-  them. The rule brain with its weight tables. The decision log.
-- [ ] **Scripted stays** (`core/tests/stays.rs`): the `Player` script and the first ten tests in
-  [Tests](development.md#tests), run on the rule brain. A whole stay in under a second.
+- [ ] **`Memory::describe`, in full.** The twelve lines of [Describing](memory.md#describing)
+  with tests on the exact wording, and the truncation from the bottom at a measured token
+  count (the model's tokenizer; without a model, words times 1.4). The first cut writes eight
+  of the lines.
+- [x] **Events as data, the rules, the arc, the rule brain, the log.** Done 2026-11-09:
+  `events.rs` with 22 rows the host's commands can carry out today (containers, the door, the
+  lights, rest, animals, the sounds, three glitches), each with its stages, needs, cooldown,
+  cap, weight, action and menu words, and a test that every id is a row in the docs' catalogue;
+  `rules.rs` (in view within the distance, disabled, the same as last, cooldown, cap, not
+  offered) with tests; `arc.rs` (move-in after the configured days, stage conditions and most
+  days, the day's budget) with tests; `brain/offer.rs` (needs met, the rules, a weighted draw
+  favouring what has not happened, `wait` first) with the hundred-draws test; the rule brain's
+  weights (wait more early, small before noticed); `brain/act.rs` turning an event into
+  commands at a place from the memory, including a chest's close thirty ticks after its open;
+  `brain/log.rs` writing `config/lodger/decisions.log`; the stay's save format 2, opening
+  format 1 by carrying its counts over. Was: `events.rs`, `rules.rs`, `arc.rs` as the docs have
+  them, the rule brain, the decision log. Still to do: the rest of the catalogue as commands
+  arrive, the offer's time-and-weather filter beyond night, the model asking (phase 4).
+- [x] **Scripted stays, first four.** Done 2026-11-09: `core/tests/stays.rs` drives a scripted
+  player (a house, a bed, a chest opened each morning, a door and torches, a day at the mine)
+  through the ABI for days on the rule brain: a twelve-day stay acts within its budget and never
+  touches the house while the player is home and awake; nothing happens before move-in and
+  stage one never takes or refuses sleep; a saved stay reopens where it was; no event lands
+  twice in a row. Twelve days run in about five seconds, with the clock moving five ticks at a
+  time. Was: the `Player` script and the first ten tests. Still to do: the other six.
 - [x] **Design decisions taken with the owner (2026-11-08):** Rust mind and Java body through
   FFM; `lodger` as the name; the one death on hard kept as the only harm; the denser pace
   (budgets 1, 2, 4, 6 a day, a stay of about two in-game weeks with forty to sixty events) over

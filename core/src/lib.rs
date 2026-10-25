@@ -8,8 +8,13 @@
 //! Phase 0 (see `../docs/todo.md`): the crate builds, `init` parses the config and answers the
 //! effective one, and the ABI path is exercised once before anything rides on it.
 
+pub mod arc;
+pub mod brain;
 pub mod config;
+pub mod events;
+pub mod memory;
 pub mod model;
+pub mod rules;
 pub mod stay;
 
 use config::{Config, ModelSize};
@@ -20,6 +25,7 @@ use craftkit::{
 use model::{Model, Settings};
 use stay::Stay;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 /// The mind's version, from `Cargo.toml`. `mod/gradle.properties` carries the same one and
 /// `VersionsTest` keeps them agreeing.
@@ -31,6 +37,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub struct Lodger {
     pub config: Config,
     pub model: Model,
+    /// The decision log, one per process, under the mod's own folder.
+    pub log: Mutex<brain::log::Log>,
 }
 
 /// Which size the config asks for; `parse` already refused any other name.
@@ -125,7 +133,18 @@ impl Mod for Lodger {
             seed: start_seed(init),
         });
 
-        Ok((Lodger { config, model }, reply))
+        let log_path = if init.config_dir.is_empty() {
+            None
+        } else {
+            Some(init.own_dir().join("decisions.log"))
+        };
+        let log = Mutex::new(brain::log::Log::new(
+            log_path,
+            config.log.keep_mb,
+            config.log.decisions,
+        ));
+
+        Ok((Lodger { config, model, log }, reply))
     }
 
     fn warm(&self) -> Result<(), String> {
@@ -149,15 +168,23 @@ impl Mod for Lodger {
     }
 
     fn observe(&self, world: &mut Stay, observations: &Observations) {
-        world.observe(observations);
+        // The day is the stay's own; before its first tick it has none, and day zero serves.
+        let day = world
+            .first_day
+            .map(|_| world.day(&Now::default()))
+            .unwrap_or(0.0);
+        world.observe(observations, day);
     }
 
     fn tick(&self, world: &mut Stay, now: &Now) -> Vec<Command> {
-        world.tick(now)
+        let mut log = self.log.lock().unwrap_or_else(|err| err.into_inner());
+
+        world.tick(now, &self.config, &mut log)
     }
 
     fn report(&self, world: &mut Stay, reports: &[Report]) {
-        world.report(reports);
+        let mut log = self.log.lock().unwrap_or_else(|err| err.into_inner());
+        world.report(reports, &mut log);
     }
 
     fn save(&self, world: &Stay) -> Vec<u8> {
