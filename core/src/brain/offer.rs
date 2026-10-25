@@ -69,7 +69,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Day => !night,
         Need::Raining => last.raining,
         Need::NotRaining => !last.raining,
-        Need::Route => false,
+        Need::Route => memory.route().is_some(),
         Need::Field => false,
         Need::Animals => memory.creatures("").count() >= 3,
         Need::Kills => memory.most_killed().is_some(),

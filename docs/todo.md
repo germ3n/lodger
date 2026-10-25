@@ -209,6 +209,15 @@ because it can be built and tested without a game, and because the model layer i
   of [What is kept](memory.md#what-is-kept) with its bound and the size test. Still to do: the
   routes, the hours, the reactions, the figures seen, the surroundings and activity pieces, the
   temper and the chains, and the 256 KiB test.
+- [x] **Routes, hours and reactions** (the memory's next pieces). Done 2026-11-09: `Route`
+  (a trail of a point every two blocks, cut at a minute's stop, sleep or leaving; kept when
+  ten points or more; counted into the route it repeats), `Session` (joined and left in real
+  time, the game time at joining; the usual minutes and whether they join after dark),
+  `Reaction` (lit, walled, watched, left, ignored, read off what the target does in the day
+  after a landmark); `Memory::clock` fed once a tick by the stay; a line of the situation text
+  for each; `Need::Route`, `Where::RouteEnd`, `animal_gone`, and `light_path` toward the
+  route's end. Tests: a walk repeated becomes a route with its far end known; sessions give
+  the usual length; a torch placed after a take reads as `lit`, a day of nothing as `ignored`.
 - [ ] **The offer** (`brain/offer.rs`): the six filters of
   [What is offered when](entity.md#what-is-offered-when), with a test per filter (no water, no
   boats; asleep, no `late_steps`; stage one, nothing from stage two) and a test that a hundred

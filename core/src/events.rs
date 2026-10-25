@@ -162,6 +162,8 @@ pub enum Where {
     OutsideDoor,
     /// A corner of the home, facing the wall.
     Corner,
+    /// The far end of the route the target walks most.
+    RouteEnd,
 }
 
 /// How an event is carried out: which command family, resolved against the memory at run time
@@ -824,6 +826,17 @@ pub const CATALOGUE: &[Event] = &[
         false,
     ),
     // Farm and animals
+    row(
+        "animal_gone",
+        3,
+        5,
+        &[Animals, Route, Home, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::MoveCreature("", Where::RouteEnd),
+        false,
+    ),
     row(
         "open_gate",
         2,
@@ -1544,6 +1557,7 @@ impl Event {
             "painting_change" => "change a painting",
             "named_animal" => "name one of their animals",
             "open_gate" => "open the gate",
+            "animal_gone" => "lead one of their animals to the end of their path",
             "sheep_dyed" => "dye a sheep",
             "stare" => "have the animals look at them",
             "pet_growl" => "have the pet growl at nothing",

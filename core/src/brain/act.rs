@@ -205,6 +205,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::PetGrowl => memory.pets().next().map(|p| block_of(p.pos)),
         Action::MoveCreature(_, Where::Home) => home.map(|h| h.center),
         Action::MoveCreature(_, Where::OutsideDoor) => home.and_then(|h| pick(&h.doors, rng)),
+        Action::MoveCreature(_, Where::RouteEnd) => memory.route_end(),
         Action::MoveCreature(_, Where::Corner) => {
             home.map(|h| [h.center[0] + 3, h.floor_y, h.center[2] + 3])
         }
@@ -417,6 +418,7 @@ pub fn commands(
             };
             let Some(spot) = memory
                 .place
+                .or_else(|| memory.route_end())
                 .or_else(|| Some([home.center[0] + 10, home.floor_y, home.center[2] + 10]))
             else {
                 return vec![];
@@ -1672,6 +1674,11 @@ mod tests {
         });
         memory.scanned.push(("oak_door".to_string(), [58, 64, 61]));
         memory.scanned.push(("bell".to_string(), [60, 65, 60]));
+        memory.routes.push(crate::memory::Route {
+            points: (0..20).map(|i| [3 + i * 2, 64, 0]).collect(),
+            walked: 3,
+            first_day: 0.0,
+        });
         memory
     }
 
@@ -2110,6 +2117,36 @@ mod tests {
         assert!(
             matches!(&made[0].0, Command::SetBlock { block, replace, .. } if block == "minecraft:dirt" && replace == &["minecraft:farmland".to_string()])
         );
+    }
+
+    #[test]
+    fn an_animal_is_led_to_the_far_end_of_the_route_and_the_path_of_torches_follows_it() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(4);
+        let now = Now::default();
+
+        assert_eq!(memory.route_end(), Some([41, 64, 0]));
+        let gone = find("animal_gone").unwrap();
+        let p = place(gone, &memory, &mut rng);
+        assert_eq!(p, Some([41, 64, 0]));
+        let made = commands(gone, p, &memory, &mut ids(), &now);
+        assert!(
+            matches!(&made[0].0, Command::MoveEntity { entity: 201, to, .. } if (to[0] - 41.5).abs() < 0.01),
+            "{:?}",
+            made[0].0
+        );
+
+        let path = find("light_path").unwrap();
+        let made = commands(path, None, &memory, &mut ids(), &now);
+        assert!(made.len() >= 3);
+        for (command, _) in &made {
+            match command {
+                Command::SetBlock { pos, .. } => {
+                    assert!(pos[0] > 0 && pos[2] == 0, "toward the route's end: {pos:?}")
+                }
+                other => panic!("{other:?}"),
+            }
+        }
     }
 
     #[test]

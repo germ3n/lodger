@@ -186,6 +186,7 @@ impl Stay {
         }
 
         let day = self.day(now);
+        self.memory.clock(now, day);
         if let Some(stage) = self.arc.tick(day, &self.memory, config) {
             log.note(&format!("stage {stage} begins on day {day:.1}"));
         }

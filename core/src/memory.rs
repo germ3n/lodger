@@ -92,6 +92,55 @@ pub struct Milestone {
     pub detail: String,
 }
 
+/// A path the target walks: points two or more blocks apart, cut where they stand still for a
+/// minute, sleep or leave. Kept when walked twice alike (the way to the mine, the way home).
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Route {
+    pub points: Vec<BlockPos>,
+    /// How many times a trail began and ended where this one does.
+    pub walked: u32,
+    pub first_day: f32,
+}
+
+impl Route {
+    pub fn start(&self) -> BlockPos {
+        self.points.first().copied().unwrap_or_default()
+    }
+
+    pub fn end(&self) -> BlockPos {
+        self.points.last().copied().unwrap_or_default()
+    }
+
+    pub fn length(&self) -> f64 {
+        self.points.windows(2).map(|w| distance(w[0], w[1])).sum()
+    }
+}
+
+/// One session of the target's: when they joined and left, in real time, and the game's time
+/// of day when they joined.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Session {
+    pub began_real: u64,
+    /// Zero while the session is open.
+    pub ended_real: u64,
+    pub began_day_time: u32,
+}
+
+/// What the target did in the day after an event landed at a place.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Reaction {
+    pub event: String,
+    pub day: f32,
+    pub pos: Option<BlockPos>,
+    /// `lit` (a light placed within 16 blocks), `walled` (three or more blocks placed within 4),
+    /// `watched` (stood facing the spot a minute), `left` (left the game within a minute),
+    /// `ignored` (a day passed), or empty while it is still being watched.
+    pub kind: String,
+}
+
 /// What is around the home, from the host's daily pass: water and how wide, snow, sand, trees,
 /// crops, a village or a mineshaft, and where each is. Rewritten each day.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -199,6 +248,19 @@ pub struct Memory {
     pub scanned: Vec<(String, BlockPos)>,
     /// The day as of the last observation, so the offer can read "just now" without a clock.
     pub today: f32,
+    /// The trail being walked right now.
+    pub trail: Vec<BlockPos>,
+    /// Routes walked, most walked first.
+    pub routes: Vec<Route>,
+    /// The target's sessions, newest last.
+    pub sessions: Vec<Session>,
+    /// What the target did after each event the lodger landed.
+    pub reactions: Vec<Reaction>,
+    /// Ticks the target has stood facing the newest watched reaction's spot.
+    pub watching_ticks: u32,
+    /// The clock as of the last tick, for the sessions.
+    pub last_real_millis: u64,
+    pub last_day_time: u32,
 }
 
 /// Caps, with the reason beside each.
@@ -218,6 +280,11 @@ const MOST_LANDMARKS: usize = 512; // a stay never reaches it
 const MOST_MILESTONES: usize = 128;
 const MOST_SCANNED: usize = 64;
 const MOST_VEHICLES: usize = 8;
+const MOST_ROUTES: usize = 16; // the least-walked dropped first
+const MOST_ROUTE_POINTS: usize = 128; // two blocks apart: a route of 256 blocks
+const LEAST_ROUTE_POINTS: usize = 10;
+const MOST_SESSIONS: usize = 30;
+const MOST_REACTIONS: usize = 128; // oldest dropped first
 
 /// The plain kind of a placed block an event can use, or none.
 fn fixture_kind(id: &str) -> Option<&'static str> {
@@ -273,6 +340,24 @@ pub fn distance(a: BlockPos, b: BlockPos) -> f64 {
     let dy = (a[1] - b[1]) as f64;
     let dz = (a[2] - b[2]) as f64;
     (dx * dx + dy * dy + dz * dz).sqrt()
+}
+
+/// Whether the target faces `pos` from where `player` stands, within `blocks`.
+fn in_view_from(player: &Player, pos: BlockPos, blocks: f64) -> bool {
+    let at = block(player.pos);
+    if distance(at, pos) > blocks {
+        return false;
+    }
+    let dx = (pos[0] - at[0]) as f64;
+    let dz = (pos[2] - at[2]) as f64;
+    if dx == 0.0 && dz == 0.0 {
+        return true;
+    }
+    let facing_x = -(player.yaw as f64).to_radians().sin();
+    let facing_z = (player.yaw as f64).to_radians().cos();
+    let length = (dx * dx + dz * dz).sqrt();
+
+    (dx * facing_x + dz * facing_z) / length > 0.5
 }
 
 fn is_light(id: &str) -> bool {
@@ -427,9 +512,34 @@ impl Memory {
                         home.floor_y = pos[1];
                     }
                 }
+                EventKind::Joined => {
+                    self.sessions.push(Session {
+                        began_real: self.last_real_millis,
+                        ended_real: 0,
+                        began_day_time: self.last_day_time,
+                    });
+                    if self.sessions.len() > MOST_SESSIONS {
+                        self.sessions.remove(0);
+                    }
+                }
+                EventKind::Left => {
+                    self.cut_trail();
+                    if let Some(session) = self.sessions.last_mut() {
+                        session.ended_real = self.last_real_millis;
+                    }
+                    // Leaving within a minute of an event is a reaction to it.
+                    if let Some(reaction) =
+                        self.reactions.iter_mut().rev().find(|r| r.kind.is_empty())
+                    {
+                        if (day - reaction.day) * 24_000.0 < 1_200.0 {
+                            reaction.kind = "left".to_string();
+                        }
+                    }
+                }
                 EventKind::PlacedBlock => {
                     if let Some(pos) = event.pos {
                         push_capped(&mut self.placed, pos, MOST_PLACED);
+                        self.react_to_placing(pos, &event.detail);
                         // A bed placed is as good a sign of home as a bed slept in, and comes
                         // hours sooner: a player cannot sleep before night.
                         if is_bed(&event.detail) {
@@ -556,6 +666,45 @@ impl Memory {
         self.last.main_hand = player.main_hand.id.clone();
         self.last.look_backs = player.movement.look_backs;
 
+        // The trail: a point every two blocks; cut when they stand still a minute or sleep.
+        let at = block(player.pos);
+        if player.movement.still_seconds >= 60.0 || player.sleeping {
+            self.cut_trail();
+        } else if self
+            .trail
+            .last()
+            .map(|p| distance(*p, at) >= 2.0)
+            .unwrap_or(true)
+        {
+            self.trail.push(at);
+            if self.trail.len() > MOST_ROUTE_POINTS {
+                self.trail.remove(0);
+            }
+        }
+
+        // A reaction being watched: standing a minute facing the spot within 8 blocks.
+        let watched_spot = self
+            .reactions
+            .iter()
+            .rev()
+            .find(|r| r.kind.is_empty())
+            .and_then(|r| r.pos);
+        if let Some(spot) = watched_spot {
+            if player.movement.still_seconds >= 1.0 && in_view_from(player, spot, 8.0) {
+                self.watching_ticks += 1;
+                if self.watching_ticks >= 20 * 60 {
+                    if let Some(reaction) =
+                        self.reactions.iter_mut().rev().find(|r| r.kind.is_empty())
+                    {
+                        reaction.kind = "watched".to_string();
+                    }
+                    self.watching_ticks = 0;
+                }
+            } else {
+                self.watching_ticks = 0;
+            }
+        }
+
         if player.movement.still_seconds >= 1.0 {
             let cell = [
                 player.pos[0].floor() as i32 / CELL,
@@ -659,8 +808,143 @@ impl Memory {
                 .unwrap_or(false)
         {
             push_capped(&mut self.landmarks, done.clone(), MOST_LANDMARKS);
+            // An older reaction still open was ignored; this one is watched for a day.
+            for reaction in self.reactions.iter_mut().filter(|r| r.kind.is_empty()) {
+                reaction.kind = "ignored".to_string();
+            }
+            push_capped(
+                &mut self.reactions,
+                Reaction {
+                    event: event.to_string(),
+                    day,
+                    pos,
+                    kind: String::new(),
+                },
+                MOST_REACTIONS,
+            );
+            self.watching_ticks = 0;
         }
         push_capped(&mut self.done, done, MOST_DONE);
+    }
+
+    /// The clock, once a tick from the stay: real time and the time of day for the sessions,
+    /// and the day that closes a reaction unanswered.
+    pub fn clock(&mut self, now: &craftkit::world::Now, day: f32) {
+        self.last_real_millis = now.real_millis;
+        self.last_day_time = now.day_time;
+        if let Some(reaction) = self.reactions.iter_mut().rev().find(|r| r.kind.is_empty()) {
+            if day - reaction.day >= 1.0 {
+                reaction.kind = "ignored".to_string();
+            }
+        }
+    }
+
+    /// The trail ends here: a long enough one becomes a route, or is counted into the route it
+    /// repeats (starting and ending within 8 blocks of it).
+    fn cut_trail(&mut self) {
+        if self.trail.len() < LEAST_ROUTE_POINTS {
+            self.trail.clear();
+            return;
+        }
+        let trail = std::mem::take(&mut self.trail);
+        let (start, end) = (trail[0], trail[trail.len() - 1]);
+        let same = self.routes.iter_mut().find(|r| {
+            (distance(r.start(), start) <= 8.0 && distance(r.end(), end) <= 8.0)
+                || (distance(r.start(), end) <= 8.0 && distance(r.end(), start) <= 8.0)
+        });
+        match same {
+            Some(route) => route.walked += 1,
+            None => {
+                self.routes.push(Route {
+                    points: trail,
+                    walked: 1,
+                    first_day: self.today,
+                });
+                if self.routes.len() > MOST_ROUTES {
+                    let least = self
+                        .routes
+                        .iter()
+                        .enumerate()
+                        .min_by_key(|(_, r)| r.walked)
+                        .map(|(i, _)| i)
+                        .unwrap_or(0);
+                    self.routes.remove(least);
+                }
+            }
+        }
+        self.routes.sort_by_key(|r| std::cmp::Reverse(r.walked));
+    }
+
+    /// A block placed answers the newest open reaction: a light within 16 blocks lit the spot,
+    /// three solid blocks within 4 walled it.
+    fn react_to_placing(&mut self, pos: BlockPos, block_id: &str) {
+        let near = self
+            .placed
+            .iter()
+            .filter(|p| {
+                self.reactions
+                    .iter()
+                    .rev()
+                    .find(|r| r.kind.is_empty())
+                    .and_then(|r| r.pos)
+                    .map(|spot| distance(spot, **p) <= 4.0)
+                    .unwrap_or(false)
+            })
+            .count();
+        let Some(reaction) = self.reactions.iter_mut().rev().find(|r| r.kind.is_empty()) else {
+            return;
+        };
+        let Some(spot) = reaction.pos else { return };
+        if is_light(block_id) && distance(spot, pos) <= 16.0 {
+            reaction.kind = "lit".to_string();
+        } else if !is_light(block_id) && distance(spot, pos) <= 4.0 && near >= 3 {
+            reaction.kind = "walled".to_string();
+        }
+    }
+
+    /// The route walked most, if any was walked twice.
+    pub fn route(&self) -> Option<&Route> {
+        self.routes.iter().find(|r| r.walked >= 2)
+    }
+
+    /// The far end of the most-walked route: the end farther from the home.
+    pub fn route_end(&self) -> Option<BlockPos> {
+        let route = self.route()?;
+        let center = self.home.as_ref().map(|h| h.center)?;
+
+        Some(
+            if distance(route.start(), center) > distance(route.end(), center) {
+                route.start()
+            } else {
+                route.end()
+            },
+        )
+    }
+
+    /// The usual session, in minutes, from the closed sessions; none before two.
+    pub fn usual_minutes(&self) -> Option<u32> {
+        let closed: Vec<u64> = self
+            .sessions
+            .iter()
+            .filter(|s| s.ended_real > s.began_real)
+            .map(|s| (s.ended_real - s.began_real) / 60_000)
+            .collect();
+        if closed.len() < 2 {
+            return None;
+        }
+
+        Some((closed.iter().sum::<u64>() / closed.len() as u64) as u32)
+    }
+
+    /// Whether they usually join after dark, from the sessions' game time.
+    pub fn plays_at_night(&self) -> bool {
+        let nights = self
+            .sessions
+            .iter()
+            .filter(|s| s.began_day_time >= 13_000 && s.began_day_time <= 23_000)
+            .count();
+
+        self.sessions.len() >= 2 && nights * 2 > self.sessions.len()
     }
 
     fn milestone(&mut self, kind: &str, day: f32, pos: Option<BlockPos>, detail: &str) {
@@ -965,6 +1249,44 @@ impl Memory {
                     .map(|(p, h)| format!(", {}", place_words(Some(h), p)))
                     .unwrap_or_default()
             ));
+        }
+
+        if let Some(route) = self.route() {
+            if let Some(home) = &self.home {
+                let end = self.route_end().unwrap_or(route.end());
+                lines.push(format!(
+                    "They walk a way of {} blocks to {}, {} times so far.",
+                    route.length().round() as i32,
+                    place_words(Some(home), end),
+                    route.walked
+                ));
+            }
+        }
+
+        if let Some(minutes) = self.usual_minutes() {
+            lines.push(format!(
+                "They usually play for about {} minutes{}.",
+                minutes.max(1),
+                if self.plays_at_night() {
+                    ", and join after dark"
+                } else {
+                    ""
+                }
+            ));
+        }
+
+        if let Some(reaction) = self.reactions.iter().rev().find(|r| !r.kind.is_empty()) {
+            let what = crate::events::find(&reaction.event)
+                .map(|e| e.menu_words())
+                .unwrap_or(&reaction.event);
+            let did = match reaction.kind.as_str() {
+                "lit" => "they lit the place up",
+                "walled" => "they walled the place in",
+                "watched" => "they stood and watched the place",
+                "left" => "they left the game",
+                _ => "they did nothing about it",
+            };
+            lines.push(format!("After it did {what}, {did}."));
         }
 
         if let Some(around) = &self.surroundings {
@@ -1298,6 +1620,155 @@ mod tests {
         assert_eq!(memory.done.len(), MOST_DONE);
         assert_eq!(plain("minecraft:iron_pickaxe"), "an iron pickaxe");
         assert_eq!(plain("minecraft:torch"), "a torch");
+    }
+
+    #[test]
+    fn a_walk_repeated_becomes_a_route_and_the_lodger_knows_its_far_end() {
+        let mut memory = Memory {
+            home: Some(Home {
+                bed: Some([0, 64, 0]),
+                center: [0, 64, 0],
+                floor_y: 64,
+                doors: vec![],
+                lights: vec![],
+            }),
+            ..Memory::default()
+        };
+        // Twice: out 40 blocks east, a point every two, then a minute's stop.
+        for _ in 0..2 {
+            for i in 0..21 {
+                memory.observe(
+                    &obs(vec![player(0, [i as f64 * 2.0, 64.0, 0.0], 0.0)], vec![]),
+                    1.0,
+                );
+            }
+            memory.observe(&obs(vec![player(0, [40.0, 64.0, 0.0], 61.0)], vec![]), 1.0);
+            for i in (0..21).rev() {
+                memory.observe(
+                    &obs(vec![player(0, [i as f64 * 2.0, 64.0, 0.0], 0.0)], vec![]),
+                    1.0,
+                );
+            }
+            memory.observe(&obs(vec![player(0, [0.0, 64.0, 0.0], 61.0)], vec![]), 1.0);
+        }
+
+        assert!(!memory.routes.is_empty());
+        let route = memory.route().expect("a route walked twice");
+        assert!(route.walked >= 2, "{}", route.walked);
+        assert_eq!(memory.route_end(), Some([40, 64, 0]));
+        assert!(
+            memory
+                .describe(2.0)
+                .iter()
+                .any(|l| l.starts_with("They walk a way of")),
+            "{:?}",
+            memory.describe(2.0)
+        );
+
+        let short = {
+            let mut m = Memory::default();
+            m.observe(&obs(vec![player(0, [0.0, 64.0, 0.0], 0.0)], vec![]), 0.0);
+            m.observe(&obs(vec![player(0, [4.0, 64.0, 0.0], 0.0)], vec![]), 0.0);
+            m.observe(&obs(vec![player(0, [4.0, 64.0, 0.0], 61.0)], vec![]), 0.0);
+            m
+        };
+        assert!(short.routes.is_empty(), "a few blocks is no route");
+    }
+
+    #[test]
+    fn sessions_give_the_usual_length_and_a_reaction_is_read_off_what_they_do_next() {
+        let mut memory = Memory::default();
+        memory.observe(&obs(vec![player(0, [0.0, 64.0, 0.0], 0.0)], vec![]), 0.0);
+        let joined = |m: &mut Memory, real: u64, time: u32| {
+            m.clock(
+                &craftkit::world::Now {
+                    tick: 0,
+                    day: 0,
+                    day_time: time,
+                    real_millis: real,
+                },
+                0.0,
+            );
+            m.observe(
+                &obs(
+                    vec![player(0, [0.0, 64.0, 0.0], 0.0)],
+                    vec![Event {
+                        player: 0,
+                        kind: EventKind::Joined,
+                        ..Event::default()
+                    }],
+                ),
+                0.0,
+            );
+        };
+        let left = |m: &mut Memory, real: u64| {
+            m.clock(
+                &craftkit::world::Now {
+                    tick: 0,
+                    day: 0,
+                    day_time: 0,
+                    real_millis: real,
+                },
+                0.0,
+            );
+            m.observe(
+                &obs(
+                    vec![],
+                    vec![Event {
+                        player: 0,
+                        kind: EventKind::Left,
+                        ..Event::default()
+                    }],
+                ),
+                0.0,
+            );
+        };
+        joined(&mut memory, 0, 14_000);
+        left(&mut memory, 40 * 60_000);
+        joined(&mut memory, 100 * 60_000, 15_000);
+        left(&mut memory, 160 * 60_000);
+        assert_eq!(memory.usual_minutes(), Some(50));
+        assert!(memory.plays_at_night());
+        assert!(memory
+            .describe(1.0)
+            .iter()
+            .any(|l| l.contains("about 50 minutes") && l.contains("after dark")));
+
+        // A bold event lands; a torch placed nearby within the day is "lit".
+        memory.record("take", Some([10, 64, 10]), 1.0, true, "");
+        assert_eq!(memory.reactions.len(), 1);
+        assert!(memory.reactions[0].kind.is_empty());
+        memory.observe(
+            &obs(
+                vec![player(0, [12.0, 64.0, 10.0], 0.0)],
+                vec![Event {
+                    player: 0,
+                    kind: EventKind::PlacedBlock,
+                    pos: Some([12, 65, 10]),
+                    detail: "minecraft:torch".to_string(),
+                    ..Event::default()
+                }],
+            ),
+            1.1,
+        );
+        assert_eq!(memory.reactions[0].kind, "lit");
+        assert!(memory
+            .describe(1.2)
+            .iter()
+            .any(|l| l.contains("they lit the place up")));
+
+        // The next lands and a day passes with nothing: ignored.
+        memory.record("grave", Some([20, 64, 20]), 2.0, true, "");
+        memory.clock(
+            &craftkit::world::Now {
+                tick: 0,
+                day: 3,
+                day_time: 0,
+                real_millis: 0,
+            },
+            3.1,
+        );
+        assert_eq!(memory.reactions[1].kind, "ignored");
     }
 
     #[test]
