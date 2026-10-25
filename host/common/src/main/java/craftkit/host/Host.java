@@ -30,7 +30,7 @@ public final class Host {
 	private Host(Platform platform, List<LoadedMod> mods) {
 		this.platform = platform;
 		this.mods = mods;
-		this.worlds = new craftkit.host.world.Worlds(mods);
+		this.worlds = new craftkit.host.world.Worlds(mods, platform::sendToPlayer);
 	}
 
 	/** The per-tick exchange with every mod's worlds; the loaders hook its level and tick events. */

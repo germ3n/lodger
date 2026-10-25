@@ -20,6 +20,12 @@ public interface Platform {
 	/** Whether this is a dedicated server, with no one at a screen to accept terms. */
 	boolean dedicatedServer();
 
+	/** Sends a payload to one player's client, the loader's way. */
+	void sendToPlayer(net.minecraft.server.level.ServerPlayer player, net.minecraft.network.protocol.common.custom.CustomPacketPayload payload);
+
+	/** The other mods loaded, as id and version pairs, for the senses' first tick. */
+	List<String[]> loadedMods();
+
 	/** The game's config directory, where {@code <mod>.json} files and {@code craftkit/natives/} live. */
 	Path configDir();
 

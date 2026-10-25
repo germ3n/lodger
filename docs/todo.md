@@ -202,28 +202,55 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Phase 3: the body, stages one and two
 
-- [ ] **Senses:** position and facing once a second, containers opened with contents, blocks
-  placed and broken near home, sleep and refused sleep, logins and logouts, dimension changes,
-  deaths, and what the target is doing (mining, farming, building, fishing, in a boat) read from
-  those. Sent as observations each tick; a tick with nothing new sends nothing.
-- [ ] **The surroundings scan:** once an in-game day, within 128 blocks of the home, on the
-  server thread in slices of a few chunks a tick so it never shows in a tick profile: water,
-  snow and sand, a village, fields and pens, the target's tunnels and unentered caves, and the
-  house's furniture by kind. Sent as one observation.
-- [ ] **Executors for the stage one and two events** of the [catalogue](entity.md#events), about
-  fifty, each with `fits`, each with a game test. Most are one of a dozen general commands
-  (move an item, move a block within reach, toggle a block, set an entity's look, play a sound
-  to a player, send a hint), so the count of executors is far below the count of events; the
-  catalogue grows by rows in `events.rs`, not by Java. Containers first (`open_chest`,
+- [x] **Senses, the host's side.** Done 2026-11-09: `senses/Senses.java` sends every player's
+  state each tick (position, facing, velocity, sneaking, sprinting, swimming, sleeping, riding,
+  health, hunger, air, level, hands, armour, effects, dimension, biome, light and sky light, what
+  they look at within 8 blocks, and the movement reading from `MovementTracker`: pace, stops,
+  turns, look-backs, backing away, sprint bursts, standing still), every entity within 64
+  blocks once a second (kind, position, name, owner, hostile, whether it faces a player), the
+  weather once a second, and the events both loaders' hooks feed: joined, left, used a block
+  (a container's contents when it is one), placed (a Fabric mixin; NeoForge's event), broke,
+  sleep refused, died, respawned, changed dimension, hit, chat; sleep begun and ended, mounted
+  and dismounted and a container closed are read off state changes with no event needed. Six
+  JUnit tests for the movement reading. Was: position and facing once a second, containers
+  opened with contents, blocks placed and broken near home, sleep and refused sleep, logins and
+  logouts, dimension changes, deaths, and what the target is doing read from those. Still to do
+  on the mind's side: the activity read from these (mining, farming, building, fishing); the
+  moon phase and time of day from 26.3's world clocks (the senses send 0 and game time's
+  remainder for now).
+- [x] **The surroundings pass, first cut.** Done 2026-11-09: the `surroundings` command starts
+  a pass around a point within a radius (at most 160), 64 columns a tick, a column every four
+  blocks read at the surface: water, lava, sand, snow, trees, crops, lights, beds, containers,
+  doors, each as a feature with a center and a size. Answered as an observation when done.
+  Was: once an in-game day within 128 blocks of the home, in slices. Still to do: villages
+  (the bell's point of interest), the target's tunnels and unentered caves, pens with their
+  animals, and the mind asking for it once a day.
+- [x] **The general commands' executors, first cut.** Done 2026-11-09, in `world/Executors.java`:
+  `log`, `system_message`, `play_sound` (a sound packet to one player), `hint` (a payload to one
+  client, kept in the client's `Hints` list and logged; the renderers are phase 5), `scan` (a
+  box of at most 40,000 blocks, counts and positions), `surroundings`, `toggle_block` (doors by
+  their own method, levers by theirs, anything with an `open` property by cycling it),
+  `move_block` (not a block with contents, only into air), `set_block`, `move_item` (between
+  two containers' slots, stacking when the items match), `drop_item` (an item entity that never
+  despawns), `set_sign` (the front text), `cancel_sleep` (wake with the vanilla message, or
+  refuse the next attempt within the given seconds through both loaders' sleep events),
+  `look_at` (a mob's look held for the given seconds by `Looks`). Each reports `done` or why
+  not; an unknown command is reported, not dropped. Was: executors for the stage one and two
+  events, about fifty, with game tests. Still to do: the game tests (the Fabric gametest setup),
+  and the lodger's events themselves, which are the mind's rows over these commands.
+- [ ] **Game tests for the executors** (`./gradlew :fabric:runGametest`): one per command
+  against a built test world, including `fits` refusing when the target is in view, which is
+  the mind's rule but the host's check. Containers first (`open_chest`,
   `shuffle_chest`, `take`, `return_taken`, `place_taken`), then furnaces, doors, lights, sounds,
   then the rest. The lodger's own torch and sign blocks, vanilla-looking.
 - [ ] **Budgets, cooldowns, caps and the menu** (`events.rs`, `brain/offer.rs`) with scripted-stay
   tests: a stay of fourteen days on the rule brain holds between forty and seventy events, no
   event twice in a row, none past its cap, none inside its cooldown.
-- [ ] **The net:** the sound packet, the hint packet (kind, place, duration), the target flag;
-  the client handlers. `late_steps` plays the right footstep sound for the block; `flicker` and
-  `painting_flip` are the first two glitches, so the hint path is built here and the rest come
-  in phase 5.
+- [x] **The net, first cut.** Done 2026-11-09: sounds go as vanilla's own sound packet to one
+  player; `HintPayload` (kind, optional place, seconds, detail) is registered on both loaders
+  and lands in the client's `Hints` list, timed and logged. Was: the sound packet, the hint
+  packet, the target flag; the client handlers. Still to do: the target flag, the footstep
+  sound by block for `late_steps`, and the first two glitch renderers.
 - [ ] **Saved data:** `lodger.dat` holding the mind's bytes, saved with the world, loaded on
   world load, the mind closed on unload.
 - [ ] **`/lodger status`, `/lodger decisions`, `/lodger reset`, `/lodger leave`.**
@@ -335,6 +362,18 @@ because it can be built and tested without a game, and because the model layer i
 - [ ] **A proper release:** the jar with three natives, `THIRD_PARTY_NOTICES.txt`, the
   README's install steps checked on a fresh machine on each platform, a Modrinth page that says
   what the mod records and downloads. Version `0.1.0`.
+
+### After every phase
+
+- [ ] **A debug UI for events, senses and the brain** (owner, 2026-11-09): once the phases are
+  in, a proper in-game screen over the menu's debug page: the live observations as the mind
+  sees them (the players' lines, the entities, the movement reading), the memory's lines, the
+  last decisions with their menus and confidences, the open chains and the temper, and buttons
+  to force an event, a stage or a want, with the world's reaction shown as it lands. Built on the
+  menu system, so any Rust mod gets the frame and the lodger fills it.
+- [ ] **A Minecraft version bump, rehearsed:** take the host to the next snapshot once, by the
+  checklist in [Updating Minecraft](development.md#updating-minecraft), and fix whatever the
+  checklist missed.
 
 ### Later, or maybe never
 

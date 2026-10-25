@@ -36,6 +36,43 @@ template. `VersionsTest` in `host/common` checks that this table, the README, bo
 in `sdk/src/lib.rs` and `Native.java`, and the CI agree. Minecraft 26.x needs Java 25, which is what makes the FFM
 API available without flags; a Minecraft that still ran Java 21 would need JNI.
 
+## Updating Minecraft
+
+The SDK is built to move to a new Minecraft version with the Rust side untouched (owner,
+2026-11-09): nothing in `sdk/` or `core/` names a Minecraft class, and the protocol is JSON with
+defaults on every field, so a new game version changes the host alone, and only its
+Minecraft-facing edge. That edge is kept to a few known places, which is the rule for anyone
+adding to the host:
+
+| Where | What touches the game there |
+| --- | --- |
+| `host/common/.../senses/Senses.java` | Reading players, entities, blocks, light, biomes into observations. |
+| `host/common/.../world/Executors.java`, `Looks.java`, `Surroundings.java` | Carrying commands out: blocks, containers, signs, items, sounds, mobs' looks, the surroundings pass. |
+| `host/common/.../world/WorldData.java` | Saved data. |
+| `host/common/.../client/` | Screens and renderers. |
+| `host/fabric/`, `host/neoforge/` | Each loader's events, networking and the Fabric mixin for block placement. |
+| `host/common/.../Host.java`'s command | `/craftkit status`. |
+
+Everything else in the host (`Native`, `LoadedMod`, `Manifest`, `Downloader`, `Preparation`,
+`Acceptance`, `Natives`, the menu) is plain Java and compiles against no game version. A mod's
+jar names the Minecraft range it was built for in its manifests; a host built for the next
+version runs the same Rust mods unchanged, since the library speaks the ABI, not the game.
+
+The checklist for a new version, in order:
+
+1. `host/gradle.properties`: `minecraft_version`, `minecraft_version_range`, `neo_form_version`,
+   `fabric_version`, `fabric_loader_version`, `neoforge_version`, and Loom and ModDevGradle if the
+   new version needs them; the same four game and loader values in `mod/gradle.properties`.
+   `VersionsTest` fails until the docs' table and the README agree.
+2. `./gradlew build` in `host/`. What breaks is in the table above and nowhere else; the
+   decompiled sources ModDevGradle writes to `host/neoforge/build/moddev/artifacts/*-sources.jar`
+   are where the new names are found (grep them, as 26.3's were).
+3. `./gradlew test`, then the real-native tests, then a dev server with the lodger's jar and a
+   dev client for the screens.
+4. The lodger's jars rebuilt (`mod/`), which changes nothing in `core/` unless the protocol
+   gained a field the new senses can fill.
+5. A line in [Todo](todo.md) under Done with the date, the versions and what moved.
+
 ## Building the native
 
 ```sh

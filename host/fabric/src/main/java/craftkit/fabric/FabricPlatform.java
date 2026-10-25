@@ -28,6 +28,18 @@ public final class FabricPlatform implements Platform {
 	}
 
 	@Override
+	public void sendToPlayer(net.minecraft.server.level.ServerPlayer player, net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
+		net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, payload);
+	}
+
+	@Override
+	public List<String[]> loadedMods() {
+		return FabricLoader.getInstance().getAllMods().stream()
+				.map(mod -> new String[] {mod.getMetadata().getId(), mod.getMetadata().getVersion().getFriendlyString()})
+				.toList();
+	}
+
+	@Override
 	public Path configDir() {
 		return FabricLoader.getInstance().getConfigDir();
 	}

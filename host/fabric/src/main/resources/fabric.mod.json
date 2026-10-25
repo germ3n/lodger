@@ -17,6 +17,9 @@
 			"craftkit.fabric.CraftkitFabricClient"
 		]
 	},
+	"mixins": [
+		"craftkit.fabric.mixins.json"
+	],
 	"depends": {
 		"fabricloader": ">=${fabric_loader_version}",
 		"fabric-api": "*",

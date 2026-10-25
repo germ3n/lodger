@@ -156,11 +156,14 @@ written 2026-11-09 from the lodger's needs and generalized as a second mod needs
   lodger's `model/` is the lodger's. What the SDK gives such a mod is the observations above in
   a form `describe` can turn into lines of text, and a worker-thread pattern (`sdk::work`) for
   bringing answers back inside `tick`.
-- **Commands:** open or close a door, move or place a block, move items between a world's
-  containers, drop an item, place a sign with given lines, spawn and drive a figure entity, play
-  a sound to a player at a place, send a client hint (a kind, a place, a duration), set an
-  entity's look, cancel a player's sleep. Each has a `fits` the host's executor checks before
-  running (see [Events re-check](entity.md#events-re-check-before-they-happen)).
+- **Commands:** log a line, scan a box for block kinds, look around a point for the
+  surroundings' features, play a sound to a player at a place, send a client hint (a kind, a
+  place, a duration), send a system message, toggle a door, trapdoor, gate or lever, move a
+  block within reach, set a block, move items between containers, drop an item that does not
+  despawn, write a sign, cancel or refuse a player's sleep, turn an entity's head for a while,
+  spawn and drive a figure in a player's skin. Each has a `fits` the host's executor checks
+  before running (see [Events re-check](entity.md#events-re-check-before-they-happen)), and an
+  unknown command is reported as such rather than dropped.
 - **Reports:** per command, `done` or `did not fit` with why.
 - **Now:** the tick, the world's time, the real clock, so a mod never reads a clock itself.
 - **Integrations:** the host knows which other mods are loaded (`Observations.mods`, the ids

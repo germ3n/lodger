@@ -20,3 +20,4 @@ from them and so that every page is kept true as code lands.
 | [Config](config.md) | Every key in `config/lodger.json`, its default and what it changes. |
 | [Development](development.md) | Toolchain, building the mod and the natives, running, tests, and the conventions the code follows. |
 | [Todo](todo.md) | What is done, what is next, in order, and known gaps. |
+| [Queue](queue.md) | Where the work stands and what the next session picks up, with the rules every session follows. |

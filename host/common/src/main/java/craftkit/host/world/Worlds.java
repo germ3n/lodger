@@ -7,21 +7,18 @@ import com.google.gson.JsonParser;
 import craftkit.host.LoadedMod;
 import craftkit.host.Log;
 import craftkit.host.Native;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.chat.Component;
+import craftkit.host.net.HintPayload;
+import craftkit.host.senses.Senses;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.function.BiConsumer;
 
 /**
  * The per-tick exchange between the game and every loaded mod's worlds: open a world for each
@@ -39,15 +36,23 @@ public final class Worlds {
 
 	private final List<LoadedMod> mods;
 	private final Map<ServerLevel, Map<LoadedMod, Open>> open = new HashMap<>();
-	/** Player indices, stable for the server's life: events and commands name players by them. */
-	private final Map<UUID, Integer> indices = new LinkedHashMap<>();
+	private final Senses senses = new Senses();
+	private final Looks looks = new Looks();
+	private final BiConsumer<ServerPlayer, HintPayload> sendHint;
 	private int ticks;
 
 	private record Open(long handle, WorldData data) {
 	}
 
-	public Worlds(List<LoadedMod> mods) {
+	/** @param sendHint how this loader sends a hint payload to a player. */
+	public Worlds(List<LoadedMod> mods, BiConsumer<ServerPlayer, HintPayload> sendHint) {
 		this.mods = mods;
+		this.sendHint = sendHint;
+	}
+
+	/** What the loaders' hooks feed. */
+	public Senses senses() {
+		return senses;
 	}
 
 	public void levelLoaded(MinecraftServer server, ServerLevel level) {
@@ -84,6 +89,7 @@ public final class Worlds {
 			return;
 		}
 
+		Surroundings.forget(level);
 		perMod.forEach((mod, world) -> {
 			save(mod, world);
 			String error = LoadedMod.errorOf(mod.library().get().worldClose(world.handle()));
@@ -103,9 +109,12 @@ public final class Worlds {
 	public void tick(MinecraftServer server) {
 		ticks++;
 		long realMillis = System.currentTimeMillis();
+		looks.tick();
+		Surroundings.tick();
+		Executors.Context context = new Executors.Context(senses, sendHint, looks);
 
 		open.forEach((level, perMod) -> {
-			String observations = observe(level).toString();
+			String observations = senses.observe(level, server.getTickCount()).toString();
 			String now = now(server, level, realMillis).toString();
 
 			perMod.forEach((mod, world) -> {
@@ -124,7 +133,7 @@ public final class Worlds {
 
 				JsonArray reports = new JsonArray();
 				for (JsonElement element : commands.getAsJsonArray()) {
-					reports.add(Executors.run(mod, level, element.getAsJsonObject(), this::player));
+					reports.add(Executors.run(mod, level, element.getAsJsonObject(), context));
 				}
 
 				if (!reports.isEmpty()) {
@@ -156,54 +165,6 @@ public final class Worlds {
 		}
 	}
 
-	/** The player with this index, if online, for the executors. */
-	private ServerPlayer player(ServerLevel level, int index) {
-		for (ServerPlayer player : level.players()) {
-			if (indexOf(player) == index) {
-				return player;
-			}
-		}
-
-		return null;
-	}
-
-	private int indexOf(ServerPlayer player) {
-		return indices.computeIfAbsent(player.getUUID(), uuid -> indices.size());
-	}
-
-	private JsonObject observe(ServerLevel level) {
-		JsonObject observations = new JsonObject();
-		JsonArray players = new JsonArray();
-
-		for (ServerPlayer player : level.players()) {
-			JsonObject p = new JsonObject();
-			p.addProperty("index", indexOf(player));
-			p.addProperty("name", player.getName().getString());
-			p.addProperty("uuid", player.getUUID().toString());
-			p.add("pos", vec(player.position()));
-			p.addProperty("yaw", player.getYRot());
-			p.addProperty("pitch", player.getXRot());
-			p.add("velocity", vec(player.getDeltaMovement()));
-			p.addProperty("sneaking", player.isShiftKeyDown());
-			p.addProperty("sprinting", player.isSprinting());
-			p.addProperty("swimming", player.isSwimming());
-			p.addProperty("sleeping", player.isSleeping());
-			p.addProperty("riding", player.getVehicle() == null ? "" : BuiltInRegistries.ENTITY_TYPE.getKey(player.getVehicle().getType()).toString());
-			p.addProperty("health", player.getHealth());
-			p.addProperty("hunger", player.getFoodData().getFoodLevel());
-			p.addProperty("air", player.getAirSupply());
-			p.addProperty("level", player.experienceLevel);
-			p.add("main_hand", stack(player.getMainHandItem()));
-			p.add("off_hand", stack(player.getOffhandItem()));
-			p.addProperty("dimension", level.dimension().identifier().toString());
-			players.add(p);
-		}
-
-		observations.add("players", players);
-
-		return observations;
-	}
-
 	private static JsonObject now(MinecraftServer server, ServerLevel level, long realMillis) {
 		JsonObject now = new JsonObject();
 		now.addProperty("tick", server.getTickCount());
@@ -214,27 +175,5 @@ public final class Worlds {
 		now.addProperty("real_millis", realMillis);
 
 		return now;
-	}
-
-	static JsonArray vec(Vec3 v) {
-		JsonArray array = new JsonArray();
-		array.add(v.x);
-		array.add(v.y);
-		array.add(v.z);
-
-		return array;
-	}
-
-	static JsonObject stack(ItemStack stack) {
-		JsonObject object = new JsonObject();
-		object.addProperty("id", stack.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
-		object.addProperty("count", stack.isEmpty() ? 0 : stack.getCount());
-
-		return object;
-	}
-
-	/** A system message to a player, for the executors. */
-	static void message(ServerPlayer player, String text) {
-		player.sendSystemMessage(Component.literal(text));
 	}
 }

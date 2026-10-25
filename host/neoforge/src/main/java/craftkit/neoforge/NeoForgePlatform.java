@@ -28,6 +28,18 @@ public final class NeoForgePlatform implements Platform {
 	}
 
 	@Override
+	public void sendToPlayer(net.minecraft.server.level.ServerPlayer player, net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
+		net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, payload);
+	}
+
+	@Override
+	public List<String[]> loadedMods() {
+		return ModList.get().getMods().stream()
+				.map(mod -> new String[] {mod.getModId(), mod.getVersion().toString()})
+				.toList();
+	}
+
+	@Override
 	public Path configDir() {
 		return FMLPaths.CONFIGDIR.get();
 	}

@@ -220,10 +220,12 @@ pub struct Scan {
     pub positions: Vec<(String, BlockPos)>,
 }
 
-/// The daily pass over the surroundings: points of interest around a point, as features.
+/// The answer to `Command::Surroundings`: points of interest around a point, as features.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Surroundings {
+    /// The command's id.
+    pub id: u64,
     pub around: BlockPos,
     pub features: Vec<Feature>,
 }
@@ -328,16 +330,27 @@ pub enum Command {
         pos: BlockPos,
         lines: Vec<String>,
     },
-    /// Cancel one player's sleep with the vanilla message.
+    /// Cancel one player's sleep with the vanilla message, or refuse their next attempt within
+    /// `seconds` with it.
     CancelSleep {
         id: u64,
         player: u32,
+        seconds: f32,
     },
-    /// Turn an entity's head toward a position.
+    /// Turn an entity's head toward a position and keep it there for `seconds`.
     LookAt {
         id: u64,
         entity: u32,
         at: Pos,
+        seconds: f32,
+    },
+    /// Look around `around` within `radius` blocks for the features of `Surroundings`, answered
+    /// as `Observations.surroundings` over the next seconds, in slices, so it never shows in a
+    /// tick profile.
+    Surroundings {
+        id: u64,
+        around: BlockPos,
+        radius: u32,
     },
     /// Spawn or move a figure wearing a player's skin, standing or walking a path.
     Figure {
@@ -371,6 +384,7 @@ impl Command {
             | Command::SetSign { id, .. }
             | Command::CancelSleep { id, .. }
             | Command::LookAt { id, .. }
+            | Command::Surroundings { id, .. }
             | Command::Figure { id, .. }
             | Command::RemoveFigure { id, .. } => *id,
         }
