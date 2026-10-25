@@ -1,0 +1,21 @@
+# A mod with no Java, so no modLoader or loaderVersion: NeoForge then loads the jar for its
+# resources alone, and the host (craftkit) loads the Rust in natives/.
+license = "MIT"
+[[mods]]
+modId = "lodger"
+version = "${version}"
+displayName = "lodger"
+authors = "razor"
+description = '''One quiet presence that moves into your world and learns you. A craftkit mod: the mind is Rust, in this jar's natives.'''
+[[dependencies.lodger]]
+modId = "craftkit"
+type = "required"
+versionRange = "[${craftkit_version},)"
+ordering = "AFTER"
+side = "BOTH"
+[[dependencies.lodger]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"

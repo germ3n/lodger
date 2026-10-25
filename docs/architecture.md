@@ -1,0 +1,134 @@
+# Architecture
+
+lodger is a Rust mod on craftkit (see [The SDK](sdk.md)). The **mind** is a Rust crate,
+`core/`, built as a shared library and shipped in a content jar (`mod/`) with the lodger's
+assets, which keeps everything the lodger knows and decides everything it does, and has no idea
+what Minecraft is. The **body** is the craftkit host, `host/`, a Java mod for Fabric and
+NeoForge, which watches the world, tells the mind what it saw, and carries out what the mind
+decided. They talk through the SDK's C ABI, with JSON in both directions, called from Java
+through the FFM API (`java.lang.foreign`, final since Java 22; Minecraft 26.x runs Java 25).
+There is no JNI, no second process, and no Java of the lodger's own.
+
+Why the split this way round: the model layer already exists in Rust (`~/engine`'s `ai/`), the
+mind is the part that needs tests by the hundred and is pure logic over data the body hands it,
+and a mind that knows nothing of the world can be run in `cargo test` against a fake scorer and
+a scripted player, in milliseconds, with no game open. The body is as thin as the game allows,
+and generic: nothing in it is the lodger's, so a second Rust mod runs on the same host.
+
+## The parts
+
+### The mind, `core/`
+
+| Part | Where | What it does |
+| --- | --- | --- |
+| Stay | `core/src/stay.rs` | One lodger in one world: the stage, the target, the memory and the open plan. `Stay::observe` takes the body's observations, `Stay::tick` advances time and asks, `Stay::commands` hands out what to do. Serializes itself to bytes the body stores. |
+| Memory | `core/src/memory/` | What the lodger knows about its target, bounded, and `describe`, which turns it into the lines of the situation text. See [Memory](memory.md). |
+| Brain | `core/src/brain/` | Builds the situation text, picks the questions for the moment, asks the model or the rule brain, applies the rules to the answer, logs it. See [Brain](brain.md). |
+| Model | `core/src/model/` | The worker thread, the queue with its keys, llama.cpp through `llama-cpp-2`, and the scoring. Ported from `~/engine/game/base/src/ai/` with the game taken out. See [Model](model.md). |
+| Download | `core/src/model/download.rs` | Fetches the GGUF on a thread of its own, checks the magic, writes under a temporary name. As in the engine. |
+| Events | `core/src/events.rs` | Every event as data: its id, which stages offer it, what it needs (a chest the target uses, a route, darkness), and the command it becomes. See [Events](entity.md#events). |
+| Rules | `core/src/rules.rs` | The hard rules, applied to every decided event before it becomes a command. See [What it never does](good-to-know.md#what-it-never-does). |
+| Arc | `core/src/arc.rs` | When a stage ends and what the next one is, and the endings. See [The five stages](entity.md#the-five-stages). |
+| Log | `core/src/log.rs` | The decision log. |
+| Mod | `core/src/lib.rs` | `Lodger`, the `craftkit::Mod`: `init` and `info`, and from phase 2 the per-world calls; `craftkit::export_mod!` makes the C ABI from it. |
+
+### The content jar, `mod/`
+
+No Java. `mod/build.gradle` runs cargo, puts the mind's library under `natives/<os>-<arch>/`
+(and the other platforms' from `natives-extra/`, which the CI fills), and packs it with
+`META-INF/craftkit.json`, `fabric.mod.json`, a `META-INF/neoforge.mods.toml` with no language loader,
+`pack.mcmeta` and `assets/lodger/` (lang files, and later the figure's and the glitches' assets).
+One jar for both loaders.
+
+### The body, `host/`
+
+The craftkit host, which [The SDK](sdk.md#what-the-host-is) describes. The parts the lodger
+leans on, all generic:
+
+| Part | Where | What it does |
+| --- | --- | --- |
+| Native | `host/common/.../Native.java` | Binds one mod's library through FFM. The only Java that knows there is a native. |
+| LoadedMod, Host | `host/common/.../LoadedMod.java`, `Host.java` | Finds content jars by their manifest, extracts the native to `config/craftkit/natives/<id>/<os>-<arch>/`, checks the ABI, hands the mod its config, answers `/craftkit status`. |
+| Worlds | `host/common/.../world/` (phase 2) | Per loaded world: the mind's handle, the per-tick exchange, the mod's bytes in the world's saved data. |
+| Senses | `host/common/.../senses/` (phase 3) | Turns server events and distance checks into observations: positions, chests opened, blocks placed, sleep, death, looking toward a figure, dimension changes. |
+| Executors | `host/common/.../commands/` (phase 3) | One per command of the protocol. Each re-checks the world (`fits`), runs, and reports `done` or `did not fit`. |
+| Figure | `host/common/.../figure/` (phase 5) | A figure entity in a player's skin that stands or walks a path: server entity and client renderer. |
+| Net | `host/common/.../net/` (phase 3) | Packets to a player's client: a sound at a place, a figure and its skin, a hint. |
+| Platform | `host/fabric/`, `host/neoforge/` | Each loader's entry point, events, config directory, loaded jars, and the handshake that refuses clients without the host. |
+
+Each part has one owner, passed down rather than shared:
+
+- `Lodger` (the `Mod`) owns the `Model` worker and the config; each `Stay` (its `World`) owns the
+  `Memory`, the `Brain`, the `Arc` and the open plan.
+- `Brain` owns its `Situation` builder and its decision log, and borrows the `Model` worker.
+- `Model` owns the worker thread, the queue and the loaded llama.cpp context.
+
+A test can build a `Stay` around a scripted player and a fake scorer and run it tick by tick,
+through the SDK's harness, the same path the host takes.
+
+## The C ABI
+
+The SDK's, in [The SDK](sdk.md#the-c-abi): `craftkit_init` once per process, and per world
+`open`, `observe`, `tick`, `report`, `save` and `close`, all UTF-8 JSON in caller-owned buffers,
+so the FFM side is a few `MethodHandle`s and no struct layouts. The JSON is small (a tick's
+observations are a few hundred bytes) and the exchange is once a tick, so its cost is nothing
+next to a block update. `tick` is also where the mind drains model replies and finished
+downloads, so every callback runs on the server thread, in a tick, never inside the call that
+asked. Errors come back as JSON, never as a panic across the boundary.
+
+## Threads
+
+- **The server thread** runs the game. Every call into the mind happens here, once per tick,
+  from the host's world loop. The mind's own code runs on this thread too, except the two below, so it never
+  needs a lock the body can see.
+- **The model worker** is one thread per process, `lodger-model`, started on the first question
+  and stopped by `lodger_shutdown`. It takes `Job`s off a channel, scores them, sends `Reply`s
+  back. It is the only thread that touches llama.cpp. One per process, not per world, because the
+  model is 700 MB in memory and a client that opens two worlds in a row must not load two.
+- **The download thread** runs one download at a time and sends one `Finished`.
+- **The client's render thread** draws the figure and plays sounds. It gets packets and asks for
+  nothing.
+
+Replies and finished downloads cross back into the server thread inside `tick`, which
+drains both channels first, so a model's answer is acted on in a tick, never inside the
+call that asked. This is the engine's `ai.pump`, moved inside the mind.
+
+## A tick's way through
+
+1. **Senses** gather what the target did since last tick and the host sends it as observations
+   (and, once an in-game day, a scan of the surroundings within 128 blocks of the home, which
+   the memory keeps as [Surroundings](memory.md#what-is-kept)):
+   position and facing, a chest opened (which one, what is in it, by id and count), a block
+   placed, sleep begun or refused, a figure looked at (within 10 degrees), a dimension change, a
+   death, a login or logout.
+2. **The mind drains** replies that arrived: each is matched to its pending question and handed
+   to the brain, which turns the choices into an event at a time and place, runs the rules over it,
+   and puts it in the plan, or `wait`.
+3. **Memory** takes the observations, bounded (see [Memory](memory.md#bounds)).
+4. **The arc** checks whether the stage should change: enough in-game days, enough events landed,
+   the target's reactions. A change is logged and may pick a new target (see
+   [Multiplayer](entity.md#multiplayer)).
+5. **The brain** decides whether to ask: on a timer (`brain.plan_every`) and on triggers (the
+   target slept, opened a chest, saw a figure, came home). An ask builds the situation text, picks
+   this stage's and moment's questions, and submits them with a key. It returns at once.
+6. **The plan** is checked: an event whose time has come becomes a command in this tick's return.
+7. **The body carries it out.** Each executor's `fits` runs against the world as it is now. If it
+   still fits, `run`, and next tick's `report` says `done`; if not, `did not fit` and why, and the
+   memory records that too, so the lodger does not try the same thing in the same place twice.
+
+## What the client knows
+
+As little as possible, because the mod is about not knowing:
+
+- the figure's entity, when the server spawns one, and which skin to use;
+- a sound to play at a position, by id, once;
+- a hint, with a duration and a place: fog for a moment, the music cut, the cave sounds
+  silenced, and the glitches of [Events](entity.md#the-sky-and-the-light): a light flickering or every light
+  in a room dark, a painting rendered upside down, the sun gone, the rain red, a compass pointing
+  somewhere, footprints drawn on the snow. The client renders the hint and then stops; the world
+  the server holds never changed;
+- whether this player is the target, so a witness's client drops sounds and figures aimed at
+  someone else. The server never sends them to a witness anyway; the flag is a second guard.
+
+The client never knows the stage, the memory or the plan, so a client-side reading of the mod's
+state shows nothing worth knowing. The mind's bytes live on the server only.

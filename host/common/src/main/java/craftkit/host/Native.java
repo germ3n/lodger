@@ -1,0 +1,108 @@
+package craftkit.host;
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+
+/**
+ * One Rust mod's shared library, bound through the FFM API.
+ *
+ * <p>This is the only Java that knows there is a native. Every function of the C ABI
+ * ({@code sdk/src/abi.rs}, exported by {@code craftkit::export_mod!}) takes UTF-8 bytes by
+ * pointer and length and answers a NUL-terminated JSON string that {@code craftkit_free} frees,
+ * so each binding here is the same few lines: copy the text into a confined arena, call, read the
+ * answer, free it. Errors come back as JSON ({@code {"error": ...}}) for the caller to read;
+ * nothing here throws for a mod that answered.
+ */
+public final class Native implements AutoCloseable {
+	/** The ABI this host speaks; a library built against another is refused. Bumped with {@code sdk/src/lib.rs}'s {@code ABI_VERSION}. */
+	public static final int ABI_VERSION = 1;
+
+	private static final Linker LINKER = Linker.nativeLinker();
+
+	private final Arena arena = Arena.ofShared();
+	private final MethodHandle abiVersion;
+	private final MethodHandle info;
+	private final MethodHandle init;
+	private final MethodHandle shutdown;
+	private final MethodHandle free;
+
+	private Native(Path library) {
+		SymbolLookup lookup = SymbolLookup.libraryLookup(library, arena);
+		abiVersion = LINKER.downcallHandle(symbol(lookup, "craftkit_abi_version"), FunctionDescriptor.of(ValueLayout.JAVA_INT));
+		info = LINKER.downcallHandle(symbol(lookup, "craftkit_info"), FunctionDescriptor.of(ValueLayout.ADDRESS));
+		init = LINKER.downcallHandle(symbol(lookup, "craftkit_init"), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
+		shutdown = LINKER.downcallHandle(symbol(lookup, "craftkit_shutdown"), FunctionDescriptor.ofVoid());
+		free = LINKER.downcallHandle(symbol(lookup, "craftkit_free"), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+	}
+
+	/** Loads the library at {@code path}; it stays loaded until {@link #close()}. Throws when a symbol is missing. */
+	public static Native load(Path path) {
+		return new Native(path);
+	}
+
+	private static MemorySegment symbol(SymbolLookup lookup, String name) {
+		return lookup.find(name).orElseThrow(() -> new IllegalStateException("the library has no " + name + "; is it a craftkit mod?"));
+	}
+
+	public int abiVersion() {
+		try {
+			return (int) abiVersion.invokeExact();
+		} catch (Throwable t) {
+			throw new IllegalStateException("craftkit_abi_version", t);
+		}
+	}
+
+	/** {@code {"id": ..., "name": ..., "version": ..., "sdk": ...}}. */
+	public String info() {
+		try {
+			return take((MemorySegment) info.invokeExact());
+		} catch (Throwable t) {
+			throw new IllegalStateException("craftkit_info", t);
+		}
+	}
+
+	/** Hands the mod its config file's text and answers its JSON: the effective config and unknown keys, or an error. */
+	public String init(String configText) {
+		try (Arena call = Arena.ofConfined()) {
+			byte[] bytes = configText.getBytes(StandardCharsets.UTF_8);
+			MemorySegment text = call.allocate(Math.max(bytes.length, 1));
+			MemorySegment.copy(bytes, 0, text, ValueLayout.JAVA_BYTE, 0, bytes.length);
+
+			return take((MemorySegment) init.invokeExact(text, (long) bytes.length));
+		} catch (Throwable t) {
+			throw new IllegalStateException("craftkit_init", t);
+		}
+	}
+
+	public void shutdown() {
+		try {
+			shutdown.invokeExact();
+		} catch (Throwable t) {
+			throw new IllegalStateException("craftkit_shutdown", t);
+		}
+	}
+
+	private String take(MemorySegment answer) throws Throwable {
+		if (answer.equals(MemorySegment.NULL)) {
+			return "{\"error\":\"the mod answered null\"}";
+		}
+
+		try {
+			return answer.reinterpret(Long.MAX_VALUE).getString(0, StandardCharsets.UTF_8);
+		} finally {
+			free.invokeExact(answer);
+		}
+	}
+
+	@Override
+	public void close() {
+		arena.close();
+	}
+}

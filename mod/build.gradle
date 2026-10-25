@@ -1,0 +1,72 @@
+// The lodger's content jar: the mind built by cargo for this machine (and any other platforms'
+// natives the CI drops in natives-extra/), the assets, and the manifests. No Java: the host
+// (host/) does the loading. One jar serves Fabric and NeoForge, since fabric.mod.json and a
+// lowcodefml neoforge.mods.toml can share a jar.
+plugins {
+	id 'base'
+}
+
+def repo = file('..')
+def cargo = System.getenv('CARGO') ?: 'cargo'
+def cargoOnPath = {
+	try {
+		def proc = [cargo, '--version'].execute()
+		proc.waitFor() == 0
+	} catch (Exception ignored) {
+		false
+	}
+}
+
+// The same names host's Natives.java works out at runtime.
+def hostOs = {
+	def name = System.getProperty('os.name').toLowerCase()
+	name.contains('mac') ? 'macos' : name.contains('win') ? 'windows' : 'linux'
+}()
+def hostArch = {
+	def arch = System.getProperty('os.arch')
+	(arch == 'aarch64' || arch == 'arm64') ? 'aarch64' : 'x86_64'
+}()
+def library = hostOs == 'macos' ? 'liblodger_core.dylib' : hostOs == 'windows' ? 'lodger_core.dll' : 'liblodger_core.so'
+
+tasks.register('cargoBuild', Exec) {
+	description = 'Builds the mind (core/) as a release shared library.'
+	workingDir repo
+	commandLine cargo, 'build', '--release', '-p', 'lodger-core'
+	onlyIf { cargoOnPath() }
+	inputs.files(fileTree(repo) { include 'Cargo.toml', 'Cargo.lock', 'core/**', 'sdk/**'; exclude '**/target/**' })
+	outputs.file(new File(repo, "target/release/${library}"))
+}
+
+tasks.register('processResources', Copy) {
+	description = 'Fills the manifests in with the versions.'
+	from('src/main/resources') {
+		filesMatching(['fabric.mod.json', 'pack.mcmeta']) {
+			expand(project.properties.findAll { k, v -> v instanceof String })
+		}
+		filesMatching(['META-INF/neoforge.mods.toml']) {
+			expand(project.properties.findAll { k, v -> v instanceof String })
+		}
+	}
+	into layout.buildDirectory.dir('resources')
+}
+
+tasks.register('jar', Jar) {
+	description = 'The content jar: resources, the host native, and natives-extra/.'
+	dependsOn 'cargoBuild', 'processResources'
+	archiveBaseName = 'lodger'
+	archiveVersion = project.version
+	destinationDirectory = layout.buildDirectory.dir('libs')
+	from(layout.buildDirectory.dir('resources'))
+	from(new File(repo, "target/release/${library}")) {
+		into "natives/${hostOs}-${hostArch}"
+	}
+	// The CI drops the other platforms' natives in natives-extra/<os>-<arch>/ before building.
+	from(file('natives-extra')) {
+		into 'natives'
+	}
+	from(new File(repo, 'LICENSE')) {
+		rename { "${it}_lodger" }
+	}
+}
+
+assemble.dependsOn 'jar'

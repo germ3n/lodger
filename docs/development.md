@@ -1,0 +1,180 @@
+# Development
+
+Building the three parts, running them, the tests, and the conventions the code follows. The
+layout:
+
+| Where | What | Built with |
+| --- | --- | --- |
+| `sdk/` | craftkit, the Rust SDK: the `Mod` trait, the C ABI, the protocol, the harness. See [The SDK](sdk.md). | cargo, in the root workspace |
+| `core/` | The lodger's mind, a craftkit mod, built as a shared library. | cargo, in the root workspace |
+| `host/` | The craftkit host, a Java mod for Fabric and NeoForge from one `common` tree (`host/common`, `host/fabric`, `host/neoforge`, the MultiLoader layout). | Gradle, Loom for Fabric, ModDevGradle for NeoForge and for `common` |
+| `mod/` | The lodger's content jar: natives, assets, manifests, no Java. | Gradle, which runs cargo |
+
+## Toolchain
+
+| What | Pinned to | Where |
+| --- | --- | --- |
+| Rust | 1.98.1, with clippy and rustfmt, the same as `~/chainv4` and `~/engine` | `rust-toolchain.toml` at the root; the CI's `toolchain:` |
+| Java | 25 | `host/build-logic`'s `toolchain.languageVersion`, which the foojay resolver in `host/settings.gradle` finds or downloads; the CI's `setup-java` |
+| Minecraft | 26.3 | `host/gradle.properties` and `mod/gradle.properties`, and the manifests' `~26.3` and `[26.3, 26.4)` |
+| Fabric Loader | 0.20.1 | the same |
+| Fabric API | 0.165.2+26.3 | the same |
+| Fabric Loom | 1.19.4 | the same |
+| NeoForge | 26.3.0.101 | the same |
+| ModDevGradle | 2.0.148, which builds `host/neoforge` and compiles `host/common` against vanilla | the same |
+| NeoForm | 26.3-1, the vanilla jar `host/common` compiles against | the same |
+| Gradle | 9.8.2 | `host/gradle/wrapper/gradle-wrapper.properties`, and `mod/`'s copy |
+| Mappings | Mojang's official ones, on both loaders. Yarn ended at 1.21.11, so there is no `mappings` line | nothing to pin |
+| llama.cpp | the commit `llama-cpp-2`'s pinned `llama-cpp-sys-2` builds, so the crate's version pins it | `core/Cargo.toml`, from phase 1 |
+| cmake and a C++ compiler | whatever the machine has; the CI's runners' own | for `llama-cpp-sys-2`, from phase 1 |
+
+Confirmed 2026-11-08 against meta.fabricmc.net (game, loader), Mojang's version manifest (26.3
+and 26.2 both run Java 25), Modrinth (the Fabric API build for 26.3), maven.neoforged.net
+(NeoForge, ModDevGradle) and the 26.3 branches of Fabric's example mod and the MultiLoader
+template. `VersionsTest` in `host/common` checks that this table, the README, both
+`gradle.properties`, the manifests, the `Cargo.toml`s, `rust-toolchain.toml`, the ABI version
+in `sdk/src/lib.rs` and `Native.java`, and the CI agree. Minecraft 26.x needs Java 25, which is what makes the FFM
+API available without flags; a Minecraft that still ran Java 21 would need JNI.
+
+## Building the native
+
+```sh
+cargo build --release -p lodger-core
+```
+
+`./gradlew jar` in `mod/` runs this itself when `cargo` is on `PATH` (`cargoBuild` in
+`mod/build.gradle`; set `CARGO` to another binary, or to a path that does not exist to skip it,
+as the CI does so its jar holds only the three natives it built).
+
+That builds `liblodger_core.dylib`, `.so` or `.dll` in `target/release/`, with llama.cpp
+compiled in from phase 1 on. The first build then compiles llama.cpp, which takes a few minutes;
+later ones do not. `--features metal` on macOS and `--features vulkan` elsewhere build the
+GPU-capable native that `model.gpu_layers` needs; the default native is CPU only.
+
+`mod/build.gradle` puts this machine's native into the jar as `natives/<os>-<arch>/`, and
+anything in `mod/natives-extra/<os>-<arch>/` beside it, which is how the CI puts all three
+together in one jar: `macos-aarch64`, `linux-x86_64`, `windows-x86_64`. At runtime the host's
+`Natives.java` extracts the one for the machine to `config/craftkit/natives/lodger/<os>-<arch>/`
+and `Native.java` loads it from there, because a shared library cannot be loaded from inside a
+jar. A native already there with the same SHA-256 is not rewritten; a new one is written beside
+and moved into place.
+
+Cross-compiling llama.cpp is not attempted: each native is built on its own platform's runner.
+
+## Building the host and the content jar
+
+```sh
+cd host && ./gradlew build        # craftkit-fabric-26.3-*.jar and craftkit-neoforge-26.3-*.jar, and the tests
+cd mod && ./gradlew jar           # lodger-*.jar, with cargo run first
+```
+
+The host's jars land in `host/fabric/build/libs/` and `host/neoforge/build/libs/`, the lodger's
+in `mod/build/libs/`. `./gradlew :fabric:runClient` and `:neoforge:runClient` in `host/` start a
+development client with the host; to see the lodger in it, put `mod/build/libs/lodger-*.jar` in
+that run's `mods/` folder (`host/fabric/runs/client/mods/`), since the host finds content jars
+through the loader, not a path. Without a lodger jar, the host starts, loads nothing, and
+`/craftkit status` says so.
+
+## Running a stay quickly
+
+A stay takes weeks of play by design. For development:
+
+- `stages.start_after_days: 0` and `stages.least_days: [0, 0, 0, 0, 0]` in the dev config, so
+  stages move as soon as their conditions allow;
+- `/lodger decisions` after each thing that happens;
+- `/time add 24000` to move days;
+- the mind's scripted-player tests, which run a whole stay in under a second (below).
+
+## Tests
+
+**The SDK and the mind** are where most tests are, and they need no game:
+
+```sh
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --all --check
+cargo test -p lodger-core -- --ignored model::     # needs the real model at core/models/qwen.gguf
+```
+
+- **The SDK's tests:** the ABI helpers (`abi.rs`), the harness refusing another ABI version, and
+  `tests/exported.rs`, a two-line mod exported with `export_mod!` and driven through the harness:
+  info, init, a refused init, a panicking init, shutdown.
+
+- **Unit tests** of the pure parts: softmax and scoring math, `Memory::describe`'s lines, the
+  memory's bounds, the rules, the arc's stage conditions, serialization across format versions.
+- **Scripted stays** (`core/tests/stays.rs`): a `Player` script (a home, a daily route, a chest
+  opened each morning, reactions to events) drives a `Stay` tick by tick for fourteen in-game days
+  against an `Echo` or a table-driven fake scorer, and the test checks what the lodger did: that
+  stage one never offered `take`, that nothing happened within 24 blocks in view, that the hard
+  ending dealt exactly one death, that a `superseded` reply did not event. These are the tests that
+  prove the rules.
+- **Model tests**, ignored by default, load the real model and check that known situations score
+  the expected way: `The player walked toward the figure twice` makes `to be looked at` win over
+  the other wants, and an empty-feeling situation leaves `nothing yet` with the most probability.
+  They are the regression tests for prompt changes.
+- **Harness tests** in the mind (`core/src/lib.rs`) call `info` and `init` through the exported
+  functions, as the host would, with good and bad config, and check that nothing panics across
+  the boundary.
+
+**The host** has fewer, because it is thin:
+
+```sh
+cd host
+./gradlew test               # JUnit in common: the manifest, the native's names and extraction, the config file, the versions agreeing
+./gradlew :fabric:runGametest  # game tests (phase 3): each command's executor against a built test world
+```
+
+Each command's executor gets one game test: the world is set up (a house, a chest with an iron
+pickaxe, a torch), the command is run, and the world is checked, including that `fits` refuses
+when the target is standing in view. These are the tests that prove the body does what the mind
+said and nothing more.
+
+As in `~/chainv4`: each module keeps its tests next to it, as `tests.rs` or an inline
+`mod tests`, and tests read as sentences: `a_queued_plan_is_superseded_by_a_newer_one`,
+`nothing_happens_within_24_blocks_while_in_view`. Every change adds tests, updates the ones it
+changes the truth of, and removes those with nothing left to prove. A test is never weakened to
+make it pass. A test that needs the real model is `#[ignore]` with a sentence saying why, not
+skipped in silence.
+
+## Conventions
+
+- **The mind knows nothing of Minecraft.** No block ids, no entity classes, no NBT: positions are
+  `(i32, i32, i32)`, items are strings, players are indices. If the mind needs a new fact, the
+  body observes it and sends it. This is what keeps the tests fast and the body thin.
+- **The body decides nothing.** An executor checks `fits` and runs. If a choice is wrong, fix the
+  mind. A body that quietly does something smarter than it was told is a bug.
+- **Every event is data first.** A new event is a row in `events.rs` (id, stages, needs,
+  cooldown, cap, command), an executor in the body, a game test for the executor, a scripted-stay
+  test if it has a rule of its own, a row in the [catalogue](entity.md#events) and a line in
+  [Config](config.md) if it adds a key. All of it in one change; a row without its test and its
+  docs is not done.
+- **Every rule is in `rules.rs` and in [What it never does](good-to-know.md#what-it-never-does),**
+  with a scripted-stay test that would catch its removal. Nothing in config reaches a rule.
+- **The host is nobody's mod.** Nothing in `host/` names the lodger. A capability the lodger
+  needs is a command of the protocol any mod could send, with an executor written for the
+  general case.
+- **Text the player sees is written once, in `mod/src/main/resources/assets/lodger/lang/`.** The
+  signs' words, the status lines, the native's error. Nothing the model chooses is shown as text;
+  the model chooses events.
+- **The situation text and the choices are in `brain/text.rs`,** nowhere else, so a prompt change
+  is one diff and the model tests cover it.
+- **No `static mut`, one `OnceLock`:** the model worker, which is one per process on purpose. All
+  else is owned through `Stay`.
+- **No panics across the FFI,** and no `unwrap` in the mind outside tests. Errors are strings in
+  JSON the body logs.
+- **Comments say why.** Full sentences. A cap has its reason beside it.
+- **Docs and tests land with the change, every change,** as `~/chainv4` does it: the page for
+  the part, [Good to know](good-to-know.md) for what would surprise someone, a `[x]` in
+  [Todo](todo.md) saying what was done and when with the old text kept after `Was:`, and the tests
+  above. A change is reported with exactly which checks ran and how they came out.
+- **Commit messages:** a lowercase first line saying what it lets the lodger or a player do, then
+  `- area: ...` bullets, then `- docs:` and `- tests:`.
+
+## Third-party notices
+
+The jar carries llama.cpp (MIT) and ggml (MIT) compiled into the native, plus every Rust crate
+in `core/Cargo.lock` and the Java dependencies Loom bundles. `scripts/gen_notices.py`, adapted
+from `~/engine`'s, writes `THIRD_PARTY_NOTICES.txt` from the lockfile and Gradle's dependency
+report, with the licence text of each, and stops naming what to update when a crate it expects
+is gone. Run it after changing dependencies; it ships inside the jar at `META-INF/`. The model
+is not a dependency: the player downloads it, and its Apache-2.0 notice is Qwen's to give.

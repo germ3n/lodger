@@ -1,0 +1,89 @@
+// Shared by common, fabric and neoforge: the toolchain, the jar's manifest, the properties
+// expanded into the mod manifests, and the tests. From the MultiLoader template's 26.3 branch,
+// trimmed to what the host needs.
+plugins {
+	id 'java-library'
+}
+
+base {
+	archivesName = "${mod_id}-${project.name}-${minecraft_version}"
+}
+
+java {
+	toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+	withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = Integer.parseInt(java_version)
+	it.options.encoding = 'UTF-8'
+}
+
+tasks.withType(Jar).configureEach {
+	from(rootProject.file('../LICENSE')) {
+		rename { "${it}_${mod_name}" }
+	}
+}
+
+jar {
+	manifest {
+		attributes([
+			'Specification-Title'   : mod_name,
+			'Specification-Vendor'  : mod_author,
+			'Specification-Version' : project.jar.archiveVersion,
+			'Implementation-Title'  : project.name,
+			'Implementation-Version': project.jar.archiveVersion,
+			'Implementation-Vendor' : mod_author,
+			'Built-On-Minecraft'    : minecraft_version
+		])
+	}
+}
+
+processResources {
+	var expandProps = [
+		'version'                      : version,
+		'group'                        : project.group,
+		'minecraft_version'            : minecraft_version,
+		'minecraft_version_range'      : minecraft_version_range,
+		'fabric_version'               : fabric_version,
+		'fabric_loader_version'        : fabric_loader_version,
+		'mod_name'                     : mod_name,
+		'mod_author'                   : mod_author,
+		'mod_id'                       : mod_id,
+		'license'                      : license,
+		'description'                  : description,
+		'neoforge_version'             : neoforge_version,
+		'neoforge_loader_version_range': neoforge_loader_version_range,
+		'java_version'                 : java_version
+	]
+
+	var jsonExpandProps = expandProps.collectEntries {
+		key, value -> [(key): value instanceof String ? value.replace('\n', '\\\\n') : value]
+	}
+
+	filesMatching(['META-INF/neoforge.mods.toml']) {
+		expand expandProps
+	}
+
+	filesMatching(['pack.mcmeta', 'fabric.mod.json']) {
+		expand jsonExpandProps
+	}
+
+	inputs.properties(expandProps)
+}
+
+dependencies {
+	testImplementation platform('org.junit:junit-bom:5.13.4')
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events 'failed'
+		exceptionFormat 'full'
+	}
+	// The tests that read docs/, sdk/ or mod/ find the repository by this.
+	systemProperty 'craftkit.repo', rootProject.projectDir.parentFile.absolutePath
+}

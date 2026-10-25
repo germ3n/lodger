@@ -1,0 +1,50 @@
+plugins {
+	id 'multiloader-common'
+	id 'net.neoforged.moddev'
+}
+
+neoForge {
+	// Vanilla with Mojang's mappings, which both loaders use since 26.x, so common code compiles
+	// once against the game and each loader adds only its own entry point and events.
+	neoFormVersion = neo_form_version
+}
+
+dependencies {
+	// Gson is the game's own, on the compile classpath through NeoForm, but the JUnit runtime
+	// classpath does not get the game's libraries; the tests that parse manifests need it.
+	testRuntimeOnly 'com.google.code.gson:gson:2.14.0'
+}
+
+configurations {
+	commonJava {
+		canBeResolved = false
+		canBeConsumed = true
+	}
+	commonResources {
+		canBeResolved = false
+		canBeConsumed = true
+	}
+}
+
+artifacts {
+	commonJava sourceSets.main.java.sourceDirectories.singleFile
+	commonResources sourceSets.main.resources.sourceDirectories.singleFile
+}
+
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements'].each { variant ->
+	configurations.named(variant) {
+		attributes {
+			attribute(loaderAttribute, 'common')
+		}
+	}
+}
+sourceSets.configureEach {
+	[it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant ->
+		configurations.named(variant) {
+			attributes {
+				attribute(loaderAttribute, 'common')
+			}
+		}
+	}
+}

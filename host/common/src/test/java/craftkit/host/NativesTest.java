@@ -1,0 +1,46 @@
+package craftkit.host;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+class NativesTest {
+	@Test
+	void platforms_are_named_as_a_content_jar_lays_them_out() {
+		assertEquals("macos-aarch64", Natives.platform("Mac OS X", "aarch64"));
+		assertEquals("macos-x86_64", Natives.platform("Mac OS X", "x86_64"));
+		assertEquals("linux-x86_64", Natives.platform("Linux", "amd64"));
+		assertEquals("linux-aarch64", Natives.platform("Linux", "aarch64"));
+		assertEquals("windows-x86_64", Natives.platform("Windows 11", "amd64"));
+	}
+
+	@Test
+	void the_library_is_named_as_cargo_names_a_cdylib() {
+		assertEquals("natives/macos-aarch64/liblodger_core.dylib", Natives.resourcePath("Mac OS X", "aarch64", "lodger_core"));
+		assertEquals("natives/linux-x86_64/liblodger_core.so", Natives.resourcePath("Linux", "amd64", "lodger_core"));
+		assertEquals("natives/windows-x86_64/lodger_core.dll", Natives.resourcePath("Windows 10", "amd64", "lodger_core"));
+	}
+
+	@Test
+	void a_native_is_extracted_once_and_rewritten_only_when_its_bytes_change(@TempDir Path dir) throws IOException {
+		Path target = Natives.extract(new byte[] {1, 2, 3}, dir.resolve("natives"), "Linux", "amd64", "demo");
+
+		assertEquals(dir.resolve("natives/linux-x86_64/libdemo.so"), target);
+		assertArrayEquals(new byte[] {1, 2, 3}, Files.readAllBytes(target));
+		assertFalse(Files.exists(target.resolveSibling("libdemo.so.part")));
+
+		var before = Files.getLastModifiedTime(target);
+		Natives.extract(new byte[] {1, 2, 3}, dir.resolve("natives"), "Linux", "amd64", "demo");
+		assertEquals(before, Files.getLastModifiedTime(target), "the same bytes are not rewritten");
+
+		Natives.extract(new byte[] {9}, dir.resolve("natives"), "Linux", "amd64", "demo");
+		assertArrayEquals(new byte[] {9}, Files.readAllBytes(target));
+	}
+}

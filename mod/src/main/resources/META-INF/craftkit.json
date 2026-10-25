@@ -1,0 +1,5 @@
+{
+	"id": "lodger",
+	"library": "lodger_core",
+	"config": "lodger.json"
+}

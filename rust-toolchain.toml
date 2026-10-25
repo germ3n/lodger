@@ -1,0 +1,5 @@
+# The same Rust as ~/chainv4 and ~/engine pin, so the three build alike. Changing it means
+# changing the CI's toolchain too (.github/workflows/ci.yml) and the table in docs/development.md.
+[toolchain]
+channel = "1.98.1"
+components = ["clippy", "rustfmt"]

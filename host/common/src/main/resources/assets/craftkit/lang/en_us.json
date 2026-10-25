@@ -1,0 +1,6 @@
+{
+	"craftkit.status.header": "craftkit %s on %s: %s mod(s)",
+	"craftkit.status.loaded": "  %s %s (sdk %s), native %s",
+	"craftkit.status.failed": "  %s: not loaded, %s",
+	"craftkit.status.none": "  no content jars with META-INF/craftkit.json are loaded"
+}

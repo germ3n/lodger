@@ -1,0 +1,29 @@
+# rust
+target/
+core/models/*.gguf
+
+# gradle
+**/.gradle/
+**/build/
+host/runs/
+host/*/runs/
+mod/natives-extra/
+
+# ides
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# macos
+.DS_Store
+
+# java
+hs_err_*.log
+*.hprof
+*.jfr
+
+# the mod's own runtime files, when the dev client runs from the repo
+config/lodger/
