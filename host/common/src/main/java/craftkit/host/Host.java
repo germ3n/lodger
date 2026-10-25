@@ -25,10 +25,17 @@ public final class Host {
 
 	private final Platform platform;
 	private final List<LoadedMod> mods;
+	private final craftkit.host.world.Worlds worlds;
 
 	private Host(Platform platform, List<LoadedMod> mods) {
 		this.platform = platform;
 		this.mods = mods;
+		this.worlds = new craftkit.host.world.Worlds(mods);
+	}
+
+	/** The per-tick exchange with every mod's worlds; the loaders hook its level and tick events. */
+	public craftkit.host.world.Worlds worlds() {
+		return worlds;
 	}
 
 	/** Loads every Rust mod the loader has, logging each, and registers the shutdown hook. */

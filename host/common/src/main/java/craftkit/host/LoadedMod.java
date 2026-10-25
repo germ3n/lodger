@@ -165,9 +165,7 @@ public final class LoadedMod {
 			return failure;
 		}
 
-		JsonObject answer = JsonParser.parseString(library.get().warm()).getAsJsonObject();
-
-		return answer.has("error") ? answer.get("error").getAsString() : "";
+		return errorOf(library.get().warm());
 	}
 
 	/** The mod's own account of whether it is ready, from any thread. */
@@ -176,20 +174,49 @@ public final class LoadedMod {
 			return new ModStatus(false, failure, false, failure);
 		}
 
-		JsonObject answer = JsonParser.parseString(library.get().status()).getAsJsonObject();
-		if (answer.has("error")) {
-			return new ModStatus(false, answer.get("error").getAsString(), false, answer.get("error").getAsString());
+		return parseStatus(library.get().status());
+	}
+
+	/**
+	 * Reads a {@code status} answer. A {@code Status} has {@code ready} and carries its own
+	 * {@code error} field, empty when nothing is wrong; a failure answer has {@code error} alone.
+	 * Reading every {@code error} key as a failure once made a loaded model look unready and
+	 * would have kept the title screen gated for good.
+	 */
+	static ModStatus parseStatus(String raw) {
+		JsonObject answer = JsonParser.parseString(raw).getAsJsonObject();
+
+		if (answer.has("ready")) {
+			return new ModStatus(
+					answer.get("ready").getAsBoolean(),
+					answer.has("line") ? answer.get("line").getAsString() : "",
+					answer.has("loading") && answer.get("loading").getAsBoolean(),
+					answer.has("error") ? answer.get("error").getAsString() : "");
 		}
 
-		return new ModStatus(
-				answer.has("ready") && answer.get("ready").getAsBoolean(),
-				answer.has("line") ? answer.get("line").getAsString() : "",
-				answer.has("loading") && answer.get("loading").getAsBoolean(),
-				answer.has("error") ? answer.get("error").getAsString() : "");
+		String why = answer.has("error") ? answer.get("error").getAsString() : "status answered " + raw;
+
+		return new ModStatus(false, why, false, why);
 	}
 
 	/** What a mod says of itself: ready to play, one line why or why not. */
 	public record ModStatus(boolean ready, String line, boolean loading, String error) {
+	}
+
+	/** The error in an answer, or the empty string when the answer is not an error. */
+	public static String errorOf(String answer) {
+		JsonElement element = JsonParser.parseString(answer);
+
+		if (element.isJsonObject() && element.getAsJsonObject().has("error") && element.getAsJsonObject().get("error").isJsonPrimitive()) {
+			return element.getAsJsonObject().get("error").getAsString();
+		}
+
+		return "";
+	}
+
+	/** The library, for the world loop. Empty when the mod did not load. */
+	public Optional<Native> library() {
+		return library;
 	}
 
 	public String id() {

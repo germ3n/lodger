@@ -33,6 +33,32 @@ class LoadedModTest {
 	}
 
 	@Test
+	void a_status_with_an_empty_error_field_is_a_status_not_a_failure() {
+		LoadedMod.ModStatus loaded = LoadedMod.parseStatus("{\"ready\":true,\"line\":\"The model is loaded\",\"loading\":false,\"error\":\"\"}");
+		assertTrue(loaded.ready());
+		assertEquals("The model is loaded", loaded.line());
+
+		LoadedMod.ModStatus failing = LoadedMod.parseStatus("{\"ready\":false,\"line\":\"The model failed to load: bad file\",\"loading\":false,\"error\":\"bad file\"}");
+		assertFalse(failing.ready());
+		assertEquals("bad file", failing.error());
+
+		LoadedMod.ModStatus refused = LoadedMod.parseStatus("{\"error\":\"the mod is not initialized\"}");
+		assertFalse(refused.ready());
+		assertEquals("the mod is not initialized", refused.line());
+
+		LoadedMod.ModStatus odd = LoadedMod.parseStatus("{\"ok\":true}");
+		assertFalse(odd.ready());
+		assertTrue(odd.line().startsWith("status answered"));
+	}
+
+	@Test
+	void an_ok_answer_has_no_error_and_an_error_answer_has_one() {
+		assertEquals("", LoadedMod.errorOf("{\"ok\":true}"));
+		assertEquals("nope", LoadedMod.errorOf("{\"error\":\"nope\"}"));
+		assertEquals("", LoadedMod.errorOf("[]"));
+	}
+
+	@Test
 	void a_bad_manifest_is_a_failure_naming_the_manifest(@TempDir Path config) {
 		LoadedMod mod = LoadedMod.load(new FakeJar("x", Map.of()), utf8("{ nope"), config.getParent(), config, "Linux", "amd64");
 

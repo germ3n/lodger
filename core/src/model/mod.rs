@@ -274,6 +274,23 @@ impl Model {
     }
 }
 
+impl Drop for Model {
+    /// A dropped model stops its worker and so frees the context, the model and llama.cpp's
+    /// backend, on the worker thread, in that order. Without this a `Lodger` dropped at
+    /// `craftkit_shutdown` left the worker alive and the backend initialized, and the next
+    /// `init` in the same process (a second test, or a client opening the mod again) could not
+    /// load: `BackendAlreadyInitialized`.
+    fn drop(&mut self) {
+        self.shutdown();
+    }
+}
+
+/// One lock for every test that loads the real model or touches the exported static lodger:
+/// llama.cpp's backend is one per process, and the exported functions keep one mod, so such
+/// tests take turns.
+#[cfg(test)]
+pub(crate) static TEST_TURN: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 /// The model's one per-process slot in tests: a fake scorer installed in place of llama.cpp.
 #[cfg(test)]
 impl Model {

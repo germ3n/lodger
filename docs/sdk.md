@@ -70,17 +70,18 @@ so the Java side is a handful of method handles and no struct layouts. Errors ar
 | `craftkit_status() -> json` | ABI 3 | `Status`: ready or not, one line why, whether `warm` is working, the last error. Safe from any thread; the title screen polls it. |
 | `craftkit_shutdown()` | phase 0 | The process is ending. Drops the `Mod`. |
 | `craftkit_free(s)` | phase 0 | Frees an answer. Null does nothing. |
-| `craftkit_world_open(state, len) -> handle` | phase 2 | A world loaded, with its saved bytes (empty for a new one). |
-| `craftkit_world_observe(handle, json, len)` | phase 2 | What the body saw this tick. |
-| `craftkit_world_tick(handle, now, len) -> json` | phase 2 | Advance one tick; the commands to carry out. |
-| `craftkit_world_report(handle, json, len)` | phase 2 | How last tick's commands went. |
-| `craftkit_world_save(handle) -> bytes` | phase 2 | The world's state for the save. |
-| `craftkit_world_close(handle)` | phase 2 | The world unloaded. |
+| `craftkit_world_open(info, len, saved, len) -> json` | ABI 4 | A world loaded: its `WorldInfo` (id, seed, name) and its saved bytes, empty for a new one; `{"handle": n}` back. |
+| `craftkit_world_observe(handle, json, len) -> json` | ABI 4 | What the host saw this tick, an `Observations`. |
+| `craftkit_world_tick(handle, now, len) -> json` | ABI 4 | Advance one tick with a `Now`; the `Command` list to carry out back. |
+| `craftkit_world_report(handle, json, len) -> json` | ABI 4 | How last tick's commands went, a `Report` list. |
+| `craftkit_world_save(handle) -> json` | ABI 4 | `{"bytes": "<base64>"}`, the world's state for the save. |
+| `craftkit_world_close(handle) -> json` | ABI 4 | The world unloaded. `craftkit_shutdown` closes any still open. |
 
 A change to any signature or JSON shape bumps `ABI_VERSION` in `sdk/src/lib.rs` and
 `Native.ABI_VERSION` in the host together (`VersionsTest` checks they agree), and this table.
 ABI 2 (2026-11-09) gave `init` the directories and the id; ABI 1 took the config text alone.
-ABI 3 (2026-11-09) added `warm`, `status` and `InitReply.resources`.
+ABI 3 (2026-11-09) added `warm`, `status` and `InitReply.resources`. ABI 4 (2026-11-09) added
+the six world functions and `sdk/src/world.rs`, the per-world shapes.
 
 ## Resources
 
@@ -101,28 +102,33 @@ replaces a good file with a failed download.
 ## The `Mod` trait
 
 ```rust
-pub trait Mod: Sized + Send + 'static {
+pub trait Mod: Sized + Send + Sync + 'static {
+    type World: Send + 'static;
     fn info() -> ModInfo;
     fn init(init: &Init) -> Result<(Self, InitReply), String>;
-    // phase 2:
-    // type World: Serialize + DeserializeOwned;
-    // fn open(&mut self, saved: &[u8]) -> Result<Self::World, String>;
-    // fn observe(&mut self, world: &mut Self::World, observations: Observations);
-    // fn tick(&mut self, world: &mut Self::World, now: Now) -> Vec<Command>;
-    // fn report(&mut self, world: &mut Self::World, reports: Vec<Report>);
+    fn warm(&self) -> Result<(), String> { Ok(()) }
+    fn status(&self) -> Status { /* ready */ }
+    fn open(&self, info: &WorldInfo, saved: &[u8]) -> Result<Self::World, String>;
+    fn observe(&self, world: &mut Self::World, observations: &Observations);
+    fn tick(&self, world: &mut Self::World, now: &Now) -> Vec<Command>;
+    fn report(&self, world: &mut Self::World, reports: &[Report]);
+    fn save(&self, world: &Self::World) -> Vec<u8>;
+    fn close(&self, world: Self::World) { drop(world) }
 }
 ```
 
 One `Mod` per process, made by `init`, with a `World` per loaded world. The host calls every
-function on the server thread, once a tick at most, so a mod needs no locks of its own; a mod
-that works on threads of its own (the lodger's model worker) brings its answers back inside
-`tick`, as the lodger's [Architecture](architecture.md#threads) describes.
+world function on the server thread, once a tick at most, so a mod needs no locks of its own
+beyond what its own threads need; `warm` and `status` come from host threads, which is why the
+mod is `Sync`. A mod that works on threads of its own (the lodger's model worker) brings its
+answers back inside `tick`, as the lodger's [Architecture](architecture.md#threads) describes.
 
 ## The protocol
 
-`sdk/src/protocol.rs`: the JSON shapes, as `serde` structs, so the host's Gson and the mod's
-`serde_json` read the same bytes. Phase 0 has `ModInfo`, `InitReply` and `Failure`. Phase 2 adds,
-from the lodger's needs first and generalized as a second mod needs them:
+`sdk/src/protocol.rs` and `sdk/src/world.rs`: the JSON shapes, as `serde` structs, so the host's
+Gson and the mod's `serde_json` read the same bytes. Every field has a default, so an older host
+and a newer mod, or the reverse, read each other within an ABI version. The per-world shapes,
+written 2026-11-09 from the lodger's needs and generalized as a second mod needs them:
 
 - **Observations,** the mod's senses, rich enough that a mod can know the world the way a
   player does without ever asking Java for it:

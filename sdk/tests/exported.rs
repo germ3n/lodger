@@ -1,6 +1,6 @@
-//! A mod of two lines, exported and driven through the harness: the path every real mod takes.
+//! A mod of a few lines, exported and driven through the harness: the path every real mod takes.
 
-use craftkit::{Init, InitReply, Mod, ModInfo};
+use craftkit::{Command, Init, InitReply, Mod, ModInfo, Now, Observations, Report, WorldInfo};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 
@@ -16,7 +16,17 @@ fn turn() -> std::sync::MutexGuard<'static, ()> {
 
 struct Tiny;
 
+/// Tiny's world: counts what it saw, answers a log line every tenth tick, saves its count.
+struct Counter {
+    seed: i64,
+    ticks: u64,
+    players_seen: u64,
+    reports: u64,
+}
+
 impl Mod for Tiny {
+    type World = Counter;
+
     fn info() -> ModInfo {
         ModInfo::new("tiny", "Tiny", "0.0.1")
     }
@@ -41,6 +51,49 @@ impl Mod for Tiny {
             },
         ))
     }
+
+    fn open(&self, info: &WorldInfo, saved: &[u8]) -> Result<Counter, String> {
+        let ticks = if saved.is_empty() {
+            0
+        } else {
+            u64::from_le_bytes(saved.try_into().map_err(|_| "bad save".to_string())?)
+        };
+
+        Ok(Counter {
+            seed: info.seed,
+            ticks,
+            players_seen: 0,
+            reports: 0,
+        })
+    }
+
+    fn observe(&self, world: &mut Counter, observations: &Observations) {
+        world.players_seen += observations.players.len() as u64;
+    }
+
+    fn tick(&self, world: &mut Counter, now: &Now) -> Vec<Command> {
+        world.ticks += 1;
+
+        if now.tick.is_multiple_of(10) {
+            vec![Command::Log {
+                id: now.tick,
+                text: format!(
+                    "seed {} tick {} players {} reports {}",
+                    world.seed, world.ticks, world.players_seen, world.reports
+                ),
+            }]
+        } else {
+            vec![]
+        }
+    }
+
+    fn report(&self, world: &mut Counter, reports: &[Report]) {
+        world.reports += reports.len() as u64;
+    }
+
+    fn save(&self, world: &Counter) -> Vec<u8> {
+        world.ticks.to_le_bytes().to_vec()
+    }
 }
 
 craftkit::export_mod!(Tiny);
@@ -58,7 +111,6 @@ fn a_mod_is_loaded_asked_and_shut_down_through_the_abi() {
     let reply = harness.init("{}");
     assert_eq!(reply["config"]["given"], "{}");
     assert_eq!(reply["unknown"], serde_json::json!([]));
-    // Other tests in this file init the same static mod, in parallel, so at least one.
     assert!(MADE.load(Ordering::SeqCst) >= 1);
 
     harness.shutdown();
@@ -114,12 +166,11 @@ fn a_mod_with_nothing_to_load_is_ready_at_once_and_warm_is_a_no_op() {
     let status = harness.status();
     assert_eq!(status["ready"], true);
     assert_eq!(status["line"], "Ready");
-    assert_eq!(harness.warm(), serde_json::json!(true));
+    assert_eq!(harness.warm(), serde_json::json!({ "ok": true }));
 }
 
 #[test]
 fn a_resource_defaults_to_required_with_no_magic_or_hash() {
-    let _turn = turn();
     let resource: craftkit::Resource = serde_json::from_str(
         r#"{ "id": "m", "title": "t", "url": "https://x/m", "path": "models/m" }"#,
     )
@@ -133,7 +184,79 @@ fn a_resource_defaults_to_required_with_no_magic_or_hash() {
 }
 
 #[test]
-fn the_library_speaks_the_sdk_s_abi_version() {
+fn a_world_is_opened_observed_ticked_reported_saved_and_reopened_from_its_bytes() {
     let _turn = turn();
+    let harness = craftkit::harness!().unwrap();
+    harness.init("{}");
+    let info = WorldInfo {
+        id: "minecraft:overworld".to_string(),
+        seed: 42,
+        name: "New World".to_string(),
+    };
+
+    let world = harness.open_world(&info, &[]).unwrap();
+    let observations = Observations {
+        players: vec![craftkit::world::Player {
+            index: 0,
+            name: "razor".to_string(),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+    assert_eq!(
+        world.observe(&observations),
+        serde_json::json!({ "ok": true })
+    );
+
+    let mut commands = Vec::new();
+    for tick in 1..=10u64 {
+        commands.extend(world.tick(&Now {
+            tick,
+            ..Default::default()
+        }));
+    }
+    assert_eq!(commands.len(), 1, "one log line in ten ticks: {commands:?}");
+    assert_eq!(commands[0].id(), 10);
+    match &commands[0] {
+        Command::Log { text, .. } => assert_eq!(text, "seed 42 tick 10 players 1 reports 0"),
+        other => panic!("{other:?}"),
+    }
+
+    world.report(&[Report {
+        id: 10,
+        done: true,
+        reason: String::new(),
+    }]);
+    let saved = world.save();
+    assert_eq!(saved, 10u64.to_le_bytes());
+    assert_eq!(world.close(), serde_json::json!({ "ok": true }));
+
+    let again = harness.open_world(&info, &saved).unwrap();
+    let later: Vec<Command> = again.tick(&Now {
+        tick: 20,
+        ..Default::default()
+    });
+    match &later[0] {
+        Command::Log { text, .. } => assert!(text.starts_with("seed 42 tick 11"), "{text}"),
+        other => panic!("{other:?}"),
+    }
+    again.close();
+}
+
+#[test]
+fn a_closed_or_unknown_handle_is_an_error_not_a_panic() {
+    let _turn = turn();
+    let harness = craftkit::harness!().unwrap();
+    harness.init("{}");
+
+    let answer = unsafe { craftkit::abi::take(craftkit_world_save(999)) };
+    assert!(answer["error"]
+        .as_str()
+        .unwrap()
+        .contains("no open world with handle 999"));
+}
+
+#[test]
+fn the_library_speaks_the_sdk_s_abi_version() {
     assert_eq!(craftkit_abi_version(), craftkit::ABI_VERSION);
 }

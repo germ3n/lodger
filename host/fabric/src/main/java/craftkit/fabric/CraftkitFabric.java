@@ -3,7 +3,9 @@ package craftkit.fabric;
 import craftkit.host.Host;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
@@ -28,6 +30,10 @@ public final class CraftkitFabric implements ModInitializer {
 		// A dedicated server fetches and loads before the world opens; the client did it at the
 		// title screen, so for an integrated server this finds nothing to do.
 		ServerLifecycleEvents.SERVER_STARTING.register(server -> host.prepareBlocking());
+		ServerLevelEvents.LOAD.register((server, level) -> host.worlds().levelLoaded(server, level));
+		ServerLevelEvents.UNLOAD.register((server, level) -> host.worlds().levelUnloaded(level));
+		ServerTickEvents.END_SERVER_TICK.register(server -> host.worlds().tick(server));
+		ServerLifecycleEvents.SERVER_STOPPING.register(server -> host.worlds().closeAll());
 	}
 
 	public static Host host() {

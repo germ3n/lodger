@@ -31,6 +31,47 @@ pub unsafe fn text<'a>(ptr: *const u8, len: usize) -> Result<&'a str, String> {
     std::str::from_utf8(bytes).map_err(|err| format!("not UTF-8: {err}"))
 }
 
+/// A bare byte slice the host sent: a world's saved bytes.
+///
+/// # Safety
+/// `ptr` must point to `len` readable bytes, or be null with `len` zero.
+pub unsafe fn bytes<'a>(ptr: *const u8, len: usize) -> Result<&'a [u8], String> {
+    if ptr.is_null() {
+        return if len == 0 {
+            Ok(&[])
+        } else {
+            Err("null pointer with a length".to_string())
+        };
+    }
+
+    Ok(unsafe { std::slice::from_raw_parts(ptr, len) })
+}
+
+/// `{"ok": true}`, the answer to a call that has nothing to say but that it worked. An object,
+/// like every other answer, so the host reads one shape.
+#[derive(Serialize, serde::Deserialize)]
+pub struct Ok {
+    pub ok: bool,
+}
+
+impl Ok {
+    pub fn yes() -> Self {
+        Self { ok: true }
+    }
+}
+
+/// `{"handle": n}`, the answer to opening a world.
+#[derive(Serialize, serde::Deserialize)]
+pub struct Handle {
+    pub handle: u64,
+}
+
+/// `{"bytes": "<base64>"}`, the answer to saving a world.
+#[derive(Serialize, serde::Deserialize)]
+pub struct Saved {
+    pub bytes: String,
+}
+
 /// Reads JSON the host sent, naming what was wrong when it is not what was expected.
 pub fn parse<T: serde::de::DeserializeOwned>(text: &str) -> Result<T, String> {
     serde_json::from_str(text).map_err(|err| format!("bad JSON from the host: {err}"))

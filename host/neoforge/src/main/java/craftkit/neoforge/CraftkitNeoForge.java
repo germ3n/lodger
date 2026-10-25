@@ -8,7 +8,11 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -23,6 +27,10 @@ public final class CraftkitNeoForge {
 		modBus.addListener(this::registerPayloads);
 		NeoForge.EVENT_BUS.addListener(this::registerCommands);
 		NeoForge.EVENT_BUS.addListener(this::serverStarting);
+		NeoForge.EVENT_BUS.addListener(this::levelLoad);
+		NeoForge.EVENT_BUS.addListener(this::levelUnload);
+		NeoForge.EVENT_BUS.addListener(this::serverTick);
+		NeoForge.EVENT_BUS.addListener(this::serverStopping);
 
 		if (FMLEnvironment.getDist() == Dist.CLIENT) {
 			NeoForge.EVENT_BUS.addListener(this::screenInit);
@@ -31,6 +39,26 @@ public final class CraftkitNeoForge {
 
 	private void serverStarting(ServerStartingEvent event) {
 		host.prepareBlocking();
+	}
+
+	private void levelLoad(LevelEvent.Load event) {
+		if (event.getLevel() instanceof ServerLevel level) {
+			host.worlds().levelLoaded(level.getServer(), level);
+		}
+	}
+
+	private void levelUnload(LevelEvent.Unload event) {
+		if (event.getLevel() instanceof ServerLevel level) {
+			host.worlds().levelUnloaded(level);
+		}
+	}
+
+	private void serverTick(ServerTickEvent.Post event) {
+		host.worlds().tick(event.getServer());
+	}
+
+	private void serverStopping(ServerStoppingEvent event) {
+		host.worlds().closeAll();
 	}
 
 	private void screenInit(ScreenEvent.Init.Post event) {

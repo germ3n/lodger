@@ -297,6 +297,9 @@ mod real {
     #[test]
     #[ignore = "needs core/models/qwen.gguf, 491 MB, not in the repository"]
     fn a_player_who_walks_toward_the_figure_wants_to_be_looked_at() {
+        let _turn = super::super::TEST_TURN
+            .lock()
+            .unwrap_or_else(|err| err.into_inner());
         let Some(model) = model() else { return };
         let situation = "You are a quiet presence living unseen in a player's house in a game.\n\
             What you know:\nThe player has seen the figure twice and walked toward it both times, \
@@ -321,7 +324,28 @@ mod real {
 
     #[test]
     #[ignore = "needs core/models/qwen.gguf, 491 MB, not in the repository"]
+    fn a_second_model_in_one_process_loads_after_the_first_is_dropped() {
+        let _turn = super::super::TEST_TURN
+            .lock()
+            .unwrap_or_else(|err| err.into_inner());
+        let Some(first) = model() else { return };
+        first.warm().unwrap();
+        assert!(first.loaded());
+        drop(first);
+
+        let second = model().unwrap();
+        second
+            .warm()
+            .unwrap_or_else(|err| panic!("the second load failed: {err}"));
+        assert!(second.loaded());
+    }
+
+    #[test]
+    #[ignore = "needs core/models/qwen.gguf, 491 MB, not in the repository"]
     fn two_questions_on_one_situation_agree_with_each_asked_alone() {
+        let _turn = super::super::TEST_TURN
+            .lock()
+            .unwrap_or_else(|err| err.into_inner());
         let Some(model) = model() else { return };
         let situation = "The player lit every room yesterday and logged off early.";
         let one = question(

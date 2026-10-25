@@ -106,18 +106,42 @@ because it can be built and tested without a game, and because the model layer i
   which was then removed, so one downloader serves every mod.
 - [x] **The real-model tests,** written 2026-11-09 and `#[ignore]`d with the reason: the
   want question on a player who walked toward the figure, and two questions on one situation
-  agreeing with each asked alone. They run once `core/models/qwen.gguf` is there.
+  agreeing with each asked alone, and `warm` then `status` through the ABI. Run 2026-11-09 with
+  the downloaded model copied to `core/models/qwen.gguf`: all three pass. A player who walked
+  toward the figure makes the model answer `to be looked at`. The tests take turns on one lock,
+  since llama.cpp's backend is one per process and three loading at once raced.
 - [ ] **Measure.** Time and resident memory for a 300-token situation with four questions of
   four choices on two threads, on a laptop and on a small VPS. Put the numbers in
   [Model](model.md) in place of "tens to a few hundred milliseconds".
 
 ### Phase 2: the mind without a model
 
-- [ ] **The SDK's world calls.** `Mod::World`, `open`, `observe`, `tick`, `report`, `save`,
-  `close` in the trait and `export_mod!`; the JSON shapes for observations, `now`, commands and
-  reports in `protocol.rs`, from the lodger's needs; the host's `world/` running them once a
-  tick and keeping the bytes in saved data; the harness driving a world with scripted
-  observations. ABI version 2.
+- [x] **The SDK's world calls.** Done 2026-11-09 (ABI 4): `Mod::World`, `open`, `observe`,
+  `tick`, `report`, `save`, `close` in the trait and `export_mod!` (worlds by handle in a map the
+  macro keeps, closed at shutdown); `sdk/src/world.rs` with `WorldInfo`, `Now`, `Observations`
+  (players with their state and movement, entities, the world's weather, events, chat, scans,
+  surroundings, loaded mods), `Command` (log, scan, sound, hint, message, toggle, move and set a
+  block, move and drop items, sign, cancel sleep, look at, figure) and `Report`; saves as
+  base64 in JSON; the harness opens a world and drives it; a two-line mod's world is opened,
+  observed, ticked, reported, saved and reopened from its bytes in the SDK's tests. The host's
+  side (the world loop, saved data, the first executors) is the next item.
+- [x] **The host's world loop.** Done 2026-11-09: `host/common/.../world/Worlds.java` opens a
+  world for each mod when a level loads (`ServerLevelEvents.LOAD` on Fabric, `LevelEvent.Load`
+  on NeoForge), with its bytes from saved data (`WorldData`, a `SavedDataType` per mod holding
+  the ABI's base64, which the game writes to
+  `<world>/dimensions/<namespace>/<dimension>/data/craftkit/<mod>.dat`); each server tick it
+  sends the level's players' basic state, ticks, carries out `log` and `system_message`
+  (`Executors`, which reports an unknown command as not done rather than dropping it), reports,
+  and saves every hundred ticks and on unload; the server's stop closes every world. Seen on a
+  plain Fabric 26.3 server with the bundled jar: three worlds opened with their saved bytes
+  from the previous run, saved again five seconds in, no errors. `NativeRealTest` drives the
+  real library through the FFM binding, with the model when `core/models/qwen.gguf` is there.
+  Two bugs the server run found: the host read every answer with an `error` key as a failure,
+  and a `Status` always has one (empty when nothing is wrong), so a loaded model looked unready
+  and the title screen would have stayed gated (`LoadedMod.parseStatus`, with a test); and a
+  dropped `Model` left its worker and llama.cpp's backend alive, so a second load in one process
+  failed with `BackendAlreadyInitialized` (`impl Drop for Model`, with a real-model test). The
+  senses proper and the other executors are phase 3.
 - [ ] **The senses, in full** (owner, 2026-11-09: "a good harness that can get the current
   biome, mobs around, etc."): everything under Observations in [The SDK](sdk.md#the-protocol),
   on the host side as `senses/` with one collector per kind (players, entities within 64,
@@ -152,8 +176,10 @@ because it can be built and tested without a game, and because the model layer i
   probability; `Model::reseed` for the world's seed in phase 2; the seed logged with decisions
   (phase 2's log). Tests: temperature zero picks the best, a warm draw follows the scores to
   within a few percent over two thousand draws, the same seed repeats and another differs.
-- [ ] **`Stay`, the lodger's `World`.** `bincode` behind a format byte. A stay that only ever
-  waits, saved and reopened.
+- [x] **`Stay`, the lodger's `World`.** Done 2026-11-09: `core/src/stay.rs`, `bincode` behind a
+  format byte, refusing a newer format or another world's save by name, counting ticks,
+  players and reports; the model reseeded with the world's seed on open; tests through the
+  ABI and direct.
 - [ ] **Memory.** Every piece in [What is kept](memory.md#what-is-kept) with its bound, and the
   test that a million observations stay under 256 KiB. Routes' downsampling and matching
   (which walks are "the same way"). The surroundings and the activity, from the host's daily

@@ -10,10 +10,15 @@
 
 pub mod config;
 pub mod model;
+pub mod stay;
 
 use config::{Config, ModelSize};
-use craftkit::{Init, InitReply, License, Mod, ModInfo, Resource, Status};
+use craftkit::{
+    Command, Init, InitReply, License, Mod, ModInfo, Now, Observations, Report, Resource, Status,
+    WorldInfo,
+};
 use model::{Model, Settings};
+use stay::Stay;
 use std::path::{Path, PathBuf};
 
 /// The mind's version, from `Cargo.toml`. `mod/gradle.properties` carries the same one and
@@ -77,6 +82,8 @@ fn start_seed(init: &Init) -> u64 {
 }
 
 impl Mod for Lodger {
+    type World = Stay;
+
     fn info() -> ModInfo {
         ModInfo::new("lodger", "lodger", VERSION)
     }
@@ -133,6 +140,29 @@ impl Mod for Lodger {
             error: self.model.error(),
         }
     }
+
+    fn open(&self, info: &WorldInfo, saved: &[u8]) -> Result<Stay, String> {
+        // The world's seed joins the start's, so two worlds on one start draw differently.
+        self.model.reseed(self.model.seed() ^ info.seed as u64);
+
+        Stay::open(info, saved)
+    }
+
+    fn observe(&self, world: &mut Stay, observations: &Observations) {
+        world.observe(observations);
+    }
+
+    fn tick(&self, world: &mut Stay, now: &Now) -> Vec<Command> {
+        world.tick(now)
+    }
+
+    fn report(&self, world: &mut Stay, reports: &[Report]) {
+        world.report(reports);
+    }
+
+    fn save(&self, world: &Stay) -> Vec<u8> {
+        world.save()
+    }
 }
 
 /// What the license screen shows before the model is fetched. Qwen2.5-0.5B-Instruct is
@@ -151,6 +181,13 @@ craftkit::export_mod!(Lodger);
 #[cfg(test)]
 mod tests {
     use super::*;
+    /// The exported functions share one static lodger, and llama.cpp's backend is one per
+    /// process, so these tests take turns with the model's, as the host's calls do.
+    fn turn() -> std::sync::MutexGuard<'static, ()> {
+        model::TEST_TURN
+            .lock()
+            .unwrap_or_else(|err| err.into_inner())
+    }
 
     fn harness() -> craftkit::harness::Harness {
         craftkit::harness!().unwrap()
@@ -158,6 +195,7 @@ mod tests {
 
     #[test]
     fn info_names_the_lodger_and_its_version() {
+        let _turn = turn();
         let info = harness().info();
 
         assert_eq!(info["id"], "lodger");
@@ -166,6 +204,7 @@ mod tests {
 
     #[test]
     fn init_with_an_empty_config_answers_the_defaults() {
+        let _turn = turn();
         let reply = harness().init("");
 
         assert_eq!(reply["config"]["brain"]["queue"], 64);
@@ -174,6 +213,7 @@ mod tests {
 
     #[test]
     fn init_lists_unknown_keys_and_keeps_known_values() {
+        let _turn = turn();
         let reply = harness().init(r#"{ "colour": 1, "model": { "threads": 4 } }"#);
 
         assert_eq!(reply["unknown"], serde_json::json!(["colour"]));
@@ -182,6 +222,7 @@ mod tests {
 
     #[test]
     fn init_declares_the_model_as_a_required_gguf_resource_under_the_game_directory() {
+        let _turn = turn();
         let init = Init {
             config: String::new(),
             game_dir: "/game".to_string(),
@@ -213,12 +254,59 @@ mod tests {
 
     #[test]
     fn status_says_the_model_is_not_downloaded_until_it_is() {
+        let _turn = turn();
         harness().init("");
         let status = harness().status();
 
         assert_eq!(status["ready"], false);
         assert_eq!(status["loading"], false);
         assert!(status["line"].as_str().unwrap().contains("not downloaded"));
+    }
+
+    #[test]
+    fn a_stay_opens_ticks_and_saves_through_the_abi() {
+        let _turn = turn();
+        let h = harness();
+        h.init("");
+        let info = WorldInfo {
+            id: "minecraft:overworld".to_string(),
+            seed: 3,
+            name: "w".to_string(),
+        };
+        let world = h.open_world(&info, &[]).unwrap();
+        assert!(world.tick(&Now::default()).is_empty());
+        let saved = world.save();
+        assert_eq!(saved[0], stay::FORMAT);
+        world.close();
+
+        let again = h.open_world(&info, &saved).unwrap();
+        again.tick(&Now::default());
+        let twice = Stay::open(&info, &again.save()).unwrap();
+        assert_eq!(twice.ticks, 2);
+        again.close();
+    }
+
+    /// Needs the real model: `cargo test -p lodger-core -- --ignored`.
+    #[test]
+    #[ignore = "needs core/models/qwen.gguf, 491 MB, not in the repository"]
+    fn with_the_real_model_warm_loads_it_and_status_says_so() {
+        let _turn = turn();
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/models/qwen.gguf");
+        if !std::path::Path::new(path).is_file() {
+            return;
+        }
+
+        let h = harness();
+        let config = format!(r#"{{ "model": {{ "path": "{path}" }} }}"#);
+        let reply = h.init(&config);
+        assert!(reply.get("error").is_none(), "{reply}");
+        assert_eq!(h.status()["ready"], false);
+
+        assert_eq!(h.warm(), serde_json::json!({ "ok": true }));
+        let status = h.status();
+        assert_eq!(status["ready"], true, "{status}");
+        assert_eq!(status["line"], "The model is loaded");
+        h.shutdown();
     }
 
     #[test]
@@ -258,6 +346,7 @@ mod tests {
 
     #[test]
     fn init_with_bad_json_is_an_error_naming_the_config() {
+        let _turn = turn();
         let reply = harness().init("{ nope");
 
         assert!(reply["error"].as_str().unwrap().starts_with("config: "));

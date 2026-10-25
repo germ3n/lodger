@@ -22,7 +22,7 @@ import java.nio.file.Path;
  */
 public final class Native implements AutoCloseable {
 	/** The ABI this host speaks; a library built against another is refused. Bumped with {@code sdk/src/lib.rs}'s {@code ABI_VERSION}. */
-	public static final int ABI_VERSION = 3;
+	public static final int ABI_VERSION = 4;
 
 	private static final Linker LINKER = Linker.nativeLinker();
 
@@ -34,6 +34,12 @@ public final class Native implements AutoCloseable {
 	private final MethodHandle status;
 	private final MethodHandle shutdown;
 	private final MethodHandle free;
+	private final MethodHandle worldOpen;
+	private final MethodHandle worldObserve;
+	private final MethodHandle worldTick;
+	private final MethodHandle worldReport;
+	private final MethodHandle worldSave;
+	private final MethodHandle worldClose;
 
 	private Native(Path library) {
 		SymbolLookup lookup = SymbolLookup.libraryLookup(library, arena);
@@ -44,6 +50,77 @@ public final class Native implements AutoCloseable {
 		status = LINKER.downcallHandle(symbol(lookup, "craftkit_status"), FunctionDescriptor.of(ValueLayout.ADDRESS));
 		shutdown = LINKER.downcallHandle(symbol(lookup, "craftkit_shutdown"), FunctionDescriptor.ofVoid());
 		free = LINKER.downcallHandle(symbol(lookup, "craftkit_free"), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+		worldOpen = LINKER.downcallHandle(symbol(lookup, "craftkit_world_open"), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
+		FunctionDescriptor handleAndText = FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG);
+		worldObserve = LINKER.downcallHandle(symbol(lookup, "craftkit_world_observe"), handleAndText);
+		worldTick = LINKER.downcallHandle(symbol(lookup, "craftkit_world_tick"), handleAndText);
+		worldReport = LINKER.downcallHandle(symbol(lookup, "craftkit_world_report"), handleAndText);
+		FunctionDescriptor handleOnly = FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG);
+		worldSave = LINKER.downcallHandle(symbol(lookup, "craftkit_world_save"), handleOnly);
+		worldClose = LINKER.downcallHandle(symbol(lookup, "craftkit_world_close"), handleOnly);
+	}
+
+	/** Opens a world from its {@code WorldInfo} JSON and saved bytes; {@code {"handle": n}} or an error. */
+	public String worldOpen(String infoJson, byte[] saved) {
+		try (Arena call = Arena.ofConfined()) {
+			MemorySegment info = utf8(call, infoJson);
+			MemorySegment bytes = call.allocate(Math.max(saved.length, 1));
+			MemorySegment.copy(saved, 0, bytes, ValueLayout.JAVA_BYTE, 0, saved.length);
+
+			return take((MemorySegment) worldOpen.invokeExact(info, (long) infoJson.getBytes(StandardCharsets.UTF_8).length, bytes, (long) saved.length));
+		} catch (Throwable t) {
+			throw new IllegalStateException("craftkit_world_open", t);
+		}
+	}
+
+	public String worldObserve(long handle, String json) {
+		return handleAndText(worldObserve, "craftkit_world_observe", handle, json);
+	}
+
+	/** The tick's commands as a JSON list, or an error. */
+	public String worldTick(long handle, String nowJson) {
+		return handleAndText(worldTick, "craftkit_world_tick", handle, nowJson);
+	}
+
+	public String worldReport(long handle, String json) {
+		return handleAndText(worldReport, "craftkit_world_report", handle, json);
+	}
+
+	/** {@code {"bytes": "<base64>"}} or an error. */
+	public String worldSave(long handle) {
+		try {
+			return take((MemorySegment) worldSave.invokeExact(handle));
+		} catch (Throwable t) {
+			throw new IllegalStateException("craftkit_world_save", t);
+		}
+	}
+
+	public String worldClose(long handle) {
+		try {
+			return take((MemorySegment) worldClose.invokeExact(handle));
+		} catch (Throwable t) {
+			throw new IllegalStateException("craftkit_world_close", t);
+		}
+	}
+
+	private String handleAndText(MethodHandle function, String name, long handle, String json) {
+		try (Arena call = Arena.ofConfined()) {
+			byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+			MemorySegment text = call.allocate(Math.max(bytes.length, 1));
+			MemorySegment.copy(bytes, 0, text, ValueLayout.JAVA_BYTE, 0, bytes.length);
+
+			return take((MemorySegment) function.invokeExact(handle, text, (long) bytes.length));
+		} catch (Throwable t) {
+			throw new IllegalStateException(name, t);
+		}
+	}
+
+	private static MemorySegment utf8(Arena arena, String text) {
+		byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+		MemorySegment segment = arena.allocate(Math.max(bytes.length, 1));
+		MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
+
+		return segment;
 	}
 
 	/** Loads the library at {@code path}; it stays loaded until {@link #close()}. Throws when a symbol is missing. */
