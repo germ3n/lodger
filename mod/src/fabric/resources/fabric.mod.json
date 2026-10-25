@@ -9,6 +9,11 @@
 	],
 	"license": "MIT",
 	"environment": "*",
+	"jars": [
+		{
+			"file": "META-INF/jars/${craftkit_jar}"
+		}
+	],
 	"depends": {
 		"fabricloader": ">=${fabric_loader_version}",
 		"craftkit": ">=${craftkit_version}",

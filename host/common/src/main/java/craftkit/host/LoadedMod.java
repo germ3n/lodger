@@ -32,8 +32,9 @@ public final class LoadedMod {
 	private final String sdk;
 	private final List<String> unknownKeys;
 	private final boolean wroteConfig;
+	private final List<Resource> resources;
 
-	private LoadedMod(String jarId, Optional<Manifest> manifest, Optional<Native> library, String failure, String name, String version, String sdk, List<String> unknownKeys, boolean wroteConfig) {
+	private LoadedMod(String jarId, Optional<Manifest> manifest, Optional<Native> library, String failure, String name, String version, String sdk, List<String> unknownKeys, boolean wroteConfig, List<Resource> resources) {
 		this.jarId = jarId;
 		this.manifest = manifest;
 		this.library = library;
@@ -43,10 +44,11 @@ public final class LoadedMod {
 		this.sdk = sdk;
 		this.unknownKeys = unknownKeys;
 		this.wroteConfig = wroteConfig;
+		this.resources = resources;
 	}
 
 	/** Loads the Rust mod a jar carries. Never throws: a failure is a value. */
-	public static LoadedMod load(Platform.ContentJar jar, byte[] manifestBytes, Path configDir, String osName, String osArch) {
+	public static LoadedMod load(Platform.ContentJar jar, byte[] manifestBytes, Path gameDir, Path configDir, String osName, String osArch) {
 		Manifest manifest;
 		try {
 			manifest = Manifest.parse(new String(manifestBytes, StandardCharsets.UTF_8));
@@ -105,7 +107,12 @@ public final class LoadedMod {
 			return failed(jar.id(), Optional.of(manifest), "could not read " + config.path() + ": " + e.getMessage());
 		}
 
-		JsonObject reply = JsonParser.parseString(library.init(text)).getAsJsonObject();
+		JsonObject init = new JsonObject();
+		init.addProperty("config", text);
+		init.addProperty("game_dir", gameDir.toAbsolutePath().toString());
+		init.addProperty("config_dir", configDir.toAbsolutePath().toString());
+		init.addProperty("id", manifest.id());
+		JsonObject reply = JsonParser.parseString(library.init(init.toString())).getAsJsonObject();
 		if (reply.has("error")) {
 			library.close();
 			return failed(jar.id(), Optional.of(manifest), "init refused: " + reply.get("error").getAsString());
@@ -126,13 +133,63 @@ public final class LoadedMod {
 			unknown.add("(could not write " + config.path() + ": " + e.getMessage() + ")");
 		}
 
+		List<Resource> resources = new ArrayList<>();
+		if (reply.has("resources")) {
+			for (JsonElement element : reply.getAsJsonArray("resources")) {
+				try {
+					resources.add(Resource.parse(element.getAsJsonObject(), gameDir));
+				} catch (IllegalArgumentException e) {
+					library.close();
+					return failed(jar.id(), Optional.of(manifest), "bad resource: " + e.getMessage());
+				}
+			}
+		}
+
 		return new LoadedMod(jar.id(), Optional.of(manifest), Optional.of(library), "",
 				info.get("name").getAsString(), info.get("version").getAsString(), info.get("sdk").getAsString(),
-				List.copyOf(unknown), wrote);
+				List.copyOf(unknown), wrote, List.copyOf(resources));
 	}
 
 	private static LoadedMod failed(String jarId, Optional<Manifest> manifest, String why) {
-		return new LoadedMod(jarId, manifest, Optional.empty(), why, "", "", "", List.of(), false);
+		return new LoadedMod(jarId, manifest, Optional.empty(), why, "", "", "", List.of(), false, List.of());
+	}
+
+	/** The files the mod needs fetched. */
+	public List<Resource> resources() {
+		return resources;
+	}
+
+	/** Loads what the mod loads before play, blocking. Empty when it loaded; the error otherwise. Call on a worker thread. */
+	public String warm() {
+		if (library.isEmpty()) {
+			return failure;
+		}
+
+		JsonObject answer = JsonParser.parseString(library.get().warm()).getAsJsonObject();
+
+		return answer.has("error") ? answer.get("error").getAsString() : "";
+	}
+
+	/** The mod's own account of whether it is ready, from any thread. */
+	public ModStatus status() {
+		if (library.isEmpty()) {
+			return new ModStatus(false, failure, false, failure);
+		}
+
+		JsonObject answer = JsonParser.parseString(library.get().status()).getAsJsonObject();
+		if (answer.has("error")) {
+			return new ModStatus(false, answer.get("error").getAsString(), false, answer.get("error").getAsString());
+		}
+
+		return new ModStatus(
+				answer.has("ready") && answer.get("ready").getAsBoolean(),
+				answer.has("line") ? answer.get("line").getAsString() : "",
+				answer.has("loading") && answer.get("loading").getAsBoolean(),
+				answer.has("error") ? answer.get("error").getAsString() : "");
+	}
+
+	/** What a mod says of itself: ready to play, one line why or why not. */
+	public record ModStatus(boolean ready, String line, boolean loading, String error) {
 	}
 
 	public String id() {

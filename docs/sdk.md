@@ -11,11 +11,14 @@ and carries out what they decide. The lodger is its first mod. This page is the 
 - **A crate** that implements `craftkit::Mod` and exports it with `craftkit::export_mod!`, built
   as a `cdylib`. It knows nothing of Minecraft's classes: it reads observations and answers
   commands, both plain `serde` structs (see [The protocol](#the-protocol)).
-- **A content jar,** with no Java in it: the crate's shared library for each platform under
-  `natives/<os>-<arch>/`, the mod's assets (lang files, textures, sounds), and three manifests:
-  `META-INF/craftkit.json` for the host, `fabric.mod.json` for Fabric, and a `META-INF/neoforge.mods.toml` with no language
-  loader for NeoForge. Both loaders load such a jar as a mod with
-  resources, so one jar serves both, and the host finds it by its manifest.
+- **A jar per loader,** with no Java of the mod's own: the crate's shared library for each of
+  six platforms (Linux, macOS, Windows; x86_64 and arm64) under `natives/<os>-<arch>/`, the
+  mod's assets (lang files, textures, sounds), `META-INF/craftkit.json` for the host, the
+  loader's manifest (`fabric.mod.json`, or a `META-INF/neoforge.mods.toml` with no language
+  loader), and the host itself nested inside (`META-INF/jars/` on Fabric, `META-INF/jarjar/` on
+  NeoForge), so a player installs one file and never meets craftkit by name. Two Rust mods on
+  one server each nest a host; the loader keeps the newest once (the owner's call, 2026-11-09;
+  before it the host was a jar of its own and one content jar served both loaders).
 - **A config file,** `config/<id>.json`, whose schema the mod owns. The host reads the text,
   hands it over, and writes back the effective config the mod answers when the file was missing.
 
@@ -58,11 +61,13 @@ so the Java side is a handful of method handles and no struct layouts. Errors ar
 (`{"error": "..."}`), never a panic across the boundary: each exported function runs under
 `catch_unwind`, and a panic is logged by the host as an error.
 
-| Function | ABI 1 | What it does |
+| Function | Since | What it does |
 | --- | --- | --- |
 | `craftkit_abi_version() -> u32` | phase 0 | The ABI the library speaks. The host refuses any other, by name, before calling anything else. |
 | `craftkit_info() -> json` | phase 0 | `ModInfo`: id, name, version, the SDK version built with. |
-| `craftkit_init(config, len) -> json` | phase 0 | The config file's text in; `InitReply` out: the effective config and the unknown keys. Makes the one `Mod` of the process. |
+| `craftkit_init(init, len) -> json` | phase 0 | `Init` JSON in: the config file's text, the game and config directories and the mod's id; `InitReply` out: the effective config and the unknown keys. Makes the one `Mod` of the process. A mod keeps what is not its config under `<config_dir>/<id>/` (`Init::own_dir`). |
+| `craftkit_warm() -> json` | ABI 3 | Loads what the mod loads before play (the lodger: its model), blocking. The host calls it on a thread of its own once the resources are there. `true`, or an error. |
+| `craftkit_status() -> json` | ABI 3 | `Status`: ready or not, one line why, whether `warm` is working, the last error. Safe from any thread; the title screen polls it. |
 | `craftkit_shutdown()` | phase 0 | The process is ending. Drops the `Mod`. |
 | `craftkit_free(s)` | phase 0 | Frees an answer. Null does nothing. |
 | `craftkit_world_open(state, len) -> handle` | phase 2 | A world loaded, with its saved bytes (empty for a new one). |
@@ -74,13 +79,31 @@ so the Java side is a handful of method handles and no struct layouts. Errors ar
 
 A change to any signature or JSON shape bumps `ABI_VERSION` in `sdk/src/lib.rs` and
 `Native.ABI_VERSION` in the host together (`VersionsTest` checks they agree), and this table.
+ABI 2 (2026-11-09) gave `init` the directories and the id; ABI 1 took the config text alone.
+ABI 3 (2026-11-09) added `warm`, `status` and `InitReply.resources`.
+
+## Resources
+
+A mod's `init` reply lists the files it needs that are not in its jar (`Resource`: id, title,
+URL, path, a size hint, the first bytes the file must have, an optional SHA-256, required or
+not). The host fetches the missing required ones before the game is playable: on a client a
+screen over the title screen with a progress bar, Quit, and Try again on failure; on a
+dedicated server at startup, blocking, with progress in the log. Then it calls `warm` and polls
+`status` until the mod says it is ready. Optional resources download in the background and the
+mod goes without until they land. A resource with a `license` (a name, a URL, a short text) is
+shown first, once: on a client a screen with the text, a button to read the full terms in a
+browser, Accept and Quit, the acceptance kept in `config/craftkit/accepted.json`; on a
+dedicated server the terms go to the log with the line to add to that file, and the resource
+waits for the operator (the owner's call, 2026-11-09: no one accepts terms on another's behalf). One downloader (`Downloader.java`) serves every mod, writes
+through a `.part` file, checks the magic on the first bytes and the hash at the end, and never
+replaces a good file with a failed download.
 
 ## The `Mod` trait
 
 ```rust
 pub trait Mod: Sized + Send + 'static {
     fn info() -> ModInfo;
-    fn init(config: &str) -> Result<(Self, InitReply), String>;
+    fn init(init: &Init) -> Result<(Self, InitReply), String>;
     // phase 2:
     // type World: Serialize + DeserializeOwned;
     // fn open(&mut self, saved: &[u8]) -> Result<Self::World, String>;
@@ -103,12 +126,14 @@ from the lodger's needs first and generalized as a second mod needs them:
 
 - **Observations,** the mod's senses, rich enough that a mod can know the world the way a
   player does without ever asking Java for it:
-  - *players:* position, facing, velocity, sneaking, sprinting, swimming, riding, sleeping,
+  - *players:* position, facing, velocity and the movement derived from them over the last
+    seconds (turns, look-backs, backing away, stops, sprint bursts), sneaking, sprinting,
+    swimming, riding, sleeping,
     health, hunger, air, experience level, held items, armour, active effects, dimension, the
     biome under them, the light level at them, whether they are indoors (sky light), what they
     look at (block or entity, within 8 blocks), what they just did (opened a container with its
     contents, placed or broke a block, slept or were refused, ate, fished, mounted, logged in or
-    out, died, respawned, changed dimension);
+    out, died, respawned, changed dimension, typed a chat line);
   - *the world around each player,* once a second within 64 blocks: time of day, weather, moon
     phase, the biome at the player and the biomes within 64 blocks; every entity within 64
     blocks with its kind, position, name if any, owner if tamed, whether it looks at the player,
@@ -132,6 +157,11 @@ from the lodger's needs first and generalized as a second mod needs them:
   running (see [Events re-check](entity.md#events-re-check-before-they-happen)).
 - **Reports:** per command, `done` or `did not fit` with why.
 - **Now:** the tick, the world's time, the real clock, so a mod never reads a clock itself.
+- **Integrations:** the host knows which other mods are loaded (`Observations.mods`, the ids
+  and versions) and implements a few hint kinds against well-known ones, each behind a presence
+  check, so a Rust mod can ask for "dynamic lights off for a minute" and get it where the mod
+  exists and nothing where it does not. The list is [Other mods](ideas.md#other-mods); each one
+  built is a line in this page.
 - **The menu,** for setup and debugging: a mod declares pages of fields and actions once
   (`Menu` in `init`'s reply), and the host renders them twice over, as a chat command tree
   under `/craftkit <id> ...` and as a GUI screen a client opens with `/craftkit <id> menu`. A

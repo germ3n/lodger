@@ -18,6 +18,16 @@ public final class FabricPlatform implements Platform {
 	}
 
 	@Override
+	public Path gameDir() {
+		return FabricLoader.getInstance().getGameDir();
+	}
+
+	@Override
+	public boolean dedicatedServer() {
+		return FabricLoader.getInstance().getEnvironmentType() == net.fabricmc.api.EnvType.SERVER;
+	}
+
+	@Override
 	public Path configDir() {
 		return FabricLoader.getInstance().getConfigDir();
 	}

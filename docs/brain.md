@@ -23,8 +23,9 @@ So:
   is the point, but every choice was the mod's.
 - **Cheap.** One decode of the situation, then a handful of tokens per choice. Tens to a few
   hundred milliseconds on two CPU threads at 512 context.
-- **Deterministic.** The same text and choices score the same every time. There is no sampling
-  and no temperature. Variety comes from the situation, not from dice.
+- **Deterministic where it counts.** The same text and choices *score* the same every time.
+  The pick from those scores is a seeded draw (see [Picking](#picking)), so the log can replay a
+  run from its seed, and the same situation does not get the same answer on every start.
 - **Calibrated enough.** A small model's judgment on `Should it event tonight?` given `The player
   lit every room yesterday and logged off early` is not deep, but it is not random either, and
   it is different from its judgment given `The player walked toward the figure twice`. That
@@ -33,6 +34,31 @@ So:
 What a 0.5B model is bad at, the brain does not ask: no arithmetic, no spatial reasoning, no
 long chains. Positions become `near the door`; counts become `many`; the question is always
 `which of these`, never `where exactly`.
+
+## Picking
+
+The engine always took the best-scoring choice, and the owner noticed what that does: the same
+situation on every start gets the same answer (2026-11-09). So the pick is a draw: the scores
+are divided by `brain.temperature` (0.7 by default), softmaxed, and a seeded random number
+lands on one. At 0 the best wins every time, as the engine; at 1 the model's own odds; below 1
+the best most of the time; above 1 flatter. The confidence logged is always the chosen choice's
+plain probability, so logs read the same way at any temperature, and the thresholds still
+compare against the *best* choice's probability, so a low-confidence question is still `wait`.
+
+The generator is a SplitMix64 in `model/mod.rs`, seeded at start from the clock and the game
+directory, reseeded with the world's seed when a world opens, and the seed is written at the top
+of each decision log entry: a stay replayed from the same seed and the same situations draws the
+same way, which is how a strange run is reproduced.
+
+## Does the model remember?
+
+No. Every ask is a fresh 512-token context: the frame, the memory's lines, the question. The
+model has no state from one ask to the next, on purpose: a stateful conversation would grow past
+the context in a day, cost more each turn, and drift. What remembers is the lodger's
+[Memory](memory.md), in Rust, bounded and saved with the world, and `Memory::describe` is what
+hands the model its past each time: the home, the habits, the last events and their reactions,
+the open chains, the temper, the want. The model reads a summary of everything that happened
+and decides once; the memory is the context.
 
 ## The situation text
 
@@ -89,6 +115,7 @@ walled a spot, went to sleep.
 | Question | Choices | Becomes |
 | --- | --- | --- |
 | `How does the player feel?` | `calm`, `curious`, `uneasy`, `afraid`, `angry` | A row in the memory's reactions, which later situations describe. Nothing else; it is the lodger's reading, not the truth. |
+| `How does it take this?` (after a provocation or an offering) | `it does not mind`, `it is hurt`, `it is angry`, `it is pleased` | Scales the temper move the table in [Provocation and temper](entity.md#provocation-and-temper) prescribes: `does not mind` halves it, `angry` doubles it, `pleased` makes a down move larger. The direction is the table's, never the model's. |
 | `Should it answer this?` | `no`, `with something small`, `by showing itself`, `by giving back` | `wait`, a small event now, `far_figure`, or `place_taken` at the target's place. The bar is `brain.react_threshold`. |
 
 ### The want (`want`)
@@ -108,10 +135,40 @@ their numbers as choices, `the first`, `the second`, up to eight. Names never ap
 ### The ending (`settle`)
 
 At the start of stage five, when `stages.ending` is `difficulty`, the arc decides the ending from
-the want's score and the difficulty, not the model. The model is asked only how: `Should the last
-night be quiet or bright?` (`quiet`, `bright`), which picks between the figure at the edge of the
-light and every torch lit at once. The ending's weight is a design decision and stays out of
-the model's hands.
+the want's score and the difficulty, not the model. The ending's weight is a design decision and
+stays out of the model's hands. Each of its three days, the model is asked once, `How does
+today go?`, with the day's beats in their two forms as the choices (`the figure at its door` or
+`the figure on its roof`; `the frames emptied` or `the paintings turned`), so endings differ in
+detail and agree in shape (see [How it ends](entity.md#how-it-ends)).
+
+### Chains
+
+An open chain (see [Chains](entity.md#chains)) reaches the brain two ways: the situation text
+says what is open and for how long, and `offer.rs` weights the chain's next steps up, or offers
+them alone when the step is exclusive. The model still chooses, and `wait` is still there; what
+a chain adds is that the lodger's next move is *about* its last one, which is what makes a stay
+read as one story rather than a list.
+
+## Text
+
+Signs, books, named animals and, with `events.chat`, chat lines in the target's name need words.
+Two ways, by `brain.text`:
+
+- **`bank`, the default.** The mod's phrase bank (`brain/text.rs`): hundreds of short lines,
+  one to four words, written by hand and grouped by want, stage and place (`for a sign by the
+  door in stage two when it wants a place`). The model is asked `What does the sign say?` with
+  eight lines drawn from the group as the choices, and scores them as it scores everything. The
+  lodger never writes, and still every sign is its choice among many, for this player, now.
+- **`generate`, an experiment.** The model writes the words itself: up to three, decoded one
+  token at a time with every token outside letters and spaces masked out, stopped at a newline,
+  passed through a blocklist and a length check, logged with the situation, and dropped (the
+  bank used instead) if any check fails. A 0.5B model writes three plausible words most of the
+  time and something wrong some of the time; the calibration pass (todo) reads the log of a few
+  stays and decides whether `generate` becomes the default or stays an experiment.
+
+Either way the words go only where the catalogue puts words: signs, books, a name tag, a chat
+line to the target in the target's own name. Never a message to a witness, never another
+player's name.
 
 ## From choices to an event
 

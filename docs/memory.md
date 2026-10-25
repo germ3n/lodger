@@ -18,10 +18,13 @@ order to understand a choice, so it is plain data, plainly described.
 | **Held** | The item the lodger holds, if any, where it took it from and when. | One. |
 | **Done** | Every event landed or refused: id, place, time, `done` or why not. The brain uses it to not repeat. | 256 rows, oldest dropped. |
 | **Want** | Which want, and a score from 0 to 1 for how far the target has met it. | One. |
+| **Temper** | 0 to 1, how provoked it is, moved by the target's acts as [Provocation and temper](entity.md#provocation-and-temper) lists them, drifting back toward the preset's resting value a tenth a day; and the last three things that moved it, for the situation text. | One, plus 3 causes. |
+| **Chains** | The open chains (see [Chains](entity.md#chains)): which chain, which step landed last and when, the place or item it carries, and the steps still ahead. | 8 open chains. |
 | **Figures seen** | Each time the target looked at a figure: for how long, from how far, whether they moved toward it. | 32 rows. |
 | **Others** | For multiplayer: per player, hours played, whether they have a home, whether they play alone. Used only to pick a target. | 16 players. |
 | **Surroundings** | What is around the home and the routes, from a scan the host does once an in-game day within 128 blocks: the nearest water and how wide, snow or sand, a village and its bell, fields, pens and what is in them, a mine (the target's tunnels, their size and torch spacing) and caves not entered, and the house's own furniture and blocks by kind (doors, windows, carpets, frames, paintings, stands, lecterns, jukeboxes, levers, pistons, campfires, candles, ladders, portals). This is what [What is offered when](entity.md#what-is-offered-when) filters on. | One, rewritten daily; at most 64 points of interest. |
 | **Activity** | What the target is doing now, from the last minute: at home, away, asleep, mining, farming, building, fishing, travelling, in a boat; and the tunnel they are digging, if any, with its direction. | One. |
+| **Movement** | How the target moves, from the last five minutes and as a running average over the stay: pace, stops per minute, turns of more than 120 degrees per minute, looks behind (a turn and back within two seconds), backing away (moving opposite to facing), sprint bursts and what they sprinted from, time standing still and what they faced, sneaking indoors, the path hugging walls or not, how fast they left the last event's room. Compared to the stay's average, so "more than usual" is a line the model can read. | One, plus 7 daily averages. |
 
 Positions are block positions. Times are in-game ticks since the world began and, for hours, the
 real wall clock the server reports, which the body passes in `now_json` each tick, so the mind
@@ -64,13 +67,15 @@ The lines, in order, each left out when there is nothing to say:
 4. The favourites: `They reach for an iron pickaxe first most days.`
 5. The most used container: `The chest by the door is opened first most days. It holds ...`
 6. The hours: `They usually play in the evening for about an hour, and do not play at night.`
-7. The last three events and their reactions: `Two days ago a torch was moved. The player lit the
-   room.`
+7. The last three events and their reactions: `Two days ago a torch was moved. The player lit
+   the room.`, and the open chains: `It took the pickaxe three days ago and has not given it
+   back.`, and the temper: `It is angry: the player broke its torches twice.`
 8. The held item: `It holds the player's iron pickaxe, taken from the chest by the door.`
 9. The figure: `The player has seen the figure twice and walked toward it once.`
 10. The routes: `The player walks the same way to the mine most days, 60 blocks east.`
-11. What the player is doing now, and what is around: `Now the player is digging a tunnel east,
-    40 blocks from the house. There is a lake north of the house and a village to the west.`
+11. What the player is doing now, how they move, and what is around: `Now the player is digging
+    a tunnel east, 40 blocks from the house. They keep looking behind them, more than usual.
+    There is a lake north of the house and a village to the west.`
 12. The time: `It is evening on the player's fifth day.`
 
 Twelve lines are about 250 tokens, which leaves room in a 512-token context for the question

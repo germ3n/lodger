@@ -8,13 +8,195 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-/// The Hugging Face URL of Qwen's own `q4_k_m` GGUF, 491 MB, the file `~/engine` runs.
-pub const DEFAULT_MODEL_URL: &str = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf";
+/// Deep-merges `file` over `base`: objects key by key, anything else replaced by the file's.
+fn merge_into(base: &mut serde_json::Value, file: &serde_json::Value) {
+    match (base, file) {
+        (serde_json::Value::Object(base), serde_json::Value::Object(file)) => {
+            for (key, value) in file {
+                match base.get_mut(key) {
+                    Some(slot) if slot.is_object() && value.is_object() => merge_into(slot, value),
+                    _ => {
+                        base.insert(key.clone(), value.clone());
+                    }
+                }
+            }
+        }
+        (base, file) => *base = file.clone(),
+    }
+}
+
+/// The four presets: what each sets. Everything not listed is the `balanced` default, which is
+/// `Config::default()`; `balanced` sets nothing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Preset {
+    /// Rare, quiet, nothing that touches the player's screen, chat or sleep, no death at the
+    /// end. A stay that is a feeling more than a story.
+    Calm,
+    /// The design as the docs describe it.
+    Balanced,
+    /// Denser, bolder, closer, the figures earlier, and the hard ending on normal too.
+    Intense,
+    /// Something every evening from the first day, every group on, short cooldowns, a stay of
+    /// a week, the death on every difficulty. For people who asked.
+    Relentless,
+}
+
+impl Preset {
+    pub fn named(name: &str) -> Option<Self> {
+        match name {
+            "calm" => Some(Self::Calm),
+            "balanced" => Some(Self::Balanced),
+            "intense" => Some(Self::Intense),
+            "relentless" => Some(Self::Relentless),
+            _ => None,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Calm => "calm",
+            Self::Balanced => "balanced",
+            Self::Intense => "intense",
+            Self::Relentless => "relentless",
+        }
+    }
+
+    /// The whole config this preset means, before the file's own keys are laid over it.
+    pub fn config(self) -> Config {
+        let mut config = Config {
+            preset: self.name().to_string(),
+            ..Config::default()
+        };
+
+        match self {
+            Self::Balanced => {}
+            Self::Calm => {
+                config.stages.events_per_day = [0.5, 1.0, 1.5, 2.0, 0.0];
+                config.stages.least_days = [2, 3, 3, 4, 1];
+                config.stages.most_days = [5, 7, 7, 9, 3];
+                config.events.cooldown_scale = 2.0;
+                config.events.min_distance = 32;
+                config.events.chat = false;
+                config.events.disabled = [
+                    "refuse_rest",
+                    "bed_occupied",
+                    "wake",
+                    "woke_elsewhere",
+                    "in_doorway",
+                    "at_the_chest",
+                    "in_your_bed",
+                    "lights_fail",
+                    "red_rain",
+                    "your_voice",
+                    "knock",
+                    "stare",
+                    "sign_word",
+                    "tunnel_toward",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect();
+                config.brain.event_threshold = 0.5;
+                config.stages.ending = "leave".to_string();
+            }
+            Self::Intense => {
+                config.stages.events_per_day = [2.0, 3.0, 5.0, 8.0, 0.0];
+                config.stages.least_days = [1, 1, 2, 2, 1];
+                config.stages.most_days = [2, 4, 4, 6, 3];
+                config.events.cooldown_scale = 0.75;
+                config.events.min_distance = 16;
+                config.brain.event_threshold = 0.3;
+                config.stages.ending = "take".to_string();
+            }
+            Self::Relentless => {
+                config.stages.events_per_day = [4.0, 6.0, 8.0, 12.0, 0.0];
+                config.stages.least_days = [1, 1, 1, 1, 1];
+                config.stages.most_days = [1, 2, 2, 3, 3];
+                config.stages.start_after_days = 0;
+                config.events.cooldown_scale = 0.5;
+                config.events.min_distance = 12;
+                config.events.offered = 12;
+                config.brain.event_threshold = 0.25;
+                config.brain.react_threshold = 0.4;
+                config.brain.plan_every = 45;
+                config.stages.ending = "take".to_string();
+            }
+        }
+
+        config
+    }
+}
+
+/// The three sizes of Qwen2.5-Instruct the lodger can run, each Qwen's own `q4_k_m` GGUF. The
+/// 0.5B is the file `~/engine` runs. Sizes are the files' lengths as Hugging Face lists them,
+/// for the progress bar before the server says the length.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ModelSize {
+    Small,
+    Medium,
+    Large,
+}
+
+impl ModelSize {
+    pub fn named(name: &str) -> Option<Self> {
+        match name {
+            "0.5b" => Some(Self::Small),
+            "1.5b" => Some(Self::Medium),
+            "3b" => Some(Self::Large),
+            _ => None,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Small => "0.5b",
+            Self::Medium => "1.5b",
+            Self::Large => "3b",
+        }
+    }
+
+    pub fn url(self) -> &'static str {
+        match self {
+            Self::Small => "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+            Self::Medium => "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+            Self::Large => "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
+        }
+    }
+
+    /// The file name under `config/lodger/models/`.
+    pub fn file_name(self) -> &'static str {
+        match self {
+            Self::Small => "qwen2.5-0.5b-q4_k_m.gguf",
+            Self::Medium => "qwen2.5-1.5b-q4_k_m.gguf",
+            Self::Large => "qwen2.5-3b-q4_k_m.gguf",
+        }
+    }
+
+    /// About how many bytes, for the bar; the 0.5B's is exact, the others rounded to the
+    /// megabyte from Hugging Face's listing (2026-11-09).
+    pub fn size_hint(self) -> u64 {
+        match self {
+            Self::Small => 491_400_032,
+            Self::Medium => 1_117_000_000,
+            Self::Large => 2_019_000_000,
+        }
+    }
+
+    /// For the screen: `Downloading the lodger's model (491 MB)`.
+    pub fn megabytes(self) -> u64 {
+        self.size_hint() / 1_000_000
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
     pub enabled: bool,
+    /// `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below that
+    /// decide how much happens, how bold it is and what is left out. A key the file sets
+    /// explicitly wins over the preset; the file written back shows the preset's values filled
+    /// in, so a player sees what `balanced` means. See `docs/config.md`.
+    pub preset: String,
     pub log: Log,
     pub model: Model,
     pub brain: Brain,
@@ -36,7 +218,12 @@ pub struct Log {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Model {
+    /// `0.5b`, `1.5b` or `3b`: which Qwen2.5-Instruct to run. See `docs/model.md`.
+    pub size: String,
+    /// Where to fetch from. Empty means Qwen's own file for `size`.
     pub url: String,
+    /// Where the file lives, relative to the game directory unless absolute. Empty means
+    /// `config/lodger/models/<the size's file name>`.
     pub path: String,
     pub threads: u32,
     pub context: u32,
@@ -54,6 +241,14 @@ pub struct Brain {
     pub react_threshold: f64,
     pub queue: u32,
     pub force_rules: bool,
+    /// `bank`: signs, books and chat lines are chosen from the phrase bank by scoring;
+    /// `generate`: the model writes up to three words itself, constrained and filtered. An
+    /// experiment; see `docs/brain.md`.
+    pub text: String,
+    /// How the answer is picked from the model's scores: 0 is always the best choice, which
+    /// answers the same situation the same way every time; above 0 a seeded draw weighted by
+    /// the scores, sharper near 0 and flatter near 1. See `docs/brain.md`.
+    pub temperature: f64,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -76,6 +271,9 @@ pub struct Events {
     pub sounds: bool,
     pub figure: bool,
     pub glitches: bool,
+    /// Whether it may show in the player list, in join messages and in chat, as the target, to
+    /// the target.
+    pub chat: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -91,6 +289,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             enabled: true,
+            preset: "balanced".to_string(),
             log: Log::default(),
             model: Model::default(),
             brain: Brain::default(),
@@ -114,8 +313,9 @@ impl Default for Log {
 impl Default for Model {
     fn default() -> Self {
         Self {
-            url: DEFAULT_MODEL_URL.to_string(),
-            path: "config/lodger/models/qwen.gguf".to_string(),
+            size: "0.5b".to_string(),
+            url: String::new(),
+            path: String::new(),
             threads: 2,
             context: 512,
             idle_minutes: 10,
@@ -132,6 +332,8 @@ impl Default for Brain {
             react_threshold: 0.55,
             queue: 64,
             force_rules: false,
+            text: "bank".to_string(),
+            temperature: 0.7,
         }
     }
 }
@@ -158,6 +360,7 @@ impl Default for Events {
             sounds: true,
             figure: true,
             glitches: true,
+            chat: true,
         }
     }
 }
@@ -174,13 +377,27 @@ impl Default for Multiplayer {
 }
 
 impl Config {
-    /// Reads the file's text. An empty text is the defaults, as a missing file is.
+    /// Reads the file's text. An empty text is the defaults, as a missing file is. The preset's
+    /// values are laid under the file's: a key the file names keeps its value, the rest take
+    /// the preset's, so `{ "preset": "calm" }` alone is a whole calm config.
     pub fn parse(text: &str) -> Result<Self, String> {
         if text.trim().is_empty() {
             return Ok(Self::default());
         }
 
-        let config: Self = serde_json::from_str(text).map_err(|err| format!("config: {err}"))?;
+        let file: serde_json::Value =
+            serde_json::from_str(text).map_err(|err| format!("config: {err}"))?;
+        let preset_name = file
+            .get("preset")
+            .and_then(|p| p.as_str())
+            .unwrap_or("balanced");
+        let preset = Preset::named(preset_name)
+            .ok_or_else(|| "preset must be calm, balanced, intense or relentless".to_string())?;
+        let mut merged = serde_json::to_value(preset.config()).map_err(|err| err.to_string())?;
+        merge_into(&mut merged, &file);
+
+        let config: Self =
+            serde_json::from_value(merged).map_err(|err| format!("config: {err}"))?;
         config.check()?;
 
         Ok(config)
@@ -196,6 +413,14 @@ impl Config {
 
         if self.model.threads == 0 {
             return Err("model.threads must be at least 1".to_string());
+        }
+
+        if ModelSize::named(&self.model.size).is_none() {
+            return Err("model.size must be 0.5b, 1.5b or 3b".to_string());
+        }
+
+        if !(0.0..=2.0).contains(&self.brain.temperature) {
+            return Err("brain.temperature must be between 0 and 2".to_string());
         }
 
         for (name, value) in [
@@ -225,6 +450,10 @@ impl Config {
 
         if !["difficulty", "leave", "take", "keep"].contains(&self.stages.ending.as_str()) {
             return Err("stages.ending must be difficulty, leave, take or keep".to_string());
+        }
+
+        if !["bank", "generate"].contains(&self.brain.text.as_str()) {
+            return Err("brain.text must be bank or generate".to_string());
         }
 
         // Zero or one offered leaves the model nothing to choose; the prompt grows past twelve.
@@ -300,6 +529,8 @@ mod tests {
         for (text, name) in [
             (r#"{ "model": { "context": 64 } }"#, "model.context"),
             (r#"{ "model": { "threads": 0 } }"#, "model.threads"),
+            (r#"{ "model": { "size": "7b" } }"#, "model.size"),
+            (r#"{ "brain": { "temperature": 3 } }"#, "brain.temperature"),
             (
                 r#"{ "brain": { "event_threshold": 1.5 } }"#,
                 "brain.event_threshold",
@@ -310,6 +541,7 @@ mod tests {
                 "stages.least_days[0]",
             ),
             (r#"{ "stages": { "ending": "win" } }"#, "stages.ending"),
+            (r#"{ "brain": { "text": "prose" } }"#, "brain.text"),
             (r#"{ "events": { "offered": 1 } }"#, "events.offered"),
             (
                 r#"{ "events": { "cooldown_scale": 0 } }"#,
@@ -331,6 +563,76 @@ mod tests {
     }
 
     #[test]
+    fn a_preset_alone_is_a_whole_config_and_a_named_key_wins_over_it() {
+        let calm = Config::parse(r#"{ "preset": "calm" }"#).unwrap();
+        assert_eq!(calm.preset, "calm");
+        assert_eq!(calm.stages.events_per_day, [0.5, 1.0, 1.5, 2.0, 0.0]);
+        assert!(!calm.events.chat);
+        assert!(calm.events.disabled.contains(&"in_your_bed".to_string()));
+
+        let mixed = Config::parse(r#"{ "preset": "calm", "events": { "chat": true } }"#).unwrap();
+        assert!(mixed.events.chat, "the file's key wins");
+        assert_eq!(mixed.events.cooldown_scale, 2.0, "the rest is the preset's");
+
+        assert_eq!(
+            Config::parse(r#"{ "preset": "balanced" }"#).unwrap(),
+            Config::default()
+        );
+        assert!(Config::parse(r#"{ "preset": "cosy" }"#)
+            .unwrap_err()
+            .contains("preset"));
+    }
+
+    #[test]
+    fn every_preset_passes_its_own_checks_and_balanced_is_the_default() {
+        for preset in [
+            Preset::Calm,
+            Preset::Balanced,
+            Preset::Intense,
+            Preset::Relentless,
+        ] {
+            let text = preset.config().to_json();
+            let parsed =
+                Config::parse(&text).unwrap_or_else(|err| panic!("{}: {err}", preset.name()));
+            assert_eq!(parsed.preset, preset.name());
+        }
+
+        assert_eq!(Preset::Balanced.config(), Config::default());
+        assert!(
+            Preset::Relentless.config().stages.events_per_day[0]
+                > Preset::Intense.config().stages.events_per_day[0]
+        );
+        assert!(
+            Preset::Intense.config().stages.events_per_day[0]
+                > Preset::Calm.config().stages.events_per_day[0]
+        );
+    }
+
+    #[test]
+    fn the_model_sizes_point_at_qwen_s_own_files() {
+        for (name, size) in [
+            ("0.5b", ModelSize::Small),
+            ("1.5b", ModelSize::Medium),
+            ("3b", ModelSize::Large),
+        ] {
+            assert_eq!(ModelSize::named(name), Some(size));
+            assert_eq!(size.name(), name);
+            assert!(
+                size.url()
+                    .starts_with("https://huggingface.co/Qwen/Qwen2.5-"),
+                "{}",
+                size.url()
+            );
+            assert!(size.url().ends_with("-instruct-q4_k_m.gguf"));
+            assert!(size.file_name().ends_with(".gguf"));
+        }
+
+        assert!(ModelSize::Small.size_hint() < ModelSize::Medium.size_hint());
+        assert!(ModelSize::Medium.size_hint() < ModelSize::Large.size_hint());
+        assert_eq!(ModelSize::Small.megabytes(), 491);
+    }
+
+    #[test]
     fn the_defaults_round_trip_through_json() {
         let text = Config::default().to_json();
 
@@ -348,7 +650,7 @@ mod tests {
             .lines()
             .filter(|line| line.starts_with("| `"))
             .filter_map(|line| line.split('`').nth(1))
-            .filter(|key| key.contains('.') || *key == "enabled")
+            .filter(|key| key.contains('.') || *key == "enabled" || *key == "preset")
             .map(str::to_string)
             .collect();
         documented.sort();

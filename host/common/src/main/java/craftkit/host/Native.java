@@ -22,7 +22,7 @@ import java.nio.file.Path;
  */
 public final class Native implements AutoCloseable {
 	/** The ABI this host speaks; a library built against another is refused. Bumped with {@code sdk/src/lib.rs}'s {@code ABI_VERSION}. */
-	public static final int ABI_VERSION = 1;
+	public static final int ABI_VERSION = 3;
 
 	private static final Linker LINKER = Linker.nativeLinker();
 
@@ -30,6 +30,8 @@ public final class Native implements AutoCloseable {
 	private final MethodHandle abiVersion;
 	private final MethodHandle info;
 	private final MethodHandle init;
+	private final MethodHandle warm;
+	private final MethodHandle status;
 	private final MethodHandle shutdown;
 	private final MethodHandle free;
 
@@ -38,6 +40,8 @@ public final class Native implements AutoCloseable {
 		abiVersion = LINKER.downcallHandle(symbol(lookup, "craftkit_abi_version"), FunctionDescriptor.of(ValueLayout.JAVA_INT));
 		info = LINKER.downcallHandle(symbol(lookup, "craftkit_info"), FunctionDescriptor.of(ValueLayout.ADDRESS));
 		init = LINKER.downcallHandle(symbol(lookup, "craftkit_init"), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
+		warm = LINKER.downcallHandle(symbol(lookup, "craftkit_warm"), FunctionDescriptor.of(ValueLayout.ADDRESS));
+		status = LINKER.downcallHandle(symbol(lookup, "craftkit_status"), FunctionDescriptor.of(ValueLayout.ADDRESS));
 		shutdown = LINKER.downcallHandle(symbol(lookup, "craftkit_shutdown"), FunctionDescriptor.ofVoid());
 		free = LINKER.downcallHandle(symbol(lookup, "craftkit_free"), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
 	}
@@ -68,16 +72,34 @@ public final class Native implements AutoCloseable {
 		}
 	}
 
-	/** Hands the mod its config file's text and answers its JSON: the effective config and unknown keys, or an error. */
-	public String init(String configText) {
+	/** Hands the mod its {@code Init} JSON (config text, directories, id) and answers its JSON: the effective config and unknown keys, or an error. */
+	public String init(String initJson) {
 		try (Arena call = Arena.ofConfined()) {
-			byte[] bytes = configText.getBytes(StandardCharsets.UTF_8);
+			byte[] bytes = initJson.getBytes(StandardCharsets.UTF_8);
 			MemorySegment text = call.allocate(Math.max(bytes.length, 1));
 			MemorySegment.copy(bytes, 0, text, ValueLayout.JAVA_BYTE, 0, bytes.length);
 
 			return take((MemorySegment) init.invokeExact(text, (long) bytes.length));
 		} catch (Throwable t) {
 			throw new IllegalStateException("craftkit_init", t);
+		}
+	}
+
+	/** Blocks while the mod loads what it loads (the lodger: its model, a second or two). {@code true}, or {@code {"error": ...}}. Call on a worker thread. */
+	public String warm() {
+		try {
+			return take((MemorySegment) warm.invokeExact());
+		} catch (Throwable t) {
+			throw new IllegalStateException("craftkit_warm", t);
+		}
+	}
+
+	/** {@code {"ready": ..., "line": ..., "loading": ..., "error": ...}}. Safe from any thread. */
+	public String status() {
+		try {
+			return take((MemorySegment) status.invokeExact());
+		} catch (Throwable t) {
+			throw new IllegalStateException("craftkit_status", t);
 		}
 	}
 

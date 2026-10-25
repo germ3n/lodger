@@ -1,7 +1,7 @@
-# The Rust side (the SDK and the lodger's mind) on each platform a content jar carries a native
-# for, the host for both loaders, then the lodger's content jar with all three natives in it.
-# docs/development.md describes the layout; VersionsTest checks the pins here agree with
-# rust-toolchain.toml and the gradle.properties files.
+# The Rust side (the SDK and the lodger's mind) on the six platforms a lodger jar carries a native
+# for, the host for both loaders, then the two lodger jars with all six natives and the host
+# nested in each. docs/development.md describes the layout; VersionsTest checks the pins here
+# agree with rust-toolchain.toml and the gradle.properties files.
 name: ci
 on: [push, pull_request]
 
@@ -14,11 +14,20 @@ jobs:
           - os: macos-latest
             platform: macos-aarch64
             library: liblodger_core.dylib
+          - os: macos-15-intel
+            platform: macos-x86_64
+            library: liblodger_core.dylib
           - os: ubuntu-24.04
             platform: linux-x86_64
             library: liblodger_core.so
+          - os: ubuntu-24.04-arm
+            platform: linux-aarch64
+            library: liblodger_core.so
           - os: windows-latest
             platform: windows-x86_64
+            library: lodger_core.dll
+          - os: windows-11-arm
+            platform: windows-aarch64
             library: lodger_core.dll
     runs-on: ${{ matrix.os }}
     steps:
@@ -56,11 +65,11 @@ jobs:
         with:
           name: craftkit-jars
           path: |
-            host/fabric/build/libs/
-            host/neoforge/build/libs/
+            host/fabric/build/libs/craftkit-fabric-*.jar
+            host/neoforge/build/libs/craftkit-neoforge-*.jar
 
-  lodger-jar:
-    needs: rust
+  lodger-jars:
+    needs: [rust, host]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -76,15 +85,21 @@ jobs:
         with:
           pattern: native-*
           path: mod/natives-extra
-      - name: lay the natives out as natives-extra/<os>-<arch>/
+      - uses: actions/download-artifact@v6
+        with:
+          name: craftkit-jars
+          path: mod/host-jars-tree
+      - name: lay the natives out as natives-extra/<os>-<arch>/ and the host jars in host-jars/
         run: |
           for dir in natives-extra/native-*; do
             mv "$dir" "natives-extra/${dir#natives-extra/native-}"
           done
-          find natives-extra -type f
-      - name: build without cargo, so the jar's natives are the three above and nothing else
+          mkdir -p host-jars
+          find host-jars-tree -name 'craftkit-*.jar' ! -name '*-sources.jar' -exec mv {} host-jars/ \;
+          find natives-extra host-jars -type f
+      - name: build without cargo, so the jars' natives are the six above and nothing else
         run: CARGO=/nonexistent ./gradlew jar --no-daemon
       - uses: actions/upload-artifact@v7
         with:
-          name: lodger-jar
+          name: lodger-jars
           path: mod/build/libs/

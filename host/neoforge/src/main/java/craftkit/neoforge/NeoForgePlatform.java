@@ -18,6 +18,16 @@ public final class NeoForgePlatform implements Platform {
 	}
 
 	@Override
+	public Path gameDir() {
+		return FMLPaths.GAMEDIR.get();
+	}
+
+	@Override
+	public boolean dedicatedServer() {
+		return net.neoforged.fml.loading.FMLEnvironment.getDist().isDedicatedServer();
+	}
+
+	@Override
 	public Path configDir() {
 		return FMLPaths.CONFIGDIR.get();
 	}

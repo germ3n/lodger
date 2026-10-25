@@ -4,7 +4,11 @@ import craftkit.host.Host;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -18,6 +22,19 @@ public final class CraftkitNeoForge {
 
 		modBus.addListener(this::registerPayloads);
 		NeoForge.EVENT_BUS.addListener(this::registerCommands);
+		NeoForge.EVENT_BUS.addListener(this::serverStarting);
+
+		if (FMLEnvironment.getDist() == Dist.CLIENT) {
+			NeoForge.EVENT_BUS.addListener(this::screenInit);
+		}
+	}
+
+	private void serverStarting(ServerStartingEvent event) {
+		host.prepareBlocking();
+	}
+
+	private void screenInit(ScreenEvent.Init.Post event) {
+		craftkit.host.client.TitleGate.onScreen(net.minecraft.client.Minecraft.getInstance(), event.getScreen());
 	}
 
 	private void registerPayloads(RegisterPayloadHandlersEvent event) {

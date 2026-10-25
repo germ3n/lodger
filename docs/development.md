@@ -8,7 +8,7 @@ layout:
 | `sdk/` | craftkit, the Rust SDK: the `Mod` trait, the C ABI, the protocol, the harness. See [The SDK](sdk.md). | cargo, in the root workspace |
 | `core/` | The lodger's mind, a craftkit mod, built as a shared library. | cargo, in the root workspace |
 | `host/` | The craftkit host, a Java mod for Fabric and NeoForge from one `common` tree (`host/common`, `host/fabric`, `host/neoforge`, the MultiLoader layout). | Gradle, Loom for Fabric, ModDevGradle for NeoForge and for `common` |
-| `mod/` | The lodger's content jar: natives, assets, manifests, no Java. | Gradle, which runs cargo |
+| `mod/` | The lodger's two jars, one per loader: natives for six platforms, assets, manifests, the host nested, no Java of its own. | Gradle, which runs cargo and takes the host jars from `host/`'s build |
 
 ## Toolchain
 
@@ -51,9 +51,11 @@ compiled in from phase 1 on. The first build then compiles llama.cpp, which take
 later ones do not. `--features metal` on macOS and `--features vulkan` elsewhere build the
 GPU-capable native that `model.gpu_layers` needs; the default native is CPU only.
 
-`mod/build.gradle` puts this machine's native into the jar as `natives/<os>-<arch>/`, and
-anything in `mod/natives-extra/<os>-<arch>/` beside it, which is how the CI puts all three
-together in one jar: `macos-aarch64`, `linux-x86_64`, `windows-x86_64`. At runtime the host's
+`mod/build.gradle` puts this machine's native into each jar as `natives/<os>-<arch>/`, and
+anything in `mod/natives-extra/<os>-<arch>/` beside it, which is how the CI puts all six
+together: `linux-x86_64`, `linux-aarch64`, `macos-x86_64`, `macos-aarch64`, `windows-x86_64`,
+`windows-aarch64`, each built on a runner of that platform (llama.cpp is not cross-compiled).
+At runtime the host's
 `Natives.java` extracts the one for the machine to `config/craftkit/natives/lodger/<os>-<arch>/`
 and `Native.java` loads it from there, because a shared library cannot be loaded from inside a
 jar. A native already there with the same SHA-256 is not rewritten; a new one is written beside
@@ -65,11 +67,13 @@ Cross-compiling llama.cpp is not attempted: each native is built on its own plat
 
 ```sh
 cd host && ./gradlew build        # craftkit-fabric-26.3-*.jar and craftkit-neoforge-26.3-*.jar, and the tests
-cd mod && ./gradlew jar           # lodger-*.jar, with cargo run first
+cd mod && ./gradlew jar           # lodger-fabric-26.3-*.jar and lodger-neoforge-26.3-*.jar, with cargo run first
 ```
 
-The host's jars land in `host/fabric/build/libs/` and `host/neoforge/build/libs/`, the lodger's
-in `mod/build/libs/`. `./gradlew :fabric:runClient` and `:neoforge:runClient` in `host/` start a
+The host's jars land in `host/fabric/build/libs/` and `host/neoforge/build/libs/`, and the
+lodger's build nests them into its own, in `mod/build/libs/` (a missing host jar is an error
+naming the step). A developer runs the two builds in that order; the CI passes the host jars as
+artifacts into `mod/host-jars/`. `./gradlew :fabric:runClient` and `:neoforge:runClient` in `host/` start a
 development client with the host; to see the lodger in it, put `mod/build/libs/lodger-*.jar` in
 that run's `mods/` folder (`host/fabric/runs/client/mods/`), since the host finds content jars
 through the loader, not a path. Without a lodger jar, the host starts, loads nothing, and

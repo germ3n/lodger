@@ -14,6 +14,12 @@ public interface Platform {
 	/** {@code fabric} or {@code neoforge}, for the log and the status line. */
 	String name();
 
+	/** The game directory: {@code mods/}, {@code config/} and the worlds are under it. */
+	Path gameDir();
+
+	/** Whether this is a dedicated server, with no one at a screen to accept terms. */
+	boolean dedicatedServer();
+
 	/** The game's config directory, where {@code <mod>.json} files and {@code craftkit/natives/} live. */
 	Path configDir();
 

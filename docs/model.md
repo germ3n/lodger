@@ -6,9 +6,20 @@ scoring, the same queue, the same download, behind the mind's C ABI instead of a
 
 ## Which model
 
-**Qwen2.5-0.5B-Instruct, Qwen's own `q4_k_m` GGUF, 491 MB** (`qwen2.5-0.5b-instruct-q4_k_m.gguf`
-from `Qwen/Qwen2.5-0.5B-Instruct-GGUF` on Hugging Face). It is the file in `~/engine/models/`
-byte for byte, so what the engine learned about it holds here.
+**Qwen2.5-Instruct, Qwen's own `q4_k_m` GGUF, in the size `model.size` picks** (owner,
+2026-11-09: "players can choose between the 0.5b, 1.5b or 3b model"):
+
+| `model.size` | File | RAM while loaded | A question of four choices on two threads | For |
+| --- | --- | --- | --- | --- |
+| `0.5b`, the default | `qwen2.5-0.5b-instruct-q4_k_m.gguf`, 491 MB | about 700 MB | tens to a few hundred milliseconds | every machine; the file `~/engine` runs, byte for byte |
+| `1.5b` | `qwen2.5-1.5b-instruct-q4_k_m.gguf`, 1.1 GB | about 1.6 GB | a few times slower | a machine with memory to spare and a player who wants sharper judgment |
+| `3b` | `qwen2.5-3b-instruct-q4_k_m.gguf`, 2.0 GB | about 3 GB | slower again, a second or more | a dedicated server with the headroom |
+
+All three are Apache-2.0 from the same repository family, and the scoring code is the same for
+each; only the file, its size and the download's length differ. Changing the size downloads the
+new file at the next start (the title screen gate again) and keeps the old one until deleted.
+The timings are the engine's experience with the small one and estimates for the others; the
+measure item in the todo replaces them with numbers.
 
 - **Why this size:** it scores a 300-token situation and four questions of four choices in tens
   to a few hundred milliseconds on two CPU threads, with about 700 MB resident, which a server
@@ -24,35 +35,41 @@ byte for byte, so what the engine learned about it holds here.
 
 ## Downloading
 
-The model is not in the jar. 491 MB is too much to ship with a mod, Hugging Face serves it well,
-and a mod that downloads half a gigabyte should say so and be told to, so:
+The model is not in the jar. 491 MB is too much to ship with a mod and Hugging Face serves it
+well. The mind declares it as a *resource* in its `init` reply (the SDK's `Resource`: the URL
+from `model.url`, the path from `model.path` under the game directory, the `GGUF` magic, the
+size), and the host fetches it (owner, 2026-11-09: "lock them out of the main menu until the
+model is downloaded and loaded"):
 
-- **`/lodger model download [url]`**, an operator command, fetches from the URL given or
-  `model.url` to `model.path` (`config/lodger/models/qwen.gguf` in the game directory). The
-  command answers at once and says when the download finished or failed, in chat to whoever ran
-  it and in the log.
-- **One at a time.** A second download while one runs is refused with
-  `a model download is already running`.
+- **On a client,** the first time the title screen opens with the file missing, a screen comes
+  up over it: the title, a progress bar, the megabytes so far, and a Quit button; Escape does
+  nothing. When the file is there the screen says `Loading the lodger's model` with a sweeping
+  bar while the mind loads it (a second or two), and then the title screen is back. On failure,
+  the error and a Try again button. A player with the file already there never sees any of it.
+- **On a dedicated server,** at startup, before the world opens, blocking, with a log line at
+  every ten percent and one when the model is loaded. On failure the server starts anyway and
+  the lodger waits for the next start.
 - **It must be a GGUF.** The first four bytes must be `GGUF`; anything else, an HTML error page
-  above all, fails with `not a GGUF model file` as soon as those bytes arrive and the connection
-  is dropped.
+  above all, fails on those bytes rather than after half a gigabyte.
 - **It is written under a temporary name,** `qwen.gguf.part`, and renamed when complete, so a
   failed download never replaces a good model and a half file is never loaded.
 - **`http://` or `https://` only.** Redirects are followed. The connect timeout is 15 seconds;
-  reading has none, since a slow connection is still a connection, but the operator can stop the
-  server.
-- **A loaded model keeps being used** until the model is unloaded (idle, or server stop), so a
-  download over a running model takes effect later.
+  reading has none, since a slow connection is still a connection, and Quit cancels.
+- **`/lodger model status`** says whether the file is there and the model loaded. Deleting the
+  file makes the next start fetch it again, from `model.url`.
 
-The body never touches the file. It asks the mind to download, and the mind's download thread
-does it with `ureq`, as the engine's does.
+The mind never touches the network: `Downloader.java` in the host does, with the JDK's
+`HttpClient`, for any Rust mod's resources. The engine's own `download.rs` was ported first and
+then removed (2026-11-09) in favour of this, so that one downloader serves every mod and the
+progress bar has one source.
 
 ## Loading
 
 The mind links llama.cpp through the `llama-cpp-2` crate, which builds llama.cpp from source into
-the shared library, statically, so the jar's native for a platform is one file. The model is
-loaded on the first ask, on the worker thread, and the asker's reply waits for it: a second or
-two the first time, then nothing.
+the shared library, statically, so the jar's native for a platform is one file. The host asks the
+mind to load the model right after the download, through the SDK's `warm` (blocking, on a host
+thread, while `status` answers the screen), so the first ask never waits; if it somehow is not
+loaded, the first ask loads it on the worker thread and waits the second or two.
 
 - **The file must be loose.** llama.cpp maps it; a file inside the jar or any archive is
   `qwen.gguf is inside an archive, llama.cpp needs it as a loose file`.

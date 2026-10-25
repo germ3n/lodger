@@ -9,11 +9,13 @@ pages explain each part in full; this one is the short list to keep in mind.
   choice; the best one wins. It cannot say a word the mod did not write, cannot invent an event,
   and cannot be talked to. Everything a player ever sees or hears was written by hand and only
   *chosen* by the model. See [Brain](brain.md#why-scoring-and-not-generation).
-- **The model is downloaded, not shipped.** It is 491 MB, Qwen's own `q4_k_m` GGUF of
-  Qwen2.5-0.5B-Instruct, the same file `~/engine` uses. `/lodger model download` fetches it to
-  `config/lodger/models/qwen.gguf`; a file that does not start with the GGUF magic is refused and
-  nothing is left behind. On a dedicated server an operator runs it, and `model.url` in the config
-  says where from. See [Model](model.md#downloading).
+- **The model is downloaded, not shipped, and the game waits for it.** It is 491 MB, Qwen's
+  own `q4_k_m` GGUF of Qwen2.5-0.5B-Instruct, the same file `~/engine` uses. The first start
+  shows a progress bar over the title screen, fetches it to `config/lodger/models/qwen.gguf`,
+  loads it, and only then lets the player in; a dedicated server does the same at startup with
+  progress in its log. A file that does not start with the GGUF magic is refused and nothing is
+  left behind. `model.url` in the config says where from. The host does the fetching, for any
+  Rust mod's declared resources. See [Model](model.md#downloading).
 - **Without the model the mod still runs.** The rule brain picks from the same choices with fixed
   weights. The lodger is duller, not absent. `/lodger status` says which brain is in charge.
 - **Thinking takes tens to hundreds of milliseconds and never stalls the server.** The model runs
@@ -34,9 +36,11 @@ pages explain each part in full; this one is the short list to keep in mind.
   situation text, question, choice and confidence, so a strange event can always be traced to what
   the lodger believed at the time. The log is the only way to tune the prompts; keep it on while
   developing.
-- **Runs are not reproducible.** Scoring is deterministic, but the situation text carries
-  times, positions and what the player did, so no two worlds go the same way, and there is no
-  seed that replays one. The decision log is what you have.
+- **Runs are reproducible from the log, and otherwise not.** Scoring is deterministic, the
+  pick from the scores is a seeded draw (`brain.temperature`), and the seed is in every decision
+  log entry, so a strange run can be replayed from its seed and situations. Two worlds never go
+  the same way on their own: the situation text carries times, positions and what the player
+  did, and the seed differs per start.
 
 ## Where things run
 
@@ -46,10 +50,10 @@ pages explain each part in full; this one is the short list to keep in mind.
   only watches the world and carries out commands, for any Rust mod. A bug in what the lodger
   *did* is the host's; in what it *chose* is the mind's, and the decision log says which. See
   [The SDK](sdk.md) and [Architecture](architecture.md).
-- **Two jars to install, on both sides.** The craftkit host for your loader (one build for
-  Fabric, one for NeoForge) and the lodger's content jar, which is the same file for both
-  loaders. The lodger's jar has no Java in it; without the host it is a resource pack with a
-  manifest nobody reads.
+- **One jar per loader, on both sides.** `lodger-fabric-…` or `lodger-neoforge-…`, with the
+  craftkit host nested inside (Fabric's `jars`, NeoForge's jar-in-jar). Two Rust mods on one
+  server each nest a host and the loader keeps the newest once. The lodger's own part has no
+  Java in it; the host is what runs.
 - **Everything that decides runs on the server.** The client renders what it is told, plays
   sounds it is told to, and reports nothing but what vanilla reports already. Both sides need
   the mod: the client for the entity, the replay figure and the sounds, the server for all the
@@ -87,18 +91,24 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
 - **It never harms a player before the last stage, and never a witness.** Up to then it does not
   touch anyone. In the last stage, what it does depends on the difficulty, and once it is done
   the stay is over.
-- **It never writes in chat, and never pretends to be a player.** No fake join messages, no
-  messages from the target's name. The replay figure wears the target's skin and shows the
-  target's name over its head at a distance, and that is as far as impersonation goes. Signs it
-  places say one word from a fixed list.
+- **It never pretends to be anyone but you, and never speaks to anyone but you.** It wears
+  your skin and your name, and with `events.chat` it shows in your player list, joins and leaves
+  in your name, and answers you in chat in your own name, to you alone. Never another player's
+  name, never a line a witness sees. Its words come from the mod's phrase bank by the model's
+  choice, or, with `brain.text: generate`, from the model under a letters-only grammar, a length
+  cap and a blocklist (see [Text](brain.md#text)).
+- **It reads your chat.** What you type is a sense, so it can answer what you say about it. On a
+  server, say so in the server's rules; it is the server's own chat and the memory keeps at most
+  eight lines.
 - **Nothing happens within 24 blocks of the target while the target can see the spot.** It works
   behind you, in rooms you left, and while you sleep. A player who stands and watches a chest
   watches a chest.
-- **It never speeds up because you are winning, or losing.** Each stage has a budget of events a
-  day (`stages.events_per_day`), confidence below `brain.event_threshold` is `wait`, and a stage
-  lasts at least `stages.least_days` in-game days however the decisions fall. The model's read
-  of you changes which events, never how many. Patience is the design. See
-  [How often](entity.md#how-often).
+- **It answers how it is treated, within the preset's bounds.** Chase it, break its things,
+  take the thing back, wall its place, insult it, and its temper rises: more a day (up to one
+  and a half times the preset), stages ending sooner, bolder events earlier, the ending tilted
+  toward taking. Build at its place, leave the thing, look without chasing, and it eases. It
+  never does anything it would not do; it does what it does sooner and more. The preset is the
+  ceiling: `calm` provoked is still calm. See [Provocation and temper](entity.md#provocation-and-temper).
 - **It never does the same thing twice in a row,** and no event more than a few times in a stay.
   Cooldowns, caps and a menu of eight drawn from a hundred and some keep a stay from wearing
   thin, and the menu is filtered by what is around and what the target is doing before the model
@@ -127,8 +137,8 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
 - **The lodger's own torches and signs are the mod's blocks.** They look like vanilla's and drop
   vanilla's, and the memory knows which they are, so a mod that strips unknown blocks strips
   them.
-- **The native must match the machine.** The lodger's jar carries its mind built for macOS
-  arm64, Linux x86_64 and Windows x86_64. On anything else the host logs `no native for
+- **The native must match the machine.** The lodger's jar carries its mind built for Linux,
+  macOS and Windows, x86_64 and arm64 each. On anything else the host logs `no native for
   <os>-<arch>` and the lodger is not there at all: its assets load, nothing else.
   `/craftkit status` says so. Build the native yourself (see
   [Development](development.md#building-the-native)) and put it in the jar, or in

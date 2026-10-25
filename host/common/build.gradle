@@ -12,7 +12,10 @@ neoForge {
 dependencies {
 	// Gson is the game's own, on the compile classpath through NeoForm, but the JUnit runtime
 	// classpath does not get the game's libraries; the tests that parse manifests need it.
-	testRuntimeOnly 'com.google.code.gson:gson:2.14.0'
+	testImplementation 'com.google.code.gson:gson:2.14.0'
+	// The same for the logger: slf4j is the game's; the tests need the API (no binding, so
+	// the host's lines are dropped in tests, which is fine).
+	testImplementation 'org.slf4j:slf4j-api:2.0.17'
 }
 
 configurations {

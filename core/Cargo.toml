@@ -11,7 +11,19 @@ publish = false
 name = "lodger_core"
 crate-type = ["cdylib", "rlib"]
 
+[features]
+# The model layer builds llama.cpp from source (a few minutes the first time). Without `model`
+# the mind still builds and runs on the rule brain; the CI builds with it.
+default = ["model"]
+model = ["dep:llama-cpp-2"]
+# GPU builds, an experiment: CPU is the default so every server behaves alike (docs/model.md).
+metal = ["model", "llama-cpp-2/metal"]
+vulkan = ["model", "llama-cpp-2/vulkan"]
+
 [dependencies]
 craftkit = { path = "../sdk" }
 serde.workspace = true
 serde_json.workspace = true
+log = "0.4"
+# The same version ~/engine runs the same model with, so the scoring code ports as it is.
+llama-cpp-2 = { version = "0.1.158", default-features = false, optional = true }

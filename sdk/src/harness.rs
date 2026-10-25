@@ -12,6 +12,8 @@ pub struct Exports {
     pub abi_version: extern "C" fn() -> u32,
     pub info: extern "C" fn() -> *mut c_char,
     pub init: unsafe extern "C" fn(*const u8, usize) -> *mut c_char,
+    pub warm: extern "C" fn() -> *mut c_char,
+    pub status: extern "C" fn() -> *mut c_char,
     pub shutdown: extern "C" fn(),
 }
 
@@ -39,9 +41,25 @@ impl Harness {
         unsafe { crate::abi::take((self.exports.info)()) }
     }
 
-    /// Calls `init` with the config text and answers what the host would read.
+    /// Calls `init` with the config text alone, as a test usually wants.
     pub fn init(&self, config: &str) -> serde_json::Value {
-        unsafe { crate::abi::take((self.exports.init)(config.as_ptr(), config.len())) }
+        self.init_with(&crate::Init::with_config(config))
+    }
+
+    /// Calls `init` with a full `Init`, as the host does.
+    pub fn init_with(&self, init: &crate::Init) -> serde_json::Value {
+        let text = serde_json::to_string(init).expect("Init serializes");
+
+        unsafe { crate::abi::take((self.exports.init)(text.as_ptr(), text.len())) }
+    }
+
+    /// Calls `warm` and answers `true`, or the error, as the host reads it.
+    pub fn warm(&self) -> serde_json::Value {
+        unsafe { crate::abi::take((self.exports.warm)()) }
+    }
+
+    pub fn status(&self) -> serde_json::Value {
+        unsafe { crate::abi::take((self.exports.status)()) }
     }
 
     pub fn shutdown(&self) {
@@ -57,6 +75,8 @@ macro_rules! harness {
             abi_version: craftkit_abi_version,
             info: craftkit_info,
             init: craftkit_init,
+            warm: craftkit_warm,
+            status: craftkit_status,
             shutdown: craftkit_shutdown,
         })
     };
@@ -83,6 +103,8 @@ mod tests {
             abi_version: other,
             info: none,
             init: no_init,
+            warm: none,
+            status: none,
             shutdown: nothing,
         })
         .err()

@@ -26,6 +26,36 @@ impl ModInfo {
     }
 }
 
+/// What the host hands a mod at `init`.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Init {
+    /// The mod's config file's text, empty when there is none.
+    pub config: String,
+    /// The game directory: where `mods/`, `config/` and the worlds are. Files a mod keeps
+    /// outside its config (a model, a log) go under `<config_dir>/<id>/`.
+    pub game_dir: String,
+    /// The config directory, `<game_dir>/config` on both loaders.
+    pub config_dir: String,
+    /// The mod's id, as the manifest names it, so a mod need not hardcode its own folder name.
+    pub id: String,
+}
+
+impl Init {
+    /// A bare `Init` with the config text alone, for tests and the harness.
+    pub fn with_config(config: &str) -> Self {
+        Self {
+            config: config.to_string(),
+            ..Self::default()
+        }
+    }
+
+    /// `<config_dir>/<id>/`, where a mod keeps what is not its config file.
+    pub fn own_dir(&self) -> std::path::PathBuf {
+        std::path::Path::new(&self.config_dir).join(&self.id)
+    }
+}
+
 /// The answer to `init`.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InitReply {
@@ -35,6 +65,77 @@ pub struct InitReply {
     /// Keys the config file had that the mod does not know, for the host to log once.
     #[serde(default)]
     pub unknown: Vec<String>,
+    /// Files the mod needs that are not in its jar. The host fetches the missing ones before the
+    /// game is playable: on a client, a screen over the title screen with a progress bar; on a
+    /// dedicated server, at startup with progress in the log. See `docs/sdk.md`.
+    #[serde(default)]
+    pub resources: Vec<Resource>,
+}
+
+/// A file a mod needs the host to fetch: the lodger's model, for one.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Resource {
+    /// Names the resource in the log, the screen and `status`.
+    pub id: String,
+    /// What the screen shows: `Downloading the lodger's model (491 MB)`.
+    pub title: String,
+    pub url: String,
+    /// Where it goes. Absolute, or relative to the game directory.
+    pub path: String,
+    /// The size, if known, for the bar before the server says the length; 0 for unknown.
+    #[serde(default)]
+    pub size_hint: u64,
+    /// Bytes the file must start with, as text (`GGUF`); empty for none. An HTML error page
+    /// fails on its first bytes rather than after 491 MB.
+    #[serde(default)]
+    pub magic: String,
+    /// The SHA-256 of the whole file, lowercase hex; empty to skip the check.
+    #[serde(default)]
+    pub sha256: String,
+    /// Whether the game waits for it. A required resource gates the title screen; an optional
+    /// one downloads in the background and the mod goes without until it lands.
+    #[serde(default = "yes")]
+    pub required: bool,
+    /// The terms the file comes under, shown and accepted before the first download, once per
+    /// resource (the host remembers). Empty for a file with no terms to show.
+    #[serde(default)]
+    pub license: License,
+}
+
+/// A resource's terms: a name, where to read them in full, and a short text the screen shows.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct License {
+    /// `Apache License 2.0`.
+    pub name: String,
+    /// The full text online.
+    pub url: String,
+    /// What the screen shows: who made the file, under what terms, in a few lines.
+    pub text: String,
+}
+
+impl License {
+    pub fn is_empty(&self) -> bool {
+        self.name.is_empty() && self.url.is_empty() && self.text.is_empty()
+    }
+}
+
+fn yes() -> bool {
+    true
+}
+
+/// What a mod says of itself when asked, for the host's screens and `/craftkit status`.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Status {
+    /// Whether the mod is ready to play: its resources present and whatever it loads loaded.
+    pub ready: bool,
+    /// One line for the screen: `Loading the model...`, `Ready`, or why not.
+    pub line: String,
+    /// Whether `warm` is still working.
+    pub loading: bool,
+    /// What is wrong, if anything, for the log.
+    pub error: String,
 }
 
 /// An error crossing the ABI: `{"error": "..."}`.

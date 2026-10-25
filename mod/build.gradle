@@ -1,7 +1,10 @@
-// The lodger's content jar: the mind built by cargo for this machine (and any other platforms'
-// natives the CI drops in natives-extra/), the assets, and the manifests. No Java: the host
-// (host/) does the loading. One jar serves Fabric and NeoForge, since fabric.mod.json and a
-// lowcodefml neoforge.mods.toml can share a jar.
+// The lodger's jars: one per loader, each carrying the craftkit host nested inside it (Fabric's
+// `jars`, NeoForge's jar-in-jar), the mind's natives for every platform the CI built, the
+// assets and the manifests. No Java of the lodger's own. Players install one file; two Rust
+// mods on one server share the newest nested host, which both loaders work out themselves.
+//
+// The host jars come from host/: run `./gradlew build` there first, or let the CI's artifacts
+// land in natives-extra/ and host-jars/.
 plugins {
 	id 'base'
 }
@@ -28,6 +31,19 @@ def hostArch = {
 }()
 def library = hostOs == 'macos' ? 'liblodger_core.dylib' : hostOs == 'windows' ? 'lodger_core.dll' : 'liblodger_core.so'
 
+// Where a loader's host jar is: the CI drops them in host-jars/, a developer builds host/.
+def hostJar = { String loader ->
+	def dropped = fileTree(dir: 'host-jars', include: "craftkit-${loader}-*.jar", exclude: '*-sources.jar')
+	if (!dropped.isEmpty()) {
+		return dropped.singleFile
+	}
+	def built = fileTree(dir: new File(repo, "host/${loader}/build/libs"), include: "craftkit-${loader}-*.jar", exclude: '*-sources.jar')
+	if (!built.isEmpty()) {
+		return built.singleFile
+	}
+	throw new GradleException("no craftkit-${loader} jar: run ./gradlew build in host/ first, or put one in mod/host-jars/")
+}
+
 tasks.register('cargoBuild', Exec) {
 	description = 'Builds the mind (core/) as a release shared library.'
 	workingDir repo
@@ -37,36 +53,60 @@ tasks.register('cargoBuild', Exec) {
 	outputs.file(new File(repo, "target/release/${library}"))
 }
 
-tasks.register('processResources', Copy) {
-	description = 'Fills the manifests in with the versions.'
+def expandProps = { project.properties.findAll { k, v -> v instanceof String } }
+
+tasks.register('processResources', Sync) {
+	description = 'Fills the shared manifests in with the versions.'
 	from('src/main/resources') {
-		filesMatching(['fabric.mod.json', 'pack.mcmeta']) {
-			expand(project.properties.findAll { k, v -> v instanceof String })
-		}
-		filesMatching(['META-INF/neoforge.mods.toml']) {
-			expand(project.properties.findAll { k, v -> v instanceof String })
+		filesMatching(['pack.mcmeta']) {
+			expand(expandProps())
 		}
 	}
 	into layout.buildDirectory.dir('resources')
 }
 
-tasks.register('jar', Jar) {
-	description = 'The content jar: resources, the host native, and natives-extra/.'
-	dependsOn 'cargoBuild', 'processResources'
-	archiveBaseName = 'lodger'
-	archiveVersion = project.version
-	destinationDirectory = layout.buildDirectory.dir('libs')
-	from(layout.buildDirectory.dir('resources'))
-	from(new File(repo, "target/release/${library}")) {
-		into "natives/${hostOs}-${hostArch}"
+// One jar task per loader. Each takes the shared resources, this loader's manifest, the host
+// jar nested, the host native and natives-extra/.
+['fabric', 'neoforge'].each { loader ->
+	def manifestTask = tasks.register("${loader}Manifest", Copy) {
+		description = "Fills in the ${loader} manifest."
+		from("src/${loader}/resources") {
+			filesMatching(['fabric.mod.json', 'META-INF/neoforge.mods.toml', 'META-INF/jarjar/metadata.json']) {
+				def props = expandProps()
+				props['craftkit_jar'] = hostJar(loader).name
+				expand(props)
+			}
+		}
+		into layout.buildDirectory.dir("manifest-${loader}")
 	}
-	// The CI drops the other platforms' natives in natives-extra/<os>-<arch>/ before building.
-	from(file('natives-extra')) {
-		into 'natives'
+
+	tasks.register("${loader}Jar", Jar) {
+		description = "The lodger for ${loader}, with the craftkit host nested."
+		dependsOn 'cargoBuild', 'processResources', manifestTask
+		archiveBaseName = "lodger-${loader}"
+		archiveVersion = "${project.minecraft_version}-${project.version}"
+		destinationDirectory = layout.buildDirectory.dir('libs')
+		from(layout.buildDirectory.dir('resources'))
+		from(layout.buildDirectory.dir("manifest-${loader}"))
+		from(new File(repo, "target/release/${library}")) {
+			into "natives/${hostOs}-${hostArch}"
+		}
+		// The CI drops the other platforms' natives in natives-extra/<os>-<arch>/ before building.
+		from(file('natives-extra')) {
+			into 'natives'
+		}
+		from({ hostJar(loader) }) {
+			into loader == 'fabric' ? 'META-INF/jars' : 'META-INF/jarjar'
+		}
+		from(new File(repo, 'LICENSE')) {
+			rename { "${it}_lodger" }
+		}
 	}
-	from(new File(repo, 'LICENSE')) {
-		rename { "${it}_lodger" }
-	}
+}
+
+tasks.register('jar') {
+	description = 'Both lodger jars.'
+	dependsOn 'fabricJar', 'neoforgeJar'
 }
 
 assemble.dependsOn 'jar'

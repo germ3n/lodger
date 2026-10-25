@@ -3,6 +3,7 @@ package craftkit.fabric;
 import craftkit.host.Host;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
@@ -24,6 +25,9 @@ public final class CraftkitFabric implements ModInitializer {
 		});
 
 		CommandRegistrationCallback.EVENT.register((dispatcher, registry, environment) -> host.registerCommands(dispatcher));
+		// A dedicated server fetches and loads before the world opens; the client did it at the
+		// title screen, so for an integrated server this finds nothing to do.
+		ServerLifecycleEvents.SERVER_STARTING.register(server -> host.prepareBlocking());
 	}
 
 	public static Host host() {

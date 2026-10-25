@@ -2,5 +2,13 @@
 	"craftkit.status.header": "craftkit %s on %s: %s mod(s)",
 	"craftkit.status.loaded": "  %s %s (sdk %s), native %s",
 	"craftkit.status.failed": "  %s: not loaded, %s",
-	"craftkit.status.none": "  no content jars with META-INF/craftkit.json are loaded"
+	"craftkit.status.none": "  no content jars with META-INF/craftkit.json are loaded",
+	"craftkit.preparing.title": "Getting ready",
+	"craftkit.preparing.loading": "Loading %s",
+	"craftkit.preparing.failed": "Something went wrong",
+	"craftkit.preparing.retry": "Try again",
+	"craftkit.preparing.quit": "Quit game",
+	"craftkit.preparing.terms": "Before downloading %s",
+	"craftkit.preparing.accept": "I accept",
+	"craftkit.preparing.read": "Read the full terms in a browser"
 }

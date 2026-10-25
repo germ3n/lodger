@@ -36,9 +36,12 @@ because it can be built and tested without a game, and because the model layer i
   template, not the secondary sources the docs were written from.
 - [x] **The SDK's shape, and the decision to build it now** (owner, 2026-11-08): craftkit
   (working name), a crate with the `Mod` trait, the C ABI, the protocol and a harness, and a host
-  for Fabric and NeoForge; Rust mods as content jars with no Java, one jar for both loaders; the
-  host a mod of its own. See [The SDK](sdk.md). Was: the lodger as a Fabric mod with its own
-  Java body.
+  for Fabric and NeoForge; Rust mods as content jars with no Java. See [The SDK](sdk.md). Was:
+  the lodger as a Fabric mod with its own Java body.
+- [x] **The host nested in each mod's jar, natives for six platforms** (owner, 2026-11-09): one
+  lodger jar per loader with the craftkit host inside (Fabric `jars`, NeoForge jar-in-jar), the
+  CI building the mind on Linux, macOS and Windows runners for x86_64 and arm64 each. Was: the
+  host a jar of its own, one content jar for both loaders, three natives.
 - [x] **The SDK crate and the mind build and pass** (2026-11-08): `sdk/` with `abi`, `protocol`,
   `harness` and `export_mod!`, `core/` as a `craftkit::Mod` with its config schema, 22 tests
   across both (`cargo test --workspace`), clippy and rustfmt clean, `liblodger_core.dylib` built
@@ -67,27 +70,43 @@ because it can be built and tested without a game, and because the model layer i
   back as `0.4000000059604645`, now f64; NeoForge calls `lowcodefml` deprecated, so the content
   jar's `neoforge.mods.toml` names no loader. Still to see by hand: `/craftkit status` in a
   client. Was: a dev client starts with both jars and `/craftkit status` shows the lodger.
-- [ ] **The CI runs green:** rustfmt, clippy and `cargo test` on three runners with the natives
-  uploaded, the host built for both loaders with its tests, the content jar assembled with all
-  three natives. Written (`.github/workflows/ci.yml`); the first push proves it.
+- [ ] **The CI runs green:** rustfmt, clippy and `cargo test` on six runners with the natives
+  uploaded, the host built for both loaders with its tests, the two lodger jars assembled with
+  all six natives and the host nested. Written (`.github/workflows/ci.yml`); the first push proves it. The Rust jobs
+  now compile llama.cpp (cmake and a C++ compiler on each runner; `Swatinem/rust-cache` keeps
+  the build between runs).
 - [ ] **`THIRD_PARTY_NOTICES.txt`** generated and checked in CI (see
   [Development](development.md#third-party-notices)).
 
 ### Phase 1: the model layer
 
-- [ ] **Port `~/engine/game/base/src/ai/` into `core/src/model/`:** `mod.rs`'s validation and
-  scoring math, `queue.rs`'s worker and keys, `download.rs`, and `infer.rs` from the `infer`
-  module, with `crate::fs` replaced by a plain path and the Lua library left behind. The engine's
-  unit tests come along. `llama-cpp-2` at the engine's version (0.1.158) to start.
-- [ ] **The `Scorer` trait, the `Echo` scorer, and the queue tests:** returns at once, calls back
-  from the tick, supersedes by key, refuses when full, reports a missing model without calling
-  back. All from the engine's `script/libs/ai.rs` tests, rewritten against the C ABI.
-- [ ] **The download through the ABI:** `/lodger model download`, the GGUF check, the `.part`
-  file, one at a time, the finished message back on a tick. Test against a local HTTP server as
-  the engine does.
-- [ ] **The real-model tests,** ignored by default, with the model at `core/models/qwen.gguf`
-  (`.gitignore`d): a known situation scores the expected way; two questions on one situation
-  agree with the same two asked alone (the rewind is right).
+- [x] **Port `~/engine/game/base/src/ai/` into `core/src/model/`.** Done 2026-11-09: `mod.rs`
+  (the `Model` the `Lodger` owns, in place of the engine's static slot; validation; the scoring
+  math), `queue.rs` (the worker and keys, verbatim), `download.rs` (paths and `.part` in place of
+  the engine's `Fs`), `infer.rs` (the engine's `infer` module; one change, the context's model
+  field is private in `llama-cpp-2` 0.1.158 so the vocab is read through the engine's own model
+  pointer). Behind a default-on `model` feature, with `metal` and `vulkan` features for the GPU
+  experiment. The first build compiled llama.cpp in about six minutes; the library went from
+  0.5 MB to 6 MB. Was: the port, with `crate::fs` replaced by a plain path and the Lua library
+  left behind.
+- [x] **The `Scorer` trait, the fake scorers and the queue tests.** Done 2026-11-09, the
+  engine's seven queue tests and the model's own: answers without blocking, a loading failure
+  returned from `start`, superseding by key, order kept, the queue bounded at 64, stop finishing
+  the running one and refusing the rest, the scorer dropped on its own thread. 32 tests in
+  `core`. The ABI side (`ask` as a command the host sends) is phase 2's, with the world calls.
+- [x] **The download, as the host's, with the title screen gated** (owner, 2026-11-09: "lock
+  them out of the main menu until the model is downloaded and loaded"). Done 2026-11-09: the
+  SDK's `Resource` in `InitReply`, `warm` and `status` in the ABI (version 3), the lodger
+  declaring its model; the host's `Downloader` (JDK `HttpClient`, `.part`, magic, SHA-256,
+  progress), `Preparation` (fetch the missing required resources one at a time, then `warm`
+  each mod, progress for a screen or a log), `PreparingScreen` over the title screen with a bar,
+  Quit and Try again, `TitleGate` hooked on both loaders' screen events, and
+  `Host.prepareBlocking` on both loaders' server-starting events. Six JUnit tests for the
+  downloader and three for resources. Was: the engine's `download.rs` ported into the mind,
+  which was then removed, so one downloader serves every mod.
+- [x] **The real-model tests,** written 2026-11-09 and `#[ignore]`d with the reason: the
+  want question on a player who walked toward the figure, and two questions on one situation
+  agreeing with each asked alone. They run once `core/models/qwen.gguf` is there.
 - [ ] **Measure.** Time and resident memory for a 300-token situation with four questions of
   four choices on two threads, on a laptop and on a small VPS. Put the numbers in
   [Model](model.md) in place of "tens to a few hundred milliseconds".
@@ -112,6 +131,27 @@ because it can be built and tested without a game, and because the model layer i
   (status, config, debug) declared in `core/`, with the debug actions (force stage, force event,
   dump memory, rule brain on, replay last decision) wired as the stay grows. Tests: the command
   tree generated from a menu matches the pages; a field change round-trips to the config file.
+- [x] **Presets** (owner, 2026-11-09: "3-4 presets, like a calm one, then aggressive; start off
+  balanced"). Done 2026-11-09: `preset` in the config, `calm`, `balanced`, `intense`,
+  `relentless` as `Preset` in `config.rs` with the table in [Config](config.md#presets), the
+  preset laid under the file's own keys, every preset passing its own checks, `balanced` equal
+  to the defaults.
+- [x] **The license before the download** (owner, 2026-11-09). Done 2026-11-09: `Resource.license`
+  in the SDK (name, URL, text), the lodger's model carrying Qwen's Apache-2.0 notice, the host's
+  `LicenseScreen` before the first download of each resource with Accept and Quit, acceptance
+  remembered in `config/craftkit/accepted.json`; a dedicated server logs the terms and waits for
+  `accepted` in `config/craftkit.json` before it downloads.
+- [x] **Three model sizes** (owner, 2026-11-09). Done 2026-11-09: `model.size` of `0.5b`,
+  `1.5b` or `3b`, each Qwen's own `q4_k_m` file with its URL, file name and size for the bar,
+  `model.url` and `model.path` empty by default and derived from the size; the table in
+  [Which model](model.md#which-model).
+- [x] **Seeded picking** (owner, 2026-11-09: "on startup the model would give the same answers
+  to the same questions"). Done 2026-11-09: the pick is a draw weighted by
+  `softmax(scores / brain.temperature)` from a SplitMix64 seeded per start (the clock and the
+  game directory), `0` restoring the engine's always-the-best; the confidence stays the plain
+  probability; `Model::reseed` for the world's seed in phase 2; the seed logged with decisions
+  (phase 2's log). Tests: temperature zero picks the best, a warm draw follows the scores to
+  within a few percent over two thousand draws, the same seed repeats and another differs.
 - [ ] **`Stay`, the lodger's `World`.** `bincode` behind a format byte. A stay that only ever
   waits, saved and reopened.
 - [ ] **Memory.** Every piece in [What is kept](memory.md#what-is-kept) with its bound, and the
@@ -175,6 +215,20 @@ because it can be built and tested without a game, and because the model layer i
   wrong. Read them for repetition above all: anything that happened three times in a stay, or
   twice in a row, is a cooldown or a cap to move. Keep the before-and-after logs under
   `docs/calibration/` with a paragraph on what moved and why.
+- [ ] **The phrase bank and `brain.text`** (owner, 2026-11-09: "use the model for sign text"):
+  `brain/text.rs` with a few hundred lines by want, stage and place; the `What does the sign
+  say?` ask over eight drawn lines; and the `generate` experiment: a letters-and-spaces token
+  mask in `infer.rs`, three words at most, a blocklist, a log line, the bank as the fallback.
+  Judged in calibration round two: does `generate` read better than the bank over ten stays?
+- [ ] **Chat and the player list** (owner, 2026-11-09): the chat sense (the target's lines and
+  witnesses' within 32 blocks, matched for lines about the lodger, eight kept) and the events
+  of [Chat and the player list](entity.md#chat-and-the-player-list), as host commands: a
+  player-list entry to one client, a system or chat line to one client in a given name, an
+  advancement toast. All target-only, all behind `events.chat`.
+- [ ] **Other mods** (owner, 2026-11-09): `Observations.mods`, the presence checks, and the
+  first three hooks (dynamic lights, a minimap marker, Presence Footsteps' sound set), each
+  tested with and without the mod in the dev client. The rest of [Other mods](ideas.md#other-mods)
+  as people ask.
 - [ ] **Chat template or not.** Score the real-model test set with Qwen's chat template around
   the situation and without, and keep whichever separates the cases more. Write the result into
   [Brain](brain.md#the-situation-text).
@@ -216,8 +270,36 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Phase 6: the ending, multiplayer, release
 
-- [ ] **`settle`** and the three endings, including the one death on hard with inventory kept and
-  the vanilla message, and the `left` and `stayed` states. Scripted-stay tests for each.
+- [ ] **`settle`** and the three endings as three-day scripts (owner, 2026-11-09: "the endgame
+  should be very grand"), each day's beats as data in `arc.rs` with a time, a condition and two
+  forms the model picks between, the budget and cooldowns off and the caps on, the chains
+  closed inside them, the one death on hard with inventory kept and the vanilla message, and
+  the `left` and `stayed` states. Scripted-stay tests for each ending, checking the order of
+  beats, that nothing repeats within a day, and that the death happens once or not at all.
+- [ ] **Temper** (owner, 2026-11-09: "doing certain things should speed up the progression"):
+  `memory/temper.rs` with the move table of [Provocation and temper](entity.md#provocation-and-temper),
+  the senses that feed it (the figure chased or hit, its blocks broken, its place walled or
+  lit, the thing taken back, chat lines at it, nights slept through), the scaling of the
+  budget, the stage lengths, the menu's stage gates, the distance and the ending, each bounded
+  by the preset, and the `How does it take this?` ask. Scripted-stay tests: a provoking player
+  reaches stage four days sooner than a quiet one; a `calm` preset provoked stays under the
+  `balanced` resting pace; temper drifts back.
+- [ ] **The other house, a dimension of its own** (owner, 2026-11-09: "custom dimensions you
+  can get teleported to by sleeping, walking through portals"): a void dimension in the
+  content jar's data pack (`data/lodger/dimension/other.json`, a flat dark sky, no mobs, no
+  day), into which the host copies the target's house block for block at stage four, and one
+  visit: the target falls asleep and wakes in the copy, in the dark, the doors leading to
+  nothing, the figure in the doorway, for one minute, then wakes in their own bed with the door
+  open. A second visit only in the `take` ending's last night, where the walk from its place
+  goes through its portal frame into the other house and the death, if any, is there. Not a
+  place to explore: a set piece, twice at most, so the world stays the player's. Needs the
+  host's teleport and block-copy commands and a dimension registered from the content jar;
+  judged in the dev client before the design goes further.
+- [ ] **Chains** (owner, 2026-11-09: "one that influences the next"): follow-ups in `events.rs`
+  (weighted or exclusive, with a carried place or item), `Memory::chains`, the situation line,
+  and the weights in `offer.rs`. The eight chains of [Chains](entity.md#chains) as data, with a
+  scripted-stay test that walks at least two end to end and one that no step is offered with its
+  needs unmet.
 - [ ] **Multiplayer:** the `Others` memory, the target ask, witnesses' traces and nothing else,
   retargeting once. Tested with two dev clients on a dev server.
 - [ ] **Performance pass:** the per-tick JSON exchange measured (it should be well under 50 µs

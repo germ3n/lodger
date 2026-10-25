@@ -6,7 +6,6 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -21,7 +20,7 @@ import java.util.Optional;
  */
 public final class Host {
 	public static final String MOD_ID = "craftkit";
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	public static final Logger LOGGER = Log.LOGGER;
 	public static final String VERSION = Optional.ofNullable(Host.class.getPackage().getImplementationVersion()).orElse("dev");
 
 	private final Platform platform;
@@ -37,6 +36,7 @@ public final class Host {
 		String osName = System.getProperty("os.name");
 		String osArch = System.getProperty("os.arch");
 		Path configDir = platform.configDir();
+		Path gameDir = platform.gameDir();
 		List<LoadedMod> mods = new ArrayList<>();
 
 		for (Platform.ContentJar jar : platform.jars()) {
@@ -51,7 +51,7 @@ public final class Host {
 				continue;
 			}
 
-			LoadedMod mod = LoadedMod.load(jar, manifest.get(), configDir, osName, osArch);
+			LoadedMod mod = LoadedMod.load(jar, manifest.get(), gameDir, configDir, osName, osArch);
 			mods.add(mod);
 
 			if (mod.loaded()) {
@@ -74,6 +74,7 @@ public final class Host {
 		}
 
 		Host host = new Host(platform, List.copyOf(mods));
+		Preparation.install(new Preparation(host.mods, new Acceptance(configDir.resolve("craftkit").resolve("accepted.json")), !platform.dedicatedServer()));
 		// Mods are one per process (a mod may hold a model loaded once for every world), so they
 		// are told the process is ending, not that a world closed.
 		Runtime.getRuntime().addShutdownHook(new Thread(host::close, "craftkit-shutdown"));
@@ -83,6 +84,32 @@ public final class Host {
 
 	public List<LoadedMod> mods() {
 		return mods;
+	}
+
+	/** The resources and loading every mod needs before play; the client and the server drive it their own way. */
+	public Preparation preparation() {
+		return Preparation.current().orElseThrow();
+	}
+
+	/**
+	 * A dedicated server's way: fetch and load before the world opens, blocking its startup
+	 * with progress in the log, and carry on without the mod if it fails. The client's way is
+	 * the screen in {@code craftkit.host.client.PreparingScreen}.
+	 */
+	public void prepareBlocking() {
+		Preparation preparation = preparation();
+
+		if (!preparation.needed()) {
+			return;
+		}
+
+		LOGGER.info("fetching and loading what the mods need before the world opens");
+		preparation.run();
+
+		Preparation.Progress progress = preparation.progress();
+		if (progress.failed()) {
+			LOGGER.error("not ready: {}. The server runs on; the mod goes without until it is fixed.", progress.error());
+		}
 	}
 
 	public Platform platform() {

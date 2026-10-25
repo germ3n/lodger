@@ -28,14 +28,16 @@ can be Rust is Rust (see [The SDK](docs/sdk.md) and [Architecture](docs/architec
 ## What it will take to run
 
 - Minecraft Java 26.3 on Java 25, with Fabric Loader 0.20.1 and the Fabric API, or NeoForge
-  26.3, on both the client and the server, on macOS arm64, Linux x86_64 or Windows x86_64, which
-  the lodger's jar carries the native for. The versions were confirmed 2026-11-08 against
+  26.3, on both the client and the server, on Linux, macOS or Windows, x86_64 or arm64, which
+  the lodger's jar carries natives for. The versions were confirmed 2026-11-08 against
   Fabric's, NeoForged's and Mojang's own metadata (see [Development](docs/development.md#toolchain)).
-- Two jars: the craftkit host for your loader, and `lodger-<version>.jar`, which is the same
-  file for both loaders.
+- One jar for your loader, `lodger-fabric-26.3-<version>.jar` or
+  `lodger-neoforge-26.3-<version>.jar`, with the craftkit host nested inside it. Nothing else.
+- **The first start downloads the model.** The title screen waits behind a progress bar for the
+  491 MB model (from Hugging Face, Qwen's own file), then loads it, then lets you in. Once. A
+  dedicated server does the same at its first startup, with progress in its log.
 - About 700 MB of RAM on the server for the model, two CPU threads while it thinks, and 491 MB
-  of disk for the model file. The model is downloaded on the first `/lodger model download`, not
-  shipped in the jar (see [Model](docs/model.md)).
+  of disk for the model file, which the first start downloads (see [Model](docs/model.md)).
 - Without the model the mod still runs, on a rule-based brain. It is less interesting, not
   broken.
 
@@ -48,8 +50,7 @@ All of them are for operators, since the point of the mod is not knowing.
 | `/craftkit status` | The host's: every Rust mod loaded, its version and native, or why it did not load. |
 | `/craftkit lodger menu` | Opens the lodger's menu: status, every config key, and the debug page (force a stage or an event, dump the memory, replay the last decision). Every field is also a subcommand, `/craftkit lodger config brain.plan_every 30`. |
 | `/lodger status` | Which stage the lodger is in, whom it is attached to, when it last acted, whether the model is loaded. |
-| `/lodger model download [url]` | Fetches the GGUF model to `config/lodger/models/qwen.gguf`, from `model.url` in the config unless a URL is given. |
-| `/lodger model status` | Whether the file is there, its size, and whether it is loaded. |
+| `/lodger model status` | Whether the file is there, its size, and whether it is loaded. A missing file is fetched again by the next start; `model.url` in the config says where from. |
 | `/lodger decisions [n]` | The last n decisions: the situation text, each question, the choice and its confidence. |
 | `/lodger leave` | Ends the lodger's stay in this world as if the arc had ended. |
 | `/lodger reset` | Forgets everything and starts over, as a fresh world would. |

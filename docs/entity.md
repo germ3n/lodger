@@ -78,6 +78,13 @@ What the body watches and reports, and the mind keeps (see [Memory](memory.md)).
 is more than the server knows anyway; the lodger reads no client state.
 
 - **Where the target is and faces,** once a second, downsampled into routes.
+- **How the target moves** (owner, 2026-11-09): pace and stops, how often they turn around,
+  how often they look behind them, whether they back away from a spot or sprint from it, how
+  long they stand still facing one thing, whether they sneak indoors, whether they walk the
+  middle of a room or its walls, how fast they leave a room an event happened in. Kept as the
+  memory's `Movement` and read by the model as plain lines: `The player keeps looking behind
+  them on the way home`, `The player left the chest room at a run`. This is how the lodger
+  reads fear without being told.
 - **Where the target sleeps,** and whether sleep was refused.
 - **Which containers the target opens,** how often, and what is in them at the time, by item id
   and count. Chests, barrels, shulkers. Not the inventory, not the ender chest.
@@ -87,8 +94,13 @@ is more than the server knows anyway; the lodger reads no client state.
 - **The target's hours:** when they log in and out, in real time and in game time, and how long
   they idle.
 - **Dimension changes, deaths, respawns.**
+- **What the target types in chat,** and what witnesses say within 32 blocks of them (owner,
+  2026-11-09). The memory keeps the last few lines about the lodger (lines that mention a
+  door, a chest, a torch, the house, the figure, a question) and the situation text quotes one:
+  `Yesterday the player said: "something keeps opening my chest"`. It is the server's own chat;
+  a server operator should know the mod reads it, and the memory keeps at most eight lines.
 
-Nothing is read from chat, from the client, or from other mods.
+Nothing is read from the client or from other mods.
 
 ## Events
 
@@ -255,6 +267,25 @@ Blocks the target placed, moved within reach, never broken for good.
 | `pet_outside` | 3 | The pet is outside the closed door in the morning. | A pet indoors and a door. |
 | `bees_out` | 3 | The bees are out of the hive at night, around the door. | A beehive within 16 blocks. |
 
+### Chat and the player list
+
+Reading: the target's chat is a sense (see [Senses](#senses)). Writing: with `events.chat`,
+and always as the target, to the target. Witnesses see none of it. Off, the lodger neither
+speaks nor shows in the list, and still reads.
+
+| Event | Stages | What happens | Needs |
+| --- | --- | --- | --- |
+| `tab_entry` | 3 | A second entry with the target's name in the player list, for a minute, seen by the target alone. Ping bar empty. | Any. |
+| `tab_entry_stays` | 4 | The entry stays all session. | Any. |
+| `joined` | 3 | `<your name> joined the game`, in the target's chat, while they are already in. Nobody joined. | Any. |
+| `left` | 4 | `<your name> left the game`, in the target's chat, while they are still in. Then nothing for an hour. | Any. |
+| `says_back` | 3 | When the target types something about the lodger (the senses' chat line matches the want's words, `house`, `door`, `chest`, a question), a chat line in the target's own name, to the target alone, from the bank: `i know`, `it was me`, `look behind the door`. Once a day at most. | The target typed. |
+| `says_first` | 4 | A chat line in the target's name, unprompted, at night: one word from the want's list, or a bank line. | Night. |
+| `whisper_from_you` | 4 | A whisper to the target from the target: `<you> whispers to you: here`. | Any. |
+| `repeats_you` | 4 | The target's last chat line, said again, in their name, a minute later. The words are the target's own; nothing is added. | The target typed. |
+| `sleep_message` | 3 | `<your name> is sleeping` with the target awake. | Night. |
+| `advancement` | 4 | The advancement toast and chat line for one the target has, as if just earned, in their name. | The target has advancements. |
+
 ### Villages
 
 Offered only with a village within 128 blocks of the home.
@@ -401,6 +432,9 @@ mining events are in [Mines and caves](#mines-and-caves); these are the rest.
 | `copy_crouch` | 4 | The far figure crouches when the target crouches, and stands when they stand, at 60 blocks. | A far figure showing. |
 | `copy_build` | 4 | A one-block-high outline of the target's house, in cobblestone the lodger dug, at its place, the right size and facing. | A home of 20 or more blocks and held stone. |
 | `wave` | 4 | The far figure raises its arm once, as a player swinging, and is gone. | A far figure showing. |
+| `through_the_hill` | 4 | It walks into one side of a hill in view and, a minute later, out of the other, the stone closing behind it both times. Approached, both faces are natural rock. | A hill of natural stone 10 to 30 blocks thick in view, the target 40 or more blocks off. |
+| `into_the_dark` | 3 | It stands at the edge of your torchlight, steps back one block out of it, the torch flickers, and the light finds nothing. | The target outdoors at night by a torch, open ground beyond. |
+| `into_the_mountain` | 4 | Seen from 40 to 80 blocks, the figure digs into a mountainside at a player's pace, a one-by-two tunnel, and the stone closes behind it block by block as it goes, until the face is smooth and it is gone. Walked up to, the face is natural stone; one block in, a torch, and behind it solid rock. Owner's idea, 2026-11-09. | A mountainside of natural stone in view from the route or home, and the target 40 or more blocks from it. |
 
 ### Building
 
@@ -437,6 +471,83 @@ More in [Ideas](ideas.md#building).
 | --- | --- | --- |
 | `settle` | 5 | The ending's own script over one to three days. See [How it ends](#how-it-ends). |
 | `wait` | all | Nothing. Always offered, always allowed. |
+
+### Chains
+
+One thing leads to the next. An event can name follow-ups in `events.rs`: events that, once it
+has landed, are offered with extra weight, or offered *only* to the exclusion of the rest, for a
+few days, and sometimes a place or an item the follow-up inherits. The memory keeps the open
+chains (`Memory::chains`), the situation text says what is open (`It took the pickaxe three days
+ago and has not given it back.`), and the model chooses with that in front of it. A chain is
+never forced: `wait` is always offered, and a follow-up whose needs stopped being met falls out.
+Some chains, with the stages they span:
+
+- **The thing.** `take` → (`place_taken` or `return_taken`, favoured for three days) → if placed,
+  `figure_leaves_item` or `at_the_chest` with it in hand → if the target takes it back,
+  `frame_emptied` everywhere by morning → `want_refused`. [2 to 4]
+- **The vein.** `ore_marked` (a torch on a vein) → if the target mines it, nothing; if not,
+  `mined_out` a day later → `ore_in_chest`: the ore is in their chest after all. [2 to 3]
+- **The tunnel.** `mining_sounds` while they mine → `mine_beside` while they are away →
+  `tunnel_toward` the next time they dig → the broken-through tunnel leads to the `cave_room`.
+  [2 to 4]
+- **The place.** `light_path` → `hole` at its end → `pillar`, a block a night → `sign` on the
+  pillar → `house_near` beside it → `house_grows` → the figure `at_its_door` → the ending's
+  last night is there. [2 to 5]
+- **The watcher.** `far_figure` → if looked at for long, `behind_you` → `on_the_roof` →
+  `in_doorway` → `in_your_bed` → `copy_crouch` and `wave` → `want_seen_met`. If chased
+  instead, `figure_runs` and a week of nothing at all. [3 to 4]
+- **The copy.** `your_spacing` in its torches → `copy_build` outline → `copy_house` over the
+  last nights → `woke_in_other_bed` on the last morning. [3 to 5]
+- **The house.** `open_door` → `door_hinge` → `second_door` → `boarded` windows, in that
+  order over a week, each only after the target has noticed the last (walked up to it, or lit
+  it). [1 to 4]
+- **The pet.** `pet_growl` at a corner → `pet_watching_spot` → `pet_follows_figure` → the pet
+  sits beside the figure, far off, then comes back. [2 to 4]
+
+A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
+menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
+tests check that a stay with the rule brain walks at least two chains end to end and that no
+follow-up is ever offered with its needs unmet.
+
+### Provocation and temper
+
+The lodger answers how it is treated (owner, 2026-11-09). The memory keeps a **temper**, 0 to
+1, starting at the preset's resting value (0.3 for `balanced`), moved by what the target does
+and read by everything that paces the stay:
+
+| The target... | Temper |
+| --- | --- |
+| chases the figure, or hits it | up, a lot |
+| breaks its torches, its signs, its cairn, its pillar, its house | up |
+| takes the thing back after it was placed; empties its chest | up |
+| walls, floods or lights its place; puts TNT or lava near it | up, a lot |
+| kills an animal it moved, or names one back | up |
+| insults it in chat (the chat sense: lines at it with a curse, `leave`, `go away`) | up |
+| sleeps every night and plays by day only, as if nothing were there | up, slowly: it is being ignored |
+| builds something at its place; leaves the thing where it put it; leaves a chest for it | down |
+| looks at the figure without approaching; stands at its sign | down |
+| lights the house but not its place; closes its door gently (the memory cannot tell gently: closes it and leaves) | nothing |
+| talks to it in chat without insult (`hello`, `what do you want`) | down, a little |
+| time passes with nothing | drifts back toward the resting value, a tenth a day |
+
+What temper does, each bounded by the preset so `calm` never becomes `relentless`:
+
+- **The budget.** Events a day are the preset's times `0.5 + temper`, so a stay runs at half
+  pace when it is appeased and at one and a half when it is provoked.
+- **The stages.** Above 0.7 a stage's least days are halved; below 0.2 its most days are
+  stretched by half. Provoke it and the figures come a week sooner.
+- **The menu.** Above 0.6 the bolder events (the near figures, the sleep events, `knock`,
+  `lights_fail`, `tunnel_toward`) are offered a stage early; below 0.2 they wait a stage.
+- **The distance.** Above 0.8, `events.min_distance` is three quarters of the preset's.
+- **The ending.** The want's score and temper together pick the ending when `stages.ending` is
+  `difficulty`: a met want with low temper leaves; a refused want with high temper takes; the
+  rest keeps. Temper above 0.9 at the end of stage four takes on any difficulty.
+- **The model** reads it as a line: `It is angry: the player broke its torches twice`, and the
+  `react` questions carry it, so the choice of *which* event is coloured too.
+
+The rules still hold at every temper: a furious lodger does everything it does more often and
+sooner, never anything it would not do. How much temper moves per act is a table in
+`memory/temper.rs` with a scripted-stay test per row.
 
 ### How often
 
@@ -511,14 +622,26 @@ One lodger per world, one target. Everyone else is a witness.
 
 ## How it ends
 
-Stage five is one to three days. Which ending depends on `stages.ending`, the world's difficulty
-when it reads `difficulty`, and whether the want was met.
+Stage five is three days, and it is the point of the stay. Everything before it was quiet;
+this is not. Which ending depends on `stages.ending`, the world's difficulty when it reads
+`difficulty`, and whether the want was met, and every ending is a script of three days that
+ramps from the first evening to the last night, with the chains above coming to their ends
+inside it. The script is data in `arc.rs`, each day a list of beats with a time and a
+condition; the brain's part is small (which of two ways a beat goes), and the rules still hold
+every step but the one death.
 
-| Ending | When | What happens |
-| --- | --- | --- |
-| **Leaves** | The want was met, on any difficulty; or `stages.ending` is `leave` | Over a day, everything it took is back where it was taken from. Its torches and signs are gone. The last night, the figure stands at the edge of the light, in your skin, and at dawn it is not there and nothing it did remains. `/lodger status` says `left`. |
-| **Takes** | The want was refused, on normal or hard; or `stages.ending` is `take` | The last night the target cannot sleep. Every one of its torches lights at once, the path to its spot. At the spot, the figure, holding everything it took, which it keeps. On hard, the target dies there, once, with their inventory kept, and the death message is vanilla's for falling out of the world. Then it is gone and the house is as it was, minus what it took. |
-| **Keeps** | The want was refused, on easy or peaceful; or `stages.ending` is `keep` | It does not leave. It stops acting. The torches stay lit, the signs stay, the things stay where they were put. The music comes back. Every few in-game weeks, one door is open. `/lodger status` says `stayed`. |
+| Ending | When | Day one | Day two | The last night |
+| --- | --- | --- | --- | --- |
+| **Leaves** | The want was met, on any difficulty; or `stages.ending` is `leave` | Everything it took comes back over the day, one thing an hour, each to where it was taken from. The animals it moved come home. Its torches go out one by one along the path, from the far end toward the house. | Its house (if it built one) is emptied: the chest's contents are on your doorstep at dawn. The figure stands at its door at noon, in plain light, for a full minute, and goes in. At dusk its torch goes out. Every pet of yours sits facing its house. | The music plays, the first time in a week. Every light in your house flickers once at midnight and steadies. At the edge of the light, the figure, in your skin, for as long as you look. When you look away and back, nothing. At dawn its house is gone, the ground flat, one torch where its door was. `/lodger status` says `left`. |
+| **Takes** | The want was refused, on normal or hard; or `stages.ending` is `take` | You cannot sleep (`You may not rest now`, all night). Every door in the house opens at midnight at once, and the pets go out. The animals stare at the house all day. The sun blinks out three times before noon. | Every frame is empty, the items on your bed, in a line pointing at the door. Every sign in the house says the same word. The figure is behind you on every route, closer each time, to 32 blocks. Your tunnels are all sealed with cobblestone. The village bell rings every hour. | Every torch it ever placed lights at once, the whole path to its place, and every torch of yours goes dark in the client's render. Red rain. The lights of its house are on. At its place, the figure, holding everything it took, which it keeps. It walks toward you for the first time, at a player's pace, and stops at one block. On hard, you die there, once, with your inventory kept, and the death message is vanilla's for falling out of the world. Then the night is ordinary, the house is as it was minus what it took, and it is gone. |
+| **Keeps** | The want was refused, on easy or peaceful; or `stages.ending` is `keep` | Its house gets a second room overnight, a copy of your bedroom, your spare bed in it. The far figure is in its window every hour. | A path of cobblestone from your door to its door. A gate in its fence facing your door, open. Your pets go and sit at its door and come back. | At midnight, its door is open and lit, and the figure is in its doorway, facing you, for as long as you look. It does not come. At dawn it stops acting, for good. The torches stay lit, the signs stay, the things stay where they were put, its house stays with its door open. The music comes back. Every few in-game weeks, one door of yours is open. `/lodger status` says `stayed`. |
+
+Within each day the beats are ordered and timed, but which of two forms a beat takes (the figure
+at its door or on its roof; the frames emptied or the paintings turned) is the model's, asked
+once per day with the day's beats as the choices, so two players' endings differ in detail and
+agree in shape. Nothing in stage five repeats a thing from the same day, and nothing in it is
+small: the budget is off, the cooldowns are off, and the caps alone hold, so a stay's last night
+can spend everything it has left.
 
 After any ending the stay is closed in `lodger.dat` and no lodger moves into that world again
 unless `/lodger reset`. The one death the hard ending deals is the only harm the lodger ever does,

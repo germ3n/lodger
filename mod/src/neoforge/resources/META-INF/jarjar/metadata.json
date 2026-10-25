@@ -1,0 +1,16 @@
+{
+	"jars": [
+		{
+			"identifier": {
+				"group": "craftkit",
+				"artifact": "craftkit-neoforge"
+			},
+			"version": {
+				"range": "[${craftkit_version},)",
+				"artifactVersion": "${craftkit_version}"
+			},
+			"path": "META-INF/jarjar/${craftkit_jar}",
+			"isObfuscated": false
+		}
+	]
+}

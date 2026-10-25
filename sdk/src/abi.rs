@@ -31,6 +31,11 @@ pub unsafe fn text<'a>(ptr: *const u8, len: usize) -> Result<&'a str, String> {
     std::str::from_utf8(bytes).map_err(|err| format!("not UTF-8: {err}"))
 }
 
+/// Reads JSON the host sent, naming what was wrong when it is not what was expected.
+pub fn parse<T: serde::de::DeserializeOwned>(text: &str) -> Result<T, String> {
+    serde_json::from_str(text).map_err(|err| format!("bad JSON from the host: {err}"))
+}
+
 /// Runs `body`, turning a panic or an `Err` into `{"error": ...}` and any result into a C string
 /// the host owns until it calls `craftkit_free`.
 pub fn answer<T: Serialize>(body: impl FnOnce() -> Result<T, String>) -> *mut c_char {

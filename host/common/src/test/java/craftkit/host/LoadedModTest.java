@@ -34,7 +34,7 @@ class LoadedModTest {
 
 	@Test
 	void a_bad_manifest_is_a_failure_naming_the_manifest(@TempDir Path config) {
-		LoadedMod mod = LoadedMod.load(new FakeJar("x", Map.of()), utf8("{ nope"), config, "Linux", "amd64");
+		LoadedMod mod = LoadedMod.load(new FakeJar("x", Map.of()), utf8("{ nope"), config.getParent(), config, "Linux", "amd64");
 
 		assertFalse(mod.loaded());
 		assertTrue(mod.failure().startsWith("bad " + Manifest.PATH), mod.failure());
@@ -44,7 +44,7 @@ class LoadedModTest {
 	@Test
 	void a_jar_without_a_native_for_this_platform_says_which_file_it_looked_for(@TempDir Path config) {
 		byte[] manifest = utf8("{ \"id\": \"demo\", \"library\": \"demo_core\" }");
-		LoadedMod mod = LoadedMod.load(new FakeJar("demo", Map.of()), manifest, config, "Linux", "amd64");
+		LoadedMod mod = LoadedMod.load(new FakeJar("demo", Map.of()), manifest, config.getParent(), config, "Linux", "amd64");
 
 		assertFalse(mod.loaded());
 		assertTrue(mod.failure().contains("no native for linux-x86_64"), mod.failure());
@@ -58,7 +58,7 @@ class LoadedModTest {
 		files.put("natives/" + Natives.platform() + "/" + Natives.fileName(Natives.os(System.getProperty("os.name")), "demo_core"), new byte[] {1, 2, 3});
 		byte[] manifest = utf8("{ \"id\": \"demo\", \"library\": \"demo_core\" }");
 
-		LoadedMod mod = LoadedMod.load(new FakeJar("demo", files), manifest, config, System.getProperty("os.name"), System.getProperty("os.arch"));
+		LoadedMod mod = LoadedMod.load(new FakeJar("demo", files), manifest, config.getParent(), config, System.getProperty("os.name"), System.getProperty("os.arch"));
 
 		assertFalse(mod.loaded());
 		assertTrue(mod.failure().startsWith("could not load"), mod.failure());

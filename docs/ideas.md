@@ -741,9 +741,52 @@ felled (replanted), stone it mined. At a player's pace, out of sight, over night
 - `figure_rides_your_horse` on your horse at the far post, dismounts, gone [4]
 - `figure_with_your_pet` your dog sits beside it, far off, then runs back to you [4]
 - `nameplate_only` your name over empty air [3]
+- `into_the_mountain` see [Where it goes](#where-it-goes-and-comes-from)
 - `figure_lit_by_its_torch` at night, holding a torch, far off, the torch the only light [3]
 
-## Mobs (never a fight; their own behaviour, redirected)
+## Where it goes and comes from
+
+The owner's mountain (2026-11-09) made a family: the world opens for it and closes behind it,
+always seen from a distance, always leaving a natural face or a thing of yours back in place,
+so walking up finds nothing to prove. The host does these as the figure plus a block script:
+each block removed is put back a second later, so nothing is ever destroyed, and a block of
+yours it passes through is yours again before you arrive.
+
+- `into_the_mountain` it digs into the mountainside at a player's pace; the stone closes behind it block by block until the face is smooth; one block in, a torch, then rock [4]
+- `out_of_the_mountain` the mountainside opens one block at a time, it steps out, looks at you, and the stone closes [4]
+- `through_the_hill` it walks into one side of a hill and, a minute later, out of the other [4]
+- `into_the_ground` it stands at its place and sinks one block at a time, the dirt closing over; a dirt path block marks the spot [4]
+- `out_of_the_ground` the ground at its place rises as a column of dirt, it is standing on it, the column sinks back [4]
+- `into_the_lake` it walks into the lake and does not come up; the water is still; the next day a boat is where it went in [4]
+- `out_of_the_lake` it walks out of the lake at dawn, dry, up the bank, toward your door, gone at 32 [4]
+- `under_the_ice` seen through the ice from the surface, walking below, then not [4; glitch]
+- `into_the_tree` it steps into the trunk of the big oak and the leaves shake once [4]
+- `into_the_leaves` it climbs into the canopy and the leaves close; the tree drops one sapling [3]
+- `into_the_snow` it lies down in the snow and sinks; the snow is smooth; footprints lead there and stop [4; glitch decals]
+- `into_the_sand` the desert sand takes it like water [4]
+- `into_your_wall` it walks into the wall of your house from outside; the wall block is gone a second and back; nothing inside [4; a block of yours moved and restored]
+- `out_of_your_wall` from inside, a block of your wall is missing for a second and it is in the gap, then the block is back and it is not [5]
+- `into_the_chest` seen through the window, it climbs into your double chest and the lid shuts; the chest is as it was, one slot shuffled [4]
+- `into_the_bed` it lies down in your bed and sinks through it; the bed is one block over [4]
+- `into_the_painting` it steps into the big painting; the painting is another painting [4; a figure walk plus `painting_change`]
+- `into_the_well` it climbs down the well it dug; the well is dry; at the bottom, a torch [4]
+- `into_the_portal_frame` it walks through your unlit portal frame as if lit, and is not on the other side [4]
+- `up_the_ladder` it climbs your ladder to the roof and is not on the roof [3]
+- `down_the_shaft` it drops down its own one-block shaft; the shaft fills in from the bottom up [4]
+- `into_the_cave` it walks into the cave mouth; the cave is lit behind it one torch at a time as it goes deeper, then the torches go out from the far end [4]
+- `into_the_mine` it walks into your mine ahead of you; the tunnel's torches go out one by one ahead of you; at the end, nothing, and they are lit again behind you [4]
+- `into_the_village` it walks into a village house at dusk and the door shuts; the house has one more bed in the morning [4]
+- `into_the_fog` it walks into fog that closes around it, on a clear day, for the target alone [4; glitch]
+- `into_the_rain` it is there in the rain and not when it stops [3]
+- `into_the_dark` it stands at the edge of your torchlight and steps back one block out of it; the torch flickers; it is not there [3]
+- `out_of_the_dark` the reverse: it steps into the light from the dark, one step, and back [3]
+- `into_its_house` it goes into its house and the door shuts; its window is dark; the next night it is lit [4]
+- `into_your_house` the last night: it goes into your house while you are outside; every window lights; when you open the door, nothing is different but one thing [5]
+- `into_the_sky` ... no: see Set aside, it never flies
+- `through_the_floor` from the roof you see it walk into your house's floor as into water [5]
+- `into_the_mirror_room` it walks into the room dug facing your bedroom and the room's torch goes out [4]
+- `into_the_waterfall` it steps through the waterfall; behind it, a one-block alcove with a torch [4]
+- `closes_the_door_from_inside` the hill's doorway it dug: it goes in, and the doorway is stone from the inside out, the log door left standing in rock [4]
 
 - `stare` animals and villagers stare [3]
 - `zombies_face_house` every zombie within 64 faces your house, standing still, until dawn [3]
@@ -814,6 +857,73 @@ felled (replanted), stone it mined. At a player's pace, out of sight, over night
 - `lodestone` a lodestone at its place, your compass bound... (a lodestone needs netherite: Set aside)
 - `far_lands_house` ... no
 
+## Reading how you move
+
+Events keyed to the movement reading, which is the lodger noticing fear or its absence.
+
+- `when_you_look_back` the figure is there only on the third look back, never the first [3]
+- `when_you_stop` every time you stand still more than ten seconds, a door sound somewhere [2]
+- `when_you_run` when you sprint from a room, the door shuts behind you [3]
+- `when_you_sneak` when you sneak indoors, it is quieter than you: no sounds that night [2]
+- `when_you_back_away` the thing you backed away from is in your bed [3]
+- `when_you_hug_walls` the torches on the walls you walk along go out one by one ahead of you, client-side [3]
+- `when_you_face_it` the longer you face the spot, the longer the far figure stays [3]
+- `when_you_turn_fast` a fast turn shows the figure in the doorway for one frame [4]
+- `when_you_are_calm` a player who never looks back gets the bold events sooner; one who always does gets the slow ones [all; a weight]
+- `when_you_leave_fast` leaving a room at a run marks it: the next event is in it [3]
+- `when_you_linger` standing at the chest a long time opens the chest one more time [2]
+- `when_you_jump` at a jump indoors, late landing sound from the room above [2]
+- `when_you_crouch_at_window` crouching at a window shows the figure far off, crouching too [4]
+- `pace_match` the far figure's pace is yours, from the memory [3]
+- `route_speed` it walks your route at your average pace, not a player's default [4]
+
+## Provocations and offerings
+
+What moves the temper, beyond the table in the catalogue, and what the lodger does about it.
+
+- `torch_broken` you break its torch: two more appear by morning [2]
+- `sign_broken` you break its sign: the word is on three signs [3]
+- `pillar_broken` you break its pillar: the pillar is back, one taller, overnight [3]
+- `house_broken` you break into its house: its door is gone and the doorway walled; a new door on the side facing away from you [4]
+- `place_walled` you wall its place: the wall has a doorway in the morning; your wall blocks are stacked beside it [3]
+- `place_lit` you light its place with torches: they are moved to your bed [3]
+- `place_flooded` you flood its place: the water is gone and the place is one block higher [4]
+- `place_tnt` you put TNT near it: the TNT is in your chest, the fuse sound every night for a week [4]
+- `figure_hit` you hit the figure: it does not react; that night, every door opens at once [4]
+- `figure_chased` you chase the figure: it runs, the only time it is fast; a week of nothing [4]
+- `figure_shot` you shoot it: the arrow is on your bed in the morning [4]
+- `animal_killed` you kill an animal it moved: the pen is empty the next morning, the animals at its place [4]
+- `thing_taken_back` you take the thing back: every frame emptied [3]
+- `chest_emptied` you empty its chest: your chest is empty, the contents in its [4]
+- `insult` you curse at it in chat: your name in the player list goes grey for an hour [3]
+- `ignore` you sleep every night: it starts waking you [3]
+- `offering_chest` you leave a chest for it: it fills it with one of everything it took [3]
+- `offering_build` you build at its place: its temper drops; a torch of thanks on your doorstep [3]
+- `offering_item` you leave the thing: the want is met [4]
+- `greeting` you say hello in chat: a door opens and closes, softly [2]
+- `question` you ask what it wants in chat: a sign appears with the want's word [3]
+- `apology` you say sorry after a provocation: half the temper move undone [3]
+
+## The other house
+
+A dimension of the lodger's own (owner, 2026-11-09), used twice at most, as the todo has it:
+a void with a dark sky where your house stands copied block for block. Things that could happen
+in it, in the one minute you are there:
+
+- `other_wake` you wake in the copy's bed; the door is open onto nothing [4]
+- `other_doorway` the figure in the doorway, facing in, not moving [4]
+- `other_frames` every frame holds the thing [4]
+- `other_signs` every sign reads the want's word [4]
+- `other_chest` the chest holds everything it ever took [4]
+- `other_window` through the window, your real house, far off, lit [4]
+- `other_sounds` your own footsteps from the next room, walking your route [4]
+- `other_bed` a second bed beside yours, slept in [4]
+- `other_mirror` the copy is mirrored [5]
+- `other_portal` in the `take` ending: its portal frame leads here; the walk ends at the copy's door [5]
+- `other_return` you wake in your own bed, the door open, one thing moved [4]
+- `other_witness` in multiplayer, a witness sees you asleep the whole minute [4]
+- `other_memory` the copy is your house as it was on the first day of the stay, not as it is now [5]
+
 ## Time, habits and rituals
 
 - `login_hour_event` something happens at the hour you usually log in, before you do, found at once [2]
@@ -870,13 +980,65 @@ felled (replanted), stone it mined. At a player's pace, out of sight, over night
 - `your_copy_stays` the copy of your house stays [5]
 - `book_left` a book with the memory's lines, on your bed, the last morning [5]
 
+## Other mods
+
+The host can see which mods are loaded, and for a few well-known ones offer hooks the lodger
+uses when the mod is there and does nothing otherwise (owner, 2026-11-09). Each is a hint kind
+the host implements against that mod's API, behind a check that the mod is present, so the
+lodger's jar never depends on any of them.
+
+- dynamic lights (LambDynamicLights, Sodium Dynamic Lights): the held torch gives no light for a minute during `lights_fail`; the figure carries a light the mod renders [3]
+- shaders (Iris, Oculus): a shadow with no caster for a second; the figure's shadow arrives before it [4]
+- minimaps (Xaero's, JourneyMap): your own marker twice, the second at its place; a waypoint named with the want's word appears and is gone; the figure as a player dot that fades [3]
+- Distant Horizons: its house on the horizon, in low detail, before it exists [4]
+- Simple Voice Chat: your own last words played back from behind you, half a second late, once; breathing from the next room in proximity chat; its footsteps in your group's channel [4]
+- Sodium / Iris performance mods: nothing; they are the reason to keep the glitches cheap
+- Fabric Skyboxes: a different sky for one second [4]
+- Presence Footsteps: the late steps use its sound set so they match yours exactly [2]
+- Ambient Sounds mods: the silence event silences those too [3]
+- inventory and storage mods (Sophisticated Storage, Tom's Storage): the chest events reach their containers, through their APIs, so a player with no vanilla chests still has `open_chest` [2]
+- Create: a contraption's gears turn one notch; a train horn far off at night [3]
+- Farmer's Delight: the cooking pot is cooking what you had, overnight [2]
+- Waystones: a waystone named with the word, at its place [4]
+- Replay Mod: nothing it records is hidden; the glitches are in the recording, which is the point
+- Essential / in-game friends list (vanilla 26.x): your own name shown online in the friends list for a minute, for you alone [3; client render only]
+- Discord Rich Presence mods: nothing; nothing leaves the machine
+
+## Chains
+
+Sequences where one event sets the next up; the catalogue's [Chains](entity.md#chains) has the
+eight that are in. More:
+
+- the boat: `boat_moved` → `boat_adrift` → `figure_in_boat` → `boat_sunk` with the held item in its chest at the bottom → `boat_waiting` at the shore on the last day
+- the field: `harvest_one` → `harvest_row` → `scarecrow` → `scarecrow_moved` nightly toward the house → `field_word` → the scarecrow in the doorway on the last night
+- the bed: `egg_on_bed` → `pillow_item` → `shift_bed` → `turn_bed` → `second_bed` → `in_your_bed` → `woke_in_other_bed`
+- the village: `bell` → `villager_at_door` → `golem_turned` → `village_doors` → `villagers_in_one_house` → `village_bell_moved` to your door
+- the lights: `flicker` → `lights_fail` → `candles_lit` → `torch_every_other` → every light out but its path, the last night
+- the water: `drip` → `bucket_floor` → `well` → `moat` → `bridge` → `bridge_finished` the last night, the figure crossing it
+- the mine: `ore_marked` → `mined_out` → `mine_beside` → `mine_below` → `tunnel_toward` → `cave_room` → `stairs_down` to its place
+- the sky: `sun_blink` → `moon_wrong` → `stars_out` → `night_early` → `red_rain` → `eclipse` on the last day
+- the sounds: `late_steps` → `late_eating` → `knock` → `knock_floor` → `knock_bed` → `breathing_bed` → `your_voice`
+- the pet: `pet_growl` → `pet_moved` → `pet_outside` → `pet_watching_spot` → `pet_follows_figure` → the pet at its door on the last night
+- the frames: `frame_rotate` → `frames_turn` → `frame_swap` → `frame_favourite` → `frame_emptied` → `item_frame_your_face`
+- the route: `late_steps` on the route → `route_marked` → `behind_you` → `on_the_route_ahead` → `route_away` → `hut_on_route` → the figure in the hut
+- the redstone: `lever` → `lever_flipped_back` → `plate_laid` → `door_opens_itself` → `lamp_morse` → `piston_blocks_door` → every door open at once the last night
+- the want of a place: `light_path` → `hole` → `pillar` → `sign` → `cairn_row` → `house_near` → `house_furnished` → `figure_at_its_door` → the last night at its house
+- the want to be seen: `far_figure` → `behind_you` → `on_the_roof` → `in_doorway` → `stands_in_field` → `at_the_chest` → `wave` → `copy_crouch` → the last night, it does not leave your sight
+- the want of a thing: `take` → `place_taken` far → `return_one_over` → `take` again → `tool_used` → `frame_favourite` in its house → `villager_word` trading it back → the last night, it holds it out at one block
+
+Chains cross: the pet chain joins the watcher chain when the pet follows the figure; the mine
+chain ends in the place chain's house if it is underground. Which chain opens depends on the
+want and the surroundings, which is the brain's choice from the first week's menus.
+
 ## Set aside
 
 Ideas that break a rule, or the design, kept so they are not reconsidered from scratch.
 
-- **Anything that writes text** beyond the want's word lists and the mod's own templates: signs
-  with the player's name, books in free prose, chat messages, renamed items with new names. The
-  model chooses, never writes, and the mod impersonates no one.
+- **Free prose** beyond the phrase bank and, as an experiment, three constrained words from
+  the model: signs with another player's name, books in free prose, chat to witnesses. Chat and
+  the player list in the target's own name, to the target, moved into the catalogue on
+  2026-11-09 (the owner's call); the model writing words is `brain.text: generate`, judged in
+  the calibration pass.
 - **Anything that makes an item from nothing:** a compass, a bell, a lodestone, rotten flesh in
   place of food, a message in a bottle. It digs, cuts, picks, cooks, crafts from what it has, and
   takes. A compass can appear if the player has iron and redstone in a chest and it crafts one.
@@ -886,7 +1048,9 @@ Ideas that break a rule, or the design, kept so they are not reconsidered from s
   as a sound only, since nothing follows it.
 - **Input control** beyond a nudge: moving the player, opening their inventory, dropping their
   items. The screen glitches render; they never act for the player.
-- **Reading chat, the client, or other mods.** The senses read the server's own facts.
+- **Reading the client or other mods.** The senses read the server's own facts, which since
+  2026-11-09 include the server's chat (the owner's call); the client's state and other mods'
+  stay off limits.
 - **Real-world data** beyond the clock: no birthdays, no weekends, no names.
 - **Destroying what a player built,** even to rebuild it elsewhere. Moved within reach, same
   night, is the limit.
