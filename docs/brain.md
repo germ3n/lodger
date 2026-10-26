@@ -98,7 +98,15 @@ questions). Which set depends on why the brain is asking.
 ### Planning (`plan`)
 
 On the timer, `brain.plan_every` seconds of the target's play, and when the target leaves or
-sleeps (the lodger's working hours).
+sleeps (the lodger's working hours). **As built (2026-11-09):** the first two questions are
+asked, `Should it do something soon?` and `What should it do?`, as one ask with the key `plan`
+(`brain/mod.rs`, `decide`); the answer comes back on a later tick (`take_replies`): `nothing
+yet`, a first-question confidence under `brain.event_threshold`, or `nothing` on the menu is
+`wait`, otherwise the chosen words name the event, which is then planned as the rule brain's
+picks are, with the time the brain's own (within four planning intervals, when the event's
+moment comes). A question unanswered for a minute, a refused ask (the queue full, the model
+shut down) or `brain.force_rules` hands the menu to the rule brain. The story on the debug
+screen says which brain decided. `When?` and `Where?` are still to come.
 
 | Question | Choices | Becomes |
 | --- | --- | --- |
@@ -155,17 +163,23 @@ Signs, books, named animals and, with `events.chat`, chat lines in the target's 
 Two ways, by `brain.text`, and the owner's call (2026-11-09: "yes it should generate, maybe with
 examples and those examples correlating to specific actions") made `generate` the default:
 
-- **`generate`, the default.** The model writes the line itself, shown the bank for that kind
-  of line as its examples first: a sign after a kill is shown kill signs, a whisper is shown
+- **`generate`, the default.** The model writes the line itself (`infer.rs`'s `generate`,
+  2026-11-09), shown the bank for that kind of line as its examples first: a sign after a kill is shown kill signs, a whisper is shown
   whispers, a name for an animal is shown names (`brain/text.rs`, `Kind`: `SignWord`,
   `ChatLine`, `KillLine`, `KillSign`, `Whisper`, `AnimalName`, `GraveSign`, each with its bank
   and its most words). The line is decoded a token at a time with every token outside letters,
   digits and spaces masked out, stopped at a newline or the kind's word count, passed through a
-  blocklist and a length check, logged with the situation, and dropped (the bank used instead)
-  if any check fails. Phase 4 wires the model in; until then `generate` picks from the bank
-  like `bank` does, so the words a player sees today are the handwritten ones.
-- **`bank`.** A line is picked from the kind's bank by the stay's seed, the model asked `What
-  does the sign say?` over eight drawn lines once it is in the loop. The lodger never writes,
+  blocklist and a length check (`text::check`), logged (`wrote (Kind): "..." -> kept or
+  dropped` in the decision log), and dropped (the bank used instead) if any check fails. The
+  writing is asked for the moment the event is planned, so the line is there when the plan
+  runs minutes later; with no line by then, the bank's stands. **The blocked words** are the
+  `BLOCKED` list at the top of `core/src/brain/text.rs`: slurs, sexual words and self-harm, and
+  nothing else, since the line appears in the player's own name in chat. Horror words (kill,
+  blood, dead) are the mod's subject and are not blocked (owner, 2026-11-09). Editing the list
+  is editing that constant; its test pins that a blocked word drops the line and a horror word
+  does not.
+- **`bank`.** A line is picked from the kind's bank by the stay's seed (the `What does the
+  sign say?` ask over eight drawn lines is still to come). The lodger never writes,
   and still every sign is its choice among many, for this player, now. The fallback of
   `generate`, and the setting for a server that wants nothing the author did not write.
 

@@ -78,6 +78,53 @@ impl Kind {
     }
 }
 
+/// Words a written line may never carry, since the line appears in the player's own name:
+/// slurs, sexual words and self-harm, nothing else. Horror words (kill, blood, dead) are the
+/// mod's own subject and stay. A generated line that trips this is dropped for a bank line,
+/// and the log keeps what the model wrote.
+const BLOCKED: &[&str] = &[
+    "rape", "suicide", "nazi", "hitler", "fuck", "shit", "cunt", "bitch", "nigg", "fag", "retard",
+    "whore", "slut", "porn", "sex", "dick", "cock", "pussy", "kys",
+];
+
+/// What the line is for, in the prompt's words.
+impl Kind {
+    pub fn purpose(self) -> &'static str {
+        match self {
+            Kind::SignWord => "The sign it puts up near the house says one or two words:",
+            Kind::ChatLine => "What it types in the player's own name, as if they said it:",
+            Kind::KillLine => "What it types in the player's own name about what they killed:",
+            Kind::KillSign => "The sign it puts up counting what the player killed says:",
+            Kind::Whisper => "The whisper the player gets from themselves says:",
+            Kind::AnimalName => "The name it gives one of the player's animals:",
+            Kind::GraveSign => "The sign on the small grave it raised says:",
+        }
+    }
+}
+
+/// A written line cleaned and checked for its kind: lower case, letters, digits and single
+/// spaces alone, at most the kind's words, not empty, nothing from the blocklist. `None` is a
+/// line to drop for a bank line.
+pub fn check(kind: Kind, written: &str) -> Option<String> {
+    let cleaned: String = written
+        .to_lowercase()
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { ' ' })
+        .collect();
+    let words: Vec<&str> = cleaned.split_whitespace().collect();
+    if words.is_empty() || words.len() > kind.most_words() {
+        return None;
+    }
+    if words
+        .iter()
+        .any(|w| BLOCKED.iter().any(|b| w.contains(b)) || w.len() > 14)
+    {
+        return None;
+    }
+
+    Some(words.join(" "))
+}
+
 /// One line of the kind, picked by seed, with `{kind}` and `{n}` filled in.
 pub fn pick(kind: Kind, seed: usize, mob: &str, count: u32) -> String {
     let bank = kind.examples();
@@ -128,6 +175,32 @@ mod tests {
                 assert!(!filled.contains('{'), "{filled}");
             }
         }
+    }
+
+    #[test]
+    fn a_written_line_is_cleaned_and_a_bad_one_dropped() {
+        assert_eq!(check(Kind::SignWord, "Under!").as_deref(), Some("under"));
+        assert_eq!(
+            check(Kind::ChatLine, "  i   KNOW  ").as_deref(),
+            Some("i know")
+        );
+        assert_eq!(
+            check(Kind::SignWord, "one two three"),
+            None,
+            "too many words"
+        );
+        assert_eq!(check(Kind::Whisper, ""), None);
+        assert_eq!(check(Kind::ChatLine, "fuck you"), None, "blocked");
+        assert_eq!(
+            check(Kind::ChatLine, "i saw you kill them").as_deref(),
+            Some("i saw you kill them"),
+            "horror words stay"
+        );
+        assert_eq!(
+            check(Kind::ChatLine, "supercalifragilisticexpialidocious"),
+            None
+        );
+        assert!(!Kind::Whisper.purpose().is_empty());
     }
 
     #[test]

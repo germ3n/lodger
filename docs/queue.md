@@ -76,8 +76,9 @@ green (below). Ask the owner, then commit; the owner wanted one commit per phase
    hours pieces of the memory, the temper and the chains, the six remaining scripted stays.
 3. **The config page** of the debug screen (phase 2's last piece): every key of the mod's
    config, written back.
-4. **Phase 4:** the brain on the model, the want and target asks, generation with the banks as
-   examples, calibration round one.
+4. **Phase 4, the rest:** the `react` asks on triggers, `When?` and `Where?`, the want and
+   target asks, calibration round one on the real model's decisions and written lines (the
+   planning ask and the writing are in, 2026-11-09).
 5. **Phase 5:** the figure in the target's skin and its renderer, the rows that need it.
 
 ## Open questions for the owner

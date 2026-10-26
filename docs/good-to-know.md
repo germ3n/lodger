@@ -10,7 +10,9 @@ pages explain each part in full; this one is the short list to keep in mind.
   is the words on a sign, a name tag or a chat line in your own name (`brain.text`, `generate`
   by default since 2026-11-09): a few words, letters and spaces only, shown handwritten examples
   of that kind of line first, through a blocklist, logged, and replaced by a handwritten line if
-  any check fails. See [Brain](brain.md#why-scoring-and-not-generation) and [Text](brain.md#text).
+  any check fails. The blocklist (`BLOCKED` in `core/src/brain/text.rs`) holds slurs, sexual
+  words and self-harm and nothing else; horror words are the mod's subject. See
+  [Brain](brain.md#why-scoring-and-not-generation) and [Text](brain.md#text).
 - **The model is downloaded, not shipped, and the game waits for it.** It is 1.1 GB, Qwen's
   own `q4_k_m` GGUF of Qwen2.5-1.5B-Instruct (`model.size` picks 0.5B at 491 MB or 3B at 2 GB
   instead). The first start shows Qwen's terms, then a progress bar over the title screen,

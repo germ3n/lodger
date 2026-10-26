@@ -250,10 +250,51 @@ impl Model {
             key,
             situation: situation.to_string(),
             questions,
+            generate: None,
             reply,
         })?;
 
         Ok(id)
+    }
+
+    /// Has the model write a few words after `prompt` on the worker (`brain.text = generate`):
+    /// at most `max_tokens` tokens of letters, digits and spaces, to a line's end. The reply's
+    /// `text` carries them. Refused as `ask_async` is.
+    pub fn generate_async(
+        &self,
+        prompt: &str,
+        max_tokens: usize,
+        key: Option<String>,
+        reply: Sender<Reply>,
+    ) -> Result<u64, String> {
+        if prompt.is_empty() {
+            return Err("prompt is empty".to_string());
+        }
+        let worker = self.worker()?;
+        let id = self.next_id.fetch_add(1, Ordering::Relaxed);
+
+        worker.submit(Job {
+            id,
+            key,
+            situation: prompt.to_string(),
+            questions: Vec::new(),
+            generate: Some(max_tokens.max(1)),
+            reply,
+        })?;
+
+        Ok(id)
+    }
+
+    /// [`Model::generate_async`] and waits. For tests and tools.
+    pub fn generate(&self, prompt: &str, max_tokens: usize) -> Result<String, String> {
+        let (tx, rx) = channel();
+        self.generate_async(prompt, max_tokens, None, tx)?;
+        let reply = rx
+            .recv()
+            .map_err(|_| "the model worker stopped".to_string())?;
+        reply.result?;
+
+        Ok(reply.text.unwrap_or_default())
     }
 
     /// [`Model::ask_async`] and waits. Inference takes tens to hundreds of milliseconds, so

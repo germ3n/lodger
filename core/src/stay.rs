@@ -174,6 +174,18 @@ impl Stay {
 
     /// One tick. The lodger's config and log come from the mod, which is one per process.
     pub fn tick(&mut self, now: &Now, config: &Config, log: &mut Log) -> Vec<Command> {
+        self.tick_with(now, config, log, None)
+    }
+
+    /// A tick with the model to ask, when there is one loaded; the brain falls back to its
+    /// rules without it.
+    pub fn tick_with(
+        &mut self,
+        now: &Now,
+        config: &Config,
+        log: &mut Log,
+        model: Option<&crate::model::Model>,
+    ) -> Vec<Command> {
         self.ticks += 1;
         self.last_now = now.clone();
         if self.first_day.is_none() {
@@ -191,8 +203,15 @@ impl Stay {
             log.note(&format!("stage {stage} begins on day {day:.1}"));
         }
 
-        self.brain
-            .tick(now, day, &mut self.memory, &mut self.arc, config, log)
+        self.brain.tick(
+            now,
+            day,
+            &mut self.memory,
+            &mut self.arc,
+            config,
+            log,
+            model,
+        )
     }
 
     pub fn report(&mut self, reports: &[Report], log: &mut Log) {

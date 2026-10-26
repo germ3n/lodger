@@ -19,21 +19,36 @@ pub const MAX_QUEUED: usize = 64;
 pub const SUPERSEDED: &str = "superseded";
 const SHUT_DOWN: &str = "the model has been shut down";
 
-/// What the worker runs: llama.cpp in the build, a fake in tests.
+/// What the worker runs: llama.cpp in the build, a fake in tests. Scoring is what the lodger
+/// decides with; writing is the few words of a sign or a chat line (`brain.text = generate`),
+/// which a scorer may not support.
 pub trait Scorer {
     fn score(&mut self, situation: &str, questions: &[Question]) -> Result<Vec<Answer>, String>;
+
+    /// Continues `prompt` by at most `max_tokens` tokens of lower-case letters, digits and
+    /// spaces, stopping at a line's end. The default cannot write.
+    fn generate(&mut self, prompt: &str, max_tokens: usize) -> Result<String, String> {
+        let _ = (prompt, max_tokens);
+        Err("this model does not write".to_string())
+    }
 }
 
 pub struct Reply {
     pub id: u64,
+    /// The answers of a scoring job; an empty list for a writing job.
     pub result: Result<Vec<Answer>, String>,
+    /// The text of a writing job.
+    pub text: Option<String>,
 }
 
 pub struct Job {
     pub id: u64,
     pub key: Option<String>,
+    /// The situation to score against, or the prompt to continue.
     pub situation: String,
     pub questions: Vec<Question>,
+    /// Some for a writing job: how many tokens at most.
+    pub generate: Option<usize>,
     pub reply: Sender<Reply>,
 }
 
@@ -158,10 +173,16 @@ fn run<S: Scorer>(scorer: &mut S, rx: Receiver<Job>, shared: &Shared) {
 
             latest.get(key) != Some(&job.id)
         });
+        let mut text = None;
         let result = if shared.closing.load(Ordering::SeqCst) {
             Err(SHUT_DOWN.to_string())
         } else if stale {
             Err(SUPERSEDED.to_string())
+        } else if let Some(max_tokens) = job.generate {
+            scorer.generate(&job.situation, max_tokens).map(|written| {
+                text = Some(written);
+                Vec::new()
+            })
         } else {
             scorer.score(&job.situation, &job.questions)
         };
@@ -175,7 +196,11 @@ fn run<S: Scorer>(scorer: &mut S, rx: Receiver<Job>, shared: &Shared) {
         }
 
         // The asker may be gone (its world closed); that is fine.
-        let _ = job.reply.send(Reply { id: job.id, result });
+        let _ = job.reply.send(Reply {
+            id: job.id,
+            result,
+            text,
+        });
     }
 }
 
@@ -240,6 +265,7 @@ mod tests {
 
     fn job(id: u64, key: Option<&str>, situation: &str, reply: &Sender<Reply>) -> Job {
         Job {
+            generate: None,
             id,
             key: key.map(str::to_string),
             situation: situation.to_string(),

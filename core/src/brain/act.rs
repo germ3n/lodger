@@ -358,6 +358,7 @@ pub fn commands(
     memory: &Memory,
     ids: &mut impl FnMut() -> u64,
     _now: &Now,
+    written: Option<&str>,
 ) -> Vec<(Command, u64)> {
     let target = memory.target.unwrap_or(0);
     let at = block_center;
@@ -365,6 +366,12 @@ pub fn commands(
         .map(|p| (p[0] + p[2]).unsigned_abs() as usize)
         .unwrap_or(0)
         + memory.done.len();
+    // The words: what the model wrote for this event, checked, or the bank's.
+    let words = |kind: Kind, mob: &str, count: u32| -> String {
+        written
+            .map(|w| w.to_string())
+            .unwrap_or_else(|| text::pick(kind, seed, mob, count))
+    };
 
     match event.action {
         Action::Wait => vec![],
@@ -860,7 +867,7 @@ pub fn commands(
         },
         Action::Sign => pos
             .map(|p| {
-                let word = text::pick(Kind::SignWord, seed, "", 0);
+                let word = words(Kind::SignWord, "", 0);
                 sign_at(ids, [p[0], p[1] + 1, p[2]], vec![String::new(), word])
             })
             .unwrap_or_default(),
@@ -875,7 +882,7 @@ pub fn commands(
                 sign_at(
                     ids,
                     p,
-                    vec![text::pick(Kind::KillSign, seed, &tally.kind, tally.kills)],
+                    vec![words(Kind::KillSign, &tally.kind, tally.kills)],
                 )
             }
             _ => vec![],
@@ -896,7 +903,7 @@ pub fn commands(
                     sign_at(
                         ids,
                         [p[0] + 1, p[1] + 1, p[2]],
-                        vec![text::pick(Kind::GraveSign, seed, &tally.kind, tally.kills)],
+                        vec![words(Kind::GraveSign, &tally.kind, tally.kills)],
                     )
                     .into_iter()
                     .map(|(c, t)| (c, t + 30)),
@@ -1051,7 +1058,7 @@ pub fn commands(
                     Command::NameEntity {
                         id: ids(),
                         entity: c.id,
-                        name: text::pick(Kind::AnimalName, seed, "", 0),
+                        name: words(Kind::AnimalName, "", 0),
                     },
                     0,
                 )]
@@ -1163,7 +1170,7 @@ pub fn commands(
                 id: ids(),
                 player: target,
                 message: "says".to_string(),
-                text: text::pick(Kind::ChatLine, seed, "", 0),
+                text: words(Kind::ChatLine, "", 0),
             },
             0,
         )],
@@ -1175,7 +1182,7 @@ pub fn commands(
                         id: ids(),
                         player: target,
                         message: "says".to_string(),
-                        text: text::pick(Kind::KillLine, seed, &tally.kind, tally.kills),
+                        text: words(Kind::KillLine, &tally.kind, tally.kills),
                     },
                     0,
                 )]
@@ -1186,7 +1193,7 @@ pub fn commands(
                 id: ids(),
                 player: target,
                 message: "whisper".to_string(),
-                text: text::pick(Kind::Whisper, seed, "", 0),
+                text: words(Kind::Whisper, "", 0),
             },
             0,
         )],
@@ -1828,6 +1835,20 @@ pub fn commands(
     }
 }
 
+/// The kind of line an event writes, if it writes one: what the model is asked to write.
+pub fn text_kind(event: &Event) -> Option<Kind> {
+    match event.action {
+        Action::Sign => Some(Kind::SignWord),
+        Action::KillSign => Some(Kind::KillSign),
+        Action::Grave => Some(Kind::GraveSign),
+        Action::NameAnimal => Some(Kind::AnimalName),
+        Action::Says => Some(Kind::ChatLine),
+        Action::SaysKills => Some(Kind::KillLine),
+        Action::Whisper => Some(Kind::Whisper),
+        _ => None,
+    }
+}
+
 /// A sign placed and written: the block now, the text a tick later.
 fn sign_at(
     ids: &mut impl FnMut() -> u64,
@@ -2115,7 +2136,7 @@ mod tests {
         let door = find("open_door").unwrap();
         let p = place(door, &memory, &mut rng);
         assert_eq!(p, Some([3, 64, 0]));
-        let made = commands(door, p, &memory, &mut ids(), &Now::default());
+        let made = commands(door, p, &memory, &mut ids(), &Now::default(), None);
         assert!(matches!(
             made[0].0,
             Command::ToggleBlock {
@@ -2131,6 +2152,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         assert!(
             matches!(
@@ -2151,6 +2173,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         assert!(
             matches!(
@@ -2188,6 +2211,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         assert!(
             matches!(
@@ -2215,6 +2239,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         match &made[0].0 {
             Command::MoveItem {
@@ -2233,6 +2258,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         assert!(
             matches!(
@@ -2296,6 +2322,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         // The furnace holds fuel already, so one move: the raw thing. Cobblestone, in slot 5,
         // is the first smeltable thing in the chest.
@@ -2321,6 +2348,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         assert!(
             matches!(
@@ -2350,6 +2378,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         assert!(
             matches!(
@@ -2377,6 +2406,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         assert_eq!(made.len(), 4);
         assert!(
@@ -2384,7 +2414,7 @@ mod tests {
         );
 
         let line = find("kill_line").unwrap();
-        let made = commands(line, None, &memory, &mut ids(), &Now::default());
+        let made = commands(line, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[0].0, Command::GameMessage { message, text, .. } if message == "says" && text.contains("cow"))
         );
@@ -2402,6 +2432,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         assert!(made.len() >= 6, "{} blocks of path", made.len());
         for (command, _) in &made {
@@ -2421,6 +2452,7 @@ mod tests {
             &memory,
             &mut ids(),
             &Now::default(),
+            None,
         );
         assert_eq!(made.len(), 4);
         assert!(
@@ -2446,7 +2478,7 @@ mod tests {
                 continue;
             }
             let pos = place(event, &memory, &mut rng);
-            let made = commands(event, pos, &memory, &mut ids(), &now);
+            let made = commands(event, pos, &memory, &mut ids(), &now, None);
             assert!(!made.is_empty(), "{} makes no command", event.id);
             for (command, _) in &made {
                 assert!(command.id() > 1, "{} gave a command no id", event.id);
@@ -2461,7 +2493,7 @@ mod tests {
         let now = Now::default();
 
         let moved = find("boat_moved").unwrap();
-        let made = commands(moved, None, &memory, &mut ids(), &now);
+        let made = commands(moved, None, &memory, &mut ids(), &now, None);
         match &made[0].0 {
             Command::MoveEntity { entity, to, .. } => {
                 assert_eq!(*entity, 301);
@@ -2471,14 +2503,14 @@ mod tests {
         }
 
         let drift = find("boat_drifts").unwrap();
-        let made = commands(drift, None, &memory, &mut ids(), &now);
+        let made = commands(drift, None, &memory, &mut ids(), &now, None);
         assert!(
             matches!(made[0].0, Command::PushEntity { entity: 301, .. }),
             "{:?}",
             made[0].0
         );
         let rolls = find("minecart_rolls").unwrap();
-        let made = commands(rolls, None, &memory, &mut ids(), &now);
+        let made = commands(rolls, None, &memory, &mut ids(), &now, None);
         assert!(
             matches!(made[0].0, Command::PushEntity { entity: 302, .. }),
             "{:?}",
@@ -2486,7 +2518,7 @@ mod tests {
         );
 
         let scan = find("scan_village").unwrap();
-        let made = commands(scan, None, &memory, &mut ids(), &now);
+        let made = commands(scan, None, &memory, &mut ids(), &now, None);
         assert!(
             matches!(&made[0].0, Command::Scan { kinds, .. } if kinds.iter().any(|k| k == "minecraft:bell"))
         );
@@ -2497,6 +2529,7 @@ mod tests {
             &memory,
             &mut ids(),
             &now,
+            None,
         );
         assert!(
             matches!(
@@ -2517,6 +2550,7 @@ mod tests {
             &memory,
             &mut ids(),
             &now,
+            None,
         );
         assert!(made.len() >= 2);
         assert!(
@@ -2534,7 +2568,7 @@ mod tests {
         let gone = find("animal_gone").unwrap();
         let p = place(gone, &memory, &mut rng);
         assert_eq!(p, Some([41, 64, 0]));
-        let made = commands(gone, p, &memory, &mut ids(), &now);
+        let made = commands(gone, p, &memory, &mut ids(), &now, None);
         assert!(
             matches!(&made[0].0, Command::MoveEntity { entity: 201, to, .. } if (to[0] - 41.5).abs() < 0.01),
             "{:?}",
@@ -2542,7 +2576,7 @@ mod tests {
         );
 
         let path = find("light_path").unwrap();
-        let made = commands(path, None, &memory, &mut ids(), &now);
+        let made = commands(path, None, &memory, &mut ids(), &now, None);
         assert!(made.len() >= 3);
         for (command, _) in &made {
             match command {
@@ -2561,7 +2595,7 @@ mod tests {
         let now = Now::default();
 
         let frames = find("frames_turn").unwrap();
-        let made = commands(frames, None, &memory, &mut ids(), &now);
+        let made = commands(frames, None, &memory, &mut ids(), &now, None);
         assert_eq!(made.len(), 3);
         let rotations: Vec<Option<u32>> = made
             .iter()
@@ -2573,7 +2607,7 @@ mod tests {
         assert!(rotations.iter().all(|r| r.is_some() && *r == rotations[0]));
 
         let watch = find("stand_watch").unwrap();
-        let made = commands(watch, None, &memory, &mut ids(), &now);
+        let made = commands(watch, None, &memory, &mut ids(), &now, None);
         assert!(
             matches!(
                 made[0].0,
@@ -2594,6 +2628,7 @@ mod tests {
             &memory,
             &mut ids(),
             &now,
+            None,
         );
         assert!(
             matches!(made[0].0, Command::MoveEntity { entity: 206, .. }),
@@ -2608,6 +2643,7 @@ mod tests {
             &memory,
             &mut ids(),
             &now,
+            None,
         );
         assert!(
             matches!(made[0].0, Command::MoveEntity { entity: 204, .. }),

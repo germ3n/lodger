@@ -32,6 +32,9 @@ struct Engine {
     n_ctx: u32,
     temperature: f64,
     rng: Arc<Mutex<Rng>>,
+    /// Per token id, whether its text is lower-case letters, digits and spaces alone: the only
+    /// tokens generation may pick. Built once, on the first write.
+    plain_tokens: Option<Vec<bool>>,
 }
 
 // The engine lives on the worker thread alone; the raw model pointer never crosses threads.
@@ -53,6 +56,10 @@ pub struct LlamaScorer(Engine);
 impl Scorer for LlamaScorer {
     fn score(&mut self, situation: &str, questions: &[Question]) -> Result<Vec<Answer>, String> {
         decode_questions(&mut self.0, situation, questions)
+    }
+
+    fn generate(&mut self, prompt: &str, max_tokens: usize) -> Result<String, String> {
+        generate_plain(&mut self.0, prompt, max_tokens)
     }
 }
 
@@ -94,7 +101,76 @@ fn load_engine(settings: &Settings, rng: Arc<Mutex<Rng>>) -> Result<Engine, Stri
         n_ctx: settings.context,
         temperature: settings.temperature,
         rng,
+        plain_tokens: None,
     })
+}
+
+/// Whether a token's text may appear in a generated line: lower-case letters, digits and
+/// spaces, nothing else, and not empty.
+fn is_plain_piece(piece: &[u8]) -> bool {
+    !piece.is_empty()
+        && piece
+            .iter()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || *b == b' ')
+}
+
+/// Continues `prompt` greedily under the plain-token mask, at most `max_tokens` tokens, stopping
+/// at an end-of-generation token, at a token no longer allowed (a newline, punctuation, an
+/// upper-case word), or when the line would run past its tokens. The caller checks the words.
+fn generate_plain(engine: &mut Engine, prompt: &str, max_tokens: usize) -> Result<String, String> {
+    let model = unsafe { &*engine.model };
+    let vocab = model.vocab();
+    let n_vocab = usize::try_from(model.n_vocab()).unwrap_or(0);
+    if engine.plain_tokens.is_none() {
+        let mask: Vec<bool> = (0..n_vocab)
+            .map(|id| {
+                let token = LlamaToken(id as i32);
+                !vocab.is_eog(token) && is_plain_piece(&vocab.token_to_piece(token, false, None))
+            })
+            .collect();
+        engine.plain_tokens = Some(mask);
+    }
+    let mask = engine.plain_tokens.as_ref().unwrap();
+
+    engine.ctx.clear_kv_cache();
+    let prompt_tokens = tokenize(&vocab, prompt, true);
+    if prompt_tokens.is_empty() {
+        return Err("prompt produced no tokens".to_string());
+    }
+    let mut batch = LlamaBatch::new(engine.n_ctx as usize, 1);
+    decode_tokens(&mut engine.ctx, &mut batch, &prompt_tokens, 0, true)?;
+    let mut pos = i32::try_from(prompt_tokens.len()).unwrap_or(i32::MAX);
+    let mut out: Vec<u8> = Vec::new();
+
+    for _ in 0..max_tokens {
+        let logits = logits_row(&engine.ctx, batch.n_tokens() - 1);
+        // The best allowed token; nothing allowed means the model wants to stop.
+        let mut best: Option<(usize, f32)> = None;
+        for (id, logit) in logits.iter().enumerate().take(mask.len()) {
+            if mask[id] && best.map(|(_, b)| *logit > b).unwrap_or(true) {
+                best = Some((id, *logit));
+            }
+        }
+        let Some((id, best_logit)) = best else { break };
+        // If the model's own first choice is a stop (end of line, punctuation, end token), the
+        // line is done: the mask only ever picks among what is allowed, so this is read off the
+        // unmasked best.
+        let unmasked_best = logits
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.total_cmp(b.1))
+            .map(|(i, _)| i)
+            .unwrap_or(id);
+        if unmasked_best != id && logits[unmasked_best] - best_logit > 2.0 {
+            break;
+        }
+        let token = LlamaToken(id as i32);
+        out.extend(vocab.token_to_piece(token, false, None));
+        decode_tokens(&mut engine.ctx, &mut batch, &[token], pos, true)?;
+        pos += 1;
+    }
+
+    Ok(String::from_utf8_lossy(&out).trim().to_string())
 }
 
 fn context_params(settings: &Settings) -> LlamaContextParams {

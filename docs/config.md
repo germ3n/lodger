@@ -58,10 +58,10 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 | Key | Default | What it changes |
 | --- | --- | --- |
 | `brain.plan_every` | `90` | Seconds of the target's play between planning asks, on top of the trigger asks. |
-| `brain.event_threshold` | `0.4` | The confidence below which an answer is `wait`. Higher is a more patient lodger. |
+| `brain.event_threshold` | `0.4` | The confidence of the model's `Should it do something soon?` answer below which the decision is `wait`. Higher is a more patient lodger. Live since 2026-11-09. |
 | `brain.react_threshold` | `0.55` | The same for reactions to what the target just did, which are cheaper to get wrong than plans, so the bar is higher. |
 | `brain.queue` | `64` | The most questions waiting. A full queue refuses; the rule brain answers. |
-| `brain.force_rules` | `false` | Uses the rule brain even with a model loaded. For comparing the two from the log. |
+| `brain.force_rules` | `false` | Uses the rule brain even with a model loaded. For comparing the two from the log, whose `brain=` says which decided. |
 | `brain.temperature` | `0.7` | How the answer is picked from the model's scores. `0`: always the best choice, so the same situation gets the same answer every time, as the engine did. Above `0`: a seeded draw weighted by the scores, sharper near `0`, the model's own odds at `1`, flatter above. The seed is logged with every decision so a run can be replayed. See [Picking](brain.md#picking). |
 | `brain.text` | `"generate"` | How signs, chat lines and names get their words. `generate` (the default since 2026-11-09, the owner's call): the model writes the line itself, shown the bank for that kind of line as examples, a few words at most, letters and spaces only, through a blocklist, every line logged, and the bank used when a check fails. `bank`: a line is picked from the bank for its kind (`brain/text.rs`), which is what both settings do until phase 4 wires the model in. See [Text](brain.md#text). |
 

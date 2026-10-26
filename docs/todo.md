@@ -362,8 +362,13 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Phase 4: the model in the loop
 
-- [ ] **Wire the brain to the worker:** the asks with their keys, the callbacks in the tick, the
-  thresholds, the fall-back to the rule brain on refusal or no model.
+- [x] **Wire the brain to the worker.** Done 2026-11-09: the two planning questions go to the
+  worker with the key `plan` and the answer is read on a later tick; `brain.event_threshold`
+  and `nothing yet` make `wait`; a refusal, a minute's silence or `brain.force_rules` hands the
+  menu to the rule brain; the story and the log say which brain decided. Tests with a fake
+  scorer: the answer names the event, `nothing yet` waits, a shut-down model and
+  `force_rules` fall back. Was: the asks with their keys, the callbacks in the tick, the
+  thresholds, the fall-back. Still to do: the `react` asks on triggers, `When?` and `Where?`.
 - [ ] **The want and the target asks,** once each at move-in.
 - [ ] **Calibration, round one.** Ten stays through stage two by different players (or the same
   one playing differently: a tidy player, a careless one, one who chases), the decision log read
@@ -371,14 +376,18 @@ because it can be built and tested without a game, and because the model layer i
   wrong. Read them for repetition above all: anything that happened three times in a stay, or
   twice in a row, is a cooldown or a cap to move. Keep the before-and-after logs under
   `docs/calibration/` with a paragraph on what moved and why.
-- [ ] **`brain.text = generate`, the model half** (owner, 2026-11-09: "use the model for sign
-  text", then "yes it should generate, maybe with examples and those examples correlating to
-  specific actions"): a `generate` function in `infer.rs` beside the scorer, decoding a token
-  at a time under a letters-digits-spaces mask, stopped at a newline or the kind's most words;
-  the prompt built from the situation text and the kind's bank as examples (`text::Kind`); a
-  blocklist; a log line per generated text with the situation; the bank as the fallback on any
-  failed check; the `What does the sign say?` ask over eight bank lines for `bank`. Judged in
-  calibration round two: does `generate` read better than the bank over ten stays?
+- [x] **`brain.text = generate`, the model half** (owner, 2026-11-09). Done 2026-11-09:
+  `Scorer::generate` and `Model::generate_async` beside scoring (a writing job on the same
+  worker, key `text`), `infer.rs`'s greedy decode under a mask of lower-case letters, digits
+  and spaces (built once from the vocabulary), stopping where the model's own best token is a
+  stop; the prompt from the situation and the kind's examples (`situation::writing_prompt`);
+  `text::check` (lower case, the kind's word count, a 14-letter word cap, the `BLOCKED` list of
+  slurs, sexual words and self-harm, which the owner trimmed from a wider list the same night);
+  the line asked for when the event is planned and used when it runs, the bank otherwise; a
+  `wrote` line in the decision log. Tests with a fake writer: a line on the sign, a bad line
+  dropped. Was: the generate function, the prompt, the blocklist, the log line, the fallback,
+  the `What does the sign say?` ask. Still to do: that ask for `bank`; calibration round two on
+  the real model's lines.
 - [ ] **Chat and the player list** (owner, 2026-11-09): the chat sense (the target's lines and
   witnesses' within 32 blocks, matched for lines about the lodger, eight kept) and the events
   of [Chat and the player list](entity.md#chat-and-the-player-list), as host commands: a

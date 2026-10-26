@@ -36,8 +36,9 @@ impl Log {
         menu: &[&Event],
         chosen: &str,
         pos: Option<BlockPos>,
+        brain: &str,
     ) {
-        let mut entry = format!("--- stage={stage} day={day:.2} brain=rules\n");
+        let mut entry = format!("--- stage={stage} day={day:.2} brain={brain}\n");
         for line in situation {
             entry.push_str("  ");
             entry.push_str(line);
@@ -72,6 +73,15 @@ impl Log {
             } else {
                 format!(", {reason}")
             }
+        ));
+    }
+
+    /// A line the model wrote, with its kind and whether it was kept.
+    pub fn wrote(&mut self, kind: &str, written: &str, kept: Option<&str>) {
+        self.write(format!(
+            "  wrote ({kind}): {written:?} -> {}",
+            kept.map(|k| format!("{k:?}"))
+                .unwrap_or_else(|| "dropped".to_string())
         ));
     }
 
@@ -130,6 +140,7 @@ mod tests {
             &[find("wait").unwrap(), find("knock").unwrap()],
             "knock",
             Some([1, 2, 3]),
+            "rules",
         );
         log.acted("knock", Some([1, 2, 3]), 1);
         log.reported("knock", true, "");

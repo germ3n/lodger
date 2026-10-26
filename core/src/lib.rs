@@ -180,7 +180,7 @@ impl Mod for Lodger {
     fn tick(&self, world: &mut Stay, now: &Now) -> Vec<Command> {
         let mut log = self.log.lock().unwrap_or_else(|err| err.into_inner());
 
-        world.tick(now, &self.config, &mut log)
+        world.tick_with(now, &self.config, &mut log, Some(&self.model))
     }
 
     fn report(&self, world: &mut Stay, reports: &[Report]) {
