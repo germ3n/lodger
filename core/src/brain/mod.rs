@@ -183,6 +183,7 @@ impl Brain {
     }
 
     /// One tick: maybe decide, maybe act. Answers the commands to send.
+    #[allow(clippy::too_many_arguments)]
     pub fn tick(
         &mut self,
         now: &Now,
@@ -324,6 +325,7 @@ impl Brain {
         commands
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn decide(
         &mut self,
         now: &Now,

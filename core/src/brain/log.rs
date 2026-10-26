@@ -28,6 +28,7 @@ impl Log {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn decided(
         &mut self,
         stage: u8,
