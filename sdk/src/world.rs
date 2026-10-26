@@ -310,6 +310,13 @@ pub enum Command {
     /// unless the block there is one of `replace` (block ids): the way a path is worn into grass
     /// or a hole dug in natural ground, and never through anything a player placed, which the
     /// mod keeps out of `replace` by never naming built blocks.
+    ///
+    /// Never where the block cannot stand: a torch over air is refused, as a player could not
+    /// place it. `settle` lets the host look up to that many blocks down and up for a spot where
+    /// it can (the nearest first, the ground before a wall); `wall` names the block to put
+    /// against a wall when the block itself stands nowhere near (`minecraft:wall_torch` for a
+    /// torch), facing out from whichever side holds it. The mod knows positions, not terrain;
+    /// the host knows the terrain.
     SetBlock {
         id: u64,
         pos: BlockPos,
@@ -317,6 +324,10 @@ pub enum Command {
         state: String,
         #[serde(default)]
         replace: Vec<String>,
+        #[serde(default, skip_serializing_if = "is_zero")]
+        settle: u8,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        wall: String,
     },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
@@ -547,6 +558,10 @@ pub struct Report {
     pub reason: String,
 }
 
+fn is_zero(n: &u8) -> bool {
+    *n == 0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -598,6 +613,30 @@ mod tests {
             r#"{"kind":"set_block","id":1,"pos":[0,0,0],"block":"minecraft:torch","state":""}"#;
         let command: Command = serde_json::from_str(text).unwrap();
         assert!(matches!(command, Command::SetBlock { ref replace, .. } if replace.is_empty()));
+        assert!(
+            matches!(command, Command::SetBlock { settle: 0, ref wall, .. } if wall.is_empty()),
+            "no settling and no wall unless asked"
+        );
+        let plain = serde_json::to_string(&command).unwrap();
+        assert!(
+            !plain.contains("settle") && !plain.contains("wall"),
+            "{plain}"
+        );
+
+        let torch = Command::SetBlock {
+            id: 2,
+            pos: [0, 65, 0],
+            block: "minecraft:torch".to_string(),
+            state: String::new(),
+            replace: vec![],
+            settle: 4,
+            wall: "minecraft:wall_torch".to_string(),
+        };
+        let text = serde_json::to_string(&torch).unwrap();
+        assert!(
+            text.contains(r#""settle":4"#) && text.contains(r#""wall":"minecraft:wall_torch""#)
+        );
+        assert_eq!(serde_json::from_str::<Command>(&text).unwrap(), torch);
 
         let message = Command::GameMessage {
             id: 2,

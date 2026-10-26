@@ -6,7 +6,7 @@
 //! time and rewinding the cache between choices. Softmax over the choices gives the answer and
 //! its confidence. No sampling, no temperature, no generated text. See `docs/model.md`.
 
-use super::{answer_for, log_softmax_at, Answer, Question, Rng, Scorer, Settings};
+use super::{answer_for, log_softmax_at, Answer, Leash, Question, Rng, Scorer, Settings};
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::context::LlamaContext;
 use llama_cpp_2::llama_backend::LlamaBackend;
@@ -32,9 +32,9 @@ struct Engine {
     n_ctx: u32,
     temperature: f64,
     rng: Arc<Mutex<Rng>>,
-    /// Per token id, whether its text is lower-case letters, digits and spaces alone: the only
-    /// tokens generation may pick. Built once, on the first write.
-    plain_tokens: Option<Vec<bool>>,
+    /// Per token id, whether its text is letters and spaces alone (`[0]`), or letters, digits
+    /// and spaces (`[1]`): the only tokens generation may pick. Built once, on the first write.
+    plain_tokens: Option<[Vec<bool>; 2]>,
 }
 
 // The engine lives on the worker thread alone; the raw model pointer never crosses threads.
@@ -58,8 +58,8 @@ impl Scorer for LlamaScorer {
         decode_questions(&mut self.0, situation, questions)
     }
 
-    fn generate(&mut self, prompt: &str, max_tokens: usize) -> Result<String, String> {
-        generate_plain(&mut self.0, prompt, max_tokens)
+    fn generate(&mut self, prompt: &str, leash: Leash) -> Result<String, String> {
+        generate_plain(&mut self.0, prompt, leash)
     }
 }
 
@@ -105,32 +105,50 @@ fn load_engine(settings: &Settings, rng: Arc<Mutex<Rng>>) -> Result<Engine, Stri
     })
 }
 
-/// Whether a token's text may appear in a generated line: lower-case letters, digits and
-/// spaces, nothing else, and not empty.
-fn is_plain_piece(piece: &[u8]) -> bool {
+/// Whether a token's text may appear in a generated line: letters of either case (the check
+/// lower-cases them; forbidding `Here` pushes the model toward whatever else is left), spaces,
+/// digits when `digits`, nothing else, and not empty.
+fn is_plain_piece(piece: &[u8], digits: bool) -> bool {
     !piece.is_empty()
         && piece
             .iter()
-            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || *b == b' ')
+            .all(|b| b.is_ascii_alphabetic() || *b == b' ' || (digits && b.is_ascii_digit()))
 }
 
-/// Continues `prompt` greedily under the plain-token mask, at most `max_tokens` tokens, stopping
-/// at an end-of-generation token, at a token no longer allowed (a newline, punctuation, an
-/// upper-case word), or when the line would run past its tokens. The caller checks the words.
-fn generate_plain(engine: &mut Engine, prompt: &str, max_tokens: usize) -> Result<String, String> {
+/// Whether `piece` would start a word past the `words`th of the line written so far: a piece
+/// opening with a space after text, when the line already has that many words.
+fn starts_word_past(written: &[u8], piece: &[u8], words: usize) -> bool {
+    let so_far = written
+        .split(|b| *b == b' ')
+        .filter(|w| !w.is_empty())
+        .count();
+
+    piece.first() == Some(&b' ') && so_far >= words
+}
+
+/// Continues `prompt` greedily under the plain-token mask for `leash`, at most its tokens,
+/// stopping at an end-of-generation token, at a token no longer allowed (a newline,
+/// punctuation), or when the line would run past its tokens. The caller checks the words.
+fn generate_plain(engine: &mut Engine, prompt: &str, leash: Leash) -> Result<String, String> {
     let model = unsafe { &*engine.model };
     let vocab = model.vocab();
     let n_vocab = usize::try_from(model.n_vocab()).unwrap_or(0);
     if engine.plain_tokens.is_none() {
-        let mask: Vec<bool> = (0..n_vocab)
+        let pieces: Vec<Option<Vec<u8>>> = (0..n_vocab)
             .map(|id| {
                 let token = LlamaToken(id as i32);
-                !vocab.is_eog(token) && is_plain_piece(&vocab.token_to_piece(token, false, None))
+                (!vocab.is_eog(token)).then(|| vocab.token_to_piece(token, false, None))
             })
             .collect();
-        engine.plain_tokens = Some(mask);
+        let mask = |digits: bool| -> Vec<bool> {
+            pieces
+                .iter()
+                .map(|p| p.as_deref().is_some_and(|p| is_plain_piece(p, digits)))
+                .collect()
+        };
+        engine.plain_tokens = Some([mask(false), mask(true)]);
     }
-    let mask = engine.plain_tokens.as_ref().unwrap();
+    let mask = &engine.plain_tokens.as_ref().unwrap()[usize::from(leash.digits)];
 
     engine.ctx.clear_kv_cache();
     let prompt_tokens = tokenize(&vocab, prompt, true);
@@ -142,7 +160,7 @@ fn generate_plain(engine: &mut Engine, prompt: &str, max_tokens: usize) -> Resul
     let start = i32::try_from(prompt_tokens.len()).unwrap_or(i32::MAX);
     let mut out: Vec<u8> = Vec::new();
 
-    for pos in (start..).take(max_tokens) {
+    for pos in (start..).take(leash.max_tokens) {
         let logits = logits_row(&engine.ctx, batch.n_tokens() - 1);
         // The best allowed token; nothing allowed means the model wants to stop.
         let mut best: Option<(usize, f32)> = None;
@@ -165,7 +183,11 @@ fn generate_plain(engine: &mut Engine, prompt: &str, max_tokens: usize) -> Resul
             break;
         }
         let token = LlamaToken(id as i32);
-        out.extend(vocab.token_to_piece(token, false, None));
+        let piece = vocab.token_to_piece(token, false, None);
+        if starts_word_past(&out, &piece, leash.words) {
+            break;
+        }
+        out.extend(piece);
         decode_tokens(&mut engine.ctx, &mut batch, &[token], pos, true)?;
     }
 
@@ -341,6 +363,30 @@ fn decode_questions(
     Ok(answers)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_plain_piece_is_letters_and_spaces_and_digits_only_when_counting() {
+        assert!(is_plain_piece(b" here", false));
+        assert!(is_plain_piece(b"Here", false), "the check lower-cases");
+        assert!(!is_plain_piece(b"123", false));
+        assert!(is_plain_piece(b" 14", true));
+        assert!(!is_plain_piece(b"\n", true));
+        assert!(!is_plain_piece(b"!", true));
+        assert!(!is_plain_piece(b"", true));
+    }
+
+    #[test]
+    fn the_decode_stops_before_a_word_past_the_leash() {
+        assert!(!starts_word_past(b"", b" the", 1), "the first word");
+        assert!(!starts_word_past(b" the", b"re", 1), "a word continued");
+        assert!(starts_word_past(b" the other one", b" again", 3));
+        assert!(!starts_word_past(b" the other", b" one", 3));
+    }
+}
+
 /// Tests against the real model, which must be at `core/models/qwen.gguf` (ignored otherwise):
 /// `cargo test -p lodger-core -- --ignored model::`.
 #[cfg(test)]
@@ -433,6 +479,49 @@ mod real {
         assert_eq!(together[0].choice, alone_one[0].choice);
         assert_eq!(together[1].choice, alone_two[0].choice);
         assert!((together[0].confidence - alone_one[0].confidence).abs() < 1.0e-3);
+        model.shutdown();
+    }
+
+    /// The situation of the first written line seen in the dev client (2026-11-09), where the
+    /// model put `123456` on a sign.
+    const DEV_STAY: &[&str] = &[
+        "The chest 60 blocks north of the house is opened most, 1 times so far. It holds a bread, an oak sapling, an apple.",
+        "Today it did open the door.",
+        "Today it did stop the music.",
+        "Today it did close the door.",
+        "Today they killed their first pig.",
+        "Around the house: water 31 blocks across 277 blocks west of the house; sand 294 blocks west of the house; trees 266 blocks west of the house.",
+        "They have killed 4 sheep so far.",
+        "Now the player is outdoors, walking.",
+    ];
+
+    #[test]
+    #[ignore = "needs core/models/qwen-1.5b.gguf or qwen.gguf, not in the repository"]
+    fn every_kind_of_line_the_model_writes_passes_its_own_check() {
+        use crate::brain::text::{self, Kind};
+        let _turn = super::super::TEST_TURN
+            .lock()
+            .unwrap_or_else(|err| err.into_inner());
+        let Some(model) = model() else { return };
+        let lines: Vec<String> = DEV_STAY.iter().map(|l| l.to_string()).collect();
+        let mut failed = Vec::new();
+        for kind in Kind::ALL {
+            let examples: Vec<String> = kind
+                .examples()
+                .iter()
+                .map(|e| text::fill(e, "sheep", 4))
+                .collect();
+            let refs: Vec<&str> = examples.iter().map(String::as_str).collect();
+            let prompt = crate::brain::situation::writing_prompt(&lines, kind.purpose(), &refs);
+            let written = model.generate(&prompt, kind.leash()).unwrap();
+            let checked = text::check(kind, &written);
+            eprintln!("{kind:?}: {written:?} -> {checked:?}");
+            if checked.is_none() {
+                failed.push(format!("{kind:?} wrote {written:?}"));
+            }
+        }
+
+        assert!(failed.is_empty(), "{failed:?}");
         model.shutdown();
     }
 }

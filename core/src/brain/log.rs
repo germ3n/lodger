@@ -52,7 +52,7 @@ impl Log {
         }
         entry.push_str(&format!("\n  chose {chosen}"));
         if let Some(pos) = pos {
-            entry.push_str(&format!(" at ({},{},{})", pos[0], pos[1], pos[2]));
+            entry.push_str(&format!(" at {}", spot_words(pos)));
         }
         self.write(entry);
     }
@@ -60,7 +60,7 @@ impl Log {
     pub fn acted(&mut self, event: &str, pos: Option<BlockPos>, commands: usize) {
         self.write(format!(
             "  acted {event}{} with {commands} command(s)",
-            pos.map(|p| format!(" at ({},{},{})", p[0], p[1], p[2]))
+            pos.map(|p| format!(" at {}", spot_words(p)))
                 .unwrap_or_default()
         ));
     }
@@ -122,9 +122,30 @@ impl Log {
     }
 }
 
+/// A spot as the log and the debug screen print it: `(440,64,-32)`, or `(440,ground,-32)` for a
+/// spot whose height the host finds (a y below -1000 is the protocol's "on the ground in this
+/// column"; the dev client's log printed `-10000`, 2026-11-09).
+pub fn spot_words(p: BlockPos) -> String {
+    if p[1] <= -1_000 {
+        format!("({},ground,{})", p[0], p[2])
+    } else {
+        format!("({},{},{})", p[0], p[1], p[2])
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_spot_on_the_ground_is_printed_as_ground() {
+        assert_eq!(spot_words([440, -10_000, -32]), "(440,ground,-32)");
+        assert_eq!(spot_words([1, 64, 2]), "(1,64,2)");
+        assert_eq!(
+            spot_words([0, -64, 0]),
+            "(0,-64,0)",
+            "the bottom of the world is a height"
+        );
+    }
     use crate::events::find;
 
     #[test]

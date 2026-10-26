@@ -253,7 +253,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             plan.event,
             if plan.forced { " (forced)" } else { "" },
             plan.pos
-                .map(|p| format!("({},{},{})", p[0], p[1], p[2]))
+                .map(crate::brain::log::spot_words)
                 .unwrap_or_else(|| "no place".to_string())
         ));
     }
@@ -346,7 +346,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             "NEXT: {}{} {}",
             plan.event,
             plan.pos
-                .map(|p| format!(" at ({},{},{})", p[0], p[1], p[2]))
+                .map(|p| format!(" at {}", crate::brain::log::spot_words(p)))
                 .unwrap_or_default(),
             if plan.forced {
                 "on the next tick (forced)".to_string()
@@ -373,7 +373,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             decision.chosen,
             decision
                 .pos
-                .map(|p| format!(" at ({},{},{})", p[0], p[1], p[2]))
+                .map(|p| format!(" at {}", crate::brain::log::spot_words(p)))
                 .unwrap_or_default(),
             decision.menu.join(" "),
             if decision.outcome.is_empty() {

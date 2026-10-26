@@ -92,9 +92,10 @@ A stay takes weeks of play by design. For development:
 - `stages.start_after_days: 0`, `stages.least_days: [0, 0, 0, 0, 0]`, `most_days: [1, 1, 1, 1,
   1]`, `events_per_day: [40, 40, 40, 40, 0]`, `brain.plan_every: 15` and
   `events.cooldown_scale: 0.05` in the dev config, so stages move as soon as their conditions
-  allow and the lodger acts every few minutes; `model.size: "0.5b"` so the dev client keeps the
-  small file;
-- **the debug screen**, F8 in a world (rebindable under Controls, Miscellaneous), or
+  allow and the lodger acts every few minutes; no `model.size`, so the dev client runs the
+  default 1.5B like a player would (`"0.5b"` for the small file on a slow machine);
+- **the debug screen**, F8 in a world (`fn+F8` on a Mac keyboard, where F8 is a media key;
+  rebindable under Controls, Miscellaneous), or
   `/craftkit lodger debug`: the Senses tab is the host's reading of you (pace, stops, turns,
   look-backs, backing away, a fear meter, light, health, the clock), the Mind tab the lodger's
   gauges (stage, days in stage, the day's budget, the plan, decisions, what the memory holds,
@@ -102,7 +103,8 @@ A stay takes weeks of play by design. For development:
   decision log entries, and buttons (move in, next stage, decide now, drop the plan, forget
   cooldowns, forget everything); the Events tab every event with whether it is offered right now
   and the first reason it is not, a filter, and a Fire button that forces it on the next tick
-  past every rule; the Log tab the last events the senses took in and the last commands carried
+  past every rule but the ones that protect what the player built (no digging within 8 blocks
+  of it); the Log tab the last events the senses took in and the last commands carried
   out with their reports. Operators and the owner of a singleplayer world (cheats on or off).
   The same from chat: `/craftkit lodger show`, `force <event>`, `stage <n>`, `action <id>`,
   which a dedicated server's console can use;
@@ -115,7 +117,30 @@ The dev client: `./gradlew :fabric:runClient` in `host/`, with `mod/build/libs/l
 copied to `host/fabric/runs/client/mods/` and its `META-INF/jars/` and the `jars` entry of its
 `fabric.mod.json` removed (the dev run has the host from its classes; a second host inside the
 jar would load twice), the model under `runs/client/config/lodger/models/`, and the dev config
-above as `runs/client/config/lodger.json`.
+above as `runs/client/config/lodger.json`. From the repository's root, after `./gradlew build`
+in `mod/`, with the client stopped:
+
+```sh
+python3 - <<'EOF'
+import zipfile, json
+src = 'mod/build/libs/lodger-fabric-26.3-0.1.0.jar'
+dst = 'host/fabric/runs/client/mods/lodger-dev.jar'
+zi, zo = zipfile.ZipFile(src), zipfile.ZipFile(dst, 'w', zipfile.ZIP_DEFLATED)
+for i in zi.infolist():
+    if i.filename.startswith('META-INF/jars/'):
+        continue
+    data = zi.read(i.filename)
+    if i.filename == 'fabric.mod.json':
+        manifest = json.loads(data)
+        manifest.pop('jars', None)
+        data = json.dumps(manifest, indent=2).encode()
+    zo.writestr(i, data)
+zo.close()
+EOF
+```
+
+`decisions.log` keeps growing across runs; move it aside before a session you want to read
+from the start.
 
 ## Tests
 
@@ -137,7 +162,7 @@ cargo test -p lodger-core -- --ignored model::     # needs the real model at cor
 - **Scripted stays** (`core/tests/stays.rs`): a `Player` script (a home, a daily route, a chest
   opened each morning, reactions to events) drives a `Stay` tick by tick for fourteen in-game days
   against an `Echo` or a table-driven fake scorer, and the test checks what the lodger did: that
-  stage one never offered `take`, that nothing happened within 24 blocks in view, that the hard
+  stage one never offered `take`, that nothing happened within reach in view, that the hard
   ending dealt exactly one death, that a `superseded` reply did not event. These are the tests that
   prove the rules.
 - **Model tests**, ignored by default, load the real model and check that known situations score

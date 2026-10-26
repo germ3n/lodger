@@ -33,7 +33,7 @@ page in `docs/` explains one part and is kept true as code lands.
 ## The shape of the code
 
 ```
-sdk/src/        craftkit: lib.rs (Mod trait, export_mod!, ABI 5), abi.rs, protocol.rs (Init,
+sdk/src/        craftkit: lib.rs (Mod trait, export_mod!, ABI 6), abi.rs, protocol.rs (Init,
                 InitReply, Resource, Status), world.rs (Observations, Command, Report, Now),
                 debug.rs (DebugRequest, DebugReply), harness.rs (drive a mod in tests)
 core/src/       the lodger: lib.rs (the Mod impl), config.rs (presets, sizes, bounds),
@@ -96,11 +96,12 @@ into commands (`act.rs`). The debug screen asks `craftkit_world_debug` every hal
 ## The dev client
 
 `./gradlew :fabric:runClient` in `host/` with `host/fabric/runs/client/mods/lodger-dev.jar`
-(the lodger jar with `META-INF/jars/` and the `jars` entry removed; a Python one-liner in the
-queue's history does it), the small model at `runs/client/config/lodger/models/
-qwen2.5-0.5b-q4_k_m.gguf`, and a fast dev config at `runs/client/config/lodger.json`
+(the lodger jar with `META-INF/jars/` and the `jars` entry removed; the script is in
+[Development](development.md#running-a-stay-quickly)), both models under
+`runs/client/config/lodger/models/`, and a fast dev config at `runs/client/config/lodger.json`
 (`start_after_days 0`, `most_days` all 1, `events_per_day` 40, `plan_every 15`,
-`cooldown_scale 0.05`, `model.size 0.5b`). In a world: F8 opens the debug screen, F9 the overlay,
+`cooldown_scale 0.05`, the default 1.5B model). In a world: F8 opens the debug screen, F9 the
+overlay (`fn+F8` and `fn+F9` on a Mac keyboard, or rebind them under Controls, Miscellaneous),
 the Events tab fires anything. `config/lodger/decisions.log` has every decision. Rebuilding
 the host while the client runs breaks the client; quit it first.
 

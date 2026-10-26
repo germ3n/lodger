@@ -337,6 +337,7 @@ in [Set aside](#set-aside) with why.
 - `villagers_face_house` every villager faces your house at noon [3]
 - `villagers_in_beds` every villager in bed at noon [3]
 - `villagers_in_one_house` all the villagers are in one house [4]
+- `village_abandoned` the village empty, every villager packed in one house facing the wall, back by dawn (owner, 2026-11-09; in the catalogue) [4]
 - `golem_turned` the golem faces your house [3]
 - `golem_at_spot` the golem stands at its place [4]
 - `golem_flower` the golem offers a poppy to the air at your door [3]

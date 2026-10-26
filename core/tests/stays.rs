@@ -11,8 +11,8 @@ use std::sync::Mutex;
 
 static TURN: Mutex<()> = Mutex::new(());
 
-/// A player with a house at the origin: a bed, a chest they open each morning, a door and two
-/// torches put up the first day, and a day of mining 80 blocks east. Asleep from 13000 to 23000.
+/// A player with a house at the origin: a bed, a chest they open each morning, the chest, a door
+/// and two torches put up the first day, and a day of mining 80 blocks east. Asleep from 13000 to 23000.
 struct Script {
     tick: u64,
 }
@@ -103,6 +103,15 @@ impl Script {
                 kind: EventKind::PlacedBlock,
                 pos: Some([4, 64, 0]),
                 detail: "minecraft:oak_door".to_string(),
+                ..Event::default()
+            });
+        }
+        if self.tick == 160 {
+            events.push(Event {
+                player: 0,
+                kind: EventKind::PlacedBlock,
+                pos: Some([2, 64, 0]),
+                detail: "minecraft:chest".to_string(),
                 ..Event::default()
             });
         }

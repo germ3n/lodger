@@ -42,6 +42,10 @@ pub struct Plan {
     /// whenever the needs hold.
     #[serde(default)]
     pub when: String,
+    /// Why it has not happened yet though its moment came (`in view`), for the debug screen;
+    /// empty while it waits for its moment or its conditions.
+    #[serde(default)]
+    pub waiting: String,
 }
 
 /// A command sent and not yet reported.
@@ -419,23 +423,63 @@ impl Brain {
                         } else {
                             rules::check(event, plan.pos, memory, arc.stage, day, config)
                         };
-                        match checked {
+                        let written = self
+                            .written
+                            .iter()
+                            .find(|(e, _)| *e == plan.event)
+                            .map(|(_, t)| t.clone());
+                        let made = match checked {
                             Ok(()) => {
-                                let written = self
-                                    .written
-                                    .iter()
-                                    .find(|(e, _)| *e == plan.event)
-                                    .map(|(_, t)| t.clone());
-                                self.written.retain(|(e, _)| *e != plan.event);
                                 let mut ids = || self.id();
-                                let made = act::commands(
+                                act::commands(
                                     event,
                                     plan.pos,
                                     memory,
                                     &mut ids,
                                     now,
                                     written.as_deref(),
-                                );
+                                )
+                            }
+                            Err(_) => Vec::new(),
+                        };
+                        // Digging near what they built is refused whoever asked, the debug
+                        // screen's Fire too: the host keeps a placed block itself from being
+                        // replaced, but not the ground under it.
+                        if let Some(dug) = made.iter().find_map(|(command, _)| {
+                            act::dug(command).filter(|p| !act::clear_of_built(memory, *p))
+                        }) {
+                            let why = "too near what they built";
+                            log.note(&format!(
+                                "{} would dig at {}: {why}",
+                                plan.event,
+                                log::spot_words(dug)
+                            ));
+                            memory.record(&plan.event, plan.pos, day, false, why);
+                            self.outcome(&plan.event, why);
+                            self.plan = None;
+                            return commands;
+                        }
+                        // In view is a reason to wait, not to give up: every block it would
+                        // change, not just its spot, stays out of sight until they look away,
+                        // within the plan's day.
+                        let seen = !plan.forced
+                            && (checked == Err(rules::Refused::InView)
+                                || (checked.is_ok()
+                                    && rules::hidden_from_view(event.action)
+                                    && made.iter().any(|(command, _)| {
+                                        act::spots(command).iter().any(|spot| {
+                                            memory.in_view(*spot, config.events.min_distance as f64)
+                                        })
+                                    })));
+                        if seen {
+                            if let Some(plan) = &mut self.plan {
+                                plan.waiting = "in view".to_string();
+                            }
+                            return commands;
+                        }
+                        match checked {
+                            Ok(()) => {
+                                self.written.retain(|(e, _)| *e != plan.event);
                                 if !plan.forced {
                                     arc.spend(event.cost());
                                 }
@@ -515,7 +559,9 @@ impl Brain {
             config,
             &mut self.rng,
         );
-        if menu.is_empty() {
+        // Nothing but `wait` on offer is nothing to decide: no ask, no decision logged. The
+        // dev client asked the model every interval for a menu of one (2026-11-09).
+        if menu.iter().all(|e| e.id == "wait") {
             return;
         }
         let lines = memory.describe(day);
@@ -987,12 +1033,7 @@ impl Brain {
             let asked = if config.brain.text == "generate" {
                 let refs: Vec<&str> = examples.iter().map(String::as_str).collect();
                 let prompt = situation::writing_prompt(&lines, kind.purpose(), &refs);
-                model.generate_async(
-                    &prompt,
-                    kind.most_words() * 2 + 2,
-                    Some("text".to_string()),
-                    sender,
-                )
+                model.generate_async(&prompt, kind.leash(), Some("text".to_string()), sender)
             } else {
                 // `bank`: the model picks among eight of the kind's lines.
                 let choices: Vec<String> = examples.iter().take(8).cloned().collect();
@@ -1027,6 +1068,19 @@ impl Brain {
         // Soon: within four planning intervals (six minutes at the default `plan_every`, a
         // minute in a dev config), when its conditions hold; dropped a day after that.
         let when = when.unwrap_or_default();
+        // The model answers `When?` before it knows the event, so a moment the event's needs
+        // rule out is dropped: `wall_swap` (away or asleep) planned "as they come home" waited
+        // its whole day in the dev client (2026-11-09).
+        let when = if when_fits(chosen, &when) {
+            when
+        } else {
+            log.note(&format!(
+                "{} cannot happen {}; whenever its needs hold",
+                chosen.id,
+                when_words(&when)
+            ));
+            String::new()
+        };
         let delay = if when == "now" {
             0
         } else {
@@ -1040,6 +1094,7 @@ impl Brain {
             decided_day: day,
             forced: false,
             when,
+            waiting: String::new(),
         });
     }
 
@@ -1078,16 +1133,15 @@ impl Brain {
             decided_day: day,
             forced: true,
             when: String::new(),
+            waiting: String::new(),
         });
         log.note(&format!("forced {}", event.id));
 
         match pos {
             Some(p) => format!(
-                "{} queued at ({},{},{}), {} command(s)",
+                "{} queued at {}, {} command(s)",
                 event.id,
-                p[0],
-                p[1],
-                p[2],
+                log::spot_words(p),
                 made.len()
             ),
             None => format!("{} queued, {} command(s)", event.id, made.len()),
@@ -1139,6 +1193,31 @@ impl Brain {
 /// The events worth offering: a convenience for the harness and the status line.
 /// Whether the plan's `When?` holds right now. `away` is the target away or asleep; `sleep`
 /// asleep; `home` within 24 blocks of the home and walking toward it; `now` and empty always.
+/// Whether a planned moment can ever hold together with the event's needs: "as they come home"
+/// never meets "away or asleep", "while they sleep" never meets "walking" or "outdoors", and
+/// "while they are away" never meets "in bed" or "indoors" (the home's rooms).
+pub fn when_fits(event: &Event, when: &str) -> bool {
+    use events::Need::*;
+    let rules_out: &[events::Need] = match when {
+        "home" => &[TargetAwayOrAsleep, TargetInBed],
+        "sleep" => &[TargetWalking, TargetOutdoors],
+        "away" => &[TargetInBed, TargetIndoors],
+        _ => &[],
+    };
+
+    !event.needs.iter().any(|n| rules_out.contains(n))
+}
+
+/// A planned moment in the log's words.
+fn when_words(when: &str) -> &str {
+    match when {
+        "away" => "while they are away",
+        "sleep" => "while they sleep",
+        "home" => "as they come home",
+        other => other,
+    }
+}
+
 pub fn when_holds(when: &str, memory: &Memory) -> bool {
     let home = memory.home.as_ref().map(|h| h.center);
     match when {
@@ -1246,7 +1325,7 @@ mod tests {
                 .collect())
         }
 
-        fn generate(&mut self, _: &str, _: usize) -> Result<String, String> {
+        fn generate(&mut self, _: &str, _: crate::model::Leash) -> Result<String, String> {
             self.written.map(str::to_string).map_err(str::to_string)
         }
     }
@@ -1410,6 +1489,8 @@ mod tests {
             pos: [2, 64, 0],
             kind: "minecraft:chest".to_string(),
             opens: 3,
+            placed: true,
+            days: 1,
             last_opened_day: 0.0,
             contents: vec![],
         });
@@ -1811,6 +1892,207 @@ mod tests {
             log.lines
         );
         model.shutdown();
+    }
+
+    #[test]
+    fn a_plan_whose_torches_they_would_see_waits_until_they_look_away() {
+        // The dev client, 2026-11-09: a path of torches went up 40 blocks off, in plain sight.
+        let mut config = Config::default();
+        config.stages.start_after_days = 0;
+        let mut memory = home_memory();
+        memory.place = Some([40, 64, 0]);
+        memory.last.online = true;
+        memory.last.pos = [-30.0, 64.0, 0.5];
+        memory.last.yaw = -90.0; // facing +x: the house and the path beyond it
+        let mut arc = Arc {
+            stage: 2,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        brain.plan = Some(Plan {
+            event: "light_path".to_string(),
+            until_tick: 24_000,
+            ..Plan::default()
+        });
+        assert!(
+            rules::check(
+                events::find("light_path").unwrap(),
+                None,
+                &memory,
+                2,
+                0.0,
+                &config
+            )
+            .is_ok(),
+            "no spot of its own: the rule alone would let it through"
+        );
+
+        let mut now = Now {
+            tick: 20,
+            ..Now::default()
+        };
+        let sent = brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+        assert!(
+            !sent.iter().any(|c| matches!(c, Command::SetBlock { .. })),
+            "no torch while they look: {sent:?}"
+        );
+        let plan = brain.plan.as_ref().expect("still planned, not dropped");
+        assert_eq!(plan.waiting, "in view");
+
+        memory.last.yaw = 90.0; // facing -x, away from it all
+        now.tick += 20;
+        let sent = brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+        assert!(
+            brain.plan.is_none() && sent.iter().any(|c| matches!(c, Command::SetBlock { .. })),
+            "it went ahead once they looked away: {sent:?}"
+        );
+    }
+
+    #[test]
+    fn a_spot_in_view_at_the_moment_keeps_the_plan_waiting_and_a_sound_never_waits() {
+        let mut config = Config::default();
+        config.stages.start_after_days = 0;
+        let mut memory = home_memory();
+        memory.last.online = true;
+        memory.last.pos = [-30.0, 64.0, 0.5];
+        memory.last.yaw = -90.0;
+        let mut arc = Arc {
+            stage: 2,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        brain.plan = Some(Plan {
+            event: "close_door".to_string(),
+            pos: Some([3, 64, 0]),
+            until_tick: 24_000,
+            ..Plan::default()
+        });
+        let now = Now {
+            tick: 20,
+            ..Now::default()
+        };
+        brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+        assert_eq!(
+            brain.plan.as_ref().map(|p| p.waiting.as_str()),
+            Some("in view"),
+            "33 blocks off and facing it: once dropped, now waiting"
+        );
+
+        assert!(!rules::hidden_from_view(
+            events::find("late_steps").unwrap().action
+        ));
+        assert!(rules::hidden_from_view(
+            events::find("light_path").unwrap().action
+        ));
+    }
+
+    #[test]
+    fn a_moment_the_event_s_needs_rule_out_is_dropped_for_whenever_they_hold() {
+        // The dev client, 2026-11-09: `wall_swap` planned "as they come home" never came.
+        let swap = events::find("wall_swap").unwrap();
+        assert!(!when_fits(swap, "home"));
+        assert!(when_fits(swap, "sleep"));
+        assert!(when_fits(swap, "away"));
+        assert!(when_fits(swap, ""));
+        assert!(!when_fits(events::find("open_chest").unwrap(), "away"));
+        assert!(!when_fits(events::find("late_steps").unwrap(), "sleep"));
+        for event in events::CATALOGUE {
+            assert!(
+                when_fits(event, "") && when_fits(event, "now"),
+                "{}",
+                event.id
+            );
+        }
+    }
+
+    #[test]
+    fn a_menu_of_nothing_but_wait_asks_nothing_and_decides_nothing() {
+        let _turn = crate::model::TEST_TURN
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let mut config = Config::default();
+        config.stages.start_after_days = 0;
+        config.brain.plan_every = 1;
+        config.events.disabled = events::CATALOGUE
+            .iter()
+            .filter(|e| e.id != "wait")
+            .map(|e| e.id.to_string())
+            .collect();
+        let mut memory = home_memory();
+        memory.want = "a place of its own".to_string();
+        let mut arc = Arc {
+            stage: 2,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, true);
+        let fake = Fake::new("something it will notice", 0, Err("no"));
+        let seen = fake.seen.clone();
+        let model = model_with(fake);
+        let mut brain = Brain::new(3);
+        let mut now = Now::default();
+        for _ in 0..30 {
+            brain.tick(
+                &now,
+                0.0,
+                &mut memory,
+                &mut arc,
+                &config,
+                &mut log,
+                Some(&model),
+            );
+            now.tick += TPS;
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+
+        assert_eq!(brain.decisions, 0);
+        assert!(seen.lock().unwrap().is_empty(), "the model was asked");
+        model.shutdown();
+    }
+
+    #[test]
+    fn a_hole_next_to_what_they_built_digs_nothing_even_when_forced() {
+        // The dev client, 2026-11-09: `hole` dug under a crafting table at the lodger's place.
+        let config = Config::default();
+        let mut memory = home_memory();
+        memory.placed.push([340, 64, 50]);
+        let mut arc = Arc {
+            stage: 3,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        for forced in [false, true] {
+            let mut brain = Brain::new(1);
+            brain.plan = Some(Plan {
+                event: "hole".to_string(),
+                pos: Some([343, 64, 50]),
+                until_tick: 24_000,
+                forced,
+                ..Plan::default()
+            });
+            let sent = brain.tick(
+                &Now {
+                    tick: 20,
+                    ..Now::default()
+                },
+                0.0,
+                &mut memory,
+                &mut arc,
+                &config,
+                &mut log,
+                None,
+            );
+            assert!(
+                !sent.iter().any(|c| act::dug(c).is_some()),
+                "forced {forced}: {sent:?}"
+            );
+            assert!(brain.plan.is_none(), "refused, not waiting");
+            assert_eq!(
+                memory.done.last().map(|d| d.reason.as_str()),
+                Some("too near what they built")
+            );
+        }
     }
 
     #[test]

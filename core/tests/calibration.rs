@@ -91,6 +91,15 @@ fn observations(tick: u64) -> Observations {
             ..Event::default()
         });
     }
+    if tick == 160 {
+        events.push(Event {
+            player: 0,
+            kind: EventKind::PlacedBlock,
+            pos: Some([2, 64, 0]),
+            detail: "minecraft:chest".to_string(),
+            ..Event::default()
+        });
+    }
     if tick == 120 || tick == 140 {
         events.push(Event {
             player: 0,

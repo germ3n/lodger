@@ -119,6 +119,7 @@ mod tests {
         memory.containers.push(crate::memory::Container {
             pos: [0, 0, 0],
             opens: 3,
+            placed: true,
             ..Default::default()
         });
         arc.landed_this_stage = 2;

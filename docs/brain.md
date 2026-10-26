@@ -104,7 +104,12 @@ asked, `Should it do something soon?` and `What should it do?`, as one ask with 
 yet`, a first-question confidence under `brain.event_threshold`, or `nothing` on the menu is
 `wait`, otherwise the chosen words name the event. `When?` is asked too (`away`, `sleep`,
 `home`, `now`): the plan waits for that moment on top of the event's needs (`when_holds`), and
-`now` runs it at once; `Where?` is asked when the memory can name two or more places (by the
+`now` runs it at once. The answer comes before the event is known, so a moment the event's
+needs rule out is dropped for "whenever its needs hold" and the log says so (`when_fits`: "as
+they come home" never meets "away or asleep", "while they sleep" never meets walking or
+outdoors, "while they are away" never meets in bed or indoors; `wall_swap` planned "as they
+come home" waited out its day in the dev client, 2026-11-09). A menu with nothing but `wait`
+on it is no decision at all: nothing is asked and nothing logged; `Where?` is asked when the memory can name two or more places (by the
 door, on the bed, by the chest they use, at the end of their path, at its place), and the
 answer is the place for the events that leave or make something at a spot (`act::flexible`).
 A question unanswered for a minute, a refused ask (the queue full, the model shut down) or
@@ -184,14 +189,23 @@ examples and those examples correlating to specific actions") made `generate` th
   2026-11-09), shown the bank for that kind of line as its examples first: a sign after a kill is shown kill signs, a whisper is shown
   whispers, a name for an animal is shown names (`brain/text.rs`, `Kind`: `SignWord`,
   `ChatLine`, `KillLine`, `KillSign`, `Whisper`, `AnimalName`, `GraveSign`, each with its bank
-  and its most words). The line is decoded a token at a time with every token outside letters,
-  digits and spaces masked out, stopped at a newline or the kind's word count, passed through a
-  blocklist and a length check (`text::check`), logged (`wrote (Kind): "..." -> kept or
+  and its most words). The line is decoded a token at a time under the kind's leash
+  (`Kind::leash`: its words, two tokens a word and two more, digits only for the two kinds that
+  count, `KillLine` and `KillSign`): every token outside letters, spaces and, for those two,
+  digits is masked out, upper case allowed since the check lower-cases, and the decode stops
+  at a newline, at the token budget, or before a token that would start one word past the
+  kind's; then a blocklist and a check (`text::check`: letters, at least one, no digit outside
+  the counting kinds, the word count), logged (`wrote (Kind): "..." -> kept or
   dropped` in the decision log), and dropped (the bank used instead) if any check fails. The
   writing is asked for the moment the event is planned, so the line is there when the plan
   runs minutes later; with no line by then, the bank's stands. **The blocked words** are the
   `BLOCKED` list at the top of `core/src/brain/text.rs`: slurs, sexual words and self-harm, and
-  nothing else, since the line appears in the player's own name in chat. Horror words (kill,
+  nothing else, since the line appears in the player's own name in chat. **The prompt ends on
+  `-` with no space after it** (`situation::writing_prompt`): Qwen's tokens carry a word's space
+  at their front (` here`), and a prompt ending in a space left the model only the tokens with
+  none, digits the likeliest; the dev client's first sign said `123456` (2026-11-09), and the
+  real-model test `every_kind_of_line_the_model_writes_passes_its_own_check` now writes one
+  line of each kind from that situation (`now`, `i was here`, `the sheep rest`). Horror words (kill,
   blood, dead) are the mod's subject and are not blocked (owner, 2026-11-09). Editing the list
   is editing that constant; its test pins that a blocked word drops the line and a horror word
   does not.
@@ -221,7 +235,11 @@ player's name.
    and the stage: not in view within `events.min_distance`, not a witness's container, not twice at
    the same place in a day, not an event the stage does not offer, not an event in `events.disabled`,
    not within the stage's least days of a stage change. A failed rule is `wait`, and the log
-   says which rule.
+   says which rule. **In view is checked again at the plan's moment, for every block the event
+   would change** (`act::spots`: blocks set, moved, broken, turned or signed, items dropped,
+   creatures moved), not just its own spot, and a plan in view **waits** (`waiting: "in view"`)
+   until the target looks away, within its day, rather than being dropped: a path of torches
+   has no spot of its own and went up in plain sight in the dev client (2026-11-09).
 5. **Plan.** One entry at most per lodger. A new plan replaces an unstarted one.
 
 ## Cadence and keys

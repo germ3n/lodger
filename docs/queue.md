@@ -53,7 +53,7 @@ end of the day the project started; check what has moved since with `git log`.
   fallback) and writes the few words (a masked greedy decode, checked, the bank as the
   fallback, or the bank ask in `bank` mode); the figure in the target's skin as client-only
   packets with eight rows; the house changed (a block for another of its family, the bed
-  breaking). 101 unit tests, 10 scripted stays, 50 JUnit, a calibration run; clippy clean.
+  breaking). 101 unit tests, 10 scripted stays, 46 JUnit, a calibration run; clippy clean.
 - **The host:** 30 executors, 14 glitch renderers, the figures, the poses, the timers.
 
 **Not yet seen by a player:** everything above. The dev client was relaunched with the latest
@@ -65,6 +65,20 @@ jar at the end of the session and left at the title screen.
    tab and watch the world and the Log tab; read `config/lodger/decisions.log` for the model's
    answers (`brain=model`) and its written lines (`wrote (...)`); the figure (`far_figure`,
    `in_doorway`). Fix what shows. Then NeoForge (`:neoforge:runClient`) the same.
+   **Asked during the first session (2026-11-09), next after its fixes:** plans in parallel
+   (`brain.most_plans`, 3 by default, presets scale it; asking again every `plan_every` while
+   below it; never two on one spot or container, never two of a group, never one event twice);
+   plans cancelled as soon as they cannot happen (the spot gone, the needs unable to return
+   within the window, a stronger reaction at the cap) with the reason in the log and on the
+   screen; the debug screen as a side panel that neither pauses nor covers the world, smaller
+   text, every plan a row with Drop and Now, waiting reasons shown; an audit that every event's
+   commands match its row, and each event through a scripted stay. **Atmospheres** (owner,
+   2026-11-09: "red mist ... like blood, also just darkness, fog ... not abrupt like other mods,
+   make it good and spooky"): the world's own fog driven on the target's client (distance and
+   colour through the fog renderer, not a layer over the HUD), easing in over tens of seconds,
+   breathing, easing out: a mist that swallows the terrain, a red mist, a darkness that pulls
+   the world in; `fog_close` and `red_rain` rebuilt on it. Ask the owner which, how long, which
+   stages, and whether they stack.
 2. **A dev stay with the real model:** the 1.5B is in the dev client's config folder and the
    default now; read `decisions.log` for `brain=model`, the reactions and the written lines.
 3. **Calibration round two** by [round one](calibration/round-1.md)'s list: the first

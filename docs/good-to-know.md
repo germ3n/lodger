@@ -8,7 +8,8 @@ pages explain each part in full; this one is the short list to keep in mind.
 - **The model decides by scoring, and writes only a few words.** Every event is a fixed choice
   the model scores; it cannot invent an event and cannot be talked to. The one place it writes
   is the words on a sign, a name tag or a chat line in your own name (`brain.text`, `generate`
-  by default since 2026-11-09): a few words, letters and spaces only, shown handwritten examples
+  by default since 2026-11-09): a few words, letters and spaces only (digits only on the lines
+  that count kills), shown handwritten examples
   of that kind of line first, through a blocklist, logged, and replaced by a handwritten line if
   any check fails. The blocklist (`BLOCKED` in `core/src/brain/text.rs`) holds slurs, sexual
   words and self-harm and nothing else; horror words are the mod's subject. See
@@ -93,7 +94,7 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   shifted one block. It never opens a wall, never touches anything in view, and never fires
   anything that explodes: a lever with TNT within 16 blocks of what it powers is not a lever to
   the lodger. What it does dig is what a player digs: natural stone, dirt and ore, one block at a
-  time at a player's pace, never within 8 blocks of anything placed and never into a cave, water
+  time at a player's pace, never within 8 blocks of anything placed (checked on every command, the debug screen's Fire too) and never into a cave, water
   or lava it can see coming (see [Like a player](entity.md#like-a-player)).
 - **It never takes more than one item at a time, and never anything from the inventory, a hand,
   an armour slot or the ender chest.** From a chest the player opens often, one item, one that
@@ -111,7 +112,8 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
 - **It reads your chat.** What you type is a sense, so it can answer what you say about it. On a
   server, say so in the server's rules; it is the server's own chat and the memory keeps at most
   eight lines.
-- **Nothing happens within 24 blocks of the target while the target can see the spot.** It works
+- **Nothing changes within 64 blocks of the target while the target faces it.** Every block an
+  event would change is checked, and an event in view waits for them to look away. It works
   behind you, in rooms you left, and while you sleep. A player who stands and watches a chest
   watches a chest.
 - **It answers how it is treated, within the preset's bounds.** Chase it, break its things,
@@ -136,6 +138,13 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   both. A mob it uses is one that was already there, redirected. The memory counts all of it.
 
 ## Things that bite
+
+- **A chest is the lodger's to use only if it is the target's.** Placed by them, or opened on
+  three different days. A village chest opened once is never touched, so a new world with no
+  chest of its own gets no chest events until one is placed.
+- **Blocks the lodger places stand where a player could place them.** `set_block` refuses a
+  torch over air; with `settle` the host looks a few blocks down and up for ground, then for a
+  wall (`wall_torch`). The mind knows positions, not terrain.
 
 - **The replay figure needs the target's skin on the client.** In singleplayer the client has
   it. On a server every client already fetches skins by profile, so the witnesses' clients would

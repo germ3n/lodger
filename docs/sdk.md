@@ -87,7 +87,9 @@ the six world functions and `sdk/src/world.rs`, the per-world shapes. ABI 5 (202
 `swap_painting`, `pose_stand`, `name_entity`, `dye_sheep`, `move_entity`, `player_list`,
 `game_message`, and `push_entity`, `rotate_block`, `set_frame_item`, `equip_entity` and
 `damage_item` the same night, and `figure.seconds` and `figure.vanish_within`),
-`set_block.replace` and the `killed` event.
+`set_block.replace` and the `killed` event. ABI 6 (2026-11-09) gave `set_block` `settle` and
+`wall` (a block stands where a player could place it, never over air) and `closed_container`
+its position and the contents as the player left them.
 
 ## Resources
 

@@ -25,12 +25,22 @@ const SHUT_DOWN: &str = "the model has been shut down";
 pub trait Scorer {
     fn score(&mut self, situation: &str, questions: &[Question]) -> Result<Vec<Answer>, String>;
 
-    /// Continues `prompt` by at most `max_tokens` tokens of lower-case letters, digits and
-    /// spaces, stopping at a line's end. The default cannot write.
-    fn generate(&mut self, prompt: &str, max_tokens: usize) -> Result<String, String> {
-        let _ = (prompt, max_tokens);
+    /// Continues `prompt` within `leash`: at most its tokens of letters and spaces (and digits
+    /// when it allows them), stopping at a line's end. The default cannot write.
+    fn generate(&mut self, prompt: &str, leash: Leash) -> Result<String, String> {
+        let _ = (prompt, leash);
         Err("this model does not write".to_string())
     }
+}
+
+/// How far a written line may run: at most `max_tokens` tokens and `words` words (the decode
+/// stops before a token that would start one more), and digits only when `digits` (a line
+/// counting what the player killed). Letters and spaces always.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Leash {
+    pub max_tokens: usize,
+    pub words: usize,
+    pub digits: bool,
 }
 
 pub struct Reply {
@@ -47,8 +57,8 @@ pub struct Job {
     /// The situation to score against, or the prompt to continue.
     pub situation: String,
     pub questions: Vec<Question>,
-    /// Some for a writing job: how many tokens at most.
-    pub generate: Option<usize>,
+    /// Some for a writing job: how far the line may run.
+    pub generate: Option<Leash>,
     pub reply: Sender<Reply>,
 }
 
@@ -178,8 +188,8 @@ fn run<S: Scorer>(scorer: &mut S, rx: Receiver<Job>, shared: &Shared) {
             Err(SHUT_DOWN.to_string())
         } else if stale {
             Err(SUPERSEDED.to_string())
-        } else if let Some(max_tokens) = job.generate {
-            scorer.generate(&job.situation, max_tokens).map(|written| {
+        } else if let Some(leash) = job.generate {
+            scorer.generate(&job.situation, leash).map(|written| {
                 text = Some(written);
                 Vec::new()
             })

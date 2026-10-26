@@ -31,10 +31,25 @@ pub struct Container {
     pub kind: String,
     pub opens: u32,
     pub last_opened_day: f32,
+    /// As the player left it: read when it is opened and again when it is closed.
     pub contents: Vec<ItemStack>,
+    /// The target placed it.
+    pub placed: bool,
+    /// On how many different days the target opened it.
+    pub days: u32,
 }
 
 impl Container {
+    /// Opened on this many different days, a container the target did not place is theirs too:
+    /// a village house moved into. One opened once on the way past is not.
+    pub const ADOPTED_DAYS: u32 = 3;
+
+    /// Whether it is the target's: placed by them, or used on [`Self::ADOPTED_DAYS`] days. Only
+    /// these are touched by the lodger and described to the model.
+    pub fn theirs(&self) -> bool {
+        self.placed || self.days >= Self::ADOPTED_DAYS
+    }
+
     pub fn is_furnace(&self) -> bool {
         self.kind.ends_with("furnace") || self.kind.ends_with("smoker")
     }
@@ -135,7 +150,8 @@ pub struct Reaction {
     pub event: String,
     pub day: f32,
     pub pos: Option<BlockPos>,
-    /// `lit` (a light placed within 16 blocks), `walled` (three or more blocks placed within 4),
+    /// `lit` (a light placed within 16 blocks), `walled` (closed in on all four sides, see
+    /// [`encloses`]),
     /// `watched` (stood facing the spot a minute), `left` (left the game within a minute),
     /// `ignored` (a day passed), or empty while it is still being watched.
     pub kind: String,
@@ -281,7 +297,7 @@ pub struct Memory {
 }
 
 /// Caps, with the reason beside each.
-const MOST_CONTAINERS: usize = 32; // least-opened dropped first
+const MOST_CONTAINERS: usize = 32; // the least-opened of those not theirs dropped first
 const MOST_DONE: usize = 256; // oldest dropped first
 const MOST_FAVOURITES: usize = 8;
 const MOST_CELLS: usize = 512; // the least-stood-in dropped first
@@ -536,8 +552,44 @@ fn is_door(id: &str) -> bool {
     id.ends_with("_door") && !id.contains("trapdoor")
 }
 
+/// Which of the four sides of `spot` a block is on, if it walls that side: one or two blocks
+/// out along that side, nearer the middle than the corner, level with the spot or one above. A
+/// block on the diagonal walls no side.
+fn side_of(spot: BlockPos, block: BlockPos) -> Option<usize> {
+    let (dx, dy, dz) = (block[0] - spot[0], block[1] - spot[1], block[2] - spot[2]);
+    if !(0..=1).contains(&dy) || dx.abs() > 2 || dz.abs() > 2 || dx.abs() == dz.abs() {
+        return None;
+    }
+    Some(if dx.abs() > dz.abs() {
+        usize::from(dx < 0)
+    } else {
+        2 + usize::from(dz < 0)
+    })
+}
+
+/// Whether blocks the target placed close `spot` in on all four sides.
+fn encloses(spot: BlockPos, placed: &[BlockPos]) -> bool {
+    let mut sides = [false; 4];
+    for block in placed {
+        if let Some(side) = side_of(spot, *block) {
+            sides[side] = true;
+        }
+    }
+
+    sides.iter().all(|s| *s)
+}
+
 fn is_bed(id: &str) -> bool {
     id.ends_with("_bed")
+}
+
+/// A block that stores items the lodger may use: a chest, a trapped chest, a barrel, a furnace,
+/// a smoker. Never an ender chest, which is the player's alone everywhere.
+fn is_storage(id: &str) -> bool {
+    (id.ends_with("chest") && !id.ends_with("ender_chest"))
+        || id.ends_with("barrel")
+        || id.ends_with("furnace")
+        || id.ends_with("smoker")
 }
 
 impl Memory {
@@ -736,6 +788,9 @@ impl Memory {
                             home.center = pos;
                             home.floor_y = pos[1];
                         }
+                        if is_storage(&event.detail) {
+                            self.container_placed(pos, &event.detail);
+                        }
                         if let Some(kind) = fixture_kind(&event.detail) {
                             self.fixtures.retain(|f| f.pos != pos);
                             push_capped(
@@ -753,6 +808,10 @@ impl Memory {
                                 floor_y: pos[1],
                                 ..Home::default()
                             });
+                            // One placed where one is remembered replaces it: a door put back
+                            // after the floor under it was dug is still one door.
+                            home.lights.retain(|p| *p != pos);
+                            home.doors.retain(|p| *p != pos);
                             if is_light(&event.detail) {
                                 push_capped(&mut home.lights, pos, MOST_LIGHTS);
                             } else {
@@ -816,14 +875,24 @@ impl Memory {
                 }
                 EventKind::BrokeBlock => {
                     if let Some(pos) = event.pos {
+                        // What stood on it drops with it (a door, a torch, a lever on the
+                        // floor), and the game sends no break for those.
+                        let above = [pos[0], pos[1] + 1, pos[2]];
                         self.placed.retain(|p| *p != pos);
                         if let Some(home) = &mut self.home {
-                            home.lights.retain(|p| *p != pos);
-                            home.doors.retain(|p| *p != pos);
+                            home.lights.retain(|p| *p != pos && *p != above);
+                            home.doors.retain(|p| *p != pos && *p != above);
                         }
                         self.containers.retain(|c| c.pos != pos);
-                        self.fixtures.retain(|f| f.pos != pos);
+                        self.fixtures.retain(|f| f.pos != pos && f.pos != above);
                         self.walls.retain(|(p, _)| *p != pos);
+                    }
+                }
+                EventKind::ClosedContainer => {
+                    if let Some(pos) = event.pos {
+                        if let Some(container) = self.containers.iter_mut().find(|c| c.pos == pos) {
+                            container.contents = event.contents.clone();
+                        }
                     }
                 }
                 _ => {}
@@ -949,9 +1018,44 @@ impl Memory {
         }
     }
 
+    /// A container the target placed: theirs from the start, opened or not.
+    fn container_placed(&mut self, pos: BlockPos, kind: &str) {
+        match self.containers.iter_mut().find(|c| c.pos == pos) {
+            Some(container) => {
+                container.placed = true;
+                container.kind = kind.to_string();
+            }
+            None => {
+                self.containers.push(Container {
+                    pos,
+                    kind: kind.to_string(),
+                    placed: true,
+                    ..Container::default()
+                });
+                self.drop_least_opened_container();
+            }
+        }
+    }
+
+    fn drop_least_opened_container(&mut self) {
+        if self.containers.len() > MOST_CONTAINERS {
+            let least = self
+                .containers
+                .iter()
+                .enumerate()
+                .min_by_key(|(_, c)| (c.theirs(), c.opens))
+                .map(|(i, _)| i)
+                .unwrap_or(0);
+            self.containers.remove(least);
+        }
+    }
+
     fn container_opened(&mut self, pos: BlockPos, kind: &str, contents: &[ItemStack], day: f32) {
         match self.containers.iter_mut().find(|c| c.pos == pos) {
             Some(container) => {
+                if container.opens == 0 || day.floor() > container.last_opened_day.floor() {
+                    container.days += 1;
+                }
                 container.opens += 1;
                 container.last_opened_day = day;
                 container.contents = contents.to_vec();
@@ -964,17 +1068,10 @@ impl Memory {
                     opens: 1,
                     last_opened_day: day,
                     contents: contents.to_vec(),
+                    placed: false,
+                    days: 1,
                 });
-                if self.containers.len() > MOST_CONTAINERS {
-                    let least = self
-                        .containers
-                        .iter()
-                        .enumerate()
-                        .min_by_key(|(_, c)| c.opens)
-                        .map(|(i, _)| i)
-                        .unwrap_or(0);
-                    self.containers.remove(least);
-                }
+                self.drop_least_opened_container();
             }
         }
     }
@@ -1062,33 +1159,29 @@ impl Memory {
         self.routes.sort_by_key(|r| std::cmp::Reverse(r.walked));
     }
 
-    /// A block placed answers the newest open reaction: a light within 16 blocks lit the spot,
-    /// three solid blocks within 4 walled it.
+    /// A block placed answers the newest open reaction: a light within 16 blocks lit the spot;
+    /// a block that closes the spot in on its last open side walled it ([`encloses`]). Building
+    /// near it is not walling it: the dev client's house went up around a sign and read as
+    /// walled (2026-11-09).
     fn react_to_placing(&mut self, pos: BlockPos, block_id: &str) {
-        let near = self
-            .placed
-            .iter()
-            .filter(|p| {
-                self.reactions
-                    .iter()
-                    .rev()
-                    .find(|r| r.kind.is_empty())
-                    .and_then(|r| r.pos)
-                    .map(|spot| distance(spot, **p) <= 4.0)
-                    .unwrap_or(false)
-            })
-            .count();
-        let Some(reaction) = self.reactions.iter_mut().rev().find(|r| r.kind.is_empty()) else {
+        let Some(reaction) = self.reactions.iter().rev().find(|r| r.kind.is_empty()) else {
             return;
         };
         let Some(spot) = reaction.pos else { return };
-        if is_light(block_id) && distance(spot, pos) <= 16.0 {
-            reaction.kind = "lit".to_string();
-            self.triggers.push("lit".to_string());
-        } else if !is_light(block_id) && distance(spot, pos) <= 4.0 && near >= 3 {
-            reaction.kind = "walled".to_string();
-            self.triggers.push("walled".to_string());
+        let kind = if is_light(block_id) && distance(spot, pos) <= 16.0 {
+            "lit"
+        } else if !is_light(block_id)
+            && side_of(spot, pos).is_some()
+            && encloses(spot, &self.placed)
+        {
+            "walled"
+        } else {
+            return;
+        };
+        if let Some(reaction) = self.reactions.iter_mut().rev().find(|r| r.kind.is_empty()) {
+            reaction.kind = kind.to_string();
         }
+        self.triggers.push(kind.to_string());
     }
 
     /// Makes a player the target.
@@ -1180,7 +1273,7 @@ impl Memory {
     pub fn used_container(&self) -> Option<&Container> {
         self.containers
             .iter()
-            .filter(|c| !c.is_furnace())
+            .filter(|c| !c.is_furnace() && c.theirs())
             .max_by_key(|c| c.opens)
     }
 
@@ -1190,7 +1283,7 @@ impl Memory {
 
         self.containers
             .iter()
-            .filter(|c| !c.is_furnace() && c.pos != used)
+            .filter(|c| !c.is_furnace() && c.theirs() && c.pos != used)
             .max_by_key(|c| c.opens)
     }
 
@@ -1198,7 +1291,7 @@ impl Memory {
     pub fn furnace(&self) -> Option<&Container> {
         self.containers
             .iter()
-            .filter(|c| c.is_furnace())
+            .filter(|c| c.is_furnace() && c.theirs())
             .max_by_key(|c| c.opens)
     }
 
@@ -1400,12 +1493,7 @@ impl Memory {
         }
 
         for done in self.recent(3) {
-            let ago = (day - done.day).max(0.0);
-            let when = if ago < 1.0 {
-                "Today".to_string()
-            } else {
-                format!("{} days ago", ago.floor() as u32)
-            };
+            let when = ago_words(day - done.day, "Today");
             lines.push(format!(
                 "{} it {} {}.",
                 when,
@@ -1423,14 +1511,9 @@ impl Memory {
             .rev()
             .find(|l| !self.recent(3).any(|d| d.day == l.day && d.event == l.event))
         {
-            let ago = (day - landmark.day).max(0.0);
             lines.push(format!(
-                "{} it {}{}.",
-                if ago < 1.0 {
-                    "Earlier today".to_string()
-                } else {
-                    format!("{} days ago", ago.floor() as u32)
-                },
+                "{} it did {}{}.",
+                ago_words(day - landmark.day, "Earlier today"),
                 crate::events::find(&landmark.event)
                     .map(|e| e.menu_words())
                     .unwrap_or(&landmark.event),
@@ -1443,12 +1526,7 @@ impl Memory {
         }
 
         if let Some(milestone) = self.milestones.last() {
-            let ago = (day - milestone.day).max(0.0);
-            let when = if ago < 1.0 {
-                "Today".to_string()
-            } else {
-                format!("{} days ago", ago.floor() as u32)
-            };
+            let when = ago_words(day - milestone.day, "Today");
             let what = match milestone.kind.as_str() {
                 "died" => "they died".to_string(),
                 "first_sleep" => "they slept for the first time".to_string(),
@@ -1564,18 +1642,17 @@ impl Memory {
 
         if let Some(tally) = self.most_killed() {
             lines.push(format!(
-                "They have killed {} {}{} so far.",
+                "They have killed {} {} so far.",
                 tally.kills,
-                tally.kind.replace('_', " "),
-                if tally.kills == 1 { "" } else { "s" }
+                crate::brain::text::plural(&tally.kind, tally.kills),
             ));
         }
 
         if let Some(held) = &self.held {
             lines.push(format!(
-                "It holds the player's {}, taken {} days ago.",
-                plain(&held.item.id),
-                (day - held.taken_day).max(0.0).floor() as u32
+                "It holds the player's {}, taken {}.",
+                bare(&held.item.id),
+                ago_words(day - held.taken_day, "today").to_lowercase()
             ));
         }
 
@@ -1617,9 +1694,77 @@ fn push_capped<T>(list: &mut Vec<T>, value: T, cap: usize) {
     }
 }
 
-/// `minecraft:iron_pickaxe` as `an iron pickaxe`.
+/// Items named without `a`: what a player has some of, not one of (`dirt`, `bread`), and names
+/// already plural (`oak planks`).
+const MASS: &[&str] = &[
+    "dirt",
+    "coarse dirt",
+    "rooted dirt",
+    "mud",
+    "cobblestone",
+    "cobbled deepslate",
+    "stone",
+    "deepslate",
+    "granite",
+    "diorite",
+    "andesite",
+    "tuff",
+    "calcite",
+    "netherrack",
+    "sand",
+    "red sand",
+    "gravel",
+    "clay",
+    "snow",
+    "ice",
+    "glass",
+    "obsidian",
+    "bread",
+    "wheat",
+    "sugar",
+    "leaf litter",
+    "moss",
+    "kelp",
+    "seagrass",
+    "short grass",
+    "coal",
+    "charcoal",
+    "raw iron",
+    "raw gold",
+    "raw copper",
+    "redstone",
+    "string",
+    "flint",
+    "gunpowder",
+    "leather",
+    "beef",
+    "porkchop",
+    "mutton",
+    "chicken",
+    "rabbit",
+    "cod",
+    "salmon",
+    "rotten flesh",
+    "bone meal",
+    "glowstone dust",
+    "lapis lazuli",
+    "quartz",
+    "paper",
+    "wool",
+    "white wool",
+];
+
+/// `minecraft:iron_pickaxe` as `iron pickaxe`.
+pub fn bare(id: &str) -> String {
+    id.rsplit(':').next().unwrap_or(id).replace('_', " ")
+}
+
+/// `minecraft:iron_pickaxe` as `an iron pickaxe`, `minecraft:dirt` as `dirt`.
 pub fn plain(id: &str) -> String {
-    let name = id.rsplit(':').next().unwrap_or(id).replace('_', " ");
+    let name = bare(id);
+    if MASS.contains(&name.as_str()) || name.ends_with('s') {
+        return name;
+    }
     let article = if name.starts_with(['a', 'e', 'i', 'o', 'u']) {
         "an"
     } else {
@@ -1627,6 +1772,16 @@ pub fn plain(id: &str) -> String {
     };
 
     format!("{article} {name}")
+}
+
+/// How long ago, in the situation's words: `today` (as given) under a day, `Yesterday`, then
+/// `3 days ago`.
+fn ago_words(ago: f32, today: &str) -> String {
+    match ago.max(0.0).floor() as u32 {
+        0 => today.to_string(),
+        1 => "Yesterday".to_string(),
+        n => format!("{n} days ago"),
+    }
 }
 
 fn place_words(home: Option<&Home>, pos: BlockPos) -> String {
@@ -1717,7 +1872,7 @@ mod tests {
     }
 
     #[test]
-    fn a_bed_slept_in_is_the_home_and_a_chest_opened_is_the_used_container() {
+    fn a_bed_slept_in_is_the_home_and_a_chest_placed_and_opened_is_the_used_container() {
         let mut memory = Memory::default();
         memory.observe(&obs(vec![player(0, [10.0, 64.0, 10.0], 0.0)], vec![]), 0.0);
         memory.observe(
@@ -1728,6 +1883,13 @@ mod tests {
                         player: 0,
                         kind: EventKind::SleptBegan,
                         pos: Some([10, 64, 10]),
+                        ..Event::default()
+                    },
+                    Event {
+                        player: 0,
+                        kind: EventKind::PlacedBlock,
+                        pos: Some([12, 64, 10]),
+                        detail: "minecraft:chest".to_string(),
                         ..Event::default()
                     },
                     Event {
@@ -1752,6 +1914,175 @@ mod tests {
         let (container, stack) = memory.favourite_in_container().unwrap();
         assert_eq!(container.pos, [12, 64, 10]);
         assert_eq!(stack.slot, 4);
+    }
+
+    fn at(kind: EventKind, pos: BlockPos, detail: &str, contents: Vec<ItemStack>) -> Event {
+        Event {
+            player: 0,
+            kind,
+            pos: Some(pos),
+            detail: detail.to_string(),
+            contents,
+        }
+    }
+
+    fn bread() -> Vec<ItemStack> {
+        vec![ItemStack {
+            id: "minecraft:bread".to_string(),
+            count: 3,
+            slot: 0,
+        }]
+    }
+
+    #[test]
+    fn a_chest_opened_on_the_way_past_is_not_theirs_until_used_on_three_days() {
+        // The dev client, 2026-11-09: a village chest opened once became "the chest opened most".
+        let mut memory = Memory::default();
+        let here = vec![player(0, [0.0, 64.0, 0.0], 0.0)];
+        let open = |memory: &mut Memory, day: f32| {
+            memory.observe(
+                &obs(
+                    here.clone(),
+                    vec![at(
+                        EventKind::OpenedContainer,
+                        [60, 64, 0],
+                        "minecraft:chest",
+                        bread(),
+                    )],
+                ),
+                day,
+            )
+        };
+        open(&mut memory, 0.4);
+        open(&mut memory, 0.6);
+        assert!(
+            memory.used_container().is_none(),
+            "opened once, then again the same day"
+        );
+        assert_eq!(memory.containers[0].days, 1);
+
+        open(&mut memory, 1.2);
+        assert!(memory.used_container().is_none(), "two days");
+        open(&mut memory, 2.1);
+        assert_eq!(
+            memory.used_container().map(|c| c.pos),
+            Some([60, 64, 0]),
+            "three days: a house moved into"
+        );
+    }
+
+    #[test]
+    fn a_chest_they_placed_is_theirs_before_it_is_opened_and_what_they_took_is_known_on_close() {
+        let mut memory = Memory::default();
+        let here = vec![player(0, [0.0, 64.0, 0.0], 0.0)];
+        memory.observe(
+            &obs(
+                here.clone(),
+                vec![at(
+                    EventKind::PlacedBlock,
+                    [2, 64, 0],
+                    "minecraft:barrel",
+                    vec![],
+                )],
+            ),
+            0.1,
+        );
+        assert_eq!(memory.used_container().map(|c| c.pos), Some([2, 64, 0]));
+
+        memory.observe(
+            &obs(
+                here.clone(),
+                vec![at(
+                    EventKind::OpenedContainer,
+                    [2, 64, 0],
+                    "minecraft:barrel",
+                    bread(),
+                )],
+            ),
+            0.2,
+        );
+        assert_eq!(memory.used_container().unwrap().contents.len(), 1);
+        memory.observe(
+            &obs(
+                here,
+                vec![at(
+                    EventKind::ClosedContainer,
+                    [2, 64, 0],
+                    "minecraft:barrel",
+                    vec![],
+                )],
+            ),
+            0.2,
+        );
+        assert!(
+            memory.used_container().unwrap().contents.is_empty(),
+            "they took the bread"
+        );
+    }
+
+    #[test]
+    fn a_door_put_back_is_one_door_and_a_door_whose_floor_was_dug_is_forgotten() {
+        // The dev client, 2026-11-09: two doors, dug under and put back, were four.
+        let mut memory = Memory::default();
+        let here = vec![player(0, [0.0, 64.0, 0.0], 0.0)];
+        let place = |pos| at(EventKind::PlacedBlock, pos, "minecraft:oak_door", vec![]);
+        memory.observe(
+            &obs(here.clone(), vec![place([3, 64, 0]), place([-3, 64, 0])]),
+            0.1,
+        );
+        memory.observe(&obs(here.clone(), vec![place([3, 64, 0])]), 0.2);
+        assert_eq!(memory.home.as_ref().unwrap().doors.len(), 2);
+
+        memory.observe(
+            &obs(
+                here,
+                vec![at(
+                    EventKind::BrokeBlock,
+                    [-3, 63, 0],
+                    "minecraft:dirt",
+                    vec![],
+                )],
+            ),
+            0.3,
+        );
+        assert_eq!(memory.home.as_ref().unwrap().doors, vec![[3, 64, 0]]);
+    }
+
+    #[test]
+    fn a_house_built_around_a_sign_is_not_walling_it_but_closing_it_in_is() {
+        // The dev client, 2026-11-09: a sign by the bed, the house built on, read as walled.
+        let spot = [0, 65, 0];
+        let building: Vec<BlockPos> = vec![
+            [0, 64, 0],
+            [1, 64, 0],
+            [-1, 64, 1],
+            [3, 65, 0],
+            [2, 66, 2],
+            [1, 65, 1],
+        ];
+        assert!(
+            !encloses(spot, &building),
+            "a floor, a far wall, a corner, a roof"
+        );
+        assert_eq!(side_of(spot, [1, 65, 1]), None, "a corner walls no side");
+        assert_eq!(side_of(spot, [2, 65, 1]), Some(0));
+        assert_eq!(side_of(spot, [0, 66, -2]), Some(3));
+
+        let mut memory = Memory::default();
+        memory.reactions.push(Reaction {
+            event: "sign".to_string(),
+            pos: Some(spot),
+            ..Reaction::default()
+        });
+        let here = vec![player(0, [20.0, 64.0, 0.0], 0.0)];
+        let place = |pos| at(EventKind::PlacedBlock, pos, "minecraft:cobblestone", vec![]);
+        let mut events: Vec<Event> = building.iter().map(|p| place(*p)).collect();
+        events.extend([place([1, 65, 0]), place([-1, 65, 0]), place([0, 65, 1])]);
+        memory.observe(&obs(here.clone(), events), 0.2);
+        assert_eq!(memory.reactions[0].kind, "", "three sides closed: not yet");
+
+        memory.observe(&obs(here, vec![place([0, 66, -1])]), 0.3);
+        assert_eq!(memory.reactions[0].kind, "walled");
     }
 
     #[test]
@@ -1831,9 +2162,7 @@ mod tests {
             "{lines:?}"
         );
         assert!(
-            lines
-                .iter()
-                .any(|l| l == "1 days ago it did open the door."),
+            lines.iter().any(|l| l == "Yesterday it did open the door."),
             "{lines:?}"
         );
         assert!(
@@ -1855,6 +2184,14 @@ mod tests {
         assert_eq!(memory.done.len(), MOST_DONE);
         assert_eq!(plain("minecraft:iron_pickaxe"), "an iron pickaxe");
         assert_eq!(plain("minecraft:torch"), "a torch");
+        // The dev client, 2026-11-09: "a dirt", "a leaf litter", "6 sheeps".
+        assert_eq!(plain("minecraft:dirt"), "dirt");
+        assert_eq!(plain("minecraft:leaf_litter"), "leaf litter");
+        assert_eq!(plain("minecraft:oak_planks"), "oak planks");
+        assert_eq!(plain("minecraft:apple"), "an apple");
+        assert_eq!(ago_words(0.4, "Earlier today"), "Earlier today");
+        assert_eq!(ago_words(1.2, "Today"), "Yesterday");
+        assert_eq!(ago_words(3.9, "Today"), "3 days ago");
     }
 
     #[test]

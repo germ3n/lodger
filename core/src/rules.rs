@@ -74,9 +74,23 @@ pub fn check(
         return Err(Refused::Capped);
     }
 
-    // The sounds, the glitches and the rest the distance rule exempts are about being near.
-    let exempt = matches!(
-        event.action,
+    let exempt = !hidden_from_view(event.action);
+
+    if let Some(pos) = pos {
+        if !exempt && memory.in_view(pos, config.events.min_distance as f64) {
+            return Err(Refused::InView);
+        }
+    }
+
+    Ok(())
+}
+
+/// Whether an event of this action is kept out of the target's sight: everything that changes
+/// something they could see. The sounds, the glitches and the rest exempted are about being
+/// near (`docs/entity.md`, The distance rule).
+pub fn hidden_from_view(action: crate::events::Action) -> bool {
+    !matches!(
+        action,
         crate::events::Action::Sound(_)
             | crate::events::Action::SoundAtTarget(_)
             | crate::events::Action::SoundFar(_)
@@ -107,15 +121,7 @@ pub fn check(
             | crate::events::Action::Figure(_, _, _)
             | crate::events::Action::BedBreaks
             | crate::events::Action::ScanVillage
-    );
-
-    if let Some(pos) = pos {
-        if !exempt && memory.in_view(pos, config.events.min_distance as f64) {
-            return Err(Refused::InView);
-        }
-    }
-
-    Ok(())
+    )
 }
 
 #[cfg(test)]

@@ -329,6 +329,7 @@ Offered only with a village within 128 blocks of the home.
 | `village_doors` | 3 | Every door in the village is open in the morning. | A village with 4 or more doors. |
 | `village_lantern` | 2 | A village lantern is gone, and is on the target's path. | A village lantern and a route. |
 | `villager_word` | 4 | A villager's trade offers one item: the held item, for one emerald. Once bought, the trade is gone. | A villager and a held item. |
+| `village_abandoned` | 4 | While the target is away, the village empties: every villager is walked into one house and its door shut, every other door hangs open, the lanterns and torches are out (the lodger holds them), the bell is silent. Found, they stand packed in that house facing the wall, silent, and turn to the target as the door opens. Everything is put back by the next dawn: villagers home, lights up, doors as they were. Once a stay. Owner's idea, 2026-11-09. Not coded yet. | A scanned village with five or more villagers and a house that holds them, the target 64 or more blocks off. |
 
 ### Water and boats
 
@@ -622,12 +623,23 @@ nothing and reports why, the memory records the attempt, and the brain does not 
 event at the same place for its cooldown. Nothing is ever forced through. An event that runs
 over minutes, such as `tunnel_toward`, re-checks every few seconds and stops where it stands.
 
+### Whose chest
+
+A **used container**, in the rows below, is one of the target's own: a chest, a barrel or a
+furnace they placed, or one they opened on three different days (a village house moved into).
+A chest opened once on the way past, a village's or a dungeon's, is never touched and never
+described to the model (owner, 2026-11-09, after a village chest became "the chest opened
+most"). What it holds is read when it is opened and again when it is closed, so what the
+target took out is known.
+
 ### The distance rule
 
 No event but the sounds, the glitches, the screen, `refuse_rest`, `bed_occupied`, `wake`,
 `stand_watch`, `stare`, `door_opens_itself`, `open_on_enter` and the figures happens within
-`events.min_distance` blocks, 24 by default, of the target while the target has line of sight
-to the spot. The lodger works behind you, in the rooms you left, and while you sleep. The
+`events.min_distance` blocks, 64 by default (24 until the owner watched a path of torches go
+up from farther off, 2026-11-09), of the target while the target faces the spot. Every block
+the event changes is checked, not only its own spot, and an event whose blocks are in view
+waits for the target to look away, within its day. The lodger works behind you, in the rooms you left, and while you sleep. The
 exceptions are the events that are *about* being near: a sound in the next room, a light
 failing over your head, a stand turning to look at you. They change nothing the target could
 check afterwards, and the figures keep their own larger distances.

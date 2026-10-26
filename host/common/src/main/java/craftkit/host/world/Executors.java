@@ -8,6 +8,7 @@ import craftkit.host.Log;
 import craftkit.host.net.HintPayload;
 import craftkit.host.senses.Senses;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -86,7 +87,7 @@ public final class Executors {
 				}
 				case "toggle_block" -> toggleBlock(level, blockPos(command.getAsJsonArray("pos")), id);
 				case "move_block" -> moveBlock(level, blockPos(command.getAsJsonArray("from")), blockPos(command.getAsJsonArray("to")), id);
-				case "set_block" -> setBlock(level, blockPos(command.getAsJsonArray("pos")), command.get("block").getAsString(), replaceable(command), id);
+				case "set_block" -> setBlock(level, command, id);
 				case "open_lid" -> openLid(level, blockPos(command.getAsJsonArray("pos")), command.get("seconds").getAsFloat(), id, context);
 				case "rotate_frame" -> rotateFrame(level, command, id);
 				case "swap_painting" -> swapPainting(level, command.get("entity").getAsInt(), id);
@@ -615,31 +616,96 @@ public final class Executors {
 			return report(id, false, "the destination is not empty");
 		}
 
+		// A torch is moved as a player would move it: never to where nothing holds it.
+		if (!state.canSurvive(level, to)) {
+			return report(id, false, "nothing holds it there");
+		}
+
 		level.setBlock(from, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 		level.setBlock(to, state, Block.UPDATE_ALL);
 
 		return report(id, true, "");
 	}
 
-	private static JsonObject setBlock(ServerLevel level, BlockPos pos, String blockId, List<String> replace, long id) {
-		Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(blockId));
-		if (block.isEmpty()) {
+	private static JsonObject setBlock(ServerLevel level, JsonObject command, long id) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		List<String> replace = replaceable(command);
+		int settle = command.has("settle") ? command.get("settle").getAsInt() : 0;
+		String wallId = command.has("wall") ? command.get("wall").getAsString() : "";
+
+		Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(blockId(command)));
+		Optional<Holder.Reference<Block>> wall = wallId.isEmpty() ? Optional.empty() : BuiltInRegistries.BLOCK.get(Identifier.parse(wallId));
+		if (block.isEmpty() || (!wallId.isEmpty() && wall.isEmpty())) {
 			return report(id, false, "no such block");
 		}
 
-		// Nothing a player built is ever destroyed: a block goes where there is nothing, or
-		// over one of the blocks the mod named, which it keeps to natural ground.
+		// The nearest spot first, down before up, standing before against a wall: a torch on the
+		// path goes on the ground below the slope before it goes on the hill beside it.
+		String why = "nothing holds it there";
+		for (int dy : Settle.order(settle)) {
+			BlockPos at = pos.above(dy);
+			String taken = taken(level, at, replace);
+			if (taken != null) {
+				why = dy == 0 ? taken : why;
+				continue;
+			}
+			BlockState standing = block.get().value().defaultBlockState();
+			if (standing.canSurvive(level, at)) {
+				level.setBlock(at, standing, Block.UPDATE_ALL);
+				return report(id, true, "");
+			}
+		}
+		if (wall.isPresent()) {
+			for (int dy : Settle.order(settle)) {
+				BlockPos at = pos.above(dy);
+				if (taken(level, at, replace) != null) {
+					continue;
+				}
+				BlockState onWall = againstWall(level, at, wall.get().value().defaultBlockState());
+				if (onWall != null) {
+					level.setBlock(at, onWall, Block.UPDATE_ALL);
+					return report(id, true, "");
+				}
+			}
+		}
+
+		return report(id, false, why);
+	}
+
+	private static String blockId(JsonObject command) {
+		return command.get("block").getAsString();
+	}
+
+	/**
+	 * Why a block may not go at {@code pos}, or null when it may. Nothing a player built is ever
+	 * destroyed: a block goes where there is nothing, or over one of the blocks the mod named,
+	 * which it keeps to natural ground.
+	 */
+	private static String taken(ServerLevel level, BlockPos pos, List<String> replace) {
 		BlockState there = level.getBlockState(pos);
 		if (!there.isAir() && !replace.contains(Senses.blockId(there))) {
-			return report(id, false, "the place holds " + Senses.blockId(there));
+			return "the place holds " + Senses.blockId(there);
 		}
 		if (level.getBlockEntity(pos) != null) {
-			return report(id, false, "a block with contents is never replaced");
+			return "a block with contents is never replaced";
 		}
 
-		level.setBlock(pos, block.get().value().defaultBlockState(), Block.UPDATE_ALL);
+		return null;
+	}
 
-		return report(id, true, "");
+	/** The wall block facing out from the first side that holds it, or null if none does. */
+	private static BlockState againstWall(ServerLevel level, BlockPos pos, BlockState wall) {
+		if (!wall.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+			return wall.canSurvive(level, pos) ? wall : null;
+		}
+		for (Direction facing : Direction.Plane.HORIZONTAL) {
+			BlockState state = wall.setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
+			if (state.canSurvive(level, pos)) {
+				return state;
+			}
+		}
+
+		return null;
 	}
 
 	private static JsonObject moveItem(ServerLevel level, JsonObject command, long id) {

@@ -55,6 +55,8 @@ public final class Senses {
 	private final Map<UUID, Boolean> wasSleeping = new HashMap<>();
 	private final Map<UUID, String> wasRiding = new HashMap<>();
 	private final Map<UUID, Boolean> hadContainerOpen = new HashMap<>();
+	/** The container each player opened last, so its close can say what it holds now. */
+	private final Map<UUID, BlockPos> openedAt = new HashMap<>();
 	/** Players whose next sleep attempt is refused, and until which tick. */
 	private final Map<UUID, Long> refuseSleepUntil = new HashMap<>();
 	private final Map<ServerLevel, List<JsonObject>> events = new HashMap<>();
@@ -115,6 +117,7 @@ public final class Senses {
 		}
 
 		if (entity instanceof Container container) {
+			openedAt.put(player.getUUID(), pos.immutable());
 			event(player, "opened_container", pos, blockId(player.level().getBlockState(pos)), contents(container));
 		}
 	}
@@ -277,7 +280,14 @@ public final class Senses {
 		boolean containerOpen = player.containerMenu != player.inventoryMenu;
 		Boolean hadOpen = hadContainerOpen.put(uuid, containerOpen);
 		if (hadOpen != null && hadOpen && !containerOpen) {
-			event(player, "closed_container", null, "", null);
+			// The contents as the player left them: what they took or put in while it was open.
+			BlockPos at = openedAt.remove(uuid);
+			BlockEntity entity = at == null ? null : player.level().getBlockEntity(at);
+			if (entity instanceof Container container) {
+				event(player, "closed_container", at, blockId(player.level().getBlockState(at)), contents(container));
+			} else {
+				event(player, "closed_container", null, "", null);
+			}
 		}
 
 		JsonObject p = new JsonObject();

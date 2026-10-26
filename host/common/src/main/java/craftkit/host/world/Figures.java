@@ -137,7 +137,8 @@ public final class Figures {
 		if (!level.isLoaded(column)) {
 			return new Vec3(pos.x, level.getSeaLevel() + 1, pos.z);
 		}
-		BlockPos surface = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, column);
+		// Leaves are not ground: a figure in a forest stands under the trees, not on them.
+		BlockPos surface = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column);
 
 		return new Vec3(pos.x, surface.getY(), pos.z);
 	}

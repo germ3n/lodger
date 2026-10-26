@@ -92,6 +92,63 @@ fn spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     ])
 }
 
+/// How far from anything the target placed the lodger digs: never nearer
+/// (`docs/good-to-know.md`, What it never does).
+pub const DIG_CLEAR: f64 = 8.0;
+
+/// A spot to dig, clear of everything the target placed by [`DIG_CLEAR`]: its place if that is
+/// clear, else the first clear one of eight around the home, 12 to 20 blocks out. None when the
+/// target has built all around: the event is not offered. The dev client's `hole` went in
+/// under a crafting table at the lodger's place, which the target had built up to (2026-11-09).
+fn dig_spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
+    if let Some(place) = memory.place.filter(|p| clear_of_built(memory, *p)) {
+        return Some(place);
+    }
+    let home = memory.home.as_ref()?;
+    let first = rng.next_u64() % 8;
+    let distance = 12.0 + (rng.next_u64() % 9) as f64;
+    (0..8)
+        .map(|i| {
+            let angle = ((first + i) % 8) as f64 * std::f64::consts::FRAC_PI_4;
+            [
+                home.center[0] + (distance * angle.cos()).round() as i32,
+                home.floor_y,
+                home.center[2] + (distance * angle.sin()).round() as i32,
+            ]
+        })
+        .find(|p| clear_of_built(memory, *p))
+}
+
+/// Whether nothing the target placed is within [`DIG_CLEAR`] of `pos`.
+pub fn clear_of_built(memory: &Memory, pos: BlockPos) -> bool {
+    memory.placed.iter().all(|p| {
+        let (dx, dy, dz) = (
+            (p[0] - pos[0]) as f64,
+            (p[1] - pos[1]) as f64,
+            (p[2] - pos[2]) as f64,
+        );
+        (dx * dx + dy * dy + dz * dz).sqrt() > DIG_CLEAR
+    })
+}
+
+/// The block a command digs out of natural ground, if it digs: air set where only ground may
+/// be replaced. A path worn into grass or water poured on a floor is not digging.
+pub fn dug(command: &Command) -> Option<BlockPos> {
+    match command {
+        Command::SetBlock {
+            pos,
+            block,
+            replace,
+            ..
+        } if block == "minecraft:air"
+            && replace.iter().any(|r| SOLID_GROUND.contains(&r.as_str())) =>
+        {
+            Some(*pos)
+        }
+        _ => None,
+    }
+}
+
 /// The place the event happens, from the memory, or none for a thing with no place.
 pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     let home = memory.home.as_ref();
@@ -273,9 +330,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             let dz = (rng.next_u64() % 7) as i32 - 3;
             [h.center[0] + dx, h.floor_y, h.center[2] + dz]
         }),
-        Action::Hole | Action::Cairn | Action::Sapling | Action::Sign | Action::Grave => {
-            spot(memory, rng)
-        }
+        Action::Hole => dig_spot(memory, rng),
+        Action::Cairn | Action::Sapling | Action::Sign | Action::Grave => spot(memory, rng),
         Action::Cauldron => memory.fixtures("cauldron").next().map(|f| f.pos),
         Action::RotateFrame => pick_ref(
             memory
@@ -340,6 +396,47 @@ fn set(ids: &mut impl FnMut() -> u64, pos: BlockPos, block: &str, replace: &[&st
         block: block.to_string(),
         state: String::new(),
         replace: replace.iter().map(|r| r.to_string()).collect(),
+        settle: 0,
+        wall: String::new(),
+    }
+}
+
+/// The blocks a command changes where the target could see it: what the view rule keeps out of
+/// sight. What happens inside a chest, to an entity by its id, or to the screen is not here; an
+/// event's own spot covers the entities.
+pub fn spots(command: &Command) -> Vec<BlockPos> {
+    let block = |p: [f64; 3]| {
+        [
+            p[0].floor() as i32,
+            p[1].floor() as i32,
+            p[2].floor() as i32,
+        ]
+    };
+    match command {
+        Command::ToggleBlock { pos, .. }
+        | Command::SetBlock { pos, .. }
+        | Command::RotateBlock { pos, .. }
+        | Command::BreakBlock { pos, .. }
+        | Command::SetSign { pos, .. } => vec![*pos],
+        Command::MoveBlock { from, to, .. } => vec![*from, *to],
+        Command::DropItem { pos, .. } => vec![block(*pos)],
+        Command::MoveEntity { to, .. } => vec![block(*to)],
+        _ => vec![],
+    }
+}
+
+/// A torch near `pos`, as a player would place one: on the ground within `settle` blocks down
+/// or up, else on a wall there, never floating. The mind knows positions, not terrain; the
+/// host finds the spot (`docs/sdk.md`, `set_block`).
+fn torch(ids: &mut impl FnMut() -> u64, pos: BlockPos, settle: u8) -> Command {
+    Command::SetBlock {
+        id: ids(),
+        pos,
+        block: "minecraft:torch".to_string(),
+        state: String::new(),
+        replace: vec![],
+        settle,
+        wall: "minecraft:wall_torch".to_string(),
     }
 }
 
@@ -356,6 +453,18 @@ const GROUND: &[&str] = &[
     "minecraft:short_grass",
     "minecraft:tall_grass",
     "minecraft:fern",
+];
+
+/// The ground itself, not what lies on it (snow, grass, ferns): taking one of these out is
+/// digging.
+const SOLID_GROUND: &[&str] = &[
+    "minecraft:grass_block",
+    "minecraft:dirt",
+    "minecraft:coarse_dirt",
+    "minecraft:podzol",
+    "minecraft:stone",
+    "minecraft:gravel",
+    "minecraft:sand",
 ];
 
 /// A step of one block from `from` toward `to`, along the longer axis.
@@ -509,7 +618,7 @@ pub fn commands(
             })
             .unwrap_or_default(),
         Action::AddTorch => pos
-            .map(|p| vec![(set(ids, [p[0], p[1] + 1, p[2]], "minecraft:torch", &[]), 0)])
+            .map(|p| vec![(torch(ids, [p[0], p[1] + 1, p[2]], 2), 0)])
             .unwrap_or_default(),
         Action::LightPath => {
             let Some(home) = memory.home.as_ref() else {
@@ -528,10 +637,7 @@ pub fn commands(
             for i in 0..count {
                 let step = step_toward(p, spot);
                 p = [p[0] + step[0] * 3, p[1], p[2] + step[1] * 3];
-                made.push((
-                    set(ids, [p[0], p[1] + 1, p[2]], "minecraft:torch", &[]),
-                    i as u64 * 20,
-                ));
+                made.push((torch(ids, [p[0], p[1] + 1, p[2]], 4), i as u64 * 20));
             }
             made
         }
@@ -883,7 +989,7 @@ pub fn commands(
                         )
                     })
                     .collect();
-                made.push((set(ids, [p[0], p[1] - 2, p[2]], "minecraft:torch", &[]), 50));
+                made.push((torch(ids, [p[0], p[1] - 2, p[2]], 1), 50));
                 made
             })
             .unwrap_or_default(),
@@ -1873,12 +1979,7 @@ pub fn commands(
             )]
         }
         Action::OreMarked => pos
-            .map(|ore| {
-                vec![(
-                    set(ids, [ore[0], ore[1] + 1, ore[2]], "minecraft:torch", &[]),
-                    0,
-                )]
-            })
+            .map(|ore| vec![(torch(ids, [ore[0], ore[1] + 1, ore[2]], 1), 0)])
             .unwrap_or_default(),
         Action::WallSwap(_) => pos
             .and_then(|p| memory.walls.iter().find(|(q, _)| *q == p))
@@ -2121,6 +2222,8 @@ mod tests {
             pos: [2, 64, 0],
             kind: "minecraft:chest".to_string(),
             opens: 5,
+            placed: true,
+            days: 1,
             last_opened_day: 0.0,
             contents: vec![
                 stack("minecraft:iron_pickaxe", 1, 4),
@@ -2140,6 +2243,8 @@ mod tests {
             pos: [-2, 64, 0],
             kind: "minecraft:chest".to_string(),
             opens: 2,
+            placed: true,
+            days: 1,
             last_opened_day: 0.0,
             contents: vec![stack("minecraft:dirt", 12, 0)],
         });
@@ -2147,6 +2252,8 @@ mod tests {
             pos: [0, 64, 2],
             kind: "minecraft:furnace".to_string(),
             opens: 3,
+            placed: true,
+            days: 1,
             last_opened_day: 0.0,
             contents: vec![stack("minecraft:iron_ingot", 3, 2)],
         });
@@ -2771,12 +2878,79 @@ mod tests {
         assert!(made.len() >= 3);
         for (command, _) in &made {
             match command {
-                Command::SetBlock { pos, .. } => {
-                    assert!(pos[0] > 0 && pos[2] == 0, "toward the route's end: {pos:?}")
+                Command::SetBlock {
+                    pos, settle, wall, ..
+                } => {
+                    assert!(pos[0] > 0 && pos[2] == 0, "toward the route's end: {pos:?}");
+                    // The dev client, 2026-11-09: the path floated over a slope.
+                    assert!(*settle >= 3, "the host may find the ground: {settle}");
+                    assert_eq!(wall, "minecraft:wall_torch");
                 }
                 other => panic!("{other:?}"),
             }
         }
+    }
+
+    #[test]
+    fn digging_is_air_into_ground_and_a_worn_path_or_a_puddle_is_not() {
+        let mut n = 0;
+        let mut ids = || {
+            n += 1;
+            n
+        };
+        assert_eq!(
+            dug(&set(&mut ids, [1, 63, 1], "minecraft:air", GROUND)),
+            Some([1, 63, 1])
+        );
+        assert_eq!(
+            dug(&set(
+                &mut ids,
+                [1, 63, 1],
+                "minecraft:dirt_path",
+                &["minecraft:grass_block"]
+            )),
+            None
+        );
+        assert_eq!(
+            dug(&set(&mut ids, [1, 64, 1], "minecraft:water", GROUND)),
+            None
+        );
+        assert_eq!(
+            dug(&set(
+                &mut ids,
+                [1, 64, 1],
+                "minecraft:air",
+                &["minecraft:snow"]
+            )),
+            None,
+            "clearing snow is not digging"
+        );
+    }
+
+    #[test]
+    fn a_hole_is_dug_clear_of_what_they_built_or_not_at_all() {
+        let mut memory = Memory::default();
+        memory.home = Some(crate::memory::Home {
+            center: [0, 64, 0],
+            floor_y: 64,
+            ..Default::default()
+        });
+        memory.place = Some([10, 64, 0]);
+        memory.placed.push([12, 64, 0]); // they built up to its place
+        let hole = find("hole").unwrap();
+        for seed in 0..20 {
+            let spot = place(hole, &memory, &mut Rng::new(seed)).expect("a clear spot");
+            assert!(clear_of_built(&memory, spot), "{spot:?}");
+            assert_ne!(spot, [10, 64, 0]);
+        }
+
+        // Built all around, out to twenty blocks: nowhere to dig.
+        for x in (-24..=24).step_by(4) {
+            for z in (-24..=24).step_by(4) {
+                memory.placed.push([x, 64, z]);
+            }
+        }
+        assert_eq!(place(hole, &memory, &mut Rng::new(3)), None);
     }
 
     #[test]

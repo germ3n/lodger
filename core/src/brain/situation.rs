@@ -21,7 +21,10 @@ pub fn situation(lines: &[String]) -> String {
 }
 
 /// The prompt for a written line of `kind`: the situation, what the line is for, the kind's
-/// examples one a line, and an open line for the model to finish.
+/// examples one a line, and an open line for the model to finish. The open line ends on `-`
+/// with no space after it: Qwen's tokens carry a word's space at their front (` here`), so a
+/// prompt ending in a space leaves the model only the tokens with none, digits among the
+/// likeliest (the dev client's first sign said `123456`).
 pub fn writing_prompt(lines: &[String], purpose: &str, examples: &[&str]) -> String {
     let mut text = situation(lines);
     text.push('\n');
@@ -32,7 +35,7 @@ pub fn writing_prompt(lines: &[String], purpose: &str, examples: &[&str]) -> Str
         text.push_str(example);
         text.push('\n');
     }
-    text.push_str("- ");
+    text.push('-');
 
     text
 }
@@ -51,7 +54,7 @@ mod tests {
     #[test]
     fn a_writing_prompt_ends_on_an_open_line_after_the_examples() {
         let text = writing_prompt(&[], "The sign by the door says:", &["here", "wait"]);
-        assert!(text.contains("- here\n- wait\n- "), "{text}");
-        assert!(text.ends_with("- "));
+        assert!(text.contains("- here\n- wait\n-"), "{text}");
+        assert!(text.ends_with("\n-"), "no space after the dash: {text:?}");
     }
 }

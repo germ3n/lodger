@@ -359,6 +359,53 @@ because it can be built and tested without a game, and because the model layer i
 - [ ] **`/lodger status`, `/lodger decisions`, `/lodger reset`, `/lodger leave`.**
 - [ ] **Play it.** A fresh world, dev config, through stages one and two on the rule brain. Write
   down everything that read wrong in [Good to know](good-to-know.md) or here.
+- [x] **The first play session's fixes** (owner at the keyboard, 2026-11-09, the 1.5B deciding).
+  Done 2026-11-09:
+  - **Written lines are words:** a sign said `123456`. The prompt ended on `- ` (a trailing
+    space leaves Qwen only the tokens without one, digits the likeliest) and the mask kept
+    lower case alone; now it ends on `-`, the mask takes either case, digits only for the two
+    counting kinds (`Kind::leash`), the decode stops before a word past the kind's, and the
+    check refuses digits outside those kinds and a line with no letter. A real-model test
+    writes each kind from the session's situation. Was: letters, digits and spaces for every
+    kind, lower case only, a prompt ending in a space.
+  - **Whose chest:** a village chest opened once was "the chest opened most" (owner: placed, or
+    opened often). A container is the target's when they placed it or opened it on three
+    different days; only those are used or described. Was: every container opened.
+  - **What they took is known:** the host reads a container again on closing
+    (`closed_container` with its position and contents). Was: contents read on opening only,
+    so `shuffle_chest` failed on the bread they had taken.
+  - **Doors counted once:** two doors dug under and put back were four. One placed where one
+    is remembered replaces it; a block broken forgets what stood on it. Was: every placement
+    appended, and only the broken block itself forgotten.
+  - **Blocks stand where a player could put them:** torches floated over a slope. `set_block`
+    refuses a block that cannot survive, and with `settle` and `wall` the host looks down and
+    up for ground, then a wall (owner: "placed on a wall, just not floating"); `move_block` the
+    same. ABI 6. Was: set wherever the mind said.
+  - **Out of sight, farther:** a path of torches went up 40 blocks off in view, and an event
+    with no spot of its own was never checked. Every block an event changes is checked at its
+    moment, a plan in view waits instead of being dropped, and `events.min_distance` is 64
+    (`calm` 80, `intense` 48, `relentless` 32; owner: "far, but in sight"). Was: the event's
+    own spot within 24, dropped when in view.
+  - **Walled means closed in** (owner: enclosed only): building a house around a sign read as
+    walling it. Now all four sides closed by placed blocks, the last one placed closing it.
+    Was: three blocks placed within 4.
+  - **A moment that fits:** `wall_swap` (away or asleep) planned "as they come home" waited
+    its whole day. `when_fits` drops a `When?` the event's needs rule out. Was: kept, and
+    never met.
+  - **The words of the situation:** `6 sheeps`, `a dirt`, `it light a path`, `1 days ago`,
+    `the player's an iron pickaxe`. Was: a plain `s`, an article on everything, the menu's
+    words after `it`.
+  - **A figure's spot on the ground reads as one:** `far_figure at (440,-10000,-32)` was the
+    protocol's "on the ground in this column" printed raw; the log and the debug pages say
+    `(440,ground,-32)` (`log::spot_words`), and the host stands a figure under the trees, not
+    on them (the heightmap without leaves). Was: the sentinel printed, the leaves counted.
+  - **Never digging near what they built:** `hole` dug at the lodger's place after the target
+    had built up to it, and the two blocks under a crafting table went (the host refused the
+    table itself). A command that takes solid ground out within 8 blocks of anything placed
+    refuses the whole event, Fire included, and `hole` looks for a clear spot 12 to 20 blocks
+    out or is not offered. Was: the catalogue's promise, unchecked.
+  - **No ask for a menu of one:** the model was asked every interval with `wait` the only
+    choice. Was: asked, and logged.
 
 ### Phase 4: the model in the loop
 

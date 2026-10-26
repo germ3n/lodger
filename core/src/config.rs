@@ -75,7 +75,7 @@ impl Preset {
                 config.stages.least_days = [2, 3, 3, 4, 1];
                 config.stages.most_days = [5, 7, 7, 9, 3];
                 config.events.cooldown_scale = 2.0;
-                config.events.min_distance = 32;
+                config.events.min_distance = 80;
                 config.events.chat = false;
                 config.events.disabled = [
                     "refuse_rest",
@@ -104,7 +104,7 @@ impl Preset {
                 config.stages.least_days = [1, 1, 2, 2, 1];
                 config.stages.most_days = [2, 4, 4, 6, 3];
                 config.events.cooldown_scale = 0.75;
-                config.events.min_distance = 16;
+                config.events.min_distance = 48;
                 config.brain.event_threshold = 0.3;
                 config.stages.ending = "take".to_string();
             }
@@ -114,7 +114,7 @@ impl Preset {
                 config.stages.most_days = [1, 2, 2, 3, 3];
                 config.stages.start_after_days = 0;
                 config.events.cooldown_scale = 0.5;
-                config.events.min_distance = 12;
+                config.events.min_distance = 32;
                 config.events.offered = 12;
                 config.brain.event_threshold = 0.25;
                 config.brain.react_threshold = 0.4;
@@ -353,7 +353,7 @@ impl Default for Stages {
 impl Default for Events {
     fn default() -> Self {
         Self {
-            min_distance: 24,
+            min_distance: 64,
             disabled: Vec::new(),
             offered: 8,
             cooldown_scale: 1.0,

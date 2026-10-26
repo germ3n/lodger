@@ -10,7 +10,7 @@ pub mod queue;
 #[cfg(feature = "model")]
 mod infer;
 
-pub use queue::{Job, Reply, Scorer, Worker, MAX_QUEUED, SUPERSEDED};
+pub use queue::{Job, Leash, Reply, Scorer, Worker, MAX_QUEUED, SUPERSEDED};
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -258,12 +258,12 @@ impl Model {
     }
 
     /// Has the model write a few words after `prompt` on the worker (`brain.text = generate`):
-    /// at most `max_tokens` tokens of letters, digits and spaces, to a line's end. The reply's
+    /// within `leash` (its tokens, letters and spaces, digits if it says), to a line's end. The reply's
     /// `text` carries them. Refused as `ask_async` is.
     pub fn generate_async(
         &self,
         prompt: &str,
-        max_tokens: usize,
+        leash: Leash,
         key: Option<String>,
         reply: Sender<Reply>,
     ) -> Result<u64, String> {
@@ -278,7 +278,10 @@ impl Model {
             key,
             situation: prompt.to_string(),
             questions: Vec::new(),
-            generate: Some(max_tokens.max(1)),
+            generate: Some(Leash {
+                max_tokens: leash.max_tokens.max(1),
+                ..leash
+            }),
             reply,
         })?;
 
@@ -286,9 +289,9 @@ impl Model {
     }
 
     /// [`Model::generate_async`] and waits. For tests and tools.
-    pub fn generate(&self, prompt: &str, max_tokens: usize) -> Result<String, String> {
+    pub fn generate(&self, prompt: &str, leash: Leash) -> Result<String, String> {
         let (tx, rx) = channel();
-        self.generate_async(prompt, max_tokens, None, tx)?;
+        self.generate_async(prompt, leash, None, tx)?;
         let reply = rx
             .recv()
             .map_err(|_| "the model worker stopped".to_string())?;
