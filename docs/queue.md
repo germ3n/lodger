@@ -6,7 +6,8 @@ end of the day the project started; check what has moved since with `git log`.
 
 ## Rules for every session
 
-- **Read first:** [Good to know](good-to-know.md), [The SDK](sdk.md), the conventions in
+- **Read first:** [Hand-off](handoff.md) if this is your first session here, then
+  [Good to know](good-to-know.md), [The SDK](sdk.md), the conventions in
   [Development](development.md), and the top of [Todo](todo.md). If a rule here and a habit of
   yours differ, this page wins.
 - **Ask before:** committing (every time), accepting any terms on the owner's behalf (the model's
@@ -36,50 +37,42 @@ end of the day the project started; check what has moved since with `git log`.
 
 ## Where it stands
 
-Phases 0 to 2 of [Todo](todo.md) are done, phase 3's host side is in, and the mind has its
-second cut (2026-11-09, evening):
+2026-11-09, late. Seven commits since the mind's first cut, one per finished item:
 
-- **The Rust side** (`sdk/`, `core/`): the SDK speaks ABI 5 (the per-world calls and the debug
-  call); the lodger has its config (presets, three sizes, 1.5B the default), the model layer
-  (scoring with seeded picking; generation is phase 4), a memory (home, containers by kind,
-  fixtures, decor, creatures, favourites, held, done, landmarks, milestones, the kill tally,
-  chat), 87 events as data over the host's commands, the rules, the arc, the rule brain, the
-  text banks by kind, the decision log, the debug pages, and a `Stay` that plans, acts and saves
-  as JSON (format 3). 85 unit tests, 4 scripted stays, 4 more against the real model.
-- **The host** (`host/`): builds for Fabric and NeoForge with 50 JUnit tests. The senses (every
-  player's state and movement, entities, weather, events from both loaders' hooks including
-  kills, chat, scans, a surroundings pass), 24 executors, the client's glitch renderers for
-  eleven hint kinds, the debug screen with its key and commands, the title gate and the
-  download screen.
-- **The lodger's jars** (`mod/`) build with the host nested, one per loader.
-- **Seen working:** a plain Fabric 26.3 server with only the lodger jar (the download, the
-  license, the worlds); a dev client through stage two with the first events landing. Not yet
-  seen: the debug screen and the new events in a client (built, not yet opened by a player),
-  NeoForge at runtime.
+- **The debug screen and the HUD** (F8, F9; `/craftkit lodger debug|show|force|stage|action`):
+  senses as meters, the mind's gauges, a Story section telling each decision with its menu,
+  its situation and its outcome, every event with a Fire button, the log. Built but not yet
+  opened by a player; the first version's tabs took no clicks (fixed the same evening).
+- **The mind:** 134 events coded; the memory has the surroundings (the host's pass once a day,
+  with structures by tag), vehicles, the village and ore scans, routes, sessions, reactions,
+  landmarks, milestones and the kill tally; `events.sounds/glitches/chat/figure` gate their
+  groups; the model decides (the two planning questions, asked on the worker and answered on a
+  later tick, the rule brain as the fallback) and writes the few words (a masked greedy
+  decode, checked, the bank as the fallback); the figure in the target's skin as client-only
+  packets with eight rows. 96 unit tests, 10 scripted stays, 50 JUnit; clippy clean.
+- **The host:** 30 executors, 14 glitch renderers, the figures, the poses, the timers.
 
-**Uncommitted at the cut-off (2026-11-09, late):** everything from the first client run's three
-fixes on: the second catalogue cut, the debug screen, the glitch renderers, the kill tally,
-the landmarks, the text banks, the new defaults, the JSON save, the upgrade guide. All checks
-green (below). Ask the owner, then commit; the owner wanted one commit per phase, so this is
-"the catalogue's second cut and the debug screen" or, at their word, two.
+**Not yet seen by a player:** everything above. The dev client was relaunched with the latest
+jar at the end of the session and left at the title screen.
 
 ## Next, in order
 
-1. **Open the debug screen in the dev client** and fire every event once from the Events tab,
-   fixing what the world shows (the chest lid, the frames, the paintings, the stands, the
-   player list entry, the chat lines, each glitch). Then NeoForge the same. The owner was
-   away from the laptop when this was built; nothing in it has been seen by a player yet.
-2. **The catalogue, third cut** (owner, 2026-11-09: "start coding all the events"): the
-   surroundings in the mind first (the todo's item), then the rows it unlocks (water, the
-   village, the field, the pen, the mine), the routes and the rows over them, redstone, the
-   remaining sounds and glitches (fog, the painting flipped, the compass), the reactions and
-   hours pieces of the memory, the temper and the chains, the six remaining scripted stays.
-3. **The config page** of the debug screen (phase 2's last piece): every key of the mod's
-   config, written back.
-4. **Phase 4, the rest:** the `react` asks on triggers, `When?` and `Where?`, the want and
-   target asks, calibration round one on the real model's decisions and written lines (the
-   planning ask and the writing are in, 2026-11-09).
-5. **Phase 5:** the figure in the target's skin and its renderer, the rows that need it.
+1. **Play it, with the owner at the keyboard.** F8, every tab; fire every event from the Events
+   tab and watch the world and the Log tab; read `config/lodger/decisions.log` for the model's
+   answers (`brain=model`) and its written lines (`wrote (...)`); the figure (`far_figure`,
+   `in_doorway`). Fix what shows. Then NeoForge (`:neoforge:runClient`) the same.
+2. **Calibration round one** on what the real model decides and writes over a few dev stays:
+   read the log end to end, move the prompts, the menu words and the thresholds where the
+   choices read wrong, and keep the before-and-after under `docs/calibration/`.
+3. **Phase 4, the rest:** the `react` asks on triggers, `When?` and `Where?`, the want and the
+   target asks, the `What does the sign say?` ask for `bank`.
+4. **Phase 5, the rest:** the figure's poses (lying in the bed), its swing and crouch, stepping
+   behind cover instead of vanishing; the rows that need it (the ending's beats).
+5. **The config page** of the debug screen: every key, written back to the file.
+6. **The remaining catalogue:** pens, caves and tunnels in the surroundings pass and the rows
+   over them; building and digging as a player; the renderers still missing (the painting
+   upside down, the compass, footprints, the sky); the endings; chains and the temper.
+7. **Game tests** for the executors; **a version bump rehearsal** by [Upgrading](upgrading.md).
 
 ## Open questions for the owner
 

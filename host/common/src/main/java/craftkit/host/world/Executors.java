@@ -53,7 +53,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures) {
 	}
 
 	private Executors() {
@@ -99,6 +99,12 @@ public final class Executors {
 				case "set_frame_item" -> setFrameItem(level, command, id);
 				case "equip_entity" -> equipEntity(level, command, id);
 				case "damage_item" -> damageItem(level, command, id);
+				case "figure" -> figure(level, command, id, context);
+				case "remove_figure" -> {
+					ServerPlayer player = context.senses().player(level, command.has("player") ? command.get("player").getAsInt() : 0);
+					boolean removed = player != null && context.figures().remove(player, command.get("figure").getAsInt());
+					yield report(id, removed, removed ? "" : "no such figure");
+				}
 				case "player_list" -> playerList(level, command, id, context);
 				case "game_message" -> gameMessage(level, command, id, context);
 				case "move_item" -> moveItem(level, command, id);
@@ -368,6 +374,42 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
+	private static JsonObject figure(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer skinOf = context.senses().player(level, command.get("skin_of").getAsInt());
+		if (skinOf == null) {
+			return report(id, false, "the player is not here");
+		}
+
+		JsonArray pos = command.getAsJsonArray("pos");
+		List<Vec3> path = new ArrayList<>();
+		if (command.has("path")) {
+			for (JsonElement point : command.getAsJsonArray("path")) {
+				JsonArray p = point.getAsJsonArray();
+				path.add(new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble()));
+			}
+		}
+		ItemStack held = ItemStack.EMPTY;
+		if (command.has("held")) {
+			JsonObject item = command.getAsJsonObject("held");
+			String itemId = item.has("id") ? item.get("id").getAsString() : "";
+			if (!itemId.isEmpty()) {
+				Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(itemId));
+				if (kind.isPresent()) {
+					held = new ItemStack(kind.get().value(), 1);
+				}
+			}
+		}
+
+		// The figure is shown to the player whose skin it wears: it is for them alone.
+		context.figures().show(level, skinOf, command.get("figure").getAsInt(), skinOf,
+				new Vec3(pos.get(0).getAsDouble(), pos.get(1).getAsDouble(), pos.get(2).getAsDouble()),
+				path, held, command.has("name_shown") && command.get("name_shown").getAsBoolean(),
+				command.has("seconds") ? command.get("seconds").getAsFloat() : 0,
+				command.has("vanish_within") ? command.get("vanish_within").getAsFloat() : 0);
+
+		return report(id, true, "");
+	}
+
 	private static JsonObject rotateBlock(ServerLevel level, BlockPos pos, long id) {
 		BlockState state = level.getBlockState(pos);
 		if (state.isAir()) {
@@ -490,7 +532,7 @@ public final class Executors {
 	}
 
 	/** A player-info packet with these entries, written through its own codec since the entries field is private. */
-	private static net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket withEntries(
+	static net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket withEntries(
 			net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket packet,
 			List<net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Entry> entries) {
 		try {

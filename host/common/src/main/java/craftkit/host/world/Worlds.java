@@ -40,6 +40,7 @@ public final class Worlds {
 	private final Looks looks = new Looks();
 	private final Later later = new Later();
 	private final Poses poses = new Poses();
+	private final Figures figures = new Figures();
 	private final BiConsumer<ServerPlayer, HintPayload> sendHint;
 	private int ticks;
 	/** The last commands carried out and how they went, newest last, for the debug screen. */
@@ -117,8 +118,9 @@ public final class Worlds {
 		looks.tick();
 		later.tick();
 		poses.tick();
+		figures.tick();
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();
@@ -228,6 +230,7 @@ public final class Worlds {
 		panel.addProperty("looks", looks.count());
 		panel.addProperty("later", later.count());
 		panel.addProperty("poses", poses.count());
+		panel.addProperty("figures", figures.count());
 
 		return panel;
 	}

@@ -405,6 +405,19 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Phase 5: the figures, stages three and four
 
+- [x] **The figure, first cut** (2026-11-09). `Figures.java`: a figure is packets to the
+  target's client alone, a player-list entry with the target's own profile (listed false, the
+  name shown or not) and a player entity with an id above the server's, facing the target,
+  holding the favourite, re-sent a point every half second along a path, taken back after its
+  seconds, when the target comes within its vanishing distance, on `remove_figure`, or when
+  they leave; the player entity type looked up by id. The mind's `Action::Figure(where,
+  seconds, vanish)` with eight rows: `far_figure` (fifty to seventy blocks off, away from the
+  home, on the ground), `behind_you` (the route's far end), `on_the_roof` (at dawn), `across_water`,
+  `in_doorway` (0.4 s), `at_the_chest`, `in_your_bed`, `replay` (walking the route); figures are
+  exempt from the in-view rule, since being seen is the point; `events.figure` gates them. Not
+  yet seen in a client. Still to do: a pose for the one in the bed (it stands), the far
+  figure's swing and crouch, the figure stepping behind cover when approached rather than
+  vanishing, witnesses never seeing it (true by construction today).
 - [ ] **The far presence** (`far_figure`): a server entity in the target's skin with the name
   shown, placed by line of sight from the route or home, gone when approached. The client
   renderer, the skin from the target's profile. Witnesses' clients never receive it.

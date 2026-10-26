@@ -4,7 +4,8 @@
 //! moment has come.
 
 use crate::brain::text::{self, Kind};
-use crate::events::{Action, Event, Need, Where};
+use crate::events::{Action, Event, FigureWhere, Need, Where};
+use crate::memory::distance;
 use crate::memory::{Held, Memory};
 use crate::model::Rng;
 use craftkit::world::{BlockPos, Command, ItemStack, Now, Pos};
@@ -13,7 +14,8 @@ use craftkit::world::{BlockPos, Command, ItemStack, Now, Pos};
 pub fn ready(event: &Event, memory: &Memory, _config: &crate::config::Config) -> bool {
     let now = Now::default();
     event.needs.iter().all(|need| {
-        matches!(*need, Need::Night | Need::Day) || super::offer::meets(*need, memory, &now)
+        matches!(*need, Need::Night | Need::Day | Need::Dawn)
+            || super::offer::meets(*need, memory, &now)
     })
 }
 
@@ -130,6 +132,56 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::IcePath
         | Action::BedOccupied => None,
         Action::OreMarked => memory.scanned("_ore").next(),
+        Action::Figure(FigureWhere::Roof, _, _) => {
+            home.map(|h| [h.center[0], h.floor_y + 5, h.center[2]])
+        }
+        Action::Figure(FigureWhere::Doorway, _, _) => home.and_then(|h| pick(&h.doors, rng)),
+        Action::Figure(FigureWhere::AtChest, _, _) => memory.used_container().map(|c| c.pos),
+        Action::Figure(FigureWhere::InBed, _, _) => home.and_then(|h| h.bed),
+        Action::Figure(FigureWhere::AcrossWater, _, _) => memory.feature("water").map(|w| {
+            // The far side: past the water's middle from the target, by its width.
+            let at = block_of(memory.last.pos);
+            let step = step_toward(at, w.pos);
+            let reach = w.size as i32 / 2 + 2;
+            [
+                w.pos[0] + step[0] * reach,
+                -10_000,
+                w.pos[2] + step[1] * reach,
+            ]
+        }),
+        Action::Figure(FigureWhere::Behind, _, _) => memory.route().map(|r| {
+            // The route's end farther from where they stand now.
+            let at = block_of(memory.last.pos);
+            let end = if distance(r.start(), at) > distance(r.end(), at) {
+                r.start()
+            } else {
+                r.end()
+            };
+            [end[0], -10_000, end[2]]
+        }),
+        Action::Figure(FigureWhere::Route, _, _) => memory
+            .route()
+            .map(|r| [r.start()[0], -10_000, r.start()[2]]),
+        Action::Figure(FigureWhere::Far, _, _) => {
+            // Fifty to seventy blocks from the target, away from the home.
+            let at = block_of(memory.last.pos);
+            let from = home.map(|h| h.center).unwrap_or(at);
+            let dx = (at[0] - from[0]) as f64;
+            let dz = (at[2] - from[2]) as f64;
+            let length = (dx * dx + dz * dz).sqrt();
+            let (ux, uz) = if length < 1.0 {
+                let angle = rng.next_f64() * std::f64::consts::TAU;
+                (angle.cos(), angle.sin())
+            } else {
+                (dx / length, dz / length)
+            };
+            let reach = 50.0 + (rng.next_u64() % 21) as f64;
+            Some([
+                at[0] + (ux * reach).round() as i32,
+                -10_000,
+                at[2] + (uz * reach).round() as i32,
+            ])
+        }
         Action::RotateFixture(kind) => pick_ref(
             memory
                 .fixtures(kind)
@@ -1814,6 +1866,50 @@ pub fn commands(
             .map(|ore| {
                 vec![(
                     set(ids, [ore[0], ore[1] + 1, ore[2]], "minecraft:torch", &[]),
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::Figure(where_, seconds, vanish) => pos
+            .map(|p| {
+                let on_ground = p[1] <= -1_000;
+                let standing = if on_ground {
+                    [p[0] as f64 + 0.5, -10_000.0, p[2] as f64 + 0.5]
+                } else {
+                    [p[0] as f64 + 0.5, p[1] as f64 + 1.0, p[2] as f64 + 0.5]
+                };
+                let path: Vec<Pos> = match where_ {
+                    FigureWhere::Route => memory
+                        .route()
+                        .map(|r| {
+                            r.points
+                                .iter()
+                                .map(|q| [q[0] as f64 + 0.5, -10_000.0, q[2] as f64 + 0.5])
+                                .collect()
+                        })
+                        .unwrap_or_default(),
+                    _ => Vec::new(),
+                };
+                vec![(
+                    Command::Figure {
+                        id: ids(),
+                        figure: 1,
+                        skin_of: target,
+                        pos: standing,
+                        path,
+                        held: memory
+                            .favourites
+                            .first()
+                            .map(|(id, _)| ItemStack {
+                                id: id.clone(),
+                                count: 1,
+                                slot: 0,
+                            })
+                            .unwrap_or_default(),
+                        name_shown: matches!(where_, FigureWhere::Far | FigureWhere::Behind),
+                        seconds,
+                        vanish_within: vanish,
+                    },
                     0,
                 )]
             })

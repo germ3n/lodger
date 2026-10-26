@@ -139,10 +139,10 @@ fn generate_plain(engine: &mut Engine, prompt: &str, max_tokens: usize) -> Resul
     }
     let mut batch = LlamaBatch::new(engine.n_ctx as usize, 1);
     decode_tokens(&mut engine.ctx, &mut batch, &prompt_tokens, 0, true)?;
-    let mut pos = i32::try_from(prompt_tokens.len()).unwrap_or(i32::MAX);
+    let start = i32::try_from(prompt_tokens.len()).unwrap_or(i32::MAX);
     let mut out: Vec<u8> = Vec::new();
 
-    for _ in 0..max_tokens {
+    for pos in (start..).take(max_tokens) {
         let logits = logits_row(&engine.ctx, batch.n_tokens() - 1);
         // The best allowed token; nothing allowed means the model wants to stop.
         let mut best: Option<(usize, f32)> = None;
@@ -167,7 +167,6 @@ fn generate_plain(engine: &mut Engine, prompt: &str, max_tokens: usize) -> Resul
         let token = LlamaToken(id as i32);
         out.extend(vocab.token_to_piece(token, false, None));
         decode_tokens(&mut engine.ctx, &mut batch, &[token], pos, true)?;
-        pos += 1;
     }
 
     Ok(String::from_utf8_lossy(&out).trim().to_string())

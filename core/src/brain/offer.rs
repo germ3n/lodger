@@ -66,6 +66,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::TargetInBed => last.online && last.sleeping,
         Need::TargetSaid => !memory.last_said.is_empty(),
         Need::Night => night,
+        Need::Dawn => now.day_time < 1_500 || now.day_time > 23_000,
         Need::Day => !night,
         Need::Raining => last.raining,
         Need::NotRaining => !last.raining,
@@ -112,6 +113,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::MiningSounds
         | Action::PetGrowl => config.events.sounds,
         Action::Hint(_, _) => config.events.glitches,
+        Action::Figure(_, _, _) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
         | Action::Says

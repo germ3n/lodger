@@ -104,6 +104,7 @@ pub fn check(
             | crate::events::Action::BedOccupied
             | crate::events::Action::WokeElsewhere
             | crate::events::Action::ScanOre
+            | crate::events::Action::Figure(_, _, _)
             | crate::events::Action::ScanVillage
     );
 

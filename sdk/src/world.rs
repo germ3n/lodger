@@ -467,7 +467,11 @@ pub enum Command {
         around: BlockPos,
         radius: u32,
     },
-    /// Spawn or move a figure wearing a player's skin, standing or walking a path.
+    /// Spawn or move a figure wearing a player's skin, standing or walking a path, seen by
+    /// that player alone (the host sends it as packets; no entity exists on the server). A `pos`
+    /// with a y below -1000 stands on the ground there. It faces the player. Gone after
+    /// `seconds` (0: until removed) or when the player comes within `vanish_within` blocks (0:
+    /// never).
     Figure {
         id: u64,
         figure: u32,
@@ -476,6 +480,10 @@ pub enum Command {
         path: Vec<Pos>,
         held: ItemStack,
         name_shown: bool,
+        #[serde(default)]
+        seconds: f32,
+        #[serde(default)]
+        vanish_within: f32,
     },
     RemoveFigure {
         id: u64,

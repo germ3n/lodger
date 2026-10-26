@@ -93,6 +93,8 @@ pub enum Need {
     TargetApproachingDoor,
     /// The village scan found blocks of this kind (`door`, `bell`).
     Scanned(&'static str),
+    /// The first hour of the day.
+    Dawn,
     /// The used container holds an item whose id ends with any of these.
     InChestAny(&'static [&'static str]),
     /// The target is walking toward the used chest, within six blocks.
@@ -147,6 +149,7 @@ impl Need {
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
+            Need::Dawn => "not dawn".to_string(),
             Need::InChestAny(_) => "none of those in the chest".to_string(),
             Need::TargetApproachingChest => "the target is not walking up to the chest".to_string(),
             Need::ColouredStacks => "fewer than six dyed stacks in the chest".to_string(),
@@ -342,6 +345,29 @@ pub enum Action {
     BedOccupied,
     /// The target wakes one block from where they lay down.
     WokeElsewhere,
+    /// The figure in the target's skin, somewhere, for some seconds, gone when approached.
+    Figure(FigureWhere, f32, f32),
+}
+
+/// Where a figure stands.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum FigureWhere {
+    /// Fifty to seventy blocks from the target, away from the home, on the ground.
+    Far,
+    /// Sixty blocks behind the target along the way they came, on the ground.
+    Behind,
+    /// On the home's roof.
+    Roof,
+    /// On the far shore of the water.
+    AcrossWater,
+    /// In the home's doorway.
+    Doorway,
+    /// At the chest they use.
+    AtChest,
+    /// On the bed.
+    InBed,
+    /// Walking the route, start to end.
+    Route,
 }
 
 /// One row of the catalogue.
@@ -1346,6 +1372,95 @@ pub const CATALOGUE: &[Event] = &[
         Action::OreMarked,
         true,
     ),
+    // The figures
+    row(
+        "far_figure",
+        3,
+        5,
+        &[Home, TargetOutdoors],
+        1.0,
+        8,
+        Full,
+        Action::Figure(FigureWhere::Far, 30.0, 32.0),
+        false,
+    ),
+    row(
+        "behind_you",
+        3,
+        5,
+        &[Route, TargetWalking, TargetOutdoors],
+        2.0,
+        4,
+        Full,
+        Action::Figure(FigureWhere::Behind, 20.0, 32.0),
+        false,
+    ),
+    row(
+        "on_the_roof",
+        3,
+        5,
+        &[Home, TargetOutdoors, Dawn],
+        3.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::Roof, 15.0, 12.0),
+        false,
+    ),
+    row(
+        "across_water",
+        3,
+        5,
+        &[Around("water"), TargetOutdoors],
+        2.0,
+        4,
+        Full,
+        Action::Figure(FigureWhere::AcrossWater, 25.0, 24.0),
+        false,
+    ),
+    row(
+        "in_doorway",
+        4,
+        5,
+        &[Door, TargetIndoors],
+        2.0,
+        4,
+        Full,
+        Action::Figure(FigureWhere::Doorway, 0.4, 0.0),
+        false,
+    ),
+    row(
+        "at_the_chest",
+        4,
+        5,
+        &[TargetApproachingChest],
+        3.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::AtChest, 1.5, 3.0),
+        false,
+    ),
+    row(
+        "in_your_bed",
+        4,
+        5,
+        &[Bed, Night, TargetApproachingDoor],
+        4.0,
+        1,
+        Full,
+        Action::Figure(FigureWhere::InBed, 1.5, 3.0),
+        false,
+    ),
+    row(
+        "replay",
+        4,
+        5,
+        &[Route, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::Route, 40.0, 24.0),
+        false,
+    ),
     // Water, snow and fields, from the surroundings
     row(
         "boat_moved",
@@ -1929,6 +2044,14 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "far_figure" => "stand far off where they can see it",
+            "behind_you" => "stand far behind them on their path",
+            "on_the_roof" => "stand on their roof at dawn",
+            "across_water" => "stand on the far shore",
+            "in_doorway" => "be in the doorway for less than a second",
+            "at_the_chest" => "be at their chest as they come in",
+            "in_your_bed" => "lie in their bed as they come home",
+            "replay" => "walk their path as they walked it",
             "boat_moved" => "move their boat to the other shore",
             "boat_adrift" => "set their boat adrift",
             "boat_drifts" => "let their boat drift off on its own",

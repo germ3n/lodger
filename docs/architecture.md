@@ -120,7 +120,10 @@ call that asked. This is the engine's `ai.pump`, moved inside the mind.
 
 As little as possible, because the mod is about not knowing:
 
-- the figure's entity, when the server spawns one, and which skin to use;
+- the figure: not an entity the server spawns but packets to the target's client alone (a
+  player-list entry carrying the target's own profile, so the skin is theirs, and a player
+  entity with an id far above the server's; `world/Figures.java`, 2026-11-09), so no other
+  player and no other mod ever sees it, and the server's world never holds it;
 - a sound to play at a position, by id, once;
 - a hint, with a duration and a place, which the client renders and then stops; the world the
   server holds never changed. The kinds the client renders today (`client/Glitches.java`,
