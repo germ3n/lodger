@@ -368,6 +368,30 @@ pub enum Command {
         entity: u32,
         velocity: Pos,
     },
+    /// Turn a block a quarter turn clockwise where its state allows: stairs, a banner, an anvil.
+    RotateBlock {
+        id: u64,
+        pos: BlockPos,
+    },
+    /// Put an item in an item frame, or empty it with an empty id.
+    SetFrameItem {
+        id: u64,
+        entity: u32,
+        item: ItemStack,
+    },
+    /// Put a piece of armour or a held item on an entity that wears it: an armour stand.
+    EquipEntity {
+        id: u64,
+        entity: u32,
+        item: ItemStack,
+    },
+    /// Wear down a damageable item in a container's slot by `amount` uses.
+    DamageItem {
+        id: u64,
+        pos: BlockPos,
+        slot: u32,
+        amount: u32,
+    },
     /// A second entry with the player's own name in that player's player list, for `seconds`,
     /// seen by that player alone.
     PlayerList {
@@ -478,6 +502,10 @@ impl Command {
             | Command::DyeSheep { id, .. }
             | Command::MoveEntity { id, .. }
             | Command::PushEntity { id, .. }
+            | Command::RotateBlock { id, .. }
+            | Command::SetFrameItem { id, .. }
+            | Command::EquipEntity { id, .. }
+            | Command::DamageItem { id, .. }
             | Command::PlayerList { id, .. }
             | Command::GameMessage { id, .. }
             | Command::MoveItem { id, .. }

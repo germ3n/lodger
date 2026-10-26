@@ -27,6 +27,8 @@ import java.util.Set;
  *   <li>{@code hotbar_slip}: the selected slot jumps to the item named in {@code detail}, once.</li>
  *   <li>{@code camera_nudge}: the view turns two degrees toward the hint's place, once.</li>
  *   <li>{@code fov_pull}: the field of view narrows over the hint's time and snaps back.</li>
+ *   <li>{@code fog_close}: a dark ring closes in from the edges of the screen for a minute.</li>
+ *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  * </ul>
  */
 public final class Glitches {
@@ -75,6 +77,19 @@ public final class Glitches {
 					float delta = wrap(wanted - minecraft.player.getYRot());
 					minecraft.player.setYRot(minecraft.player.getYRot() + Math.signum(delta) * Math.min(2, Math.abs(delta)));
 				}));
+				case "snow_indoors", "rain_indoors" -> {
+					var random = minecraft.level.getRandom();
+					var particle = hint.hint().equals("snow_indoors")
+							? net.minecraft.core.particles.ParticleTypes.SNOWFLAKE
+							: net.minecraft.core.particles.ParticleTypes.FALLING_WATER;
+					for (int i = 0; i < 6; i++) {
+						minecraft.level.addParticle(particle,
+								minecraft.player.getX() + random.nextDouble() * 6 - 3,
+								minecraft.player.getY() + 2.5 + random.nextDouble(),
+								minecraft.player.getZ() + random.nextDouble() * 6 - 3,
+								0, -0.05, 0);
+					}
+				}
 				case "fov_pull" -> {
 					pullingFov = true;
 					if (fovBefore == null) {
@@ -126,6 +141,16 @@ public final class Glitches {
 					}
 				}
 				case "lightning_silent" -> fill(graphics, width, height, 0xFFFFFF, progress < 0.3f ? 0.8f : 0.8f * (1 - progress));
+				case "fog_close" -> {
+					// A ring from the edges, darkest at the rim, deepest in the middle minute.
+					float depth = Math.min(progress * 6, Math.min(1, (1 - progress) * 6));
+					int rim = (int) (Math.min(width, height) * 0.35f * depth);
+					int a = (int) (200 * depth);
+					graphics.fillGradient(0, 0, width, rim, (a << 24) | 0x05050A, 0x05050A);
+					graphics.fillGradient(0, height - rim, width, height, 0x05050A, (a << 24) | 0x05050A);
+					graphics.fill(0, 0, rim / 2, height, ((a / 2) << 24) | 0x05050A);
+					graphics.fill(width - rim / 2, 0, width, height, ((a / 2) << 24) | 0x05050A);
+				}
 				case "red_rain" -> {
 					float alpha = Math.min(progress * 5, Math.min(1, (1 - progress) * 5)) * 0.22f;
 					fill(graphics, width, height, 0x7A0A0A, alpha);

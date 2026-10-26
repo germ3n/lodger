@@ -129,8 +129,10 @@ As little as possible, because the mod is about not knowing:
   `lights_fail` (dark, then back), `sun_blink` (black for a blink, twice), `lightning_silent`
   (a white flash), `red_rain` (a red cast), `crosshair_gone`, `hotbar_slip` (the selected slot
   jumps to the favourite tool once), `camera_nudge` (two degrees toward the place, once),
-  `fov_pull` (the field of view narrows over the hint's time and snaps back). Still to come:
-  a painting rendered upside down, a compass pointing somewhere, footprints on the snow, fog;
+  `fov_pull` (the field of view narrows over the hint's time and snaps back), `fog_close` (a
+  dark ring closes in from the screen's edges for a minute), `snow_indoors` and
+  `rain_indoors` (snow or rain falls around the player). Still to come: a painting rendered
+  upside down, a compass pointing somewhere, footprints on the snow;
 - whether this player is the target, so a witness's client drops sounds and figures aimed at
   someone else. The server never sends them to a witness anyway; the flag is a second guard.
 

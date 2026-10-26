@@ -93,8 +93,12 @@ public final class Executors {
 				case "pose_stand" -> poseStand(level, command, id, context);
 				case "name_entity" -> nameEntity(level, command.get("entity").getAsInt(), command.get("name").getAsString(), id);
 				case "dye_sheep" -> dyeSheep(level, command.get("entity").getAsInt(), command.get("colour").getAsString(), id);
-				case "move_entity" -> moveEntity(level, command, id);
+				case "move_entity" -> moveEntity(level, command, id, context);
 				case "push_entity" -> pushEntity(level, command, id);
+				case "rotate_block" -> rotateBlock(level, blockPos(command.getAsJsonArray("pos")), id);
+				case "set_frame_item" -> setFrameItem(level, command, id);
+				case "equip_entity" -> equipEntity(level, command, id);
+				case "damage_item" -> damageItem(level, command, id);
 				case "player_list" -> playerList(level, command, id, context);
 				case "game_message" -> gameMessage(level, command, id, context);
 				case "move_item" -> moveItem(level, command, id);
@@ -334,14 +338,113 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
-	private static JsonObject moveEntity(ServerLevel level, JsonObject command, long id) {
-		Entity entity = level.getEntity(command.get("entity").getAsInt());
+	private static JsonObject moveEntity(ServerLevel level, JsonObject command, long id, Context context) {
+		int entityId = command.get("entity").getAsInt();
+		JsonArray to = command.getAsJsonArray("to");
+		double x = to.get(0).getAsDouble();
+		double y = to.get(1).getAsDouble();
+		double z = to.get(2).getAsDouble();
+
+		// A player index wrapped from the top names the player; a player moves two blocks at most
+		// (waking a block from the bed), never farther.
+		if (entityId > Integer.MAX_VALUE - 64) {
+			ServerPlayer player = context.senses().player(level, Integer.MAX_VALUE - entityId);
+			if (player == null) {
+				return report(id, false, "the player is not here");
+			}
+			if (player.position().distanceTo(new Vec3(x, y, z)) > 2.5) {
+				return report(id, false, "a player is moved two blocks at most");
+			}
+			player.teleportTo(x, y, z);
+			return report(id, true, "");
+		}
+
+		Entity entity = level.getEntity(entityId);
 		if (entity == null || entity instanceof ServerPlayer) {
 			return report(id, false, "no movable entity with that id here");
 		}
+		entity.teleportTo(x, y, z);
 
-		JsonArray to = command.getAsJsonArray("to");
-		entity.teleportTo(to.get(0).getAsDouble(), to.get(1).getAsDouble(), to.get(2).getAsDouble());
+		return report(id, true, "");
+	}
+
+	private static JsonObject rotateBlock(ServerLevel level, BlockPos pos, long id) {
+		BlockState state = level.getBlockState(pos);
+		if (state.isAir()) {
+			return report(id, false, "nothing there");
+		}
+
+		BlockState turned = state.rotate(net.minecraft.world.level.block.Rotation.CLOCKWISE_90);
+		if (turned.equals(state)) {
+			return report(id, false, Senses.blockId(state) + " does not turn");
+		}
+
+		level.setBlock(pos, turned, Block.UPDATE_ALL);
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject setFrameItem(ServerLevel level, JsonObject command, long id) {
+		if (!(level.getEntity(command.get("entity").getAsInt()) instanceof net.minecraft.world.entity.decoration.ItemFrame frame)) {
+			return report(id, false, "no item frame with that id here");
+		}
+
+		JsonObject item = command.getAsJsonObject("item");
+		String itemId = item.has("id") ? item.get("id").getAsString() : "";
+		if (itemId.isEmpty()) {
+			frame.setItem(ItemStack.EMPTY);
+			return report(id, true, "");
+		}
+
+		Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(itemId));
+		if (kind.isEmpty()) {
+			return report(id, false, "no such item");
+		}
+		frame.setItem(new ItemStack(kind.get().value(), Math.max(1, item.get("count").getAsInt())));
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject equipEntity(ServerLevel level, JsonObject command, long id) {
+		Entity entity = level.getEntity(command.get("entity").getAsInt());
+		if (!(entity instanceof net.minecraft.world.entity.LivingEntity living) || entity instanceof ServerPlayer) {
+			return report(id, false, "no entity that wears things with that id here");
+		}
+
+		JsonObject item = command.getAsJsonObject("item");
+		Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(item.get("id").getAsString()));
+		if (kind.isEmpty()) {
+			return report(id, false, "no such item");
+		}
+		ItemStack stack = new ItemStack(kind.get().value(), Math.max(1, item.get("count").getAsInt()));
+		net.minecraft.world.entity.EquipmentSlot slot = living.getEquipmentSlotForItem(stack);
+		if (!living.getItemBySlot(slot).isEmpty()) {
+			return report(id, false, "that slot is worn already");
+		}
+		living.setItemSlot(slot, stack);
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject damageItem(ServerLevel level, JsonObject command, long id) {
+		Container container = container(level, blockPos(command.getAsJsonArray("pos")));
+		if (container == null) {
+			return report(id, false, "no container there");
+		}
+
+		int slot = command.get("slot").getAsInt();
+		if (slot < 0 || slot >= container.getContainerSize()) {
+			return report(id, false, "no such slot");
+		}
+		ItemStack stack = container.getItem(slot);
+		if (stack.isEmpty() || !stack.isDamageableItem()) {
+			return report(id, false, "nothing with wear in that slot");
+		}
+
+		// Worn, never broken: the damage stops one short of the item's end.
+		int amount = command.get("amount").getAsInt();
+		stack.setDamageValue(Math.min(stack.getMaxDamage() - 1, stack.getDamageValue() + Math.max(0, amount)));
+		container.setChanged();
 
 		return report(id, true, "");
 	}
@@ -424,6 +527,7 @@ public final class Executors {
 			case "says" -> player.sendSystemMessage(Component.translatable("chat.type.text", name, Component.literal(text)));
 			case "whisper" -> player.sendSystemMessage(Component.translatable("commands.message.display.incoming", name, Component.literal(text)).withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.ITALIC));
 			case "sleepers" -> player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(Component.translatable("sleep.players_sleeping", 1, 2)));
+			case "bed_occupied" -> player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(Component.translatable("block.minecraft.bed.occupied")));
 			default -> {
 				return report(id, false, "no message kind called " + message);
 			}

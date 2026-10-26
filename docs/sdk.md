@@ -85,7 +85,8 @@ ABI 3 (2026-11-09) added `warm`, `status` and `InitReply.resources`. ABI 4 (2026
 the six world functions and `sdk/src/world.rs`, the per-world shapes. ABI 5 (2026-11-09) added
 `craftkit_world_debug` and `sdk/src/debug.rs`, nine commands (`open_lid`, `rotate_frame`,
 `swap_painting`, `pose_stand`, `name_entity`, `dye_sheep`, `move_entity`, `player_list`,
-`game_message`, and `push_entity` the same night), `set_block.replace` and the `killed` event.
+`game_message`, and `push_entity`, `rotate_block`, `set_frame_item`, `equip_entity` and
+`damage_item` the same night), `set_block.replace` and the `killed` event.
 
 ## Resources
 
@@ -172,8 +173,10 @@ written 2026-11-09 from the lodger's needs and generalized as a second mod needs
   and put items, drop an item that does not despawn, write a sign, cancel or refuse a player's
   sleep, turn an entity's head for a while, turn an armour stand's head or have it follow a
   player, turn an item frame's item, swap a painting for another of its size, name an entity,
-  dye a sheep, move an entity, push an entity (a velocity: a boat drifts, a minecart rolls),
-  show a second entry with a player's own name in their player
+  dye a sheep, move an entity (a player two blocks at most, to wake them a block from the bed),
+  push an entity (a velocity: a boat drifts, a minecart rolls), turn a block a quarter turn
+  (stairs, a banner), put an item in a frame or empty it, dress an entity that wears things (an
+  armour stand), wear down a tool in a container, show a second entry with a player's own name in their player
   list for a while, send a line in the game's own words to one player (`joined`, `left`, `says`
   in their own name, `whisper` from themselves, `sleepers` on the action bar), spawn and drive a
   figure in a player's skin (phase 5). Each has a `fits` the host's executor checks before

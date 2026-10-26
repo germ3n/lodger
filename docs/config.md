@@ -83,10 +83,10 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 | `events.disabled` | `[]` | Event ids the brain never offers as choices. For servers that want, say, no `take` or no `sign_word`. See [Events](entity.md#events). |
 | `events.offered` | `8` | How many eligible events the brain is offered per plan. Fewer is a more predictable lodger; more is a longer prompt. |
 | `events.cooldown_scale` | `1.0` | Multiplies every event's cooldown. `2.0` is a lodger that repeats itself half as often and so does less. |
-| `events.sounds` | `true` | Whether the target hears anything at all. |
+| `events.sounds` | `true` | Whether the sounds (the door and chest sounds, the knocks, the late steps, the mining sounds, the pet's growl) may happen. Off, nothing in the group is offered or forced. |
 | `events.figure` | `true` | Whether the far presence and the replay figure are ever shown. |
-| `events.chat` | `true` | Whether it may appear in the player list, in join and leave messages and in chat, always as the target and only to the target. `false` on servers that want the chat untouched. See [Chat and the player list](entity.md#chat-and-the-player-list). |
-| `events.glitches` | `true` | Whether the target's client is ever sent a glitch: the lights failing, the sun blinking out, red rain and the rest of [Glitches](entity.md#the-sky-and-the-light). |
+| `events.chat` | `true` | Whether the lodger may touch the target's chat and player list (a line in their own name, a whisper from themselves, their name twice in the list, the joined and left lines, the sleepers count). |
+| `events.glitches` | `true` | Whether the client-rendered glitches (the flicker, the lights failing, the sun blinking, the red rain, the fog, the crosshair gone, the camera nudge, the field of view pulled, the music cut, the silence) may happen. |
 
 ## Multiplayer
 

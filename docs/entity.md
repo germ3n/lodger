@@ -351,6 +351,7 @@ they use. Digging is what a player digs, at a player's pace, with a player's sou
 | --- | --- | --- | --- |
 | `mining_sounds` | 2 | While the target mines, pickaxe-on-stone sounds from inside the rock, 6 to 12 blocks off, a few minutes at a time, keeping pace with the target's own. Nothing is dug. | The target mining underground. |
 | `echo_steps` | 2 | Footsteps that answer the target's from a side tunnel, in the mine. | The target in a tunnel with a branch. |
+| `scan_ore` | 2 | Nothing the target sees: while they mine, the lodger looks at the rock around them (the host's scan, 24 blocks across) for ore they have not found, so `ore_marked` has a vein to mark. | The target underground. |
 | `ore_marked` | 2 | A torch on an ore vein the target has not found, within sight of their tunnel. | An unfound vein within 12 blocks of a tunnel. |
 | `mine_beside` | 3 | While the target is away, a tunnel the size and length of their newest one is dug beside it, three blocks over, lit the way they light theirs (the memory's torch spacing). Its ore is in the chest they use; it keeps the stone. | A tunnel of 10 or more blocks the target dug, and a chest. |
 | `mined_out` | 3 | One ore vein the target was heading for, the one their tunnel points at, is gone when they reach it: a hollow with torches in it, as if mined an hour ago. | A vein within 16 blocks ahead of the target's tunnel. |

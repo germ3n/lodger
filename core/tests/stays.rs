@@ -37,8 +37,17 @@ impl Script {
         if (13_000..23_000).contains(&time) {
             return ([0.5, 64.0, 0.5], true, false, 0.0);
         }
-        if (2_000..11_000).contains(&time) {
-            return ([80.5, 40.0, 0.5], false, false, 1.0);
+        // The walk to the mine and back, 77 blocks over 200 ticks, so the memory sees a route.
+        if (1_800..2_000).contains(&time) {
+            let x = 3.5 + (time - 1_800) as f64 / 200.0 * 77.0;
+            return ([x, 64.0, 0.5], false, false, 7.7);
+        }
+        if (10_800..11_000).contains(&time) {
+            let x = 80.5 - (time - 10_800) as f64 / 200.0 * 77.0;
+            return ([x, 64.0, 0.5], false, false, 7.7);
+        }
+        if (2_000..10_800).contains(&time) {
+            return ([80.5, 40.0, 0.5], false, true, 0.0);
         }
         if (11_000..13_000).contains(&time) {
             return ([3.5, 64.0, 2.5], false, true, 0.0);
@@ -50,7 +59,7 @@ impl Script {
     /// Whether the player is home and awake: when nothing of the house may be touched.
     fn home_awake(tick: u64) -> bool {
         let time = tick % 24_000;
-        (11_000..13_000).contains(&time) || !(2_000..23_000).contains(&time)
+        (11_000..13_000).contains(&time) || !(1_800..23_000).contains(&time)
     }
 
     fn observations(&self) -> Observations {
@@ -122,7 +131,8 @@ impl Script {
                 },
                 movement: Movement {
                     pace,
-                    still_seconds: if still { 5.0 } else { 0.0 },
+                    // A minute's stillness cuts the trail into a route at the mine and at home.
+                    still_seconds: if still { 61.0 } else { 0.0 },
                     ..Movement::default()
                 },
                 ..Player::default()
@@ -312,4 +322,197 @@ fn the_same_event_never_lands_twice_in_a_row() {
         assert_ne!(pair[0], pair[1], "{} twice in a row in {landed:?}", pair[0]);
     }
     world.close();
+}
+
+/// The stay behind a run, read back through its save, for the tests that look at the memory.
+fn stay_after(days: u64, config: &str, seed: i64) -> lodger_core::stay::Stay {
+    let _turn = TURN.lock().unwrap_or_else(|err| err.into_inner());
+    let harness = craftkit::harness!().unwrap();
+    harness.init(config);
+    let info = WorldInfo {
+        id: "minecraft:overworld".to_string(),
+        seed,
+        name: "scripted".to_string(),
+    };
+    let world = harness.open_world(&info, &[]).unwrap();
+    let mut script = Script::new();
+    while script.tick < days * 24_000 {
+        world.observe(&script.observations());
+        let commands = world.tick(&script.now());
+        let reports: Vec<Report> = commands
+            .iter()
+            .map(|command| Report {
+                id: command.id(),
+                done: true,
+                reason: String::new(),
+            })
+            .collect();
+        if !reports.is_empty() {
+            world.report(&reports);
+        }
+        script.tick += 5;
+    }
+    let stay = lodger_core::stay::Stay::open(&info, &world.save()).unwrap();
+    world.close();
+
+    stay
+}
+
+#[test]
+fn no_event_lands_inside_its_cooldown_or_past_its_cap() {
+    let stay = stay_after(
+        14,
+        r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [3, 3, 3, 3, 3], "events_per_day": [8, 8, 8, 8, 8] } }"#,
+        21,
+    );
+    let landed: Vec<_> = stay
+        .memory
+        .done
+        .iter()
+        .filter(|d| d.ok && d.event != "wait")
+        .collect();
+    assert!(
+        landed.len() >= 4,
+        "{} events landed in fourteen days",
+        landed.len()
+    );
+
+    for (i, done) in landed.iter().enumerate() {
+        let event = lodger_core::events::find(&done.event).expect(&done.event);
+        let times = landed.iter().filter(|d| d.event == done.event).count() as u32;
+        assert!(
+            times <= event.most_per_stay,
+            "{} landed {} times, its cap is {}",
+            done.event,
+            times,
+            event.most_per_stay
+        );
+        for earlier in &landed[..i] {
+            if earlier.event == done.event {
+                assert!(
+                    done.day - earlier.day >= event.cooldown_days - 1e-3,
+                    "{} landed on day {:.2} and again on day {:.2}, inside its {} day cooldown",
+                    done.event,
+                    earlier.day,
+                    done.day,
+                    event.cooldown_days
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn a_disabled_event_never_happens_and_a_group_switched_off_stays_quiet() {
+    let run = run(
+        8,
+        r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [2, 2, 2, 2, 2] }, "events": { "disabled": ["open_door", "close_door", "wake", "door_opens_itself"], "sounds": false, "glitches": false, "chat": false } }"#,
+    );
+    for (_, command) in &run.commands {
+        match command {
+            Command::ToggleBlock { pos, .. } => {
+                assert_ne!(*pos, [4, 64, 0], "the door toggled while disabled")
+            }
+            Command::PlaySound { .. } => panic!("a sound with events.sounds off: {command:?}"),
+            Command::Hint { .. } => panic!("a glitch with events.glitches off: {command:?}"),
+            // The occupied-bed line is vanilla's action bar from the rest group, not chat.
+            Command::GameMessage { message, .. } if message != "bed_occupied" => {
+                panic!("chat with events.chat off: {command:?}")
+            }
+            Command::PlayerList { .. } => {
+                panic!("chat with events.chat off: {command:?}")
+            }
+            _ => {}
+        }
+    }
+}
+
+#[test]
+fn sleep_is_only_ever_refused_while_the_player_is_in_bed_and_sounds_play_only_while_they_are_there()
+{
+    let run = run(
+        10,
+        r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [2, 2, 2, 2, 2] } }"#,
+    );
+    for (tick, command) in &run.commands {
+        let time = tick % 24_000;
+        match command {
+            Command::CancelSleep { seconds, .. } if *seconds > 0.0 => {
+                assert!(
+                    (13_000..23_000).contains(&time),
+                    "sleep refused at {time} with nobody in bed"
+                );
+            }
+            // A sound at the house (within 30 blocks of it) while the player is at the mine
+            // would be for nobody; a far sound or a glitch follows the player wherever they are.
+            Command::PlaySound { pos, .. } if pos[0].abs() < 30.0 && pos[2].abs() < 30.0 => {
+                assert!(
+                    !(2_000..10_800).contains(&time),
+                    "a sound at the house for a player 80 blocks away at {time}: {command:?}"
+                );
+            }
+            _ => {}
+        }
+    }
+}
+
+#[test]
+fn a_calm_preset_acts_less_than_a_relentless_one() {
+    let calm = run(
+        6,
+        r#"{ "preset": "calm", "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [2, 2, 2, 2, 2] } }"#,
+    );
+    let relentless = run(
+        6,
+        r#"{ "preset": "relentless", "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [2, 2, 2, 2, 2] } }"#,
+    );
+
+    assert!(
+        calm.commands.len() < relentless.commands.len(),
+        "calm did {} things, relentless {}",
+        calm.commands.len(),
+        relentless.commands.len()
+    );
+}
+
+#[test]
+fn the_stay_is_over_after_stage_five_and_nothing_happens_after() {
+    let config = r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [1, 1, 1, 1, 1] } }"#;
+    let stay = stay_after(8, config, 9);
+    assert!(stay.arc.over(), "{}", stay.status_line());
+
+    let run = run(8, config);
+    let late: Vec<_> = run
+        .commands
+        .iter()
+        .filter(|(tick, command)| {
+            *tick >= 6 * 24_000 && !matches!(command, Command::Surroundings { .. })
+        })
+        .collect();
+    assert!(late.is_empty(), "after the stay ended: {late:?}");
+}
+
+#[test]
+fn the_memory_learns_the_house_the_chest_the_favourite_and_the_route_from_the_script() {
+    let stay = stay_after(4, r#"{ "stages": { "start_after_days": 0 } }"#, 2);
+    let memory = &stay.memory;
+
+    let home = memory.home.as_ref().expect("a home");
+    assert_eq!(home.bed, Some([0, 64, 0]));
+    assert_eq!(home.doors, vec![[4, 64, 0]]);
+    assert_eq!(home.lights.len(), 2);
+    assert_eq!(memory.used_container().unwrap().pos, [2, 64, 0]);
+    assert_eq!(memory.favourites[0].0, "minecraft:iron_pickaxe");
+    assert!(
+        memory.route().is_some(),
+        "the daily walk to the mine is a route: {:?}",
+        memory.routes.len()
+    );
+    assert!(
+        memory.sessions.is_empty(),
+        "the script never joins or leaves"
+    );
+    assert!(stay.brain.story.len() >= 3);
+    let saved = stay.save();
+    assert!(saved.len() < 256 * 1024, "{} bytes saved", saved.len());
 }

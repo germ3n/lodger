@@ -85,7 +85,40 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .map(|h| h.doors.iter().any(|d| memory.approaching(*d, 6.0)))
             .unwrap_or(false),
         Need::Scanned(kind) => memory.scanned(kind).next().is_some(),
+        Need::InChestAny(suffixes) => memory
+            .in_used_container(|id| suffixes.iter().any(|s| id.ends_with(s)))
+            .is_some(),
+        Need::TargetApproachingChest => memory
+            .used_container()
+            .map(|c| memory.approaching(c.pos, 6.0))
+            .unwrap_or(false),
+        Need::ColouredStacks => memory.coloured_stacks() >= 6,
+        Need::ToolInContainer => memory.tool_in_container().is_some(),
         Need::Water => false,
+    }
+}
+
+/// Whether the event's group is on in the config: `events.sounds`, `events.glitches`,
+/// `events.chat`. An event in a group that is off is never offered or forced.
+pub fn switched_on(event: &Event, config: &Config) -> bool {
+    use crate::events::Action;
+    match event.action {
+        Action::Sound(_)
+        | Action::SoundAtTarget(_)
+        | Action::SoundFar(_)
+        | Action::SoundAtFixture(_, _)
+        | Action::SoundPair(_, _, _)
+        | Action::Taps(_, _, _)
+        | Action::MiningSounds
+        | Action::PetGrowl => config.events.sounds,
+        Action::Hint(_, _) => config.events.glitches,
+        Action::TabEntry
+        | Action::Message(_)
+        | Action::Says
+        | Action::SaysKills
+        | Action::Whisper
+        | Action::RepeatsYou => config.events.chat,
+        _ => true,
     }
 }
 
@@ -115,6 +148,10 @@ pub fn offer<'a>(
         }
 
         if config.events.disabled.iter().any(|d| d == event.id) {
+            continue;
+        }
+
+        if !switched_on(event, config) {
             continue;
         }
 

@@ -218,6 +218,23 @@ because it can be built and tested without a game, and because the model layer i
   for each; `Need::Route`, `Where::RouteEnd`, `animal_gone`, and `light_path` toward the
   route's end. Tests: a walk repeated becomes a route with its far end known; sessions give
   the usual length; a torch placed after a take reads as `lit`, a day of nothing as `ignored`.
+- [x] **The catalogue, third cut, and the group switches.** Done 2026-11-09: twenty-four more
+  rows (stairs and banners turned, frames emptied and swapped, the stand dressed, the tool worn
+  down, the cold furnace, the chest opening as the target walks up, sorting by colour, a flower
+  planted, a crop replanted, an ice path, the occupied bed, waking a block over, the pet
+  outside, the player-list entry that stays, the note tune, the piston, the phantom disc, the
+  fog closing in, snow and rain indoors, the ore scan and the torch on the vein), over four
+  more commands (`rotate_block`, `set_frame_item`, `equip_entity`, `damage_item`) and a player
+  moved two blocks at most; `events.sounds`, `events.glitches` and `events.chat` now gate their
+  groups in the offer and in forcing (they were read and unused); `Need::InChestAny`,
+  `TargetApproachingChest`, `ColouredStacks`, `ToolInContainer`. 126 rows coded.
+- [x] **Scripted stays, the other six.** Done 2026-11-09: no event inside its cooldown or past
+  its cap over fourteen days; a disabled event never happens and a group switched off stays
+  quiet; sleep is only refused with the player in bed and house sounds never play for a player
+  at the mine; calm acts less than relentless; the stay is over after stage five and nothing
+  happens after; the memory learns the house, the chest, the favourite and the route from the
+  script (which now walks to the mine, 77 blocks over 200 ticks, so a route forms) and the save
+  stays under 256 KiB. Ten scripted stays in all.
 - [ ] **The offer** (`brain/offer.rs`): the six filters of
   [What is offered when](entity.md#what-is-offered-when), with a test per filter (no water, no
   boats; asleep, no `late_steps`; stage one, nothing from stage two) and a test that a hundred

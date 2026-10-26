@@ -119,7 +119,37 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PushVehicle(_)
         | Action::MiningSounds
         | Action::VillageDoors
-        | Action::ScanVillage => None,
+        | Action::ScanVillage
+        | Action::ScanOre
+        | Action::FrameEmptied
+        | Action::FrameSwap
+        | Action::StandDress
+        | Action::ToolUsed
+        | Action::ColdFurnace
+        | Action::TidyByColour
+        | Action::IcePath
+        | Action::BedOccupied => None,
+        Action::OreMarked => memory.scanned("_ore").next(),
+        Action::RotateFixture(kind) => pick_ref(
+            memory
+                .fixtures(kind)
+                .map(|f| f.pos)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            rng,
+        ),
+        Action::SoundPair(kind, _, _) => pick_ref(
+            memory
+                .fixtures(kind)
+                .map(|f| f.pos)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            rng,
+        ),
+        Action::OpenOnEnter => memory.used_container().map(|c| c.pos),
+        Action::PlantFlower => home.and_then(|h| pick(&h.doors, rng)),
+        Action::ReplantOther => memory.feature("crops").map(|f| f.pos),
+        Action::WokeElsewhere => home.and_then(|h| h.bed),
         Action::BucketFloor => home.map(|h| [h.center[0] + 2, h.floor_y, h.center[2] + 2]),
         Action::SnowCleared | Action::Trample | Action::DoorAhead => {
             home.and_then(|h| pick(&h.doors, rng))
@@ -1061,7 +1091,7 @@ pub fn commands(
             .unwrap_or_default(),
         Action::MoveCreature(kind, _) => {
             let creature = if kind.is_empty() {
-                if event.id == "pet_moved" {
+                if event.id.starts_with("pet_") {
                     memory.pets().next()
                 } else {
                     memory
@@ -1422,6 +1452,365 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        Action::RotateFixture(_) => pos
+            .map(|p| vec![(Command::RotateBlock { id: ids(), pos: p }, 0)])
+            .unwrap_or_default(),
+        Action::SoundPair(_, first, second) => pos
+            .map(|p| {
+                vec![
+                    (sound_at(ids, target, first, at(p), 0.8), 0),
+                    (sound_at(ids, target, second, at(p), 0.8), 12),
+                ]
+            })
+            .unwrap_or_default(),
+        Action::FrameEmptied => match (
+            memory.decor("item_frame").next(),
+            memory.home.as_ref().and_then(|h| h.bed),
+        ) {
+            (Some(frame), Some(bed)) => vec![
+                (
+                    Command::SetFrameItem {
+                        id: ids(),
+                        entity: frame.id,
+                        item: ItemStack::default(),
+                    },
+                    0,
+                ),
+                // The host answers what the frame held? It does not; the memory does not know
+                // it either, so the bed gets a stand-in the frame could have held.
+                (
+                    Command::DropItem {
+                        id: ids(),
+                        pos: [
+                            bed[0] as f64 + 0.5,
+                            bed[1] as f64 + 0.7,
+                            bed[2] as f64 + 0.5,
+                        ],
+                        item: ItemStack {
+                            id: memory
+                                .favourites
+                                .first()
+                                .map(|(id, _)| id.clone())
+                                .unwrap_or_else(|| "minecraft:stick".to_string()),
+                            count: 1,
+                            slot: 0,
+                        },
+                    },
+                    1,
+                ),
+            ],
+            _ => vec![],
+        },
+        Action::FrameSwap => match (memory.decor("item_frame").next(), memory.used_container()) {
+            (Some(frame), Some(chest)) => {
+                let Some(stack) = chest.contents.iter().find(|s| s.count == 1) else {
+                    return vec![];
+                };
+                vec![
+                    (
+                        Command::TakeItem {
+                            id: ids(),
+                            from: chest.pos,
+                            slot: stack.slot,
+                            count: 1,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::SetFrameItem {
+                            id: ids(),
+                            entity: frame.id,
+                            item: ItemStack {
+                                id: stack.id.clone(),
+                                count: 1,
+                                slot: 0,
+                            },
+                        },
+                        1,
+                    ),
+                ]
+            }
+            _ => vec![],
+        },
+        Action::StandDress => {
+            let armour = |id: &str| {
+                ["_helmet", "_chestplate", "_leggings", "_boots"]
+                    .iter()
+                    .any(|a| id.ends_with(a))
+            };
+            match (
+                memory.decor("armor_stand").next(),
+                memory.in_used_container(armour),
+            ) {
+                (Some(stand), Some((chest, stack))) => vec![
+                    (
+                        Command::TakeItem {
+                            id: ids(),
+                            from: chest.pos,
+                            slot: stack.slot,
+                            count: 1,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::EquipEntity {
+                            id: ids(),
+                            entity: stand.id,
+                            item: ItemStack {
+                                id: stack.id.clone(),
+                                count: 1,
+                                slot: 0,
+                            },
+                        },
+                        1,
+                    ),
+                ],
+                _ => vec![],
+            }
+        }
+        Action::ToolUsed => memory
+            .tool_in_container()
+            .map(|(chest, stack)| {
+                vec![(
+                    Command::DamageItem {
+                        id: ids(),
+                        pos: chest.pos,
+                        slot: stack.slot,
+                        amount: 20 + (seed % 30) as u32,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::ColdFurnace => match (memory.furnace(), memory.used_container()) {
+            (Some(furnace), Some(chest)) => {
+                let (Some(fuel), Some(&empty)) = (
+                    furnace.contents.iter().find(|s| s.slot == 1),
+                    chest.empty_slots().first(),
+                ) else {
+                    return vec![];
+                };
+                vec![(
+                    Command::MoveItem {
+                        id: ids(),
+                        from: furnace.pos,
+                        from_slot: 1,
+                        to: chest.pos,
+                        to_slot: empty,
+                        count: fuel.count,
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
+        Action::OpenOnEnter => pos
+            .map(|p| {
+                vec![(
+                    Command::OpenLid {
+                        id: ids(),
+                        pos: p,
+                        seconds: 8.0,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::TidyByColour => match (memory.used_container(), pos) {
+            (Some(container), _) => {
+                // Sorted by the colour word first, so wool and concrete of one colour sit together.
+                let mut by_colour = container.contents.clone();
+                for stack in &mut by_colour {
+                    if crate::memory::is_coloured(&stack.id) {
+                        let name = stack.id.rsplit(':').next().unwrap_or(&stack.id).to_string();
+                        let (colour, kind) = name.rsplit_once('_').unwrap_or((&name, ""));
+                        stack.id = format!("0{colour}_{kind}");
+                    }
+                }
+                tidy_moves(&by_colour, 27)
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, (from_slot, to_slot, count))| {
+                        (
+                            Command::MoveItem {
+                                id: ids(),
+                                from: container.pos,
+                                from_slot,
+                                to: container.pos,
+                                to_slot,
+                                count,
+                            },
+                            i as u64,
+                        )
+                    })
+                    .collect()
+            }
+            _ => vec![],
+        },
+        Action::PlantFlower => {
+            let flower = |id: &str| {
+                [
+                    "poppy",
+                    "dandelion",
+                    "tulip",
+                    "orchid",
+                    "allium",
+                    "daisy",
+                    "cornflower",
+                    "lily_of_the_valley",
+                ]
+                .iter()
+                .any(|f| id.ends_with(f))
+            };
+            match (pos, memory.in_used_container(flower), memory.home.as_ref()) {
+                (Some(door), Some((chest, stack)), Some(home)) => {
+                    let step = step_toward(home.center, door);
+                    let p = [
+                        door[0] + step[0] * 2 + step[1],
+                        door[1],
+                        door[2] + step[1] * 2 + step[0],
+                    ];
+                    vec![
+                        (
+                            Command::TakeItem {
+                                id: ids(),
+                                from: chest.pos,
+                                slot: stack.slot,
+                                count: 1,
+                            },
+                            0,
+                        ),
+                        (set(ids, p, &stack.id, &["minecraft:short_grass"]), 1),
+                    ]
+                }
+                _ => vec![],
+            }
+        }
+        Action::ReplantOther => {
+            let seeds = |id: &str| {
+                ["carrot", "potato", "beetroot_seeds"]
+                    .iter()
+                    .any(|s| id.ends_with(s))
+            };
+            match (pos, memory.in_used_container(seeds)) {
+                (Some(field), Some((chest, stack))) => {
+                    let crop = if stack.id.ends_with("carrot") {
+                        "minecraft:carrots"
+                    } else if stack.id.ends_with("potato") {
+                        "minecraft:potatoes"
+                    } else {
+                        "minecraft:beetroots"
+                    };
+                    vec![
+                        (
+                            Command::TakeItem {
+                                id: ids(),
+                                from: chest.pos,
+                                slot: stack.slot,
+                                count: 1,
+                            },
+                            0,
+                        ),
+                        (set(ids, field, crop, &["minecraft:wheat"]), 1),
+                    ]
+                }
+                _ => vec![],
+            }
+        }
+        Action::IcePath => match (memory.feature("water"), memory.home.as_ref()) {
+            (Some(water), Some(home)) => {
+                let mut p = water.pos;
+                let mut made = Vec::new();
+                for i in 0..6 {
+                    made.push((
+                        set(ids, p, "minecraft:ice", &["minecraft:water"]),
+                        i as u64 * 10,
+                    ));
+                    let step = step_toward(p, [home.center[0], p[1], home.center[2]]);
+                    if step == [0, 0] {
+                        break;
+                    }
+                    p = [p[0] + step[0], p[1], p[2] + step[1]];
+                }
+                made
+            }
+            _ => vec![],
+        },
+        Action::BedOccupied => vec![
+            (
+                Command::GameMessage {
+                    id: ids(),
+                    player: target,
+                    message: "bed_occupied".to_string(),
+                    text: String::new(),
+                },
+                0,
+            ),
+            (
+                Command::CancelSleep {
+                    id: ids(),
+                    player: target,
+                    seconds: 0.0,
+                },
+                1,
+            ),
+        ],
+        Action::WokeElsewhere => pos
+            .map(|bed| {
+                vec![
+                    (
+                        Command::CancelSleep {
+                            id: ids(),
+                            player: target,
+                            seconds: 0.0,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::MoveEntity {
+                            id: ids(),
+                            entity: u32::MAX - target,
+                            to: [
+                                bed[0] as f64 + 1.5,
+                                bed[1] as f64 + 0.6,
+                                bed[2] as f64 + 0.5,
+                            ],
+                        },
+                        2,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
+        Action::ScanOre => {
+            let at = block_of(memory.last.pos);
+            vec![(
+                Command::Scan {
+                    id: ids(),
+                    min: [at[0] - 12, at[1] - 6, at[2] - 12],
+                    max: [at[0] + 12, at[1] + 6, at[2] + 12],
+                    kinds: [
+                        "coal", "iron", "copper", "gold", "redstone", "lapis", "diamond", "emerald",
+                    ]
+                    .iter()
+                    .flat_map(|ore| {
+                        [
+                            format!("minecraft:{ore}_ore"),
+                            format!("minecraft:deepslate_{ore}_ore"),
+                        ]
+                    })
+                    .collect(),
+                },
+                0,
+            )]
+        }
+        Action::OreMarked => pos
+            .map(|ore| {
+                vec![(
+                    set(ids, [ore[0], ore[1] + 1, ore[2]], "minecraft:torch", &[]),
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::RepeatsYou => {
             if memory.last_said.is_empty() {
                 return vec![];
@@ -1674,6 +2063,34 @@ mod tests {
         });
         memory.scanned.push(("oak_door".to_string(), [58, 64, 61]));
         memory.scanned.push(("bell".to_string(), [60, 65, 60]));
+        for (kind, pos) in [
+            ("stairs", [4, 65, 3]),
+            ("banner", [0, 66, 3]),
+            ("piston", [-3, 64, 3]),
+            ("jukebox", [-3, 64, -3]),
+        ] {
+            memory.fixtures.push(Fixture {
+                kind: kind.to_string(),
+                pos,
+            });
+        }
+        for (id, count, slot) in [
+            ("minecraft:iron_helmet", 1, 11),
+            ("minecraft:poppy", 3, 12),
+            ("minecraft:carrot", 5, 13),
+            ("minecraft:red_wool", 4, 14),
+            ("minecraft:blue_wool", 2, 15),
+            ("minecraft:red_concrete", 7, 16),
+            ("minecraft:lime_wool", 1, 17),
+            ("minecraft:black_wool", 9, 18),
+            ("minecraft:white_bed", 1, 19),
+        ] {
+            memory.containers[0].contents.push(stack(id, count, slot));
+        }
+        memory.containers[2]
+            .contents
+            .push(stack("minecraft:coal", 3, 1));
+        memory.scanned.push(("iron_ore".to_string(), [20, 40, 20]));
         memory.routes.push(crate::memory::Route {
             points: (0..20).map(|i| [3 + i * 2, 64, 0]).collect(),
             walked: 3,
@@ -1880,11 +2297,12 @@ mod tests {
             &mut ids(),
             &Now::default(),
         );
-        assert_eq!(made.len(), 2);
+        // The furnace holds fuel already, so one move: the raw thing. Cobblestone, in slot 5,
+        // is the first smeltable thing in the chest.
+        assert_eq!(made.len(), 1);
         assert!(
             matches!(
                 made[0].0,
-                // Cobblestone, in slot 5, is the first smeltable thing in the chest.
                 Command::MoveItem {
                     from_slot: 5,
                     to_slot: 0,
@@ -1894,19 +2312,6 @@ mod tests {
             ),
             "{:?}",
             made[0].0
-        );
-        assert!(
-            matches!(
-                made[1].0,
-                Command::MoveItem {
-                    from_slot: 7,
-                    to_slot: 1,
-                    count: 1,
-                    ..
-                }
-            ),
-            "{:?}",
-            made[1].0
         );
 
         let out = find("take_output").unwrap();

@@ -99,6 +99,11 @@ pub fn check(
             | crate::events::Action::MiningSounds
             | crate::events::Action::PushVehicle(_)
             | crate::events::Action::DoorAhead
+            | crate::events::Action::OpenOnEnter
+            | crate::events::Action::SoundPair(_, _, _)
+            | crate::events::Action::BedOccupied
+            | crate::events::Action::WokeElsewhere
+            | crate::events::Action::ScanOre
             | crate::events::Action::ScanVillage
     );
 

@@ -6,11 +6,9 @@
 //! command, an executor in the host. The brain never sees the catalogue whole: `brain::offer`
 //! narrows it by stage, needs, time, cooldowns and caps before the model is asked.
 
-use serde::{Deserialize, Serialize};
-
 /// What an event needs from the memory and the moment before it is offered. The debug screen
 /// shows the first unmet need beside an event, in [`Need::words`].
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Need {
     /// The memory knows where the target sleeps and keeps things.
     Home,
@@ -95,6 +93,14 @@ pub enum Need {
     TargetApproachingDoor,
     /// The village scan found blocks of this kind (`door`, `bell`).
     Scanned(&'static str),
+    /// The used container holds an item whose id ends with any of these.
+    InChestAny(&'static [&'static str]),
+    /// The target is walking toward the used chest, within six blocks.
+    TargetApproachingChest,
+    /// Six or more dyed stacks in the used chest.
+    ColouredStacks,
+    /// A damageable favourite tool sits in a chest.
+    ToolInContainer,
 }
 
 impl Need {
@@ -140,21 +146,25 @@ impl Need {
             Need::TargetUnderground => "the target is not underground".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
-            Need::Scanned(kind) => format!("the village scan found no {kind}"),
+            Need::Scanned(kind) => format!("the scan found no {kind}"),
+            Need::InChestAny(_) => "none of those in the chest".to_string(),
+            Need::TargetApproachingChest => "the target is not walking up to the chest".to_string(),
+            Need::ColouredStacks => "fewer than six dyed stacks in the chest".to_string(),
+            Need::ToolInContainer => "no tool with wear in a chest".to_string(),
             Need::Water => "no water".to_string(),
         }
     }
 }
 
 /// How an event counts against the day's budget: a sound or a screen glitch is half an event.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Weight {
     Full,
     Half,
 }
 
 /// Where a creature is moved to.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Where {
     /// Inside the home, by its center.
     Home,
@@ -168,7 +178,7 @@ pub enum Where {
 
 /// How an event is carried out: which command family, resolved against the memory at run time
 /// (`brain::act`).
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Action {
     /// Nothing.
     Wait,
@@ -300,6 +310,38 @@ pub enum Action {
     VillageDoors,
     /// The village scanned for its doors and bell.
     ScanVillage,
+    /// The rock around the target scanned for ore, while they mine.
+    ScanOre,
+    /// A torch on an ore vein the scan found.
+    OreMarked,
+    /// A fixture of this kind turned a quarter turn.
+    RotateFixture(&'static str),
+    /// A frame emptied, its item laid on the bed.
+    FrameEmptied,
+    /// A frame's item swapped with one from the chest.
+    FrameSwap,
+    /// A piece of armour from the chest on the stand.
+    StandDress,
+    /// The favourite tool in the chest worn down a few dozen uses.
+    ToolUsed,
+    /// The furnace's fuel back in the chest, mid-smelt.
+    ColdFurnace,
+    /// The chest's lid opening as the target walks up to it.
+    OpenOnEnter,
+    /// A flower from the chest planted by the door.
+    PlantFlower,
+    /// One crop replaced by another from seeds in the chest.
+    ReplantOther,
+    /// A line of ice across the water toward the house.
+    IcePath,
+    /// The chest sorted by colour.
+    TidyByColour,
+    /// Two sounds at a fixture, the second a moment after.
+    SoundPair(&'static str, &'static str, &'static str),
+    /// Vanilla's "this bed is occupied" and out of the bed.
+    BedOccupied,
+    /// The target wakes one block from where they lay down.
+    WokeElsewhere,
 }
 
 /// One row of the catalogue.
@@ -1014,6 +1056,296 @@ pub const CATALOGUE: &[Event] = &[
         Action::RepeatsYou,
         false,
     ),
+    // Decoration, the stands and the tools, second round
+    row(
+        "stairs_turned",
+        2,
+        5,
+        &[Fixture("stairs"), TargetAwayOrAsleep],
+        2.0,
+        4,
+        Full,
+        Action::RotateFixture("stairs"),
+        true,
+    ),
+    row(
+        "banner_turned",
+        2,
+        5,
+        &[Fixture("banner"), TargetAwayOrAsleep],
+        2.0,
+        4,
+        Full,
+        Action::RotateFixture("banner"),
+        true,
+    ),
+    row(
+        "frame_emptied",
+        3,
+        5,
+        &[Decor("item_frame"), Bed, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::FrameEmptied,
+        false,
+    ),
+    row(
+        "frame_swap",
+        3,
+        5,
+        &[Decor("item_frame"), UsedContainer, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::FrameSwap,
+        false,
+    ),
+    row(
+        "armor_stand_dress",
+        3,
+        5,
+        &[
+            Decor("armor_stand"),
+            InChestAny(&["_helmet", "_chestplate", "_leggings", "_boots"]),
+            TargetAwayOrAsleep,
+        ],
+        3.0,
+        2,
+        Full,
+        Action::StandDress,
+        false,
+    ),
+    row(
+        "tool_used",
+        3,
+        5,
+        &[ToolInContainer, TargetAwayOrAsleep],
+        3.0,
+        3,
+        Full,
+        Action::ToolUsed,
+        false,
+    ),
+    row(
+        "cold_furnace",
+        3,
+        5,
+        &[Furnace, UsedContainer, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::ColdFurnace,
+        true,
+    ),
+    row(
+        "open_on_enter",
+        4,
+        5,
+        &[TargetApproachingChest],
+        2.0,
+        3,
+        Full,
+        Action::OpenOnEnter,
+        false,
+    ),
+    row(
+        "tidy_by_colour",
+        3,
+        5,
+        &[ColouredStacks, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::TidyByColour,
+        false,
+    ),
+    row(
+        "plant_flower",
+        2,
+        5,
+        &[
+            Door,
+            InChestAny(&[
+                "poppy",
+                "dandelion",
+                "tulip",
+                "orchid",
+                "allium",
+                "daisy",
+                "cornflower",
+                "lily_of_the_valley",
+            ]),
+            TargetAwayOrAsleep,
+        ],
+        3.0,
+        2,
+        Full,
+        Action::PlantFlower,
+        true,
+    ),
+    row(
+        "replant_other",
+        3,
+        5,
+        &[
+            Around("crops"),
+            InChestAny(&["carrot", "potato", "beetroot_seeds"]),
+            TargetAwayOrAsleep,
+        ],
+        3.0,
+        2,
+        Full,
+        Action::ReplantOther,
+        false,
+    ),
+    row(
+        "ice_path",
+        3,
+        5,
+        &[Around("water"), Home, TargetAwayOrAsleep],
+        4.0,
+        1,
+        Full,
+        Action::IcePath,
+        false,
+    ),
+    row(
+        "bed_occupied",
+        3,
+        5,
+        &[TargetInBed],
+        2.0,
+        3,
+        Full,
+        Action::BedOccupied,
+        false,
+    ),
+    row(
+        "woke_elsewhere",
+        4,
+        5,
+        &[TargetInBed, Bed],
+        3.0,
+        2,
+        Full,
+        Action::WokeElsewhere,
+        false,
+    ),
+    row(
+        "pet_outside",
+        3,
+        5,
+        &[Pet, Door, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::MoveCreature("", Where::OutsideDoor),
+        false,
+    ),
+    row(
+        "tab_entry_stays",
+        4,
+        5,
+        &[TargetOnline],
+        4.0,
+        1,
+        Full,
+        Action::TabEntry,
+        false,
+    ),
+    row(
+        "note_tune",
+        3,
+        5,
+        &[Fixture("note_block"), Night, TargetOnline],
+        3.0,
+        2,
+        Half,
+        Action::Taps("note_block", "minecraft:block.note_block.harp", 3),
+        true,
+    ),
+    row(
+        "piston_once",
+        3,
+        5,
+        &[Fixture("piston"), Night, TargetOnline],
+        2.0,
+        3,
+        Half,
+        Action::SoundPair(
+            "piston",
+            "minecraft:block.piston.extend",
+            "minecraft:block.piston.contract",
+        ),
+        true,
+    ),
+    row(
+        "disc_phantom",
+        3,
+        5,
+        &[Fixture("jukebox"), TargetIndoors, TargetOnline],
+        3.0,
+        2,
+        Half,
+        Action::SoundAtFixture("jukebox", "minecraft:music_disc.11"),
+        true,
+    ),
+    row(
+        "fog_close",
+        3,
+        5,
+        &[TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::Hint("fog_close", 60.0),
+        true,
+    ),
+    row(
+        "snow_indoors",
+        3,
+        5,
+        &[TargetIndoors, Around("snow")],
+        3.0,
+        2,
+        Half,
+        Action::Hint("snow_indoors", 8.0),
+        true,
+    ),
+    row(
+        "rain_indoors",
+        3,
+        5,
+        &[TargetIndoors, Raining],
+        3.0,
+        2,
+        Half,
+        Action::Hint("rain_indoors", 8.0),
+        true,
+    ),
+    row(
+        "scan_ore",
+        2,
+        5,
+        &[TargetUnderground],
+        0.5,
+        u32::MAX,
+        Half,
+        Action::ScanOre,
+        true,
+    ),
+    row(
+        "ore_marked",
+        2,
+        5,
+        &[Scanned("_ore"), TargetUnderground],
+        2.0,
+        4,
+        Full,
+        Action::OreMarked,
+        true,
+    ),
     // Water, snow and fields, from the surroundings
     row(
         "boat_moved",
@@ -1573,6 +1905,30 @@ impl Event {
             "says_first" => "say something in their name",
             "whisper_from_you" => "whisper to them as them",
             "repeats_you" => "repeat what they said",
+            "stairs_turned" => "turn a stair block another way",
+            "banner_turned" => "turn the banner",
+            "frame_emptied" => "take the thing out of the frame and leave it on the bed",
+            "frame_swap" => "swap the frame's thing for one from the chest",
+            "armor_stand_dress" => "dress the stand in a piece of their armour",
+            "tool_used" => "wear their tool down as if used",
+            "cold_furnace" => "take the fuel out of the furnace",
+            "open_on_enter" => "open the chest as they walk up to it",
+            "tidy_by_colour" => "sort the chest by colour",
+            "plant_flower" => "plant one of their flowers by the door",
+            "replant_other" => "replace a crop with another",
+            "ice_path" => "freeze a path across the water toward the house",
+            "bed_occupied" => "tell them the bed is occupied",
+            "woke_elsewhere" => "wake them a block from the bed",
+            "pet_outside" => "put the pet outside the door",
+            "tab_entry_stays" => "show their name twice all session",
+            "note_tune" => "three notes from the note block",
+            "piston_once" => "work the piston once",
+            "disc_phantom" => "play a disc they do not own",
+            "fog_close" => "close the fog in for a minute",
+            "snow_indoors" => "let it snow indoors for a moment",
+            "rain_indoors" => "let it rain indoors for a moment",
+            "scan_ore" => "look at the rock around them",
+            "ore_marked" => "put a torch on an ore they have not found",
             "boat_moved" => "move their boat to the other shore",
             "boat_adrift" => "set their boat adrift",
             "boat_drifts" => "let their boat drift off on its own",

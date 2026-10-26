@@ -33,6 +33,12 @@ pub fn answer(
             if stay.memory.target.is_none() {
                 stay.memory.target = Some(*player);
             }
+            if !offer::switched_on(row, config) {
+                return DebugReply::message(format!(
+                    "{} is in a group the config turned off (events.sounds, glitches or chat)",
+                    row.id
+                ));
+            }
             let message = stay.brain.force(row, &stay.memory, day, log);
             let mut reply = snapshot(stay, config, log, now, day);
             reply.message = message;

@@ -302,6 +302,10 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "lectern",
         "anvil",
         "carpet",
+        "stairs",
+        "banner",
+        "piston",
+        "redstone_lamp",
         "sign",
         "trapdoor",
         "pressure_plate",
@@ -358,6 +362,36 @@ fn in_view_from(player: &Player, pos: BlockPos, blocks: f64) -> bool {
     let length = (dx * dx + dz * dz).sqrt();
 
     (dx * facing_x + dz * facing_z) / length > 0.5
+}
+
+/// Whether an item id is a dyed kind: `red_wool`, `lime_concrete`, `blue_stained_glass`.
+pub fn is_coloured(id: &str) -> bool {
+    const COLOURS: &[&str] = &[
+        "white",
+        "orange",
+        "magenta",
+        "light_blue",
+        "yellow",
+        "lime",
+        "pink",
+        "gray",
+        "light_gray",
+        "cyan",
+        "purple",
+        "blue",
+        "brown",
+        "green",
+        "red",
+        "black",
+    ];
+    let name = id.rsplit(':').next().unwrap_or(id);
+    (name.ends_with("_wool")
+        || name.ends_with("_concrete")
+        || name.ends_with("_stained_glass")
+        || name.ends_with("_bed")
+        || name.ends_with("_carpet")
+        || name.ends_with("_terracotta"))
+        && COLOURS.iter().any(|c| name.starts_with(c))
 }
 
 fn is_light(id: &str) -> bool {
@@ -1070,6 +1104,31 @@ impl Memory {
     /// The target's tamed animals near them.
     pub fn pets(&self) -> impl Iterator<Item = &Creature> {
         self.last.creatures_near.iter().filter(|c| c.pet)
+    }
+
+    /// A favourite tool with wear (a pickaxe, an axe, a sword, a shovel, a hoe) in any chest.
+    pub fn tool_in_container(&self) -> Option<(&Container, &ItemStack)> {
+        let is_tool = |id: &str| {
+            [
+                "_pickaxe", "_axe", "_sword", "_shovel", "_hoe", "_bow", "shears",
+            ]
+            .iter()
+            .any(|t| id.ends_with(t))
+        };
+        for container in self.containers.iter().filter(|c| !c.is_furnace()) {
+            if let Some(stack) = container.contents.iter().find(|s| is_tool(&s.id)) {
+                return Some((container, stack));
+            }
+        }
+
+        None
+    }
+
+    /// The coloured stacks (wool, concrete, glass, beds, carpets) in the used container.
+    pub fn coloured_stacks(&self) -> usize {
+        self.used_container()
+            .map(|c| c.contents.iter().filter(|s| is_coloured(&s.id)).count())
+            .unwrap_or(0)
     }
 
     /// A stack in the used container matching `test`, with the container.
