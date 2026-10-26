@@ -20,6 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * still passes; the dev machine runs it.
  */
 class NativeRealTest {
+	/** The developer's model under core/models: the 1.5B when it is there, else the small one. */
+	private static Path localModel() {
+		Path models = Repo.root().resolve("core").resolve("models");
+		Path large = models.resolve("qwen-1.5b.gguf");
+
+		return Files.isRegularFile(large) ? large : models.resolve("qwen.gguf");
+	}
+
 	private static Path library() {
 		String os = Natives.os(System.getProperty("os.name"));
 		return Repo.root().resolve("target").resolve("release").resolve(Natives.fileName(os, "lodger_core"));

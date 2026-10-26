@@ -346,12 +346,9 @@ fn decode_questions(
 #[cfg(test)]
 mod real {
     use super::super::{Model, Question, Settings};
-    use std::path::PathBuf;
 
     fn model() -> Option<Model> {
-        let path = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/models/qwen.gguf"));
-
-        path.is_file().then(|| {
+        super::super::local_model_path().map(|path| {
             Model::new(Settings {
                 path,
                 threads: 2,
@@ -370,7 +367,7 @@ mod real {
     }
 
     #[test]
-    #[ignore = "needs core/models/qwen.gguf, 491 MB, not in the repository"]
+    #[ignore = "needs core/models/qwen-1.5b.gguf or qwen.gguf, not in the repository"]
     fn a_player_who_walks_toward_the_figure_wants_to_be_looked_at() {
         let _turn = super::super::TEST_TURN
             .lock()
@@ -398,7 +395,7 @@ mod real {
     }
 
     #[test]
-    #[ignore = "needs core/models/qwen.gguf, 491 MB, not in the repository"]
+    #[ignore = "needs core/models/qwen-1.5b.gguf or qwen.gguf, not in the repository"]
     fn a_second_model_in_one_process_loads_after_the_first_is_dropped() {
         let _turn = super::super::TEST_TURN
             .lock()
@@ -416,7 +413,7 @@ mod real {
     }
 
     #[test]
-    #[ignore = "needs core/models/qwen.gguf, 491 MB, not in the repository"]
+    #[ignore = "needs core/models/qwen-1.5b.gguf or qwen.gguf, not in the repository"]
     fn two_questions_on_one_situation_agree_with_each_asked_alone() {
         let _turn = super::super::TEST_TURN
             .lock()

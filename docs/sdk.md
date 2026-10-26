@@ -177,7 +177,9 @@ written 2026-11-09 from the lodger's needs and generalized as a second mod needs
   dye a sheep, move an entity (a player two blocks at most, to wake them a block from the bed),
   push an entity (a velocity: a boat drifts, a minecart rolls), turn a block a quarter turn
   (stairs, a banner), put an item in a frame or empty it, dress an entity that wears things (an
-  armour stand), wear down a tool in a container, show a figure in a player's own skin to that
+  armour stand), wear down a tool in a container, break a block as a player would so its item
+  drops (beds, torches, carpets, panes, flowers, signs and lanterns alone; the host refuses the
+  rest), show a figure in a player's own skin to that
   player alone (no entity exists on the server: a player-list entry with their profile and a
   player entity as packets to one client, standing or walking a path a point every half second,
   facing them, holding an item, gone after its seconds or when they come within its vanishing

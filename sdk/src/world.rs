@@ -373,6 +373,12 @@ pub enum Command {
         id: u64,
         pos: BlockPos,
     },
+    /// Break a block as a player would, dropping its item, so nothing is lost: only beds,
+    /// torches, carpets, panes, flowers and signs; the host refuses anything else.
+    BreakBlock {
+        id: u64,
+        pos: BlockPos,
+    },
     /// Put an item in an item frame, or empty it with an empty id.
     SetFrameItem {
         id: u64,
@@ -511,6 +517,7 @@ impl Command {
             | Command::MoveEntity { id, .. }
             | Command::PushEntity { id, .. }
             | Command::RotateBlock { id, .. }
+            | Command::BreakBlock { id, .. }
             | Command::SetFrameItem { id, .. }
             | Command::EquipEntity { id, .. }
             | Command::DamageItem { id, .. }

@@ -125,7 +125,7 @@ above as `runs/client/config/lodger.json`.
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all --check
-cargo test -p lodger-core -- --ignored model::     # needs the real model at core/models/qwen.gguf
+cargo test -p lodger-core -- --ignored model::     # needs the real model at core/models/qwen-1.5b.gguf (or qwen.gguf
 ```
 
 - **The SDK's tests:** the ABI helpers (`abi.rs`), the harness refusing another ABI version, and

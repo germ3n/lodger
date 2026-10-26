@@ -165,7 +165,12 @@ impl Mod for Lodger {
         // The world's seed joins the start's, so two worlds on one start draw differently.
         self.model.reseed(self.model.seed() ^ info.seed as u64);
 
-        Stay::open(info, saved)
+        let mut stay = Stay::open(info, saved)?;
+        // In multiplayer with `multiplayer.pick` at `model`, the brain picks the target; with
+        // `first`, the first player seen is it (the memory's default).
+        stay.memory.defer_target = self.config.multiplayer.pick == "model";
+
+        Ok(stay)
     }
 
     fn observe(&self, world: &mut Stay, observations: &Observations) {
@@ -323,16 +328,15 @@ mod tests {
 
     /// Needs the real model: `cargo test -p lodger-core -- --ignored`.
     #[test]
-    #[ignore = "needs core/models/qwen.gguf, 491 MB, not in the repository"]
+    #[ignore = "needs core/models/qwen-1.5b.gguf or qwen.gguf, not in the repository"]
     fn with_the_real_model_warm_loads_it_and_status_says_so() {
         let _turn = turn();
-        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/models/qwen.gguf");
-        if !std::path::Path::new(path).is_file() {
+        let Some(path) = model::local_model_path() else {
             return;
-        }
+        };
 
         let h = harness();
-        let config = format!(r#"{{ "model": {{ "path": "{path}" }} }}"#);
+        let config = format!(r#"{{ "model": {{ "path": "{}" }} }}"#, path.display());
         let reply = h.init(&config);
         assert!(reply.get("error").is_none(), "{reply}");
         assert_eq!(h.status()["ready"], false);

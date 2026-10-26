@@ -96,6 +96,7 @@ public final class Executors {
 				case "move_entity" -> moveEntity(level, command, id, context);
 				case "push_entity" -> pushEntity(level, command, id);
 				case "rotate_block" -> rotateBlock(level, blockPos(command.getAsJsonArray("pos")), id);
+				case "break_block" -> breakBlock(level, blockPos(command.getAsJsonArray("pos")), id);
 				case "set_frame_item" -> setFrameItem(level, command, id);
 				case "equip_entity" -> equipEntity(level, command, id);
 				case "damage_item" -> damageItem(level, command, id);
@@ -406,6 +407,28 @@ public final class Executors {
 				path, held, command.has("name_shown") && command.get("name_shown").getAsBoolean(),
 				command.has("seconds") ? command.get("seconds").getAsFloat() : 0,
 				command.has("vanish_within") ? command.get("vanish_within").getAsFloat() : 0);
+
+		return report(id, true, "");
+	}
+
+	/** What a {@code break_block} may break: things that drop as themselves and that a player rebuilds in a moment. */
+	private static boolean breakable(BlockState state) {
+		String id = Senses.blockId(state);
+		return state.is(net.minecraft.tags.BlockTags.BEDS) || id.endsWith("torch") || id.endsWith("_carpet") || id.endsWith("glass_pane")
+				|| state.is(net.minecraft.tags.BlockTags.FLOWERS) || state.is(net.minecraft.tags.BlockTags.ALL_SIGNS) || id.endsWith("lantern");
+	}
+
+	private static JsonObject breakBlock(ServerLevel level, BlockPos pos, long id) {
+		BlockState state = level.getBlockState(pos);
+		if (state.isAir()) {
+			return report(id, false, "nothing there");
+		}
+		if (!breakable(state)) {
+			return report(id, false, Senses.blockId(state) + " is not something it breaks");
+		}
+
+		// As a player's hand would: the block's own drop, both halves of a bed.
+		level.destroyBlock(pos, true);
 
 		return report(id, true, "");
 	}

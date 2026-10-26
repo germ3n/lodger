@@ -200,6 +200,24 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
         ),
     ));
     gauges.push(Gauge::new(
+        "want",
+        if memory.want.is_empty() { 0.0 } else { 1.0 },
+        1.0,
+        format!(
+            "{}{}",
+            if memory.want.is_empty() {
+                "not chosen yet".to_string()
+            } else {
+                memory.want.clone()
+            },
+            if memory.last.mood.is_empty() {
+                String::new()
+            } else {
+                format!("; they seem {}", memory.last.mood)
+            }
+        ),
+    ));
+    gauges.push(Gauge::new(
         "memory",
         (memory.containers.len() + memory.fixtures.len() + memory.decor.len()) as f32,
         64.0,

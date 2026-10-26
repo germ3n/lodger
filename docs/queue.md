@@ -26,11 +26,13 @@ end of the day the project started; check what has moved since with `git log`.
   [Upgrading](upgrading.md) lists.
 - **Checks before reporting:** `cargo fmt --all --check`, `cargo clippy --workspace --all-targets
   -- -D warnings`, `cargo test --workspace`, and `cargo test -p lodger-core -- --ignored` when
-  `core/models/qwen.gguf` is there; `./gradlew build` in `host/` (JUnit, including the
+  `core/models/qwen-1.5b.gguf` (or `qwen.gguf`) is there; `./gradlew build` in `host/` (JUnit, including the
   real-native tests when `target/release/liblodger_core.dylib` is built); `./gradlew jar` in
   `mod/`. The plain-server smoke test below for anything that touches the host's edge.
 - **Machine notes:** Gradle needs `JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home`.
-  The downloaded model is at `core/models/qwen.gguf` (gitignored). The scratch Fabric server used
+  The downloaded models are at `core/models/qwen-1.5b.gguf` (the default size, 1.1 GB) and
+  `core/models/qwen.gguf` (the 0.5B), both gitignored; the tests prefer the 1.5B. The dev
+  client has both under `runs/client/config/lodger/models/` and runs the default. The scratch Fabric server used
   for smoke tests was in the session's scratchpad and is gone with it; make one again with the
   Fabric server launcher for 26.3, Fabric API in `mods/`, `eula.txt` (ask), the lodger jar, and
   `config/craftkit/accepted.json` holding `lodger:model` (ask).
@@ -46,10 +48,12 @@ end of the day the project started; check what has moved since with `git log`.
 - **The mind:** 134 events coded; the memory has the surroundings (the host's pass once a day,
   with structures by tag), vehicles, the village and ore scans, routes, sessions, reactions,
   landmarks, milestones and the kill tally; `events.sounds/glitches/chat/figure` gate their
-  groups; the model decides (the two planning questions, asked on the worker and answered on a
-  later tick, the rule brain as the fallback) and writes the few words (a masked greedy
-  decode, checked, the bank as the fallback); the figure in the target's skin as client-only
-  packets with eight rows. 96 unit tests, 10 scripted stays, 50 JUnit; clippy clean.
+  groups; the model decides (the four planning questions, the reactions on triggers, the want
+  and the target, asked on the worker and answered on a later tick, the rule brain as the
+  fallback) and writes the few words (a masked greedy decode, checked, the bank as the
+  fallback, or the bank ask in `bank` mode); the figure in the target's skin as client-only
+  packets with eight rows; the house changed (a block for another of its family, the bed
+  breaking). 101 unit tests, 10 scripted stays, 50 JUnit, a calibration run; clippy clean.
 - **The host:** 30 executors, 14 glitch renderers, the figures, the poses, the timers.
 
 **Not yet seen by a player:** everything above. The dev client was relaunched with the latest
@@ -61,11 +65,10 @@ jar at the end of the session and left at the title screen.
    tab and watch the world and the Log tab; read `config/lodger/decisions.log` for the model's
    answers (`brain=model`) and its written lines (`wrote (...)`); the figure (`far_figure`,
    `in_doorway`). Fix what shows. Then NeoForge (`:neoforge:runClient`) the same.
-2. **Calibration round one** on what the real model decides and writes over a few dev stays:
-   read the log end to end, move the prompts, the menu words and the thresholds where the
-   choices read wrong, and keep the before-and-after under `docs/calibration/`.
-3. **Phase 4, the rest:** the `react` asks on triggers, `When?` and `Where?`, the want and the
-   target asks, the `What does the sign say?` ask for `bank`.
+2. **A dev stay with the real model:** the 1.5B is in the dev client's config folder and the
+   default now; read `decisions.log` for `brain=model`, the reactions and the written lines.
+3. **Calibration round two** by [round one](calibration/round-1.md)'s list: the first
+   planning question, the second question's confidence, the moods' bar, the written lines.
 4. **Phase 5, the rest:** the figure's poses (lying in the bed), its swing and crouch, stepping
    behind cover instead of vanishing; the rows that need it (the ending's beats).
 5. **The config page** of the debug screen: every key, written back to the file.

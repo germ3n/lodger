@@ -67,6 +67,15 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::TargetSaid => !memory.last_said.is_empty(),
         Need::Night => night,
         Need::Dawn => now.day_time < 1_500 || now.day_time > 23_000,
+        Need::Wall => !memory.walls.is_empty(),
+        Need::PlacedLight => memory
+            .walls
+            .iter()
+            .any(|(_, id)| id.ends_with("torch") || id.ends_with("lantern")),
+        Need::Pane => memory
+            .walls
+            .iter()
+            .any(|(_, id)| id.ends_with("glass_pane")),
         Need::Day => !night,
         Need::Raining => last.raining,
         Need::NotRaining => !last.raining,

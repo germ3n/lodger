@@ -102,11 +102,14 @@ sleeps (the lodger's working hours). **As built (2026-11-09):** the first two qu
 asked, `Should it do something soon?` and `What should it do?`, as one ask with the key `plan`
 (`brain/mod.rs`, `decide`); the answer comes back on a later tick (`take_replies`): `nothing
 yet`, a first-question confidence under `brain.event_threshold`, or `nothing` on the menu is
-`wait`, otherwise the chosen words name the event, which is then planned as the rule brain's
-picks are, with the time the brain's own (within four planning intervals, when the event's
-moment comes). A question unanswered for a minute, a refused ask (the queue full, the model
-shut down) or `brain.force_rules` hands the menu to the rule brain. The story on the debug
-screen says which brain decided. `When?` and `Where?` are still to come.
+`wait`, otherwise the chosen words name the event. `When?` is asked too (`away`, `sleep`,
+`home`, `now`): the plan waits for that moment on top of the event's needs (`when_holds`), and
+`now` runs it at once; `Where?` is asked when the memory can name two or more places (by the
+door, on the bed, by the chest they use, at the end of their path, at its place), and the
+answer is the place for the events that leave or make something at a spot (`act::flexible`).
+A question unanswered for a minute, a refused ask (the queue full, the model shut down) or
+`brain.force_rules` hands the menu to the rule brain, whose weights lean toward the want
+(`rules_brain::choose_wanting`). The story on the debug screen says which brain decided.
 
 | Question | Choices | Becomes |
 | --- | --- | --- |
@@ -118,7 +121,14 @@ screen says which brain decided. `When?` and `Where?` are still to come.
 ### Reacting (`react`)
 
 On a trigger: the target opened a container, saw a figure, came home to a landed event, lit or
-walled a spot, went to sleep.
+walled a spot, went to sleep. **As built (2026-11-09):** the memory raises a trigger (`slept`,
+`opened_chest`, `died`, `lit`, `walled`, `watched`, `left`); the brain asks `How does the
+player feel?` and `Should it answer this?` with the key `react`, ten seconds apart at most, when
+no other question is out and nothing is planned. The feeling is kept as the memory's mood and
+read in the situation text (`The player seems uneasy.`); an answer above
+`brain.react_threshold` becomes a small event from the menu now, the far figure, or the held
+thing given back (`place_taken` or `return_taken`), told in the story as `model/react`. `How
+does it take this?` waits for the temper.
 
 | Question | Choices | Becomes |
 | --- | --- | --- |
@@ -128,7 +138,10 @@ walled a spot, went to sleep.
 
 ### The want (`want`)
 
-Once, at move-in.
+Once, at move-in. **As built (2026-11-09):** asked the moment the target is known, with the
+memory's lines as the situation; the answer is the memory's `want`, read in every situation
+text (`It wants to be looked at.`) and leaning the rule brain's weights. Without a model the
+rules pick one by the stay's seed.
 
 | Question | Choices |
 | --- | --- |
@@ -136,7 +149,11 @@ Once, at move-in.
 
 ### The target (`witness`)
 
-Once, at move-in, in multiplayer with `multiplayer.pick` at `model`. The situation text is the
+Once, at move-in, in multiplayer with `multiplayer.pick` at `model`. **As built (2026-11-09):**
+the memory defers the target when `pick` is `model` and more than one player is there at the
+first sight; a player alone is the target at once, so nothing they do is missed. With two or
+more seen the brain asks and the answer's ordinal names the one; with no model, or after five
+minutes with no answer, the first seen is it. The situation text is the
 `Others` lines, one per player, and the question is `Which player does it move in with?` with
 their numbers as choices, `the first`, `the second`, up to eight. Names never appear.
 
@@ -178,8 +195,9 @@ examples and those examples correlating to specific actions") made `generate` th
   blood, dead) are the mod's subject and are not blocked (owner, 2026-11-09). Editing the list
   is editing that constant; its test pins that a blocked word drops the line and a horror word
   does not.
-- **`bank`.** A line is picked from the kind's bank by the stay's seed (the `What does the
-  sign say?` ask over eight drawn lines is still to come). The lodger never writes,
+- **`bank`.** The model is asked `What does the sign say?` (with the kind's purpose in front)
+  over eight of the kind's lines and its choice is the line; without a model the stay's seed
+  picks one. The lodger never writes,
   and still every sign is its choice among many, for this player, now. The fallback of
   `generate`, and the setting for a server that wants nothing the author did not write.
 

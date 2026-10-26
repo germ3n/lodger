@@ -23,11 +23,13 @@ order to understand a choice, so it is plain data, plainly described.
 | **Reactions** | What the target did in the day after each bold event landed: `lit` (a light placed within 16 blocks), `walled` (three or more blocks placed within 4), `watched` (stood a minute facing the spot within 8 blocks), `left` (left the game within a minute), `ignored` (a day passed). One row per landmark. Chasing a figure is phase 5's. | 128 rows, oldest dropped. |
 | **Held** | The item the lodger holds, if any, where it took it from and when. | One. |
 | **Done** | Every event landed or refused: id, place, time, `done` or why not. The brain uses it to not repeat. | 256 rows, oldest dropped. |
-| **Want** | Which want, and a score from 0 to 1 for how far the target has met it. | One. |
+| **Want** | Which want (`a place of its own`, `to be looked at`, `one thing of theirs`), the model's pick at move-in or the seed's; a line of the situation text. The score for how far it is met is the todo's. | One. |
+| **Mood** | The lodger's reading of how the target feels, from the model's `How does the player feel?` after a trigger: `calm`, `curious`, `uneasy`, `afraid`, `angry`. A line of the situation text. | One. |
+| **Walls** | The building blocks the target placed with their ids (planks, logs, stone, bricks, glass, torches, lanterns, wool and the rest with a family), for the events that swap one for another of its family. | 512, oldest dropped. |
 | **Temper** | 0 to 1, how provoked it is, moved by the target's acts as [Provocation and temper](entity.md#provocation-and-temper) lists them, drifting back toward the preset's resting value a tenth a day; and the last three things that moved it, for the situation text. | One, plus 3 causes. |
 | **Chains** | The open chains (see [Chains](entity.md#chains)): which chain, which step landed last and when, the place or item it carries, and the steps still ahead. | 8 open chains. |
 | **Figures seen** | Each time the target looked at a figure: for how long, from how far, whether they moved toward it. | 32 rows. |
-| **Others** | For multiplayer: per player, hours played, whether they have a home, whether they play alone. Used only to pick a target. | 16 players. |
+| **Others** | Every player seen, by index, name and uuid, for the target ask in multiplayer. Hours and homes per player are the todo's. | 16 players. |
 | **Surroundings** | What is around the home, from the host's pass once an in-game day within 96 blocks, and again when the home moves: water and how wide, snow, sand, trees, crops, a village, a mineshaft, each with where it is. `Need::Around(kind)` reads it; `describe` names up to three. Pens, caves and the target's tunnels are the todo's. | One, rewritten daily; the host caps a pass at 160 blocks. |
 | **Vehicles** | Boats and minecarts within 64 blocks of the home, from the entity pass, for the events that move them. | 8. |
 | **Scanned** | What the village scan found (its doors, its bell), by plain kind and position, so `village_doors` knows what to open. | 64. |

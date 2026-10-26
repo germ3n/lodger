@@ -218,6 +218,24 @@ The senses report every mob the target hits and kills, and the memory keeps a ta
 | `grave` | 3 | Two cobblestone stacked at the lodger's place with a sign beside them naming the kind they kill most: `cow`, or `rest`. | Three or more kills of one kind, a home. |
 | `kill_line` | 3 | A chat line in the target's own name about it, at night: `i saw what you did to the cows`, `the cows remember`, `14 cows`. | Three or more kills of one kind, night. |
 
+### The house, changed
+
+Owner's idea, 2026-11-09: "trying to sleep breaks the bed", "replace certain blocks of the
+house". The one place the lodger changes what the target built, and only into the same thing
+slightly wrong, never gone: a block becomes another member of its family (`memory::family`:
+every wood for planks, logs, fences, slabs, stairs and trapdoors; every colour for wool,
+concrete, terracotta, carpets and stained glass; the stones; the bricks; the torches; the
+lanterns; panes and iron bars), picked by the stay's seed, and the bed comes back as its item.
+Nothing with contents, no door, nothing of the ground. (The owner, 2026-11-09: "shouldn't be
+hardcoded, why only spruce"; it was a table at first.)
+
+| Event | Stages | What happens | Needs |
+| --- | --- | --- | --- |
+| `wall_swap` | 3 | One block of the house is another of its family: planks of another wood, cobblestone for stone bricks or mossy cobblestone, wool of another colour, glass tinted. Only blocks the target placed and the memory knows the kind of. | A placed building block with a family, the target away or asleep. |
+| `torch_blue` | 3 | One of their torches or lanterns is another kind: a soul torch burning blue, a redstone torch's dim red, a soul lantern. | A placed torch or lantern. |
+| `window_bars` | 4 | A window pane is iron bars. | A placed glass pane. |
+| `bed_breaks` | 4 | As they lie down, the bed breaks under them and drops as its item where it stood. Once a stay. | The target in bed at night. |
+
 ### Lights and fire
 
 | Event | Stages | What happens | Needs |

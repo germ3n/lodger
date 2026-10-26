@@ -95,6 +95,12 @@ pub enum Need {
     Scanned(&'static str),
     /// The first hour of the day.
     Dawn,
+    /// A placed building block with a cousin (planks, cobblestone, bricks, glass, a torch).
+    Wall,
+    /// A placed torch or lantern.
+    PlacedLight,
+    /// A placed glass pane.
+    Pane,
     /// The used container holds an item whose id ends with any of these.
     InChestAny(&'static [&'static str]),
     /// The target is walking toward the used chest, within six blocks.
@@ -150,6 +156,9 @@ impl Need {
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
             Need::Dawn => "not dawn".to_string(),
+            Need::Wall => "no building block it knows the kind of".to_string(),
+            Need::PlacedLight => "no torch or lantern placed".to_string(),
+            Need::Pane => "no glass pane placed".to_string(),
             Need::InChestAny(_) => "none of those in the chest".to_string(),
             Need::TargetApproachingChest => "the target is not walking up to the chest".to_string(),
             Need::ColouredStacks => "fewer than six dyed stacks in the chest".to_string(),
@@ -347,6 +356,11 @@ pub enum Action {
     WokeElsewhere,
     /// The figure in the target's skin, somewhere, for some seconds, gone when approached.
     Figure(FigureWhere, f32, f32),
+    /// One building block of the house becomes its cousin: planks another wood, cobblestone
+    /// mossy, a pane iron bars, a torch blue. Matched by id suffix: all, or lights, or panes.
+    WallSwap(&'static str),
+    /// The bed breaks under them as they lie down; its item drops where it stood.
+    BedBreaks,
 }
 
 /// Where a figure stands.
@@ -1372,6 +1386,52 @@ pub const CATALOGUE: &[Event] = &[
         Action::OreMarked,
         true,
     ),
+    // The house, changed (owner, 2026-11-09: "replace certain blocks of house", "trying to
+    // sleep breaks the bed")
+    row(
+        "wall_swap",
+        3,
+        5,
+        &[Wall, TargetAwayOrAsleep],
+        2.0,
+        6,
+        Full,
+        Action::WallSwap(""),
+        false,
+    ),
+    row(
+        "torch_blue",
+        3,
+        5,
+        &[PlacedLight, TargetAwayOrAsleep],
+        2.0,
+        4,
+        Full,
+        Action::WallSwap("torch"),
+        false,
+    ),
+    row(
+        "window_bars",
+        4,
+        5,
+        &[Pane, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::WallSwap("glass_pane"),
+        false,
+    ),
+    row(
+        "bed_breaks",
+        4,
+        5,
+        &[TargetInBed, Night],
+        4.0,
+        1,
+        Full,
+        Action::BedBreaks,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -2044,6 +2104,10 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "wall_swap" => "change one block of the house for its cousin",
+            "torch_blue" => "make one of their torches burn blue",
+            "window_bars" => "turn a window pane to iron bars",
+            "bed_breaks" => "break the bed under them as they lie down",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

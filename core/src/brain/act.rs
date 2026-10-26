@@ -132,6 +132,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::IcePath
         | Action::BedOccupied => None,
         Action::OreMarked => memory.scanned("_ore").next(),
+        Action::WallSwap(suffix) => {
+            let candidates: Vec<BlockPos> = memory
+                .walls
+                .iter()
+                .filter(|(_, id)| suffix.is_empty() || id.ends_with(suffix))
+                .map(|(p, _)| *p)
+                .collect();
+            pick_ref(&candidates, rng)
+        }
+        Action::BedBreaks => home.and_then(|h| h.bed),
         Action::Figure(FigureWhere::Roof, _, _) => {
             home.map(|h| [h.center[0], h.floor_y + 5, h.center[2]])
         }
@@ -1870,6 +1880,36 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        Action::WallSwap(_) => pos
+            .and_then(|p| memory.walls.iter().find(|(q, _)| *q == p))
+            .and_then(|(p, id)| {
+                // Another member of the block's family, by the seed: any wood, any colour.
+                let others = crate::memory::cousins(id);
+                (!others.is_empty()).then(|| (*p, id.clone(), others[seed % others.len()].clone()))
+            })
+            .map(|(p, id, cousin)| vec![(set(ids, p, &cousin, &[id.as_str()]), 0)])
+            .unwrap_or_default(),
+        Action::BedBreaks => pos
+            .map(|bed| {
+                vec![
+                    (
+                        Command::CancelSleep {
+                            id: ids(),
+                            player: target,
+                            seconds: 0.0,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::BreakBlock {
+                            id: ids(),
+                            pos: bed,
+                        },
+                        3,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         Action::Figure(where_, seconds, vanish) => pos
             .map(|p| {
                 let on_ground = p[1] <= -1_000;
@@ -1929,6 +1969,52 @@ pub fn commands(
             )]
         }
     }
+}
+
+/// Whether the event's place may be the model's `Where?` answer rather than the memory's
+/// default: the things the lodger leaves or makes at a spot.
+pub fn flexible(event: &Event) -> bool {
+    matches!(
+        event.action,
+        Action::PlaceTaken
+            | Action::Sign
+            | Action::Cairn
+            | Action::Hole
+            | Action::Grave
+            | Action::Sapling
+    )
+}
+
+/// The places the memory can name for `Where?`, each with its words, in a fixed order so the
+/// model's answer maps back.
+pub fn named_places(memory: &Memory) -> Vec<(&'static str, BlockPos)> {
+    let mut places = Vec::new();
+    if let Some(home) = &memory.home {
+        if let Some(door) = home.doors.first() {
+            let step = step_toward(home.center, *door);
+            places.push((
+                "by the door",
+                [door[0] + step[0], door[1], door[2] + step[1]],
+            ));
+        }
+        if let Some(bed) = home.bed {
+            places.push(("on the bed", bed));
+        }
+    }
+    if let Some(chest) = memory.used_container() {
+        places.push((
+            "by the chest they use",
+            [chest.pos[0] + 1, chest.pos[1], chest.pos[2]],
+        ));
+    }
+    if let Some(end) = memory.route_end() {
+        places.push(("at the end of their path", end));
+    }
+    if let Some(place) = memory.place {
+        places.push(("at its place", place));
+    }
+
+    places
 }
 
 /// The kind of line an event writes, if it writes one: what the model is asked to write.
@@ -2208,6 +2294,15 @@ mod tests {
             .contents
             .push(stack("minecraft:coal", 3, 1));
         memory.scanned.push(("iron_ore".to_string(), [20, 40, 20]));
+        memory
+            .walls
+            .push(([5, 65, 5], "minecraft:oak_planks".to_string()));
+        memory
+            .walls
+            .push(([5, 66, 5], "minecraft:glass_pane".to_string()));
+        memory
+            .walls
+            .push(([1, 65, 1], "minecraft:torch".to_string()));
         memory.routes.push(crate::memory::Route {
             points: (0..20).map(|i| [3 + i * 2, 64, 0]).collect(),
             walked: 3,
@@ -2682,6 +2777,85 @@ mod tests {
                 other => panic!("{other:?}"),
             }
         }
+    }
+
+    #[test]
+    fn a_wall_block_becomes_its_cousin_and_the_bed_breaks_into_its_item() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(8);
+        let now = Now::default();
+
+        let swap = find("window_bars").unwrap();
+        let p = place(swap, &memory, &mut rng);
+        assert_eq!(p, Some([5, 66, 5]));
+        let made = commands(swap, p, &memory, &mut ids(), &now, None);
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { block, replace, .. } if block == "minecraft:iron_bars" && replace == &["minecraft:glass_pane".to_string()]),
+            "{:?}",
+            made[0].0
+        );
+
+        let torch = find("torch_blue").unwrap();
+        let made = commands(
+            torch,
+            place(torch, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { block, replace, .. } if block != "minecraft:torch" && block.ends_with("torch") && replace == &["minecraft:torch".to_string()]),
+            "{:?}",
+            made[0].0
+        );
+
+        let wall = find("wall_swap").unwrap();
+        let made = commands(wall, Some([5, 65, 5]), &memory, &mut ids(), &now, None);
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { block, .. } if block.ends_with("_planks") && block != "minecraft:oak_planks"),
+            "{:?}",
+            made[0].0
+        );
+        assert_eq!(
+            crate::memory::family("minecraft:cherry_planks").len(),
+            crate::memory::WOODS.len()
+        );
+        assert_eq!(
+            crate::memory::cousins("minecraft:lime_wool").len(),
+            crate::memory::COLOURS.len() - 1
+        );
+        assert!(
+            crate::memory::cousins("minecraft:oak_door").is_empty(),
+            "doors are two blocks and stay"
+        );
+
+        let bed = find("bed_breaks").unwrap();
+        let made = commands(
+            bed,
+            place(bed, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(matches!(made[0].0, Command::CancelSleep { .. }));
+        assert!(
+            matches!(
+                made[1].0,
+                Command::BreakBlock {
+                    pos: [0, 64, 0],
+                    ..
+                }
+            ),
+            "{:?}",
+            made[1].0
+        );
+        assert_eq!(
+            crate::memory::cousins("minecraft:chest"),
+            Vec::<String>::new(),
+            "a chest has no family"
+        );
     }
 
     #[test]

@@ -203,6 +203,9 @@ pub struct Snapshot {
     pub underground: bool,
     /// The day they last ate, for the sound that answers it.
     pub ate_day: f32,
+    /// The lodger's reading of how they feel, from the model's `How does the player feel?`:
+    /// `calm`, `curious`, `uneasy`, `afraid`, `angry`, or empty before the first reading.
+    pub mood: String,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -261,6 +264,20 @@ pub struct Memory {
     /// The clock as of the last tick, for the sessions.
     pub last_real_millis: u64,
     pub last_day_time: u32,
+    /// What it wants from this player, chosen once at move-in (`docs/entity.md`, What it
+    /// wants): `a place of its own`, `to be looked at`, `one thing of theirs`; empty until then.
+    pub want: String,
+    /// Every player seen, by index and name, for the target ask in multiplayer.
+    pub others: Vec<(u32, String, String)>,
+    /// Whether the target is left for the brain to pick (multiplayer, `multiplayer.pick` at
+    /// `model`) rather than being the first player seen.
+    pub defer_target: bool,
+    /// Things that just happened that the brain may react to, drained each tick:
+    /// `slept`, `opened_chest`, `died`, `lit`, `walled`, `watched`, `left`.
+    pub triggers: Vec<String>,
+    /// The building blocks the target placed, with their ids, for the events that change one
+    /// into its cousin (owner, 2026-11-09: "replace certain blocks of the house").
+    pub walls: Vec<(BlockPos, String)>,
 }
 
 /// Caps, with the reason beside each.
@@ -285,6 +302,7 @@ const MOST_ROUTE_POINTS: usize = 128; // two blocks apart: a route of 256 blocks
 const LEAST_ROUTE_POINTS: usize = 10;
 const MOST_SESSIONS: usize = 30;
 const MOST_REACTIONS: usize = 128; // oldest dropped first
+const MOST_WALLS: usize = 512; // oldest dropped first
 
 /// The plain kind of a placed block an event can use, or none.
 fn fixture_kind(id: &str) -> Option<&'static str> {
@@ -364,6 +382,122 @@ fn in_view_from(player: &Player, pos: BlockPos, blocks: f64) -> bool {
     (dx * facing_x + dz * facing_z) / length > 0.5
 }
 
+/// The woods and the colours the game has, from which the families below are made, so every
+/// kind of planks and every colour of wool is covered without a table per block.
+pub const WOODS: &[&str] = &[
+    "oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "mangrove", "cherry", "bamboo",
+    "pale_oak", "crimson", "warped",
+];
+pub const COLOURS: &[&str] = &[
+    "white",
+    "orange",
+    "magenta",
+    "light_blue",
+    "yellow",
+    "lime",
+    "pink",
+    "gray",
+    "light_gray",
+    "cyan",
+    "purple",
+    "blue",
+    "brown",
+    "green",
+    "red",
+    "black",
+];
+/// Families that are their own lists.
+const STONES: &[&str] = &[
+    "stone",
+    "cobblestone",
+    "mossy_cobblestone",
+    "stone_bricks",
+    "cracked_stone_bricks",
+    "mossy_stone_bricks",
+    "chiseled_stone_bricks",
+    "andesite",
+    "polished_andesite",
+    "diorite",
+    "granite",
+    "tuff",
+    "deepslate_bricks",
+    "cracked_deepslate_bricks",
+    "deepslate_tiles",
+];
+const BRICKS: &[&str] = &["bricks", "mud_bricks", "nether_bricks", "red_nether_bricks"];
+const TORCHES: &[&str] = &["torch", "soul_torch", "redstone_torch"];
+const WALL_TORCHES: &[&str] = &["wall_torch", "soul_wall_torch", "redstone_wall_torch"];
+const LANTERNS: &[&str] = &["lantern", "soul_lantern"];
+const PANES: &[&str] = &["glass_pane", "iron_bars"];
+const GLASSES: &[&str] = &["glass", "tinted_glass"];
+
+/// The family a building block belongs to, as the ids of every member, or none for a block
+/// the lodger never changes (a chest, a bed, a door, the ground). The families are the woods
+/// by suffix (`_planks`, `_log`, `_stripped_log`, `_fence`, `_slab`, `_stairs`), the colours by
+/// kind (`_wool`, `_concrete`, `_terracotta`, `_carpet`, `_stained_glass`,
+/// `_stained_glass_pane`), the stones, the bricks, the torches and the lanterns.
+pub fn family(id: &str) -> Vec<String> {
+    let name = id.rsplit(':').next().unwrap_or(id);
+    let with = |members: &[&str]| -> Vec<String> {
+        members.iter().map(|m| format!("minecraft:{m}")).collect()
+    };
+    for list in [
+        STONES,
+        BRICKS,
+        TORCHES,
+        WALL_TORCHES,
+        LANTERNS,
+        PANES,
+        GLASSES,
+    ] {
+        if list.contains(&name) {
+            return with(list);
+        }
+    }
+    for suffix in ["_planks", "_log", "_fence", "_slab", "_stairs", "_trapdoor"] {
+        if let Some(wood) = name.strip_suffix(suffix) {
+            let wood = wood.strip_prefix("stripped_").unwrap_or(wood);
+            if WOODS.contains(&wood) {
+                let stripped = name.starts_with("stripped_");
+                return WOODS
+                    .iter()
+                    .map(|w| {
+                        format!(
+                            "minecraft:{}{w}{suffix}",
+                            if stripped { "stripped_" } else { "" }
+                        )
+                    })
+                    .collect();
+            }
+        }
+    }
+    for kind in [
+        "_wool",
+        "_concrete",
+        "_terracotta",
+        "_carpet",
+        "_stained_glass_pane",
+        "_stained_glass",
+    ] {
+        if let Some(colour) = name.strip_suffix(kind) {
+            if COLOURS.contains(&colour) {
+                return COLOURS
+                    .iter()
+                    .map(|c| format!("minecraft:{c}{kind}"))
+                    .collect();
+            }
+        }
+    }
+
+    Vec::new()
+}
+
+/// The other members of a block's family: what it may be swapped for. Empty for a block the
+/// lodger never changes.
+pub fn cousins(id: &str) -> Vec<String> {
+    family(id).into_iter().filter(|m| m != id).collect()
+}
+
 /// Whether an item id is a dyed kind: `red_wool`, `lime_concrete`, `blue_stained_glass`.
 pub fn is_coloured(id: &str) -> bool {
     const COLOURS: &[&str] = &[
@@ -411,11 +545,17 @@ impl Memory {
     /// another (multiplayer, a later phase).
     pub fn observe(&mut self, observations: &Observations, day: f32) {
         self.today = day;
-        if self.target.is_none() {
+        for player in &observations.players {
+            if !self.others.iter().any(|(i, _, _)| *i == player.index) && self.others.len() < 16 {
+                self.others
+                    .push((player.index, player.name.clone(), player.uuid.clone()));
+            }
+        }
+        // The first player seen is the target, unless the brain is to pick among several and
+        // several are here: a player alone is the target at once, so nothing they do is missed.
+        if self.target.is_none() && (!self.defer_target || observations.players.len() == 1) {
             if let Some(first) = observations.players.first() {
-                self.target = Some(first.index);
-                self.target_name = first.name.clone();
-                self.target_uuid = first.uuid.clone();
+                self.set_target(first.index, &first.name, &first.uuid);
             }
         }
 
@@ -528,10 +668,15 @@ impl Memory {
             match event.kind {
                 EventKind::OpenedContainer => {
                     if let Some(pos) = event.pos {
+                        let used = self.used_container().map(|c| c.pos) == Some(pos);
                         self.container_opened(pos, &event.detail, &event.contents, day);
+                        if used {
+                            self.trigger("opened_chest");
+                        }
                     }
                 }
                 EventKind::SleptBegan => {
+                    self.trigger("slept");
                     if !self.milestones.iter().any(|m| m.kind == "first_sleep") {
                         self.milestone("first_sleep", day, event.pos, "");
                     }
@@ -567,6 +712,7 @@ impl Memory {
                     {
                         if (day - reaction.day) * 24_000.0 < 1_200.0 {
                             reaction.kind = "left".to_string();
+                            self.triggers.push("left".to_string());
                         }
                     }
                 }
@@ -574,6 +720,10 @@ impl Memory {
                     if let Some(pos) = event.pos {
                         push_capped(&mut self.placed, pos, MOST_PLACED);
                         self.react_to_placing(pos, &event.detail);
+                        if !cousins(&event.detail).is_empty() {
+                            self.walls.retain(|(p, _)| *p != pos);
+                            push_capped(&mut self.walls, (pos, event.detail.clone()), MOST_WALLS);
+                        }
                         // A bed placed is as good a sign of home as a bed slept in, and comes
                         // hours sooner: a player cannot sleep before night.
                         if is_bed(&event.detail) {
@@ -613,6 +763,7 @@ impl Memory {
                 }
                 EventKind::Died => {
                     self.milestone("died", day, event.pos, "");
+                    self.trigger("died");
                 }
                 EventKind::ChangedDimension => {
                     self.milestone("crossed", day, event.pos, &event.detail);
@@ -672,6 +823,7 @@ impl Memory {
                         }
                         self.containers.retain(|c| c.pos != pos);
                         self.fixtures.retain(|f| f.pos != pos);
+                        self.walls.retain(|(p, _)| *p != pos);
                     }
                 }
                 _ => {}
@@ -731,6 +883,7 @@ impl Memory {
                         self.reactions.iter_mut().rev().find(|r| r.kind.is_empty())
                     {
                         reaction.kind = "watched".to_string();
+                        self.triggers.push("watched".to_string());
                     }
                     self.watching_ticks = 0;
                 }
@@ -931,8 +1084,23 @@ impl Memory {
         let Some(spot) = reaction.pos else { return };
         if is_light(block_id) && distance(spot, pos) <= 16.0 {
             reaction.kind = "lit".to_string();
+            self.triggers.push("lit".to_string());
         } else if !is_light(block_id) && distance(spot, pos) <= 4.0 && near >= 3 {
             reaction.kind = "walled".to_string();
+            self.triggers.push("walled".to_string());
+        }
+    }
+
+    /// Makes a player the target.
+    pub fn set_target(&mut self, index: u32, name: &str, uuid: &str) {
+        self.target = Some(index);
+        self.target_name = name.to_string();
+        self.target_uuid = uuid.to_string();
+    }
+
+    fn trigger(&mut self, kind: &str) {
+        if self.triggers.len() < 8 {
+            self.triggers.push(kind.to_string());
         }
     }
 
@@ -1384,6 +1552,14 @@ impl Memory {
                 parts.truncate(3);
                 lines.push(format!("Around the house: {}.", parts.join("; ")));
             }
+        }
+
+        if !self.want.is_empty() {
+            lines.push(format!("It wants {}.", self.want));
+        }
+
+        if !self.last.mood.is_empty() {
+            lines.push(format!("The player seems {}.", self.last.mood));
         }
 
         if let Some(tally) = self.most_killed() {

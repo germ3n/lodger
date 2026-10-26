@@ -326,6 +326,21 @@ impl Drop for Model {
     }
 }
 
+/// The model file a developer keeps under `core/models/` for the real-model tests: the 1.5B
+/// (`qwen-1.5b.gguf`, the default size) when it is there, else the small one (`qwen.gguf`).
+/// Neither is in the repository.
+#[cfg(test)]
+pub(crate) fn local_model_path() -> Option<PathBuf> {
+    ["qwen-1.5b.gguf", "qwen.gguf"]
+        .iter()
+        .map(|name| {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("models")
+                .join(name)
+        })
+        .find(|path| path.is_file())
+}
+
 /// One lock for every test that loads the real model or touches the exported static lodger:
 /// llama.cpp's backend is one per process, and the exported functions keep one mod, so such
 /// tests take turns.

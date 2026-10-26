@@ -369,13 +369,26 @@ because it can be built and tested without a game, and because the model layer i
   scorer: the answer names the event, `nothing yet` waits, a shut-down model and
   `force_rules` fall back. Was: the asks with their keys, the callbacks in the tick, the
   thresholds, the fall-back. Still to do: the `react` asks on triggers, `When?` and `Where?`.
-- [ ] **The want and the target asks,** once each at move-in.
-- [ ] **Calibration, round one.** Ten stays through stage two by different players (or the same
-  one playing differently: a tidy player, a careless one, one who chases), the decision log read
-  end to end, and the prompts, choices' wording and thresholds moved where the choices read
-  wrong. Read them for repetition above all: anything that happened three times in a stay, or
-  twice in a row, is a cooldown or a cap to move. Keep the before-and-after logs under
-  `docs/calibration/` with a paragraph on what moved and why.
+- [x] **The want and the target asks,** once each at move-in. Done 2026-11-09: `want` asked
+  the moment the target is known (the seed's pick without a model), kept in the memory, read
+  in the situation text and leaning the rule brain's weights; `witness` asked when
+  `multiplayer.pick` is `model` and two players are seen, the first seen after five minutes
+  alone or without a model. `When?` and `Where?` the same evening: the plan waits for the
+  model's moment (`when_holds`), the model's place stands for the events that leave or make
+  something at a spot. The `react` asks on the memory's triggers (slept, opened the chest, died,
+  lit, walled, watched, left): the mood kept, a small event now, the far figure or the thing
+  given back above `brain.react_threshold`. The `bank` mode's `What does the sign say?` ask.
+  Tests with the fake scorer for each. The house-changing events the owner asked for the same
+  night (`wall_swap`, `torch_blue`, `window_bars`, `bed_breaks`; `break_block` and
+  `memory::family`, every wood and colour as data, not a table).
+- [x] **Calibration, round one, first pass.** Done 2026-11-09: `core/tests/calibration.rs`
+  (ignored; three scripted days against the real 1.5B with every decision printed) and
+  [round one](calibration/round-1.md): seventeen decisions all by the model, thirteen landed,
+  the want and the moods read; what to move in round two (the first planning question barely
+  discriminates, low-confidence picks still happen, moods at low confidence are noise, no
+  written line was exercised). Was: ten stays through stage two by different players, the log
+  read end to end, the prompts and thresholds moved. Still to do: round two as the page says,
+  on the owner's dev stays with the real model.
 - [x] **`brain.text = generate`, the model half** (owner, 2026-11-09). Done 2026-11-09:
   `Scorer::generate` and `Model::generate_async` beside scoring (a writing job on the same
   worker, key `text`), `infer.rs`'s greedy decode under a mask of lower-case letters, digits

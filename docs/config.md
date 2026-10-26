@@ -59,7 +59,7 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 | --- | --- | --- |
 | `brain.plan_every` | `90` | Seconds of the target's play between planning asks, on top of the trigger asks. |
 | `brain.event_threshold` | `0.4` | The confidence of the model's `Should it do something soon?` answer below which the decision is `wait`. Higher is a more patient lodger. Live since 2026-11-09. |
-| `brain.react_threshold` | `0.55` | The same for reactions to what the target just did, which are cheaper to get wrong than plans, so the bar is higher. |
+| `brain.react_threshold` | `0.55` | The same for the model's `Should it answer this?` after a trigger (live since 2026-11-09): below it, no answer. Reactions are cheaper to get wrong than plans, so the bar is higher. |
 | `brain.queue` | `64` | The most questions waiting. A full queue refuses; the rule brain answers. |
 | `brain.force_rules` | `false` | Uses the rule brain even with a model loaded. For comparing the two from the log, whose `brain=` says which decided. |
 | `brain.temperature` | `0.7` | How the answer is picked from the model's scores. `0`: always the best choice, so the same situation gets the same answer every time, as the engine did. Above `0`: a seeded draw weighted by the scores, sharper near `0`, the model's own odds at `1`, flatter above. The seed is logged with every decision so a run can be replayed. See [Picking](brain.md#picking). |
@@ -92,7 +92,7 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 
 | Key | Default | What it changes |
 | --- | --- | --- |
-| `multiplayer.pick` | `"model"` | `"model"`, `"first"`, `"random"` or a player name. How the target is picked when several players are there. See [Multiplayer](entity.md#multiplayer). |
+| `multiplayer.pick` | `"model"` | Who the lodger moves in with when several players are on: `model` asks the brain once two are seen (`Which player does it move in with?`, their ordinals as the choices; live since 2026-11-09), `first` takes the first player seen. Alone for five minutes, the first seen is it either way. |
 | `multiplayer.retarget` | `true` | Whether the lodger may change target once, at a stage boundary, if the current one has not played for `multiplayer.absent_days` real days. |
 | `multiplayer.absent_days` | `7` | See above. |
 | `multiplayer.witness_traces` | `true` | Whether witnesses see traces at all. `false` makes the stay invisible to everyone but the target, which is a different and lonelier mod. |

@@ -7,10 +7,17 @@ use crate::model::Rng;
 
 /// Picks one of the menu, `wait` among them.
 pub fn choose<'a>(menu: &[&'a Event], stage: u8, rng: &mut Rng) -> &'a Event {
+    choose_wanting(menu, stage, "", rng)
+}
+
+/// [`choose`] with the want leaning the weights: `one thing of theirs` doubles the take and
+/// what follows it, `to be looked at` the figures, `a place of its own` the building and the
+/// path, as `docs/entity.md`'s What it wants has it.
+pub fn choose_wanting<'a>(menu: &[&'a Event], stage: u8, want: &str, rng: &mut Rng) -> &'a Event {
     let weights: Vec<f64> = menu
         .iter()
         .map(|event| {
-            if event.id == "wait" {
+            let base = if event.id == "wait" {
                 match stage {
                     1 => 3.0,
                     2 => 2.0,
@@ -23,6 +30,29 @@ pub fn choose<'a>(menu: &[&'a Event], stage: u8, rng: &mut Rng) -> &'a Event {
                     1 | 2 => 0.5,
                     _ => 1.5,
                 }
+            };
+            let leaning = match want {
+                "one thing of theirs" => matches!(
+                    event.id,
+                    "take" | "place_taken" | "return_taken" | "item_on_table"
+                ),
+                "to be looked at" => {
+                    event.id.contains("figure")
+                        || matches!(
+                            event.id,
+                            "behind_you" | "on_the_roof" | "across_water" | "in_doorway" | "stare"
+                        )
+                }
+                "a place of its own" => matches!(
+                    event.id,
+                    "sign" | "cairn" | "hole" | "light_path" | "path_worn" | "grave"
+                ),
+                _ => false,
+            };
+            if leaning {
+                base * 2.0
+            } else {
+                base
             }
         })
         .collect();
