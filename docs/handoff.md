@@ -104,16 +104,23 @@ qwen2.5-0.5b-q4_k_m.gguf`, and a fast dev config at `runs/client/config/lodger.j
 the Events tab fires anything. `config/lodger/decisions.log` has every decision. Rebuilding
 the host while the client runs breaks the client; quit it first.
 
-## Where it stands (2026-11-09, late)
+## Where it stands (2026-11-09, night)
 
-Phases 0 to 3 are done, phase 4 has the planning ask and the writing, phase 5 has the figure's
-first cut. 134 events are coded of the catalogue's two hundred; the ones left need the figure's
-poses and movement, building and digging as a player, pens and caves in the surroundings pass,
-or client renderers not yet written (a painting upside down, a compass, footprints, the sky).
-Nothing from the second half of the day has been seen in a client yet: the debug screen's tabs,
-the HUD, the new events, the model deciding, the written lines, the figure. That is the first
-thing to do, with the owner at the keyboard: open the screen, fire every event, read the log,
-fix what the world shows.
+Phases 0 to 4 are done; phase 5 has the figure's first cut. The brain asks the model the four
+planning questions (what, how soon, when, where), the want once, the target in multiplayer,
+and the reactions on triggers, and has the model write the words on signs and in chat; the
+rule brain stands in whenever the model is not there. A first calibration run against the
+real 1.5B is in [calibration/round-1.md](calibration/round-1.md) with what to move next. 138
+events are coded of the catalogue's two hundred; the ones left need the figure's poses and
+movement, building and digging as a player, pens and caves in the surroundings pass, or client
+renderers not yet written (a painting upside down, a compass, footprints, the sky). The 1.5B
+model is downloaded under `core/models/` (gitignored; the tests prefer it) and in the dev
+client's config folder.
+
+Nothing from the second half of the day has been seen in a client yet: the debug screen's
+tabs, the HUD, the new events, the model deciding, the written lines, the figure, the house
+changed. That is the first thing to do, with the owner at the keyboard: open the screen, fire
+every event, read the log, fix what the world shows.
 
 ## Open questions for the owner
 
@@ -124,3 +131,5 @@ fix what the world shows.
   the question is only whether that is wanted) and how it should pose in the bed.
 - What "use this to piggyback and implement various events, as a guide" referred to (asked
   2026-11-09 with nothing attached).
+- Calibration round two's choices (see round one): reword or drop `Should it do something
+  soon?`, gate on the second question's confidence, bar the moods.
