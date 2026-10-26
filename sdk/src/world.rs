@@ -27,7 +27,9 @@ pub struct WorldInfo {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Now {
-    /// The server's tick count since the world opened.
+    /// The server's tick count since the game started: it starts again at 0 when the game
+    /// does, so a mod that saves a tick to wait for keeps the last one it saw and moves its own
+    /// back when this comes back lower (the lodger's `Stay::last_tick`).
     pub tick: u64,
     /// The world's time of day, 0 to 24000.
     pub day_time: u32,

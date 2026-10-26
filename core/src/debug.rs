@@ -230,18 +230,13 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             memory.last.creatures_near.len()
         ),
     ));
-    if let Some(tally) = memory.tally.first() {
+    if !memory.tally.is_empty() {
+        let kills: u32 = memory.tally.iter().map(|t| t.kills).sum();
         gauges.push(Gauge::new(
             "kills",
-            tally.kills as f32,
-            (tally.kills.max(10)) as f32,
-            format!(
-                "{} {}s killed, {} hit; {} kinds",
-                tally.kills,
-                tally.kind,
-                tally.hits,
-                memory.tally.len()
-            ),
+            kills as f32,
+            (kills.max(10)) as f32,
+            kills_words(&memory.tally),
         ));
     }
 
@@ -457,9 +452,51 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
     }
 }
 
+/// Every kind killed, most first, with the hits: `11 sheep, 3 pigs, 1 creeper; 18 hits`. Six
+/// kinds at most, then how many more. The dev client's line named the first kind alone, so a
+/// pig killed seemed not counted (2026-11-09).
+fn kills_words(tally: &[crate::memory::Tally]) -> String {
+    let mut killed: Vec<&crate::memory::Tally> = tally.iter().filter(|t| t.kills > 0).collect();
+    killed.sort_by_key(|t| std::cmp::Reverse(t.kills));
+    let mut words: Vec<String> = killed
+        .iter()
+        .take(6)
+        .map(|t| {
+            format!(
+                "{} {}",
+                t.kills,
+                crate::brain::text::plural(&t.kind, t.kills)
+            )
+        })
+        .collect();
+    if killed.len() > 6 {
+        words.push(format!("{} more kinds", killed.len() - 6));
+    }
+    if words.is_empty() {
+        words.push("none killed".to_string());
+    }
+    let hits: u32 = tally.iter().map(|t| t.hits).sum();
+
+    format!("{}; {hits} hits", words.join(", "))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_kills_line_names_every_kind_most_first() {
+        let t = |kind: &str, kills, hits| crate::memory::Tally {
+            kind: kind.to_string(),
+            kills,
+            hits,
+        };
+        assert_eq!(
+            kills_words(&[t("sheep", 11, 9), t("creeper", 1, 4), t("pig", 3, 5)]),
+            "11 sheep, 3 pigs, 1 creeper; 18 hits"
+        );
+        assert_eq!(kills_words(&[t("zombie", 0, 2)]), "none killed; 2 hits");
+    }
     use crate::memory::Home;
     use craftkit::world::WorldInfo;
 

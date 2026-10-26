@@ -97,6 +97,13 @@ pub struct Brain {
     /// Lines the model wrote, by event, used when the plan runs.
     #[serde(skip)]
     pub written: Vec<(String, String)>,
+    /// An answer to what the target typed, waiting for its moment. It needs no plan slot, so a
+    /// waiting plan never holds a reply back.
+    #[serde(default)]
+    pub reply: Option<ChatReply>,
+    /// The model's writing job for the reply, if one is out.
+    #[serde(skip)]
+    pub reply_writing: Option<u64>,
     /// The channel the model answers on. Made on first use; not saved, not compared, not cloned
     /// (a cloned brain starts a channel of its own).
     #[serde(skip)]
@@ -129,6 +136,24 @@ impl std::fmt::Debug for Channel {
         })
     }
 }
+
+/// An answer to the target's chat line (`answers_you`): sent at `due_tick` with the model's
+/// line, or the bank's if none came, and dropped at `until_tick` or if they left.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ChatReply {
+    pub due_tick: u64,
+    pub until_tick: u64,
+    /// The model's line, once written and checked.
+    pub written: Option<String>,
+}
+
+/// How likely a line about the lodger is answered (`answers_you`), and any other line; at most
+/// [`REPLIES_A_DAY`] a day, and the row's cooldown (a quarter day, five minutes of play) apart.
+/// The owner's call (2026-11-09): "stage 2 and up, often if about it".
+pub const REPLY_CHANCE_ABOUT: f64 = 0.6;
+pub const REPLY_CHANCE_OTHER: f64 = 0.15;
+pub const REPLIES_A_DAY: usize = 3;
 
 /// A planning question out to the model.
 #[derive(Clone, Debug, PartialEq)]
@@ -358,6 +383,14 @@ impl Brain {
             }
         }
 
+        // What they typed: perhaps an answer, in a few seconds, whatever else is waiting.
+        if let Some((heard, about)) = memory.heard.take() {
+            self.consider_reply(&heard, about, now, day, memory, arc, config, log, model);
+        }
+        if let Some(command) = self.reply_due(now, day, memory, log) {
+            commands.push(command);
+        }
+
         // A reaction, on a trigger, ten seconds apart at most, when nothing else is asked.
         let may_react = self.asking.is_none()
             && self.plan.is_none()
@@ -537,6 +570,129 @@ impl Brain {
         }
 
         commands
+    }
+
+    /// Whether to answer what the target just typed, and if so when: the row's rules (stage,
+    /// cooldown, `events.chat`, `events.disabled`), [`REPLIES_A_DAY`], one reply waiting at a
+    /// time, and a chance by whether the line was about it. The model writes the answer with
+    /// their words in its prompt; the bank stands in.
+    #[allow(clippy::too_many_arguments)]
+    fn consider_reply(
+        &mut self,
+        heard: &str,
+        about: bool,
+        now: &Now,
+        day: f32,
+        memory: &Memory,
+        arc: &Arc,
+        config: &Config,
+        log: &mut log::Log,
+        model: Option<&Model>,
+    ) {
+        let Some(event) = events::find("answers_you") else {
+            return;
+        };
+        let today = memory
+            .done
+            .iter()
+            .filter(|d| d.event == event.id && d.ok && d.day.floor() == day.floor())
+            .count();
+        if self.reply.is_some()
+            || today >= REPLIES_A_DAY
+            || !offer::switched_on(event, config)
+            || rules::check(event, None, memory, arc.stage, day, config).is_err()
+        {
+            return;
+        }
+        let chance = if about {
+            REPLY_CHANCE_ABOUT
+        } else {
+            REPLY_CHANCE_OTHER
+        };
+        if self.rng.next_f64() >= chance {
+            return;
+        }
+
+        // Five seconds to a minute after they typed, as someone typing back.
+        let due_tick = now.tick + 5 * TPS + self.rng.next_u64() % (55 * TPS);
+        self.reply = Some(ChatReply {
+            due_tick,
+            until_tick: due_tick + 60 * TPS,
+            written: None,
+        });
+        log.note(&format!(
+            "will answer what they typed in {}s",
+            (due_tick - now.tick) / TPS
+        ));
+        if let Some(model) = model
+            .filter(|m| m.loaded() && !config.brain.force_rules && config.brain.text == "generate")
+        {
+            let mut lines = memory.describe(day);
+            lines.push(format!("They just typed: {heard}"));
+            let kind = Kind::Reply;
+            let examples = kind.examples();
+            let prompt = situation::writing_prompt(&lines, kind.purpose(), examples);
+            let sender = self.replies().0.clone();
+            if let Ok(id) =
+                model.generate_async(&prompt, kind.leash(), Some("reply".to_string()), sender)
+            {
+                self.reply_writing = Some(id);
+            }
+        }
+    }
+
+    /// The reply, when its moment comes: the model's line or the bank's, in their name, to
+    /// them alone. Dropped if they left or its minute passed.
+    fn reply_due(
+        &mut self,
+        now: &Now,
+        day: f32,
+        memory: &mut Memory,
+        log: &mut log::Log,
+    ) -> Option<Command> {
+        let reply = self.reply.as_ref()?;
+        if now.tick > reply.until_tick || !memory.last.online {
+            self.reply = None;
+            self.reply_writing = None;
+            return None;
+        }
+        if now.tick < reply.due_tick {
+            return None;
+        }
+        let reply = self.reply.take()?;
+        self.reply_writing = None;
+        let event = events::find("answers_you")?;
+        let mut ids = || self.id();
+        let made = act::commands(event, None, memory, &mut ids, now, reply.written.as_deref());
+        memory.record(event.id, None, day, true, "");
+        log.acted(event.id, None, made.len());
+
+        made.into_iter().next().map(|(command, _)| command)
+    }
+
+    /// Every tick the brain waits for, moved `shift` ticks earlier: the host's clock started
+    /// again lower (`Stay`'s `last_tick`). A tick of 0, "never", stays 0; one that would pass
+    /// 0 is 1, "at once".
+    pub fn rebase(&mut self, shift: u64) {
+        let back = |t: &mut u64| {
+            if *t != 0 {
+                *t = t.saturating_sub(shift).max(1);
+            }
+        };
+        if let Some(plan) = &mut self.plan {
+            back(&mut plan.from_tick);
+            back(&mut plan.until_tick);
+        }
+        for later in &mut self.later {
+            back(&mut later.at_tick);
+        }
+        back(&mut self.next_plan_tick);
+        back(&mut self.next_survey_tick);
+        back(&mut self.last_react_tick);
+        back(&mut self.waiting_for_target_since);
+        if let Some(ask) = &mut self.asking {
+            back(&mut ask.asked_tick);
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -754,6 +910,17 @@ impl Brain {
                         }
                     }
                     (_, Ok(_)) => {}
+                }
+            } else if self.reply_writing == Some(reply.id) {
+                self.reply_writing = None;
+                let written = reply.text.unwrap_or_default();
+                let kept = match &reply.result {
+                    Ok(_) => text::check(Kind::Reply, &written),
+                    Err(_) => None,
+                };
+                log.wrote("Reply", &written, kept.as_deref());
+                if let Some(answer) = &mut self.reply {
+                    answer.written = kept;
                 }
             } else if self
                 .writing
@@ -2092,6 +2259,145 @@ mod tests {
                 memory.done.last().map(|d| d.reason.as_str()),
                 Some("too near what they built")
             );
+        }
+    }
+
+    /// Ticks a brain a second at a time with `heard` typed on the first tick, until it sends a
+    /// chat line or `seconds` pass; the line sent, if any.
+    #[allow(clippy::too_many_arguments)]
+    fn type_and_wait(
+        brain: &mut Brain,
+        memory: &mut Memory,
+        arc: &mut Arc,
+        config: &Config,
+        model: Option<&Model>,
+        now: &mut Now,
+        heard: &str,
+        about: bool,
+        seconds: u64,
+    ) -> Option<String> {
+        let mut log = log::Log::new(None, 16, false);
+        memory.heard = Some((heard.to_string(), about));
+        for _ in 0..seconds {
+            for command in brain.tick(now, 0.0, memory, arc, config, &mut log, model) {
+                if let Command::GameMessage { text, message, .. } = command {
+                    if message == "says" {
+                        return Some(text);
+                    }
+                }
+            }
+            now.tick += TPS;
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        None
+    }
+
+    fn talking(stage: u8) -> (Config, Memory, Arc) {
+        let mut config = Config::default();
+        config.stages.start_after_days = 0;
+        config.events.cooldown_scale = 0.0;
+        config.brain.plan_every = 100_000; // no planning in the way
+        let mut memory = home_memory();
+        memory.last.online = true;
+        memory.want = "a place of its own".to_string();
+        let mut arc = Arc {
+            stage,
+            ..Arc::default()
+        };
+        arc.tick(0.0, &memory, &config);
+        (config, memory, arc)
+    }
+
+    #[test]
+    fn a_line_about_it_is_answered_within_a_minute_in_the_model_s_words() {
+        let _turn = crate::model::TEST_TURN
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let (config, mut memory, mut arc) = talking(2);
+        let model = model_with(Fake::new("nothing yet", 0, Ok("You know who.")));
+        let mut brain = Brain::new(11);
+        let mut now = Now {
+            tick: 20,
+            ..Now::default()
+        };
+        // A chance, not a certainty: they keep asking until it answers.
+        let mut said = None;
+        for _ in 0..12 {
+            said = type_and_wait(
+                &mut brain,
+                &mut memory,
+                &mut arc,
+                &config,
+                Some(&model),
+                &mut now,
+                "who is in my house",
+                true,
+                70,
+            );
+            if said.is_some() {
+                break;
+            }
+        }
+
+        assert_eq!(said.as_deref(), Some("you know who"));
+        model.shutdown();
+    }
+
+    #[test]
+    fn nothing_is_answered_in_stage_one_or_with_chat_off() {
+        for (stage, chat) in [(1, true), (2, false)] {
+            let (mut config, mut memory, mut arc) = talking(stage);
+            config.events.chat = chat;
+            let mut brain = Brain::new(5);
+            let mut now = Now {
+                tick: 20,
+                ..Now::default()
+            };
+            for _ in 0..10 {
+                let said = type_and_wait(
+                    &mut brain,
+                    &mut memory,
+                    &mut arc,
+                    &config,
+                    None,
+                    &mut now,
+                    "hello who is there",
+                    true,
+                    70,
+                );
+                assert_eq!(said, None, "stage {stage}, chat {chat}");
+            }
+        }
+    }
+
+    #[test]
+    fn at_most_three_answers_a_day_from_the_bank_without_a_model() {
+        let (config, mut memory, mut arc) = talking(3);
+        let mut brain = Brain::new(9);
+        let mut now = Now {
+            tick: 20,
+            ..Now::default()
+        };
+        let mut answers = Vec::new();
+        for _ in 0..30 {
+            if let Some(line) = type_and_wait(
+                &mut brain,
+                &mut memory,
+                &mut arc,
+                &config,
+                None,
+                &mut now,
+                "is someone in my house",
+                true,
+                70,
+            ) {
+                answers.push(line);
+            }
+        }
+
+        assert_eq!(answers.len(), REPLIES_A_DAY, "{answers:?}");
+        for line in &answers {
+            assert!(Kind::Reply.examples().contains(&line.as_str()), "{line}");
         }
     }
 

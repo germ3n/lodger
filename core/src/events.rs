@@ -62,6 +62,8 @@ pub enum Need {
     TargetInBed,
     /// The target typed something in chat this stay.
     TargetSaid,
+    /// The target just typed: met only by the chat trigger, never on the planning menu.
+    Heard,
     /// Night.
     Night,
     /// Day.
@@ -141,6 +143,7 @@ impl Need {
             Need::TargetWalking => "the target is not walking".to_string(),
             Need::TargetInBed => "the target is not in bed".to_string(),
             Need::TargetSaid => "the target has not typed".to_string(),
+            Need::Heard => "answered only as they type".to_string(),
             Need::Night => "not night".to_string(),
             Need::Day => "not day".to_string(),
             Need::Raining => "not raining".to_string(),
@@ -300,6 +303,8 @@ pub enum Action {
     Whisper,
     /// The target's last line, said again in their name.
     RepeatsYou,
+    /// An answer to what the target just typed, in their name, to them alone.
+    Answers,
     /// A boat or minecart moved to the far side of the water, or its middle.
     MoveVehicle,
     /// A boat or minecart given a push, so it moves on its own in view.
@@ -1062,6 +1067,17 @@ pub const CATALOGUE: &[Event] = &[
         Full,
         Action::Says,
         false,
+    ),
+    row(
+        "answers_you",
+        2,
+        5,
+        &[Heard, TargetOnline],
+        0.25,
+        60,
+        Half,
+        Action::Answers,
+        true,
     ),
     row(
         "says_first",
@@ -2080,6 +2096,7 @@ impl Event {
             "says_first" => "say something in their name",
             "whisper_from_you" => "whisper to them as them",
             "repeats_you" => "repeat what they said",
+            "answers_you" => "answer what they typed",
             "stairs_turned" => "turn a stair block another way",
             "banner_turned" => "turn the banner",
             "frame_emptied" => "take the thing out of the frame and leave it on the bed",

@@ -109,7 +109,9 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   name, never a line a witness sees. Its words come from the mod's phrase bank by the model's
   choice, or, with `brain.text: generate`, from the model under a letters-only grammar, a length
   cap and a blocklist (see [Text](brain.md#text)).
-- **It reads your chat.** What you type is a sense, so it can answer what you say about it. On a
+- **It reads your chat, and sometimes answers.** What you type is a sense: from stage two a
+  line about it is often answered, in your own name to you alone, a few seconds later, at most
+  three times a day; your words, cleaned to letters, reach the model's prompt for that answer. On a
   server, say so in the server's rules; it is the server's own chat and the memory keeps at most
   eight lines.
 - **Nothing changes within 64 blocks of the target while the target faces it.** Every block an

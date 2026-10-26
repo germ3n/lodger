@@ -23,11 +23,13 @@ pub enum Kind {
     AnimalName,
     /// A sign on a grave for what they kill most; `{kind}` is filled in.
     GraveSign,
+    /// An answer to what the target just typed, in their own name, to them alone.
+    Reply,
 }
 
 impl Kind {
     /// Every kind, for the tests that go through them all.
-    pub const ALL: [Kind; 7] = [
+    pub const ALL: [Kind; 8] = [
         Kind::SignWord,
         Kind::ChatLine,
         Kind::KillLine,
@@ -35,6 +37,7 @@ impl Kind {
         Kind::Whisper,
         Kind::AnimalName,
         Kind::GraveSign,
+        Kind::Reply,
     ];
 
     /// Whether a line of this kind may carry digits: only the ones that count what the player
@@ -91,6 +94,18 @@ impl Kind {
                 "again",
             ],
             Kind::GraveSign => &["{kind}", "rest", "the {kind}s", "{kind}. rest."],
+            Kind::Reply => &[
+                "i heard you",
+                "inside",
+                "you know who",
+                "always",
+                "not yet",
+                "behind the door",
+                "it was me",
+                "keep asking",
+                "here",
+                "dont",
+            ],
         }
     }
 
@@ -100,7 +115,7 @@ impl Kind {
             Kind::SignWord | Kind::Whisper => 2,
             Kind::AnimalName => 3,
             Kind::KillSign | Kind::GraveSign => 3,
-            Kind::ChatLine | Kind::KillLine => 8,
+            Kind::ChatLine | Kind::KillLine | Kind::Reply => 8,
         }
     }
 }
@@ -125,6 +140,7 @@ impl Kind {
             Kind::Whisper => "The whisper the player gets from themselves says:",
             Kind::AnimalName => "The name it gives one of the player's animals:",
             Kind::GraveSign => "The sign on the small grave it raised says:",
+            Kind::Reply => "What it types back in the player's own name, answering them:",
         }
     }
 }
@@ -150,6 +166,28 @@ pub fn check(kind: Kind, written: &str) -> Option<String> {
     if words
         .iter()
         .any(|w| BLOCKED.iter().any(|b| w.contains(b)) || w.len() > 14)
+    {
+        return None;
+    }
+
+    Some(words.join(" "))
+}
+
+/// What the target typed, as the writing prompt may quote it: lower case, letters and single
+/// spaces, the first eight words. None when nothing is left or a word is blocked, and then the
+/// line is not answered at all. Their own words reach the model only this way (owner,
+/// 2026-11-09: a reply "may echo a word").
+pub fn heard(typed: &str) -> Option<String> {
+    let cleaned: String = typed
+        .to_lowercase()
+        .chars()
+        .map(|c| if c.is_ascii_alphabetic() { c } else { ' ' })
+        .collect();
+    let words: Vec<&str> = cleaned.split_whitespace().take(8).collect();
+    if words.is_empty()
+        || words
+            .iter()
+            .any(|w| BLOCKED.iter().any(|b| w.contains(b)) || w.len() > 14)
     {
         return None;
     }
@@ -249,6 +287,20 @@ mod tests {
             None
         );
         assert!(!Kind::Whisper.purpose().is_empty());
+    }
+
+    #[test]
+    fn what_they_typed_is_cleaned_to_words_and_a_blocked_line_is_not_heard() {
+        assert_eq!(
+            heard("Who's in my HOUSE?!").as_deref(),
+            Some("who s in my house")
+        );
+        assert_eq!(
+            heard("one two three four five six seven eight nine ten").as_deref(),
+            Some("one two three four five six seven eight")
+        );
+        assert_eq!(heard("123 ?!"), None);
+        assert_eq!(heard("fuck off"), None);
     }
 
     #[test]

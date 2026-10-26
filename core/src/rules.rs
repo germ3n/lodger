@@ -52,8 +52,11 @@ pub fn check(
         return Err(Refused::Disabled);
     }
 
+    // An answer is the target's to start, paced by its own cap and gap: two replies in a
+    // conversation are not the lodger repeating itself.
+    let answers = matches!(event.action, crate::events::Action::Answers);
     if let Some(last) = memory.recent(1).next() {
-        if last.event == event.id && last.ok {
+        if last.event == event.id && last.ok && !answers {
             return Err(Refused::SameAsLast);
         }
     }
@@ -109,6 +112,7 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::SaysKills
             | crate::events::Action::Whisper
             | crate::events::Action::RepeatsYou
+            | crate::events::Action::Answers
             | crate::events::Action::MoveCreature(_, crate::events::Where::OutsideDoor)
             | crate::events::Action::MiningSounds
             | crate::events::Action::PushVehicle(_)

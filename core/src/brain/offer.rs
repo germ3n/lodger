@@ -65,6 +65,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::TargetWalking => last.online && last.walking,
         Need::TargetInBed => last.online && last.sleeping,
         Need::TargetSaid => !memory.last_said.is_empty(),
+        // `answers_you` starts from the chat trigger (`Brain::consider_reply`), never the menu.
+        Need::Heard => false,
         Need::Night => night,
         Need::Dawn => now.day_time < 1_500 || now.day_time > 23_000,
         Need::Wall => !memory.walls.is_empty(),
@@ -128,7 +130,8 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::Says
         | Action::SaysKills
         | Action::Whisper
-        | Action::RepeatsYou => config.events.chat,
+        | Action::RepeatsYou
+        | Action::Answers => config.events.chat,
         _ => true,
     }
 }

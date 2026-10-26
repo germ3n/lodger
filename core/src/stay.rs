@@ -35,6 +35,10 @@ pub struct Stay {
     pub brain: Brain,
     /// The in-game day the stay began, so its days count from its own start.
     pub first_day: Option<u64>,
+    /// The host's tick at the last tick. A host's count may start again at 0 when the game
+    /// does (Minecraft's server tick count does), so a lower one moves every tick the brain
+    /// waits for back by the difference ([`Brain::rebase`]).
+    pub last_tick: u64,
     /// The clock as of the last tick, for the debug screen's questions between ticks. Not
     /// saved: a reopened stay reads the clock again on its first tick.
     #[serde(skip)]
@@ -177,6 +181,23 @@ impl Stay {
         self.tick_with(now, config, log, None)
     }
 
+    /// Moves the brain's waiting ticks back when the host's clock came back lower than it was:
+    /// the game restarted and its tick count with it. Reopened in the dev client, a plan due in
+    /// a minute said 1956 seconds (2026-11-09). A save from before `last_tick` takes the
+    /// moment from the brain's next planning time.
+    fn rebase_if_the_clock_started_again(&mut self, tick: u64, config: &Config) {
+        let interval = config.brain.plan_every as u64 * crate::brain::TPS;
+        let last = if self.last_tick == 0 && self.brain.next_plan_tick > tick + 2 * interval {
+            self.brain.next_plan_tick - interval
+        } else {
+            self.last_tick
+        };
+        if tick < last {
+            self.brain.rebase(last - tick);
+        }
+        self.last_tick = tick;
+    }
+
     /// A tick with the model to ask, when there is one loaded; the brain falls back to its
     /// rules without it.
     pub fn tick_with(
@@ -187,6 +208,7 @@ impl Stay {
         model: Option<&crate::model::Model>,
     ) -> Vec<Command> {
         self.ticks += 1;
+        self.rebase_if_the_clock_started_again(now.tick, config);
         self.last_now = now.clone();
         if self.first_day.is_none() {
             self.first_day = Some(now.day);
@@ -273,6 +295,65 @@ mod tests {
 
     fn log() -> Log {
         Log::new(None, 16, true)
+    }
+
+    fn at(tick: u64) -> Now {
+        Now {
+            tick,
+            ..Now::default()
+        }
+    }
+
+    fn with_a_plan_due_at(from_tick: u64) -> crate::brain::Plan {
+        crate::brain::Plan {
+            event: "kill_line".to_string(),
+            from_tick,
+            until_tick: from_tick + 24_000,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn a_plan_due_in_a_minute_is_still_due_in_a_minute_after_the_game_restarts() {
+        // The dev client, 2026-11-09: reopened, `kill_line` said 1956 seconds.
+        let config = Config {
+            enabled: false, // the clock alone: no brain at work
+            ..Config::default()
+        };
+        let mut stay = Stay::new(&info());
+        stay.tick(&at(39_000), &config, &mut log());
+        stay.brain.plan = Some(with_a_plan_due_at(39_500));
+        stay.brain.next_plan_tick = 39_300;
+
+        let mut back = Stay::open(&info(), &stay.save()).unwrap();
+        back.tick(&at(100), &config, &mut log());
+        let plan = back.brain.plan.as_ref().unwrap();
+        assert_eq!((plan.from_tick, plan.until_tick), (600, 24_600));
+        assert_eq!(back.brain.next_plan_tick, 400);
+        assert_eq!(back.last_tick, 100);
+
+        // A clock that only goes on moves nothing.
+        back.tick(&at(101), &config, &mut log());
+        assert_eq!(back.brain.plan.as_ref().unwrap().from_tick, 600);
+    }
+
+    #[test]
+    fn a_save_from_before_the_last_tick_was_kept_is_rebased_from_its_next_planning() {
+        let mut config = Config {
+            enabled: false,
+            ..Config::default()
+        };
+        config.brain.plan_every = 15;
+        let mut stay = Stay::new(&info());
+        stay.brain.plan = Some(with_a_plan_due_at(39_120));
+        stay.brain.next_plan_tick = 39_000;
+        stay.last_tick = 0; // as an older save reads
+
+        stay.tick(&at(50), &config, &mut log());
+        let plan = stay.brain.plan.as_ref().unwrap();
+        // The last moment was a planning interval (300 ticks) before the next planning.
+        assert_eq!(plan.from_tick, 39_120 - (38_700 - 50));
+        assert!(plan.from_tick < 1_000, "{}", plan.from_tick);
     }
 
     #[test]

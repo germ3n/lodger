@@ -309,6 +309,7 @@ speaks nor shows in the list, and still reads.
 | `tab_entry_stays` | 4 | The entry stays all session. | Any. |
 | `joined` | 3 | `<your name> joined the game`, in the target's chat, while they are already in. Nobody joined. | Any. |
 | `left` | 4 | `<your name> left the game`, in the target's chat, while they are still in. Then nothing for an hour. | Any. |
+| `answers_you` | 2 | What the target types is sometimes answered, 5 to 60 seconds later, in their own name, to them alone: often a line about it (the house, a door, `who`, a question, its want's words), rarely anything else (60 and 15 in a hundred), at most three a day and five minutes of play apart. The model writes it with their words in its prompt, cleaned to letters (it may echo one: `house?`), from the reply bank's examples (`i heard you`, `inside`, `not yet`); the bank stands in. Started by the chat line, never from the menu; the one event that may follow itself. Owner, 2026-11-09. | The target typed, `events.chat`. |
 | `says_back` | 3 | When the target types something about the lodger (the senses' chat line matches the want's words, `house`, `door`, `chest`, a question), a chat line in the target's own name, to the target alone, from the bank: `i know`, `it was me`, `look behind the door`. Once a day at most. | The target typed. |
 | `says_first` | 4 | A chat line in the target's name, unprompted, at night: one word from the want's list, or a bank line. | Night. |
 | `whisper_from_you` | 4 | A whisper to the target from the target: `<you> whispers to you: here`. | Any. |

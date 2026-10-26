@@ -252,6 +252,10 @@ pub struct Memory {
     pub decor: Vec<Decor>,
     /// The last thing the target said in chat, whatever it was about.
     pub last_said: String,
+    /// What the target just typed, cleaned (`text::heard`), and whether it was about the
+    /// lodger: taken by the brain on its next tick to answer or not. Not saved.
+    #[serde(skip)]
+    pub heard: Option<(String, bool)>,
     /// What they hit and killed, by kind, most killed first.
     pub tally: Vec<Tally>,
     /// The events the target would have noticed (the catalogue's bold rows), kept for the
@@ -904,10 +908,27 @@ impl Memory {
                 continue;
             }
             self.last_said = line.text.clone();
-            if about_the_lodger(&line.text) {
+            let about = about_the_lodger(&line.text) || self.about_its_want(&line.text);
+            if about {
                 push_capped(&mut self.chat, line.text.clone(), MOST_CHAT);
             }
+            if let Some(words) = crate::brain::text::heard(&line.text) {
+                self.heard = Some((words, about));
+            }
         }
+    }
+
+    /// Whether a line names what it wants: `place`, `look`, `mine`, by the want's own words.
+    fn about_its_want(&self, text: &str) -> bool {
+        let lower = text.to_lowercase();
+        let words: &[&str] = match self.want.as_str() {
+            "a place of its own" => &["place", "room", "space", "build"],
+            "to be looked at" => &["look", "see", "watch", "saw"],
+            "one thing of theirs" => &["mine", "take", "took", "stole", "missing"],
+            _ => &[],
+        };
+
+        words.iter().any(|w| lower.contains(w))
     }
 
     fn observe_player(&mut self, player: &Player) {

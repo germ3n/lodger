@@ -200,7 +200,13 @@ examples and those examples correlating to specific actions") made `generate` th
   writing is asked for the moment the event is planned, so the line is there when the plan
   runs minutes later; with no line by then, the bank's stands. **The blocked words** are the
   `BLOCKED` list at the top of `core/src/brain/text.rs`: slurs, sexual words and self-harm, and
-  nothing else, since the line appears in the player's own name in chat. **The prompt ends on
+  nothing else, since the line appears in the player's own name in chat. **Answers to chat**
+  (`answers_you`, `Brain::consider_reply`, owner 2026-11-09): a line the target types may be
+  answered, decided on the tick it arrives (the row's rules, three a day, a 60 in 100 chance for
+  a line about the lodger and 15 otherwise), written by the model with `They just typed: <their
+  words>` added to the situation (`text::heard`: lower case, letters, eight words, through the
+  blocklist, so the model may echo a word), and sent 5 to 60 seconds later; it needs no plan
+  slot. **The prompt ends on
   `-` with no space after it** (`situation::writing_prompt`): Qwen's tokens carry a word's space
   at their front (` here`), and a prompt ending in a space left the model only the tokens with
   none, digits the likeliest; the dev client's first sign said `123456` (2026-11-09), and the
@@ -240,7 +246,10 @@ player's name.
    creatures moved), not just its own spot, and a plan in view **waits** (`waiting: "in view"`)
    until the target looks away, within its day, rather than being dropped: a path of torches
    has no spot of its own and went up in plain sight in the dev client (2026-11-09).
-5. **Plan.** One entry at most per lodger. A new plan replaces an unstarted one.
+5. **Plan.** One entry at most per lodger. A new plan replaces an unstarted one. Its moment is a
+   tick of the host's clock, which starts again at 0 when the game does; the stay moves every
+   tick the brain waits for back by the difference when that happens (`Stay::last_tick`,
+   `Brain::rebase`).
 
 ## Cadence and keys
 

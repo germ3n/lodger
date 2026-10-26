@@ -404,6 +404,18 @@ because it can be built and tested without a game, and because the model layer i
     table itself). A command that takes solid ground out within 8 blocks of anything placed
     refuses the whole event, Fire included, and `hole` looks for a clear spot 12 to 20 blocks
     out or is not offered. Was: the catalogue's promise, unchecked.
+  - **A plan survives the game restarting:** reopened, a plan due in a minute said 1956
+    seconds, since the host's tick count starts again at 0 and the brain's ticks were the old
+    session's. The stay keeps the last tick (`Stay::last_tick`) and moves every waiting tick
+    back when the clock comes back lower (`Brain::rebase`); a save from before it takes the
+    moment from the next planning time. Was: the brain stalled until the count caught up.
+  - **The kills line names every kind:** a pig killed seemed not counted, since `show` named
+    the most-killed kind alone (`11 sheeps killed, 18 hit; 9 kinds`). Was: the first kind.
+  - **It answers chat, sometimes** (owner: "stage 2 and up, often if about it", "may echo a
+    word"): `answers_you`, started by the target's line, not the menu; three a day, five
+    minutes apart, 60 or 15 in a hundred; the model writes it with their cleaned words in the
+    prompt, the new `Reply` bank behind it; exempt from "never twice in a row". Was:
+    `says_back` alone, stage three, chosen from the menu whenever, so rarely near a line.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

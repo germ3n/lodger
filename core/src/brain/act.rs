@@ -166,6 +166,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SaysKills
         | Action::Whisper
         | Action::RepeatsYou
+        | Action::Answers
         | Action::NameAnimal
         | Action::DyeSheep
         | Action::GolemTurned
@@ -2055,6 +2056,15 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        Action::Answers => vec![(
+            Command::GameMessage {
+                id: ids(),
+                player: target,
+                message: "says".to_string(),
+                text: words(Kind::Reply, "", 0),
+            },
+            0,
+        )],
         Action::RepeatsYou => {
             if memory.last_said.is_empty() {
                 return vec![];
@@ -2128,6 +2138,7 @@ pub fn text_kind(event: &Event) -> Option<Kind> {
         Action::Says => Some(Kind::ChatLine),
         Action::SaysKills => Some(Kind::KillLine),
         Action::Whisper => Some(Kind::Whisper),
+        Action::Answers => Some(Kind::Reply),
         _ => None,
     }
 }
