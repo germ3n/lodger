@@ -1893,7 +1893,7 @@ pub const CATALOGUE: &[Event] = &[
         1.0,
         4,
         Half,
-        Action::SoundFar("minecraft:entity.wolf.howl"),
+        Action::SoundFar("minecraft:entity.wolf_sad.whine"),
         true,
     ),
     row(
@@ -2208,7 +2208,7 @@ impl Event {
             "place_sound" => "a block placed behind them",
             "lever_click" => "a lever's click, in a house with none",
             "drip" => "dripping water indoors",
-            "wolf_far" => "a wolf howling far off",
+            "wolf_far" => "a wolf whining far off",
             "thunder_clear" => "thunder under a clear sky",
             "arrow_hit" => "an arrow hitting the wall behind them",
             "portal_sound" => "a portal's hum in the house",
@@ -2275,6 +2275,46 @@ mod tests {
         }
         assert_eq!(find("open_door").unwrap().stages_words(), "1 to 5");
         assert_eq!(Need::Fixture("fence_gate").words(), "no fence gate placed");
+    }
+
+    /// Every sound the mind names exists in the game: a renamed sound fails here, not in a
+    /// player's world (`entity.wolf.howl` was gone in 26.3, 2026-11-09). The list is the game's
+    /// own `sounds.json`, regenerated on a version bump (`docs/upgrading.md`).
+    #[test]
+    fn every_sound_the_mind_names_is_one_the_game_has() {
+        let known: std::collections::HashSet<&str> = include_str!("../tests/data/sounds-26.3.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#') && !l.is_empty())
+            .collect();
+        let sources = [include_str!("events.rs"), include_str!("brain/act.rs")];
+        let categories = [
+            "block.",
+            "entity.",
+            "ambient.",
+            "item.",
+            "music.",
+            "weather.",
+            "event.",
+            "ui.",
+            "enchant.",
+            "particle.",
+            "random.",
+        ];
+        let mut unknown = Vec::new();
+        for source in sources {
+            for (i, _) in source.match_indices("\"minecraft:") {
+                let rest = &source[i + 1..];
+                let id = &rest[..rest.find('"').unwrap_or(rest.len())];
+                let name = &id["minecraft:".len()..];
+                if categories.iter().any(|c| name.starts_with(c)) && !known.contains(id) {
+                    unknown.push(id.to_string());
+                }
+            }
+        }
+        unknown.sort();
+        unknown.dedup();
+
+        assert!(unknown.is_empty(), "sounds 26.3 does not have: {unknown:?}");
     }
 
     /// Every id here is a row in docs/entity.md's catalogue, so the two never drift apart.

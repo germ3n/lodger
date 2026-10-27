@@ -471,6 +471,13 @@ pub enum Command {
         player: u32,
         seconds: f32,
     },
+    /// Move a player, gently: to `to`, or the first spot up to two blocks above it with room
+    /// to stand, never more than 32 blocks from where they are. ABI 9.
+    MovePlayer {
+        id: u64,
+        player: u32,
+        to: Pos,
+    },
     /// Hold a mob where it stands, facing `player`, moving and attacking no one, for `seconds`
     /// (at most ten minutes); then it is as it was. A mob saved while held is let go when next
     /// seen, so none is ever left frozen in a world. ABI 8.
@@ -553,6 +560,7 @@ impl Command {
             | Command::CancelSleep { id, .. }
             | Command::LookAt { id, .. }
             | Command::Hold { id, .. }
+            | Command::MovePlayer { id, .. }
             | Command::Surroundings { id, .. }
             | Command::Figure { id, .. }
             | Command::RemoveFigure { id, .. } => *id,
@@ -617,6 +625,20 @@ mod tests {
         assert_eq!(command.id(), 9);
         let back: Command = serde_json::from_str(&text).unwrap();
         assert_eq!(back, command);
+    }
+
+    #[test]
+    fn moving_a_player_is_its_own_command() {
+        let text = serde_json::to_string(&Command::MovePlayer {
+            id: 5,
+            player: 0,
+            to: [1.5, 64.6, 0.5],
+        })
+        .unwrap();
+        assert_eq!(
+            text,
+            r#"{"kind":"move_player","id":5,"player":0,"to":[1.5,64.6,0.5]}"#
+        );
     }
 
     #[test]

@@ -120,3 +120,12 @@ moved.
 | Date | From | To | What moved |
 | --- | --- | --- | --- |
 | 2026-11-09 | the design, for 1.21.x | Minecraft 26.3, Java 25, Fabric Loader 0.20.1, Fabric API 0.165.2+26.3, NeoForge 26.3.0.101, NeoForm 26.3-1, Loom 1.19.4, ModDevGradle 2.0.148, Gradle 9.8.2 | First build. Found by reading 26.3's sources: `Commands.hasPermission`, `PayloadTypeRegistry.clientboundConfiguration`, `IModFile.getContents` (JarContents) in NeoForge, `GuiGraphicsExtractor`, `Blaze3D.openUri`, `getGameTime` for the clock, `SavedDataType` with a null extra, `ItemEntity.setUnlimitedLifetime`, `ClientboundSetActionBarTextPacket`, the four-argument `SignText`, `ServerLevelEvents`, `ServerEntityLevelChangeEvents`, NeoForge's `BreakBlockEvent` under `event/level/block/`, `KeyMapping.Category`, `InputConstants.Type.KEYBOARD`, `Minecraft.gui.screen()`. |
+
+## The sound list
+
+`core/tests/data/sounds-26.3.txt` is every sound event id of the game version, read from its
+own `sounds.json` (the assets index in Loom's cache, `~/.gradle/caches/fabric-loom/assets/`,
+`minecraft/sounds.json`). `every_sound_the_mind_names_is_one_the_game_has` checks every sound
+the mind names against it. On a version bump, write the new version's list beside it and point
+the test at it: a renamed sound then fails a test, not a player's world (26.3 dropped
+`entity.wolf.howl`).

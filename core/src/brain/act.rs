@@ -966,16 +966,18 @@ pub fn commands(
             }
             made
         }
+        // Held still while they look: a look alone fought the animals' own walking, and they
+        // jittered (the owner, 2026-11-09).
         Action::Stare => memory
             .creatures("")
             .take(8)
             .map(|creature| {
                 (
-                    Command::LookAt {
+                    Command::Hold {
                         id: ids(),
                         entity: creature.id,
-                        at: memory.last.pos,
-                        seconds: 20.0,
+                        player: target,
+                        seconds: 10.0 + (seed % 21) as f32,
                     },
                     0,
                 )
@@ -1944,9 +1946,9 @@ pub fn commands(
                         0,
                     ),
                     (
-                        Command::MoveEntity {
+                        Command::MovePlayer {
                             id: ids(),
-                            entity: u32::MAX - target,
+                            player: target,
                             to: [
                                 bed[0] as f64 + 1.5,
                                 bed[1] as f64 + 0.6,
@@ -2822,6 +2824,14 @@ mod tests {
             assert!(!made.is_empty(), "{} makes no command", event.id);
             for (command, _) in &made {
                 assert!(command.id() > 1, "{} gave a command no id", event.id);
+                // No made-up ids: `woke_elsewhere` sent the player as entity u32::MAX - 0,
+                // which no host knows (2026-11-09).
+                let text = serde_json::to_string(command).unwrap();
+                assert!(
+                    !text.contains("4294967") && !text.contains(&format!("{}", i64::MAX)),
+                    "{} sent a placeholder id: {text}",
+                    event.id
+                );
             }
         }
     }
@@ -2993,6 +3003,29 @@ mod tests {
             }
         }
         assert_eq!(place(hole, &memory, &mut Rng::new(3)), None);
+    }
+
+    #[test]
+    fn waking_elsewhere_moves_the_player_and_the_animals_stand_still_to_stare() {
+        let memory = rich_memory();
+        let now = Now::default();
+        let woke = find("woke_elsewhere").unwrap();
+        let bed = memory.home.as_ref().unwrap().bed;
+        let made = commands(woke, bed, &memory, &mut ids(), &now, None);
+        assert!(
+            made.iter().any(|(c, _)| matches!(c, Command::MovePlayer { player, .. } if *player == memory.target.unwrap_or(0))),
+            "{made:?}"
+        );
+
+        let stare = find("stare").unwrap();
+        let made = commands(stare, None, &memory, &mut ids(), &now, None);
+        assert!(!made.is_empty());
+        for (command, _) in &made {
+            assert!(
+                matches!(command, Command::Hold { seconds, .. } if (10.0..=30.0).contains(seconds)),
+                "{command:?}"
+            );
+        }
     }
 
     #[test]

@@ -117,6 +117,7 @@ public final class Executors {
 				case "cancel_sleep" -> cancelSleep(level, command, id, context);
 				case "look_at" -> lookAt(level, command, id, context);
 				case "hold" -> hold(level, command, id, context);
+				case "move_player" -> movePlayer(level, command, id, context);
 				default -> report(id, false, "the host does not carry out " + kind + " yet");
 			};
 		} catch (RuntimeException e) {
@@ -873,6 +874,30 @@ public final class Executors {
 		context.looks().add(mob, new Vec3(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble()), command.get("seconds").getAsFloat());
 
 		return report(id, true, "");
+	}
+
+	/** The farthest a mod may move a player in one go. */
+	static final double MOST_MOVE = 32;
+
+	private static JsonObject movePlayer(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		JsonArray to = command.getAsJsonArray("to");
+		Vec3 target = new Vec3(to.get(0).getAsDouble(), to.get(1).getAsDouble(), to.get(2).getAsDouble());
+		if (target.distanceTo(player.position()) > MOST_MOVE) {
+			return report(id, false, "farther than " + (int) MOST_MOVE + " blocks");
+		}
+		for (int up = 0; up <= 2; up++) {
+			Vec3 at = target.add(0, up, 0);
+			if (level.noCollision(player, player.getDimensions(player.getPose()).makeBoundingBox(at))) {
+				player.teleportTo(at.x, at.y, at.z);
+				return report(id, true, "");
+			}
+		}
+
+		return report(id, false, "no room to stand there");
 	}
 
 	private static JsonObject hold(ServerLevel level, JsonObject command, long id, Context context) {

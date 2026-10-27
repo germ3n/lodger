@@ -292,7 +292,7 @@ hardcoded, why only spruce"; it was a table at first.)
 | `sheep_dyed` | 2 | A sheep is another colour, from dye in a chest. | A sheep and dye. |
 | `horse_moved` | 2 | The horse is tied to a different post. | A horse on a lead. |
 | `hostiles_stare` | 3 | At night every hostile mob within 48 blocks (up to sixteen) stops where it stands and turns to the target, and stays so, facing them as they move, attacking no one, until dawn burns or frees them. None is spawned: a night with few has few. Owner's idea, 2026-11-09. | Three or more hostile mobs near, night. |
-| `stare` | 3 | Every animal and villager within 32 blocks stops, turns its head to the target and keeps looking for ten to thirty seconds. Never a hostile mob: that would be a fight. | Three or more animals or villagers nearby. |
+| `stare` | 3 | Every animal and villager within 32 blocks stops, turns to the target and holds still looking at them for ten to thirty seconds (`hold`: they stand still rather than look and walk at once, which jittered). Never a hostile mob: that would be a fight. | Three or more animals or villagers nearby. |
 | `pet_growl` | 2 | A tamed wolf growls, or a cat hisses, facing an empty spot in the house, for a few seconds. | A tamed pet in the home. |
 | `pet_moved` | 2 | A sitting pet is sitting somewhere else, facing a corner. | A sitting pet in the home. |
 | `pet_outside` | 3 | The pet is outside the closed door in the morning. | A pet indoors and a door. |
@@ -412,7 +412,7 @@ Heard by the target alone. Nothing in the world changes.
 | `lever_click` | 2 | A lever's click, in a house with no lever. | The target indoors. |
 | `page_turn` | 2 | Pages turning by the lectern. | A lectern. |
 | `arrow_hit` | 3 | An arrow hits the wall behind the target. Nothing is there. | The target indoors. |
-| `wolf_far` | 2 | A wolf howls far off, in a biome with none. | Night. |
+| `wolf_far` | 2 | A wolf whines far off, long and low, in a biome with none (26.3 has no howl). | Night. |
 | `disc_phantom` | 3 | A disc the target does not own plays from the jukebox, which is empty. | A jukebox. |
 | `silence` | 3 | Cave sounds and ambient sounds are silenced for an evening. | The target online at night. |
 | `your_voice` | 4 | The target's own hurt sound, once, from the next room. | The target indoors. |

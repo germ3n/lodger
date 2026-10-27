@@ -432,6 +432,10 @@ because it can be built and tested without a game, and because the model layer i
     dawn (`hold`, ABI 8: AI off, turned each tick, a tag and a sweep so none is ever saved
     frozen, released on unload). The Rust is tested; the host's `Holds` compiled and seen in a
     client next session. Was: `stare`, animals and villagers alone.
+  - **The second session's silent failures** (the review's B2, B3, B5, B8): `woke_elsewhere`
+    moved the player as a made-up entity id and did nothing (now `move_player`, ABI 9);
+    `wolf_far`'s sound was gone in 26.3 (now `wolf_sad.whine`, and every sound checked against
+    the game's list); `stare` jittered (now `hold`). Was: each failed in the game's log alone.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
