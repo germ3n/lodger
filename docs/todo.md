@@ -442,6 +442,10 @@ because it can be built and tested without a game, and because the model layer i
     the sapling is planted before it is taken. ABI 10. Was: placed at the home's floor height
     wherever that fell, the text sent after a sign that was not there, a sapling taken and
     then lost if the planting failed.
+  - **Every event's words are a deed** (the review's B10): the eighteen sound events worded as
+    noun phrases ("a wolf howling far off") read as "Today it could not a wolf howling far off";
+    they are verbs now ("make a wolf whine far off"), and a test keeps every row so. Was: a
+    noun phrase after "it did" and "it could not".
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

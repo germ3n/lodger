@@ -2096,8 +2096,8 @@ impl Event {
             "cook_one" => "cook one thing in the furnace",
             "take_output" => "move what the furnace made to the chest",
             "item_on_table" => "lay a tool on the crafting table",
-            "anvil_sound" => "the anvil, from the workshop",
-            "page_turn" => "pages turning by the lectern",
+            "anvil_sound" => "ring the anvil in the workshop",
+            "page_turn" => "turn the pages by the lectern",
             "armor_stand_turn" => "turn the armour stand's head",
             "stand_watch" => "have the armour stands watch them",
             "open_door" => "open the door",
@@ -2161,7 +2161,7 @@ impl Event {
             "woke_elsewhere" => "wake them a block from the bed",
             "pet_outside" => "put the pet outside the door",
             "tab_entry_stays" => "show their name twice all session",
-            "note_tune" => "three notes from the note block",
+            "note_tune" => "play three notes on the note block",
             "piston_once" => "work the piston once",
             "disc_phantom" => "play a disc they do not own",
             "fog_close" => "close the fog in for a minute",
@@ -2189,35 +2189,35 @@ impl Event {
             "snow_cleared" => "clear the snow from the path",
             "trample" => "trample the field toward the door",
             "harvest_one" => "harvest one crop into the chest",
-            "mining_sounds" => "a pickaxe in the rock near them",
-            "echo_steps" => "footsteps answering theirs in the tunnel",
-            "late_eating" => "one more bite after theirs",
+            "mining_sounds" => "dig with a pickaxe in the rock near them",
+            "echo_steps" => "answer their footsteps in the tunnel",
+            "late_eating" => "take one more bite after theirs",
             "scan_village" => "look over the village",
             "village_doors" => "open every door in the village",
             "lamps_noon" => "turn the lamps on at noon",
             "plate_laid" => "lay a pressure plate before the chest",
             "door_opens_itself" => "open the door as they reach it",
             "bell" => "ring the bell once",
-            "note" => "one note from the note block",
+            "note" => "play one note on the note block",
             "lever" => "flip the lever",
-            "door_sound" => "a door sound from another room",
-            "chest_sound" => "a chest sound from another room",
+            "door_sound" => "make a door sound in another room",
+            "chest_sound" => "make a chest sound in another room",
             "cut_music" => "stop the music",
-            "late_steps" => "their own footsteps, a moment late",
+            "late_steps" => "echo their own footsteps a moment late",
             "knock" => "knock on the door",
-            "place_sound" => "a block placed behind them",
-            "lever_click" => "a lever's click, in a house with none",
+            "place_sound" => "place a block behind them, by sound alone",
+            "lever_click" => "click a lever in a house with none",
             "drip" => "dripping water indoors",
-            "wolf_far" => "a wolf whining far off",
-            "thunder_clear" => "thunder under a clear sky",
-            "arrow_hit" => "an arrow hitting the wall behind them",
-            "portal_sound" => "a portal's hum in the house",
-            "your_voice" => "their own hurt sound from the next room",
+            "wolf_far" => "make a wolf whine far off",
+            "thunder_clear" => "bring thunder under a clear sky",
+            "arrow_hit" => "sound an arrow hitting the wall behind them",
+            "portal_sound" => "hum like a portal in the house",
+            "your_voice" => "make their own hurt sound in the next room",
             "silence" => "silence the world's sounds for an evening",
             "flicker" => "flicker a light",
             "lights_fail" => "put the lights out for a while",
             "sun_blink" => "make the sun blink out",
-            "lightning_silent" => "a flash of lightning with no thunder",
+            "lightning_silent" => "flash lightning with no thunder",
             "red_rain" => "turn the rain red",
             "crosshair_gone" => "take the crosshair away for a moment",
             "hotbar_slip" => "slip their hotbar to the favourite tool",
@@ -2275,6 +2275,39 @@ mod tests {
         }
         assert_eq!(find("open_door").unwrap().stages_words(), "1 to 5");
         assert_eq!(Need::Fixture("fence_gate").words(), "no fence gate placed");
+    }
+
+    /// Every event's words start with what it does, a verb: the situation says `Today it did
+    /// <words>` and `Today it could not <words>`, and a noun phrase read as `Today it could not
+    /// a wolf howling far off` (2026-11-09).
+    #[test]
+    fn every_event_s_words_start_with_a_verb() {
+        let not_verbs = [
+            "a",
+            "an",
+            "the",
+            "their",
+            "his",
+            "one",
+            "two",
+            "three",
+            "pages",
+            "footsteps",
+            "thunder",
+            "lightning",
+            "nothing",
+        ];
+        let nouns: Vec<String> = CATALOGUE
+            .iter()
+            .filter(|e| e.id != "wait")
+            .filter(|e| {
+                let first = e.menu_words().split_whitespace().next().unwrap_or("");
+                not_verbs.contains(&first) || e.menu_words() == e.id
+            })
+            .map(|e| format!("{}: {}", e.id, e.menu_words()))
+            .collect();
+
+        assert!(nouns.is_empty(), "words that are not a deed: {nouns:?}");
     }
 
     /// Every sound the mind names exists in the game: a renamed sound fails here, not in a
