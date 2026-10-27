@@ -94,7 +94,10 @@ its position and the contents as the player left them. ABI 7 (2026-11-09) gave a
 (2026-11-09) added `hold`: a mob held where it stands, facing a player, attacking no one, its
 AI given back as it was, and never saved frozen (a tag, a sweep, a release on unload). ABI 9
 (2026-11-09) added `move_player`, a player moved at most 32 blocks to a spot with room to stand,
-where `woke_elsewhere` had sent the player as a made-up entity id no host knew.
+where `woke_elsewhere` had sent the player as a made-up entity id no host knew. ABI 10
+(2026-11-09) gave `set_block` `rest` (on something solid, never in the air) and `only` (over
+one of `replace`, never into air), and `set_sign` `settle` (the sign looked for down and up
+its column, where a settled sign landed).
 
 ## Resources
 

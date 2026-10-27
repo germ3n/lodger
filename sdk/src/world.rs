@@ -330,6 +330,13 @@ pub enum Command {
         settle: u8,
         #[serde(default, skip_serializing_if = "String::is_empty")]
         wall: String,
+        /// Only on something solid: a cobblestone of a cairn sits on the ground or on the
+        /// block below it, never in the air (a torch or a sign needs no telling). ABI 10.
+        #[serde(default, skip_serializing_if = "is_false")]
+        rest: bool,
+        /// Only over one of `replace`, never into air: ice goes on water, not beside it. ABI 10.
+        #[serde(default, skip_serializing_if = "is_false")]
+        only: bool,
     },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
@@ -463,6 +470,10 @@ pub enum Command {
         id: u64,
         pos: BlockPos,
         lines: Vec<String>,
+        /// Look this many blocks down and up the column for the sign: a sign placed with
+        /// `set_block`'s `settle` may have landed off its spot. ABI 10.
+        #[serde(default, skip_serializing_if = "is_zero")]
+        settle: u8,
     },
     /// Cancel one player's sleep with the vanilla message, or refuse their next attempt within
     /// `seconds` with it.
@@ -582,6 +593,10 @@ fn is_zero(n: &u8) -> bool {
     *n == 0
 }
 
+fn is_false(b: &bool) -> bool {
+    !*b
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -681,6 +696,8 @@ mod tests {
             replace: vec![],
             settle: 4,
             wall: "minecraft:wall_torch".to_string(),
+            rest: false,
+            only: false,
         };
         let text = serde_json::to_string(&torch).unwrap();
         assert!(

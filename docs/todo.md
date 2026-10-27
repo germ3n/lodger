@@ -436,6 +436,12 @@ because it can be built and tested without a game, and because the model layer i
     moved the player as a made-up entity id and did nothing (now `move_player`, ABI 9);
     `wolf_far`'s sound was gone in 26.3 (now `wolf_sad.whine`, and every sound checked against
     the game's list); `stare` jittered (now `hold`). Was: each failed in the game's log alone.
+  - **What it builds lands where it should** (the review's B1, B4): signs, cairns, graves and
+    saplings settle to the ground (`rest`, a wall sign when no ground), the sign's text finds
+    it where it landed, ice goes only on water, and a failed block drops the rest of its event;
+    the sapling is planted before it is taken. ABI 10. Was: placed at the home's floor height
+    wherever that fell, the text sent after a sign that was not there, a sapling taken and
+    then lost if the planting failed.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

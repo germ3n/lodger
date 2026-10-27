@@ -400,8 +400,35 @@ fn set(ids: &mut impl FnMut() -> u64, pos: BlockPos, block: &str, replace: &[&st
         replace: replace.iter().map(|r| r.to_string()).collect(),
         settle: 0,
         wall: String::new(),
+        rest: false,
+        only: false,
     }
 }
+
+/// A full block on the ground near `pos`, as a player would build: within three blocks down
+/// or up, on something solid (the ground, or the block placed before it), never in the air.
+fn on_ground(ids: &mut impl FnMut() -> u64, pos: BlockPos, block: &str) -> Command {
+    Command::SetBlock {
+        id: ids(),
+        pos,
+        block: block.to_string(),
+        state: String::new(),
+        replace: GROUND_COVER.iter().map(|r| r.to_string()).collect(),
+        settle: 3,
+        wall: String::new(),
+        rest: true,
+        only: false,
+    }
+}
+
+/// What lies on the ground and a block placed there may take the place of: grass, ferns,
+/// snow, never anything built.
+const GROUND_COVER: &[&str] = &[
+    "minecraft:short_grass",
+    "minecraft:tall_grass",
+    "minecraft:fern",
+    "minecraft:snow",
+];
 
 /// The blocks a command changes where the target could see it: what the view rule keeps out of
 /// sight. What happens inside a chest, to an entity by its id, or to the screen is not here; an
@@ -439,6 +466,8 @@ fn torch(ids: &mut impl FnMut() -> u64, pos: BlockPos, settle: u8) -> Command {
         replace: vec![],
         settle,
         wall: "minecraft:wall_torch".to_string(),
+        rest: false,
+        only: false,
     }
 }
 
@@ -1002,11 +1031,10 @@ pub fn commands(
                 (0..3)
                     .map(|height| {
                         (
-                            set(
+                            on_ground(
                                 ids,
                                 [p[0], p[1] + 1 + height, p[2]],
                                 "minecraft:cobblestone",
-                                &[],
                             ),
                             height as u64 * 15,
                         )
@@ -1015,7 +1043,23 @@ pub fn commands(
             })
             .unwrap_or_default(),
         Action::Sapling => match (pos, memory.in_used_container(|id| id.ends_with("sapling"))) {
+            // Planted first, on the ground within three blocks, and only then taken from the
+            // chest: a planting that fails drops the take, so no sapling of theirs is lost.
             (Some(p), Some((container, stack))) => vec![
+                (
+                    Command::SetBlock {
+                        id: ids(),
+                        pos: [p[0], p[1] + 1, p[2]],
+                        block: stack.id.clone(),
+                        state: String::new(),
+                        replace: GROUND_COVER.iter().map(|r| r.to_string()).collect(),
+                        settle: 3,
+                        wall: String::new(),
+                        rest: false,
+                        only: false,
+                    },
+                    0,
+                ),
                 (
                     Command::TakeItem {
                         id: ids(),
@@ -1023,16 +1067,7 @@ pub fn commands(
                         slot: stack.slot,
                         count: 1,
                     },
-                    0,
-                ),
-                (
-                    set(
-                        ids,
-                        [p[0], p[1] + 1, p[2]],
-                        &stack.id,
-                        &["minecraft:short_grass"],
-                    ),
-                    1,
+                    2,
                 ),
             ],
             _ => vec![],
@@ -1063,11 +1098,11 @@ pub fn commands(
             (Some(p), Some(tally)) => {
                 let mut made = vec![
                     (
-                        set(ids, [p[0], p[1] + 1, p[2]], "minecraft:cobblestone", &[]),
+                        on_ground(ids, [p[0], p[1] + 1, p[2]], "minecraft:cobblestone"),
                         0,
                     ),
                     (
-                        set(ids, [p[0], p[1] + 2, p[2]], "minecraft:cobblestone", &[]),
+                        on_ground(ids, [p[0], p[1] + 2, p[2]], "minecraft:cobblestone"),
                         15,
                     ),
                 ];
@@ -1901,8 +1936,19 @@ pub fn commands(
                 let mut p = water.pos;
                 let mut made = Vec::new();
                 for i in 0..6 {
+                    // On the water's surface wherever it is within two blocks, never on land.
                     made.push((
-                        set(ids, p, "minecraft:ice", &["minecraft:water"]),
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: p,
+                            block: "minecraft:ice".to_string(),
+                            state: String::new(),
+                            replace: vec!["minecraft:water".to_string()],
+                            settle: 2,
+                            wall: String::new(),
+                            rest: false,
+                            only: true,
+                        },
                         i as u64 * 10,
                     ));
                     let step = step_toward(p, [home.center[0], p[1], home.center[2]]);
@@ -2174,9 +2220,21 @@ fn sign_at(
     pos: BlockPos,
     lines: Vec<String>,
 ) -> Vec<(Command, u64)> {
+    // On the ground within three blocks, else on a wall there; the text finds it where it
+    // landed. The dev client's signs went into the air on a slope (2026-11-09).
     vec![
         (
-            set(ids, pos, "minecraft:oak_sign", &["minecraft:short_grass"]),
+            Command::SetBlock {
+                id: ids(),
+                pos,
+                block: "minecraft:oak_sign".to_string(),
+                state: String::new(),
+                replace: GROUND_COVER.iter().map(|r| r.to_string()).collect(),
+                settle: 3,
+                wall: "minecraft:oak_wall_sign".to_string(),
+                rest: false,
+                only: false,
+            },
             0,
         ),
         (
@@ -2184,6 +2242,7 @@ fn sign_at(
                 id: ids(),
                 pos,
                 lines,
+                settle: 3,
             },
             2,
         ),
@@ -3003,6 +3062,50 @@ mod tests {
             }
         }
         assert_eq!(place(hole, &memory, &mut Rng::new(3)), None);
+    }
+
+    #[test]
+    fn what_it_builds_lands_on_the_ground_and_ice_only_on_water() {
+        // The dev client, 2026-11-09: signs in the air, cairns in a village's stairs, ice in
+        // the lake bed.
+        let memory = rich_memory();
+        let mut rng = Rng::new(3);
+        let now = Now::default();
+        let made_by = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        for (command, _) in made_by("cairn", &mut rng) {
+            assert!(
+                matches!(&command, Command::SetBlock { rest: true, settle, .. } if *settle >= 3),
+                "{command:?}"
+            );
+        }
+        let sign = made_by("sign", &mut rng);
+        assert!(
+            matches!(&sign[0].0, Command::SetBlock { wall, settle, .. } if wall == "minecraft:oak_wall_sign" && *settle >= 3),
+            "{:?}",
+            sign[0].0
+        );
+        assert!(
+            matches!(&sign[1].0, Command::SetSign { settle, .. } if *settle >= 3),
+            "the text looks where the sign landed"
+        );
+        for (command, _) in made_by("ice_path", &mut rng) {
+            assert!(
+                matches!(&command, Command::SetBlock { only: true, replace, .. } if replace == &["minecraft:water".to_string()]),
+                "{command:?}"
+            );
+        }
+        let sapling = made_by("sapling", &mut rng);
+        assert!(
+            matches!(sapling[0].0, Command::SetBlock { .. })
+                && matches!(sapling[1].0, Command::TakeItem { .. })
+                && sapling[1].1 > sapling[0].1,
+            "planted before it is taken: {sapling:?}"
+        );
     }
 
     #[test]

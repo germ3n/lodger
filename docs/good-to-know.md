@@ -147,7 +147,11 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   chest of its own gets no chest events until one is placed.
 - **Blocks the lodger places stand where a player could place them.** `set_block` refuses a
   torch over air; with `settle` the host looks a few blocks down and up for ground, then for a
-  wall (`wall_torch`). The mind knows positions, not terrain.
+  wall (`wall_torch`, `oak_wall_sign`); a cairn's cobblestone sits on something solid (`rest`)
+  and ice goes only on water (`only`). The mind knows positions, not terrain. When a block of
+  an event fails, the rest of that event is not sent (no text for a sign that is not there),
+  and a sapling is planted before it is taken from the chest, so a failed planting loses
+  nothing.
 
 - **The replay figure needs the target's skin on the client.** In singleplayer the client has
   it. On a server every client already fetches skins by profile, so the witnesses' clients would

@@ -634,6 +634,8 @@ public final class Executors {
 		List<String> replace = replaceable(command);
 		int settle = command.has("settle") ? command.get("settle").getAsInt() : 0;
 		String wallId = command.has("wall") ? command.get("wall").getAsString() : "";
+		boolean rest = command.has("rest") && command.get("rest").getAsBoolean();
+		boolean only = command.has("only") && command.get("only").getAsBoolean();
 
 		Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(blockId(command)));
 		Optional<Holder.Reference<Block>> wall = wallId.isEmpty() ? Optional.empty() : BuiltInRegistries.BLOCK.get(Identifier.parse(wallId));
@@ -646,9 +648,13 @@ public final class Executors {
 		String why = "nothing holds it there";
 		for (int dy : Settle.order(settle)) {
 			BlockPos at = pos.above(dy);
-			String taken = taken(level, at, replace);
+			String taken = taken(level, at, replace, only);
 			if (taken != null) {
 				why = dy == 0 ? taken : why;
+				continue;
+			}
+			if (rest && !level.getBlockState(at.below()).isFaceSturdy(level, at.below(), Direction.UP)) {
+				why = dy == 0 ? "nothing under it" : why;
 				continue;
 			}
 			BlockState standing = block.get().value().defaultBlockState();
@@ -660,7 +666,7 @@ public final class Executors {
 		if (wall.isPresent()) {
 			for (int dy : Settle.order(settle)) {
 				BlockPos at = pos.above(dy);
-				if (taken(level, at, replace) != null) {
+				if (taken(level, at, replace, only) != null) {
 					continue;
 				}
 				BlockState onWall = againstWall(level, at, wall.get().value().defaultBlockState());
@@ -683,8 +689,11 @@ public final class Executors {
 	 * destroyed: a block goes where there is nothing, or over one of the blocks the mod named,
 	 * which it keeps to natural ground.
 	 */
-	private static String taken(ServerLevel level, BlockPos pos, List<String> replace) {
+	private static String taken(ServerLevel level, BlockPos pos, List<String> replace, boolean only) {
 		BlockState there = level.getBlockState(pos);
+		if (only && !replace.contains(Senses.blockId(there))) {
+			return there.isAir() ? "nothing to replace there" : "the place holds " + Senses.blockId(there);
+		}
 		if (!there.isAir() && !replace.contains(Senses.blockId(there))) {
 			return "the place holds " + Senses.blockId(there);
 		}
@@ -828,8 +837,16 @@ public final class Executors {
 	}
 
 	private static JsonObject setSign(ServerLevel level, JsonObject command, long id) {
-		BlockEntity entity = level.getBlockEntity(blockPos(command.getAsJsonArray("pos")));
-		if (!(entity instanceof SignBlockEntity sign)) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		int settle = command.has("settle") ? command.get("settle").getAsInt() : 0;
+		SignBlockEntity sign = null;
+		for (int dy : Settle.order(settle)) {
+			if (level.getBlockEntity(pos.above(dy)) instanceof SignBlockEntity found) {
+				sign = found;
+				break;
+			}
+		}
+		if (sign == null) {
 			return report(id, false, "no sign there");
 		}
 

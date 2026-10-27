@@ -1514,6 +1514,15 @@ impl Brain {
                         if report.done { "done" } else { &report.reason },
                     );
                     if !report.done {
+                        // The rest of a failed event is not sent: the sign's text after a sign
+                        // that did not go down, the take after a planting that failed.
+                        let dropped: Vec<u64> = self
+                            .pending
+                            .iter()
+                            .filter(|p| p.event == pending.event && p.day == pending.day)
+                            .map(|p| p.id)
+                            .collect();
+                        self.later.retain(|l| !dropped.contains(&l.command.id()));
                         self.pending
                             .retain(|p| !(p.event == pending.event && p.day == pending.day));
                     }
@@ -2747,6 +2756,67 @@ mod tests {
         );
         assert_eq!(brain.plans.len(), 1);
         assert_eq!(brain.drop_plan(9, 0.0, &mut memory, &mut log), "no plan 9");
+    }
+
+    #[test]
+    fn a_sign_that_did_not_go_down_gets_no_text_sent_after_it() {
+        let config = Config::default();
+        let mut memory = home_memory();
+        let mut arc = Arc {
+            stage: 2,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        let id = brain.next_plan_id();
+        brain.plans.push(Plan {
+            id,
+            event: "sign".to_string(),
+            pos: Some([8, 64, 0]),
+            until_tick: 24_000,
+            forced: true,
+            ..Plan::default()
+        });
+        let sent = brain.tick(
+            &Now {
+                tick: 20,
+                ..Now::default()
+            },
+            0.0,
+            &mut memory,
+            &mut arc,
+            &config,
+            &mut log,
+            None,
+        );
+        let block = sent
+            .iter()
+            .find(|c| matches!(c, Command::SetBlock { .. }))
+            .expect("the sign's block went out");
+        assert!(
+            brain
+                .later
+                .iter()
+                .any(|l| matches!(l.command, Command::SetSign { .. })),
+            "the text waits two ticks"
+        );
+
+        brain.report(
+            &[Report {
+                id: block.id(),
+                done: false,
+                reason: "nothing holds it there".to_string(),
+            }],
+            &mut memory,
+            &mut log,
+        );
+        assert!(
+            !brain
+                .later
+                .iter()
+                .any(|l| matches!(l.command, Command::SetSign { .. })),
+            "no text for a sign that is not there"
+        );
     }
 
     #[test]
