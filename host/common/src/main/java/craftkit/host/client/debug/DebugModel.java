@@ -24,7 +24,12 @@ public final class DebugModel {
 		}
 	}
 
-	public record Section(String title, List<String> lines) {
+	/** A titled group: plain lines, then rows with buttons of their own (a plan's Drop and Now). */
+	public record Section(String title, List<String> lines, List<Item> items) {
+	}
+
+	/** A row of a section, a quieter line under it, and its buttons. */
+	public record Item(String text, String detail, List<ActionRow> actions) {
 	}
 
 	public record EventRow(String id, String words, String stages, boolean offered, String why, int times) {
@@ -142,7 +147,20 @@ public final class DebugModel {
 				JsonObject s = element.getAsJsonObject();
 				List<String> lines = new ArrayList<>();
 				strings(s, "lines", lines);
-				sections.add(new Section(text(s, "title"), lines));
+				List<Item> items = new ArrayList<>();
+				if (s.has("items") && s.get("items").isJsonArray()) {
+					for (JsonElement i : s.getAsJsonArray("items")) {
+						JsonObject item = i.getAsJsonObject();
+						List<ActionRow> buttons = new ArrayList<>();
+						if (item.has("actions") && item.get("actions").isJsonArray()) {
+							for (JsonElement a : item.getAsJsonArray("actions")) {
+								buttons.add(new ActionRow(text(a.getAsJsonObject(), "id"), text(a.getAsJsonObject(), "label")));
+							}
+						}
+						items.add(new Item(text(item, "text"), text(item, "detail"), buttons));
+					}
+				}
+				sections.add(new Section(text(s, "title"), lines, items));
 			}
 		}
 		if (mod.has("events")) {

@@ -94,14 +94,18 @@ A stay takes weeks of play by design. For development:
   `events.cooldown_scale: 0.05` in the dev config, so stages move as soon as their conditions
   allow and the lodger acts every few minutes; no `model.size`, so the dev client runs the
   default 1.5B like a player would (`"0.5b"` for the small file on a slow machine);
-- **the debug screen**, F8 in a world (`fn+F8` on a Mac keyboard, where F8 is a media key;
+- **the debug panel**, F8 in a world (`fn+F8` on a Mac keyboard, where F8 is a media key;
   rebindable under Controls, Miscellaneous), or
-  `/craftkit lodger debug`: the Senses tab is the host's reading of you (pace, stops, turns,
+  `/craftkit lodger debug`: a strip down the right third of the screen at three quarters of the
+  GUI's text size, see-through, that neither pauses the game nor blurs it, so the world stays
+  in view beside it (owner, 2026-11-09: the full screen hid the events it was there to watch);
+  it opens on the Mind tab. The Senses tab is the host's reading of you (pace, stops, turns,
   look-backs, backing away, a fear meter, light, health, the clock), the Mind tab the lodger's
-  gauges (stage, days in stage, the day's budget, the plan, decisions, what the memory holds,
-  kills), its situation lines, its plan, what it did lately, what it never forgets, the last
-  decision log entries, and buttons (move in, next stage, decide now, drop the plan, forget
-  cooldowns, forget everything); the Events tab every event with whether it is offered right now
+  gauges (stage, days in stage, the day's budget, the plans held of how many, decisions, what
+  the memory holds, kills), its situation lines, its plans as rows with Drop and Now buttons
+  and why each waits, what it did lately, what it never forgets, the last decision log
+  entries, and buttons (move in, next stage, decide now, drop the plans, forget cooldowns,
+  forget everything); the Events tab every event with whether it is offered right now
   and the first reason it is not, a filter, and a Fire button that forces it on the next tick
   past every rule but the ones that protect what the player built (no digging within 8 blocks
   of it); the Log tab the last events the senses took in and the last commands carried

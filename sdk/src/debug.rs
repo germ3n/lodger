@@ -68,6 +68,20 @@ impl Gauge {
 pub struct Section {
     pub title: String,
     pub lines: Vec<String>,
+    /// Rows with buttons of their own, after the lines: one per plan, say, each with Drop and
+    /// Now. A button fires [`DebugRequest::Action`] with its id. ABI 7.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub items: Vec<Item>,
+}
+
+/// A row of a [`Section`] with its own buttons.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Item {
+    pub text: String,
+    /// A second, quieter line: why it waits, when it is due.
+    pub detail: String,
+    pub actions: Vec<ActionRow>,
 }
 
 impl Section {
@@ -75,6 +89,7 @@ impl Section {
         Self {
             title: title.to_string(),
             lines,
+            items: Vec::new(),
         }
     }
 }
@@ -126,6 +141,22 @@ impl DebugReply {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_section_s_items_carry_their_own_buttons_and_none_are_left_out() {
+        let mut section = Section::new("Plans", vec![]);
+        let plain = serde_json::to_string(&section).unwrap();
+        assert!(!plain.contains("items"), "no items, no key: {plain}");
+        section.items.push(Item {
+            text: "#3 open_door".to_string(),
+            detail: "in 20s".to_string(),
+            actions: vec![ActionRow::new("plan_drop:3", "Drop")],
+        });
+        let text = serde_json::to_string(&section).unwrap();
+        let back: Section = serde_json::from_str(&text).unwrap();
+        assert_eq!(back, section);
+        assert_eq!(back.items[0].actions[0].id, "plan_drop:3");
+    }
 
     #[test]
     fn requests_are_tagged_by_kind() {

@@ -120,7 +120,7 @@ impl Stay {
             .split_first()
             .ok_or_else(|| "an empty save".to_string())?;
 
-        let stay: Self = match *format {
+        let mut stay: Self = match *format {
             FORMAT => {
                 serde_json::from_slice(body).map_err(|err| format!("the save is damaged: {err}"))?
             }
@@ -152,6 +152,7 @@ impl Stay {
                 stay.world, info.id
             ));
         }
+        stay.brain.migrate();
 
         Ok(stay)
     }
@@ -322,19 +323,19 @@ mod tests {
         };
         let mut stay = Stay::new(&info());
         stay.tick(&at(39_000), &config, &mut log());
-        stay.brain.plan = Some(with_a_plan_due_at(39_500));
+        stay.brain.plans = vec![with_a_plan_due_at(39_500)];
         stay.brain.next_plan_tick = 39_300;
 
         let mut back = Stay::open(&info(), &stay.save()).unwrap();
         back.tick(&at(100), &config, &mut log());
-        let plan = back.brain.plan.as_ref().unwrap();
+        let plan = back.brain.plans.first().unwrap();
         assert_eq!((plan.from_tick, plan.until_tick), (600, 24_600));
         assert_eq!(back.brain.next_plan_tick, 400);
         assert_eq!(back.last_tick, 100);
 
         // A clock that only goes on moves nothing.
         back.tick(&at(101), &config, &mut log());
-        assert_eq!(back.brain.plan.as_ref().unwrap().from_tick, 600);
+        assert_eq!(back.brain.plans.first().unwrap().from_tick, 600);
     }
 
     #[test]
@@ -345,15 +346,39 @@ mod tests {
         };
         config.brain.plan_every = 15;
         let mut stay = Stay::new(&info());
-        stay.brain.plan = Some(with_a_plan_due_at(39_120));
+        stay.brain.plans = vec![with_a_plan_due_at(39_120)];
         stay.brain.next_plan_tick = 39_000;
         stay.last_tick = 0; // as an older save reads
 
         stay.tick(&at(50), &config, &mut log());
-        let plan = stay.brain.plan.as_ref().unwrap();
+        let plan = stay.brain.plans.first().unwrap();
         // The last moment was a planning interval (300 ticks) before the next planning.
         assert_eq!(plan.from_tick, 39_120 - (38_700 - 50));
         assert!(plan.from_tick < 1_000, "{}", plan.from_tick);
+    }
+
+    #[test]
+    fn a_save_with_one_plan_opens_with_it_in_the_list() {
+        let mut stay = Stay::new(&info());
+        stay.tick(&at(10), &Config::default(), &mut log());
+        let mut text = serde_json::to_value(&stay).unwrap();
+        text["brain"]["plan"] = serde_json::json!({
+            "event": "open_door",
+            "from_tick": 400,
+            "until_tick": 24_400
+        });
+        let mut bytes = vec![FORMAT];
+        bytes.extend(serde_json::to_vec(&text).unwrap());
+
+        let back = Stay::open(&info(), &bytes).unwrap();
+        assert_eq!(back.brain.plans.len(), 1);
+        assert_eq!(back.brain.plans[0].event, "open_door");
+        assert!(back.brain.plans[0].id > 0);
+        assert!(back.brain.plan.is_none());
+        assert!(
+            !String::from_utf8_lossy(&back.save()).contains("\"plan\":"),
+            "the old key is not written again"
+        );
     }
 
     #[test]

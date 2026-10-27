@@ -89,7 +89,8 @@ the six world functions and `sdk/src/world.rs`, the per-world shapes. ABI 5 (202
 `damage_item` the same night, and `figure.seconds` and `figure.vanish_within`),
 `set_block.replace` and the `killed` event. ABI 6 (2026-11-09) gave `set_block` `settle` and
 `wall` (a block stands where a player could place it, never over air) and `closed_container`
-its position and the contents as the player left them.
+its position and the contents as the player left them. ABI 7 (2026-11-09) gave a debug
+`Section` its `items`: rows with buttons of their own (a plan with Drop and Now).
 
 ## Resources
 
@@ -199,12 +200,13 @@ written 2026-11-09 from the lodger's needs and generalized as a second mod needs
   exists and nothing where it does not. The list is [Other mods](ideas.md#other-mods); each one
   built is a line in this page.
 - **The debug screen** (`sdk/src/debug.rs`, 2026-11-09): the host owns a screen any Rust mod
-  gets (the debug key, F8 unless rebound, or `/craftkit <id> debug`), with its own Senses and
+  gets (the debug key, F8 unless rebound, or `/craftkit <id> debug`), a panel down the right
+  third of the screen at three quarters text size that leaves the world in view, with its own Senses and
   Log tabs filled from the host's side (the asking player's movement and state as meters, the
   entities near, the last events sensed, the last commands carried out), and a Mind and an
   Events tab the mod fills through `Mod::debug`: asked a `Snapshot` every half second it
   answers a `DebugReply` of gauges (a label, a value over a max, words), titled sections of
-  lines, every event with its stages, whether it is offered right now, why not, and how often
+  lines and of items (a row with a quieter line and buttons of its own, ABI 7), every event with its stages, whether it is offered right now, why not, and how often
   it happened, and buttons; asked `Force { event, player }`, `SetStage { stage }` or
   `Action { id }` it does the thing and answers a message. Operators and the owner of a
   singleplayer world alone; the server checks. The same requests are chat commands,

@@ -136,6 +136,32 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
     }
 }
 
+/// The group an event belongs to, of which one plan at a time: the figures, the chat lines,
+/// the screen's glitches, the sounds. None for the rest, which are kept apart by spot and id.
+pub fn group(event: &Event) -> Option<&'static str> {
+    use crate::events::Action;
+    match event.action {
+        Action::Sound(_)
+        | Action::SoundAtTarget(_)
+        | Action::SoundFar(_)
+        | Action::SoundAtFixture(_, _)
+        | Action::SoundPair(_, _, _)
+        | Action::Taps(_, _, _)
+        | Action::MiningSounds
+        | Action::PetGrowl => Some("sound"),
+        Action::Hint(_, _) => Some("screen"),
+        Action::Figure(_, _, _) => Some("figure"),
+        Action::TabEntry
+        | Action::Message(_)
+        | Action::Says
+        | Action::SaysKills
+        | Action::Whisper
+        | Action::RepeatsYou
+        | Action::Answers => Some("chat"),
+        _ => None,
+    }
+}
+
 /// The first need an event lacks right now, in words, or none.
 pub fn unmet(event: &Event, memory: &Memory, now: &Now) -> Option<String> {
     event

@@ -76,6 +76,7 @@ impl Preset {
                 config.stages.most_days = [5, 7, 7, 9, 3];
                 config.events.cooldown_scale = 2.0;
                 config.events.min_distance = 80;
+                config.brain.most_plans = 2;
                 config.events.chat = false;
                 config.events.disabled = [
                     "refuse_rest",
@@ -105,6 +106,7 @@ impl Preset {
                 config.stages.most_days = [2, 4, 4, 6, 3];
                 config.events.cooldown_scale = 0.75;
                 config.events.min_distance = 48;
+                config.brain.most_plans = 4;
                 config.brain.event_threshold = 0.3;
                 config.stages.ending = "take".to_string();
             }
@@ -115,6 +117,7 @@ impl Preset {
                 config.stages.start_after_days = 0;
                 config.events.cooldown_scale = 0.5;
                 config.events.min_distance = 32;
+                config.brain.most_plans = 5;
                 config.events.offered = 12;
                 config.brain.event_threshold = 0.25;
                 config.brain.react_threshold = 0.4;
@@ -237,6 +240,8 @@ pub struct Model {
 #[serde(default)]
 pub struct Brain {
     pub plan_every: u32,
+    /// How many plans it holds at once (`docs/brain.md`, Plans).
+    pub most_plans: u32,
     pub event_threshold: f64,
     pub react_threshold: f64,
     pub queue: u32,
@@ -328,6 +333,7 @@ impl Default for Brain {
     fn default() -> Self {
         Self {
             plan_every: 90,
+            most_plans: 3,
             event_threshold: 0.4,
             react_threshold: 0.55,
             queue: 64,

@@ -8,36 +8,45 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * The debug screen: four tabs over one {@link DebugModel} the server refreshes every half
- * second while the screen is open. <b>Senses</b> is the host's reading of this player, as
- * meters. <b>Mind</b> is the mod's gauges, its sections and its buttons. <b>Events</b> is every
- * event the mod can do, with whether it is offered right now and why not, a filter, and a Fire
- * button on each row that forces it. <b>Log</b> is the last events the senses took in and the
- * last commands the host carried out. Opened with the debug key (F8 unless rebound) or
- * {@code /craftkit <mod> debug}; operators and the owner of a singleplayer world alone.
+ * The debug panel: a strip down the right of the screen, a third of it wide, over the world,
+ * which stays in view and keeps running beside it (owner, 2026-11-09: the full screen hid the
+ * events it was there to watch). Four tabs over one {@link DebugModel} the server refreshes
+ * every half second while it is open. <b>Senses</b> is the host's reading of this player, as
+ * meters. <b>Mind</b> is the mod's gauges, its buttons, and its sections, whose items (each plan)
+ * carry buttons of their own. <b>Events</b> is every event the mod can do, with whether it is
+ * offered right now and why not, a filter, and a Fire button on each. <b>Log</b> is the last
+ * events the senses took in and the last commands carried out. Opened with the debug key (F8
+ * unless rebound; fn+F8 on a Mac keyboard) or {@code /craftkit <mod> debug}; operators and the
+ * owner of a singleplayer world alone.
  *
- * <p>Everything is drawn by hand from the model, with hit testing on the rows, so the screen
- * never rebuilds widgets as the model changes; the one widget is the filter box.
+ * <p>Everything in the panel is drawn by hand at {@link PanelLayout#SCALE} into the panel's own
+ * coordinates ({@link #pw} by {@link #ph} units), with hit testing on the rows in those units,
+ * so the screen never rebuilds widgets as the model changes; the one widget is the filter box,
+ * drawn at the game's own scale.
  */
 public final class DebugScreen extends Screen {
 	private static final int REFRESH_TICKS = 10;
-	private static final int ROW = 12;
-	private static final int PAD = 8;
-	private static final int BAR_WIDTH = 120;
+	private static final float SCALE = PanelLayout.SCALE;
+	private static final int ROW = 11;
+	private static final int PAD = 6;
+	private static final int BAR_WIDTH = 70;
 	private static final int WHITE = 0xFFFFFFFF;
-	private static final int GREY = 0xFF9A9A9A;
-	private static final int DIM = 0xFF5A5A5A;
+	private static final int GREY = 0xFFA8A8A8;
+	private static final int DIM = 0xFF666666;
 	private static final int GREEN = 0xFF7FD17F;
 	private static final int RED = 0xFFE06060;
 	private static final int YELLOW = 0xFFE0C860;
-	private static final int BACK = 0xC0101014;
-	private static final int PANEL = 0xFF1C1C22;
+	/** The panel: dark, and see-through enough that the world still shows behind it. */
+	private static final int PANEL = 0xB8101014;
+	private static final int TAB_ON = 0xE02A2A34;
+	private static final int BUTTON = 0xE0303038;
 	private static final int BAR_BACK = 0xFF2A2A2A;
 	private static final int BAR_FRONT = 0xFFDADADA;
 
@@ -58,7 +67,7 @@ public final class DebugScreen extends Screen {
 
 	private final String mod;
 	private DebugModel model = new DebugModel();
-	private Tab tab = Tab.SENSES;
+	private Tab tab = Tab.MIND;
 	private int scroll;
 	private int contentHeight;
 	private int ticks;
@@ -66,7 +75,11 @@ public final class DebugScreen extends Screen {
 	private String filterText = "";
 	private String flash = "";
 	private long flashUntil;
-	/** The clickable rectangles drawn this frame: x, y, w, h and what a click does. */
+	/** The panel's left edge in GUI pixels, and its size in its own units. */
+	private int left;
+	private int pw;
+	private int ph;
+	/** The clickable rectangles drawn this frame, in the panel's units. */
 	private final List<Hit> hits = new ArrayList<>();
 
 	private record Hit(int x, int y, int w, int h, Runnable action) {
@@ -86,19 +99,22 @@ public final class DebugScreen extends Screen {
 		DebugHud.sendWith(send);
 	}
 
-	/** Opens the screen for a mod; an empty id asks the server which mods there are and takes the first. */
+	/** Opens the panel for a mod; an empty id asks the server which mods there are and takes the first. */
 	public static void open(String mod) {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.level == null) {
 			return;
 		}
 		DebugScreen screen = new DebugScreen(mod);
+		if (open != null) {
+			screen.tab = open.tab;
+		}
 		open = screen;
 		minecraft.gui.setScreen(screen);
 		screen.ask("{\"kind\":\"snapshot\"}");
 	}
 
-	/** A server answer: an order to open, or a refresh of the open screen. */
+	/** A server answer: an order to open, or a refresh of the open panel. */
 	public static void receive(DebugTellPayload tell) {
 		if (tell.json().contains("\"open\":true")) {
 			open(tell.mod());
@@ -135,9 +151,17 @@ public final class DebugScreen extends Screen {
 		sender.accept(new DebugAskPayload(mod, json));
 	}
 
+	private void action(String id) {
+		ask("{\"kind\":\"action\",\"id\":\"" + id.replace("\"", "") + "\"}");
+	}
+
 	@Override
 	protected void init() {
-		filter = new EditBox(this.font, this.width - PAD - 160, PAD + 4, 160, 14, Component.translatable("craftkit.debug.filter"));
+		left = PanelLayout.left(this.width);
+		pw = PanelLayout.units(this.width);
+		ph = (int) (this.height / SCALE);
+		int boxWidth = Math.min(110, this.width - left - 2 * PAD);
+		filter = new EditBox(this.font, this.width - PAD - boxWidth, this.height - PAD - 14, boxWidth, 14, Component.translatable("craftkit.debug.filter"));
 		filter.setMaxLength(40);
 		filter.setValue(filterText);
 		filter.setResponder(text -> {
@@ -152,6 +176,11 @@ public final class DebugScreen extends Screen {
 	@Override
 	public boolean isPauseScreen() {
 		return false;
+	}
+
+	/** No blur and no darkening: the world beside the panel is what is being watched. */
+	@Override
+	public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
 	}
 
 	@Override
@@ -173,15 +202,21 @@ public final class DebugScreen extends Screen {
 
 	@Override
 	public boolean mouseScrolled(double x, double y, double dx, double dy) {
-		scroll = Math.max(0, Math.min(Math.max(0, contentHeight - (this.height - 60)), scroll - (int) (dy * ROW * 3)));
+		if (x < left) {
+			return false;
+		}
+		int view = ph - bodyTop() - PAD;
+		scroll = Math.max(0, Math.min(Math.max(0, contentHeight - view), scroll - (int) (dy * ROW * 3)));
 
 		return true;
 	}
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
+		double px = PanelLayout.toPanel(event.x(), left);
+		double py = PanelLayout.toPanel(event.y(), 0);
 		for (Hit hit : hits) {
-			if (hit.contains(event.x(), event.y())) {
+			if (hit.contains(px, py)) {
 				hit.action().run();
 				return true;
 			}
@@ -190,55 +225,49 @@ public final class DebugScreen extends Screen {
 		return super.mouseClicked(event, doubled);
 	}
 
+	private int bodyTop() {
+		return PAD + 2 * ROW + 6;
+	}
+
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-		graphics.fill(0, 0, this.width, this.height, BACK);
 		hits.clear();
+		graphics.fill(left, 0, this.width, this.height, PANEL);
 
-		// The header: the title, the mod picker, the tabs.
-		graphics.text(this.font, this.title, PAD, PAD, WHITE);
-		int x = PAD;
-		int tabY = PAD + 14;
-		for (Tab t : Tab.values()) {
-			int w = this.font.width(t.label) + 12;
-			boolean on = t == tab;
-			graphics.fill(x, tabY, x + w, tabY + 14, on ? PANEL : BAR_BACK);
-			graphics.text(this.font, t.label, x + 6, tabY + 3, on ? WHITE : GREY);
-			Tab chosen = t;
-			hits.add(new Hit(x, tabY, w, 14, () -> {
-				tab = chosen;
-				scroll = 0;
-			}));
-			x += w + 4;
-		}
-		{
-			String hud = DebugHud.enabled() ? "HUD: on" : "HUD: off";
-			int w = this.font.width(hud) + 12;
-			graphics.fill(x, tabY, x + w, tabY + 14, DebugHud.enabled() ? PANEL : BAR_BACK);
-			graphics.text(this.font, hud, x + 6, tabY + 3, DebugHud.enabled() ? YELLOW : GREY);
-			hits.add(new Hit(x, tabY, w, 14, () -> DebugHud.toggle(mod)));
-			x += w + 4;
-		}
+		graphics.pose().pushMatrix();
+		graphics.pose().translate(left, 0);
+		graphics.pose().scale(SCALE, SCALE);
+
+		// The header: the title or what just happened, then the tabs.
+		String head = !model.error.isEmpty() ? model.error
+				: !flash.isEmpty() && System.currentTimeMillis() < flashUntil ? flash
+				: this.title.getString() + (model.mods.size() > 1 ? "  (" + mod + ", click to switch)" : "");
+		int headColour = !model.error.isEmpty() ? RED : !flash.isEmpty() && System.currentTimeMillis() < flashUntil ? YELLOW : WHITE;
+		graphics.text(this.font, trim(head, pw - 2 * PAD), PAD, PAD, headColour);
 		if (model.mods.size() > 1) {
-			String picker = "mod: " + mod + " (click to switch)";
-			int w = this.font.width(picker) + 8;
-			graphics.text(this.font, picker, x + 8, tabY + 3, GREY);
-			hits.add(new Hit(x + 8, tabY, w, 14, () -> {
+			hits.add(new Hit(PAD, PAD, pw - 2 * PAD, ROW, () -> {
 				int index = (model.mods.indexOf(mod) + 1) % model.mods.size();
 				open(model.mods.get(index));
 			}));
 		}
-		if (!model.error.isEmpty()) {
-			graphics.text(this.font, model.error, this.width - PAD - this.font.width(model.error), PAD, RED);
-		} else if (!flash.isEmpty() && System.currentTimeMillis() < flashUntil && tab != Tab.EVENTS) {
-			graphics.text(this.font, flash, this.width - PAD - this.font.width(flash), PAD, YELLOW);
+		int x = PAD;
+		int tabY = PAD + ROW + 2;
+		for (Tab t : Tab.values()) {
+			x = button(graphics, x, tabY, t.label, t == tab ? WHITE : GREY, t == tab ? TAB_ON : BUTTON, () -> {
+				tab = t;
+				scroll = 0;
+			});
 		}
+		button(graphics, x, tabY, DebugHud.enabled() ? "HUD on" : "HUD off", DebugHud.enabled() ? YELLOW : GREY, BUTTON, () -> DebugHud.toggle(mod));
 
-		// The body scrolls under a clip.
-		int top = tabY + 20;
-		int bottom = this.height - PAD;
-		graphics.fill(PAD, top - 2, this.width - PAD, bottom, PANEL);
-		graphics.enableScissor(PAD, top, this.width - PAD, bottom);
+		// The body scrolls under a clip, set in GUI pixels while the pose is still plain.
+		int top = bodyTop();
+		int bottom = ph - (tab == Tab.EVENTS ? (int) (22 / SCALE) : PAD);
+		graphics.pose().popMatrix();
+		graphics.enableScissor(left, (int) (top * SCALE), this.width, (int) (bottom * SCALE));
+		graphics.pose().pushMatrix();
+		graphics.pose().translate(left, 0);
+		graphics.pose().scale(SCALE, SCALE);
 		int y = top + 2 - scroll;
 		int start = y;
 		int headerHits = hits.size();
@@ -249,7 +278,6 @@ public final class DebugScreen extends Screen {
 			case LOG -> y = log(graphics, y);
 		}
 		contentHeight = y - start + 4;
-		graphics.disableScissor();
 		// Body rows scrolled out of the clip take no clicks; the header's hits stay.
 		List<Hit> body = new ArrayList<>(hits.subList(headerHits, hits.size()));
 		hits.subList(headerHits, hits.size()).clear();
@@ -258,15 +286,15 @@ public final class DebugScreen extends Screen {
 				hits.add(hit);
 			}
 		}
-
 		if (contentHeight > bottom - top) {
-			// A scroll bar.
 			int track = bottom - top;
 			int thumb = Math.max(10, track * track / contentHeight);
 			int at = top + (track - thumb) * scroll / Math.max(1, contentHeight - track);
-			graphics.fill(this.width - PAD - 3, top, this.width - PAD, bottom, BAR_BACK);
-			graphics.fill(this.width - PAD - 3, at, this.width - PAD, at + thumb, GREY);
+			graphics.fill(pw - 3, top, pw, bottom, BAR_BACK);
+			graphics.fill(pw - 3, at, pw, at + thumb, GREY);
 		}
+		graphics.pose().popMatrix();
+		graphics.disableScissor();
 
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 	}
@@ -279,7 +307,7 @@ public final class DebugScreen extends Screen {
 		y += 4;
 		y = heading(graphics, y, "Where and what");
 		for (String line : model.senseLines) {
-			y = line(graphics, y, line, GREY);
+			y = wrapped(graphics, y, line, GREY);
 		}
 		y += 4;
 		y = heading(graphics, y, "Entities within 64 blocks");
@@ -302,31 +330,28 @@ public final class DebugScreen extends Screen {
 		}
 		y += 4;
 		if (!model.actions.isEmpty()) {
-			int x = PAD + 6;
+			int x = PAD;
 			for (DebugModel.ActionRow action : model.actions) {
-				int w = this.font.width(action.label()) + 10;
-				if (x + w > this.width - PAD - 6) {
-					x = PAD + 6;
-					y += 16;
+				int w = this.font.width(action.label()) + 8;
+				if (x + w > pw - PAD) {
+					x = PAD;
+					y += ROW + 3;
 				}
-				graphics.fill(x, y, x + w, y + 13, BAR_BACK);
-				graphics.text(this.font, action.label(), x + 5, y + 3, WHITE);
 				String id = action.id();
-				hits.add(new Hit(x, y, w, 13, () -> ask("{\"kind\":\"action\",\"id\":\"" + id + "\"}")));
-				x += w + 4;
+				x = button(graphics, x, y, action.label(), WHITE, BUTTON, () -> action(id));
 			}
-			y += 20;
+			y += ROW + 6;
 		}
 		for (DebugModel.Section section : model.sections) {
 			y = heading(graphics, y, section.title());
-			if (section.lines().isEmpty()) {
+			if (section.lines().isEmpty() && section.items().isEmpty()) {
 				y = line(graphics, y, "nothing", DIM);
 			}
 			for (String text : section.lines()) {
-				for (net.minecraft.util.FormattedCharSequence part : this.font.split(Component.literal(text), this.width - 2 * PAD - 20)) {
-					graphics.text(this.font, part, PAD + 6, y, GREY);
-					y += 10;
-				}
+				y = wrapped(graphics, y, text, GREY);
+			}
+			for (DebugModel.Item item : section.items()) {
+				y = item(graphics, y, item);
 			}
 			y += 4;
 		}
@@ -334,27 +359,45 @@ public final class DebugScreen extends Screen {
 		return y;
 	}
 
+	/** A section's row: its text with its buttons on the right, and the quieter line under it. */
+	private int item(GuiGraphicsExtractor graphics, int y, DebugModel.Item item) {
+		int buttons = 0;
+		for (DebugModel.ActionRow action : item.actions()) {
+			buttons += this.font.width(action.label()) + 12;
+		}
+		graphics.text(this.font, trim(item.text(), pw - 2 * PAD - buttons - 4), PAD, y + 1, WHITE);
+		int x = pw - PAD - buttons;
+		for (DebugModel.ActionRow action : item.actions()) {
+			String id = action.id();
+			x = button(graphics, x, y, action.label(), WHITE, BUTTON, () -> action(id));
+		}
+		y += ROW;
+		if (!item.detail().isEmpty()) {
+			y = line(graphics, y, "  " + item.detail(), item.detail().startsWith("in view") || item.detail().startsWith("waiting") ? YELLOW : DIM);
+		}
+
+		return y + 2;
+	}
+
 	private int events(GuiGraphicsExtractor graphics, int y, int top, int bottom) {
 		List<DebugModel.EventRow> rows = model.eventsMatching(filterText);
 		long offered = rows.stream().filter(DebugModel.EventRow::offered).count();
-		y = heading(graphics, y, rows.size() + " events, " + offered + " offered right now" + (flash.isEmpty() || System.currentTimeMillis() > flashUntil ? "" : "  |  " + flash));
-		int fireX = this.width - PAD - 40;
+		y = heading(graphics, y, rows.size() + " events, " + offered + " offered right now");
+		int fireX = pw - PAD - 26;
+		int idWidth = Math.min(110, (pw - 2 * PAD) / 3);
 		for (DebugModel.EventRow row : rows) {
 			if (y + ROW < top || y > bottom) {
 				y += ROW;
 				continue;
 			}
-			graphics.text(this.font, row.id(), PAD + 6, y + 1, row.offered() ? GREEN : WHITE);
+			graphics.text(this.font, trim(row.id(), idWidth - 4), PAD, y + 1, row.offered() ? GREEN : WHITE);
 			String tail = row.offered() ? "offered" : row.why();
 			if (row.times() > 0) {
 				tail += "  x" + row.times();
 			}
-			graphics.text(this.font, trim(row.words(), 150), PAD + 120, y + 1, GREY);
-			graphics.text(this.font, trim(tail, fireX - (PAD + 280) - 6), PAD + 280, y + 1, row.offered() ? GREEN : DIM);
-			graphics.fill(fireX, y, fireX + 34, y + 11, BAR_BACK);
-			graphics.text(this.font, "Fire", fireX + 7, y + 1, WHITE);
+			graphics.text(this.font, trim(tail, fireX - (PAD + idWidth) - 4), PAD + idWidth, y + 1, row.offered() ? GREEN : DIM);
 			String id = row.id();
-			hits.add(new Hit(fireX, y, 34, 11, () -> ask("{\"kind\":\"force\",\"event\":\"" + id + "\",\"player\":0}")));
+			button(graphics, fireX, y, "Fire", WHITE, BUTTON, () -> ask("{\"kind\":\"force\",\"event\":\"" + id + "\",\"player\":0}"));
 			y += ROW;
 		}
 
@@ -367,7 +410,7 @@ public final class DebugScreen extends Screen {
 			y = line(graphics, y, "nothing yet", DIM);
 		}
 		for (String line : model.sensedEvents) {
-			y = line(graphics, y, line, GREY);
+			y = wrapped(graphics, y, line, GREY);
 		}
 		y += 4;
 		y = heading(graphics, y, "Carried out lately, newest first");
@@ -375,34 +418,59 @@ public final class DebugScreen extends Screen {
 			y = line(graphics, y, "nothing yet", DIM);
 		}
 		for (String line : model.commands) {
-			y = line(graphics, y, line, line.contains("not done") ? RED : GREY);
+			y = wrapped(graphics, y, line, line.contains("not done") ? RED : GREY);
 		}
 
 		return y;
 	}
 
-	private int heading(GuiGraphicsExtractor graphics, int y, String text) {
-		graphics.text(this.font, text, PAD + 4, y, WHITE);
+	/** A button at x, y in the panel's units; answers the x after it. */
+	private int button(GuiGraphicsExtractor graphics, int x, int y, String label, int colour, int back, Runnable action) {
+		int w = this.font.width(label) + 8;
+		graphics.fill(x, y, x + w, y + ROW, back);
+		graphics.text(this.font, label, x + 4, y + 2, colour);
+		hits.add(new Hit(x, y, w, ROW, action));
 
-		return y + ROW + 2;
+		return x + w + 3;
+	}
+
+	private int heading(GuiGraphicsExtractor graphics, int y, String text) {
+		graphics.text(this.font, trim(text, pw - 2 * PAD), PAD, y, WHITE);
+
+		return y + ROW + 1;
 	}
 
 	private int line(GuiGraphicsExtractor graphics, int y, String text, int colour) {
-		graphics.text(this.font, trim(text, this.width - 2 * PAD - 16), PAD + 6, y, colour);
+		graphics.text(this.font, trim(text, pw - 2 * PAD - 4), PAD, y, colour);
 
 		return y + 10;
 	}
 
-	private int gauge(GuiGraphicsExtractor graphics, int y, DebugModel.Gauge gauge) {
-		int labelWidth = 90;
-		graphics.text(this.font, gauge.label(), PAD + 6, y + 1, GREY);
-		int left = PAD + 6 + labelWidth;
-		graphics.fill(left, y + 2, left + BAR_WIDTH, y + 9, BAR_BACK);
-		int filled = (int) (BAR_WIDTH * gauge.fraction());
-		graphics.fill(left, y + 2, left + filled, y + 9, gauge.fraction() > 0.85f ? YELLOW : BAR_FRONT);
-		graphics.text(this.font, trim(gauge.text(), this.width - (left + BAR_WIDTH + 8) - PAD - 8), left + BAR_WIDTH + 8, y + 1, WHITE);
+	/** A long line over as many lines as it takes, rather than cut: the panel is narrow. */
+	private int wrapped(GuiGraphicsExtractor graphics, int y, String text, int colour) {
+		for (FormattedCharSequence part : this.font.split(Component.literal(text), pw - 2 * PAD - 4)) {
+			graphics.text(this.font, part, PAD, y, colour);
+			y += 10;
+		}
 
-		return y + ROW;
+		return y;
+	}
+
+	private int gauge(GuiGraphicsExtractor graphics, int y, DebugModel.Gauge gauge) {
+		int labelWidth = 72;
+		graphics.text(this.font, trim(gauge.label(), labelWidth - 4), PAD, y + 1, GREY);
+		int bar = PAD + labelWidth;
+		graphics.fill(bar, y + 2, bar + BAR_WIDTH, y + 8, BAR_BACK);
+		int filled = (int) (BAR_WIDTH * gauge.fraction());
+		graphics.fill(bar, y + 2, bar + filled, y + 8, gauge.fraction() > 0.85f ? YELLOW : BAR_FRONT);
+		int textX = bar + BAR_WIDTH + 6;
+		List<FormattedCharSequence> parts = this.font.split(Component.literal(gauge.text()), pw - textX - PAD);
+		for (FormattedCharSequence part : parts) {
+			graphics.text(this.font, part, textX, y + 1, WHITE);
+			y += 10;
+		}
+
+		return y + (parts.isEmpty() ? ROW : 2);
 	}
 
 	private String trim(String text, int width) {

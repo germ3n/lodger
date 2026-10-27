@@ -27,7 +27,12 @@ class DebugModelTest {
 			  "mod": {
 			    "message": "",
 			    "gauges": [{"label": "stage", "value": 2, "max": 5, "text": "stage 2 of 5"}],
-			    "sections": [{"title": "Plan", "lines": ["nothing planned"]}],
+			    "sections": [
+			      {"title": "Plans", "lines": [], "items": [
+			        {"text": "#3 open_door at (3,64,0)", "detail": "in 20s", "actions": [{"id": "plan_drop:3", "label": "Drop"}, {"id": "plan_now:3", "label": "Now"}]}
+			      ]},
+			      {"title": "Story", "lines": ["NEXT: open_door in 20s (1 planned)"]}
+			    ],
 			    "events": [
 			      {"id": "open_door", "words": "open the door", "stages": "1 to 5", "offered": false, "why": "the target is home and awake", "times": 1},
 			      {"id": "knock", "words": "knock on the door", "stages": "2 to 5", "offered": true, "why": "", "times": 0}
@@ -64,7 +69,13 @@ class DebugModelTest {
 
 		assertEquals("stage 2 of 5", model.gauges.get(0).text());
 		assertEquals(0.4f, model.gauges.get(0).fraction());
-		assertEquals("Plan", model.sections.get(0).title());
+		DebugModel.Section plans = model.sections.get(0);
+		assertEquals("Plans", plans.title());
+		assertEquals(1, plans.items().size(), "a plan is a row with buttons");
+		assertEquals("in 20s", plans.items().get(0).detail());
+		assertEquals("plan_drop:3", plans.items().get(0).actions().get(0).id());
+		assertEquals("Now", plans.items().get(0).actions().get(1).label());
+		assertTrue(model.sections.get(1).items().isEmpty(), "a section without items has none");
 		assertEquals(2, model.events.size());
 		assertFalse(model.events.get(0).offered());
 		assertEquals("the target is home and awake", model.events.get(0).why());

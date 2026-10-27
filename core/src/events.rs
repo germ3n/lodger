@@ -114,6 +114,36 @@ pub enum Need {
 }
 
 impl Need {
+    /// Whether the need is a fact of the world the target must change to bring back (the home,
+    /// a chest, a door, what a chest holds, a route), rather than a moment that comes and goes
+    /// (night, the target away, rain, an animal near). A plan whose lasting need is gone is
+    /// cancelled; one whose passing need is unmet waits.
+    pub fn lasting(&self) -> bool {
+        !matches!(
+            self,
+            Need::TargetAwayOrAsleep
+                | Need::TargetOnline
+                | Need::TargetIndoors
+                | Need::TargetOutdoors
+                | Need::TargetWalking
+                | Need::TargetInBed
+                | Need::TargetSaid
+                | Need::Heard
+                | Need::Night
+                | Need::Day
+                | Need::Dawn
+                | Need::Raining
+                | Need::NotRaining
+                | Need::Creature(_)
+                | Need::Pet
+                | Need::Animals
+                | Need::TargetUnderground
+                | Need::TargetAte
+                | Need::TargetApproachingDoor
+                | Need::TargetApproachingChest
+        )
+    }
+
     /// The need in words, for the debug screen's `why` column.
     pub fn words(&self) -> String {
         match self {

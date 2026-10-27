@@ -214,9 +214,12 @@ fn a_stay_of_twelve_days_on_the_rule_brain_acts_within_its_budget_and_never_in_v
 
     assert!(!run.commands.is_empty(), "nothing happened in twelve days");
     // The budget is 1, 2, 4, 6 a day and the rule brain waits often: twelve days through the
-    // first stages hold a few dozen commands at most.
+    // first stages hold a few dozen events, some of several commands. 114 with one plan at a
+    // time; 123 with three side by side (2026-11-09), which land more of each day's budget
+    // rather than more than it: the budget itself is held by the brain's test
+    // `plans_held_count_against_the_day_s_budget_before_they_run`.
     assert!(
-        run.commands.len() < 120,
+        run.commands.len() < 140,
         "{} commands in twelve days",
         run.commands.len()
     );

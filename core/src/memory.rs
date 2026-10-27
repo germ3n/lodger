@@ -1322,6 +1322,29 @@ impl Memory {
     }
 
     /// Whether any fixture of this kind is known.
+    /// What the memory knows at a spot, in a word: `door`, `bed`, `chest`, `wall`, `light`,
+    /// `fixture`, `decor`, or none. A plan keeps it, and is cancelled when it is gone.
+    pub fn thing_at(&self, pos: BlockPos) -> Option<&'static str> {
+        let home = self.home.as_ref();
+        if home.is_some_and(|h| h.doors.contains(&pos)) {
+            Some("door")
+        } else if home.is_some_and(|h| h.bed == Some(pos)) {
+            Some("bed")
+        } else if self.containers.iter().any(|c| c.pos == pos && c.theirs()) {
+            Some("chest")
+        } else if self.walls.iter().any(|(p, _)| *p == pos) {
+            Some("wall")
+        } else if home.is_some_and(|h| h.lights.contains(&pos)) {
+            Some("light")
+        } else if self.fixtures.iter().any(|f| f.pos == pos) {
+            Some("fixture")
+        } else if self.decor.iter().any(|d| d.pos == pos) {
+            Some("decor")
+        } else {
+            None
+        }
+    }
+
     pub fn has_fixture(&self, kind: &str) -> bool {
         self.fixtures(kind).next().is_some()
     }

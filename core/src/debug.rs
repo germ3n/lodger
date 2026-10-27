@@ -10,7 +10,7 @@ use crate::config::Config;
 use crate::events::{self, CATALOGUE};
 use crate::rules;
 use crate::stay::Stay;
-use craftkit::debug::{ActionRow, DebugReply, DebugRequest, EventRow, Gauge, Section};
+use craftkit::debug::{ActionRow, DebugReply, DebugRequest, EventRow, Gauge, Item, Section};
 use craftkit::world::Now;
 
 /// Answers one request about one stay. `now` is the stay's idea of the clock from its last
@@ -71,15 +71,28 @@ pub fn answer(
                 }
                 "plan_now" => {
                     stay.brain.next_plan_tick = 0;
-                    stay.brain.plan = None;
-                    "the brain decides on the next tick".to_string()
+                    "the brain decides on the next tick, if it holds fewer plans than it may"
+                        .to_string()
                 }
                 "clear_plan" => {
-                    let had = stay.brain.plan.take().map(|p| p.event);
+                    let ids: Vec<u64> = stay.brain.plans.iter().map(|p| p.id).collect();
+                    for id in &ids {
+                        stay.brain.drop_plan(*id, day, &mut stay.memory, log);
+                    }
                     stay.brain.later.clear();
-                    match had {
-                        Some(event) => format!("dropped the plan for {event}"),
-                        None => "there was no plan".to_string(),
+                    match ids.len() {
+                        0 => "there were no plans".to_string(),
+                        n => format!("dropped {n} plan(s)"),
+                    }
+                }
+                other if other.starts_with("plan_drop:") || other.starts_with("plan_now:") => {
+                    let (verb, number) = other.split_once(':').unwrap_or_default();
+                    match number.parse::<u64>() {
+                        Ok(id) if verb == "plan_drop" => {
+                            stay.brain.drop_plan(id, day, &mut stay.memory, log)
+                        }
+                        Ok(id) => stay.brain.plan_now(id),
+                        Err(_) => format!("no plan {number}"),
                     }
                 }
                 "forget_cooldowns" => {
@@ -93,7 +106,7 @@ pub fn answer(
                     stay.memory = Default::default();
                     stay.memory.target = target;
                     stay.memory.target_name = name;
-                    stay.brain.plan = None;
+                    stay.brain.plans.clear();
                     stay.brain.later.clear();
                     stay.brain.pending.clear();
                     "the memory is empty; it learns the house again from here".to_string()
@@ -154,36 +167,22 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             format!("{spent:.1} of {budget:.1} events"),
         ));
     }
-    match &brain.plan {
-        Some(plan) => {
-            let wait = plan.from_tick.saturating_sub(now.tick) as f32 / 20.0;
-            gauges.push(Gauge::new(
-                "plan",
-                if plan.forced {
-                    1.0
-                } else {
-                    1.0 - (wait / (4.0 * config.brain.plan_every as f32)).min(1.0)
-                },
-                1.0,
-                if plan.forced {
-                    format!("{} forced, next tick", plan.event)
-                } else if wait > 0.0 {
-                    format!("{} in {wait:.0}s, then when its moment comes", plan.event)
-                } else {
-                    format!("{} waiting for its moment", plan.event)
-                },
-            ));
-        }
-        None => {
-            let wait = brain.next_plan_tick.saturating_sub(now.tick) as f32 / 20.0;
-            gauges.push(Gauge::new(
-                "plan",
-                1.0 - (wait / config.brain.plan_every as f32).min(1.0),
-                1.0,
-                format!("none; next decision in {wait:.0}s"),
-            ));
-        }
-    }
+    let most = config.brain.most_plans.max(1);
+    let next = brain.next_plan_tick.saturating_sub(now.tick) / 20;
+    gauges.push(Gauge::new(
+        "plans",
+        brain.plans.len() as f32,
+        most as f32,
+        match soonest(brain) {
+            Some(plan) => format!(
+                "{} of {most}; next {} {}",
+                brain.plans.len(),
+                plan.event,
+                plan_when(plan, now)
+            ),
+            None => format!("none of {most}; next decision in {next}s"),
+        },
+    ));
     gauges.push(Gauge::new(
         "decisions",
         brain.decisions as f32,
@@ -241,17 +240,33 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
     }
 
     let mut sections = vec![Section::new("As the brain reads it", memory.describe(day))];
-    let mut plan_lines = Vec::new();
-    if let Some(plan) = &brain.plan {
-        plan_lines.push(format!(
-            "{}{} at {}",
-            plan.event,
-            if plan.forced { " (forced)" } else { "" },
-            plan.pos
-                .map(crate::brain::log::spot_words)
-                .unwrap_or_else(|| "no place".to_string())
+    let mut plans = Section::new("Plans", Vec::new());
+    for plan in &brain.plans {
+        plans.items.push(Item {
+            text: format!(
+                "#{} {}{} at {}",
+                plan.id,
+                plan.event,
+                if plan.forced { " (forced)" } else { "" },
+                plan.pos
+                    .map(crate::brain::log::spot_words)
+                    .unwrap_or_else(|| "no place".to_string())
+            ),
+            detail: plan_when(plan, now),
+            actions: vec![
+                ActionRow::new(&format!("plan_drop:{}", plan.id), "Drop"),
+                ActionRow::new(&format!("plan_now:{}", plan.id), "Now"),
+            ],
+        });
+    }
+    if plans.items.is_empty() {
+        plans.lines.push(format!(
+            "nothing planned; a decision in about {}s",
+            brain.next_plan_tick.saturating_sub(now.tick) / 20
         ));
     }
+    sections.push(plans);
+    let mut plan_lines = Vec::new();
     for pending in &brain.pending {
         plan_lines.push(format!(
             "waiting on the host: {} (command {})",
@@ -265,10 +280,9 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             serde_json::to_string(&later.command).unwrap_or_default()
         ));
     }
-    if plan_lines.is_empty() {
-        plan_lines.push("nothing planned".to_string());
+    if !plan_lines.is_empty() {
+        sections.push(Section::new("Under way", plan_lines));
     }
-    sections.push(Section::new("Plan", plan_lines));
     sections.push(Section::new(
         "Done lately",
         memory
@@ -336,23 +350,15 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
     // chose and what came of it (owner, 2026-11-09: "show events that happened, what is about
     // to happen, why it happened").
     let mut story = Vec::new();
-    if let Some(plan) = &brain.plan {
+    if let Some(plan) = soonest(brain) {
         story.push(format!(
-            "NEXT: {}{} {}",
+            "NEXT: {}{} {} ({} planned)",
             plan.event,
             plan.pos
                 .map(|p| format!(" at {}", crate::brain::log::spot_words(p)))
                 .unwrap_or_default(),
-            if plan.forced {
-                "on the next tick (forced)".to_string()
-            } else if plan.from_tick > now.tick {
-                format!(
-                    "in about {}s, once its moment comes",
-                    (plan.from_tick - now.tick) / 20
-                )
-            } else {
-                "as soon as its moment comes".to_string()
-            }
+            plan_when(plan, now),
+            brain.plans.len()
         ));
     } else {
         story.push(format!(
@@ -452,6 +458,24 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
     }
 }
 
+/// The plan due soonest, forced ones first.
+fn soonest(brain: &crate::brain::Brain) -> Option<&crate::brain::Plan> {
+    brain.plans.iter().min_by_key(|p| (!p.forced, p.from_tick))
+}
+
+/// When a plan happens, in the screen's words: `next tick (forced)`, `in 40s`, or why it waits.
+fn plan_when(plan: &crate::brain::Plan, now: &Now) -> String {
+    if plan.forced {
+        "on the next tick (forced)".to_string()
+    } else if plan.from_tick > now.tick {
+        format!("in {}s", (plan.from_tick - now.tick) / 20)
+    } else if plan.waiting.is_empty() {
+        "due".to_string()
+    } else {
+        plan.waiting.clone()
+    }
+}
+
 /// Every kind killed, most first, with the hits: `11 sheep, 3 pigs, 1 creeper; 18 hits`. Six
 /// kinds at most, then how many more. The dev client's line named the first kind alone, so a
 /// pig killed seemed not counted (2026-11-09).
@@ -539,7 +563,11 @@ mod tests {
         assert_eq!(door.why, "the target is home and awake");
         let music = reply.events.iter().find(|e| e.id == "cut_music").unwrap();
         assert!(music.offered, "{}", music.why);
-        assert!(reply.sections.iter().any(|s| s.title == "Plan"));
+        let plans = reply.sections.iter().find(|s| s.title == "Plans").unwrap();
+        assert!(
+            plans.items.is_empty() && plans.lines[0].starts_with("nothing planned"),
+            "{plans:?}"
+        );
         assert_eq!(reply.gauges[0].text, "stage 2 of 5");
         let story = reply.sections.iter().find(|s| s.title == "Story").unwrap();
         assert!(story.lines[0].starts_with("NEXT:"), "{:?}", story.lines);
@@ -601,7 +629,7 @@ mod tests {
             "{}",
             reply.message
         );
-        let plan = stay.brain.plan.as_ref().unwrap();
+        let plan = stay.brain.plans.first().unwrap();
         assert!(plan.forced);
 
         // The target is home and awake, which the rules would refuse; forced, it still goes.
@@ -624,7 +652,7 @@ mod tests {
             )),
             "{commands:?}"
         );
-        assert!(stay.brain.plan.is_none());
+        assert!(stay.brain.plans.is_empty());
         assert_eq!(stay.arc.spent_today, 0.0, "a forced event costs no budget");
 
         let nothing = answer(

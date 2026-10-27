@@ -58,6 +58,7 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 | Key | Default | What it changes |
 | --- | --- | --- |
 | `brain.plan_every` | `90` | Seconds of the target's play between planning asks, on top of the trigger asks. |
+| `brain.most_plans` | `3` | How many plans it holds at once; it asks again every `plan_every` while below it (`calm` 2, `intense` 4, `relentless` 5; one until 2026-11-09, owner: "one event at a time kinda gets slow"). |
 | `brain.event_threshold` | `0.4` | The confidence of the model's `Should it do something soon?` answer below which the decision is `wait`. Higher is a more patient lodger. Live since 2026-11-09. |
 | `brain.react_threshold` | `0.55` | The same for the model's `Should it answer this?` after a trigger (live since 2026-11-09): below it, no answer. Reactions are cheaper to get wrong than plans, so the bar is higher. |
 | `brain.queue` | `64` | The most questions waiting. A full queue refuses; the rule brain answers. |

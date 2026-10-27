@@ -246,7 +246,20 @@ player's name.
    creatures moved), not just its own spot, and a plan in view **waits** (`waiting: "in view"`)
    until the target looks away, within its day, rather than being dropped: a path of torches
    has no spot of its own and went up in plain sight in the dev client (2026-11-09).
-5. **Plan.** One entry at most per lodger. A new plan replaces an unstarted one. Its moment is a
+5. **Plans.** Up to `brain.most_plans` at once (3; one until 2026-11-09, owner: "one event at
+   a time kinda gets slow"), each with a number, run on its own every tick (`Brain::run_plan`):
+   it asks again every `plan_every` while below the cap, and the menu leaves out what clashes
+   with a plan held (`Brain::clashes`: never the same event, never two of one group by
+   `offer::group`, the figures, the chat lines, the screen, the sounds, never two on one spot).
+   The day's budget counts the plans held as well as what was spent, since a plan spends only
+   when it runs. **A plan is cancelled** as soon as it cannot happen (`cancel_reason`): a rule
+   now refusing it outright (its stage passed, disabled, at its cap), a lasting need gone
+   (`Need::lasting`: the home, a chest, a door, what a chest holds, a route, as against night,
+   rain or the target away, which only make it wait), or what was at its spot when planned gone
+   (`Plan::on`, `Memory::thing_at`: `its door is gone`); at the cap a reaction displaces the
+   oldest plan not yet due (`made way for ...`). Each cancellation is in the log, the memory
+   and the story. While it waits, `Plan::waiting` says why (`waiting: the target is home and
+   awake`, `waiting while they sleep`, `in view`) on the debug screen. Its moment is a
    tick of the host's clock, which starts again at 0 when the game does; the stay moves every
    tick the brain waits for back by the difference when that happens (`Stay::last_tick`,
    `Brain::rebase`).

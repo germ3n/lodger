@@ -202,7 +202,7 @@ fn three_days_against_the_real_model_print_every_decision() {
         }
         tick += 5;
         // The model answers on its own thread; a short wait keeps the loop from racing it.
-        if stay.brain.asking.is_some() || stay.brain.writing.is_some() {
+        if stay.brain.asking.is_some() || !stay.brain.writings.is_empty() {
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
     }

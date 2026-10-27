@@ -65,7 +65,8 @@ jar at the end of the session and left at the title screen.
    tab and watch the world and the Log tab; read `config/lodger/decisions.log` for the model's
    answers (`brain=model`) and its written lines (`wrote (...)`); the figure (`far_figure`,
    `in_doorway`). Fix what shows. Then NeoForge (`:neoforge:runClient`) the same.
-   **Asked during the first session (2026-11-09), next after its fixes:** plans in parallel
+   **Asked during the first session (2026-11-09), next after its fixes:** (done the same night:
+   parallel plans, cancelling, the side panel; see the todo) plans in parallel
    (`brain.most_plans`, 3 by default, presets scale it; asking again every `plan_every` while
    below it; never two on one spot or container, never two of a group, never one event twice);
    plans cancelled as soon as they cannot happen (the spot gone, the needs unable to return

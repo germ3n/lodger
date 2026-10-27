@@ -27,6 +27,8 @@ pub const TPS: u64 = 20;
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Plan {
+    /// Its number in this stay, for the debug screen's Drop and Now.
+    pub id: u64,
     pub event: String,
     pub pos: Option<BlockPos>,
     /// The tick it may run from; it waits past this for its conditions.
@@ -42,10 +44,24 @@ pub struct Plan {
     /// whenever the needs hold.
     #[serde(default)]
     pub when: String,
-    /// Why it has not happened yet though its moment came (`in view`), for the debug screen;
-    /// empty while it waits for its moment or its conditions.
+    /// Why it has not happened yet, for the debug screen: `in view`, `waiting: not night`,
+    /// `waiting while they sleep`; empty before its moment.
     #[serde(default)]
     pub waiting: String,
+    /// What the memory knew at its spot when it was planned (`door`, `chest`, `bed`:
+    /// `Memory::thing_at`); gone, the plan is cancelled.
+    #[serde(default)]
+    pub on: String,
+}
+
+/// What a plan did on a tick.
+enum Step {
+    /// Still waiting, and why.
+    Wait(String),
+    /// Done with, carried out or not: it leaves the list.
+    Gone,
+    /// Carried out: these commands go now.
+    Sent(Vec<Command>),
 }
 
 /// A command sent and not yet reported.
@@ -68,7 +84,12 @@ pub struct Later {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Brain {
+    /// The plans waiting for their moments, at most `brain.most_plans`.
+    pub plans: Vec<Plan>,
+    /// A save from before plans ran side by side had one; [`Brain::migrate`] moves it.
+    #[serde(default, skip_serializing)]
     pub plan: Option<Plan>,
+    pub next_plan_id: u64,
     pub pending: Vec<Pending>,
     pub later: Vec<Later>,
     pub next_plan_tick: u64,
@@ -91,9 +112,9 @@ pub struct Brain {
     /// The question out to the model, if one is; answered on a later tick.
     #[serde(skip)]
     pub asking: Option<Ask>,
-    /// The line the model is writing for the planned event, if one is.
+    /// The lines the model is writing for planned events.
     #[serde(skip)]
-    pub writing: Option<Writing>,
+    pub writings: Vec<Writing>,
     /// Lines the model wrote, by event, used when the plan runs.
     #[serde(skip)]
     pub written: Vec<(String, String)>,
@@ -393,7 +414,6 @@ impl Brain {
 
         // A reaction, on a trigger, ten seconds apart at most, when nothing else is asked.
         let may_react = self.asking.is_none()
-            && self.plan.is_none()
             && (self.last_react_tick == 0
                 || now.tick.saturating_sub(self.last_react_tick) >= REACT_EVERY_TICKS);
         if may_react && !memory.triggers.is_empty() {
@@ -436,140 +456,245 @@ impl Brain {
             }
         }
 
-        if self.plan.is_none() && self.asking.is_none() && now.tick >= self.next_plan_tick {
+        if self.plans.len() < config.brain.most_plans.max(1) as usize
+            && self.asking.is_none()
+            && now.tick >= self.next_plan_tick
+        {
             self.next_plan_tick = now.tick + config.brain.plan_every as u64 * TPS;
             self.decide(now, day, memory, arc, config, log, model);
         }
 
-        if let Some(plan) = self.plan.clone() {
-            if now.tick > plan.until_tick {
-                memory.record(&plan.event, plan.pos, day, false, "its moment never came");
-                self.outcome(&plan.event, "its moment never came");
-                self.plan = None;
-            } else if now.tick >= plan.from_tick {
-                if let Some(event) = events::find(&plan.event) {
-                    if plan.forced
-                        || (act::ready(event, memory, config) && when_holds(&plan.when, memory))
-                    {
-                        let checked = if plan.forced {
-                            Ok(())
-                        } else {
-                            rules::check(event, plan.pos, memory, arc.stage, day, config)
-                        };
-                        let written = self
-                            .written
-                            .iter()
-                            .find(|(e, _)| *e == plan.event)
-                            .map(|(_, t)| t.clone());
-                        let made = match checked {
-                            Ok(()) => {
-                                let mut ids = || self.id();
-                                act::commands(
-                                    event,
-                                    plan.pos,
-                                    memory,
-                                    &mut ids,
-                                    now,
-                                    written.as_deref(),
-                                )
-                            }
-                            Err(_) => Vec::new(),
-                        };
-                        // Digging near what they built is refused whoever asked, the debug
-                        // screen's Fire too: the host keeps a placed block itself from being
-                        // replaced, but not the ground under it.
-                        if let Some(dug) = made.iter().find_map(|(command, _)| {
-                            act::dug(command).filter(|p| !act::clear_of_built(memory, *p))
-                        }) {
-                            let why = "too near what they built";
-                            log.note(&format!(
-                                "{} would dig at {}: {why}",
-                                plan.event,
-                                log::spot_words(dug)
-                            ));
-                            memory.record(&plan.event, plan.pos, day, false, why);
-                            self.outcome(&plan.event, why);
-                            self.plan = None;
-                            return commands;
-                        }
-                        // In view is a reason to wait, not to give up: every block it would
-                        // change, not just its spot, stays out of sight until they look away,
-                        // within the plan's day.
-                        let seen = !plan.forced
-                            && (checked == Err(rules::Refused::InView)
-                                || (checked.is_ok()
-                                    && rules::hidden_from_view(event.action)
-                                    && made.iter().any(|(command, _)| {
-                                        act::spots(command).iter().any(|spot| {
-                                            memory.in_view(*spot, config.events.min_distance as f64)
-                                        })
-                                    })));
-                        if seen {
-                            if let Some(plan) = &mut self.plan {
-                                plan.waiting = "in view".to_string();
-                            }
-                            return commands;
-                        }
-                        match checked {
-                            Ok(()) => {
-                                self.written.retain(|(e, _)| *e != plan.event);
-                                if !plan.forced {
-                                    arc.spend(event.cost());
-                                }
-                                if plan.forced && made.is_empty() {
-                                    memory.record(
-                                        &plan.event,
-                                        plan.pos,
-                                        day,
-                                        false,
-                                        "nothing to do it with",
-                                    );
-                                }
-                                log.acted(&plan.event, plan.pos, made.len());
-                                if !plan.forced {
-                                    self.outcome(
-                                        &plan.event,
-                                        if made.is_empty() {
-                                            "nothing to do it with"
-                                        } else {
-                                            "sent to the world"
-                                        },
-                                    );
-                                }
-                                for (command, later_ticks) in made {
-                                    let id = command.id();
-                                    self.pending.push(Pending {
-                                        id,
-                                        event: plan.event.clone(),
-                                        pos: plan.pos,
-                                        day,
-                                    });
-                                    if later_ticks == 0 {
-                                        commands.push(command);
-                                    } else {
-                                        self.later.push(Later {
-                                            at_tick: now.tick + later_ticks,
-                                            command,
-                                        });
-                                    }
-                                }
-                                if self.pending.is_empty() && !plan.forced {
-                                    memory.record(&plan.event, plan.pos, day, true, "");
-                                }
-                                self.plan = None;
-                            }
-                            Err(refused) => {
-                                memory.record(&plan.event, plan.pos, day, false, refused.words());
-                                self.outcome(&plan.event, refused.words());
-                                self.plan = None;
-                            }
-                        }
+        // Every plan on its own: cancelled once it cannot happen, waiting for its moment or
+        // for them to look away, or carried out.
+        let ids: Vec<u64> = self.plans.iter().map(|p| p.id).collect();
+        for id in ids {
+            let Some(plan) = self.plans.iter().find(|p| p.id == id).cloned() else {
+                continue;
+            };
+            match self.run_plan(&plan, now, day, memory, arc, config, log) {
+                Step::Wait(why) => {
+                    if let Some(plan) = self.plans.iter_mut().find(|p| p.id == id) {
+                        plan.waiting = why;
                     }
+                }
+                Step::Gone => self.plans.retain(|p| p.id != id),
+                Step::Sent(sent) => {
+                    commands.extend(sent);
+                    self.plans.retain(|p| p.id != id);
                 }
             }
         }
 
         commands
+    }
+
+    /// One plan's tick: cancelled if it can no longer happen, gone if its day passed, waiting
+    /// (and why) before its moment, for its needs, or while its blocks are in view, refused if
+    /// it would dig near what they built, else carried out.
+    #[allow(clippy::too_many_arguments)]
+    fn run_plan(
+        &mut self,
+        plan: &Plan,
+        now: &Now,
+        day: f32,
+        memory: &mut Memory,
+        arc: &mut Arc,
+        config: &Config,
+        log: &mut log::Log,
+    ) -> Step {
+        let Some(event) = events::find(&plan.event) else {
+            return Step::Gone;
+        };
+        if now.tick > plan.until_tick {
+            memory.record(&plan.event, plan.pos, day, false, "its moment never came");
+            self.outcome(&plan.event, "its moment never came");
+            return Step::Gone;
+        }
+        if !plan.forced {
+            if let Some(why) = cancel_reason(event, plan, memory, arc.stage, day, config) {
+                self.cancel(plan, &why, day, memory, log);
+                return Step::Gone;
+            }
+        }
+        if now.tick < plan.from_tick {
+            return Step::Wait(String::new());
+        }
+        if !plan.forced {
+            if !act::ready(event, memory, config) {
+                let why = offer::unmet(event, memory, now).unwrap_or_default();
+                return Step::Wait(format!("waiting: {why}"));
+            }
+            if !when_holds(&plan.when, memory) {
+                return Step::Wait(format!("waiting {}", when_words(&plan.when)));
+            }
+        }
+
+        let checked = if plan.forced {
+            Ok(())
+        } else {
+            rules::check(event, plan.pos, memory, arc.stage, day, config)
+        };
+        let written = self
+            .written
+            .iter()
+            .find(|(e, _)| *e == plan.event)
+            .map(|(_, t)| t.clone());
+        let made = match checked {
+            Ok(()) => {
+                let mut ids = || self.id();
+                act::commands(event, plan.pos, memory, &mut ids, now, written.as_deref())
+            }
+            Err(_) => Vec::new(),
+        };
+        // Digging near what they built is refused whoever asked, the debug screen's Fire too:
+        // the host keeps a placed block itself from being replaced, but not the ground under it.
+        if let Some(dug) = made
+            .iter()
+            .find_map(|(command, _)| act::dug(command).filter(|p| !act::clear_of_built(memory, *p)))
+        {
+            let why = "too near what they built";
+            log.note(&format!(
+                "{} would dig at {}: {why}",
+                plan.event,
+                log::spot_words(dug)
+            ));
+            memory.record(&plan.event, plan.pos, day, false, why);
+            self.outcome(&plan.event, why);
+            return Step::Gone;
+        }
+        // In view is a reason to wait, not to give up: every block it would change, not just
+        // its spot, stays out of sight until they look away, within the plan's day.
+        let seen = !plan.forced
+            && (checked == Err(rules::Refused::InView)
+                || (checked.is_ok()
+                    && rules::hidden_from_view(event.action)
+                    && made.iter().any(|(command, _)| {
+                        act::spots(command)
+                            .iter()
+                            .any(|spot| memory.in_view(*spot, config.events.min_distance as f64))
+                    })));
+        if seen {
+            return Step::Wait("in view".to_string());
+        }
+        if let Err(refused) = checked {
+            memory.record(&plan.event, plan.pos, day, false, refused.words());
+            self.outcome(&plan.event, refused.words());
+            return Step::Gone;
+        }
+
+        self.written.retain(|(e, _)| *e != plan.event);
+        if !plan.forced {
+            arc.spend(event.cost());
+        }
+        if plan.forced && made.is_empty() {
+            memory.record(&plan.event, plan.pos, day, false, "nothing to do it with");
+        }
+        log.acted(&plan.event, plan.pos, made.len());
+        if !plan.forced {
+            self.outcome(
+                &plan.event,
+                if made.is_empty() {
+                    "nothing to do it with"
+                } else {
+                    "sent to the world"
+                },
+            );
+        }
+        if made.is_empty() && !plan.forced {
+            memory.record(&plan.event, plan.pos, day, true, "");
+        }
+        let mut sent = Vec::new();
+        for (command, later_ticks) in made {
+            self.pending.push(Pending {
+                id: command.id(),
+                event: plan.event.clone(),
+                pos: plan.pos,
+                day,
+            });
+            if later_ticks == 0 {
+                sent.push(command);
+            } else {
+                self.later.push(Later {
+                    at_tick: now.tick + later_ticks,
+                    command,
+                });
+            }
+        }
+
+        Step::Sent(sent)
+    }
+
+    /// A plan given up, with its reason in the log, the memory and the story.
+    fn cancel(
+        &mut self,
+        plan: &Plan,
+        why: &str,
+        day: f32,
+        memory: &mut Memory,
+        log: &mut log::Log,
+    ) {
+        log.note(&format!("cancelled {}: {why}", plan.event));
+        memory.record(&plan.event, plan.pos, day, false, why);
+        self.outcome(&plan.event, &format!("cancelled: {why}"));
+        self.writings.retain(|w| w.event != plan.event);
+        self.written.retain(|(e, _)| *e != plan.event);
+    }
+
+    /// Drops one plan by its number: the debug screen's Drop. Says which.
+    pub fn drop_plan(
+        &mut self,
+        id: u64,
+        day: f32,
+        memory: &mut Memory,
+        log: &mut log::Log,
+    ) -> String {
+        let Some(plan) = self.plans.iter().find(|p| p.id == id).cloned() else {
+            return format!("no plan {id}");
+        };
+        self.cancel(&plan, "dropped from the debug screen", day, memory, log);
+        self.plans.retain(|p| p.id != id);
+        format!("dropped {}", plan.event)
+    }
+
+    /// Runs one plan on the next tick past its moment and its rules, as Fire does: the debug
+    /// screen's Now. Says which.
+    pub fn plan_now(&mut self, id: u64) -> String {
+        match self.plans.iter_mut().find(|p| p.id == id) {
+            Some(plan) => {
+                plan.from_tick = 0;
+                plan.forced = true;
+                plan.until_tick = u64::MAX;
+                format!("{} on the next tick", plan.event)
+            }
+            None => format!("no plan {id}"),
+        }
+    }
+
+    /// Whether an event may be planned beside the plans already held: never the same event,
+    /// never two of one group (two figures, two chat lines), never two on one spot.
+    fn clashes(&self, event: &Event, pos: Option<BlockPos>) -> bool {
+        let group = offer::group(event);
+        self.plans.iter().any(|plan| {
+            plan.event == event.id
+                || (pos.is_some() && plan.pos == pos)
+                || (group.is_some() && events::find(&plan.event).and_then(offer::group) == group)
+        })
+    }
+
+    /// A save from before plans ran side by side: its one plan joins the list.
+    pub fn migrate(&mut self) {
+        if let Some(mut plan) = self.plan.take() {
+            if plan.id == 0 {
+                self.next_plan_id += 1;
+                plan.id = self.next_plan_id;
+            }
+            self.plans.push(plan);
+        }
+    }
+
+    fn next_plan_id(&mut self) -> u64 {
+        self.next_plan_id += 1;
+        self.next_plan_id
     }
 
     /// Whether to answer what the target just typed, and if so when: the row's rules (stage,
@@ -679,7 +804,7 @@ impl Brain {
                 *t = t.saturating_sub(shift).max(1);
             }
         };
-        if let Some(plan) = &mut self.plan {
+        for plan in &mut self.plans {
             back(&mut plan.from_tick);
             back(&mut plan.until_tick);
         }
@@ -715,6 +840,11 @@ impl Brain {
             config,
             &mut self.rng,
         );
+        // Nothing planned beside what clashes with a plan held (the same event, its group).
+        let menu: Vec<&Event> = menu
+            .into_iter()
+            .filter(|e| e.id == "wait" || !self.clashes(e, None))
+            .collect();
         // Nothing but `wait` on offer is nothing to decide: no ask, no decision logged. The
         // dev client asked the model every interval for a menu of one (2026-11-09).
         if menu.iter().all(|e| e.id == "wait") {
@@ -922,13 +1052,8 @@ impl Brain {
                 if let Some(answer) = &mut self.reply {
                     answer.written = kept;
                 }
-            } else if self
-                .writing
-                .as_ref()
-                .map(|w| w.id == reply.id)
-                .unwrap_or(false)
-            {
-                let writing = self.writing.take().unwrap();
+            } else if let Some(at) = self.writings.iter().position(|w| w.id == reply.id) {
+                let writing = self.writings.remove(at);
                 let written = if writing.bank {
                     reply
                         .result
@@ -1215,7 +1340,7 @@ impl Brain {
                 )
             };
             if let Ok(id) = asked {
-                self.writing = Some(Writing {
+                self.writings.push(Writing {
                     id,
                     event: chosen.id.to_string(),
                     kind,
@@ -1226,10 +1351,50 @@ impl Brain {
             }
         }
 
-        if !arc.affords(chosen.cost(), now.day, config) {
+        // The day's budget counts the plans already held: they spend when they run, and three
+        // held at once would all pass a check that saw only what was spent.
+        let held: f32 = self
+            .plans
+            .iter()
+            .filter(|p| !p.forced)
+            .filter_map(|p| events::find(&p.event))
+            .map(|e| e.cost())
+            .sum();
+        if !arc.affords(chosen.cost() + held, now.day, config) {
             log.note("the day's budget is spent");
-            self.writing = None;
+            self.writings.retain(|w| w.event != chosen.id);
             return;
+        }
+        if self.clashes(chosen, pos) {
+            log.note(&format!("{} clashes with a plan held", chosen.id));
+            self.writings.retain(|w| w.event != chosen.id);
+            return;
+        }
+        // At the cap only a reaction plans (decide waits below it): the oldest plan whose moment
+        // has not come makes way for it.
+        if self.plans.len() >= config.brain.most_plans.max(1) as usize {
+            let oldest = self
+                .plans
+                .iter()
+                .filter(|p| !p.forced && p.from_tick > now.tick)
+                .min_by_key(|p| p.id)
+                .cloned();
+            match oldest {
+                Some(old) => {
+                    // It never ran, so no record in the memory: the log and the story say so.
+                    let why = format!("made way for {}", chosen.id);
+                    log.note(&format!("cancelled {}: {why}", old.event));
+                    self.outcome(&old.event, &format!("cancelled: {why}"));
+                    self.writings.retain(|w| w.event != old.event);
+                    self.written.retain(|(e, _)| *e != old.event);
+                    self.plans.retain(|p| p.id != old.id);
+                }
+                None => {
+                    log.note(&format!("no room for {}: every plan is due", chosen.id));
+                    self.writings.retain(|w| w.event != chosen.id);
+                    return;
+                }
+            }
         }
 
         // Soon: within four planning intervals (six minutes at the default `plan_every`, a
@@ -1253,7 +1418,9 @@ impl Brain {
         } else {
             self.rng.next_u64() % (4 * config.brain.plan_every as u64 * TPS).max(1)
         };
-        self.plan = Some(Plan {
+        let id = self.next_plan_id();
+        self.plans.push(Plan {
+            id,
             event: chosen.id.to_string(),
             pos,
             from_tick: now.tick + delay,
@@ -1262,6 +1429,10 @@ impl Brain {
             forced: false,
             when,
             waiting: String::new(),
+            on: pos
+                .and_then(|p| memory.thing_at(p))
+                .unwrap_or_default()
+                .to_string(),
         });
     }
 
@@ -1292,7 +1463,11 @@ impl Brain {
             return format!("{} cannot happen: {why}", event.id);
         }
 
-        self.plan = Some(Plan {
+        // Fire replaces a plan for the same event; the others wait on.
+        self.plans.retain(|p| p.event != event.id);
+        let id = self.next_plan_id();
+        self.plans.push(Plan {
+            id,
             event: event.id.to_string(),
             pos,
             from_tick: 0,
@@ -1301,6 +1476,7 @@ impl Brain {
             forced: true,
             when: String::new(),
             waiting: String::new(),
+            on: String::new(),
         });
         log.note(&format!("forced {}", event.id));
 
@@ -1360,6 +1536,41 @@ impl Brain {
 /// The events worth offering: a convenience for the harness and the status line.
 /// Whether the plan's `When?` holds right now. `away` is the target away or asleep; `sleep`
 /// asleep; `home` within 24 blocks of the home and walking toward it; `now` and empty always.
+/// Why a plan can no longer happen, if it cannot: a rule that now refuses it outright (the
+/// stage moved on, the config disabled it, its cap reached), a lasting need gone (the chest,
+/// the home: `Need::lasting`), or what was at its spot gone (`Plan::on`). A need that comes and
+/// goes, a cooldown or the view only make it wait.
+fn cancel_reason(
+    event: &Event,
+    plan: &Plan,
+    memory: &Memory,
+    stage: u8,
+    day: f32,
+    config: &Config,
+) -> Option<String> {
+    if let Err(
+        refused @ (rules::Refused::Disabled | rules::Refused::NotOffered | rules::Refused::Capped),
+    ) = rules::check(event, plan.pos, memory, stage, day, config)
+    {
+        return Some(refused.words().to_string());
+    }
+    if let Some(need) = event
+        .needs
+        .iter()
+        .find(|n| n.lasting() && !offer::meets(**n, memory, &Now::default()))
+    {
+        return Some(format!("no longer: {}", need.words()));
+    }
+    if !plan.on.is_empty() {
+        let still = plan.pos.and_then(|p| memory.thing_at(p));
+        if still != Some(plan.on.as_str()) {
+            return Some(format!("its {} is gone", plan.on));
+        }
+    }
+
+    None
+}
+
 /// Whether a planned moment can ever hold together with the event's needs: "as they come home"
 /// never meets "away or asleep", "while they sleep" never meets "walking" or "outdoors", and
 /// "while they are away" never meets "in bed" or "indoors" (the home's rooms).
@@ -1573,7 +1784,7 @@ mod tests {
         assert_eq!(decision.brain, "model");
         assert_ne!(decision.chosen, "wait", "the second menu choice was picked");
         assert_eq!(decision.menu[1], decision.chosen);
-        assert!(brain.plan.is_some());
+        assert!(!brain.plans.is_empty());
         assert!(
             log.lines.iter().any(|l| l.contains("brain=model")),
             "{:?}",
@@ -1686,7 +1897,7 @@ mod tests {
                 &mut log,
                 Some(&model),
             );
-            if !memory.want.is_empty() && brain.plan.is_some() {
+            if !memory.want.is_empty() && !brain.plans.is_empty() {
                 break;
             }
             now.tick += TPS;
@@ -1700,7 +1911,7 @@ mod tests {
                 .count()
                 >= 2
         );
-        let plan = brain.plan.as_ref().expect("a plan");
+        let plan = brain.plans.first().expect("a plan");
         assert_eq!(plan.event, "sign");
         assert_eq!(plan.when, "sleep");
         assert_eq!(plan.pos, Some([0, 64, 0]), "the model's place, on the bed");
@@ -1753,7 +1964,7 @@ mod tests {
                 &mut log,
                 Some(&model),
             );
-            if brain.plan.is_some() {
+            if !brain.plans.is_empty() {
                 break;
             }
             now.tick += TPS;
@@ -1972,7 +2183,7 @@ mod tests {
         );
 
         // When the plan runs, the sign carries it.
-        let plan = brain.plan.clone().unwrap();
+        let plan = brain.plans.first().cloned().unwrap();
         let mut at = Now {
             tick: plan.from_tick,
             ..later
@@ -2077,11 +2288,11 @@ mod tests {
         };
         let mut log = log::Log::new(None, 16, false);
         let mut brain = Brain::new(1);
-        brain.plan = Some(Plan {
+        brain.plans = vec![Plan {
             event: "light_path".to_string(),
             until_tick: 24_000,
             ..Plan::default()
-        });
+        }];
         assert!(
             rules::check(
                 events::find("light_path").unwrap(),
@@ -2104,14 +2315,15 @@ mod tests {
             !sent.iter().any(|c| matches!(c, Command::SetBlock { .. })),
             "no torch while they look: {sent:?}"
         );
-        let plan = brain.plan.as_ref().expect("still planned, not dropped");
+        let plan = brain.plans.first().expect("still planned, not dropped");
         assert_eq!(plan.waiting, "in view");
 
         memory.last.yaw = 90.0; // facing -x, away from it all
         now.tick += 20;
         let sent = brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
         assert!(
-            brain.plan.is_none() && sent.iter().any(|c| matches!(c, Command::SetBlock { .. })),
+            !brain.plans.iter().any(|p| p.event == "light_path")
+                && sent.iter().any(|c| matches!(c, Command::SetBlock { .. })),
             "it went ahead once they looked away: {sent:?}"
         );
     }
@@ -2130,19 +2342,19 @@ mod tests {
         };
         let mut log = log::Log::new(None, 16, false);
         let mut brain = Brain::new(1);
-        brain.plan = Some(Plan {
+        brain.plans = vec![Plan {
             event: "close_door".to_string(),
             pos: Some([3, 64, 0]),
             until_tick: 24_000,
             ..Plan::default()
-        });
+        }];
         let now = Now {
             tick: 20,
             ..Now::default()
         };
         brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
         assert_eq!(
-            brain.plan.as_ref().map(|p| p.waiting.as_str()),
+            brain.plans.first().map(|p| p.waiting.as_str()),
             Some("in view"),
             "33 blocks off and facing it: once dropped, now waiting"
         );
@@ -2231,13 +2443,13 @@ mod tests {
         let mut log = log::Log::new(None, 16, false);
         for forced in [false, true] {
             let mut brain = Brain::new(1);
-            brain.plan = Some(Plan {
+            brain.plans = vec![Plan {
                 event: "hole".to_string(),
                 pos: Some([343, 64, 50]),
                 until_tick: 24_000,
                 forced,
                 ..Plan::default()
-            });
+            }];
             let sent = brain.tick(
                 &Now {
                     tick: 20,
@@ -2254,7 +2466,10 @@ mod tests {
                 !sent.iter().any(|c| act::dug(c).is_some()),
                 "forced {forced}: {sent:?}"
             );
-            assert!(brain.plan.is_none(), "refused, not waiting");
+            assert!(
+                !brain.plans.iter().any(|p| p.event == "hole"),
+                "refused, not waiting"
+            );
             assert_eq!(
                 memory.done.last().map(|d| d.reason.as_str()),
                 Some("too near what they built")
@@ -2402,6 +2617,139 @@ mod tests {
     }
 
     #[test]
+    fn plans_held_count_against_the_day_s_budget_before_they_run() {
+        // Plans spend when they run; a check that saw only what was spent let three be held
+        // on a budget of one (the scripted stay's command count rose past its bound).
+        let mut config = Config::default();
+        config.stages.start_after_days = 0;
+        config.stages.events_per_day = [1.0, 1.0, 1.0, 1.0, 0.0];
+        config.brain.plan_every = 1;
+        config.brain.most_plans = 3;
+        config.events.cooldown_scale = 0.0;
+        let mut memory = home_memory();
+        let mut arc = Arc {
+            stage: 2,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(4);
+        // One plan held that cannot run for a long while: the day's one event.
+        let id = brain.next_plan_id();
+        brain.plans.push(Plan {
+            id,
+            event: "late_steps".to_string(),
+            from_tick: 1_000_000,
+            until_tick: 2_000_000,
+            ..Plan::default()
+        });
+        for tick in (20..4_000).step_by(20) {
+            let now = Now {
+                tick,
+                ..Now::default()
+            };
+            brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+        }
+
+        assert!(
+            brain.decisions > 10,
+            "it kept deciding: {}",
+            brain.decisions
+        );
+        // What ran and what is still held never pass the day's one event.
+        let held: f32 = brain
+            .plans
+            .iter()
+            .filter_map(|p| events::find(&p.event))
+            .map(|e| e.cost())
+            .sum();
+        assert!(
+            arc.spent_today + held <= 1.0 + 1e-6,
+            "spent {} with {held} still held: {:?}",
+            arc.spent_today,
+            brain.plans
+        );
+    }
+
+    #[test]
+    fn plans_run_side_by_side_and_one_is_cancelled_when_its_door_is_gone() {
+        let mut config = Config::default();
+        config.stages.start_after_days = 0;
+        config.brain.plan_every = 1;
+        config.events.cooldown_scale = 0.0;
+        let mut memory = home_memory();
+        let mut arc = Arc {
+            stage: 3,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(2);
+        let mut now = Now {
+            tick: 20,
+            ..Now::default()
+        };
+        for _ in 0..40 {
+            brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+            if brain.plans.len() >= 2 {
+                break;
+            }
+            now.tick += TPS;
+        }
+        assert!(brain.plans.len() >= 2, "{:?}", brain.plans);
+        let ids: Vec<u64> = brain.plans.iter().map(|p| p.id).collect();
+        let mut events: Vec<&str> = brain.plans.iter().map(|p| p.event.as_str()).collect();
+        events.dedup();
+        assert_eq!(events.len(), brain.plans.len(), "never one event twice");
+        assert!(ids.windows(2).all(|w| w[0] != w[1]));
+
+        // A plan on the door, and the door broken: cancelled with its reason.
+        let id = brain.next_plan_id();
+        brain.plans.push(Plan {
+            id,
+            event: "close_door".to_string(),
+            pos: Some([3, 64, 0]),
+            from_tick: now.tick + 10_000,
+            until_tick: now.tick + 30_000,
+            on: "door".to_string(),
+            ..Plan::default()
+        });
+        memory.home.as_mut().unwrap().doors.clear();
+        brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+        assert!(!brain.plans.iter().any(|p| p.id == id), "{:?}", brain.plans);
+        assert!(
+            memory.done.iter().any(|d| d.event == "close_door"
+                && d.reason.starts_with("no longer")
+                || d.reason == "its door is gone"),
+            "{:?}",
+            memory.done
+        );
+    }
+
+    #[test]
+    fn a_plan_dropped_or_run_now_from_the_screen_says_which() {
+        let mut memory = home_memory();
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        for event in ["open_door", "cut_music"] {
+            let id = brain.next_plan_id();
+            brain.plans.push(Plan {
+                id,
+                event: event.to_string(),
+                from_tick: 5_000,
+                until_tick: 30_000,
+                ..Plan::default()
+            });
+        }
+        assert_eq!(brain.plan_now(2), "cut_music on the next tick");
+        assert!(brain.plans[1].forced && brain.plans[1].from_tick == 0);
+        assert_eq!(
+            brain.drop_plan(1, 0.0, &mut memory, &mut log),
+            "dropped open_door"
+        );
+        assert_eq!(brain.plans.len(), 1);
+        assert_eq!(brain.drop_plan(9, 0.0, &mut memory, &mut log), "no plan 9");
+    }
+
+    #[test]
     fn a_plan_s_moment_is_within_four_planning_intervals() {
         let mut config = Config::default();
         config.brain.plan_every = 15;
@@ -2427,13 +2775,13 @@ mod tests {
         let mut now = Now::default();
         for _ in 0..200 {
             brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
-            if brain.plan.is_some() {
+            if !brain.plans.is_empty() {
                 break;
             }
             now.tick += 15 * TPS;
         }
 
-        let plan = brain.plan.as_ref().expect("a plan");
+        let plan = brain.plans.first().expect("a plan");
         assert!(
             plan.from_tick - now.tick <= 4 * 15 * TPS,
             "{} ticks ahead",

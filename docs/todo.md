@@ -416,6 +416,16 @@ because it can be built and tested without a game, and because the model layer i
     minutes apart, 60 or 15 in a hundred; the model writes it with their cleaned words in the
     prompt, the new `Reply` bank behind it; exempt from "never twice in a row". Was:
     `says_back` alone, stage three, chosen from the menu whenever, so rarely near a line.
+  - **Plans side by side** (owner: "one event at a time kinda gets slow"; a config key, 3;
+    ask again sooner; no shared spot, group or event): `brain.most_plans` (calm 2, intense 4,
+    relentless 5), each plan run on its own, the budget counting plans held, plans cancelled
+    with a reason when they cannot happen (a lasting need or the thing at their spot gone, a
+    rule refusing them outright, a reaction at the cap), a save's single plan carried over.
+    Was: one plan, and no new decision until it was spent.
+  - **The debug panel** (owner: "kinda hard to use ingame, takes up whole screen"; a right-side
+    panel): the right third of the screen, three quarters text size, see-through, no blur, not
+    paused, wrapped lines, the Mind tab first; plans as rows with Drop and Now (a debug
+    section's `items`, ABI 7). Was: the whole screen, darkened, lines cut off.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
