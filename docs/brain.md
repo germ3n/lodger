@@ -200,7 +200,13 @@ examples and those examples correlating to specific actions") made `generate` th
   writing is asked for the moment the event is planned, so the line is there when the plan
   runs minutes later; with no line by then, the bank's stands. **The blocked words** are the
   `BLOCKED` list at the top of `core/src/brain/text.rs`: slurs, sexual words and self-harm, and
-  nothing else, since the line appears in the player's own name in chat. **Answers to chat**
+  nothing else, since the line appears in the player's own name in chat. **Variety**
+  (2026-11-09, after the owner saw `kill_line` go round its bank): each token is drawn among
+  the likely allowed ones at `brain.text_temperature` (0.8, the top 90 per cent), not always
+  the likeliest; every line written is kept (`Memory::lines_written`, 128) and a line that
+  repeats one (the same, or the same first three words) is dropped, the bank's fallback
+  skipping used lines too (`text::pick_fresh`); and an event fired from the debug screen asks
+  the model like a planned one, waiting three seconds for the line. **Answers to chat**
   (`answers_you`, `Brain::consider_reply`, owner 2026-11-09): a line the target types may be
   answered, decided on the tick it arrives (the row's rules, three a day, a 60 in 100 chance for
   a line about the lodger and 15 otherwise), written by the model with `They just typed: <their

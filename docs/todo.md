@@ -451,6 +451,10 @@ because it can be built and tested without a game, and because the model layer i
     catalogue row (read from `docs/entity.md` at build time), its cooldown and cap and its last
     outcome; a line with a spot in it teleports you there on a click. ABI 11. Was: an id and a
     reason, and coordinates to type by hand.
+  - **Lines vary and never repeat** (the review's B11, C1, C4; owner: "the kill_line stuff
+    repeats"): Fire asks the model too (it went to the bank alone, round its six lines), the
+    model draws among likely words at `brain.text_temperature` 0.8, and no line is used twice
+    in a stay. Was: the likeliest word every time, and Fire from the bank in order.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

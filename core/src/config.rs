@@ -242,6 +242,9 @@ pub struct Brain {
     pub plan_every: u32,
     /// How many plans it holds at once (`docs/brain.md`, Plans).
     pub most_plans: u32,
+    /// How freely the model writes a line: 0 the likeliest words every time, 0.8 by default
+    /// (`docs/brain.md`, Text).
+    pub text_temperature: f64,
     pub event_threshold: f64,
     pub react_threshold: f64,
     pub queue: u32,
@@ -334,6 +337,7 @@ impl Default for Brain {
         Self {
             plan_every: 90,
             most_plans: 3,
+            text_temperature: 0.8,
             event_threshold: 0.4,
             react_threshold: 0.55,
             queue: 64,

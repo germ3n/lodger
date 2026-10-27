@@ -36,11 +36,14 @@ pub trait Scorer {
 /// How far a written line may run: at most `max_tokens` tokens and `words` words (the decode
 /// stops before a token that would start one more), and digits only when `digits` (a line
 /// counting what the player killed). Letters and spaces always.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Leash {
     pub max_tokens: usize,
     pub words: usize,
     pub digits: bool,
+    /// 0 writes the likeliest word every time, the same line for the same moment; above it,
+    /// a draw among the likely ones (`brain.text_temperature`).
+    pub temperature: f32,
 }
 
 pub struct Reply {

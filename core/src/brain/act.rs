@@ -454,6 +454,16 @@ pub fn spots(command: &Command) -> Vec<BlockPos> {
     }
 }
 
+/// The words a command puts in the world: a sign's lines, a chat line, a name.
+pub fn texts(command: &Command) -> Vec<String> {
+    match command {
+        Command::SetSign { lines, .. } => lines.iter().filter(|l| !l.is_empty()).cloned().collect(),
+        Command::GameMessage { text, .. } if !text.is_empty() => vec![text.clone()],
+        Command::NameEntity { name, .. } => vec![name.clone()],
+        _ => vec![],
+    }
+}
+
 /// A torch near `pos`, as a player would place one: on the ground within `settle` blocks down
 /// or up, else on a wall there, never floating. The mind knows positions, not terrain; the
 /// host finds the spot (`docs/sdk.md`, `set_block`).
@@ -572,7 +582,7 @@ pub fn commands(
     let words = |kind: Kind, mob: &str, count: u32| -> String {
         written
             .map(|w| w.to_string())
-            .unwrap_or_else(|| text::pick(kind, seed, mob, count))
+            .unwrap_or_else(|| text::pick_fresh(kind, seed, mob, count, &memory.lines_written))
     };
 
     match event.action {

@@ -254,6 +254,8 @@ pub struct Memory {
     pub decor: Vec<Decor>,
     /// The last thing the target said in chat, whatever it was about.
     pub last_said: String,
+    /// Every line it wrote this stay (signs, chat, names), newest last: none is used twice.
+    pub lines_written: Vec<String>,
     /// What the target just typed, cleaned (`text::heard`), and whether it was about the
     /// lodger: taken by the brain on its next tick to answer or not. Not saved.
     #[serde(skip)]
@@ -303,6 +305,7 @@ pub struct Memory {
 }
 
 /// Caps, with the reason beside each.
+const MOST_LINES_WRITTEN: usize = 128;
 const MOST_CONTAINERS: usize = 32; // the least-opened of those not theirs dropped first
 const MOST_DONE: usize = 256; // oldest dropped first
 const MOST_FAVOURITES: usize = 8;
@@ -931,6 +934,13 @@ impl Memory {
             if let Some(words) = crate::brain::text::heard(&line.text) {
                 self.heard = Some((words, about));
             }
+        }
+    }
+
+    /// Keeps a line it wrote, so it is not written again.
+    pub fn wrote(&mut self, line: String) {
+        if !line.is_empty() && !self.lines_written.contains(&line) {
+            push_capped(&mut self.lines_written, line, MOST_LINES_WRITTEN);
         }
     }
 

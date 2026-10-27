@@ -53,6 +53,7 @@ impl Kind {
             max_tokens: self.most_words() * 2 + 2,
             words: self.most_words(),
             digits: self.counts(),
+            temperature: 0.0,
         }
     }
 
@@ -195,6 +196,25 @@ pub fn heard(typed: &str) -> Option<String> {
     Some(words.join(" "))
 }
 
+/// Whether a line repeats one already used this stay: the same, or opening with the same three
+/// words (`the salmon remember` and `the salmon remember you`).
+pub fn is_repeat(line: &str, used: &[String]) -> bool {
+    let head = |l: &str| l.split_whitespace().take(3).collect::<Vec<_>>().join(" ");
+    let mine = head(line);
+    used.iter()
+        .any(|u| u == line || (line.split_whitespace().count() >= 3 && head(u) == mine))
+}
+
+/// A line of the kind not yet used this stay, from the seed's place in the bank on; the seed's
+/// own when every one was used.
+pub fn pick_fresh(kind: Kind, seed: usize, mob: &str, count: u32, used: &[String]) -> String {
+    let bank = kind.examples();
+    (0..bank.len())
+        .map(|i| fill(bank[(seed + i) % bank.len()], mob, count))
+        .find(|line| !is_repeat(line, used))
+        .unwrap_or_else(|| pick(kind, seed, mob, count))
+}
+
 /// One line of the kind, picked by seed, with `{kind}` and `{n}` filled in.
 pub fn pick(kind: Kind, seed: usize, mob: &str, count: u32) -> String {
     let bank = kind.examples();
@@ -301,6 +321,27 @@ mod tests {
         );
         assert_eq!(heard("123 ?!"), None);
         assert_eq!(heard("fuck off"), None);
+    }
+
+    #[test]
+    fn a_line_used_once_is_not_used_again_and_the_bank_moves_on() {
+        // The dev client, 2026-11-09: `17 salmon`, `the salmon remember`, round and round.
+        let used = vec!["17 salmon".to_string(), "the salmon remember".to_string()];
+        assert!(is_repeat("17 salmon", &used));
+        assert!(
+            is_repeat("the salmon remember you", &used),
+            "the same opening"
+        );
+        assert!(!is_repeat("salmon", &used));
+        let first = pick_fresh(Kind::KillLine, 0, "salmon", 17, &[]);
+        let next = pick_fresh(
+            Kind::KillLine,
+            0,
+            "salmon",
+            17,
+            std::slice::from_ref(&first),
+        );
+        assert_ne!(first, next);
     }
 
     #[test]

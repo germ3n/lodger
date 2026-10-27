@@ -115,6 +115,40 @@ fn is_plain_piece(piece: &[u8], digits: bool) -> bool {
             .all(|b| b.is_ascii_alphabetic() || *b == b' ' || (digits && b.is_ascii_digit()))
 }
 
+/// Only the likeliest tokens making up this share of the probability are drawn from.
+const TOP_P: f32 = 0.9;
+
+/// A token drawn from `candidates` (id, logit) at `temperature`, among the likeliest making up
+/// `top_p` of the probability, with `r` in 0..1 as the draw. None for no candidates.
+fn sample(candidates: &mut [(usize, f32)], temperature: f32, top_p: f32, r: f64) -> Option<usize> {
+    if candidates.is_empty() {
+        return None;
+    }
+    candidates.sort_by(|a, b| b.1.total_cmp(&a.1));
+    let best = candidates[0].1;
+    let weights: Vec<f64> = candidates
+        .iter()
+        .map(|(_, l)| (((l - best) / temperature.max(1e-3)) as f64).exp())
+        .collect();
+    let total: f64 = weights.iter().sum();
+    // Keep the head of the list up to `top_p` of the mass, at least one.
+    let mut kept = 0;
+    let mut mass = 0.0;
+    while kept < weights.len() && (kept == 0 || mass < top_p as f64 * total) {
+        mass += weights[kept];
+        kept += 1;
+    }
+    let mut at = r * mass;
+    for (i, w) in weights.iter().take(kept).enumerate() {
+        if at < *w {
+            return Some(candidates[i].0);
+        }
+        at -= w;
+    }
+
+    Some(candidates[kept - 1].0)
+}
+
 /// Whether `piece` would start a word past the `words`th of the line written so far: a piece
 /// opening with a space after text, when the line already has that many words.
 fn starts_word_past(written: &[u8], piece: &[u8], words: usize) -> bool {
@@ -182,6 +216,24 @@ fn generate_plain(engine: &mut Engine, prompt: &str, leash: Leash) -> Result<Str
         if unmasked_best != id && logits[unmasked_best] - best_logit > 2.0 {
             break;
         }
+        // A draw among the likely allowed tokens, so one moment can give different lines.
+        let id = if leash.temperature > 0.0 {
+            let mut candidates: Vec<(usize, f32)> = logits
+                .iter()
+                .enumerate()
+                .take(mask.len())
+                .filter(|(i, l)| mask[*i] && **l > best_logit - 8.0)
+                .map(|(i, l)| (i, *l))
+                .collect();
+            let r = engine
+                .rng
+                .lock()
+                .unwrap_or_else(|err| err.into_inner())
+                .next_f64();
+            sample(&mut candidates, leash.temperature, TOP_P, r).unwrap_or(id)
+        } else {
+            id
+        };
         let token = LlamaToken(id as i32);
         let piece = vocab.token_to_piece(token, false, None);
         if starts_word_past(&out, &piece, leash.words) {
@@ -376,6 +428,26 @@ mod tests {
         assert!(!is_plain_piece(b"\n", true));
         assert!(!is_plain_piece(b"!", true));
         assert!(!is_plain_piece(b"", true));
+    }
+
+    #[test]
+    fn a_draw_keeps_to_the_likely_tokens_and_a_low_temperature_is_nearly_greedy() {
+        let mut c = vec![(1, 0.0), (2, 5.0), (3, 4.5), (4, -20.0)];
+        assert_eq!(
+            sample(&mut c.clone(), 0.01, 0.9, 0.99),
+            Some(2),
+            "near greedy"
+        );
+        let mut seen = std::collections::HashSet::new();
+        for i in 0..100 {
+            seen.insert(sample(&mut c, 1.0, 0.9, i as f64 / 100.0).unwrap());
+        }
+        assert!(
+            seen.contains(&2) && seen.contains(&3),
+            "both likely ones: {seen:?}"
+        );
+        assert!(!seen.contains(&4), "never the unlikely one");
+        assert_eq!(sample(&mut [], 1.0, 0.9, 0.5), None);
     }
 
     #[test]

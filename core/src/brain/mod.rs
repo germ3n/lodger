@@ -52,6 +52,10 @@ pub struct Plan {
     /// `Memory::thing_at`); gone, the plan is cancelled.
     #[serde(default)]
     pub on: String,
+    /// The model was asked for its line, or it needs none: a forced plan asks on its first
+    /// tick and waits three seconds for it.
+    #[serde(default)]
+    pub words_asked: bool,
 }
 
 /// What a plan did on a tick.
@@ -464,6 +468,37 @@ impl Brain {
             self.decide(now, day, memory, arc, config, log, model);
         }
 
+        // A plan that carries words and has not asked for them (one fired from the debug
+        // screen) asks now and gives the model three seconds; Fire wrote from the bank alone
+        // and the same six lines came round (2026-11-09).
+        let unasked: Vec<u64> = self
+            .plans
+            .iter()
+            .filter(|p| !p.words_asked)
+            .map(|p| p.id)
+            .collect();
+        for id in unasked {
+            let Some(event) = self
+                .plans
+                .iter()
+                .find(|p| p.id == id)
+                .and_then(|p| events::find(&p.event))
+            else {
+                continue;
+            };
+            let asks = model.is_some() && !config.brain.force_rules;
+            if asks {
+                let lines = memory.describe(day);
+                self.ask_for_words(event, &lines, memory, config, model);
+            }
+            if let Some(plan) = self.plans.iter_mut().find(|p| p.id == id) {
+                plan.words_asked = true;
+                if asks {
+                    plan.from_tick = plan.from_tick.max(now.tick + 3 * TPS);
+                }
+            }
+        }
+
         // Every plan on its own: cancelled once it cannot happen, waiting for its moment or
         // for them to look away, or carried out.
         let ids: Vec<u64> = self.plans.iter().map(|p| p.id).collect();
@@ -486,6 +521,68 @@ impl Brain {
         }
 
         commands
+    }
+
+    /// Asks the model to write the line an event will carry, if it carries one and the model
+    /// is there: the kind's examples shown first, the moment's situation, the config's
+    /// temperature. The line comes back on a later tick and waits in `written`.
+    fn ask_for_words(
+        &mut self,
+        chosen: &Event,
+        lines: &[String],
+        memory: &Memory,
+        config: &Config,
+        model: Option<&Model>,
+    ) {
+        if let (Some(model), Some(kind)) = (
+            model.filter(|_| !config.brain.force_rules),
+            act::text_kind(chosen),
+        ) {
+            let tally = memory.most_killed();
+            let mob = tally.map(|t| t.kind.clone()).unwrap_or_default();
+            let count = tally.map(|t| t.kills).unwrap_or(0);
+            let examples: Vec<String> = kind
+                .examples()
+                .iter()
+                .map(|e| text::fill(e, &mob, count))
+                .collect();
+            let sender = self.replies().0.clone();
+            let asked = if config.brain.text == "generate" {
+                let refs: Vec<&str> = examples.iter().map(String::as_str).collect();
+                let prompt = situation::writing_prompt(lines, kind.purpose(), &refs);
+                model.generate_async(
+                    &prompt,
+                    crate::model::Leash {
+                        temperature: config.brain.text_temperature as f32,
+                        ..kind.leash()
+                    },
+                    Some("text".to_string()),
+                    sender,
+                )
+            } else {
+                // `bank`: the model picks among eight of the kind's lines.
+                let choices: Vec<String> = examples.iter().take(8).cloned().collect();
+                model.ask_async(
+                    &situation::situation(lines),
+                    vec![Question {
+                        text: format!("{} {}", kind.purpose(), SIGN_SAYS),
+                        choices,
+                    }],
+                    Some("text".to_string()),
+                    sender,
+                )
+            };
+            if let Ok(id) = asked {
+                self.writings.push(Writing {
+                    id,
+                    event: chosen.id.to_string(),
+                    kind,
+                    mob,
+                    count,
+                    bank: config.brain.text != "generate",
+                });
+            }
+        }
     }
 
     /// One plan's tick: cancelled if it can no longer happen, gone if its day passed, waiting
@@ -602,6 +699,11 @@ impl Brain {
         }
         if made.is_empty() && !plan.forced {
             memory.record(&plan.event, plan.pos, day, true, "");
+        }
+        for command in made.iter().map(|(c, _)| c) {
+            for line in act::texts(command) {
+                memory.wrote(line);
+            }
         }
         let mut sent = Vec::new();
         for (command, later_ticks) in made {
@@ -758,9 +860,15 @@ impl Brain {
             let examples = kind.examples();
             let prompt = situation::writing_prompt(&lines, kind.purpose(), examples);
             let sender = self.replies().0.clone();
-            if let Ok(id) =
-                model.generate_async(&prompt, kind.leash(), Some("reply".to_string()), sender)
-            {
+            if let Ok(id) = model.generate_async(
+                &prompt,
+                crate::model::Leash {
+                    temperature: config.brain.text_temperature as f32,
+                    ..kind.leash()
+                },
+                Some("reply".to_string()),
+                sender,
+            ) {
                 self.reply_writing = Some(id);
             }
         }
@@ -790,6 +898,9 @@ impl Brain {
         let mut ids = || self.id();
         let made = act::commands(event, None, memory, &mut ids, now, reply.written.as_deref());
         memory.record(event.id, None, day, true, "");
+        for line in made.iter().flat_map(|(c, _)| act::texts(c)) {
+            memory.wrote(line);
+        }
         log.acted(event.id, None, made.len());
 
         made.into_iter().next().map(|(command, _)| command)
@@ -1045,7 +1156,8 @@ impl Brain {
                 self.reply_writing = None;
                 let written = reply.text.unwrap_or_default();
                 let kept = match &reply.result {
-                    Ok(_) => text::check(Kind::Reply, &written),
+                    Ok(_) => text::check(Kind::Reply, &written)
+                        .filter(|l| !text::is_repeat(l, &memory.lines_written)),
                     Err(_) => None,
                 };
                 log.wrote("Reply", &written, kept.as_deref());
@@ -1065,8 +1177,10 @@ impl Brain {
                 } else {
                     reply.text.unwrap_or_default()
                 };
+                // A line it already used this stay is dropped for a fresh one from the bank.
                 let kept = match &reply.result {
-                    Ok(_) => text::check(writing.kind, &written),
+                    Ok(_) => text::check(writing.kind, &written)
+                        .filter(|l| !text::is_repeat(l, &memory.lines_written)),
                     Err(_) => None,
                 };
                 log.wrote(&format!("{:?}", writing.kind), &written, kept.as_deref());
@@ -1312,44 +1426,7 @@ impl Brain {
             return;
         }
 
-        if let (Some(model), Some(kind)) = (model, act::text_kind(chosen)) {
-            let tally = memory.most_killed();
-            let mob = tally.map(|t| t.kind.clone()).unwrap_or_default();
-            let count = tally.map(|t| t.kills).unwrap_or(0);
-            let examples: Vec<String> = kind
-                .examples()
-                .iter()
-                .map(|e| text::fill(e, &mob, count))
-                .collect();
-            let sender = self.replies().0.clone();
-            let asked = if config.brain.text == "generate" {
-                let refs: Vec<&str> = examples.iter().map(String::as_str).collect();
-                let prompt = situation::writing_prompt(&lines, kind.purpose(), &refs);
-                model.generate_async(&prompt, kind.leash(), Some("text".to_string()), sender)
-            } else {
-                // `bank`: the model picks among eight of the kind's lines.
-                let choices: Vec<String> = examples.iter().take(8).cloned().collect();
-                model.ask_async(
-                    &situation::situation(&lines),
-                    vec![Question {
-                        text: format!("{} {}", kind.purpose(), SIGN_SAYS),
-                        choices,
-                    }],
-                    Some("text".to_string()),
-                    sender,
-                )
-            };
-            if let Ok(id) = asked {
-                self.writings.push(Writing {
-                    id,
-                    event: chosen.id.to_string(),
-                    kind,
-                    mob,
-                    count,
-                    bank: config.brain.text != "generate",
-                });
-            }
-        }
+        self.ask_for_words(chosen, &lines, memory, config, model);
 
         // The day's budget counts the plans already held: they spend when they run, and three
         // held at once would all pass a check that saw only what was spent.
@@ -1433,6 +1510,7 @@ impl Brain {
                 .and_then(|p| memory.thing_at(p))
                 .unwrap_or_default()
                 .to_string(),
+            words_asked: true,
         });
     }
 
@@ -1477,6 +1555,7 @@ impl Brain {
             when: String::new(),
             waiting: String::new(),
             on: String::new(),
+            words_asked: act::text_kind(event).is_none(),
         });
         log.note(&format!("forced {}", event.id));
 
@@ -2119,16 +2198,20 @@ mod tests {
                 &mut log,
                 Some(&model),
             );
-            if !brain.written.is_empty() {
+            if !brain.written.is_empty() || !memory.lines_written.is_empty() {
                 break;
             }
             now.tick += TPS;
             std::thread::sleep(std::time::Duration::from_millis(2));
         }
-        assert_eq!(
-            brain.written,
-            vec![("sign".to_string(), "under".to_string())]
-        );
+        // The model's pick is waiting for the sign, or already on it when the plan ran in the
+        // same tick the answer came.
+        let line = brain
+            .written
+            .first()
+            .map(|(_, l)| l.as_str())
+            .or(memory.lines_written.first().map(String::as_str));
+        assert_eq!(line, Some("under"), "{:?}", brain.written);
         model.shutdown();
     }
 
@@ -2817,6 +2900,66 @@ mod tests {
                 .any(|l| matches!(l.command, Command::SetSign { .. })),
             "no text for a sign that is not there"
         );
+    }
+
+    #[test]
+    fn a_fired_line_is_the_model_s_and_a_line_it_repeats_is_dropped_for_a_fresh_one() {
+        // The dev client, 2026-11-09: Fire never asked the model, and `kill_line` went round
+        // the bank's six lines.
+        let _turn = crate::model::TEST_TURN
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let config = Config::default();
+        let mut memory = home_memory();
+        memory.last.online = true;
+        memory.tally.push(crate::memory::Tally {
+            kind: "salmon".to_string(),
+            hits: 0,
+            kills: 17,
+        });
+        let mut arc = Arc {
+            stage: 3,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let model = model_with(Fake::new("nothing yet", 0, Ok("the river is quieter now")));
+        let mut brain = Brain::new(3);
+        let mut now = Now {
+            tick: 20,
+            ..Now::default()
+        };
+        let mut fire_and_read = |brain: &mut Brain, memory: &mut Memory, now: &mut Now| {
+            let event = events::find("kill_line").unwrap();
+            brain.force(event, memory, 0.0, &mut log);
+            for _ in 0..200 {
+                for command in
+                    brain.tick(now, 0.0, memory, &mut arc, &config, &mut log, Some(&model))
+                {
+                    if let Command::GameMessage { text, .. } = command {
+                        return text;
+                    }
+                }
+                now.tick += 2;
+                std::thread::sleep(std::time::Duration::from_millis(1));
+            }
+            panic!("nothing said");
+        };
+
+        let first = fire_and_read(&mut brain, &mut memory, &mut now);
+        assert_eq!(
+            first, "the river is quieter now",
+            "the model's line, not the bank's"
+        );
+        let second = fire_and_read(&mut brain, &mut memory, &mut now);
+        assert_ne!(second, first, "the same line again is dropped");
+        assert!(
+            Kind::KillLine
+                .examples()
+                .iter()
+                .any(|e| text::fill(e, "salmon", 17) == second),
+            "a fresh bank line instead: {second}"
+        );
+        model.shutdown();
     }
 
     #[test]
