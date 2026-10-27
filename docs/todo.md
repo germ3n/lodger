@@ -446,6 +446,11 @@ because it can be built and tested without a game, and because the model layer i
     noun phrases ("a wolf howling far off") read as "Today it could not a wolf howling far off";
     they are verbs now ("make a wolf whine far off"), and a test keeps every row so. Was: a
     noun phrase after "it did" and "it could not".
+  - **The panel explains and goes places** (the review's E1, E2; owner: "a tooltip ... that
+    shows description", "hover over coordinates and teleport there"): an event's tooltip is its
+    catalogue row (read from `docs/entity.md` at build time), its cooldown and cap and its last
+    outcome; a line with a spot in it teleports you there on a click. ABI 11. Was: an id and a
+    reason, and coordinates to type by hand.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

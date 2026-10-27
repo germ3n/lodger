@@ -109,6 +109,10 @@ pub struct EventRow {
     pub why: String,
     /// How many times it happened in this world.
     pub times: u32,
+    /// What it is, for the screen's tooltip: lines split by `\n` (what happens, what it needs,
+    /// its cooldown and cap, how it went last). ABI 11.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub about: String,
 }
 
 /// A button on the mod's page.

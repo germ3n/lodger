@@ -22,7 +22,7 @@ import java.nio.file.Path;
  */
 public final class Native implements AutoCloseable {
 	/** The ABI this host speaks; a library built against another is refused. Bumped with {@code sdk/src/lib.rs}'s {@code ABI_VERSION}. */
-	public static final int ABI_VERSION = 10;
+	public static final int ABI_VERSION = 11;
 
 	private static final Linker LINKER = Linker.nativeLinker();
 

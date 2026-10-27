@@ -97,7 +97,9 @@ AI given back as it was, and never saved frozen (a tag, a sweep, a release on un
 where `woke_elsewhere` had sent the player as a made-up entity id no host knew. ABI 10
 (2026-11-09) gave `set_block` `rest` (on something solid, never in the air) and `only` (over
 one of `replace`, never into air), and `set_sign` `settle` (the sign looked for down and up
-its column, where a settled sign landed).
+its column, where a settled sign landed). ABI 11 (2026-11-09) gave a debug `EventRow` its
+`about`, the screen's tooltip; and the host answers a `teleport` request from the screen itself
+(an operator clicking a spot), with no mod involved.
 
 ## Resources
 

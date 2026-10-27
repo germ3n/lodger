@@ -438,6 +438,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
                 offered: why.is_empty(),
                 why,
                 times,
+                about: about(event, memory, config),
             }
         })
         .collect();
@@ -456,6 +457,33 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             ActionRow::new("forget_all", "Forget everything"),
         ],
     }
+}
+
+/// An event's tooltip: what the catalogue says it does and needs, its cooldown and cap as the
+/// config scales them, and how it went last. Lines split by `\n`.
+fn about(event: &crate::events::Event, memory: &crate::memory::Memory, config: &Config) -> String {
+    let mut lines = Vec::new();
+    if let Some((what, needs)) = events::described(event.id) {
+        lines.push(what.replace('`', ""));
+        lines.push(format!("Needs: {}", needs.replace('`', "")));
+    }
+    lines.push(format!(
+        "Stages {}; cooldown {:.2} days; at most {} a stay; {}",
+        event.stages_words(),
+        event.cooldown_days * config.events.cooldown_scale as f32,
+        event.most_per_stay,
+        if event.cost() < 1.0 { "small" } else { "full" }
+    ));
+    match memory.done.iter().rev().find(|d| d.event == event.id) {
+        Some(done) if done.ok => lines.push(format!("Last: day {:.2}, done", done.day)),
+        Some(done) => lines.push(format!(
+            "Last: day {:.2}, not done: {}",
+            done.day, done.reason
+        )),
+        None => lines.push("Never yet in this world".to_string()),
+    }
+
+    lines.join("\n")
 }
 
 /// The plan due soonest, forced ones first.
@@ -561,6 +589,11 @@ mod tests {
         let reply = answer(&mut stay, &DebugRequest::Snapshot, &config, &mut log, &now);
         let door = reply.events.iter().find(|e| e.id == "open_door").unwrap();
         assert_eq!(door.why, "the target is home and awake");
+        assert!(
+            door.about.contains("\nNeeds: ") && door.about.contains("Never yet"),
+            "the tooltip: {}",
+            door.about
+        );
         let music = reply.events.iter().find(|e| e.id == "cut_music").unwrap();
         assert!(music.offered, "{}", music.why);
         let plans = reply.sections.iter().find(|s| s.title == "Plans").unwrap();

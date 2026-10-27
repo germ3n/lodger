@@ -99,7 +99,10 @@ A stay takes weeks of play by design. For development:
   `/craftkit lodger debug`: a strip down the right third of the screen at three quarters of the
   GUI's text size, see-through, that neither pauses the game nor blurs it, so the world stays
   in view beside it (owner, 2026-11-09: the full screen hid the events it was there to watch);
-  it opens on the Mind tab. The Senses tab is the host's reading of you (pace, stops, turns,
+  it opens on the Mind tab. Hovering an event shows what it does and needs (the catalogue's
+  own row, built into the mind from `docs/entity.md`), its cooldown and cap, and how it went
+  last; any line or plan with a spot in it, `(x,y,z)` or `(x,ground,z)`, is a link that
+  teleports you there. The Senses tab is the host's reading of you (pace, stops, turns,
   look-backs, backing away, a fear meter, light, health, the clock), the Mind tab the lodger's
   gauges (stage, days in stage, the day's budget, the plans held of how many, decisions, what
   the memory holds, kills), its situation lines, its plans as rows with Drop and Now buttons

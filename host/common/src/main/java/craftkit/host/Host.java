@@ -153,10 +153,37 @@ public final class Host {
 				request = new com.google.gson.JsonObject();
 				request.addProperty("kind", "snapshot");
 			}
-			answer = worlds.debug(player, ask.mod(), request);
+			answer = "teleport".equals(request.has("kind") ? request.get("kind").getAsString() : "")
+					? teleport(player, request)
+					: worlds.debug(player, ask.mod(), request);
 		}
 
 		platform.sendToPlayer(player, new craftkit.host.net.DebugTellPayload(ask.mod(), answer.toString()));
+	}
+
+	/**
+	 * The panel's coordinates, clicked: the asking operator goes there, in their own level; a
+	 * missing height is the surface. Answered as a message the panel flashes.
+	 */
+	private static com.google.gson.JsonObject teleport(net.minecraft.server.level.ServerPlayer player, com.google.gson.JsonObject request) {
+		com.google.gson.JsonObject answer = new com.google.gson.JsonObject();
+		com.google.gson.JsonObject mod = new com.google.gson.JsonObject();
+		answer.add("mod", mod);
+		try {
+			com.google.gson.JsonArray pos = request.getAsJsonArray("pos");
+			int x = pos.get(0).getAsInt();
+			int z = pos.get(2).getAsInt();
+			net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) player.level();
+			int y = pos.get(1).isJsonNull()
+					? level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z)
+					: pos.get(1).getAsInt();
+			player.teleportTo(x + 0.5, y, z + 0.5);
+			mod.addProperty("message", "teleported to " + x + " " + y + " " + z);
+		} catch (RuntimeException e) {
+			mod.addProperty("message", "no teleport: " + e.getMessage());
+		}
+
+		return answer;
 	}
 
 	/**

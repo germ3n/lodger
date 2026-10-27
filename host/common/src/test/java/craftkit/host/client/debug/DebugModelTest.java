@@ -34,7 +34,7 @@ class DebugModelTest {
 			      {"title": "Story", "lines": ["NEXT: open_door in 20s (1 planned)"]}
 			    ],
 			    "events": [
-			      {"id": "open_door", "words": "open the door", "stages": "1 to 5", "offered": false, "why": "the target is home and awake", "times": 1},
+			      {"id": "open_door", "words": "open the door", "stages": "1 to 5", "offered": false, "why": "the target is home and awake", "times": 1, "about": "A door opens.\\nNeeds: a door."},
 			      {"id": "knock", "words": "knock on the door", "stages": "2 to 5", "offered": true, "why": "", "times": 0}
 			    ],
 			    "actions": [{"id": "plan_now", "label": "Decide now"}]
@@ -80,6 +80,8 @@ class DebugModelTest {
 		assertFalse(model.events.get(0).offered());
 		assertEquals("the target is home and awake", model.events.get(0).why());
 		assertEquals(1, model.events.get(0).times());
+		assertEquals("A door opens.\nNeeds: a door.", model.events.get(0).about(), "the tooltip, lines and all");
+		assertEquals("", model.events.get(1).about(), "none given, none shown");
 		assertEquals("Decide now", model.actions.get(0).label());
 
 		assertEquals(1, model.eventsMatching("knock").size());

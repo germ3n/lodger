@@ -79,6 +79,11 @@ public final class DebugScreen extends Screen {
 	private int left;
 	private int pw;
 	private int ph;
+	/** The mouse in the panel's units, this frame. */
+	private double mx;
+	private double my;
+	/** What to show by the mouse after everything else is drawn, if anything. */
+	private String tooltip = "";
 	/** The clickable rectangles drawn this frame, in the panel's units. */
 	private final List<Hit> hits = new ArrayList<>();
 
@@ -232,6 +237,9 @@ public final class DebugScreen extends Screen {
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
 		hits.clear();
+		tooltip = "";
+		mx = PanelLayout.toPanel(mouseX, left);
+		my = PanelLayout.toPanel(mouseY, 0);
 		graphics.fill(left, 0, this.width, this.height, PANEL);
 
 		graphics.pose().pushMatrix();
@@ -295,6 +303,13 @@ public final class DebugScreen extends Screen {
 		}
 		graphics.pose().popMatrix();
 		graphics.disableScissor();
+		if (!tooltip.isEmpty()) {
+			graphics.pose().pushMatrix();
+			graphics.pose().translate(left, 0);
+			graphics.pose().scale(SCALE, SCALE);
+			tooltip(graphics);
+			graphics.pose().popMatrix();
+		}
 
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 	}
@@ -366,6 +381,7 @@ public final class DebugScreen extends Screen {
 			buttons += this.font.width(action.label()) + 12;
 		}
 		graphics.text(this.font, trim(item.text(), pw - 2 * PAD - buttons - 4), PAD, y + 1, WHITE);
+		goTo(graphics, item.text(), PAD, y, pw - 2 * PAD - buttons - 4, ROW);
 		int x = pw - PAD - buttons;
 		for (DebugModel.ActionRow action : item.actions()) {
 			String id = action.id();
@@ -398,6 +414,10 @@ public final class DebugScreen extends Screen {
 			graphics.text(this.font, trim(tail, fireX - (PAD + idWidth) - 4), PAD + idWidth, y + 1, row.offered() ? GREEN : DIM);
 			String id = row.id();
 			button(graphics, fireX, y, "Fire", WHITE, BUTTON, () -> ask("{\"kind\":\"force\",\"event\":\"" + id + "\",\"player\":0}"));
+			if (mx >= PAD && mx < fireX && my >= y && my < y + ROW && my >= top && my <= bottom) {
+				graphics.fill(PAD, y + ROW - 1, fireX - 4, y + ROW, DIM);
+				tooltip = row.id() + " (" + row.words() + ")\n" + (row.about().isEmpty() ? (row.offered() ? "offered" : row.why()) : row.about());
+			}
 			y += ROW;
 		}
 
@@ -448,12 +468,47 @@ public final class DebugScreen extends Screen {
 
 	/** A long line over as many lines as it takes, rather than cut: the panel is narrow. */
 	private int wrapped(GuiGraphicsExtractor graphics, int y, String text, int colour) {
+		int start = y;
 		for (FormattedCharSequence part : this.font.split(Component.literal(text), pw - 2 * PAD - 4)) {
 			graphics.text(this.font, part, PAD, y, colour);
 			y += 10;
 		}
+		goTo(graphics, text, PAD, start, pw - 2 * PAD, y - start);
 
 		return y;
+	}
+
+	/** A line with a spot in it is a link: underlined under the mouse, a click goes there. */
+	private void goTo(GuiGraphicsExtractor graphics, String text, int x, int y, int w, int h) {
+		Coordinates.find(text).ifPresent(spot -> {
+			hits.add(new Hit(x, y, w, h, () -> ask("{\"kind\":\"teleport\",\"pos\":" + spot.json() + "}")));
+			if (mx >= x && mx < x + w && my >= y && my < y + h) {
+				graphics.fill(x, y + h - 1, x + w, y + h, YELLOW);
+				tooltip = "click: go to " + spot.x() + " " + spot.y().map(String::valueOf).orElse("(the ground)") + " " + spot.z();
+			}
+		});
+	}
+
+	/** The tooltip, by the mouse and inside the panel: a dark box of wrapped lines. */
+	private void tooltip(GuiGraphicsExtractor graphics) {
+		int width = Math.min(pw - 2 * PAD, 280);
+		List<FormattedCharSequence> lines = new ArrayList<>();
+		for (String text : tooltip.split("\n")) {
+			lines.addAll(this.font.split(Component.literal(text), width - 8));
+		}
+		int height = lines.size() * 10 + 6;
+		int x = (int) Math.max(PAD, Math.min(mx + 8, pw - PAD - width));
+		int y = (int) Math.min(my + 10, ph - PAD - height);
+		if (y < PAD) {
+			y = PAD;
+		}
+		graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, GREY);
+		graphics.fill(x, y, x + width, y + height, 0xF4101016);
+		int ty = y + 3;
+		for (FormattedCharSequence line : lines) {
+			graphics.text(this.font, line, x + 4, ty, WHITE);
+			ty += 10;
+		}
 	}
 
 	private int gauge(GuiGraphicsExtractor graphics, int y, DebugModel.Gauge gauge) {

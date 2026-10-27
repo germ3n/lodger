@@ -2058,6 +2058,38 @@ pub fn find(id: &str) -> Option<&'static Event> {
     CATALOGUE.iter().find(|event| event.id == id)
 }
 
+/// The catalogue's page, built into the mind so the debug screen can say what each event is
+/// without a second copy of the words: `docs/entity.md`'s rows, `| \`id\` | stages | what
+/// happens | needs |`.
+const CATALOGUE_PAGE: &str = include_str!("../../docs/entity.md");
+
+/// What the catalogue says of an event: what happens, and what it needs. None for an event
+/// with no row (the docs test keeps every coded event in the page).
+pub fn described(id: &str) -> Option<(&'static str, &'static str)> {
+    static ROWS: std::sync::OnceLock<
+        std::collections::HashMap<&'static str, (&'static str, &'static str)>,
+    > = std::sync::OnceLock::new();
+    ROWS.get_or_init(|| {
+        CATALOGUE_PAGE
+            .lines()
+            .filter_map(|line| {
+                let cells: Vec<&str> = line.split(" | ").collect();
+                let id = cells.first()?.strip_prefix("| `")?.strip_suffix('`')?;
+                let what = cells.get(2)?.trim();
+                let needs = cells
+                    .get(3)?
+                    .trim()
+                    .trim_end_matches(" |")
+                    .trim_end_matches('|')
+                    .trim();
+                Some((id, (what, needs)))
+            })
+            .collect()
+    })
+    .get(id)
+    .copied()
+}
+
 impl Event {
     pub fn offered_in(&self, stage: u8) -> bool {
         self.from_stage <= stage && stage <= self.to_stage
@@ -2351,6 +2383,22 @@ mod tests {
     }
 
     /// Every id here is a row in docs/entity.md's catalogue, so the two never drift apart.
+    #[test]
+    fn every_event_has_its_description_and_needs_from_the_catalogue_page() {
+        let missing: Vec<&str> = CATALOGUE
+            .iter()
+            .filter(|e| e.id != "wait")
+            .filter(|e| {
+                described(e.id).is_none_or(|(what, needs)| what.is_empty() || needs.is_empty())
+            })
+            .map(|e| e.id)
+            .collect();
+        assert!(missing.is_empty(), "no description: {missing:?}");
+        let (what, needs) = described("open_chest").unwrap();
+        assert!(what.starts_with("A chest in the home opens"), "{what}");
+        assert!(!needs.ends_with('|'), "{needs}");
+    }
+
     #[test]
     fn every_event_is_in_the_docs_catalogue() {
         let docs =

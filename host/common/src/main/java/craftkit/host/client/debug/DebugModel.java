@@ -32,7 +32,8 @@ public final class DebugModel {
 	public record Item(String text, String detail, List<ActionRow> actions) {
 	}
 
-	public record EventRow(String id, String words, String stages, boolean offered, String why, int times) {
+	/** An event as the panel lists it; {@code about} is its tooltip, lines split by a newline. */
+	public record EventRow(String id, String words, String stages, boolean offered, String why, int times, String about) {
 	}
 
 	public record ActionRow(String id, String label) {
@@ -166,7 +167,7 @@ public final class DebugModel {
 		if (mod.has("events")) {
 			for (JsonElement element : mod.getAsJsonArray("events")) {
 				JsonObject e = element.getAsJsonObject();
-				events.add(new EventRow(text(e, "id"), text(e, "words"), text(e, "stages"), e.has("offered") && e.get("offered").getAsBoolean(), text(e, "why"), (int) number(e, "times")));
+				events.add(new EventRow(text(e, "id"), text(e, "words"), text(e, "stages"), e.has("offered") && e.get("offered").getAsBoolean(), text(e, "why"), (int) number(e, "times"), text(e, "about")));
 			}
 		}
 		if (mod.has("actions")) {
