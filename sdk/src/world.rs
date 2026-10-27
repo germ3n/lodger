@@ -471,6 +471,15 @@ pub enum Command {
         player: u32,
         seconds: f32,
     },
+    /// Hold a mob where it stands, facing `player`, moving and attacking no one, for `seconds`
+    /// (at most ten minutes); then it is as it was. A mob saved while held is let go when next
+    /// seen, so none is ever left frozen in a world. ABI 8.
+    Hold {
+        id: u64,
+        entity: u32,
+        player: u32,
+        seconds: f32,
+    },
     /// Turn an entity's head toward a position and keep it there for `seconds`.
     LookAt {
         id: u64,
@@ -543,6 +552,7 @@ impl Command {
             | Command::SetSign { id, .. }
             | Command::CancelSleep { id, .. }
             | Command::LookAt { id, .. }
+            | Command::Hold { id, .. }
             | Command::Surroundings { id, .. }
             | Command::Figure { id, .. }
             | Command::RemoveFigure { id, .. } => *id,
@@ -607,6 +617,22 @@ mod tests {
         assert_eq!(command.id(), 9);
         let back: Command = serde_json::from_str(&text).unwrap();
         assert_eq!(back, command);
+    }
+
+    #[test]
+    fn a_hold_is_a_mob_a_player_and_a_time() {
+        let hold = Command::Hold {
+            id: 4,
+            entity: 301,
+            player: 0,
+            seconds: 250.0,
+        };
+        let text = serde_json::to_string(&hold).unwrap();
+        assert_eq!(
+            text,
+            r#"{"kind":"hold","id":4,"entity":301,"player":0,"seconds":250.0}"#
+        );
+        assert_eq!(hold.id(), 4);
     }
 
     #[test]

@@ -213,6 +213,8 @@ pub struct Snapshot {
     pub main_hand: String,
     /// Animals and villagers within 32 blocks, from the last entity pass.
     pub creatures_near: Vec<Creature>,
+    /// Hostile mobs within 48 blocks, from the last entity pass: zombies, skeletons, spiders.
+    pub hostiles_near: Vec<Creature>,
     pub look_backs: u32,
     pub raining: bool,
     /// Under the ground: no sky light and below the surface.
@@ -670,6 +672,20 @@ impl Memory {
                     pos: e.pos,
                     named: !e.name.is_empty(),
                     pet: !e.owner.is_empty() && e.owner == self.target_uuid,
+                })
+                .collect();
+
+            self.last.hostiles_near = observations
+                .entities
+                .iter()
+                .filter(|e| e.hostile && distance(block(e.pos), at) <= 48.0)
+                .take(MOST_CREATURES)
+                .map(|e| Creature {
+                    id: e.id,
+                    kind: e.kind.rsplit(':').next().unwrap_or(&e.kind).to_string(),
+                    pos: e.pos,
+                    named: !e.name.is_empty(),
+                    pet: false,
                 })
                 .collect();
 
@@ -2127,6 +2143,35 @@ mod tests {
 
         memory.observe(&obs(here, vec![place([0, 66, -1])]), 0.3);
         assert_eq!(memory.reactions[0].kind, "walled");
+    }
+
+    #[test]
+    fn monsters_near_are_kept_apart_from_the_animals_within_forty_eight_blocks() {
+        let mut memory = Memory::default();
+        let entity = |id, kind: &str, x: f64, hostile| craftkit::world::Entity {
+            id,
+            kind: kind.to_string(),
+            pos: [x, 64.0, 0.0],
+            hostile,
+            ..Default::default()
+        };
+        let mut seen = obs(vec![player(0, [0.0, 64.0, 0.0], 0.0)], vec![]);
+        seen.entities = vec![
+            entity(1, "minecraft:zombie", 10.0, true),
+            entity(2, "minecraft:skeleton", 40.0, true),
+            entity(3, "minecraft:creeper", 60.0, true),
+            entity(4, "minecraft:cow", 5.0, false),
+        ];
+        memory.observe(&seen, 0.5);
+
+        let kinds: Vec<&str> = memory
+            .last
+            .hostiles_near
+            .iter()
+            .map(|c| c.kind.as_str())
+            .collect();
+        assert_eq!(kinds, ["zombie", "skeleton"], "the creeper is past 48");
+        assert_eq!(memory.creatures("").count(), 1, "only the cow is an animal");
     }
 
     #[test]

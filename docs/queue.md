@@ -80,6 +80,17 @@ jar at the end of the session and left at the title screen.
    breathing, easing out: a mist that swallows the terrain, a red mist, a darkness that pulls
    the world in; `fog_close` and `red_rain` rebuilt on it. Ask the owner which, how long, which
    stages, and whether they stack.
+   **Paused 2026-11-09 night, mid-item (owner: "pause, I'll come back and say continue"):**
+   `hostiles_stare` is written and uncommitted: the mind, the SDK's `hold` (ABI 8) and the
+   host's `Holds`, `Facing` and the `hold` executor. Rust passes (fmt, clippy, 129 unit, 10
+   stays, 28 SDK); the host has not been compiled with it (the client was running). Next: quit
+   the client, `cargo build --release -p lodger-core`, `./gradlew build` in `host/` and `mod/`
+   (expect `FacingTest`), fix what the compile says, ask to commit, try it at night in the dev
+   client. Then the atmospheres, owner's answers 2026-11-09: all four (mist from stage 2, red
+   mist and darkness stage 3+, dusk at noon stage 2+), the slow breath (in over 40 to 60 s, held
+   2 to 4 minutes with the fog edge pulsing, out over 30 to 40 s, starting while they face away
+   or are indoors), and they may stack; ask whether `fog_close` and `red_rain` move onto the
+   real fog. Then `village_abandoned`, then the rest of the catalogue.
 2. **A dev stay with the real model:** the 1.5B is in the dev client's config folder and the
    default now; read `decisions.log` for `brain=model`, the reactions and the written lines.
 3. **Calibration round two** by [round one](calibration/round-1.md)'s list: the first

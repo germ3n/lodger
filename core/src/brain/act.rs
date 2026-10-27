@@ -167,6 +167,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::Whisper
         | Action::RepeatsYou
         | Action::Answers
+        | Action::HostilesStare
         | Action::NameAnimal
         | Action::DyeSheep
         | Action::GolemTurned
@@ -529,7 +530,7 @@ pub fn commands(
     pos: Option<BlockPos>,
     memory: &Memory,
     ids: &mut impl FnMut() -> u64,
-    _now: &Now,
+    now: &Now,
     written: Option<&str>,
 ) -> Vec<(Command, u64)> {
     let target = memory.target.unwrap_or(0);
@@ -2056,6 +2057,28 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // Until dawn: the night's remaining ticks, a minute at least, ten minutes at most.
+        Action::HostilesStare => {
+            let to_dawn = 23_000u32.saturating_sub(now.day_time) as f32 / 20.0;
+            let seconds = to_dawn.clamp(60.0, 600.0);
+            memory
+                .last
+                .hostiles_near
+                .iter()
+                .take(16)
+                .map(|mob| {
+                    (
+                        Command::Hold {
+                            id: ids(),
+                            entity: mob.id,
+                            player: target,
+                            seconds,
+                        },
+                        0,
+                    )
+                })
+                .collect()
+        }
         Action::Answers => vec![(
             Command::GameMessage {
                 id: ids(),
@@ -2316,6 +2339,14 @@ mod tests {
                 pos: [10.0, 64.0, 10.0],
                 named,
                 pet,
+            });
+        }
+        for (kind, id) in [("zombie", 301), ("skeleton", 302), ("spider", 303)] {
+            memory.last.hostiles_near.push(Creature {
+                id,
+                kind: kind.to_string(),
+                pos: [20.0, 64.0, 20.0],
+                ..Creature::default()
             });
         }
         memory.tally.push(Tally {
@@ -2962,6 +2993,41 @@ mod tests {
             }
         }
         assert_eq!(place(hole, &memory, &mut Rng::new(3)), None);
+    }
+
+    #[test]
+    fn the_monsters_near_are_held_staring_until_dawn_and_no_longer_than_ten_minutes() {
+        let memory = rich_memory();
+        let stare = find("hostiles_stare").unwrap();
+        let at = |day_time| Now {
+            day_time,
+            ..Now::default()
+        };
+        let made = commands(stare, None, &memory, &mut ids(), &at(18_000), None);
+        assert_eq!(made.len(), 3, "one hold for each of the three");
+        for (command, later) in &made {
+            match command {
+                Command::Hold {
+                    seconds, player, ..
+                } => {
+                    assert_eq!(*seconds, 250.0, "5000 ticks to dawn");
+                    assert_eq!(*player, memory.target.unwrap_or(0));
+                    assert_eq!(*later, 0);
+                }
+                other => panic!("{other:?}"),
+            }
+        }
+        let early = commands(stare, None, &memory, &mut ids(), &at(13_000), None);
+        assert!(matches!(early[0].0, Command::Hold { seconds, .. } if seconds == 500.0));
+        let late = commands(stare, None, &memory, &mut ids(), &at(22_900), None);
+        assert!(
+            matches!(late[0].0, Command::Hold { seconds, .. } if seconds == 60.0),
+            "a minute at least"
+        );
+        assert!(
+            !crate::rules::hidden_from_view(stare.action),
+            "it is about being seen"
+        );
     }
 
     #[test]

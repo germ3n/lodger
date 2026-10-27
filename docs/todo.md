@@ -426,6 +426,12 @@ because it can be built and tested without a game, and because the model layer i
     panel): the right third of the screen, three quarters text size, see-through, no blur, not
     paused, wrapped lines, the Mind tab first; plans as rows with Drop and Now (a debug
     section's `items`, ABI 7). Was: the whole screen, darkened, lines cut off.
+  - **The monsters stare** (owner: "zombies and skeletons that just stare at you for a night";
+    the ones already there, never spawned): `hostiles_stare`, stage three and up, at night with
+    three or more hostiles within 48 blocks, holds up to sixteen still and facing the target until
+    dawn (`hold`, ABI 8: AI off, turned each tick, a tag and a sweep so none is ever saved
+    frozen, released on unload). The Rust is tested; the host's `Holds` compiled and seen in a
+    client next session. Was: `stare`, animals and villagers alone.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds) {
 	}
 
 	private Executors() {
@@ -116,6 +116,7 @@ public final class Executors {
 				case "set_sign" -> setSign(level, command, id);
 				case "cancel_sleep" -> cancelSleep(level, command, id, context);
 				case "look_at" -> lookAt(level, command, id, context);
+				case "hold" -> hold(level, command, id, context);
 				default -> report(id, false, "the host does not carry out " + kind + " yet");
 			};
 		} catch (RuntimeException e) {
@@ -870,6 +871,22 @@ public final class Executors {
 
 		JsonArray at = command.getAsJsonArray("at");
 		context.looks().add(mob, new Vec3(at.get(0).getAsDouble(), at.get(1).getAsDouble(), at.get(2).getAsDouble()), command.get("seconds").getAsFloat());
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject hold(ServerLevel level, JsonObject command, long id, Context context) {
+		Entity entity = level.getEntity(command.get("entity").getAsInt());
+		Mob mob = entity == null ? null : Senses.mob(entity);
+		if (mob == null) {
+			return report(id, false, "no mob with that id here");
+		}
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+
+		context.holds().add(mob, player, command.get("seconds").getAsFloat());
 
 		return report(id, true, "");
 	}

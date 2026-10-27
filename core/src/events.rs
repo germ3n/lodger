@@ -78,6 +78,8 @@ pub enum Need {
     Field,
     /// Three or more animals or villagers near the target.
     Animals,
+    /// Three or more hostile mobs within 48 blocks of the target.
+    Hostiles,
     /// The target has killed three or more of one kind.
     Kills,
     /// Water near the home.
@@ -137,6 +139,7 @@ impl Need {
                 | Need::Creature(_)
                 | Need::Pet
                 | Need::Animals
+                | Need::Hostiles
                 | Need::TargetUnderground
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
@@ -181,6 +184,7 @@ impl Need {
             Need::Route => "no route".to_string(),
             Need::Field => "no field".to_string(),
             Need::Animals => "fewer than three animals near".to_string(),
+            Need::Hostiles => "fewer than three hostile mobs near".to_string(),
             Need::Kills => "fewer than three kills of one kind".to_string(),
             Need::Around(kind) => format!("no {} around the house", kind.replace('_', " ")),
             Need::Vehicle => "no boat or minecart near".to_string(),
@@ -333,6 +337,8 @@ pub enum Action {
     Whisper,
     /// The target's last line, said again in their name.
     RepeatsYou,
+    /// Every hostile mob near holds still and stares at the target until dawn.
+    HostilesStare,
     /// An answer to what the target just typed, in their name, to them alone.
     Answers,
     /// A boat or minecart moved to the far side of the water, or its middle.
@@ -1108,6 +1114,17 @@ pub const CATALOGUE: &[Event] = &[
         Half,
         Action::Answers,
         true,
+    ),
+    row(
+        "hostiles_stare",
+        3,
+        5,
+        &[Night, TargetOnline, Hostiles],
+        2.0,
+        2,
+        Full,
+        Action::HostilesStare,
+        false,
     ),
     row(
         "says_first",
@@ -2126,6 +2143,7 @@ impl Event {
             "says_first" => "say something in their name",
             "whisper_from_you" => "whisper to them as them",
             "repeats_you" => "repeat what they said",
+            "hostiles_stare" => "have the monsters stand and stare at them all night",
             "answers_you" => "answer what they typed",
             "stairs_turned" => "turn a stair block another way",
             "banner_turned" => "turn the banner",

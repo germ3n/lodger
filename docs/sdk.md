@@ -90,7 +90,9 @@ the six world functions and `sdk/src/world.rs`, the per-world shapes. ABI 5 (202
 `set_block.replace` and the `killed` event. ABI 6 (2026-11-09) gave `set_block` `settle` and
 `wall` (a block stands where a player could place it, never over air) and `closed_container`
 its position and the contents as the player left them. ABI 7 (2026-11-09) gave a debug
-`Section` its `items`: rows with buttons of their own (a plan with Drop and Now).
+`Section` its `items`: rows with buttons of their own (a plan with Drop and Now). ABI 8
+(2026-11-09) added `hold`: a mob held where it stands, facing a player, attacking no one, its
+AI given back as it was, and never saved frozen (a tag, a sweep, a release on unload).
 
 ## Resources
 

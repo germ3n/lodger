@@ -84,6 +84,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Route => memory.route().is_some(),
         Need::Field => false,
         Need::Animals => memory.creatures("").count() >= 3,
+        Need::Hostiles => memory.last.hostiles_near.len() >= 3,
         Need::Kills => memory.most_killed().is_some(),
         Need::Around(kind) => memory.feature(kind).is_some(),
         Need::Vehicle => !memory.vehicles.is_empty(),

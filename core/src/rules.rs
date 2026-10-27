@@ -113,6 +113,7 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::Whisper
             | crate::events::Action::RepeatsYou
             | crate::events::Action::Answers
+            | crate::events::Action::HostilesStare
             | crate::events::Action::MoveCreature(_, crate::events::Where::OutsideDoor)
             | crate::events::Action::MiningSounds
             | crate::events::Action::PushVehicle(_)
