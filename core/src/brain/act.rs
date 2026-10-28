@@ -329,7 +329,22 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::ItemOnTable => memory.fixtures("crafting_table").next().map(|f| f.pos),
         Action::EggOnBed => home.and_then(|h| h.bed),
         Action::Take => memory.favourite_in_container().map(|(c, _)| c.pos),
-        Action::ReturnTaken => memory.held.as_ref().map(|h| h.from),
+        Action::ReturnTaken | Action::ReturnUsed => memory.held.as_ref().map(|h| h.from),
+        Action::RenameOne => memory.used_container().map(|c| c.pos),
+        // Another chest of theirs than the one just opened, one of the house's.
+        Action::ChestAnswers => {
+            let opened = memory.opened_now;
+            pick_ref(
+                memory
+                    .containers
+                    .iter()
+                    .filter(|c| c.theirs() && !c.is_furnace() && Some(c.pos) != opened)
+                    .map(|c| c.pos)
+                    .collect::<Vec<_>>()
+                    .as_slice(),
+                rng,
+            )
+        }
         Action::PlaceTaken => memory
             .place
             .or_else(|| home.and_then(|h| h.bed))
@@ -612,6 +627,8 @@ pub fn commands(
 
     match event.action {
         Action::Wait => vec![],
+        // Its sounds are its ways to sound, above.
+        Action::ChestAnswers => vec![],
         Action::ToggleDoor | Action::ToggleFixture(_) => pos
             .map(|p| vec![(Command::ToggleBlock { id: ids(), pos: p }, 0)])
             .unwrap_or_default(),
@@ -898,6 +915,7 @@ pub fn commands(
                         from: container.pos,
                         slot: stack.slot,
                         count: 1,
+                        keep: "item_on_table".to_string(),
                     },
                     0,
                 ),
@@ -914,6 +932,7 @@ pub fn commands(
                             count: 1,
                             slot: 0,
                         },
+                        kept: "item_on_table".to_string(),
                     },
                     1,
                 ),
@@ -935,6 +954,7 @@ pub fn commands(
                             count: 1,
                             slot: 0,
                         },
+                        kept: String::new(),
                     },
                     0,
                 )]
@@ -947,6 +967,7 @@ pub fn commands(
                     from: container.pos,
                     slot: stack.slot,
                     count: 1,
+                    keep: "held".to_string(),
                 },
                 0,
             )],
@@ -959,10 +980,61 @@ pub fn commands(
                     into: held.from,
                     slot: Some(held.slot),
                     item: held.item.clone(),
+                    kept: "held".to_string(),
+                    wear: 0,
+                    name: String::new(),
                 },
                 0,
             )],
             None => vec![],
+        },
+        // What it took, given back a little used: a tool worn some more, anything else named.
+        Action::ReturnUsed => match &memory.held {
+            Some(held) => {
+                let tool = [
+                    "_pickaxe", "_axe", "_sword", "_shovel", "_hoe", "bow", "shears",
+                ]
+                .iter()
+                .any(|t| held.item.id.ends_with(t));
+                vec![(
+                    Command::PutItem {
+                        id: ids(),
+                        into: held.from,
+                        slot: Some(held.slot),
+                        item: held.item.clone(),
+                        kept: "held".to_string(),
+                        wear: if tool { 4 + (seed % 9) as u32 } else { 0 },
+                        name: if tool {
+                            String::new()
+                        } else {
+                            words(Kind::ItemName, "", 0)
+                        },
+                    },
+                    0,
+                )]
+            }
+            None => vec![],
+        },
+        Action::RenameOne => match (pos, memory.used_container()) {
+            (Some(p), Some(container)) if !container.contents.is_empty() => {
+                // Their favourite if it is in there, else whatever the seed lands on.
+                let favourite = memory.favourites.first().map(|(id, _)| id.as_str());
+                let stack = container
+                    .contents
+                    .iter()
+                    .find(|s| Some(s.id.as_str()) == favourite)
+                    .unwrap_or(&container.contents[seed % container.contents.len()]);
+                vec![(
+                    Command::RenameItem {
+                        id: ids(),
+                        pos: p,
+                        slot: stack.slot,
+                        name: words(Kind::ItemName, "", 0),
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
         },
         Action::PlaceTaken => match (&memory.held, pos) {
             (Some(held), Some(p)) => vec![(
@@ -970,6 +1042,7 @@ pub fn commands(
                     id: ids(),
                     pos: [p[0] as f64 + 0.5, p[1] as f64 + 1.0, p[2] as f64 + 0.5],
                     item: held.item.clone(),
+                    kept: "held".to_string(),
                 },
                 0,
             )],
@@ -1101,6 +1174,7 @@ pub fn commands(
                         from: container.pos,
                         slot: stack.slot,
                         count: 1,
+                        keep: String::new(),
                     },
                     2,
                 ),
@@ -1498,6 +1572,7 @@ pub fn commands(
                         from: container.pos,
                         slot: stack.slot,
                         count: 1,
+                        keep: String::new(),
                     },
                     0,
                 ),
@@ -1511,6 +1586,9 @@ pub fn commands(
                             count: 1,
                             slot: 0,
                         },
+                        kept: String::new(),
+                        wear: 0,
+                        name: String::new(),
                     },
                     1,
                 ),
@@ -1593,6 +1671,9 @@ pub fn commands(
                                 count: 1,
                                 slot: 0,
                             },
+                            kept: String::new(),
+                            wear: 0,
+                            name: String::new(),
                         },
                         1,
                     ),
@@ -1634,6 +1715,7 @@ pub fn commands(
                             from: container.pos,
                             slot: stack.slot,
                             count: 1,
+                            keep: String::new(),
                         },
                         0,
                     ),
@@ -1744,6 +1826,7 @@ pub fn commands(
                             count: 1,
                             slot: 0,
                         },
+                        kept: String::new(),
                     },
                     1,
                 ),
@@ -1762,6 +1845,7 @@ pub fn commands(
                             from: chest.pos,
                             slot: stack.slot,
                             count: 1,
+                            keep: String::new(),
                         },
                         0,
                     ),
@@ -1798,6 +1882,7 @@ pub fn commands(
                             from: chest.pos,
                             slot: stack.slot,
                             count: 1,
+                            keep: String::new(),
                         },
                         0,
                     ),
@@ -1926,6 +2011,7 @@ pub fn commands(
                                 from: chest.pos,
                                 slot: stack.slot,
                                 count: 1,
+                                keep: String::new(),
                             },
                             0,
                         ),
@@ -1957,6 +2043,7 @@ pub fn commands(
                                 from: chest.pos,
                                 slot: stack.slot,
                                 count: 1,
+                                keep: String::new(),
                             },
                             0,
                         ),
@@ -2245,6 +2332,7 @@ pub fn text_kind(event: &Event) -> Option<Kind> {
         Action::SaysKills => Some(Kind::KillLine),
         Action::Whisper => Some(Kind::Whisper),
         Action::Answers => Some(Kind::Reply),
+        Action::RenameOne | Action::ReturnUsed => Some(Kind::ItemName),
         _ => None,
     }
 }
@@ -2912,6 +3000,7 @@ mod tests {
             if event.id == "wait"
                 || event.id == "return_taken"
                 || event.id == "place_taken"
+                || event.id == "returned_used"
                 || event.id == "door_opens_itself"
             {
                 continue;
@@ -3143,6 +3232,65 @@ mod tests {
                 && matches!(sapling[1].0, Command::TakeItem { .. })
                 && sapling[1].1 > sapling[0].1,
             "planted before it is taken: {sapling:?}"
+        );
+    }
+
+    #[test]
+    fn what_it_took_comes_back_itself_worn_or_named_and_a_thing_in_the_chest_gets_a_name() {
+        let mut memory = rich_memory();
+        let now = Now::default();
+        let held = |id: &str| crate::memory::Held {
+            item: stack(id, 1, 0),
+            from: [2, 64, 0],
+            slot: 4,
+            ..Default::default()
+        };
+
+        memory.held = Some(held("minecraft:iron_pickaxe"));
+        let used = find("returned_used").unwrap();
+        let made = commands(used, None, &memory, &mut ids(), &now, None);
+        assert!(
+            matches!(&made[0].0, Command::PutItem { kept, wear, name, .. } if kept == "held" && *wear > 0 && name.is_empty()),
+            "the pickaxe itself, worn: {:?}",
+            made[0].0
+        );
+        memory.held = Some(held("minecraft:bread"));
+        let made = commands(used, None, &memory, &mut ids(), &now, Some("borrowed"));
+        assert!(
+            matches!(&made[0].0, Command::PutItem { wear: 0, name, .. } if name == "borrowed"),
+            "bread is named, not worn: {:?}",
+            made[0].0
+        );
+
+        let take = commands(find("take").unwrap(), None, &memory, &mut ids(), &now, None);
+        assert!(
+            matches!(&take[0].0, Command::TakeItem { keep, .. } if keep == "held"),
+            "what it takes the host keeps: {:?}",
+            take[0].0
+        );
+        let back = commands(
+            find("return_taken").unwrap(),
+            None,
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(matches!(&back[0].0, Command::PutItem { kept, .. } if kept == "held"));
+
+        let rename = find("renamed_item").unwrap();
+        let made = commands(
+            rename,
+            Some([2, 64, 0]),
+            &memory,
+            &mut ids(),
+            &now,
+            Some("mine"),
+        );
+        assert!(
+            matches!(&made[0].0, Command::RenameItem { name, slot: 4, .. } if name == "mine"),
+            "the favourite, the pickaxe in slot 4: {:?}",
+            made[0].0
         );
     }
 

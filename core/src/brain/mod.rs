@@ -184,6 +184,9 @@ pub const REPLY_CHANCE_ABOUT: f64 = 0.6;
 pub const REPLY_CHANCE_OTHER: f64 = 0.15;
 pub const REPLIES_A_DAY: usize = 3;
 
+/// How likely another chest answers the one they open (`chest_answers`).
+pub const ECHO_CHANCE: f64 = 0.3;
+
 /// A planning question out to the model.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Ask {
@@ -444,6 +447,11 @@ impl Brain {
         }
         if let Some(command) = self.reply_due(now, day, memory, log) {
             commands.push(command);
+        }
+        // A chest of theirs opened: perhaps another closes in the house at the same moment.
+        if memory.opened_now.is_some() {
+            commands.extend(self.consider_echo(now, day, memory, arc, config, log));
+            memory.opened_now = None;
         }
 
         // A reaction, on a trigger, ten seconds apart at most, when nothing else is asked.
@@ -827,6 +835,48 @@ impl Brain {
     fn next_plan_id(&mut self) -> u64 {
         self.next_plan_id += 1;
         self.next_plan_id
+    }
+
+    /// Whether another chest of the house answers the one the target just opened: the row's
+    /// rules, a chance of [`ECHO_CHANCE`], and a chest of theirs other than that one.
+    fn consider_echo(
+        &mut self,
+        now: &Now,
+        day: f32,
+        memory: &mut Memory,
+        arc: &Arc,
+        config: &Config,
+        log: &mut log::Log,
+    ) -> Vec<Command> {
+        let Some(event) = events::find("chest_answers") else {
+            return Vec::new();
+        };
+        if !offer::switched_on(event, config)
+            || rules::check(event, None, memory, arc.stage, day, config).is_err()
+            || self.rng.next_f64() >= ECHO_CHANCE
+        {
+            return Vec::new();
+        }
+        let Some(pos) = act::place(event, memory, &mut self.rng) else {
+            return Vec::new();
+        };
+        let mut ids = || self.id();
+        let made = act::commands(event, Some(pos), memory, &mut ids, now, None);
+        memory.record(event.id, Some(pos), day, true, "");
+        log.acted(event.id, Some(pos), made.len());
+        let mut sent = Vec::new();
+        for (command, later) in made {
+            if later == 0 {
+                sent.push(command);
+            } else {
+                self.later.push(Later {
+                    at_tick: now.tick + later,
+                    command,
+                });
+            }
+        }
+
+        sent
     }
 
     /// Whether to answer what the target just typed, and if so when: the row's rules (stage,
@@ -2991,6 +3041,52 @@ mod tests {
             "a fresh bank line instead: {second}"
         );
         model.shutdown();
+    }
+
+    #[test]
+    fn opening_one_chest_another_closes_somewhere_in_the_house_now_and_then() {
+        let mut config = Config::default();
+        config.events.cooldown_scale = 0.0;
+        config.brain.plan_every = 100_000;
+        let mut memory = home_memory();
+        memory.last.online = true;
+        for pos in [[2, 64, 0], [-3, 64, 1]] {
+            memory.containers.push(crate::memory::Container {
+                pos,
+                kind: "minecraft:chest".to_string(),
+                placed: true,
+                ..Default::default()
+            });
+        }
+        let mut arc = Arc {
+            stage: 2,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(6);
+        let mut now = Now {
+            tick: 20,
+            ..Now::default()
+        };
+        let mut answered = Vec::new();
+        for _ in 0..40 {
+            memory.opened_now = Some([2, 64, 0]);
+            for command in brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None) {
+                if let Command::PlaySound { pos, .. } = command {
+                    answered.push(pos);
+                }
+            }
+            now.tick += 40;
+        }
+
+        assert!(!answered.is_empty(), "never in forty openings");
+        assert!(answered.len() < 30, "only now and then: {}", answered.len());
+        assert!(
+            answered
+                .iter()
+                .all(|p| (p[0] - -2.5).abs() < 0.01 && (p[2] - 1.5).abs() < 0.01),
+            "the other chest, never the one opened: {answered:?}"
+        );
     }
 
     #[test]

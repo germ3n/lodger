@@ -463,6 +463,10 @@ pub enum Command {
         from: BlockPos,
         slot: u32,
         count: u32,
+        /// Keep the very stack taken under this name, saved with the world, for `put_item` or
+        /// `drop_item` to give back: enchantments, wear and name and all. ABI 13.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        keep: String,
     },
     /// Put an item into a container: the slot given, or the first empty one when `slot` is
     /// absent. The mod gives back what it took this way.
@@ -471,12 +475,24 @@ pub enum Command {
         into: BlockPos,
         slot: Option<u32>,
         item: ItemStack,
+        /// Give back the stack kept under this name by `take_item`'s `keep`, components and
+        /// all, instead of making `item`. ABI 13.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        kept: String,
+        /// As it goes back: this much more wear on a tool, and this name. ABI 13.
+        #[serde(default, skip_serializing_if = "is_zero_u32")]
+        wear: u32,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        name: String,
     },
     /// Drop an item at a position, as an item entity that does not despawn.
     DropItem {
         id: u64,
         pos: Pos,
         item: ItemStack,
+        /// As `put_item`'s. ABI 13.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        kept: String,
     },
     /// Write a sign's lines.
     SetSign {
@@ -501,6 +517,13 @@ pub enum Command {
         id: u64,
         player: u32,
         to: Pos,
+    },
+    /// Name the item in a container's slot, as an anvil would. ABI 13.
+    RenameItem {
+        id: u64,
+        pos: BlockPos,
+        slot: u32,
+        name: String,
     },
     /// Hold a mob where it stands, facing `player`, moving and attacking no one, for `seconds`
     /// (at most ten minutes); then it is as it was. A mob saved while held is let go when next
@@ -586,6 +609,7 @@ impl Command {
             | Command::Hold { id, .. }
             | Command::MovePlayer { id, .. }
             | Command::BlockSound { id, .. }
+            | Command::RenameItem { id, .. }
             | Command::Surroundings { id, .. }
             | Command::Figure { id, .. }
             | Command::RemoveFigure { id, .. } => *id,
@@ -604,6 +628,10 @@ pub struct Report {
 }
 
 fn is_zero(n: &u8) -> bool {
+    *n == 0
+}
+
+fn is_zero_u32(n: &u32) -> bool {
     *n == 0
 }
 

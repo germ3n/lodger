@@ -64,6 +64,8 @@ pub enum Need {
     TargetSaid,
     /// The target just typed: met only by the chat trigger, never on the planning menu.
     Heard,
+    /// The target just opened a chest of theirs: met only by that, never on the menu.
+    JustOpened,
     /// Night.
     Night,
     /// Day.
@@ -131,6 +133,7 @@ impl Need {
                 | Need::TargetInBed
                 | Need::TargetSaid
                 | Need::Heard
+                | Need::JustOpened
                 | Need::Night
                 | Need::Day
                 | Need::Dawn
@@ -177,6 +180,7 @@ impl Need {
             Need::TargetInBed => "the target is not in bed".to_string(),
             Need::TargetSaid => "the target has not typed".to_string(),
             Need::Heard => "answered only as they type".to_string(),
+            Need::JustOpened => "happens only as they open a chest".to_string(),
             Need::Night => "not night".to_string(),
             Need::Day => "not day".to_string(),
             Need::Raining => "not raining".to_string(),
@@ -339,6 +343,12 @@ pub enum Action {
     RepeatsYou,
     /// Every hostile mob near holds still and stares at the target until dawn.
     HostilesStare,
+    /// What it took comes back worn a little, or with a name on it.
+    ReturnUsed,
+    /// One of their things in the chest gets a name.
+    RenameOne,
+    /// Another chest of the house closes as they open theirs.
+    ChestAnswers,
     /// An answer to what the target just typed, in their name, to them alone.
     Answers,
     /// A boat or minecart moved to the far side of the water, or its middle.
@@ -1125,6 +1135,39 @@ pub const CATALOGUE: &[Event] = &[
         Full,
         Action::HostilesStare,
         false,
+    ),
+    row(
+        "returned_used",
+        3,
+        5,
+        &[Held, TargetAwayOrAsleep],
+        1.0,
+        3,
+        Full,
+        Action::ReturnUsed,
+        false,
+    ),
+    row(
+        "renamed_item",
+        3,
+        5,
+        &[UsedContainer, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Full,
+        Action::RenameOne,
+        false,
+    ),
+    row(
+        "chest_answers",
+        2,
+        5,
+        &[JustOpened, TwoContainers],
+        0.5,
+        8,
+        Half,
+        Action::ChestAnswers,
+        true,
     ),
     row(
         "says_first",
@@ -2187,6 +2230,9 @@ impl Event {
             "whisper_from_you" => "whisper to them as them",
             "repeats_you" => "repeat what they said",
             "knock_heavy" => "pound on the door, heavy and slow",
+            "returned_used" => "give back what it took, a little used",
+            "renamed_item" => "write a name on one of their things",
+            "chest_answers" => "close another chest as they open theirs",
             "hostiles_stare" => "have the monsters stand and stare at them all night",
             "answers_you" => "answer what they typed",
             "stairs_turned" => "turn a stair block another way",

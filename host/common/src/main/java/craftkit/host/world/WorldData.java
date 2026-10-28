@@ -4,27 +4,34 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import craftkit.host.Host;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
 /**
  * One mod's bytes for one level, kept in the level's saved data under {@code craftkit_<mod id>},
  * as the base64 the ABI hands out, so the host never decodes them. The mod owns what they mean.
+ * Beside them, the items the mod took and keeps ({@code take_item}'s {@code keep}), as the game
+ * saves items, components and all, so what is given back is the very thing taken.
  */
 public final class WorldData extends SavedData {
 	private String bytes;
+	private final java.util.Map<String, ItemStack> kept = new java.util.HashMap<>();
 
 	public WorldData() {
-		this("");
+		this("", java.util.Map.of());
 	}
 
-	public WorldData(String bytes) {
+	public WorldData(String bytes, java.util.Map<String, ItemStack> kept) {
 		this.bytes = bytes;
+		this.kept.putAll(kept);
 	}
 
 	public static SavedDataType<WorldData> type(String modId) {
 		Codec<WorldData> codec = RecordCodecBuilder.create(instance -> instance
-				.group(Codec.STRING.fieldOf("bytes").forGetter(data -> data.bytes))
+				.group(
+						Codec.STRING.fieldOf("bytes").forGetter(data -> data.bytes),
+						Codec.unboundedMap(Codec.STRING, ItemStack.CODEC).optionalFieldOf("kept", java.util.Map.of()).forGetter(data -> data.kept))
 				.apply(instance, WorldData::new));
 
 		java.util.function.Supplier<WorldData> fresh = WorldData::new;
@@ -35,6 +42,26 @@ public final class WorldData extends SavedData {
 	/** The saved bytes as base64, empty for a new world. */
 	public String bytes() {
 		return bytes;
+	}
+
+	/** Keeps a taken stack under a key; a stack already kept there is added to if the same. */
+	public void keep(String key, ItemStack stack) {
+		ItemStack had = kept.get(key);
+		if (had != null && ItemStack.isSameItemSameComponents(had, stack)) {
+			had.grow(stack.getCount());
+		} else {
+			kept.put(key, stack.copy());
+		}
+		setDirty();
+	}
+
+	/** The stack kept under a key, taken out, or null. */
+	public ItemStack giveBack(String key) {
+		ItemStack stack = kept.remove(key);
+		if (stack != null) {
+			setDirty();
+		}
+		return stack;
 	}
 
 	public void set(String base64) {

@@ -156,6 +156,9 @@ never a witness's container.
 | `tidy_by_colour` | 3 | Wool, concrete, glass or beds in a chest are sorted by colour, the way a child would. | A container with 6 or more coloured stacks. |
 | `swap_stacks` | 2 | Two stacks trade places between two of the target's chests. | Two used containers. |
 | `fill_gap` | 2 | One item the target has many of is in a chest it was never in, in a slot that was empty. | Two used containers. |
+| `renamed_item` | 3 | One of their things in the chest they use has a name on it, as an anvil writes one: `mine`, `borrowed`, `not yours`; the model writes it. Their favourite, if it is there. | A used container with something in it. |
+| `returned_used` | 3 | What it took comes back to its chest the very same item, but a tool worn a little more (never broken by it), anything else with a name on it. | Something held. |
+| `chest_answers` | 2 | As the target opens a chest of theirs, another chest of the house closes, or opens and closes, at the same moment. Three times in ten, never from the menu. | Two chests of theirs. |
 | `take` | 2 | One item of the kind the memory says the target uses most is taken from the container they open most. The lodger holds it. | A used container with a favourite in it, out of view. |
 | `return_taken` | 2 | The held item is back where it was taken from, in its slot, or one slot over. | A held item. |
 | `place_taken` | 2 | The held item is placed where the want says: on the bed, on the table, at the end of the route, at its place, as a dropped item that does not despawn or into a container there. | A held item. |

@@ -403,6 +403,38 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        "chest_answers" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:block.chest.close", 3)],
+                    (0.9, 1.0),
+                    0.6,
+                    Still,
+                ),
+                v(
+                    &[("minecraft:block.chest.close", 1)],
+                    (0.7, 0.8),
+                    0.7,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.chest.open", 0),
+                        ("minecraft:block.chest.close", 6),
+                    ],
+                    (0.9, 1.0),
+                    0.5,
+                    Still,
+                ),
+                v(
+                    &[("minecraft:block.barrel.close", 3)],
+                    (0.9, 1.0),
+                    0.6,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         _ => return None,
     })
 }

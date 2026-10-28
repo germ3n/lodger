@@ -97,6 +97,9 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   the lodger. What it does dig is what a player digs: natural stone, dirt and ore, one block at a
   time at a player's pace, never within 8 blocks of anything placed (checked on every command, the debug screen's Fire too) and never into a cave, water
   or lava it can see coming (see [Like a player](entity.md#like-a-player)).
+- **What it takes is the very thing it gives back.** The host keeps the taken stack with the
+  world, enchantments, wear and name and all (until 2026-11-09 a taken enchanted tool came
+  back plain).
 - **It never takes more than one item at a time, and never anything from the inventory, a hand,
   an armour slot or the ender chest.** From a chest the player opens often, one item, one that
   the memory says they use. What it takes it holds, and it always comes back, somewhere. Items

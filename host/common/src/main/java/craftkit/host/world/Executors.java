@@ -60,7 +60,7 @@ public final class Executors {
 	private Executors() {
 	}
 
-	public static JsonObject run(LoadedMod mod, ServerLevel level, JsonObject command, Context context) {
+	public static JsonObject run(LoadedMod mod, ServerLevel level, JsonObject command, Context context, WorldData data) {
 		long id = command.has("id") ? command.get("id").getAsLong() : 0;
 		String kind = command.has("kind") ? command.get("kind").getAsString() : "";
 
@@ -110,9 +110,10 @@ public final class Executors {
 				case "player_list" -> playerList(level, command, id, context);
 				case "game_message" -> gameMessage(level, command, id, context);
 				case "move_item" -> moveItem(level, command, id);
-				case "take_item" -> takeItem(level, command, id);
-				case "put_item" -> putItem(level, command, id);
-				case "drop_item" -> dropItem(level, command, id);
+				case "take_item" -> takeItem(level, command, id, data);
+				case "put_item" -> putItem(level, command, id, data);
+				case "drop_item" -> dropItem(level, command, id, data);
+				case "rename_item" -> renameItem(level, command, id);
 				case "set_sign" -> setSign(level, command, id);
 				case "cancel_sleep" -> cancelSleep(level, command, id, context);
 				case "look_at" -> lookAt(level, command, id, context);
@@ -773,21 +774,35 @@ public final class Executors {
 			return report(id, false, "no such slot");
 		}
 
+		// What is there now, up to the count: a chest changes while no one watches it.
 		ItemStack source = from.getItem(fromSlot);
-		if (source.isEmpty() || source.getCount() < count) {
-			return report(id, false, "the source slot has too few");
+		if (source.isEmpty()) {
+			return report(id, false, "nothing in the source slot");
 		}
+		count = Math.min(count, source.getCount());
 
-		ItemStack target = to.getItem(toSlot);
-		if (!target.isEmpty() && !(ItemStack.isSameItemSameComponents(target, source) && target.getCount() + count <= target.getMaxStackSize())) {
-			return report(id, false, "the destination slot is taken");
+		// The slot asked for, else a matching stack with room, else the first empty one.
+		int slot = -1;
+		for (int candidate : Slots.order(toSlot, to.getContainerSize())) {
+			if (to == from && candidate == fromSlot) {
+				continue;
+			}
+			ItemStack there = to.getItem(candidate);
+			if (there.isEmpty() || (ItemStack.isSameItemSameComponents(there, source) && there.getCount() + count <= there.getMaxStackSize())) {
+				slot = candidate;
+				break;
+			}
+		}
+		if (slot < 0) {
+			return report(id, false, "the destination is full");
 		}
 
 		ItemStack moved = source.split(count);
+		ItemStack target = to.getItem(slot);
 		if (target.isEmpty()) {
-			to.setItem(toSlot, moved);
+			to.setItem(slot, moved);
 		} else {
-			target.grow(count);
+			target.grow(moved.getCount());
 		}
 		from.setChanged();
 		to.setChanged();
@@ -795,7 +810,7 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
-	private static JsonObject takeItem(ServerLevel level, JsonObject command, long id) {
+	private static JsonObject takeItem(ServerLevel level, JsonObject command, long id, WorldData data) {
 		Container from = container(level, blockPos(command.getAsJsonArray("from")));
 		if (from == null) {
 			return report(id, false, "no container at the source");
@@ -812,25 +827,60 @@ public final class Executors {
 			return report(id, false, "the slot has too few");
 		}
 
-		source.shrink(count);
+		// What it takes it holds: the very stack, kept with the world, when the mod names a key.
+		ItemStack taken = source.split(count);
+		if (command.has("keep") && !command.get("keep").getAsString().isEmpty()) {
+			data.keep(command.get("keep").getAsString(), taken);
+		}
 		from.setChanged();
 
 		return report(id, true, "");
 	}
 
-	private static JsonObject putItem(ServerLevel level, JsonObject command, long id) {
+	private static JsonObject renameItem(ServerLevel level, JsonObject command, long id) {
+		Container in = container(level, blockPos(command.getAsJsonArray("pos")));
+		if (in == null) {
+			return report(id, false, "no container there");
+		}
+		int slot = command.get("slot").getAsInt();
+		if (slot < 0 || slot >= in.getContainerSize() || in.getItem(slot).isEmpty()) {
+			return report(id, false, "nothing in that slot");
+		}
+		in.getItem(slot).set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal(command.get("name").getAsString()));
+		in.setChanged();
+
+		return report(id, true, "");
+	}
+
+	/** The stack a give-back command means: the kept one when it names a key, else one made from its item. */
+	private static ItemStack stackOf(JsonObject command, WorldData data) {
+		if (command.has("kept") && !command.get("kept").getAsString().isEmpty()) {
+			return data.giveBack(command.get("kept").getAsString());
+		}
+		JsonObject item = command.getAsJsonObject("item");
+		Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(item.get("id").getAsString()));
+
+		return kind.map(k -> new ItemStack(k.value(), item.get("count").getAsInt())).orElse(null);
+	}
+
+	private static JsonObject putItem(ServerLevel level, JsonObject command, long id, WorldData data) {
 		Container into = container(level, blockPos(command.getAsJsonArray("into")));
 		if (into == null) {
 			return report(id, false, "no container at the destination");
 		}
 
-		JsonObject item = command.getAsJsonObject("item");
-		Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(item.get("id").getAsString()));
-		if (kind.isEmpty()) {
-			return report(id, false, "no such item");
+		ItemStack stack = stackOf(command, data);
+		if (stack == null || stack.isEmpty()) {
+			return report(id, false, "no such item, or nothing kept under that name");
 		}
-
-		ItemStack stack = new ItemStack(kind.get().value(), item.get("count").getAsInt());
+		// As it goes back: a little more wear (never broken by it), a name.
+		int wear = command.has("wear") ? command.get("wear").getAsInt() : 0;
+		if (wear > 0 && stack.isDamageableItem()) {
+			stack.setDamageValue(Math.min(stack.getMaxDamage() - 1, stack.getDamageValue() + wear));
+		}
+		if (command.has("name") && !command.get("name").getAsString().isEmpty()) {
+			stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal(command.get("name").getAsString()));
+		}
 		int slot = -1;
 		if (command.has("slot") && !command.get("slot").isJsonNull()) {
 			slot = command.get("slot").getAsInt();
@@ -852,6 +902,10 @@ public final class Executors {
 		}
 
 		if (slot < 0) {
+			// Never lost: what does not fit goes back to where it was kept.
+			if (command.has("kept") && !command.get("kept").getAsString().isEmpty()) {
+				data.keep(command.get("kept").getAsString(), stack);
+			}
 			return report(id, false, "the container is full");
 		}
 
@@ -861,15 +915,14 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
-	private static JsonObject dropItem(ServerLevel level, JsonObject command, long id) {
-		JsonObject item = command.getAsJsonObject("item");
-		Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(item.get("id").getAsString()));
-		if (kind.isEmpty()) {
-			return report(id, false, "no such item");
+	private static JsonObject dropItem(ServerLevel level, JsonObject command, long id, WorldData data) {
+		ItemStack stack = stackOf(command, data);
+		if (stack == null || stack.isEmpty()) {
+			return report(id, false, "no such item, or nothing kept under that name");
 		}
 
 		JsonArray pos = command.getAsJsonArray("pos");
-		ItemEntity entity = new ItemEntity(level, pos.get(0).getAsDouble(), pos.get(1).getAsDouble(), pos.get(2).getAsDouble(), new ItemStack(kind.get().value(), item.get("count").getAsInt()), 0, 0, 0);
+		ItemEntity entity = new ItemEntity(level, pos.get(0).getAsDouble(), pos.get(1).getAsDouble(), pos.get(2).getAsDouble(), stack, 0, 0, 0);
 		entity.setUnlimitedLifetime();
 		level.addFreshEntity(entity);
 

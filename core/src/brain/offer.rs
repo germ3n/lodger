@@ -67,6 +67,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::TargetSaid => !memory.last_said.is_empty(),
         // `answers_you` starts from the chat trigger (`Brain::consider_reply`), never the menu.
         Need::Heard => false,
+        // `chest_answers` starts from the opening (`Brain::consider_echo`), never the menu.
+        Need::JustOpened => false,
         Need::Night => night,
         Need::Dawn => now.day_time < 1_500 || now.day_time > 23_000,
         Need::Wall => !memory.walls.is_empty(),
@@ -159,6 +161,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::Whisper
         | Action::RepeatsYou
         | Action::Answers => Some("chat"),
+        Action::ChestAnswers => Some("sound"),
         _ => None,
     }
 }

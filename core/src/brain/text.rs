@@ -21,6 +21,8 @@ pub enum Kind {
     Whisper,
     /// A name for one of their animals.
     AnimalName,
+    /// A name on one of their things, as an anvil would write it.
+    ItemName,
     /// A sign on a grave for what they kill most; `{kind}` is filled in.
     GraveSign,
     /// An answer to what the target just typed, in their own name, to them alone.
@@ -29,7 +31,7 @@ pub enum Kind {
 
 impl Kind {
     /// Every kind, for the tests that go through them all.
-    pub const ALL: [Kind; 8] = [
+    pub const ALL: [Kind; 9] = [
         Kind::SignWord,
         Kind::ChatLine,
         Kind::KillLine,
@@ -38,6 +40,7 @@ impl Kind {
         Kind::AnimalName,
         Kind::GraveSign,
         Kind::Reply,
+        Kind::ItemName,
     ];
 
     /// Whether a line of this kind may carry digits: only the ones that count what the player
@@ -85,6 +88,16 @@ impl Kind {
             ],
             Kind::KillSign => &["{n} {kind}s", "{n} so far", "{kind}s: {n}", "{n}"],
             Kind::Whisper => &["here", "behind you", "wait", "yours", "soon", "look"],
+            Kind::ItemName => &[
+                "mine",
+                "yours",
+                "borrowed",
+                "not yours",
+                "keep it",
+                "for later",
+                "again",
+                "the other one",
+            ],
             Kind::AnimalName => &[
                 "yours",
                 "mine",
@@ -114,7 +127,7 @@ impl Kind {
     pub fn most_words(self) -> usize {
         match self {
             Kind::SignWord | Kind::Whisper => 2,
-            Kind::AnimalName => 3,
+            Kind::AnimalName | Kind::ItemName => 3,
             Kind::KillSign | Kind::GraveSign => 3,
             Kind::ChatLine | Kind::KillLine | Kind::Reply => 8,
         }
@@ -140,6 +153,7 @@ impl Kind {
             Kind::KillSign => "The sign it puts up counting what the player killed says:",
             Kind::Whisper => "The whisper the player gets from themselves says:",
             Kind::AnimalName => "The name it gives one of the player's animals:",
+            Kind::ItemName => "The name it writes on one of the player's things:",
             Kind::GraveSign => "The sign on the small grave it raised says:",
             Kind::Reply => "What it types back in the player's own name, answering them:",
         }

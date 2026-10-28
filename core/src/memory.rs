@@ -265,6 +265,10 @@ pub struct Memory {
     pub decor: Vec<Decor>,
     /// The last thing the target said in chat, whatever it was about.
     pub last_said: String,
+    /// A chest of theirs the target just opened, taken by the brain on its next tick
+    /// (`chest_answers`). Not saved.
+    #[serde(skip)]
+    pub opened_now: Option<BlockPos>,
     /// The house the target is in when it is not their home, from the mind's own scan
     /// (`brain::sounds::house_spot`): its doors and chests. Not saved.
     #[serde(skip)]
@@ -789,6 +793,9 @@ impl Memory {
                         self.container_opened(pos, &event.detail, &event.contents, day);
                         if used {
                             self.trigger("opened_chest");
+                        }
+                        if self.containers.iter().any(|c| c.pos == pos && c.theirs()) {
+                            self.opened_now = Some(pos);
                         }
                     }
                 }

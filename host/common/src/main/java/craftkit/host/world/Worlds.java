@@ -146,7 +146,7 @@ public final class Worlds {
 
 				JsonArray reports = new JsonArray();
 				for (JsonElement element : commands.getAsJsonArray()) {
-					JsonObject report = Executors.run(mod, level, element.getAsJsonObject(), context);
+					JsonObject report = Executors.run(mod, level, element.getAsJsonObject(), context, world.data());
 					reports.add(report);
 					remember(mod, element.getAsJsonObject(), report);
 				}
