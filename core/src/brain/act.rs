@@ -330,7 +330,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::EggOnBed => home.and_then(|h| h.bed),
         Action::Take => memory.favourite_in_container().map(|(c, _)| c.pos),
         Action::ReturnTaken | Action::ReturnUsed => memory.held.as_ref().map(|h| h.from),
-        Action::RenameOne => memory.used_container().map(|c| c.pos),
+        Action::RenameOne | Action::BookWord | Action::MapMarked => {
+            memory.used_container().map(|c| c.pos)
+        }
         // Another chest of theirs than the one just opened, one of the house's.
         Action::ChestAnswers => {
             let opened = memory.opened_now;
@@ -1012,6 +1014,43 @@ pub fn commands(
                     },
                     0,
                 )]
+            }
+            None => vec![],
+        },
+        Action::BookWord => match memory.in_used_container(|id| id == "minecraft:writable_book") {
+            Some((container, book)) => {
+                let word = words(Kind::SignWord, "", 0);
+                vec![(
+                    Command::SignBook {
+                        id: ids(),
+                        pos: container.pos,
+                        slot: book.slot,
+                        title: word.clone(),
+                        pages: vec![word],
+                    },
+                    0,
+                )]
+            }
+            None => vec![],
+        },
+        // Its place, or the home's middle if it has none yet.
+        Action::MapMarked => match memory.in_used_container(|id| id == "minecraft:filled_map") {
+            Some((container, map)) => {
+                let at = memory
+                    .place
+                    .or_else(|| memory.home.as_ref().map(|h| h.center));
+                at.map(|at| {
+                    vec![(
+                        Command::MarkMap {
+                            id: ids(),
+                            pos: container.pos,
+                            slot: map.slot,
+                            at,
+                        },
+                        0,
+                    )]
+                })
+                .unwrap_or_default()
             }
             None => vec![],
         },
@@ -2333,6 +2372,7 @@ pub fn text_kind(event: &Event) -> Option<Kind> {
         Action::Whisper => Some(Kind::Whisper),
         Action::Answers => Some(Kind::Reply),
         Action::RenameOne | Action::ReturnUsed => Some(Kind::ItemName),
+        Action::BookWord => Some(Kind::SignWord),
         _ => None,
     }
 }
@@ -2458,6 +2498,11 @@ mod tests {
     /// The memory with everything the catalogue could ask for.
     fn rich_memory() -> Memory {
         let mut memory = memory();
+        // A book and quill and a map in the chest they use, for `book_word` and `map_marked`.
+        memory.containers[0].contents.extend([
+            stack("minecraft:writable_book", 1, 12),
+            stack("minecraft:filled_map", 1, 13),
+        ]);
         memory.containers.push(Container {
             pos: [-2, 64, 0],
             kind: "minecraft:chest".to_string(),
@@ -3291,6 +3336,39 @@ mod tests {
             matches!(&made[0].0, Command::RenameItem { name, slot: 4, .. } if name == "mine"),
             "the favourite, the pickaxe in slot 4: {:?}",
             made[0].0
+        );
+    }
+
+    #[test]
+    fn the_book_is_signed_with_one_word_and_the_map_marked_at_its_place() {
+        let mut memory = rich_memory();
+        memory.place = Some([40, 64, -12]);
+        let now = Now::default();
+        let book = commands(
+            find("book_word").unwrap(),
+            None,
+            &memory,
+            &mut ids(),
+            &now,
+            Some("under"),
+        );
+        assert!(
+            matches!(&book[0].0, Command::SignBook { slot: 12, title, pages, .. } if title == "under" && pages == &["under".to_string()]),
+            "{:?}",
+            book[0].0
+        );
+        let map = commands(
+            find("map_marked").unwrap(),
+            None,
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(
+            matches!(&map[0].0, Command::MarkMap { slot: 13, at, .. } if *at == [40, 64, -12]),
+            "{:?}",
+            map[0].0
         );
     }
 

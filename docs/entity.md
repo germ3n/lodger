@@ -163,8 +163,8 @@ never a witness's container.
 | `return_taken` | 2 | The held item is back where it was taken from, in its slot, or one slot over. | A held item. |
 | `place_taken` | 2 | The held item is placed where the want says: on the bed, on the table, at the end of the route, at its place, as a dropped item that does not despawn or into a container there. | A held item. |
 | `tool_used` | 3 | The favourite tool in the chest has lost durability overnight, a few dozen uses' worth, as if someone used it. | A damageable favourite in a chest. |
-| `book_word` | 3 | A book and quill in a chest has one word written in it, from the want's list, and is signed with no author. | A book and quill in a chest. |
-| `map_marked` | 3 | A map in a chest shows a marker at the lodger's place. | A map in a chest, the want a place. |
+| `book_word` | 3 | The book and quill in the chest they use is a written book: one word on its page, the same word its title, signed by no one (the model writes the word). | A book and quill in a chest of theirs. |
+| `map_marked` | 3 | The map in the chest they use shows a red X at the lodger's place, or at the house itself when it has none yet. | A filled map in a chest of theirs. |
 | `hopper_emptied` | 3 | A hopper's contents are in the chest it feeds, or the other way round. | A hopper in the home. |
 | `shulker_moved` | 3 | A shulker box is on a different wall of the same room. | A placed shulker box. |
 | `open_on_enter` | 4 | The chest the target uses most opens as they enter its room, and stays open until they look away. | A used container in a room with a door. |

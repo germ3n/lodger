@@ -518,6 +518,22 @@ pub enum Command {
         player: u32,
         to: Pos,
     },
+    /// Sign the book and quill in a container's slot as a written book with these pages, the
+    /// title given and no author, as a player signing it would. ABI 14.
+    SignBook {
+        id: u64,
+        pos: BlockPos,
+        slot: u32,
+        title: String,
+        pages: Vec<String>,
+    },
+    /// Mark the filled map in a container's slot with a target at `at`. ABI 14.
+    MarkMap {
+        id: u64,
+        pos: BlockPos,
+        slot: u32,
+        at: BlockPos,
+    },
     /// Name the item in a container's slot, as an anvil would. ABI 13.
     RenameItem {
         id: u64,
@@ -610,6 +626,8 @@ impl Command {
             | Command::MovePlayer { id, .. }
             | Command::BlockSound { id, .. }
             | Command::RenameItem { id, .. }
+            | Command::SignBook { id, .. }
+            | Command::MarkMap { id, .. }
             | Command::Surroundings { id, .. }
             | Command::Figure { id, .. }
             | Command::RemoveFigure { id, .. } => *id,

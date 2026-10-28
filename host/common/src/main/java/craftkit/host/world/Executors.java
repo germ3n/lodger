@@ -114,6 +114,8 @@ public final class Executors {
 				case "put_item" -> putItem(level, command, id, data);
 				case "drop_item" -> dropItem(level, command, id, data);
 				case "rename_item" -> renameItem(level, command, id);
+				case "sign_book" -> signBook(level, command, id);
+				case "mark_map" -> markMap(level, command, id);
 				case "set_sign" -> setSign(level, command, id);
 				case "cancel_sleep" -> cancelSleep(level, command, id, context);
 				case "look_at" -> lookAt(level, command, id, context);
@@ -833,6 +835,38 @@ public final class Executors {
 			data.keep(command.get("keep").getAsString(), taken);
 		}
 		from.setChanged();
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject signBook(ServerLevel level, JsonObject command, long id) {
+		Container in = container(level, blockPos(command.getAsJsonArray("pos")));
+		int slot = command.get("slot").getAsInt();
+		if (in == null || slot < 0 || slot >= in.getContainerSize() || !in.getItem(slot).is(net.minecraft.world.item.Items.WRITABLE_BOOK)) {
+			return report(id, false, "no book and quill there");
+		}
+		List<net.minecraft.server.network.Filterable<Component>> pages = new ArrayList<>();
+		for (JsonElement page : command.getAsJsonArray("pages")) {
+			pages.add(net.minecraft.server.network.Filterable.passThrough(Component.literal(page.getAsString())));
+		}
+		String title = command.get("title").getAsString();
+		ItemStack written = in.getItem(slot).transmuteCopy(net.minecraft.world.item.Items.WRITTEN_BOOK, 1);
+		written.set(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT,
+				new net.minecraft.world.item.component.WrittenBookContent(net.minecraft.server.network.Filterable.passThrough(title.isEmpty() ? " " : title), "", 0, pages, true));
+		in.setItem(slot, written);
+		in.setChanged();
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject markMap(ServerLevel level, JsonObject command, long id) {
+		Container in = container(level, blockPos(command.getAsJsonArray("pos")));
+		int slot = command.get("slot").getAsInt();
+		if (in == null || slot < 0 || slot >= in.getContainerSize() || !in.getItem(slot).is(net.minecraft.world.item.Items.FILLED_MAP)) {
+			return report(id, false, "no map there");
+		}
+		net.minecraft.world.level.saveddata.maps.MapItemSavedData.addTargetDecoration(in.getItem(slot), blockPos(command.getAsJsonArray("at")), "craftkit", net.minecraft.world.level.saveddata.maps.MapDecorationTypes.TARGET_X);
+		in.setChanged();
 
 		return report(id, true, "");
 	}

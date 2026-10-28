@@ -481,6 +481,9 @@ because it can be built and tested without a game, and because the model layer i
     the name, the `ItemName` bank), `returned_used` (worn a little, or named) and
     `chest_answers` (another chest closes as they open theirs, three times in ten). Was: a new
     item made from the id, moves failing on a count or a slot, none of the three.
+  - **Chests, part two:** `book_word` (their book and quill signed with one word, by no one;
+    the model writes the word) and `map_marked` (a red X at its place on their map), with
+    `sign_book` and `mark_map` (ABI 14). Was: in the catalogue alone.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

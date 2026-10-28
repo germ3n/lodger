@@ -345,6 +345,10 @@ pub enum Action {
     HostilesStare,
     /// What it took comes back worn a little, or with a name on it.
     ReturnUsed,
+    /// The book and quill in their chest is signed with one word, by no one.
+    BookWord,
+    /// Their map shows a mark at its place.
+    MapMarked,
     /// One of their things in the chest gets a name.
     RenameOne,
     /// Another chest of the house closes as they open theirs.
@@ -1134,6 +1138,28 @@ pub const CATALOGUE: &[Event] = &[
         2,
         Full,
         Action::HostilesStare,
+        false,
+    ),
+    row(
+        "book_word",
+        3,
+        5,
+        &[InChest("writable_book"), TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::BookWord,
+        false,
+    ),
+    row(
+        "map_marked",
+        3,
+        5,
+        &[InChest("filled_map"), TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::MapMarked,
         false,
     ),
     row(
@@ -2231,6 +2257,8 @@ impl Event {
             "repeats_you" => "repeat what they said",
             "knock_heavy" => "pound on the door, heavy and slow",
             "returned_used" => "give back what it took, a little used",
+            "book_word" => "write one word in their book and sign it",
+            "map_marked" => "mark its place on their map",
             "renamed_item" => "write a name on one of their things",
             "chest_answers" => "close another chest as they open theirs",
             "hostiles_stare" => "have the monsters stand and stare at them all night",
