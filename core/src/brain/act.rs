@@ -152,6 +152,14 @@ pub fn dug(command: &Command) -> Option<BlockPos> {
 /// The place the event happens, from the memory, or none for a thing with no place.
 pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     let home = memory.home.as_ref();
+    // The house's sounds come from a real door or chest of the house they are in, theirs
+    // first (owner, 2026-11-09: "any house, yours first").
+    if matches!(
+        event.id,
+        "door_sound" | "chest_sound" | "knock" | "knock_heavy" | "lever_click" | "your_voice"
+    ) {
+        return super::sounds::house_spot(event.id, memory, rng.next_u64() as usize);
+    }
 
     match event.action {
         Action::Wait
@@ -578,6 +586,23 @@ pub fn commands(
         .map(|p| (p[0] + p[2]).unsigned_abs() as usize)
         .unwrap_or(0)
         + memory.done.len();
+    // A sound event plays one of its ways to sound, the next after the last: from the house's
+    // door or chest, from far off, or around the target as it moves.
+    if let Some(ways) = super::sounds::variants(event.id) {
+        let spot = match event.action {
+            Action::SoundFar(_) => {
+                let angle = (seed % 8) as f64 * std::f64::consts::FRAC_PI_4;
+                Some([
+                    memory.last.pos[0] + 36.0 * angle.cos(),
+                    memory.last.pos[1],
+                    memory.last.pos[2] + 36.0 * angle.sin(),
+                ])
+            }
+            _ => pos.map(block_center),
+        };
+        let way = super::sounds::pick(ways, seed, memory.times(event.id));
+        return super::sounds::commands(way, spot, memory, target, seed, ids);
+    }
     // The words: what the model wrote for this event, checked, or the bank's.
     let words = |kind: Kind, mob: &str, count: u32| -> String {
         written

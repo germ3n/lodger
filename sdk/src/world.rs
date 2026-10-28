@@ -282,6 +282,19 @@ pub enum Command {
         volume: f32,
         pitch: f32,
     },
+    /// The sound a block makes, to one player at a position: `of` is `step`, `place`,
+    /// `break` or `hit`, and `block` a block id, or `under` (the block under the player's
+    /// feet) or `held` (the block in their hand, stone if none), so footsteps sound like what
+    /// they walk on. ABI 12.
+    BlockSound {
+        id: u64,
+        player: u32,
+        block: String,
+        of: String,
+        pos: Pos,
+        volume: f32,
+        pitch: f32,
+    },
     /// A client-side hint to one player: a kind the host's client knows, a place, a duration.
     Hint {
         id: u64,
@@ -572,6 +585,7 @@ impl Command {
             | Command::LookAt { id, .. }
             | Command::Hold { id, .. }
             | Command::MovePlayer { id, .. }
+            | Command::BlockSound { id, .. }
             | Command::Surroundings { id, .. }
             | Command::Figure { id, .. }
             | Command::RemoveFigure { id, .. } => *id,

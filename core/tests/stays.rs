@@ -154,6 +154,8 @@ impl Script {
 
 struct Run {
     commands: Vec<(u64, Command)>,
+    /// Events that landed, as the stay's own debug page counts them at the end.
+    landed: u64,
 }
 
 /// The command's kind, and for a hint its kind too, since two different hints are two different
@@ -182,6 +184,7 @@ fn run(days: u64, config: &str) -> Run {
     let mut script = Script::new();
     let mut run = Run {
         commands: Vec::new(),
+        landed: 0,
     };
 
     while script.tick < days * 24_000 {
@@ -204,6 +207,14 @@ fn run(days: u64, config: &str) -> Run {
         script.tick += 5;
     }
 
+    // "N decisions, M events landed, K did not": the stay's own count.
+    let page = world.debug(&craftkit::debug::DebugRequest::Snapshot);
+    run.landed = page
+        .gauges
+        .iter()
+        .find(|g| g.label == "decisions")
+        .and_then(|g| g.text.split(", ").nth(1)?.split(' ').next()?.parse().ok())
+        .unwrap_or(0);
     world.close();
     run
 }
@@ -213,14 +224,15 @@ fn a_stay_of_twelve_days_on_the_rule_brain_acts_within_its_budget_and_never_in_v
     let run = run(12, r#"{ "stages": { "start_after_days": 1 } }"#);
 
     assert!(!run.commands.is_empty(), "nothing happened in twelve days");
-    // The budget is 1, 2, 4, 6 a day and the rule brain waits often: twelve days through the
-    // first stages hold a few dozen events, some of several commands. 114 with one plan at a
-    // time; 123 with three side by side (2026-11-09), which land more of each day's budget
-    // rather than more than it: the budget itself is held by the brain's test
-    // `plans_held_count_against_the_day_s_budget_before_they_run`.
+    // The budget is 1, 2, 4, 6 events a day: eleven days after moving in land 66 at most.
+    // Events, not commands: since the sound events got their variants (2026-11-09) a footstep
+    // is up to five commands, and the command count stopped measuring the budget. The day's
+    // own bound is held by the brain's `plans_held_count_against_the_day_s_budget_before_they_run`.
+    assert!(run.landed > 0, "the page counted nothing");
+    assert!(run.landed <= 66, "{} events in eleven days", run.landed);
     assert!(
-        run.commands.len() < 140,
-        "{} commands in twelve days",
+        run.commands.len() < 400,
+        "a runaway: {} commands in twelve days",
         run.commands.len()
     );
 

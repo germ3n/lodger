@@ -23,6 +23,14 @@ pub struct Home {
     pub lights: Vec<BlockPos>,
 }
 
+/// A house the target is in that is not their home, as the mind's scan found it.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Here {
+    pub doors: Vec<BlockPos>,
+    pub containers: Vec<BlockPos>,
+    pub day: f32,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Container {
@@ -257,6 +265,13 @@ pub struct Memory {
     pub decor: Vec<Decor>,
     /// The last thing the target said in chat, whatever it was about.
     pub last_said: String,
+    /// The house the target is in when it is not their home, from the mind's own scan
+    /// (`brain::sounds::house_spot`): its doors and chests. Not saved.
+    #[serde(skip)]
+    pub here: Option<Here>,
+    /// The id of that scan, so its answer is told from the village's and the ore's.
+    #[serde(skip)]
+    pub here_scan: u64,
     /// Every line it wrote this stay (signs, chat, names), newest last: none is used twice.
     pub lines_written: Vec<String>,
     /// What the target just typed, cleaned (`text::heard`), and whether it was about the
@@ -644,6 +659,22 @@ impl Memory {
         }
 
         for scan in &observations.scans {
+            if self.here_scan != 0 && scan.id == self.here_scan {
+                let of = |test: fn(&str) -> bool| -> Vec<BlockPos> {
+                    scan.positions
+                        .iter()
+                        .filter(|(kind, _)| test(kind))
+                        .map(|(_, pos)| *pos)
+                        .take(16)
+                        .collect()
+                };
+                self.here = Some(Here {
+                    doors: of(|k| k.ends_with("_door")),
+                    containers: of(|k| k.ends_with("chest") || k.ends_with("barrel")),
+                    day,
+                });
+                continue;
+            }
             self.scanned = scan
                 .positions
                 .iter()

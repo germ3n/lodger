@@ -7,6 +7,7 @@ pub mod log;
 pub mod offer;
 pub mod rules_brain;
 pub mod situation;
+pub mod sounds;
 pub mod text;
 
 use crate::arc::Arc;
@@ -100,6 +101,9 @@ pub struct Brain {
     /// The tick the surroundings may be asked for again, so an unanswered pass is retried, not
     /// repeated every tick.
     pub next_survey_tick: u64,
+    /// The tick the house around the target may be scanned again (`Memory::here`).
+    #[serde(default)]
+    pub next_here_scan: u64,
     pub next_command_id: u64,
     pub rng: Rng,
     /// Decisions made, for the status line.
@@ -405,6 +409,32 @@ impl Brain {
                 let pick = WANT_CHOICES[(self.rng.next_u64() % 3) as usize];
                 memory.want = pick.to_string();
                 log.note(&format!("it wants {pick} (the rules' pick)"));
+            }
+        }
+
+        // The house they are in, when it is not their home: its doors and chests, so a knock
+        // in a village house is on that house's door. Every thirty seconds at most.
+        if memory.last.online && memory.last.indoors && now.tick >= self.next_here_scan {
+            let at = memory.last.pos;
+            let away = memory.home.as_ref().is_none_or(|h| {
+                let (dx, dz) = (at[0] - h.center[0] as f64, at[2] - h.center[2] as f64);
+                (dx * dx + dz * dz).sqrt() > 24.0
+            });
+            if away {
+                let c = [
+                    at[0].floor() as i32,
+                    at[1].floor() as i32,
+                    at[2].floor() as i32,
+                ];
+                let id = self.id();
+                commands.push(Command::Scan {
+                    id,
+                    min: [c[0] - 8, c[1] - 3, c[2] - 8],
+                    max: [c[0] + 8, c[1] + 5, c[2] + 8],
+                    kinds: sounds::HOUSE_KINDS.iter().map(|k| k.to_string()).collect(),
+                });
+                memory.here_scan = id;
+                self.next_here_scan = now.tick + 30 * TPS;
             }
         }
 

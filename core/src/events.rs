@@ -1844,13 +1844,24 @@ pub const CATALOGUE: &[Event] = &[
     row(
         "knock",
         2,
-        5,
+        3,
         &[Home, TargetIndoors, Night],
         1.0,
         4,
         Half,
-        Action::Taps("", "minecraft:entity.zombie.attack_wooden_door", 3),
+        Action::Taps("", "minecraft:block.wooden_door.close", 3),
         true,
+    ),
+    row(
+        "knock_heavy",
+        4,
+        5,
+        &[Home, TargetIndoors, Night],
+        1.0,
+        4,
+        Full,
+        Action::Taps("", "minecraft:entity.zombie.attack_wooden_door", 3),
+        false,
     ),
     row(
         "place_sound",
@@ -2175,6 +2186,7 @@ impl Event {
             "says_first" => "say something in their name",
             "whisper_from_you" => "whisper to them as them",
             "repeats_you" => "repeat what they said",
+            "knock_heavy" => "pound on the door, heavy and slow",
             "hostiles_stare" => "have the monsters stand and stare at them all night",
             "answers_you" => "answer what they typed",
             "stairs_turned" => "turn a stair block another way",
@@ -2351,7 +2363,11 @@ mod tests {
             .lines()
             .filter(|l| !l.starts_with('#') && !l.is_empty())
             .collect();
-        let sources = [include_str!("events.rs"), include_str!("brain/act.rs")];
+        let sources = [
+            include_str!("events.rs"),
+            include_str!("brain/act.rs"),
+            include_str!("brain/sounds.rs"),
+        ];
         let categories = [
             "block.",
             "entity.",

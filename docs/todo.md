@@ -463,6 +463,14 @@ because it can be built and tested without a game, and because the model layer i
   - **A route on the first day** (the review's B9): the longest single walk of 32 blocks or
     more is the route until one is walked twice. Was: "no route" until the same way was walked
     twice, so `behind_you` and `animal_gone` waited.
+  - **The sounds, reviewed** (batch 1 of the review; owner: any house, theirs first; match the
+    block; soft knocks early, the heavy one later; three to five ways each): every sound event
+    plays one of its ways, never the same twice running; footsteps and placing are the real
+    block's sound (`block_sound`, ABI 12); the house's sounds come from a real door or chest of
+    the house they are in (a village house by the mind's own scan, `Memory::here`), theirs
+    first; `knock` became soft knocks for stages two and three and `knock_heavy` the pounding
+    for four and five. The twelve-day stay counts events landed against the budget, not
+    commands. Was: one fixed sound each, stone footsteps, a zombie bashing for a knock.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
@@ -696,3 +704,9 @@ The `[x]` lines above, each dated. Summary by day:
   executors), the mind's first and second cuts (the memory, 87 events, the rules, the arc, the
   rule brain, the log, scripted stays), the debug screen, the glitch renderers, the kill tally,
   the landmarks, the text banks, the upgrade guide. First seen in a dev client the same day.
+
+## At the very end
+
+- [ ] **Split the project into two repositories** (owner, 2026-11-09): one for the SDK
+  (`sdk/`, the craftkit host in `host/`, their docs and CI) and one for the lodger (`core/`,
+  `mod/`, its docs), the lodger depending on the published SDK crate and host jar.

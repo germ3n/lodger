@@ -101,7 +101,9 @@ its column, where a settled sign landed). ABI 11 (2026-11-09) gave a debug `Even
 `about`, the screen's tooltip; and the host answers a `teleport` request from the screen itself
 (an operator clicking a spot), with no mod involved. The surroundings pass also reads the house around its middle
 block by block, each door, light, chest and bed head as a `house_*` feature at its own
-position (2026-11-09, no change of shape).
+position (2026-11-09, no change of shape). ABI 12 (2026-11-09) added `block_sound`: the step, place, break
+or hit sound of a real block (`under` the player, `held` in their hand, or by id), so a mod's
+footsteps sound like what is underfoot.
 
 ## Resources
 

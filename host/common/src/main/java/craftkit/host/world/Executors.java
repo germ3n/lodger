@@ -118,6 +118,7 @@ public final class Executors {
 				case "look_at" -> lookAt(level, command, id, context);
 				case "hold" -> hold(level, command, id, context);
 				case "move_player" -> movePlayer(level, command, id, context);
+				case "block_sound" -> blockSound(level, command, id, context);
 				default -> report(id, false, "the host does not carry out " + kind + " yet");
 			};
 		} catch (RuntimeException e) {
@@ -140,6 +141,45 @@ public final class Executors {
 		player.connection.send(new ClientboundSoundPacket(sound.get(), SoundSource.AMBIENT,
 				pos.get(0).getAsDouble(), pos.get(1).getAsDouble(), pos.get(2).getAsDouble(),
 				command.get("volume").getAsFloat(), command.get("pitch").getAsFloat(), level.getRandom().nextLong()));
+
+		return report(id, true, "");
+	}
+
+	private static JsonObject blockSound(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		String which = command.get("block").getAsString();
+		BlockState state;
+		if (which.equals("under")) {
+			state = level.getBlockState(player.blockPosition().below());
+		} else if (which.equals("held")) {
+			state = player.getMainHandItem().getItem() instanceof net.minecraft.world.item.BlockItem held
+					? held.getBlock().defaultBlockState()
+					: Blocks.STONE.defaultBlockState();
+		} else {
+			Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(which));
+			if (block.isEmpty()) {
+				return report(id, false, "no such block");
+			}
+			state = block.get().value().defaultBlockState();
+		}
+		if (state.isAir()) {
+			state = Blocks.STONE.defaultBlockState();
+		}
+		net.minecraft.world.level.block.SoundType type = state.getSoundType();
+		SoundEvent sound = switch (command.get("of").getAsString()) {
+			case "place" -> type.getPlaceSound();
+			case "break" -> type.getBreakSound();
+			case "hit" -> type.getHitSound();
+			default -> type.getStepSound();
+		};
+
+		JsonArray pos = command.getAsJsonArray("pos");
+		player.connection.send(new ClientboundSoundPacket(Holder.direct(sound), SoundSource.BLOCKS,
+				pos.get(0).getAsDouble(), pos.get(1).getAsDouble(), pos.get(2).getAsDouble(),
+				command.get("volume").getAsFloat() * type.getVolume(), command.get("pitch").getAsFloat() * type.getPitch(), level.getRandom().nextLong()));
 
 		return report(id, true, "");
 	}

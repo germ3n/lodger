@@ -398,6 +398,12 @@ they use. Digging is what a player digs, at a player's pace, with a player's sou
 
 ### Sounds
 
+Every sound event has three to five ways to sound (`brain/sounds.rs`: the sounds, a pitch, a
+rhythm, and whether it stays put, comes from behind, comes closer or goes away), never the same
+way twice running; footsteps and placing are the sound of the real block underfoot or in hand
+(`block_sound`); the house's sounds come from a real door or chest of the house the target is
+in, theirs first (owner, 2026-11-09).
+
 Heard by the target alone. Nothing in the world changes.
 
 | Event | Stages | What happens | Needs |
@@ -408,7 +414,8 @@ Heard by the target alone. Nothing in the world changes.
 | `late_steps` | 2 | The target's own footstep sounds play once more, half a second after they stop, from their own position. | The target walking. |
 | `late_eating` | 2 | The same with eating: one more bite after the target's. | The target eating. |
 | `place_sound` | 2 | A block-placed sound behind the target. Nothing placed. | The target indoors. |
-| `knock` | 2 | Three knocks on the door, from outside, while the target is indoors at night. Nothing at the door. | A home with a door, night. |
+| `knock` | 2 | Soft knocks on a door of the house the target is in, at night: three evenly, or two, a pause and one, or four quick, or one; the door shut, no one there. A door-close sound pitched up and quiet (owner, 2026-11-09: soft knocks early, the heavy one later). | A door, the target indoors, night. |
+| `knock_heavy` | 4 | Something heavy at the door at night: slow pounding, two, three or five, the sound of a zombie at a wooden door pitched low; nothing there when it is opened. | A door, the target indoors, night. |
 | `lever_click` | 2 | A lever's click, in a house with no lever. | The target indoors. |
 | `page_turn` | 2 | Pages turning by the lectern. | A lectern. |
 | `arrow_hit` | 3 | An arrow hits the wall behind the target. Nothing is there. | The target indoors. |
