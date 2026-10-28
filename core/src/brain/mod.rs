@@ -1957,6 +1957,7 @@ mod tests {
             opens: 3,
             placed: true,
             days: 1,
+            in_home: false,
             last_opened_day: 0.0,
             contents: vec![],
         });

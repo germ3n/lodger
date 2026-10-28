@@ -2329,6 +2329,7 @@ mod tests {
             opens: 5,
             placed: true,
             days: 1,
+            in_home: false,
             last_opened_day: 0.0,
             contents: vec![
                 stack("minecraft:iron_pickaxe", 1, 4),
@@ -2350,6 +2351,7 @@ mod tests {
             opens: 2,
             placed: true,
             days: 1,
+            in_home: false,
             last_opened_day: 0.0,
             contents: vec![stack("minecraft:dirt", 12, 0)],
         });
@@ -2359,6 +2361,7 @@ mod tests {
             opens: 3,
             placed: true,
             days: 1,
+            in_home: false,
             last_opened_day: 0.0,
             contents: vec![stack("minecraft:iron_ingot", 3, 2)],
         });

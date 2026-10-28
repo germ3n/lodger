@@ -455,6 +455,11 @@ because it can be built and tested without a game, and because the model layer i
     repeats"): Fire asks the model too (it went to the bank alone, round its six lines), the
     model draws among likely words at `brain.text_temperature` 0.8, and no line is used twice
     in a stay. Was: the likeliest word every time, and Fire from the bank in order.
+  - **The house they sleep in is the home's** (the review's B6, B7; owner: "the home's, placed
+    or not"): the daily surroundings pass reads every block within 8 of the bed, and its doors,
+    lights, chests and bed join the home whoever placed them; a chest there is theirs
+    (`Container::in_home`). Was: only what the target placed, so a village house had "0 doors
+    and 0 lights" and generated torches did not count.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

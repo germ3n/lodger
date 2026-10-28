@@ -142,9 +142,11 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
 
 ## Things that bite
 
-- **A chest is the lodger's to use only if it is the target's.** Placed by them, or opened on
-  three different days. A village chest opened once is never touched, so a new world with no
-  chest of its own gets no chest events until one is placed.
+- **A chest is the lodger's to use only if it is the home's.** Placed by them, standing in the
+  house they sleep in (a village house counts once they sleep there), or opened on three
+  different days. A village chest opened once on the way past is never touched. The house's
+  doors and torches count the same way, whoever placed them; what it breaks is still natural
+  ground alone.
 - **Blocks the lodger places stand where a player could place them.** `set_block` refuses a
   torch over air; with `settle` the host looks a few blocks down and up for ground, then for a
   wall (`wall_torch`, `oak_wall_sign`); a cairn's cobblestone sits on something solid (`rest`)

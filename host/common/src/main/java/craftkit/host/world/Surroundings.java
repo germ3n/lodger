@@ -161,11 +161,51 @@ public final class Surroundings {
 			entry[3] += at.getZ();
 		}
 
+		/** How far the house is read around the pass's middle: the bed, most days. */
+		private static final int HOUSE = 8;
+		private static final int MOST_OF_A_KIND = 32;
+
+		/**
+		 * The house around the middle, block by block, once: each door (its lower half), light,
+		 * chest and bed head as a feature of its own, {@code house_door} and so on, so a mod
+		 * knows the house a player sleeps in whoever built it (a village house, generated
+		 * torches). About 2,600 blocks, once a day.
+		 */
+		private void house(JsonArray array) {
+			java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+			for (BlockPos at : BlockPos.betweenClosed(around.offset(-HOUSE, -3, -HOUSE), around.offset(HOUSE, 5, HOUSE))) {
+				if (!level.isLoaded(at)) {
+					continue;
+				}
+				BlockState state = level.getBlockState(at);
+				String kind = null;
+				if (state.is(BlockTags.DOORS) && state.getValue(net.minecraft.world.level.block.DoorBlock.HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER) {
+					kind = "house_door";
+				} else if (state.is(Blocks.TORCH) || state.is(Blocks.WALL_TORCH) || state.is(Blocks.SOUL_TORCH) || state.is(Blocks.SOUL_WALL_TORCH) || state.is(Blocks.LANTERN) || state.is(Blocks.SOUL_LANTERN)) {
+					kind = "house_light";
+				} else if (state.is(Blocks.CHEST) || state.is(Blocks.BARREL) || state.is(Blocks.TRAPPED_CHEST)) {
+					kind = "house_chest";
+				} else if (state.is(BlockTags.BEDS) && state.getValue(net.minecraft.world.level.block.BedBlock.PART) == net.minecraft.world.level.block.state.properties.BedPart.HEAD) {
+					kind = "house_bed";
+				}
+				if (kind == null || counts.merge(kind, 1, Integer::sum) > MOST_OF_A_KIND) {
+					continue;
+				}
+				JsonObject feature = new JsonObject();
+				feature.addProperty("kind", kind);
+				feature.add("pos", Senses.blockPos(at.immutable()));
+				feature.addProperty("size", 1);
+				feature.addProperty("detail", Senses.blockId(state));
+				array.add(feature);
+			}
+		}
+
 		JsonObject result() {
 			JsonObject result = new JsonObject();
 			result.addProperty("id", id);
 			result.add("around", Senses.blockPos(around));
 			JsonArray array = new JsonArray();
+			house(array);
 			features.forEach((kind, entry) -> {
 				JsonObject feature = new JsonObject();
 				feature.addProperty("kind", kind);

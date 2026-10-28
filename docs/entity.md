@@ -628,7 +628,9 @@ over minutes, such as `tunnel_toward`, re-checks every few seconds and stops whe
 ### Whose chest
 
 A **used container**, in the rows below, is one of the target's own: a chest, a barrel or a
-furnace they placed, or one they opened on three different days (a village house moved into).
+furnace they placed, one in the house they sleep in whoever placed it (the surroundings pass
+reads the house; owner, 2026-11-09: "the home's, placed or not"), or one they opened on three
+different days.
 A chest opened once on the way past, a village's or a dungeon's, is never touched and never
 described to the model (owner, 2026-11-09, after a village chest became "the chest opened
 most"). What it holds is read when it is opened and again when it is closed, so what the

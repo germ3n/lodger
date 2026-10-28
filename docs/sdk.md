@@ -99,7 +99,9 @@ where `woke_elsewhere` had sent the player as a made-up entity id no host knew. 
 one of `replace`, never into air), and `set_sign` `settle` (the sign looked for down and up
 its column, where a settled sign landed). ABI 11 (2026-11-09) gave a debug `EventRow` its
 `about`, the screen's tooltip; and the host answers a `teleport` request from the screen itself
-(an operator clicking a spot), with no mod involved.
+(an operator clicking a spot), with no mod involved. The surroundings pass also reads the house around its middle
+block by block, each door, light, chest and bed head as a `house_*` feature at its own
+position (2026-11-09, no change of shape).
 
 ## Resources
 

@@ -37,6 +37,9 @@ pub struct Container {
     pub placed: bool,
     /// On how many different days the target opened it.
     pub days: u32,
+    /// It stands in the house they sleep in (the surroundings pass's house read): the home's,
+    /// whoever placed it (owner, 2026-11-09).
+    pub in_home: bool,
 }
 
 impl Container {
@@ -47,7 +50,7 @@ impl Container {
     /// Whether it is the target's: placed by them, or used on [`Self::ADOPTED_DAYS`] days. Only
     /// these are touched by the lodger and described to the model.
     pub fn theirs(&self) -> bool {
-        self.placed || self.days >= Self::ADOPTED_DAYS
+        self.placed || self.in_home || self.days >= Self::ADOPTED_DAYS
     }
 
     pub fn is_furnace(&self) -> bool {
@@ -628,8 +631,14 @@ impl Memory {
             self.surroundings = Some(Surround {
                 day,
                 around: around.around,
-                features: around.features.clone(),
+                features: around
+                    .features
+                    .iter()
+                    .filter(|f| !f.kind.starts_with("house_"))
+                    .cloned()
+                    .collect(),
             });
+            self.read_house(&around.features);
         }
 
         for scan in &observations.scans {
@@ -937,6 +946,43 @@ impl Memory {
         }
     }
 
+    /// The house the target sleeps in, as the host read it: its doors, lights, chests and bed
+    /// become the home's, whoever placed them, so a village house or torches it did not place
+    /// count (owner, 2026-11-09: "the home's, placed or not"). What the target placed stays as
+    /// it was; nothing read here is ever broken.
+    fn read_house(&mut self, features: &[craftkit::world::Feature]) {
+        let Some(home) = self.home.as_mut() else {
+            return;
+        };
+        for feature in features {
+            let pos = feature.pos;
+            match feature.kind.as_str() {
+                "house_door" if !home.doors.contains(&pos) => {
+                    push_capped(&mut home.doors, pos, MOST_DOORS)
+                }
+                "house_light" if !home.lights.contains(&pos) => {
+                    push_capped(&mut home.lights, pos, MOST_LIGHTS)
+                }
+                "house_bed" if home.bed.is_none() => home.bed = Some(pos),
+                _ => {}
+            }
+        }
+        for feature in features.iter().filter(|f| f.kind == "house_chest") {
+            match self.containers.iter_mut().find(|c| c.pos == feature.pos) {
+                Some(container) => container.in_home = true,
+                None => {
+                    self.containers.push(Container {
+                        pos: feature.pos,
+                        kind: feature.detail.clone(),
+                        in_home: true,
+                        ..Container::default()
+                    });
+                    self.drop_least_opened_container();
+                }
+            }
+        }
+    }
+
     /// Keeps a line it wrote, so it is not written again.
     pub fn wrote(&mut self, line: String) {
         if !line.is_empty() && !self.lines_written.contains(&line) {
@@ -1117,6 +1163,7 @@ impl Memory {
                     contents: contents.to_vec(),
                     placed: false,
                     days: 1,
+                    in_home: false,
                 });
                 self.drop_least_opened_container();
             }
@@ -2182,6 +2229,67 @@ mod tests {
             .collect();
         assert_eq!(kinds, ["zombie", "skeleton"], "the creeper is past 48");
         assert_eq!(memory.creatures("").count(), 1, "only the cow is an animal");
+    }
+
+    #[test]
+    fn the_house_they_sleep_in_is_the_home_s_whoever_built_it() {
+        // The dev client, 2026-11-09: a village house read as "0 doors and 0 lights", its
+        // torches and chest untouchable.
+        let mut memory = Memory::default();
+        let here = vec![player(0, [0.0, 64.0, 0.0], 0.0)];
+        memory.observe(
+            &obs(
+                here.clone(),
+                vec![Event {
+                    player: 0,
+                    kind: EventKind::SleptBegan,
+                    pos: Some([0, 64, 0]),
+                    ..Event::default()
+                }],
+            ),
+            0.1,
+        );
+        let feature = |kind: &str, pos: BlockPos, detail: &str| craftkit::world::Feature {
+            kind: kind.to_string(),
+            pos,
+            size: 1,
+            detail: detail.to_string(),
+        };
+        let mut seen = obs(here, vec![]);
+        seen.surroundings = Some(craftkit::world::Surroundings {
+            id: 1,
+            around: [0, 64, 0],
+            features: vec![
+                feature("water", [30, 62, 0], ""),
+                feature("house_door", [3, 64, 0], "minecraft:oak_door"),
+                feature("house_light", [1, 66, 2], "minecraft:wall_torch"),
+                feature("house_light", [-2, 66, 2], "minecraft:torch"),
+                feature("house_chest", [-1, 64, -2], "minecraft:chest"),
+                feature("house_bed", [0, 64, 0], "minecraft:red_bed"),
+            ],
+        });
+        memory.observe(&seen, 0.2);
+
+        let home = memory.home.as_ref().unwrap();
+        assert_eq!(home.doors, vec![[3, 64, 0]]);
+        assert_eq!(home.lights.len(), 2);
+        assert_eq!(
+            memory.used_container().map(|c| c.pos),
+            Some([-1, 64, -2]),
+            "the house's chest is the home's, never opened"
+        );
+        let lines = memory.describe(0.2);
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.contains("1 door") && l.contains("2 lights")),
+            "{lines:?}"
+        );
+        assert!(
+            !lines.iter().any(|l| l.contains("house_")),
+            "the house is not its surroundings: {lines:?}"
+        );
+        assert_eq!(memory.surroundings.as_ref().unwrap().features.len(), 1);
     }
 
     #[test]
