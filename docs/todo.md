@@ -460,6 +460,9 @@ because it can be built and tested without a game, and because the model layer i
     lights, chests and bed join the home whoever placed them; a chest there is theirs
     (`Container::in_home`). Was: only what the target placed, so a village house had "0 doors
     and 0 lights" and generated torches did not count.
+  - **A route on the first day** (the review's B9): the longest single walk of 32 blocks or
+    more is the route until one is walked twice. Was: "no route" until the same way was walked
+    twice, so `behind_you` and `animal_gone` waited.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

@@ -309,6 +309,8 @@ pub struct Memory {
 
 /// Caps, with the reason beside each.
 const MOST_LINES_WRITTEN: usize = 128;
+/// How long a walk taken once must be to stand as the route until one is walked twice.
+pub const FIRST_ROUTE: f64 = 32.0;
 const MOST_CONTAINERS: usize = 32; // the least-opened of those not theirs dropped first
 const MOST_DONE: usize = 256; // oldest dropped first
 const MOST_FAVOURITES: usize = 8;
@@ -1291,9 +1293,16 @@ impl Memory {
         }
     }
 
-    /// The route walked most, if any was walked twice.
+    /// The route walked most, if any was walked twice; before that, the longest single walk of
+    /// [`FIRST_ROUTE`] blocks or more, so a player's first day has one (the dev client's
+    /// `behind_you` and `animal_gone` waited on "no route", 2026-11-09).
     pub fn route(&self) -> Option<&Route> {
-        self.routes.iter().find(|r| r.walked >= 2)
+        self.routes.iter().find(|r| r.walked >= 2).or_else(|| {
+            self.routes
+                .iter()
+                .filter(|r| r.length() >= FIRST_ROUTE)
+                .max_by(|a, b| a.length().total_cmp(&b.length()))
+        })
     }
 
     /// The far end of the most-walked route: the end farther from the home.
@@ -2290,6 +2299,34 @@ mod tests {
             "the house is not its surroundings: {lines:?}"
         );
         assert_eq!(memory.surroundings.as_ref().unwrap().features.len(), 1);
+    }
+
+    #[test]
+    fn a_long_first_walk_is_the_route_until_one_is_walked_twice() {
+        let walk = |points: Vec<BlockPos>, walked| Route {
+            points,
+            walked,
+            ..Route::default()
+        };
+        let mut memory = Memory::default();
+        memory.routes.push(walk(vec![[0, 64, 0], [10, 64, 0]], 1));
+        assert!(memory.route().is_none(), "ten blocks is a stroll");
+
+        memory
+            .routes
+            .push(walk(vec![[0, 64, 0], [20, 64, 0], [40, 64, 0]], 1));
+        assert_eq!(
+            memory.route().map(|r| r.length()),
+            Some(40.0),
+            "a first day's route"
+        );
+
+        memory.routes.push(walk(vec![[0, 64, 0], [0, 64, 12]], 2));
+        assert_eq!(
+            memory.route().map(|r| r.walked),
+            Some(2),
+            "one walked twice wins, however short"
+        );
     }
 
     #[test]
