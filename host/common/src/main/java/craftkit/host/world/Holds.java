@@ -26,7 +26,26 @@ public final class Holds {
 	public static final float MOST_SECONDS = 600;
 	private static final int SWEEP_EVERY = 100;
 
-	private record Hold(Mob mob, UUID player, long untilTick) {
+	/** The hits a held mob takes unmoved before it wakes: the first it ignores, the second frees it. */
+	public static final int HITS_TO_WAKE = 2;
+
+	private static final class Hold {
+		final Mob mob;
+		final UUID player;
+		final long untilTick;
+		float health;
+		int hits;
+
+		Hold(Mob mob, UUID player, long untilTick) {
+			this.mob = mob;
+			this.player = player;
+			this.untilTick = untilTick;
+			this.health = mob.getHealth();
+		}
+
+		Mob mob() {
+			return mob;
+		}
 	}
 
 	private final List<Hold> active = new ArrayList<>();
@@ -58,12 +77,18 @@ public final class Holds {
 				it.remove();
 				continue;
 			}
-			if (hold.untilTick() < tick) {
+			// Hit once it stands unmoved, still staring; hit again and that one wakes, alone
+			// (owner, 2026-11-09: "a mix of" breaking the spell and staying frozen).
+			if (mob.getHealth() < hold.health) {
+				hold.hits++;
+			}
+			hold.health = mob.getHealth();
+			if (hold.untilTick < tick || hold.hits >= HITS_TO_WAKE) {
 				release(mob);
 				it.remove();
 				continue;
 			}
-			ServerPlayer player = server.getPlayerList().getPlayer(hold.player());
+			ServerPlayer player = server.getPlayerList().getPlayer(hold.player);
 			if (player != null && player.level() == mob.level()) {
 				Vec3 to = player.getEyePosition().subtract(mob.getEyePosition());
 				float yaw = Facing.yaw(to.x, to.z);

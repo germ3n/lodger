@@ -91,7 +91,7 @@ the six world functions and `sdk/src/world.rs`, the per-world shapes. ABI 5 (202
 `wall` (a block stands where a player could place it, never over air) and `closed_container`
 its position and the contents as the player left them. ABI 7 (2026-11-09) gave a debug
 `Section` its `items`: rows with buttons of their own (a plan with Drop and Now). ABI 8
-(2026-11-09) added `hold`: a mob held where it stands, facing a player, attacking no one, its
+(2026-11-09) added `hold`: a mob held where it stands, facing a player, attacking no one (the second hit it takes wakes it), its
 AI given back as it was, and never saved frozen (a tag, a sweep, a release on unload). ABI 9
 (2026-11-09) added `move_player`, a player moved at most 32 blocks to a spot with room to stand,
 where `woke_elsewhere` had sent the player as a made-up entity id no host knew. ABI 10

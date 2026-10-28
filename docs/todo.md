@@ -471,6 +471,9 @@ because it can be built and tested without a game, and because the model layer i
     first; `knock` became soft knocks for stages two and three and `knock_heavy` the pounding
     for four and five. The twelve-day stay counts events landed against the budget, not
     commands. Was: one fixed sound each, stone footsteps, a zombie bashing for a knock.
+  - **A held mob hit twice wakes** (owner: "a mix of" breaking the spell and staying frozen):
+    the first hit it takes unmoved; the second frees that mob alone. Was: frozen through any
+    number of hits.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
