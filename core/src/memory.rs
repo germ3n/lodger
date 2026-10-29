@@ -276,6 +276,10 @@ pub struct Memory {
     /// The id of that scan, so its answer is told from the village's and the ore's.
     #[serde(skip)]
     pub here_scan: u64,
+    /// What it dug and holds, by block id and count: the only blocks and items it may give
+    /// without having taken them first (`chest_full_of_one`). Filled from the host's reports
+    /// ("replaced minecraft:dirt"), spent as it gives.
+    pub stores: Vec<(String, u32)>,
     /// Every line it wrote this stay (signs, chat, names), newest last: none is used twice.
     pub lines_written: Vec<String>,
     /// What the target just typed, cleaned (`text::heard`), and whether it was about the
@@ -1023,6 +1027,25 @@ impl Memory {
                 }
             }
         }
+    }
+
+    /// How many of a block it holds from digging.
+    pub fn stored(&self, id: &str) -> u32 {
+        self.stores
+            .iter()
+            .find(|(i, _)| i == id)
+            .map(|(_, n)| *n)
+            .unwrap_or(0)
+    }
+
+    /// Adds to, or takes from, what it holds; never below none.
+    pub fn store(&mut self, id: &str, change: i64) {
+        match self.stores.iter_mut().find(|(i, _)| i == id) {
+            Some((_, n)) => *n = (*n as i64 + change).max(0) as u32,
+            None if change > 0 => self.stores.push((id.to_string(), change as u32)),
+            None => {}
+        }
+        self.stores.retain(|(_, n)| *n > 0);
     }
 
     /// Keeps a line it wrote, so it is not written again.

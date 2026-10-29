@@ -37,6 +37,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .unwrap_or(false),
         Need::Held => memory.held.is_some(),
         Need::FavouriteInContainer => memory.favourite_in_container().is_some(),
+        Need::Stored(id, n) => memory.stored(id) >= n,
         Need::InChest(suffix) => memory
             .in_used_container(|id| id.ends_with(suffix))
             .is_some(),

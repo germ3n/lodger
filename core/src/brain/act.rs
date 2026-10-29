@@ -331,6 +331,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::Take => memory.favourite_in_container().map(|(c, _)| c.pos),
         Action::ReturnTaken | Action::ReturnUsed => memory.held.as_ref().map(|h| h.from),
         Action::HopperEmptied => memory.fixtures("hopper").next().map(|f| f.pos),
+        Action::FullOfOne => memory.used_container().map(|c| c.pos),
         Action::ShulkerMoved => memory.fixtures("shulker_box").next().map(|f| f.pos),
         Action::RenameOne | Action::BookWord | Action::MapMarked => {
             memory.used_container().map(|c| c.pos)
@@ -1019,6 +1020,34 @@ pub fn commands(
                 )]
             }
             None => vec![],
+        },
+        // One dirt in every empty slot, as many as it dug: never one it does not hold.
+        Action::FullOfOne => match (pos, memory.used_container()) {
+            (Some(p), Some(chest)) => chest
+                .empty_slots()
+                .into_iter()
+                .take(memory.stored("minecraft:dirt") as usize)
+                .enumerate()
+                .map(|(i, slot)| {
+                    (
+                        Command::PutItem {
+                            id: ids(),
+                            into: p,
+                            slot: Some(slot),
+                            item: ItemStack {
+                                id: "minecraft:dirt".to_string(),
+                                count: 1,
+                                slot,
+                            },
+                            kept: String::new(),
+                            wear: 0,
+                            name: String::new(),
+                        },
+                        i as u64,
+                    )
+                })
+                .collect(),
+            _ => vec![],
         },
         // What waits in the hopper goes into the chest beside or under it that is theirs; the
         // mind never sees inside a hopper, so the host moves whatever is there.
@@ -2554,6 +2583,7 @@ mod tests {
     /// The memory with everything the catalogue could ask for.
     fn rich_memory() -> Memory {
         let mut memory = memory();
+        memory.store("minecraft:dirt", 5);
         // A book and quill and a map in the chest they use, for `book_word` and `map_marked`.
         memory.containers[0].contents.extend([
             stack("minecraft:writable_book", 1, 12),
@@ -3463,6 +3493,24 @@ mod tests {
             "{:?}",
             made[0].0
         );
+    }
+
+    #[test]
+    fn a_chest_full_of_one_holds_only_as_much_dirt_as_it_dug() {
+        let mut memory = rich_memory();
+        memory.stores.clear();
+        memory.store("minecraft:dirt", 3);
+        let fill = find("chest_full_of_one").unwrap();
+        let made = commands(
+            fill,
+            Some([2, 64, 0]),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 3, "three dug, three slots");
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::PutItem { item, kept, .. } if item.id == "minecraft:dirt" && item.count == 1 && kept.is_empty())));
     }
 
     #[test]

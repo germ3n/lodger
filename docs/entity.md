@@ -156,6 +156,7 @@ never a witness's container.
 | `tidy_by_colour` | 3 | Wool, concrete, glass or beds in a chest are sorted by colour, the way a child would. | A container with 6 or more coloured stacks. |
 | `swap_stacks` | 2 | Two stacks trade places between two of the target's chests. | Two used containers. |
 | `fill_gap` | 2 | One item the target has many of is in a chest it was never in, in a slot that was empty. | Two used containers. |
+| `chest_full_of_one` | 3 | Every empty slot of the chest they use holds a single dirt, as many as it has dug (its holes), never one more. | A chest of theirs, three dirt or more dug. |
 | `renamed_item` | 3 | One of their things in the chest they use has a name on it, as an anvil writes one: `mine`, `borrowed`, `not yours`; the model writes it. Their favourite, if it is there. | A used container with something in it. |
 | `returned_used` | 3 | What it took comes back to its chest the very same item, but a tool worn a little more (never broken by it), anything else with a name on it. | Something held. |
 | `chest_answers` | 2 | As the target opens a chest of theirs, another chest of the house closes, or opens and closes, at the same moment. Three times in ten, never from the menu. | Two chests of theirs. |

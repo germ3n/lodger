@@ -488,6 +488,10 @@ because it can be built and tested without a game, and because the model layer i
     feeds) and `shulker_moved` (their shulker box across the room, everything still in it);
     hoppers and shulker boxes are fixtures; `move_block` carries a single-block container's
     contents and searches `around` for room (ABI 15). Was: in the catalogue alone.
+  - **Chests, part four:** what it digs it holds (`Memory::stores`, from the host's "replaced"
+    reports, grass dug as dirt), and `chest_full_of_one` fills a chest's empty slots with one
+    dirt each, never more than it holds, spending the store. Was: no count of what it dug,
+    so "everything it places it dug" could not be kept.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

@@ -138,7 +138,7 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   same for everyone, and a witness looking up sees noon.
 - **It never follows the target into another dimension.** The Nether and the End are the one
   place it is not. Coming back, it has been busy.
-- **It never spawns anything.** No mobs, no items that did not exist. Everything it places it
+- **It never spawns anything** (what it gives without taking it first comes out of what it dug, counted in `Memory::stores`). No mobs, no items that did not exist. Everything it places it
   dug, cut, picked, cooked, crafted from those or took first, as a player would have to: its
   cobblestone is from its tunnels, its logs from trees it felled and replanted, its torches from
   both. A mob it uses is one that was already there, redirected. The memory counts all of it.

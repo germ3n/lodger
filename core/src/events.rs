@@ -30,6 +30,8 @@ pub enum Need {
     FavouriteInContainer,
     /// The used container holds an item whose id ends with this.
     InChest(&'static str),
+    /// It holds at least this many of a block from its own digging.
+    Stored(&'static str, u32),
     /// A furnace the target used.
     Furnace,
     /// A furnace, and a chest with something to smelt and something to burn.
@@ -163,6 +165,9 @@ impl Need {
             Need::Held => "holds nothing".to_string(),
             Need::FavouriteInContainer => "no favourite in a chest".to_string(),
             Need::InChest(suffix) => format!("no {} in the chest", suffix.replace('_', " ")),
+            Need::Stored(id, n) => {
+                format!("fewer than {n} {} dug", id.rsplit(':').next().unwrap_or(id))
+            }
             Need::Furnace => "no furnace used".to_string(),
             Need::Smeltable => "nothing to smelt with fuel".to_string(),
             Need::FurnaceOutput => "nothing finished in the furnace".to_string(),
@@ -351,6 +356,8 @@ pub enum Action {
     HopperEmptied,
     /// Their shulker box is on another wall of the room, with all it holds.
     ShulkerMoved,
+    /// Every empty slot of their chest holds one dirt it dug.
+    FullOfOne,
     /// Their map shows a mark at its place.
     MapMarked,
     /// One of their things in the chest gets a name.
@@ -1142,6 +1149,21 @@ pub const CATALOGUE: &[Event] = &[
         2,
         Full,
         Action::HostilesStare,
+        false,
+    ),
+    row(
+        "chest_full_of_one",
+        3,
+        5,
+        &[
+            UsedContainer,
+            Stored("minecraft:dirt", 3),
+            TargetAwayOrAsleep,
+        ],
+        3.0,
+        2,
+        Full,
+        Action::FullOfOne,
         false,
     ),
     row(
@@ -2285,6 +2307,7 @@ impl Event {
             "returned_used" => "give back what it took, a little used",
             "book_word" => "write one word in their book and sign it",
             "hopper_emptied" => "empty their hopper into the chest it feeds",
+            "chest_full_of_one" => "fill every empty slot of their chest with one dirt",
             "shulker_moved" => "move their shulker box to another wall",
             "map_marked" => "mark its place on their map",
             "renamed_item" => "write a name on one of their things",

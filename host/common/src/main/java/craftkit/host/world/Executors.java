@@ -730,8 +730,10 @@ public final class Executors {
 			}
 			BlockState standing = block.get().value().defaultBlockState();
 			if (standing.canSurvive(level, at)) {
+				// What was there is the mod's now, as a player's dig is: said, so it can count it.
+				String was = Senses.blockId(level.getBlockState(at));
 				level.setBlock(at, standing, Block.UPDATE_ALL);
-				return report(id, true, "");
+				return report(id, true, level.getBlockState(at).isAir() && !was.equals("minecraft:air") ? "replaced " + was : "");
 			}
 		}
 		if (wall.isPresent()) {

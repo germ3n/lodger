@@ -742,6 +742,12 @@ impl Brain {
             for line in act::texts(command) {
                 memory.wrote(line);
             }
+            // What it gives without having taken it comes out of what it dug.
+            if let Command::PutItem { item, kept, .. } = command {
+                if kept.is_empty() && memory.stored(&item.id) > 0 {
+                    memory.store(&item.id, -(item.count as i64));
+                }
+            }
         }
         let mut sent = Vec::new();
         for (command, later_ticks) in made {
@@ -1687,6 +1693,19 @@ impl Brain {
                     }
                 }
 
+                // A dig's block is the lodger's now ("replaced minecraft:dirt"): grass dug is dirt.
+                if let Some(was) = report
+                    .reason
+                    .strip_prefix("replaced ")
+                    .filter(|_| report.done)
+                {
+                    let held = if was == "minecraft:grass_block" {
+                        "minecraft:dirt"
+                    } else {
+                        was
+                    };
+                    memory.store(held, 1);
+                }
                 if report.done && pending.event == "take" {
                     // The host took it; the memory holds it from here.
                     act::took(memory, pending.pos);
@@ -3087,6 +3106,75 @@ mod tests {
                 .all(|p| (p[0] - -2.5).abs() < 0.01 && (p[2] - 1.5).abs() < 0.01),
             "the other chest, never the one opened: {answered:?}"
         );
+    }
+
+    #[test]
+    fn what_it_digs_it_holds_and_what_it_gives_from_nothing_comes_out_of_that() {
+        let mut memory = home_memory();
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        for (id, was) in [
+            (7, "minecraft:grass_block"),
+            (8, "minecraft:dirt"),
+            (9, "minecraft:stone"),
+        ] {
+            brain.pending.push(Pending {
+                id,
+                event: "hole".to_string(),
+                ..Pending::default()
+            });
+            brain.report(
+                &[Report {
+                    id,
+                    done: true,
+                    reason: format!("replaced {was}"),
+                }],
+                &mut memory,
+                &mut log,
+            );
+        }
+        assert_eq!(memory.stored("minecraft:dirt"), 2, "grass dug is dirt");
+        assert_eq!(memory.stored("minecraft:stone"), 1);
+
+        memory.store("minecraft:dirt", 1);
+        memory.containers.push(crate::memory::Container {
+            pos: [2, 64, 0],
+            kind: "minecraft:chest".to_string(),
+            placed: true,
+            ..Default::default()
+        });
+        let id = brain.next_plan_id();
+        brain.plans.push(Plan {
+            id,
+            event: "chest_full_of_one".to_string(),
+            pos: Some([2, 64, 0]),
+            until_tick: 24_000,
+            forced: true,
+            ..Plan::default()
+        });
+        let mut arc = Arc {
+            stage: 3,
+            ..Arc::default()
+        };
+        let sent = brain.tick(
+            &Now {
+                tick: 20,
+                ..Now::default()
+            },
+            0.0,
+            &mut memory,
+            &mut arc,
+            &Config::default(),
+            &mut log,
+            None,
+        );
+        let given = sent
+            .iter()
+            .chain(brain.later.iter().map(|l| &l.command))
+            .filter(|c| matches!(c, Command::PutItem { .. }))
+            .count();
+        assert_eq!(given, 3, "the three it held");
+        assert_eq!(memory.stored("minecraft:dirt"), 0, "and holds none now");
     }
 
     #[test]
