@@ -497,6 +497,12 @@ because it can be built and tested without a game, and because the model layer i
     `pickup_pop`, `cold_crackle` (their cold furnace), `breath_close` (at their ear),
     `cave_air` (a cave's sound in the open) and `door_scratch`, each three or four ways, with
     the new movements above, beside, rising and at the ear. Was: fourteen sound events.
+  - **The home read, often** (batch 3; owner: "why only read the house once a day?"): the
+    house box (17 by 9 by 17 around the home) is scanned when they come home, half a minute
+    after they build or break near it, and every ten minutes while there; inside the box, what
+    it finds is the home's (doors, lights, chests, the bed, windows, stairs, carpets, ladders,
+    pots, work blocks) and what it does not find is gone; `scan` takes `*` suffix kinds; door
+    and window events take the house they are in first. Was: once a day, adding only.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

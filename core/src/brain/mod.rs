@@ -104,6 +104,11 @@ pub struct Brain {
     /// The tick the house around the target may be scanned again (`Memory::here`).
     #[serde(default)]
     pub next_here_scan: u64,
+    /// The tick of the last home read, and whether the target was near the home last tick.
+    #[serde(skip)]
+    pub last_home_read: u64,
+    #[serde(skip)]
+    pub was_near_home: bool,
     pub next_command_id: u64,
     pub rng: Rng,
     /// Decisions made, for the status line.
@@ -415,6 +420,43 @@ impl Brain {
             }
         }
 
+        // The home, read again: when they come home, half a minute after they build or break
+        // near it, and every ten minutes while they are there. Cheap: a few thousand blocks.
+        if let Some(home) = memory.home.clone() {
+            let at = memory.last.pos;
+            let near = memory.last.online && {
+                let (dx, dz) = (at[0] - home.center[0] as f64, at[2] - home.center[2] as f64);
+                (dx * dx + dz * dz).sqrt() <= 24.0
+            };
+            let came_home = near && !self.was_near_home;
+            self.was_near_home = near;
+            let since = now.tick.saturating_sub(self.last_home_read);
+            let due = self.last_home_read == 0
+                || came_home
+                || (memory.home_dirty && since >= 30 * TPS)
+                || (near && since >= 600 * TPS);
+            if due {
+                let c = home.center;
+                let (min, max) = (
+                    [c[0] - 8, c[1] - 3, c[2] - 8],
+                    [c[0] + 8, c[1] + 5, c[2] + 8],
+                );
+                let id = self.id();
+                commands.push(Command::Scan {
+                    id,
+                    min,
+                    max,
+                    kinds: crate::memory::HOME_KINDS
+                        .iter()
+                        .map(|k| k.to_string())
+                        .collect(),
+                });
+                memory.home_scan = (id, min, max);
+                memory.home_dirty = false;
+                self.last_home_read = now.tick.max(1);
+            }
+        }
+
         // The house they are in, when it is not their home: its doors and chests, so a knock
         // in a village house is on that house's door. Every thirty seconds at most.
         if memory.last.online && memory.last.indoors && now.tick >= self.next_here_scan {
@@ -434,7 +476,10 @@ impl Brain {
                     id,
                     min: [c[0] - 8, c[1] - 3, c[2] - 8],
                     max: [c[0] + 8, c[1] + 5, c[2] + 8],
-                    kinds: sounds::HOUSE_KINDS.iter().map(|k| k.to_string()).collect(),
+                    kinds: crate::memory::HOME_KINDS
+                        .iter()
+                        .map(|k| k.to_string())
+                        .collect(),
                 });
                 memory.here_scan = id;
                 self.next_here_scan = now.tick + 30 * TPS;
@@ -3175,6 +3220,57 @@ mod tests {
             .count();
         assert_eq!(given, 3, "the three it held");
         assert_eq!(memory.stored("minecraft:dirt"), 0, "and holds none now");
+    }
+
+    #[test]
+    fn the_home_is_read_when_they_come_home_after_they_build_and_not_every_tick() {
+        let config = Config::default();
+        let mut memory = home_memory();
+        memory.last.online = true;
+        memory.last.pos = [100.0, 64.0, 0.0];
+        let mut arc = Arc {
+            stage: 1,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        let home_reads = |sent: &[Command], memory: &Memory| {
+            sent.iter()
+                .filter(|c| matches!(c, Command::Scan { id, .. } if *id == memory.home_scan.0))
+                .count()
+        };
+        let mut tick = |brain: &mut Brain, memory: &mut Memory, at: u64| {
+            brain.tick(
+                &Now {
+                    tick: at,
+                    ..Now::default()
+                },
+                0.0,
+                memory,
+                &mut arc,
+                &config,
+                &mut log,
+                None,
+            )
+        };
+        let sent = tick(&mut brain, &mut memory, 20);
+        assert_eq!(home_reads(&sent, &memory), 1, "read once to begin with");
+        let sent = tick(&mut brain, &mut memory, 40);
+        assert_eq!(home_reads(&sent, &memory), 0, "not every tick");
+
+        memory.last.pos = [1.0, 64.0, 1.0];
+        let sent = tick(&mut brain, &mut memory, 60);
+        assert_eq!(home_reads(&sent, &memory), 1, "they came home");
+
+        memory.home_dirty = true;
+        let sent = tick(&mut brain, &mut memory, 80);
+        assert_eq!(
+            home_reads(&sent, &memory),
+            0,
+            "half a minute after building, not at once"
+        );
+        let sent = tick(&mut brain, &mut memory, 60 + 31 * TPS);
+        assert_eq!(home_reads(&sent, &memory), 1);
     }
 
     #[test]

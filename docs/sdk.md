@@ -110,7 +110,8 @@ pickaxe came back plain; `rename_item`; and `move_item` moves what is there, up 
 into the slot asked or the first that fits. ABI 14 (2026-11-09): `sign_book` (a book and quill signed as a
 written book with no author) and `mark_map` (a target mark on a filled map). ABI 15 (2026-11-09): `move_block`'s `around`, a search for room on
 solid ground, and a single-block container moved with what it holds; `move_item` takes the
-first slot with something in it when the one asked is empty.
+first slot with something in it when the one asked is empty. A `scan` kind starting with `*` is a suffix (`*_stairs`), no
+change of shape (2026-11-09).
 
 ## Resources
 

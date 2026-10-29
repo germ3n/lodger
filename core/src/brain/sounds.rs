@@ -807,34 +807,11 @@ pub fn commands(
         .collect()
 }
 
-/// The doors, chests, lecterns and jukeboxes the mind scans for in a house the target is in
-/// that is not their home (`Memory::here`).
-pub const HOUSE_KINDS: &[&str] = &[
-    "minecraft:oak_door",
-    "minecraft:spruce_door",
-    "minecraft:birch_door",
-    "minecraft:jungle_door",
-    "minecraft:acacia_door",
-    "minecraft:dark_oak_door",
-    "minecraft:mangrove_door",
-    "minecraft:cherry_door",
-    "minecraft:bamboo_door",
-    "minecraft:pale_oak_door",
-    "minecraft:crimson_door",
-    "minecraft:warped_door",
-    "minecraft:iron_door",
-    "minecraft:copper_door",
-    "minecraft:chest",
-    "minecraft:barrel",
-    "minecraft:trapped_chest",
-    "minecraft:lectern",
-    "minecraft:jukebox",
-];
-
 /// The block of a house the sound comes from: a door for a door's sound or a knock, a chest
 /// for a chest's; the house they are in first when it is not their home, else their home.
 pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos> {
     let want_chest = event == "chest_sound";
+    let want_pane = event == "window_tap";
     let home_near = memory.home.as_ref().is_some_and(|h| {
         let at = memory.last.pos;
         let dx = at[0] - h.center[0] as f64;
@@ -847,6 +824,8 @@ pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos>
         if let Some(here) = &memory.here {
             let found = if want_chest {
                 pick(&here.containers)
+            } else if want_pane {
+                pick(&here.panes)
             } else {
                 pick(&here.doors)
             };
@@ -854,6 +833,10 @@ pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos>
                 return found;
             }
         }
+    }
+    if want_pane {
+        let panes: Vec<BlockPos> = memory.fixtures("glass_pane").map(|f| f.pos).collect();
+        return pick(&panes);
     }
     if want_chest {
         let chests: Vec<BlockPos> = memory

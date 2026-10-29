@@ -217,7 +217,7 @@ public final class Executors {
 		for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
 			String block = Senses.blockId(level.getBlockState(pos));
 			counts.merge(block, 1, Integer::sum);
-			if (wanted.contains(block)) {
+			if (Kinds.wanted(block, wanted)) {
 				JsonArray entry = new JsonArray();
 				entry.add(block);
 				entry.add(Senses.blockPos(pos));

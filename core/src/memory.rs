@@ -28,7 +28,53 @@ pub struct Home {
 pub struct Here {
     pub doors: Vec<BlockPos>,
     pub containers: Vec<BlockPos>,
+    pub panes: Vec<BlockPos>,
     pub day: f32,
+}
+
+/// What the home read looks for: doors, lights, containers, beds, windows, stairs, carpets,
+/// ladders, pots and the work blocks, whoever placed them. A `*` is a suffix.
+pub const HOME_KINDS: &[&str] = &[
+    "*_door",
+    "*torch",
+    "*lantern",
+    "minecraft:chest",
+    "minecraft:trapped_chest",
+    "minecraft:barrel",
+    "minecraft:furnace",
+    "minecraft:smoker",
+    "*_bed",
+    "*glass_pane",
+    "minecraft:glass",
+    "*_stairs",
+    "*_carpet",
+    "minecraft:ladder",
+    "minecraft:flower_pot",
+    "minecraft:crafting_table",
+    "minecraft:lectern",
+    "minecraft:jukebox",
+];
+
+/// The fixture kinds the home read covers: inside its box, what it does not find is gone.
+const READ_FIXTURES: &[&str] = &[
+    "glass_pane",
+    "glass",
+    "stairs",
+    "carpet",
+    "flower_pot",
+    "ladder",
+    "crafting_table",
+    "lectern",
+    "jukebox",
+];
+
+/// A door is two blocks; its lower half stands for it.
+fn lower_halves(doors: &[BlockPos]) -> Vec<BlockPos> {
+    doors
+        .iter()
+        .filter(|d| !doors.contains(&[d[0], d[1] - 1, d[2]]))
+        .copied()
+        .collect()
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -276,6 +322,13 @@ pub struct Memory {
     /// The id of that scan, so its answer is told from the village's and the ore's.
     #[serde(skip)]
     pub here_scan: u64,
+    /// The home read's scan and its box: the house around the home, read often
+    /// (`Memory::read_home`). Not saved.
+    #[serde(skip)]
+    pub home_scan: (u64, BlockPos, BlockPos),
+    /// The target built or broke something near the home since the last read.
+    #[serde(skip)]
+    pub home_dirty: bool,
     /// What it dug and holds, by block id and count: the only blocks and items it may give
     /// without having taken them first (`chest_full_of_one`). Filled from the host's reports
     /// ("replaced minecraft:dirt"), spent as it gives.
@@ -385,6 +438,7 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "composter",
         "hopper",
         "shulker_box",
+        "ladder",
     ];
     let name = id.rsplit(':').next().unwrap_or(id);
 
@@ -669,6 +723,11 @@ impl Memory {
         }
 
         for scan in &observations.scans {
+            if self.home_scan.0 != 0 && scan.id == self.home_scan.0 {
+                let (_, min, max) = self.home_scan;
+                self.read_home(&scan.positions, min, max);
+                continue;
+            }
             if self.here_scan != 0 && scan.id == self.here_scan {
                 let of = |test: fn(&str) -> bool| -> Vec<BlockPos> {
                     scan.positions
@@ -679,8 +738,9 @@ impl Memory {
                         .collect()
                 };
                 self.here = Some(Here {
-                    doors: of(|k| k.ends_with("_door")),
+                    doors: lower_halves(&of(|k| k.ends_with("_door"))),
                     containers: of(|k| k.ends_with("chest") || k.ends_with("barrel")),
+                    panes: of(|k| k.ends_with("glass_pane") || k.ends_with("glass")),
                     day,
                 });
                 continue;
@@ -848,6 +908,7 @@ impl Memory {
                 }
                 EventKind::PlacedBlock => {
                     if let Some(pos) = event.pos {
+                        self.mark_home_dirty(pos);
                         push_capped(&mut self.placed, pos, MOST_PLACED);
                         self.react_to_placing(pos, &event.detail);
                         if !cousins(&event.detail).is_empty() {
@@ -953,6 +1014,7 @@ impl Memory {
                 }
                 EventKind::BrokeBlock => {
                     if let Some(pos) = event.pos {
+                        self.mark_home_dirty(pos);
                         // What stood on it drops with it (a door, a torch, a lever on the
                         // floor), and the game sends no break for those.
                         let above = [pos[0], pos[1] + 1, pos[2]];
@@ -1029,6 +1091,17 @@ impl Memory {
         }
     }
 
+    /// Something built or broken within twelve blocks of the home: read it again soon.
+    fn mark_home_dirty(&mut self, pos: BlockPos) {
+        if self
+            .home
+            .as_ref()
+            .is_some_and(|h| distance(h.center, pos) <= 12.0)
+        {
+            self.home_dirty = true;
+        }
+    }
+
     /// How many of a block it holds from digging.
     pub fn stored(&self, id: &str) -> u32 {
         self.stores
@@ -1046,6 +1119,81 @@ impl Memory {
             None => {}
         }
         self.stores.retain(|(_, n)| *n > 0);
+    }
+
+    /// The home read: inside its box, what it found is the home's (whoever placed it) and what
+    /// it did not find is gone. Doors, lights, containers, the bed, and the fixtures it covers.
+    /// Read when they come home, after they build near it, and every ten minutes there
+    /// (owner, 2026-11-09: "why only read the house once a day?").
+    pub fn read_home(&mut self, found: &[(String, BlockPos)], min: BlockPos, max: BlockPos) {
+        let inside = |p: &BlockPos| (0..3).all(|i| p[i] >= min[i] && p[i] <= max[i]);
+        let of = |test: &dyn Fn(&str) -> bool| -> Vec<BlockPos> {
+            found
+                .iter()
+                .filter(|(k, _)| test(k))
+                .map(|(_, p)| *p)
+                .collect()
+        };
+        let doors = lower_halves(&of(&|k| k.ends_with("_door")));
+        let lights = of(&|k| k.ends_with("torch") || k.ends_with("lantern"));
+        let beds = of(&|k| k.ends_with("_bed"));
+        let Some(home) = self.home.as_mut() else {
+            return;
+        };
+        home.doors.retain(|p| !inside(p));
+        for d in doors {
+            push_capped(&mut home.doors, d, MOST_DOORS);
+        }
+        home.lights.retain(|p| !inside(p));
+        for l in lights {
+            push_capped(&mut home.lights, l, MOST_LIGHTS);
+        }
+        let bed_gone = home.bed.is_some_and(|b| {
+            inside(&b)
+                && !beds
+                    .iter()
+                    .any(|f| (0..3).map(|i| (f[i] - b[i]).abs()).sum::<i32>() <= 1)
+        });
+        if bed_gone || home.bed.is_none() {
+            home.bed = beds.first().copied();
+        }
+
+        let stores = of(&|k| is_storage(k));
+        self.containers
+            .retain(|c| !inside(&c.pos) || stores.contains(&c.pos));
+        for (kind, pos) in found.iter().filter(|(k, _)| is_storage(k)) {
+            match self.containers.iter_mut().find(|c| c.pos == *pos) {
+                Some(container) => container.in_home = true,
+                None => {
+                    self.containers.push(Container {
+                        pos: *pos,
+                        kind: kind.clone(),
+                        in_home: true,
+                        ..Container::default()
+                    });
+                    self.drop_least_opened_container();
+                }
+            }
+        }
+
+        self.fixtures.retain(|f| {
+            !(inside(&f.pos) && READ_FIXTURES.contains(&f.kind.as_str()))
+                || found.iter().any(|(_, p)| *p == f.pos)
+        });
+        for (id, pos) in found {
+            if let Some(kind) = fixture_kind(id).filter(|k| READ_FIXTURES.contains(k)) {
+                if !self.fixtures.iter().any(|f| f.pos == *pos) {
+                    push_capped(
+                        &mut self.fixtures,
+                        Fixture {
+                            kind: kind.to_string(),
+                            pos: *pos,
+                        },
+                        MOST_FIXTURES,
+                    );
+                }
+            }
+        }
     }
 
     /// Keeps a line it wrote, so it is not written again.
@@ -2390,6 +2538,73 @@ mod tests {
             Some(2),
             "one walked twice wins, however short"
         );
+    }
+
+    #[test]
+    fn a_home_read_is_the_truth_inside_its_box_and_leaves_the_rest_alone() {
+        let mut memory = Memory {
+            home: Some(Home {
+                center: [0, 64, 0],
+                bed: Some([1, 64, 1]),
+                doors: vec![[3, 64, 0], [-3, 64, 0], [40, 64, 0]],
+                lights: vec![[2, 66, 2]],
+                ..Home::default()
+            }),
+            ..Memory::default()
+        };
+        memory.fixtures.push(Fixture {
+            kind: "lever".to_string(),
+            pos: [1, 65, -2],
+        });
+        memory.fixtures.push(Fixture {
+            kind: "carpet".to_string(),
+            pos: [0, 64, 3],
+        });
+        memory.containers.push(Container {
+            pos: [-2, 64, 2],
+            kind: "minecraft:chest".to_string(),
+            placed: true,
+            ..Container::default()
+        });
+        let found = |k: &str, p: BlockPos| (k.to_string(), p);
+        memory.read_home(
+            &[
+                found("minecraft:oak_door", [3, 64, 0]),
+                found("minecraft:oak_door", [3, 65, 0]),
+                found("minecraft:wall_torch", [-1, 66, 3]),
+                found("minecraft:glass_pane", [4, 65, 1]),
+                found("minecraft:barrel", [2, 64, -3]),
+                found("minecraft:red_bed", [-4, 64, 4]),
+            ],
+            [-8, 61, -8],
+            [8, 69, 8],
+        );
+
+        let home = memory.home.as_ref().unwrap();
+        assert_eq!(
+            home.doors,
+            vec![[40, 64, 0], [3, 64, 0]],
+            "one door gone, the far one kept, a door is one"
+        );
+        assert_eq!(home.lights, vec![[-1, 66, 3]], "the old torch is gone");
+        assert_eq!(home.bed, Some([-4, 64, 4]), "the bed moved");
+        assert!(
+            memory.containers.iter().all(|c| c.pos != [-2, 64, 2]),
+            "the chest is gone"
+        );
+        assert!(memory
+            .containers
+            .iter()
+            .any(|c| c.pos == [2, 64, -3] && c.theirs()));
+        assert!(
+            memory.has_fixture("lever"),
+            "a read that looks for no levers keeps them"
+        );
+        assert!(
+            !memory.has_fixture("carpet"),
+            "a carpet it looked for and did not find is gone"
+        );
+        assert!(memory.has_fixture("glass_pane"));
     }
 
     #[test]

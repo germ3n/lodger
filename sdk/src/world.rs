@@ -266,7 +266,8 @@ pub enum Command {
         id: u64,
         text: String,
     },
-    /// Count and locate blocks of `kinds` in the box, answered as a `Scan` next tick.
+    /// Count and locate blocks of `kinds` in the box, answered as a `Scan` next tick. A kind
+    /// starting with `*` is a suffix: `*_stairs` is every stair.
     Scan {
         id: u64,
         min: BlockPos,

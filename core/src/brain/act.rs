@@ -163,6 +163,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             | "lever_click"
             | "your_voice"
             | "door_scratch"
+            | "open_door"
+            | "close_door"
+            | "window_tap"
     ) {
         return super::sounds::house_spot(event.id, memory, rng.next_u64() as usize);
     }
