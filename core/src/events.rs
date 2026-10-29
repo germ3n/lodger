@@ -68,6 +68,8 @@ pub enum Need {
     Heard,
     /// The target just opened a chest of theirs: met only by that, never on the menu.
     JustOpened,
+    /// Fresh loot: armed by the brain and given by the host, never on the menu.
+    LootOpened,
     /// Night.
     Night,
     /// Day.
@@ -136,6 +138,7 @@ impl Need {
                 | Need::TargetSaid
                 | Need::Heard
                 | Need::JustOpened
+                | Need::LootOpened
                 | Need::Night
                 | Need::Day
                 | Need::Dawn
@@ -186,6 +189,7 @@ impl Need {
             Need::TargetSaid => "the target has not typed".to_string(),
             Need::Heard => "answered only as they type".to_string(),
             Need::JustOpened => "happens only as they open a chest".to_string(),
+            Need::LootOpened => "armed for the next fresh loot they open".to_string(),
             Need::Night => "not night".to_string(),
             Need::Day => "not day".to_string(),
             Need::Raining => "not raining".to_string(),
@@ -364,6 +368,8 @@ pub enum Action {
     RenameOne,
     /// Another chest of the house closes as they open theirs.
     ChestAnswers,
+    /// Something of its own in the loot of a chest they open for the first time.
+    LootGift,
     /// An answer to what the target just typed, in their name, to them alone.
     Answers,
     /// A boat or minecart moved to the far side of the water, or its middle.
@@ -1231,6 +1237,17 @@ pub const CATALOGUE: &[Event] = &[
         Full,
         Action::RenameOne,
         false,
+    ),
+    row(
+        "loot_gift",
+        2,
+        5,
+        &[LootOpened],
+        0.0,
+        12,
+        Half,
+        Action::LootGift,
+        true,
     ),
     row(
         "chest_answers",
@@ -2408,6 +2425,7 @@ impl Event {
             "map_marked" => "mark its place on their map",
             "renamed_item" => "write a name on one of their things",
             "chest_answers" => "close another chest as they open theirs",
+            "loot_gift" => "leave something of its own in the loot they find",
             "hostiles_stare" => "have the monsters stand and stare at them all night",
             "answers_you" => "answer what they typed",
             "stairs_turned" => "turn a stair block another way",

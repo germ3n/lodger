@@ -199,6 +199,9 @@ pub enum EventKind {
     Dismounted,
     Died,
     Respawned,
+    /// A chest's fresh loot got the mod's armed offering (`arm_loot`): `detail` is the item
+    /// placed, empty for an offering spent with nothing to give.
+    LootTouched,
     ChangedDimension,
     /// Hit an entity; `detail` is its kind, `pos` where it stood.
     Hit,
@@ -517,6 +520,19 @@ pub enum Command {
         player: u32,
         seconds: f32,
     },
+    /// Arm an offering for the player's next chest of fresh loot: by `chance`, the item (or
+    /// the stack kept under `kept`; `@head` is the player's own head) joins the loot as it is
+    /// made, swapping one loot item out by `replace`'s chance (kept as `loot_taken`). Answered
+    /// by a `loot_touched` event. ABI 16.
+    ArmLoot {
+        id: u64,
+        player: u32,
+        chance: f32,
+        replace: f32,
+        item: ItemStack,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        kept: String,
+    },
     /// Move a player, gently: to `to`, or the first spot up to two blocks above it with room
     /// to stand, never more than 32 blocks from where they are. ABI 9.
     MovePlayer {
@@ -630,6 +646,7 @@ impl Command {
             | Command::LookAt { id, .. }
             | Command::Hold { id, .. }
             | Command::MovePlayer { id, .. }
+            | Command::ArmLoot { id, .. }
             | Command::BlockSound { id, .. }
             | Command::RenameItem { id, .. }
             | Command::SignBook { id, .. }

@@ -111,7 +111,9 @@ into the slot asked or the first that fits. ABI 14 (2026-11-09): `sign_book` (a 
 written book with no author) and `mark_map` (a target mark on a filled map). ABI 15 (2026-11-09): `move_block`'s `around`, a search for room on
 solid ground, and a single-block container moved with what it holds; `move_item` takes the
 first slot with something in it when the one asked is empty. A `scan` kind starting with `*` is a suffix (`*_stairs`), no
-change of shape (2026-11-09).
+change of shape (2026-11-09). ABI 16 (2026-11-09): `arm_loot`, an offering for a player's next
+fresh loot that the host applies as the loot is made (the game's own unpacking, then one item
+added or swapped, the swapped one kept), answered by the `loot_touched` event.
 
 ## Resources
 

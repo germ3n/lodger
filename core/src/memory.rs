@@ -311,6 +311,10 @@ pub struct Memory {
     pub decor: Vec<Decor>,
     /// The last thing the target said in chat, whatever it was about.
     pub last_said: String,
+    /// An offering is armed for the target's next fresh loot (`arm_loot`). Not saved: the
+    /// host forgets it on a restart, so it is armed again.
+    #[serde(skip)]
+    pub loot_armed: bool,
     /// A chest of theirs the target just opened, taken by the brain on its next tick
     /// (`chest_answers`). Not saved.
     #[serde(skip)]
@@ -1042,6 +1046,22 @@ impl Memory {
                         self.containers.retain(|c| c.pos != pos);
                         self.fixtures.retain(|f| f.pos != pos && f.pos != above);
                         self.walls.retain(|(p, _)| *p != pos);
+                    }
+                }
+                // Their fresh loot got its offering: what it gave it no longer holds.
+                EventKind::LootTouched => {
+                    self.loot_armed = false;
+                    if !event.detail.is_empty() {
+                        if self
+                            .held
+                            .as_ref()
+                            .is_some_and(|h| h.item.id == event.detail)
+                        {
+                            self.held = None;
+                        } else if self.stored(&event.detail) > 0 {
+                            self.store(&event.detail, -1);
+                        }
+                        self.record("loot_gift", event.pos, day, true, &event.detail);
                     }
                 }
                 EventKind::ClosedContainer => {

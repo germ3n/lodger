@@ -33,7 +33,7 @@ page in `docs/` explains one part and is kept true as code lands.
 ## The shape of the code
 
 ```
-sdk/src/        craftkit: lib.rs (Mod trait, export_mod!, ABI 15), abi.rs, protocol.rs (Init,
+sdk/src/        craftkit: lib.rs (Mod trait, export_mod!, ABI 16), abi.rs, protocol.rs (Init,
                 InitReply, Resource, Status), world.rs (Observations, Command, Report, Now),
                 debug.rs (DebugRequest, DebugReply), harness.rs (drive a mod in tests)
 core/src/       the lodger: lib.rs (the Mod impl), config.rs (presets, sizes, bounds),

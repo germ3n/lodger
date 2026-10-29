@@ -195,6 +195,15 @@ pub const REPLIES_A_DAY: usize = 3;
 /// How likely another chest answers the one they open (`chest_answers`).
 pub const ECHO_CHANCE: f64 = 0.3;
 
+/// How likely a chest of fresh loot gets its offering, and how likely the offering takes a
+/// loot item's place rather than an empty slot's (owner, 2026-11-09: "1 in 5", "mostly add").
+pub const LOOT_CHANCE: f32 = 0.2;
+pub const LOOT_SWAP: f32 = 0.25;
+
+/// What may turn up in loot from nowhere, loot being the world's (owner, 2026-11-09): the
+/// one exception to "it never spawns anything", and only when it holds nothing of its own.
+pub const LOOT_FROM_NOWHERE: &[&str] = &["minecraft:redstone_lamp", "minecraft:candle"];
+
 /// A planning question out to the model.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Ask {
@@ -521,6 +530,13 @@ impl Brain {
         if let Some(command) = self.reply_due(now, day, memory, log) {
             commands.push(command);
         }
+        // An offering for their next fresh loot, armed when none is.
+        if !memory.loot_armed && memory.last.online {
+            if let Some(command) = self.arm_loot(day, memory, arc, config) {
+                commands.push(command);
+            }
+        }
+
         // A chest of theirs opened: perhaps another closes in the house at the same moment.
         if memory.opened_now.is_some() {
             commands.extend(self.consider_echo(now, day, memory, arc, config, log));
@@ -921,6 +937,52 @@ impl Brain {
     fn next_plan_id(&mut self) -> u64 {
         self.next_plan_id += 1;
         self.next_plan_id
+    }
+
+    /// The offering for the target's next fresh loot (`loot_gift`): what it holds of theirs
+    /// first (the very item, kept by the host), their own head from stage four now and then,
+    /// something it dug, else a thing from [`LOOT_FROM_NOWHERE`]. The row's rules hold.
+    fn arm_loot(
+        &mut self,
+        day: f32,
+        memory: &mut Memory,
+        arc: &Arc,
+        config: &Config,
+    ) -> Option<Command> {
+        let event = events::find("loot_gift")?;
+        if !offer::switched_on(event, config)
+            || rules::check(event, None, memory, arc.stage, day, config).is_err()
+        {
+            return None;
+        }
+        let one = |id: &str| craftkit::world::ItemStack {
+            id: id.to_string(),
+            count: 1,
+            slot: 0,
+        };
+        let dug = ["minecraft:torch", "minecraft:dirt", "minecraft:cobblestone"]
+            .into_iter()
+            .find(|id| memory.stored(id) > 0);
+        let (item, kept) = if let Some(held) = &memory.held {
+            (held.item.clone(), "held".to_string())
+        } else if arc.stage >= 4 && self.rng.next_f64() < 0.3 {
+            (one("@head"), String::new())
+        } else if let Some(id) = dug.filter(|_| self.rng.next_f64() < 0.5) {
+            (one(id), String::new())
+        } else {
+            let pick = LOOT_FROM_NOWHERE[(self.rng.next_u64() as usize) % LOOT_FROM_NOWHERE.len()];
+            (one(pick), String::new())
+        };
+        memory.loot_armed = true;
+
+        Some(Command::ArmLoot {
+            id: self.id(),
+            player: memory.target.unwrap_or(0),
+            chance: LOOT_CHANCE,
+            replace: LOOT_SWAP,
+            item,
+            kept,
+        })
     }
 
     /// Whether another chest of the house answers the one the target just opened: the row's
@@ -3360,6 +3422,96 @@ mod tests {
         assert_eq!(village_reads(&memory), 1, "not again at once");
         tick(&mut brain, &mut memory, 40 + 300 * TPS);
         assert_eq!(village_reads(&memory), 2, "five minutes on");
+    }
+
+    #[test]
+    fn an_offering_is_armed_for_fresh_loot_its_own_thing_first_and_again_once_given() {
+        let config = Config::default();
+        let mut memory = home_memory();
+        memory.last.online = true;
+        memory.held = Some(crate::memory::Held {
+            item: craftkit::world::ItemStack {
+                id: "minecraft:iron_pickaxe".to_string(),
+                count: 1,
+                slot: 4,
+            },
+            from: [2, 64, 0],
+            slot: 4,
+            taken_day: 0.0,
+        });
+        let mut arc = Arc {
+            stage: 2,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        let mut at = 20;
+        let mut tick = |brain: &mut Brain, memory: &mut Memory, arc: &mut Arc| {
+            at += 20;
+            brain.tick(
+                &Now {
+                    tick: at,
+                    ..Now::default()
+                },
+                0.0,
+                memory,
+                arc,
+                &config,
+                &mut log,
+                None,
+            )
+        };
+        let armed = |sent: &[Command]| {
+            sent.iter().find_map(|c| match c {
+                Command::ArmLoot {
+                    item, kept, chance, ..
+                } => Some((item.id.clone(), kept.clone(), *chance)),
+                _ => None,
+            })
+        };
+
+        let sent = tick(&mut brain, &mut memory, &mut arc);
+        assert_eq!(
+            armed(&sent),
+            Some((
+                "minecraft:iron_pickaxe".to_string(),
+                "held".to_string(),
+                LOOT_CHANCE
+            )),
+            "what it took, the very one"
+        );
+        assert_eq!(
+            armed(&tick(&mut brain, &mut memory, &mut arc)),
+            None,
+            "one at a time"
+        );
+
+        // The host gave it: the memory holds it no more, and arms again.
+        let mut seen = craftkit::world::Observations::default();
+        seen.events.push(craftkit::world::Event {
+            player: 0,
+            kind: craftkit::world::EventKind::LootTouched,
+            pos: Some([300, 40, 12]),
+            detail: "minecraft:iron_pickaxe".to_string(),
+            contents: vec![],
+        });
+        memory.observe(&seen, 0.0);
+        memory.last.online = true; // the observation carried no players
+        assert!(memory.held.is_none());
+        assert!(memory.done.iter().any(|d| d.event == "loot_gift" && d.ok));
+        let again = armed(&tick(&mut brain, &mut memory, &mut arc)).expect("armed again");
+        assert!(
+            LOOT_FROM_NOWHERE.contains(&again.0.as_str()),
+            "holding nothing, a thing from the short list: {again:?}"
+        );
+
+        arc.stage = 1;
+        memory.loot_armed = false;
+        assert_eq!(
+            armed(&tick(&mut brain, &mut memory, &mut arc)),
+            None,
+            "not before stage two"
+        );
     }
 
     #[test]

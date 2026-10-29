@@ -176,6 +176,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
 
     match event.action {
         Action::Wait
+        | Action::LootGift
         | Action::Hint(_, _)
         | Action::RefuseRest
         | Action::Stare
@@ -647,6 +648,8 @@ pub fn commands(
         Action::Wait => vec![],
         // Its sounds are its ways to sound, above.
         Action::ChestAnswers => vec![],
+        // Armed by the brain (`Brain::arm_loot`), given by the host.
+        Action::LootGift => vec![],
         Action::ToggleDoor | Action::ToggleFixture(_) => pos
             .map(|p| vec![(Command::ToggleBlock { id: ids(), pos: p }, 0)])
             .unwrap_or_default(),
@@ -3147,6 +3150,7 @@ mod tests {
                 || event.id == "return_taken"
                 || event.id == "place_taken"
                 || event.id == "returned_used"
+                || event.id == "loot_gift"
                 || event.id == "door_opens_itself"
             {
                 continue;

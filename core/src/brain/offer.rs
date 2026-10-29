@@ -70,6 +70,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Heard => false,
         // `chest_answers` starts from the opening (`Brain::consider_echo`), never the menu.
         Need::JustOpened => false,
+        // `loot_gift` is armed by the brain and given by the host, never from the menu.
+        Need::LootOpened => false,
         Need::Night => night,
         Need::Dawn => now.day_time < 1_500 || now.day_time > 23_000,
         Need::Wall => !memory.walls.is_empty(),

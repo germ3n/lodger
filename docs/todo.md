@@ -508,6 +508,12 @@ because it can be built and tested without a game, and because the model layer i
     scan and the ore's are kept apart; the entity pass (every second) and the surroundings
     pass (daily, the house read on its own) were already right. Was: the village read once,
     and a mining trip's ore scan wiped it.
+  - **Something of its own in the loot** (owner: "hook into loot generation"; its own things
+    and a short list, mostly add, one in five from stage two): `loot_gift`, armed by the brain
+    (what it took of theirs first, their head from stage four now and then, something it dug,
+    else a redstone lamp or a candle) and given by the host as fresh loot is unpacked, one item
+    added or swapped (the swapped one kept); the host's `loot_touched` report clears what it
+    gave. ABI 16. The one exception to "it never spawns anything". Was: nothing in loot.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
@@ -743,6 +749,11 @@ The `[x]` lines above, each dated. Summary by day:
   the landmarks, the text banks, the upgrade guide. First seen in a dev client the same day.
 
 ## At the very end
+
+- [ ] **The host in Rust, behind a thin Java wrapper** (owner, 2026-11-09): what decides or
+  keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
+  into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
+  hooks, the game's API calls, rendering), since the game's own API is Java.
 
 - [ ] **Split the project into two repositories** (owner, 2026-11-09): one for the SDK
   (`sdk/`, the craftkit host in `host/`, their docs and CI) and one for the lodger (`core/`,

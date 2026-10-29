@@ -39,6 +39,7 @@ public final class Worlds {
 	private final Senses senses = new Senses();
 	private final Looks looks = new Looks();
 	private final Holds holds = new Holds();
+	private final LootOffers loot = new LootOffers();
 	private final Later later = new Later();
 	private final Poses poses = new Poses();
 	private final Figures figures = new Figures();
@@ -55,6 +56,13 @@ public final class Worlds {
 	public Worlds(List<LoadedMod> mods, BiConsumer<ServerPlayer, HintPayload> sendHint) {
 		this.mods = mods;
 		this.sendHint = sendHint;
+		senses.lootHook((player, chest) -> loot.apply(player, chest, modId -> {
+			Map<LoadedMod, Open> perMod = open.get((ServerLevel) player.level());
+			if (perMod == null) {
+				return null;
+			}
+			return perMod.entrySet().stream().filter(e -> e.getKey().id().equals(modId)).map(e -> e.getValue().data()).findFirst().orElse(null);
+		}));
 	}
 
 	/** What the loaders' hooks feed. */
@@ -124,7 +132,7 @@ public final class Worlds {
 		poses.tick();
 		figures.tick();
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();

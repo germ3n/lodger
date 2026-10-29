@@ -52,9 +52,14 @@ pub fn check(
         return Err(Refused::Disabled);
     }
 
-    // An answer is the target's to start, paced by its own cap and gap: two replies in a
-    // conversation are not the lodger repeating itself.
-    let answers = matches!(event.action, crate::events::Action::Answers);
+    // What the target starts (a line typed, a chest opened, fresh loot found) is paced by its
+    // own cap and chance: two replies in a conversation are not the lodger repeating itself.
+    let answers = matches!(
+        event.action,
+        crate::events::Action::Answers
+            | crate::events::Action::ChestAnswers
+            | crate::events::Action::LootGift
+    );
     if let Some(last) = memory.recent(1).next() {
         if last.event == event.id && last.ok && !answers {
             return Err(Refused::SameAsLast);

@@ -108,9 +108,31 @@ public final class Senses {
 		event(player, "left", null, "", null);
 	}
 
+	/** What the host does with a chest's fresh loot, just unpacked: a mod's offering (`LootOffers`). */
+	public interface LootHook {
+		/** The item placed, "" for an offering spent with nothing to give, or null for none. */
+		String touched(ServerPlayer player, Container chest);
+	}
+
+	private LootHook lootHook = (player, chest) -> null;
+
+	public void lootHook(LootHook hook) {
+		lootHook = hook;
+	}
+
 	/** A block used: if it holds a container, that is a container opened, with its contents. */
 	public void noticedUsedBlock(ServerPlayer player, BlockPos pos) {
 		BlockEntity entity = player.level().getBlockEntity(pos);
+
+		// Fresh loot: unpacked now, as the game would on opening, so an offering can join it
+		// before the chest is seen (the hook runs before the block's own use).
+		if (entity instanceof net.minecraft.world.RandomizableContainer loot && loot.getLootTable() != null && entity instanceof Container chest) {
+			loot.unpackLootTable(player);
+			String touched = lootHook.touched(player, chest);
+			if (touched != null) {
+				event(player, "loot_touched", pos, touched, null);
+			}
+		}
 
 		if (DEBUG) {
 			craftkit.host.Log.LOGGER.info("sense: used {} at {} ({})", blockId(player.level().getBlockState(pos)), pos.toShortString(), entity == null ? "no block entity" : entity.getClass().getSimpleName());
