@@ -320,6 +320,11 @@ pub enum Command {
         id: u64,
         from: BlockPos,
         to: BlockPos,
+        /// Look this far around `to` (its level, one up, one down) for a spot with room and
+        /// something solid under it, when `to` itself will not do. A single-block container
+        /// (a shulker box, a barrel; never a chest) is moved with what it holds. ABI 15.
+        #[serde(default, skip_serializing_if = "is_zero")]
+        around: u8,
     },
     /// Set a block, with an optional state string the host parses. Only where there is nothing,
     /// unless the block there is one of `replace` (block ids): the way a path is worn into grass

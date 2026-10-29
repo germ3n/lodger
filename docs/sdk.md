@@ -108,7 +108,9 @@ taken, saved with the world, and `put_item` and `drop_item`'s `kept` give it bac
 and all (`put_item` with `wear` and a `name` as it goes back), where before a taken enchanted
 pickaxe came back plain; `rename_item`; and `move_item` moves what is there, up to its count,
 into the slot asked or the first that fits. ABI 14 (2026-11-09): `sign_book` (a book and quill signed as a
-written book with no author) and `mark_map` (a target mark on a filled map).
+written book with no author) and `mark_map` (a target mark on a filled map). ABI 15 (2026-11-09): `move_block`'s `around`, a search for room on
+solid ground, and a single-block container moved with what it holds; `move_item` takes the
+first slot with something in it when the one asked is empty.
 
 ## Resources
 

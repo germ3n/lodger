@@ -86,7 +86,7 @@ public final class Executors {
 					yield report(id, true, "started; the answer comes as an observation");
 				}
 				case "toggle_block" -> toggleBlock(level, blockPos(command.getAsJsonArray("pos")), id);
-				case "move_block" -> moveBlock(level, blockPos(command.getAsJsonArray("from")), blockPos(command.getAsJsonArray("to")), id);
+				case "move_block" -> moveBlock(level, command, id);
 				case "set_block" -> setBlock(level, command, id);
 				case "open_lid" -> openLid(level, blockPos(command.getAsJsonArray("pos")), command.get("seconds").getAsFloat(), id, context);
 				case "rotate_frame" -> rotateFrame(level, command, id);
@@ -647,27 +647,55 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
-	private static JsonObject moveBlock(ServerLevel level, BlockPos from, BlockPos to, long id) {
+	private static JsonObject moveBlock(ServerLevel level, JsonObject command, long id) {
+		BlockPos from = blockPos(command.getAsJsonArray("from"));
+		BlockPos to = blockPos(command.getAsJsonArray("to"));
+		int around = command.has("around") ? Math.clamp(command.get("around").getAsInt(), 0, 8) : 0;
 		BlockState state = level.getBlockState(from);
 		if (state.isAir()) {
 			return report(id, false, "nothing at the source");
 		}
 
-		if (level.getBlockEntity(from) != null) {
+		// A single-block container goes with what it holds; a chest may be half of two.
+		BlockEntity entity = level.getBlockEntity(from);
+		Container holds = entity instanceof Container c && !(state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock) ? c : null;
+		if (entity != null && holds == null) {
 			return report(id, false, "a block with contents is not moved this way");
 		}
 
-		if (!level.getBlockState(to).isAir()) {
-			return report(id, false, "the destination is not empty");
+		BlockPos at = null;
+		for (int[] offset : Moves.offsets(around)) {
+			BlockPos candidate = to.offset(offset[0], offset[1], offset[2]);
+			// A torch is moved as a player would move it: never to where nothing holds it; a box
+			// moved around sits on something solid.
+			if (candidate.equals(from) || !level.getBlockState(candidate).isAir() || !state.canSurvive(level, candidate)) {
+				continue;
+			}
+			if (around > 0 && !level.getBlockState(candidate.below()).isFaceSturdy(level, candidate.below(), Direction.UP)) {
+				continue;
+			}
+			at = candidate;
+			break;
+		}
+		if (at == null) {
+			return report(id, false, around > 0 ? "no room around the destination" : "the destination is not empty, or nothing holds it there");
 		}
 
-		// A torch is moved as a player would move it: never to where nothing holds it.
-		if (!state.canSurvive(level, to)) {
-			return report(id, false, "nothing holds it there");
+		List<ItemStack> contents = new ArrayList<>();
+		if (holds != null) {
+			for (int slot = 0; slot < holds.getContainerSize(); slot++) {
+				contents.add(holds.getItem(slot).copy());
+				holds.setItem(slot, ItemStack.EMPTY);
+			}
 		}
-
 		level.setBlock(from, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-		level.setBlock(to, state, Block.UPDATE_ALL);
+		level.setBlock(at, state, Block.UPDATE_ALL);
+		if (holds != null && level.getBlockEntity(at) instanceof Container moved) {
+			for (int slot = 0; slot < Math.min(contents.size(), moved.getContainerSize()); slot++) {
+				moved.setItem(slot, contents.get(slot));
+			}
+			moved.setChanged();
+		}
 
 		return report(id, true, "");
 	}
@@ -779,7 +807,17 @@ public final class Executors {
 		// What is there now, up to the count: a chest changes while no one watches it.
 		ItemStack source = from.getItem(fromSlot);
 		if (source.isEmpty()) {
-			return report(id, false, "nothing in the source slot");
+			// The slot asked is empty: the first that is not (a hopper no one has looked in).
+			for (int candidate : Slots.order(fromSlot, from.getContainerSize())) {
+				if (!from.getItem(candidate).isEmpty()) {
+					fromSlot = candidate;
+					source = from.getItem(candidate);
+					break;
+				}
+			}
+		}
+		if (source.isEmpty()) {
+			return report(id, false, "nothing in the source");
 		}
 		count = Math.min(count, source.getCount());
 

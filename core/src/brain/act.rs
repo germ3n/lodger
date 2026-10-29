@@ -330,6 +330,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::EggOnBed => home.and_then(|h| h.bed),
         Action::Take => memory.favourite_in_container().map(|(c, _)| c.pos),
         Action::ReturnTaken | Action::ReturnUsed => memory.held.as_ref().map(|h| h.from),
+        Action::HopperEmptied => memory.fixtures("hopper").next().map(|f| f.pos),
+        Action::ShulkerMoved => memory.fixtures("shulker_box").next().map(|f| f.pos),
         Action::RenameOne | Action::BookWord | Action::MapMarked => {
             memory.used_container().map(|c| c.pos)
         }
@@ -697,6 +699,7 @@ pub fn commands(
                         id: ids(),
                         from: p,
                         to: [p[0] + step[0], p[1], p[2] + step[2]],
+                        around: 0,
                     },
                     0,
                 )]
@@ -1017,6 +1020,58 @@ pub fn commands(
             }
             None => vec![],
         },
+        // What waits in the hopper goes into the chest beside or under it that is theirs; the
+        // mind never sees inside a hopper, so the host moves whatever is there.
+        Action::HopperEmptied => pos
+            .and_then(|hopper| {
+                memory
+                    .containers
+                    .iter()
+                    .filter(|c| c.theirs() && !c.is_furnace())
+                    .find(|c| {
+                        let d = [
+                            c.pos[0] - hopper[0],
+                            c.pos[1] - hopper[1],
+                            c.pos[2] - hopper[2],
+                        ];
+                        d[0].abs() + d[1].abs() + d[2].abs() == 1
+                    })
+                    .map(|chest| {
+                        (0..5)
+                            .map(|slot| {
+                                (
+                                    Command::MoveItem {
+                                        id: ids(),
+                                        from: hopper,
+                                        from_slot: slot,
+                                        to: chest.pos,
+                                        to_slot: 0,
+                                        count: 64,
+                                    },
+                                    slot as u64,
+                                )
+                            })
+                            .collect()
+                    })
+            })
+            .unwrap_or_default(),
+        // Across the room: three to five blocks the seed's way, wherever there is room and
+        // ground, its contents with it.
+        Action::ShulkerMoved => pos
+            .map(|p| {
+                let way = [[1, 0], [-1, 0], [0, 1], [0, -1]][seed % 4];
+                let reach = 3 + (seed % 3) as i32;
+                vec![(
+                    Command::MoveBlock {
+                        id: ids(),
+                        from: p,
+                        to: [p[0] + way[0] * reach, p[1], p[2] + way[1] * reach],
+                        around: 2,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::BookWord => match memory.in_used_container(|id| id == "minecraft:writable_book") {
             Some((container, book)) => {
                 let word = words(Kind::SignWord, "", 0);
@@ -1308,6 +1363,7 @@ pub fn commands(
                             id: ids(),
                             from: p,
                             to: [p[0] + 1, p[1], p[2]],
+                            around: 0,
                         },
                         i as u64,
                     )
@@ -2525,6 +2581,8 @@ mod tests {
         });
         for (kind, pos) in [
             ("crafting_table", [1, 64, 2]),
+            ("hopper", [2, 65, 0]),
+            ("shulker_box", [-4, 64, -4]),
             ("anvil", [-1, 64, 2]),
             ("lectern", [-1, 64, -2]),
             ("glass_pane", [0, 65, -3]),
@@ -3369,6 +3427,41 @@ mod tests {
             matches!(&map[0].0, Command::MarkMap { slot: 13, at, .. } if *at == [40, 64, -12]),
             "{:?}",
             map[0].0
+        );
+    }
+
+    #[test]
+    fn the_hopper_empties_into_its_chest_and_the_box_moves_with_what_it_holds() {
+        let memory = rich_memory();
+        let now = Now::default();
+        let mut rng = Rng::new(2);
+        let hopper = find("hopper_emptied").unwrap();
+        let made = commands(
+            hopper,
+            place(hopper, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert_eq!(made.len(), 5, "its five slots");
+        assert!(
+            made.iter().all(|(c, _)| matches!(c, Command::MoveItem { from, to, .. } if *from == [2, 65, 0] && *to == [2, 64, 0])),
+            "from the hopper into the chest under it: {made:?}"
+        );
+        let shulker = find("shulker_moved").unwrap();
+        let made = commands(
+            shulker,
+            place(shulker, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(
+            matches!(&made[0].0, Command::MoveBlock { from, around: 2, to, .. } if *from == [-4, 64, -4] && to != from),
+            "{:?}",
+            made[0].0
         );
     }
 

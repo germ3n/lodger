@@ -347,6 +347,10 @@ pub enum Action {
     ReturnUsed,
     /// The book and quill in their chest is signed with one word, by no one.
     BookWord,
+    /// What waits in their hopper is in the chest it feeds.
+    HopperEmptied,
+    /// Their shulker box is on another wall of the room, with all it holds.
+    ShulkerMoved,
     /// Their map shows a mark at its place.
     MapMarked,
     /// One of their things in the chest gets a name.
@@ -1138,6 +1142,28 @@ pub const CATALOGUE: &[Event] = &[
         2,
         Full,
         Action::HostilesStare,
+        false,
+    ),
+    row(
+        "hopper_emptied",
+        3,
+        5,
+        &[Fixture("hopper"), UsedContainer, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Half,
+        Action::HopperEmptied,
+        true,
+    ),
+    row(
+        "shulker_moved",
+        3,
+        5,
+        &[Fixture("shulker_box"), TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::ShulkerMoved,
         false,
     ),
     row(
@@ -2258,6 +2284,8 @@ impl Event {
             "knock_heavy" => "pound on the door, heavy and slow",
             "returned_used" => "give back what it took, a little used",
             "book_word" => "write one word in their book and sign it",
+            "hopper_emptied" => "empty their hopper into the chest it feeds",
+            "shulker_moved" => "move their shulker box to another wall",
             "map_marked" => "mark its place on their map",
             "renamed_item" => "write a name on one of their things",
             "chest_answers" => "close another chest as they open theirs",

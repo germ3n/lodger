@@ -165,8 +165,8 @@ never a witness's container.
 | `tool_used` | 3 | The favourite tool in the chest has lost durability overnight, a few dozen uses' worth, as if someone used it. | A damageable favourite in a chest. |
 | `book_word` | 3 | The book and quill in the chest they use is a written book: one word on its page, the same word its title, signed by no one (the model writes the word). | A book and quill in a chest of theirs. |
 | `map_marked` | 3 | The map in the chest they use shows a red X at the lodger's place, or at the house itself when it has none yet. | A filled map in a chest of theirs. |
-| `hopper_emptied` | 3 | A hopper's contents are in the chest it feeds, or the other way round. | A hopper in the home. |
-| `shulker_moved` | 3 | A shulker box is on a different wall of the same room. | A placed shulker box. |
+| `hopper_emptied` | 3 | What waited in their hopper is in the chest of theirs beside or under it. | A hopper they placed, next to a chest of theirs. |
+| `shulker_moved` | 3 | Their shulker box is three to five blocks across the room, on the floor, with everything still in it. | A shulker box they placed. |
 | `open_on_enter` | 4 | The chest the target uses most opens as they enter its room, and stays open until they look away. | A used container in a room with a door. |
 
 ### Furnaces and workstations

@@ -379,6 +379,8 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "button",
         "flower_pot",
         "composter",
+        "hopper",
+        "shulker_box",
     ];
     let name = id.rsplit(':').next().unwrap_or(id);
 
