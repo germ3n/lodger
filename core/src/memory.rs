@@ -53,7 +53,34 @@ pub const HOME_KINDS: &[&str] = &[
     "minecraft:crafting_table",
     "minecraft:lectern",
     "minecraft:jukebox",
+    "minecraft:dandelion",
+    "minecraft:poppy",
+    "minecraft:blue_orchid",
+    "minecraft:allium",
+    "minecraft:azure_bluet",
+    "*_tulip",
+    "minecraft:oxeye_daisy",
+    "minecraft:cornflower",
+    "minecraft:lily_of_the_valley",
+    "minecraft:pumpkin",
 ];
+
+/// Whether a block id is a flower the home read keeps (`flowers_potted`).
+pub fn is_flower(id: &str) -> bool {
+    let name = id.rsplit(':').next().unwrap_or(id);
+    name.ends_with("_tulip")
+        || matches!(
+            name,
+            "dandelion"
+                | "poppy"
+                | "blue_orchid"
+                | "allium"
+                | "azure_bluet"
+                | "oxeye_daisy"
+                | "cornflower"
+                | "lily_of_the_valley"
+        )
+}
 
 /// The fixture kinds the home read covers: inside its box, what it does not find is gone.
 const READ_FIXTURES: &[&str] = &[
@@ -356,6 +383,8 @@ pub struct Memory {
     pub vehicles: Vec<Creature>,
     /// Blocks a scan found near the village (doors, the bell), for the village events.
     pub scanned: Vec<(String, BlockPos)>,
+    /// Flowers and pumpkins growing around the home, by block id, from the home read.
+    pub plants: Vec<(String, BlockPos)>,
     /// Ore a scan found in the rock around the target (`scan_ore`), kept apart from the
     /// village's: one scan answering used to wipe the other (2026-11-09).
     pub ores: Vec<(String, BlockPos)>,
@@ -1212,6 +1241,13 @@ impl Memory {
             }
         }
 
+        self.plants.retain(|(_, p)| !inside(p));
+        for (id, pos) in found {
+            if is_flower(id) || id == "minecraft:pumpkin" {
+                self.plants.push((id.clone(), *pos));
+            }
+        }
+        self.plants.truncate(32);
         self.fixtures.retain(|f| {
             !(inside(&f.pos) && READ_FIXTURES.contains(&f.kind.as_str()))
                 || found.iter().any(|(_, p)| *p == f.pos)

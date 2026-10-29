@@ -32,6 +32,10 @@ pub enum Need {
     InChest(&'static str),
     /// It holds at least this many of a block from its own digging.
     Stored(&'static str, u32),
+    /// A plant grows around the home: `flower` for any flower, else a block id's name.
+    Plant(&'static str),
+    /// A ladder of four rungs or more in the home.
+    Ladder,
     /// A furnace the target used.
     Furnace,
     /// A furnace, and a chest with something to smelt and something to burn.
@@ -171,6 +175,8 @@ impl Need {
             Need::Stored(id, n) => {
                 format!("fewer than {n} {} dug", id.rsplit(':').next().unwrap_or(id))
             }
+            Need::Plant(kind) => format!("no {kind} around the home"),
+            Need::Ladder => "no ladder of four rungs".to_string(),
             Need::Furnace => "no furnace used".to_string(),
             Need::Smeltable => "nothing to smelt with fuel".to_string(),
             Need::FurnaceOutput => "nothing finished in the furnace".to_string(),
@@ -370,6 +376,14 @@ pub enum Action {
     ChestAnswers,
     /// Something of its own in the loot of a chest they open for the first time.
     LootGift,
+    /// A door hung on the other side of its frame.
+    DoorHinge,
+    /// One rung of a ladder missing, on top of the ladder.
+    LadderGap,
+    /// The flowers around the house in its pots by the door.
+    FlowersPotted,
+    /// A pumpkin of theirs carved, facing the door.
+    PumpkinFace,
     /// An answer to what the target just typed, in their name, to them alone.
     Answers,
     /// A boat or minecart moved to the far side of the water, or its middle.
@@ -1236,6 +1250,50 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::RenameOne,
+        false,
+    ),
+    row(
+        "door_hinge",
+        3,
+        5,
+        &[Door, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Full,
+        Action::DoorHinge,
+        false,
+    ),
+    row(
+        "ladder_gap",
+        3,
+        5,
+        &[Ladder, TargetAwayOrAsleep],
+        2.0,
+        2,
+        Full,
+        Action::LadderGap,
+        false,
+    ),
+    row(
+        "flowers_potted",
+        2,
+        5,
+        &[Plant("flower"), Fixture("flower_pot"), TargetAwayOrAsleep],
+        2.0,
+        2,
+        Full,
+        Action::FlowersPotted,
+        false,
+    ),
+    row(
+        "pumpkin_face",
+        3,
+        5,
+        &[Plant("pumpkin"), InChest("shears"), TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::PumpkinFace,
         false,
     ),
     row(
@@ -2426,6 +2484,10 @@ impl Event {
             "renamed_item" => "write a name on one of their things",
             "chest_answers" => "close another chest as they open theirs",
             "loot_gift" => "leave something of its own in the loot they find",
+            "door_hinge" => "hang a door on the other side of its frame",
+            "ladder_gap" => "take a rung out of a ladder and leave it on top",
+            "flowers_potted" => "pick the flowers outside and pot them by the door",
+            "pumpkin_face" => "carve a pumpkin to face the door",
             "hostiles_stare" => "have the monsters stand and stare at them all night",
             "answers_you" => "answer what they typed",
             "stairs_turned" => "turn a stair block another way",

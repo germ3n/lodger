@@ -196,12 +196,12 @@ Blocks the target placed, moved within reach, never broken for good.
 | --- | --- | --- | --- |
 | `open_door` | 1 | A door or trapdoor of the home is opened while the target is away or asleep. | A home with a door. |
 | `close_door` | 1 | A door the target left open is closed. | An open door in the home. |
-| `door_hinge` | 3 | A door is hung on the other side of its frame. | A door in the home. |
+| `door_hinge` | 3 | A door of the house they are in, theirs first, hangs on the other side of its frame (`set_state`, both halves). | A door. |
 | `window_tap` | 2 | Three taps on a window pane from outside, at night. | A window and night. |
 | `carpet_shift` | 2 | The carpets in a room are one block over. | 3 or more carpets in a room. |
 | `stairs_turned` | 2 | One stair block the target placed faces another way. | A placed stair out of view. |
-| `ladder_gap` | 3 | One rung of a ladder is missing, and is on top of the ladder. | A ladder of 4 or more. |
-| `flowers_potted` | 2 | The flowers around the house are gone, and are in pots inside, by the door. | Flowers within 8 blocks of the home and room on a surface. |
+| `ladder_gap` | 3 | One rung from the middle of the home's tallest ladder is missing, and is set on top of the ladder. | A ladder of four rungs or more. |
+| `flowers_potted` | 2 | Up to three flowers around the house are picked and are in the home's empty pots. | Flowers around the home, an empty flower pot. |
 | `path_worn` | 3 | A line of dirt path from the door toward the lodger's place, as if walked a hundred times. | Grass between the door and the spot. |
 | `cairn` | 3 | A small stack of cobblestone at the end of the target's route, from the lodger's own digging. | A route and held stone. |
 | `hole` | 3 | A one-block hole three deep at the lodger's place, with a torch at the bottom. | A spot on natural ground. |
@@ -209,7 +209,7 @@ Blocks the target placed, moved within reach, never broken for good.
 | `backfill` | 3 | A hole the target dug near the house is filled in again with what came out of it, the blocks it dug elsewhere. | A dug hole within 24 blocks and held stone. |
 | `sapling` | 2 | A sapling from a chest is planted at the spot. | A sapling in a chest and a spot on grass. |
 | `tree_grown` | 3 | The sapling by the door is a tree in the morning. | A sapling the target planted and bone meal in a chest. |
-| `pumpkin_face` | 3 | A pumpkin the target grew is carved, and faces the door. | A pumpkin within 16 blocks and shears in a chest. |
+| `pumpkin_face` | 3 | A pumpkin by the house is carved where it grows, its face to the nearest door; the shears in their chest are a little worn. | A pumpkin around the home, shears in a chest of theirs. |
 
 ### What they kill
 

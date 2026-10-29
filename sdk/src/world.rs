@@ -330,7 +330,7 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_zero")]
         around: u8,
     },
-    /// Set a block, with an optional state string the host parses. Only where there is nothing,
+    /// Set a block, with an optional state the host applies (`facing=north,half=top`). Only where there is nothing,
     /// unless the block there is one of `replace` (block ids): the way a path is worn into grass
     /// or a hole dug in natural ground, and never through anything a player placed, which the
     /// mod keeps out of `replace` by never naming built blocks.
@@ -533,6 +533,14 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         kept: String,
     },
+    /// Change one property of the block at `pos` (`hinge` to `right`, or `@next` for the next
+    /// value); a door's other half changes with it. ABI 17.
+    SetState {
+        id: u64,
+        pos: BlockPos,
+        property: String,
+        value: String,
+    },
     /// Move a player, gently: to `to`, or the first spot up to two blocks above it with room
     /// to stand, never more than 32 blocks from where they are. ABI 9.
     MovePlayer {
@@ -647,6 +655,7 @@ impl Command {
             | Command::Hold { id, .. }
             | Command::MovePlayer { id, .. }
             | Command::ArmLoot { id, .. }
+            | Command::SetState { id, .. }
             | Command::BlockSound { id, .. }
             | Command::RenameItem { id, .. }
             | Command::SignBook { id, .. }

@@ -38,6 +38,14 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Held => memory.held.is_some(),
         Need::FavouriteInContainer => memory.favourite_in_container().is_some(),
         Need::Stored(id, n) => memory.stored(id) >= n,
+        Need::Plant(kind) => memory.plants.iter().any(|(id, _)| {
+            if kind == "flower" {
+                crate::memory::is_flower(id)
+            } else {
+                id.ends_with(kind)
+            }
+        }),
+        Need::Ladder => crate::brain::act::ladder_column(memory).is_some(),
         Need::InChest(suffix) => memory
             .in_used_container(|id| id.ends_with(suffix))
             .is_some(),

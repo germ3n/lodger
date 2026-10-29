@@ -514,6 +514,11 @@ because it can be built and tested without a game, and because the model layer i
     else a redstone lamp or a candle) and given by the host as fresh loot is unpacked, one item
     added or swapped (the swapped one kept); the host's `loot_touched` report clears what it
     gave. ABI 16. The one exception to "it never spawns anything". Was: nothing in loot.
+  - **The house, part two:** `door_hinge` (a door rehung, `set_state`), `ladder_gap` (a middle
+    rung set on top), `flowers_potted` (the flowers around the house in its empty pots) and
+    `pumpkin_face` (carved where it grows, facing the door, the shears worn); the home read
+    keeps the flowers and pumpkins around it; `set_block`'s state applied at last. ABI 17.
+    Was: in the catalogue alone, and the state field ignored.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

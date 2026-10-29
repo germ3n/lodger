@@ -166,6 +166,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             | "open_door"
             | "close_door"
             | "window_tap"
+            | "door_hinge"
     ) {
         return super::sounds::house_spot(event.id, memory, rng.next_u64() as usize);
     }
@@ -299,9 +300,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }
         Action::HarvestOne => memory.feature("crops").map(|f| f.pos),
         Action::PlateLaid => memory.used_container().map(|c| c.pos),
-        Action::ToggleDoor | Action::Wake | Action::PathWorn | Action::KillSign => {
-            home.and_then(|h| pick(&h.doors, rng))
-        }
+        Action::ToggleDoor
+        | Action::DoorHinge
+        | Action::Wake
+        | Action::PathWorn
+        | Action::KillSign => home.and_then(|h| pick(&h.doors, rng)),
         Action::ToggleFixture(kind) | Action::SoundAtFixture(kind, _) => pick_ref(
             memory
                 .fixtures(kind)
@@ -345,6 +348,13 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::Take => memory.favourite_in_container().map(|(c, _)| c.pos),
         Action::ReturnTaken | Action::ReturnUsed => memory.held.as_ref().map(|h| h.from),
         Action::HopperEmptied => memory.fixtures("hopper").next().map(|f| f.pos),
+        Action::LadderGap => ladder_column(memory).map(|c| c[c.len() / 2]),
+        Action::FlowersPotted => memory.fixtures("flower_pot").next().map(|f| f.pos),
+        Action::PumpkinFace => memory
+            .plants
+            .iter()
+            .find(|(id, _)| id == "minecraft:pumpkin")
+            .map(|(_, p)| *p),
         Action::FullOfOne => memory.used_container().map(|c| c.pos),
         Action::ShulkerMoved => memory.fixtures("shulker_box").next().map(|f| f.pos),
         Action::RenameOne | Action::BookWord | Action::MapMarked => {
@@ -494,6 +504,28 @@ pub fn spots(command: &Command) -> Vec<BlockPos> {
         Command::MoveEntity { to, .. } => vec![block(*to)],
         _ => vec![],
     }
+}
+
+/// The home's tallest ladder of four rungs or more, bottom to top, if there is one.
+pub fn ladder_column(memory: &Memory) -> Option<Vec<BlockPos>> {
+    let rungs: Vec<BlockPos> = memory.fixtures("ladder").map(|f| f.pos).collect();
+    rungs
+        .iter()
+        .filter(|r| !rungs.contains(&[r[0], r[1] - 1, r[2]]))
+        .map(|bottom| {
+            let mut column = vec![*bottom];
+            loop {
+                let top = column[column.len() - 1];
+                let next = [top[0], top[1] + 1, top[2]];
+                if !rungs.contains(&next) {
+                    break;
+                }
+                column.push(next);
+            }
+            column
+        })
+        .filter(|c| c.len() >= 4)
+        .max_by_key(|c| c.len())
 }
 
 /// The words a command puts in the world: a sign's lines, a chat line, a name.
@@ -1036,6 +1068,122 @@ pub fn commands(
                 )]
             }
             None => vec![],
+        },
+        Action::DoorHinge => pos
+            .map(|door| {
+                vec![(
+                    Command::SetState {
+                        id: ids(),
+                        pos: door,
+                        property: "hinge".to_string(),
+                        value: "@next".to_string(),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // A rung from the middle, set on top of the ladder: the climb has a gap, and the rung
+        // is where they will find it.
+        Action::LadderGap => match ladder_column(memory) {
+            Some(column) => {
+                let rung = column[column.len() / 2];
+                let top = column[column.len() - 1];
+                vec![(
+                    Command::MoveBlock {
+                        id: ids(),
+                        from: rung,
+                        to: [top[0], top[1] + 1, top[2]],
+                        around: 0,
+                    },
+                    0,
+                )]
+            }
+            None => vec![],
+        },
+        // Each flower picked (it holds it then) and set in an empty pot of the home: three at
+        // most.
+        Action::FlowersPotted => {
+            let pots: Vec<BlockPos> = memory.fixtures("flower_pot").map(|f| f.pos).collect();
+            memory
+                .plants
+                .iter()
+                .filter(|(id, _)| crate::memory::is_flower(id))
+                .zip(pots)
+                .take(3)
+                .enumerate()
+                .flat_map(|(i, ((flower, at), pot))| {
+                    let name = flower.rsplit(':').next().unwrap_or(flower);
+                    [
+                        (
+                            set(ids, *at, "minecraft:air", &[flower.as_str()]),
+                            i as u64 * 10,
+                        ),
+                        (
+                            set(
+                                ids,
+                                pot,
+                                &format!("minecraft:potted_{name}"),
+                                &["minecraft:flower_pot"],
+                            ),
+                            i as u64 * 10 + 4,
+                        ),
+                    ]
+                })
+                .collect()
+        }
+        // Carved where it grows, its face to the nearest door, their shears a little worn.
+        Action::PumpkinFace => match (pos, memory.in_used_container(|id| id == "minecraft:shears"))
+        {
+            (Some(p), Some((chest, shears))) => {
+                let door = memory
+                    .home
+                    .as_ref()
+                    .and_then(|h| {
+                        h.doors
+                            .iter()
+                            .min_by_key(|d| (d[0] - p[0]).abs() + (d[2] - p[2]).abs())
+                            .copied()
+                    })
+                    .unwrap_or([p[0], p[1], p[2] + 1]);
+                let (dx, dz) = (door[0] - p[0], door[2] - p[2]);
+                let facing = if dx.abs() >= dz.abs() {
+                    if dx >= 0 {
+                        "east"
+                    } else {
+                        "west"
+                    }
+                } else if dz >= 0 {
+                    "south"
+                } else {
+                    "north"
+                };
+                vec![
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: p,
+                            block: "minecraft:carved_pumpkin".to_string(),
+                            state: format!("facing={facing}"),
+                            replace: vec!["minecraft:pumpkin".to_string()],
+                            settle: 0,
+                            wall: String::new(),
+                            rest: false,
+                            only: true,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::DamageItem {
+                            id: ids(),
+                            pos: chest.pos,
+                            slot: shears.slot,
+                            amount: 1,
+                        },
+                        2,
+                    ),
+                ]
+            }
+            _ => vec![],
         },
         // One dirt in every empty slot, as many as it dug: never one it does not hold.
         Action::FullOfOne => match (pos, memory.used_container()) {
@@ -2600,11 +2748,20 @@ mod tests {
     fn rich_memory() -> Memory {
         let mut memory = memory();
         memory.store("minecraft:dirt", 5);
+        memory
+            .plants
+            .push(("minecraft:poppy".to_string(), [6, 64, 6]));
+        memory
+            .plants
+            .push(("minecraft:pumpkin".to_string(), [-6, 64, 6]));
         // A book and quill and a map in the chest they use, for `book_word` and `map_marked`.
         memory.containers[0].contents.extend([
             stack("minecraft:writable_book", 1, 12),
             stack("minecraft:filled_map", 1, 13),
         ]);
+        memory.containers[0]
+            .contents
+            .push(stack("minecraft:shears", 1, 14));
         memory.containers.push(Container {
             pos: [-2, 64, 0],
             kind: "minecraft:chest".to_string(),
@@ -2628,6 +2785,11 @@ mod tests {
         for (kind, pos) in [
             ("crafting_table", [1, 64, 2]),
             ("hopper", [2, 65, 0]),
+            ("ladder", [-6, 64, 0]),
+            ("ladder", [-6, 65, 0]),
+            ("ladder", [-6, 66, 0]),
+            ("ladder", [-6, 67, 0]),
+            ("flower_pot", [2, 65, 2]),
             ("shulker_box", [-4, 64, -4]),
             ("anvil", [-1, 64, 2]),
             ("lectern", [-1, 64, -2]),
@@ -3528,6 +3690,48 @@ mod tests {
         );
         assert_eq!(made.len(), 3, "three dug, three slots");
         assert!(made.iter().all(|(c, _)| matches!(c, Command::PutItem { item, kept, .. } if item.id == "minecraft:dirt" && item.count == 1 && kept.is_empty())));
+    }
+
+    #[test]
+    fn the_door_is_rehung_a_rung_goes_on_top_the_flower_is_potted_and_the_pumpkin_faces_the_door() {
+        let memory = rich_memory();
+        let now = Now::default();
+        let mut rng = Rng::new(4);
+        let made_by = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            commands(
+                event,
+                place(event, &memory, rng),
+                &memory,
+                &mut ids(),
+                &now,
+                None,
+            )
+        };
+        assert!(
+            matches!(&made_by("door_hinge", &mut rng)[0].0, Command::SetState { property, value, .. } if property == "hinge" && value == "@next")
+        );
+        assert!(
+            matches!(&made_by("ladder_gap", &mut rng)[0].0, Command::MoveBlock { from, to, .. } if *from == [-6, 66, 0] && *to == [-6, 68, 0]),
+            "a middle rung onto the top"
+        );
+        let potted = made_by("flowers_potted", &mut rng);
+        assert!(
+            matches!(&potted[0].0, Command::SetBlock { block, pos, .. } if block == "minecraft:air" && *pos == [6, 64, 6])
+        );
+        assert!(
+            matches!(&potted[1].0, Command::SetBlock { block, pos, .. } if block == "minecraft:potted_poppy" && *pos == [2, 65, 2])
+        );
+        let carved = made_by("pumpkin_face", &mut rng);
+        assert!(
+            matches!(&carved[0].0, Command::SetBlock { block, state, only: true, .. } if block == "minecraft:carved_pumpkin" && state.starts_with("facing=")),
+            "{:?}",
+            carved[0].0
+        );
+        assert!(matches!(
+            &carved[1].0,
+            Command::DamageItem { amount: 1, .. }
+        ));
     }
 
     #[test]

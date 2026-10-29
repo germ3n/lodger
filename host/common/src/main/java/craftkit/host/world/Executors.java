@@ -121,6 +121,7 @@ public final class Executors {
 				case "look_at" -> lookAt(level, command, id, context);
 				case "hold" -> hold(level, command, id, context);
 				case "move_player" -> movePlayer(level, command, id, context);
+				case "set_state" -> setState(level, command, id);
 				case "arm_loot" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -736,7 +737,7 @@ public final class Executors {
 				why = dy == 0 ? "nothing under it" : why;
 				continue;
 			}
-			BlockState standing = block.get().value().defaultBlockState();
+			BlockState standing = withState(block.get().value().defaultBlockState(), command.has("state") ? command.get("state").getAsString() : "");
 			if (standing.canSurvive(level, at)) {
 				// What was there is the mod's now, as a player's dig is: said, so it can count it.
 				String was = Senses.blockId(level.getBlockState(at));
@@ -1070,6 +1071,64 @@ public final class Executors {
 
 	/** The farthest a mod may move a player in one go. */
 	static final double MOST_MOVE = 32;
+
+	/** A block's state with `name=value,name=value` applied; what does not fit is left as it was. */
+	static BlockState withState(BlockState state, String properties) {
+		for (String pair : properties.split(",")) {
+			String[] kv = pair.split("=", 2);
+			if (kv.length == 2) {
+				state = withProperty(state, kv[0].trim(), kv[1].trim());
+			}
+		}
+
+		return state;
+	}
+
+	private static <T extends Comparable<T>> BlockState withProperty(BlockState state, String name, String value) {
+		for (net.minecraft.world.level.block.state.properties.Property<?> property : state.getProperties()) {
+			if (property.getName().equals(name)) {
+				@SuppressWarnings("unchecked")
+				net.minecraft.world.level.block.state.properties.Property<T> typed = (net.minecraft.world.level.block.state.properties.Property<T>) property;
+				T now = state.getValue(typed);
+				T next;
+				if (value.equals("@next")) {
+					java.util.List<T> values = new java.util.ArrayList<>(typed.getPossibleValues());
+					next = values.get((values.indexOf(now) + 1) % values.size());
+				} else {
+					next = typed.getValue(value).orElse(now);
+				}
+				return state.setValue(typed, next);
+			}
+		}
+
+		return state;
+	}
+
+	private static JsonObject setState(ServerLevel level, JsonObject command, long id) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		BlockState state = level.getBlockState(pos);
+		String property = command.get("property").getAsString();
+		String value = command.get("value").getAsString();
+		BlockState changed = withState(state, property + "=" + value);
+		if (changed == state) {
+			return report(id, false, "the block there has no " + property + " to change");
+		}
+		level.setBlock(pos, changed, Block.UPDATE_ALL);
+		// A door is two blocks: its other half changes with it.
+		if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
+			BlockPos other = state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER ? pos.above() : pos.below();
+			BlockState half = level.getBlockState(other);
+			if (half.is(state.getBlock())) {
+				level.setBlock(other, withState(half, property + "=" + changed.getValue(findProperty(changed, property))), Block.UPDATE_ALL);
+			}
+		}
+
+		return report(id, true, "");
+	}
+
+	private static net.minecraft.world.level.block.state.properties.Property<?> findProperty(BlockState state, String name) {
+		return state.getProperties().stream().filter(p -> p.getName().equals(name)).findFirst().orElseThrow();
+	}
 
 	private static JsonObject movePlayer(ServerLevel level, JsonObject command, long id, Context context) {
 		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());

@@ -113,7 +113,9 @@ solid ground, and a single-block container moved with what it holds; `move_item`
 first slot with something in it when the one asked is empty. A `scan` kind starting with `*` is a suffix (`*_stairs`), no
 change of shape (2026-11-09). ABI 16 (2026-11-09): `arm_loot`, an offering for a player's next
 fresh loot that the host applies as the loot is made (the game's own unpacking, then one item
-added or swapped, the swapped one kept), answered by the `loot_touched` event.
+added or swapped, the swapped one kept), answered by the `loot_touched` event. ABI 17 (2026-11-09): `set_state` (one property of a block, a
+door's other half with it; `@next` for the next value), and `set_block`'s `state` applied at
+last (`facing=north`), which the host had ignored.
 
 ## Resources
 
