@@ -156,9 +156,19 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     // first (owner, 2026-11-09: "any house, yours first").
     if matches!(
         event.id,
-        "door_sound" | "chest_sound" | "knock" | "knock_heavy" | "lever_click" | "your_voice"
+        "door_sound"
+            | "chest_sound"
+            | "knock"
+            | "knock_heavy"
+            | "lever_click"
+            | "your_voice"
+            | "door_scratch"
     ) {
         return super::sounds::house_spot(event.id, memory, rng.next_u64() as usize);
+    }
+    // A cold furnace's crackle comes from their furnace.
+    if event.id == "cold_crackle" {
+        return memory.furnace().map(|f| f.pos);
     }
 
     match event.action {

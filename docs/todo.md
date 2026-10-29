@@ -492,6 +492,11 @@ because it can be built and tested without a game, and because the model layer i
     reports, grass dug as dirt), and `chest_full_of_one` fills a chest's empty slots with one
     dirt each, never more than it holds, spending the store. Was: no count of what it dug,
     so "everything it places it dug" could not be kept.
+  - **Eight more sounds** (owner: "add more sound events if you can think of any"):
+    `steps_above`, `scratching` (in the wall beside them), `ladder_climb` (rising behind them),
+    `pickup_pop`, `cold_crackle` (their cold furnace), `breath_close` (at their ear),
+    `cave_air` (a cave's sound in the open) and `door_scratch`, each three or four ways, with
+    the new movements above, beside, rising and at the ear. Was: fourteen sound events.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

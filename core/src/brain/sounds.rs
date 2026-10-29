@@ -18,6 +18,14 @@ pub enum Moves {
     Closer,
     /// From two blocks off to eight, going away.
     Away,
+    /// On the floor above, three blocks up, crossing from one side to the other.
+    Above,
+    /// Inside the wall beside them, a block and a half to their right.
+    Beside,
+    /// Two blocks behind, rising five blocks over the beats, as up a ladder.
+    Rising,
+    /// At their ear: half a block behind, at head height.
+    Ear,
 }
 
 /// One way an event can sound: its beats (a sound and the tick it plays at), a pitch drawn
@@ -435,6 +443,280 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        "steps_above" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.wood.step", 0),
+                        ("minecraft:block.wood.step", 9),
+                        ("minecraft:block.wood.step", 18),
+                        ("minecraft:block.wood.step", 27),
+                    ],
+                    (0.8, 0.9),
+                    0.5,
+                    Above,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.wood.step", 0),
+                        ("minecraft:block.wood.step", 12),
+                        ("minecraft:block.wood.step", 24),
+                    ],
+                    (0.7, 0.8),
+                    0.6,
+                    Above,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.wood.step", 0),
+                        ("minecraft:block.wood.step", 6),
+                        ("minecraft:block.wood.step", 12),
+                        ("minecraft:block.wood.step", 18),
+                        ("minecraft:block.wood.step", 24),
+                    ],
+                    (0.9, 1.0),
+                    0.4,
+                    Above,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.wool.step", 0),
+                        ("minecraft:block.wool.step", 10),
+                        ("minecraft:block.wool.step", 20),
+                    ],
+                    (0.8, 0.9),
+                    0.6,
+                    Above,
+                ),
+            ];
+            WAYS
+        }
+        "scratching" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.silverfish.step", 0),
+                        ("minecraft:entity.silverfish.step", 3),
+                        ("minecraft:entity.silverfish.step", 6),
+                        ("minecraft:entity.silverfish.step", 9),
+                    ],
+                    (0.6, 0.7),
+                    0.5,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.wood.hit", 0),
+                        ("minecraft:block.wood.hit", 4),
+                        ("minecraft:block.wood.hit", 8),
+                    ],
+                    (1.4, 1.6),
+                    0.3,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.sand.step", 0),
+                        ("minecraft:block.sand.step", 5),
+                        ("minecraft:block.sand.step", 10),
+                        ("minecraft:block.sand.step", 15),
+                    ],
+                    (0.6, 0.7),
+                    0.4,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.silverfish.step", 0),
+                        ("minecraft:entity.silverfish.step", 20),
+                    ],
+                    (0.5, 0.6),
+                    0.5,
+                    Beside,
+                ),
+            ];
+            WAYS
+        }
+        "ladder_climb" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.ladder.step", 0),
+                        ("minecraft:block.ladder.step", 8),
+                        ("minecraft:block.ladder.step", 16),
+                        ("minecraft:block.ladder.step", 24),
+                        ("minecraft:block.ladder.step", 32),
+                    ],
+                    (0.9, 1.0),
+                    0.6,
+                    Rising,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.ladder.step", 0),
+                        ("minecraft:block.ladder.step", 5),
+                        ("minecraft:block.ladder.step", 10),
+                        ("minecraft:block.ladder.step", 15),
+                    ],
+                    (1.0, 1.1),
+                    0.6,
+                    Rising,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.ladder.step", 0),
+                        ("minecraft:block.ladder.step", 12),
+                        ("minecraft:block.ladder.step", 24),
+                    ],
+                    (0.8, 0.9),
+                    0.5,
+                    Rising,
+                ),
+            ];
+            WAYS
+        }
+        "pickup_pop" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:entity.item.pickup", 0)],
+                    (0.9, 1.1),
+                    0.5,
+                    Behind,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.item.pickup", 0),
+                        ("minecraft:entity.item.pickup", 6),
+                    ],
+                    (1.0, 1.2),
+                    0.5,
+                    Behind,
+                ),
+                v(
+                    &[("minecraft:entity.experience_orb.pickup", 0)],
+                    (0.6, 0.8),
+                    0.4,
+                    Behind,
+                ),
+            ];
+            WAYS
+        }
+        "cold_crackle" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:block.furnace.fire_crackle", 0)],
+                    (0.8, 0.9),
+                    0.8,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.furnace.fire_crackle", 0),
+                        ("minecraft:block.furnace.fire_crackle", 18),
+                        ("minecraft:block.furnace.fire_crackle", 40),
+                    ],
+                    (0.7, 0.9),
+                    0.7,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.furnace.fire_crackle", 0),
+                        ("minecraft:block.candle.extinguish", 30),
+                    ],
+                    (0.8, 0.9),
+                    0.7,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
+        "breath_close" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 40),
+                    ],
+                    (0.6, 0.7),
+                    0.3,
+                    Ear,
+                ),
+                v(
+                    &[("minecraft:entity.player.breath", 0)],
+                    (0.5, 0.6),
+                    0.35,
+                    Ear,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 30),
+                        ("minecraft:entity.player.breath", 60),
+                    ],
+                    (0.6, 0.7),
+                    0.25,
+                    Ear,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.warden.heartbeat", 0),
+                        ("minecraft:entity.warden.heartbeat", 20),
+                        ("minecraft:entity.warden.heartbeat", 40),
+                    ],
+                    (0.9, 1.0),
+                    0.3,
+                    Ear,
+                ),
+            ];
+            WAYS
+        }
+        "cave_air" => {
+            const WAYS: &[Variant] = &[
+                v(&[("minecraft:ambient.cave", 0)], (0.8, 1.0), 0.8, Behind),
+                v(&[("minecraft:ambient.cave", 0)], (0.5, 0.6), 1.0, Away),
+                v(&[("minecraft:ambient.cave", 0)], (1.1, 1.3), 0.7, Closer),
+            ];
+            WAYS
+        }
+        "door_scratch" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.wood.hit", 0),
+                        ("minecraft:block.wood.hit", 3),
+                        ("minecraft:block.wood.hit", 6),
+                        ("minecraft:block.wood.hit", 9),
+                        ("minecraft:block.wood.hit", 12),
+                    ],
+                    (1.5, 1.7),
+                    0.35,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.wood.hit", 0),
+                        ("minecraft:block.wood.hit", 5),
+                        ("minecraft:block.wood.hit", 30),
+                        ("minecraft:block.wood.hit", 35),
+                    ],
+                    (1.3, 1.5),
+                    0.35,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.silverfish.step", 0),
+                        ("minecraft:entity.silverfish.step", 4),
+                        ("minecraft:entity.silverfish.step", 8),
+                    ],
+                    (0.5, 0.6),
+                    0.5,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         _ => return None,
     })
 }
@@ -470,13 +752,31 @@ pub fn commands(
         .map(|(i, (sound, tick))| {
             let along = i as f64 / (n - 1.0).max(1.0);
             let distance = match variant.moves {
-                Still => 0.0,
-                Behind => 3.0,
+                Still | Above | Beside => 0.0,
+                Behind | Rising => 3.0,
                 Closer => 8.0 - 6.0 * along,
                 Away => 2.0 + 6.0 * along,
+                Ear => 0.5,
             };
+            // Their right: the way they face, turned a quarter.
+            let right = [-back[1], back[0]];
             let pos = match (variant.moves, spot) {
                 (Still, Some(spot)) => spot,
+                (Above, _) => {
+                    let across = -3.0 + 6.0 * along;
+                    [
+                        at[0] + right[0] * across,
+                        at[1] + 3.0,
+                        at[2] + right[1] * across,
+                    ]
+                }
+                (Beside, _) => [at[0] + right[0] * 1.5, at[1] + 1.0, at[2] + right[1] * 1.5],
+                (Rising, _) => [
+                    at[0] + back[0] * 2.0,
+                    at[1] + 5.0 * along,
+                    at[2] + back[1] * 2.0,
+                ],
+                (Ear, _) => [at[0] + back[0] * 0.5, at[1] + 1.6, at[2] + back[1] * 0.5],
                 _ => [
                     at[0] + back[0] * distance,
                     at[1],
@@ -587,6 +887,14 @@ mod tests {
             "arrow_hit",
             "wolf_far",
             "your_voice",
+            "steps_above",
+            "scratching",
+            "ladder_climb",
+            "pickup_pop",
+            "cold_crackle",
+            "breath_close",
+            "cave_air",
+            "door_scratch",
         ] {
             let n = variants(id)
                 .unwrap_or_else(|| panic!("{id} has none"))
@@ -655,6 +963,59 @@ mod tests {
         assert!(
             closer.windows(2).all(|w| w[0].1 < w[1].1),
             "one beat after another"
+        );
+    }
+
+    #[test]
+    fn steps_cross_the_floor_above_scratches_stay_in_the_wall_and_a_climb_rises() {
+        let mut memory = Memory::default();
+        memory.last.pos = [0.0, 64.0, 0.0];
+        memory.last.yaw = 0.0;
+        let mut n = 0;
+        let mut ids = || {
+            n += 1;
+            n
+        };
+        let heights = |id: &str, way: usize, ids: &mut dyn FnMut() -> u64| -> Vec<[f64; 3]> {
+            commands(
+                &variants(id).unwrap()[way],
+                None,
+                &memory,
+                0,
+                0,
+                &mut || ids(),
+            )
+            .into_iter()
+            .map(|(c, _)| match c {
+                Command::PlaySound { pos, .. } => pos,
+                other => panic!("{other:?}"),
+            })
+            .collect()
+        };
+        let above = heights("steps_above", 0, &mut ids);
+        assert!(
+            above.iter().all(|p| (p[1] - 67.0).abs() < 0.01),
+            "on the floor above"
+        );
+        assert!(
+            (above[0][0] - above.last().unwrap()[0]).abs() > 4.0,
+            "crossing it"
+        );
+        let wall = heights("scratching", 0, &mut ids);
+        assert!(
+            wall.windows(2).all(|w| w[0] == w[1]),
+            "one place in the wall"
+        );
+        let climb = heights("ladder_climb", 0, &mut ids);
+        assert!(
+            climb.windows(2).all(|w| w[1][1] > w[0][1]),
+            "rising: {climb:?}"
+        );
+        let ear = heights("breath_close", 0, &mut ids);
+        let d = ((ear[0][0]).powi(2) + (ear[0][2]).powi(2)).sqrt();
+        assert!(
+            d < 1.0 && (ear[0][1] - 65.6).abs() < 0.01,
+            "at the ear: {ear:?}"
         );
     }
 

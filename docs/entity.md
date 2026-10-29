@@ -412,6 +412,14 @@ Heard by the target alone. Nothing in the world changes.
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
+| `steps_above` | 2 | Footsteps cross the floor above the target, three blocks up, wood or wool underfoot, slow or quick; there is no floor above, or no one on it. | The target indoors. |
+| `scratching` | 3 | Something scratches inside the wall beside them at night, small and quick, or slow, a block and a half to their right. | The target indoors, night. |
+| `ladder_climb` | 3 | Someone climbs a ladder just behind them, rung by rung, rising five blocks, slow or quick. | The target indoors. |
+| `pickup_pop` | 2 | Behind them, the pop of an item picked up, once or twice, or an experience orb taken; nothing on the ground. | The target online. |
+| `cold_crackle` | 2 | Their furnace crackles as if lit, once or a few times, and a candle goes out after. It is cold. | A furnace of theirs, the target indoors. |
+| `breath_close` | 3 | Breathing at their ear, half a block behind them at head height, once or slowly a few times; in its last way a heartbeat. | The target online. |
+| `cave_air` | 2 | The sound of a cave out in the open at night, behind them, going away, or coming closer. | The target outdoors, night. |
+| `door_scratch` | 3 | Scratching at a door of the house they are in, at night: quick, or in two bursts, or something small. | A door, the target indoors, night. |
 | `door_sound` | 1 | A door's sound from another room. No door moved. | A home with two rooms. |
 | `chest_sound` | 1 | A chest's sound from another room. | A home with two rooms. |
 | `cut_music` | 1 | The client's music stops and does not start for an in-game evening. | The target online. |
