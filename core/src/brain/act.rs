@@ -349,6 +349,12 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::ReturnTaken | Action::ReturnUsed => memory.held.as_ref().map(|h| h.from),
         Action::HopperEmptied => memory.fixtures("hopper").next().map(|f| f.pos),
         Action::LadderGap => ladder_column(memory).map(|c| c[c.len() / 2]),
+        Action::TreeGrown => memory
+            .plants
+            .iter()
+            .find(|(id, _)| id.ends_with("_sapling"))
+            .map(|(_, p)| *p),
+        Action::Backfill => memory.holes.last().map(|(p, _)| *p),
         Action::FlowersPotted => memory.fixtures("flower_pot").next().map(|f| f.pos),
         Action::PumpkinFace => memory
             .plants
@@ -505,6 +511,9 @@ pub fn spots(command: &Command) -> Vec<BlockPos> {
         _ => vec![],
     }
 }
+
+/// What it fills a hole with, from what it dug: the blocks a player's hole held.
+pub const FILL: &[&str] = &["minecraft:dirt", "minecraft:cobblestone", "minecraft:stone"];
 
 /// The home's tallest ladder of four rungs or more, bottom to top, if there is one.
 pub fn ladder_column(memory: &Memory) -> Option<Vec<BlockPos>> {
@@ -1069,6 +1078,63 @@ pub fn commands(
             }
             None => vec![],
         },
+        // Grown first, then the bone meal taken: a sapling that does not grow costs nothing.
+        Action::TreeGrown => match (
+            pos,
+            memory.in_used_container(|id| id == "minecraft:bone_meal"),
+        ) {
+            (Some(p), Some((chest, meal))) => vec![
+                (
+                    Command::Grow {
+                        id: ids(),
+                        pos: p,
+                        tries: 6,
+                    },
+                    0,
+                ),
+                (
+                    Command::TakeItem {
+                        id: ids(),
+                        from: chest.pos,
+                        slot: meal.slot,
+                        count: meal.count.min(3),
+                        keep: String::new(),
+                    },
+                    2,
+                ),
+            ],
+            _ => vec![],
+        },
+        // Their holes by the house filled, newest first, with what it dug and holds: five at
+        // most, never more than it holds.
+        Action::Backfill => {
+            let mut stock: Vec<(&str, u32)> = FILL.iter().map(|b| (*b, memory.stored(b))).collect();
+            memory
+                .holes
+                .iter()
+                .rev()
+                .take(5)
+                .enumerate()
+                .filter_map(|(i, (at, _))| {
+                    let (block, left) = stock.iter_mut().find(|(_, n)| *n > 0)?;
+                    *left -= 1;
+                    Some((
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: *at,
+                            block: block.to_string(),
+                            state: String::new(),
+                            replace: GROUND_COVER.iter().map(|r| r.to_string()).collect(),
+                            settle: 0,
+                            wall: String::new(),
+                            rest: false,
+                            only: false,
+                        },
+                        i as u64 * 8,
+                    ))
+                })
+                .collect()
+        }
         Action::DoorHinge => pos
             .map(|door| {
                 vec![(
@@ -2762,6 +2828,15 @@ mod tests {
         memory.containers[0]
             .contents
             .push(stack("minecraft:shears", 1, 14));
+        memory.containers[0]
+            .contents
+            .push(stack("minecraft:bone_meal", 9, 15));
+        memory
+            .plants
+            .push(("minecraft:oak_sapling".to_string(), [5, 64, -5]));
+        memory
+            .holes
+            .push(([7, 63, 0], "minecraft:dirt".to_string()));
         memory.containers.push(Container {
             pos: [-2, 64, 0],
             kind: "minecraft:chest".to_string(),
@@ -3732,6 +3807,48 @@ mod tests {
             &carved[1].0,
             Command::DamageItem { amount: 1, .. }
         ));
+    }
+
+    #[test]
+    fn a_sapling_grows_before_the_bone_meal_is_taken_and_a_hole_is_filled_with_what_it_dug() {
+        let memory = rich_memory();
+        let now = Now::default();
+        let mut rng = Rng::new(1);
+        let tree = find("tree_grown").unwrap();
+        let made = commands(
+            tree,
+            place(tree, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(matches!(&made[0].0, Command::Grow { pos, .. } if *pos == [5, 64, -5]));
+        assert!(
+            matches!(
+                &made[1].0,
+                Command::TakeItem {
+                    count: 3,
+                    slot: 15,
+                    ..
+                }
+            ) && made[1].1 > made[0].1,
+            "the meal after, three of nine"
+        );
+        let fill = find("backfill").unwrap();
+        let made = commands(
+            fill,
+            place(fill, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { pos, block, .. } if *pos == [7, 63, 0] && block == "minecraft:dirt"),
+            "{:?}",
+            made[0].0
+        );
     }
 
     #[test]

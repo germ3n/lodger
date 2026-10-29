@@ -844,6 +844,17 @@ impl Brain {
                     memory.store(&item.id, -(item.count as i64));
                 }
             }
+            // A block it fills with comes out of what it dug too.
+            if let Command::SetBlock { block, .. } = command {
+                if plan.event == "backfill" {
+                    memory.store(block, -1);
+                    if let Some(at) = memory.holes.iter().position(
+                        |(p, _)| matches!(command, Command::SetBlock { pos, .. } if pos == p),
+                    ) {
+                        memory.holes.remove(at);
+                    }
+                }
+            }
         }
         let mut sent = Vec::new();
         for (command, later_ticks) in made {

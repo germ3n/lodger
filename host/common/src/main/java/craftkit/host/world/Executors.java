@@ -122,6 +122,7 @@ public final class Executors {
 				case "hold" -> hold(level, command, id, context);
 				case "move_player" -> movePlayer(level, command, id, context);
 				case "set_state" -> setState(level, command, id);
+				case "grow" -> grow(level, command, id);
 				case "arm_loot" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -1102,6 +1103,28 @@ public final class Executors {
 		}
 
 		return state;
+	}
+
+	/** Bone meal, as a player uses it, up to `tries` times, until the block is something else. */
+	private static JsonObject grow(ServerLevel level, JsonObject command, long id) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		int tries = Math.clamp(command.get("tries").getAsInt(), 1, 16);
+		BlockState was = level.getBlockState(pos);
+		for (int i = 0; i < tries; i++) {
+			BlockState state = level.getBlockState(pos);
+			if (state.getBlock() != was.getBlock()) {
+				break;
+			}
+			if (!(state.getBlock() instanceof net.minecraft.world.level.block.BonemealableBlock grows)
+					|| !grows.isValidBonemealTarget(level, pos, state, net.minecraft.world.level.block.BonemealSource.INTERACTION)) {
+				return report(id, false, "it will not grow");
+			}
+			if (grows.isBonemealSuccess(level, level.getRandom(), pos, state, net.minecraft.world.level.block.BonemealSource.INTERACTION)) {
+				grows.performBonemeal(level, level.getRandom(), pos, state, net.minecraft.world.level.block.BonemealSource.INTERACTION);
+			}
+		}
+
+		return level.getBlockState(pos).getBlock() != was.getBlock() ? report(id, true, "") : report(id, false, "it did not grow this time");
 	}
 
 	private static JsonObject setState(ServerLevel level, JsonObject command, long id) {

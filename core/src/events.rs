@@ -36,6 +36,8 @@ pub enum Need {
     Plant(&'static str),
     /// A ladder of four rungs or more in the home.
     Ladder,
+    /// A hole the target dug near the home, and something it dug to fill it with.
+    Hole,
     /// A furnace the target used.
     Furnace,
     /// A furnace, and a chest with something to smelt and something to burn.
@@ -177,6 +179,7 @@ impl Need {
             }
             Need::Plant(kind) => format!("no {kind} around the home"),
             Need::Ladder => "no ladder of four rungs".to_string(),
+            Need::Hole => "no hole of theirs near the home, or nothing dug to fill it".to_string(),
             Need::Furnace => "no furnace used".to_string(),
             Need::Smeltable => "nothing to smelt with fuel".to_string(),
             Need::FurnaceOutput => "nothing finished in the furnace".to_string(),
@@ -384,6 +387,10 @@ pub enum Action {
     FlowersPotted,
     /// A pumpkin of theirs carved, facing the door.
     PumpkinFace,
+    /// The sapling by the house a tree overnight, their bone meal spent.
+    TreeGrown,
+    /// A hole they dug near the house filled in again.
+    Backfill,
     /// An answer to what the target just typed, in their name, to them alone.
     Answers,
     /// A boat or minecart moved to the far side of the water, or its middle.
@@ -1294,6 +1301,28 @@ pub const CATALOGUE: &[Event] = &[
         2,
         Full,
         Action::PumpkinFace,
+        false,
+    ),
+    row(
+        "backfill",
+        3,
+        5,
+        &[Hole, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Full,
+        Action::Backfill,
+        false,
+    ),
+    row(
+        "tree_grown",
+        3,
+        5,
+        &[Plant("sapling"), InChest("bone_meal"), TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::TreeGrown,
         false,
     ),
     row(
@@ -2488,6 +2517,8 @@ impl Event {
             "ladder_gap" => "take a rung out of a ladder and leave it on top",
             "flowers_potted" => "pick the flowers outside and pot them by the door",
             "pumpkin_face" => "carve a pumpkin to face the door",
+            "tree_grown" => "grow the sapling by the house into a tree",
+            "backfill" => "fill in a hole they dug by the house",
             "hostiles_stare" => "have the monsters stand and stare at them all night",
             "answers_you" => "answer what they typed",
             "stairs_turned" => "turn a stair block another way",

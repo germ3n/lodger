@@ -63,6 +63,7 @@ pub const HOME_KINDS: &[&str] = &[
     "minecraft:cornflower",
     "minecraft:lily_of_the_valley",
     "minecraft:pumpkin",
+    "*_sapling",
 ];
 
 /// Whether a block id is a flower the home read keeps (`flowers_potted`).
@@ -383,8 +384,10 @@ pub struct Memory {
     pub vehicles: Vec<Creature>,
     /// Blocks a scan found near the village (doors, the bell), for the village events.
     pub scanned: Vec<(String, BlockPos)>,
-    /// Flowers and pumpkins growing around the home, by block id, from the home read.
+    /// Flowers, pumpkins and saplings around the home, by block id, from the home read.
     pub plants: Vec<(String, BlockPos)>,
+    /// Natural blocks the target dug out near the home, where and what, for `backfill`.
+    pub holes: Vec<(BlockPos, String)>,
     /// Ore a scan found in the rock around the target (`scan_ore`), kept apart from the
     /// village's: one scan answering used to wipe the other (2026-11-09).
     pub ores: Vec<(String, BlockPos)>,
@@ -1064,6 +1067,31 @@ impl Memory {
                 EventKind::BrokeBlock => {
                     if let Some(pos) = event.pos {
                         self.mark_home_dirty(pos);
+                        // Natural ground dug near the home, not something they had placed.
+                        let natural = [
+                            "dirt",
+                            "grass_block",
+                            "coarse_dirt",
+                            "stone",
+                            "deepslate",
+                            "sand",
+                            "gravel",
+                            "andesite",
+                            "diorite",
+                            "granite",
+                            "tuff",
+                        ]
+                        .iter()
+                        .any(|k| event.detail.rsplit(':').next() == Some(*k));
+                        if natural
+                            && !self.placed.contains(&pos)
+                            && self
+                                .home
+                                .as_ref()
+                                .is_some_and(|h| distance(h.center, pos) <= 16.0)
+                        {
+                            push_capped(&mut self.holes, (pos, event.detail.clone()), 32);
+                        }
                         // What stood on it drops with it (a door, a torch, a lever on the
                         // floor), and the game sends no break for those.
                         let above = [pos[0], pos[1] + 1, pos[2]];
@@ -1243,7 +1271,7 @@ impl Memory {
 
         self.plants.retain(|(_, p)| !inside(p));
         for (id, pos) in found {
-            if is_flower(id) || id == "minecraft:pumpkin" {
+            if is_flower(id) || id == "minecraft:pumpkin" || id.ends_with("_sapling") {
                 self.plants.push((id.clone(), *pos));
             }
         }
@@ -2710,6 +2738,48 @@ mod tests {
         assert_eq!(memory.scanned("bell").count(), 1, "the village kept");
         assert_eq!(memory.scanned("_ore").count(), 1);
         assert!(memory.scans_out.is_empty());
+    }
+
+    #[test]
+    fn natural_ground_they_dig_by_the_house_is_a_hole_and_what_they_placed_is_not() {
+        let mut memory = Memory {
+            home: Some(Home {
+                center: [0, 64, 0],
+                ..Home::default()
+            }),
+            ..Memory::default()
+        };
+        let here = vec![player(0, [0.0, 64.0, 0.0], 0.0)];
+        let broke = |pos, id: &str| at(EventKind::BrokeBlock, pos, id, vec![]);
+        memory.observe(
+            &obs(
+                here.clone(),
+                vec![at(
+                    EventKind::PlacedBlock,
+                    [2, 64, 2],
+                    "minecraft:dirt",
+                    vec![],
+                )],
+            ),
+            0.1,
+        );
+        memory.observe(
+            &obs(
+                here,
+                vec![
+                    broke([3, 63, 0], "minecraft:grass_block"),
+                    broke([2, 64, 2], "minecraft:dirt"),
+                    broke([60, 63, 0], "minecraft:stone"),
+                    broke([1, 64, 1], "minecraft:oak_planks"),
+                ],
+            ),
+            0.2,
+        );
+        assert_eq!(
+            memory.holes,
+            vec![([3, 63, 0], "minecraft:grass_block".to_string())],
+            "theirs, natural, near: one"
+        );
     }
 
     #[test]

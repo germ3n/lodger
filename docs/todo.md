@@ -519,6 +519,10 @@ because it can be built and tested without a game, and because the model layer i
     `pumpkin_face` (carved where it grows, facing the door, the shears worn); the home read
     keeps the flowers and pumpkins around it; `set_block`'s state applied at last. ABI 17.
     Was: in the catalogue alone, and the state field ignored.
+  - **The house, part three:** `tree_grown` (the sapling by the house a tree overnight, their
+    bone meal spent only if it grew; `grow`, ABI 18) and `backfill` (their holes by the house
+    filled with what it dug); the memory keeps the natural ground they dig near the home.
+    Was: in the catalogue alone.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

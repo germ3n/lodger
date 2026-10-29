@@ -206,9 +206,9 @@ Blocks the target placed, moved within reach, never broken for good.
 | `cairn` | 3 | A small stack of cobblestone at the end of the target's route, from the lodger's own digging. | A route and held stone. |
 | `hole` | 3 | A one-block hole three deep at the lodger's place, with a torch at the bottom. | A spot on natural ground. |
 | `alcove` | 4 | A one-block alcove dug into natural stone behind a wall of the house, hidden, with a torch in it and whatever the lodger holds. Found only by someone who looks. | A house wall against natural stone. |
-| `backfill` | 3 | A hole the target dug near the house is filled in again with what came out of it, the blocks it dug elsewhere. | A dug hole within 24 blocks and held stone. |
+| `backfill` | 3 | Up to five of the holes they dug by the house (natural ground within 16 blocks, newest first) are filled in again with dirt or stone it dug itself, never more than it holds. | A hole of theirs near the home, something dug to fill it. |
 | `sapling` | 2 | A sapling from a chest is planted at the spot. | A sapling in a chest and a spot on grass. |
-| `tree_grown` | 3 | The sapling by the door is a tree in the morning. | A sapling the target planted and bone meal in a chest. |
+| `tree_grown` | 3 | The sapling by the house is a tree in the morning: bone meal from their chest (three at most), spent only if it grew. | A sapling around the home, bone meal in a chest of theirs. |
 | `pumpkin_face` | 3 | A pumpkin by the house is carved where it grows, its face to the nearest door; the shears in their chest are a little worn. | A pumpkin around the home, shears in a chest of theirs. |
 
 ### What they kill

@@ -46,6 +46,9 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             }
         }),
         Need::Ladder => crate::brain::act::ladder_column(memory).is_some(),
+        Need::Hole => {
+            !memory.holes.is_empty() && crate::brain::act::FILL.iter().any(|b| memory.stored(b) > 0)
+        }
         Need::InChest(suffix) => memory
             .in_used_container(|id| id.ends_with(suffix))
             .is_some(),

@@ -533,6 +533,13 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         kept: String,
     },
+    /// Bone meal the block at `pos`, as a player would, up to `tries` times, until it is
+    /// something else (a sapling a tree). Not done if it did not grow. ABI 18.
+    Grow {
+        id: u64,
+        pos: BlockPos,
+        tries: u32,
+    },
     /// Change one property of the block at `pos` (`hinge` to `right`, or `@next` for the next
     /// value); a door's other half changes with it. ABI 17.
     SetState {
@@ -656,6 +663,7 @@ impl Command {
             | Command::MovePlayer { id, .. }
             | Command::ArmLoot { id, .. }
             | Command::SetState { id, .. }
+            | Command::Grow { id, .. }
             | Command::BlockSound { id, .. }
             | Command::RenameItem { id, .. }
             | Command::SignBook { id, .. }
