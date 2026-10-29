@@ -109,6 +109,9 @@ pub struct Brain {
     pub last_home_read: u64,
     #[serde(skip)]
     pub was_near_home: bool,
+    /// The tick of the last village read.
+    #[serde(skip)]
+    pub last_village_read: u64,
     pub next_command_id: u64,
     pub rng: Rng,
     /// Decisions made, for the status line.
@@ -457,6 +460,31 @@ impl Brain {
             }
         }
 
+        // The village, read every five minutes while they are within 64 blocks of it: its
+        // doors, its bell, its lanterns, for the village events.
+        if let Some(village) = memory.feature("village").map(|v| v.pos) {
+            let at = memory.last.pos;
+            let (dx, dz) = (at[0] - village[0] as f64, at[2] - village[2] as f64);
+            let near = memory.last.online && (dx * dx + dz * dz).sqrt() <= 64.0;
+            if near
+                && (self.last_village_read == 0
+                    || now.tick.saturating_sub(self.last_village_read) >= 300 * TPS)
+            {
+                let id = self.id();
+                commands.push(Command::Scan {
+                    id,
+                    min: [village[0] - 19, village[1] - 8, village[2] - 19],
+                    max: [village[0] + 19, village[1] + 15, village[2] + 19],
+                    kinds: ["*_door", "minecraft:bell", "*lantern"]
+                        .iter()
+                        .map(|k| k.to_string())
+                        .collect(),
+                });
+                memory.scans_out.push((id, "village_read".to_string()));
+                self.last_village_read = now.tick.max(1);
+            }
+        }
+
         // The house they are in, when it is not their home: its doors and chests, so a knock
         // in a village house is on that house's door. Every thirty seconds at most.
         if memory.last.online && memory.last.indoors && now.tick >= self.next_here_scan {
@@ -786,6 +814,13 @@ impl Brain {
         for command in made.iter().map(|(c, _)| c) {
             for line in act::texts(command) {
                 memory.wrote(line);
+            }
+            // A scan's answer is kept by what sent it: the village's and the ore's apart.
+            if let Command::Scan { id, .. } = command {
+                memory.scans_out.push((*id, plan.event.clone()));
+                if memory.scans_out.len() > 8 {
+                    memory.scans_out.remove(0);
+                }
             }
             // What it gives without having taken it comes out of what it dug.
             if let Command::PutItem { item, kept, .. } = command {
@@ -3271,6 +3306,60 @@ mod tests {
         );
         let sent = tick(&mut brain, &mut memory, 60 + 31 * TPS);
         assert_eq!(home_reads(&sent, &memory), 1);
+    }
+
+    #[test]
+    fn the_village_is_read_while_they_are_near_it_every_five_minutes() {
+        let config = Config::default();
+        let mut memory = home_memory();
+        memory.last.online = true;
+        memory.surroundings = Some(crate::memory::Surround {
+            day: 0.0,
+            around: [0, 64, 0],
+            features: vec![craftkit::world::Feature {
+                kind: "village".to_string(),
+                pos: [200, 64, 0],
+                size: 40,
+                detail: String::new(),
+            }],
+        });
+        memory.last.pos = [0.0, 64.0, 0.0];
+        let mut arc = Arc {
+            stage: 1,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        let village_reads = |memory: &Memory| {
+            memory
+                .scans_out
+                .iter()
+                .filter(|(_, e)| e == "village_read")
+                .count()
+        };
+        let mut tick = |brain: &mut Brain, memory: &mut Memory, at: u64| {
+            brain.tick(
+                &Now {
+                    tick: at,
+                    ..Now::default()
+                },
+                0.0,
+                memory,
+                &mut arc,
+                &config,
+                &mut log,
+                None,
+            );
+        };
+        tick(&mut brain, &mut memory, 20);
+        assert_eq!(village_reads(&memory), 0, "far from it");
+        memory.last.pos = [180.0, 64.0, 0.0];
+        tick(&mut brain, &mut memory, 40);
+        assert_eq!(village_reads(&memory), 1, "near it");
+        tick(&mut brain, &mut memory, 60);
+        assert_eq!(village_reads(&memory), 1, "not again at once");
+        tick(&mut brain, &mut memory, 40 + 300 * TPS);
+        assert_eq!(village_reads(&memory), 2, "five minutes on");
     }
 
     #[test]

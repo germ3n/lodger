@@ -352,6 +352,12 @@ pub struct Memory {
     pub vehicles: Vec<Creature>,
     /// Blocks a scan found near the village (doors, the bell), for the village events.
     pub scanned: Vec<(String, BlockPos)>,
+    /// Ore a scan found in the rock around the target (`scan_ore`), kept apart from the
+    /// village's: one scan answering used to wipe the other (2026-11-09).
+    pub ores: Vec<(String, BlockPos)>,
+    /// Which event sent each scan still to be answered, by its id. Not saved.
+    #[serde(skip)]
+    pub scans_out: Vec<(u64, String)>,
     /// The day as of the last observation, so the offer can read "just now" without a clock.
     pub today: f32,
     /// The trail being walked right now.
@@ -745,12 +751,22 @@ impl Memory {
                 });
                 continue;
             }
-            self.scanned = scan
+            let found: Vec<(String, BlockPos)> = scan
                 .positions
                 .iter()
                 .take(MOST_SCANNED)
                 .map(|(kind, pos)| (kind.rsplit(':').next().unwrap_or(kind).to_string(), *pos))
                 .collect();
+            let by = self
+                .scans_out
+                .iter()
+                .find(|(id, _)| *id == scan.id)
+                .map(|(_, event)| event.clone());
+            self.scans_out.retain(|(id, _)| *id != scan.id);
+            match by.as_deref() {
+                Some("scan_ore") => self.ores = found,
+                _ => self.scanned = found,
+            }
         }
 
         let Some(index) = self.target else { return };
@@ -1673,10 +1689,12 @@ impl Memory {
             .unwrap_or(true)
     }
 
-    /// Where the village's blocks of a kind are, from the last scan (`door`, `bell`).
+    /// Where the scanned blocks of a kind are, the village's (`door`, `bell`) and the ore's
+    /// (`_ore`), each from its own last scan.
     pub fn scanned<'a>(&'a self, kind: &'a str) -> impl Iterator<Item = BlockPos> + 'a {
         self.scanned
             .iter()
+            .chain(self.ores.iter())
             .filter(move |(k, _)| k.ends_with(kind))
             .map(|(_, p)| *p)
     }
@@ -2605,6 +2623,37 @@ mod tests {
             "a carpet it looked for and did not find is gone"
         );
         assert!(memory.has_fixture("glass_pane"));
+    }
+
+    #[test]
+    fn an_ore_scan_leaves_the_village_s_doors_and_bell_alone() {
+        let mut memory = Memory::default();
+        let answer = |id: u64, found: &[(&str, BlockPos)]| {
+            let mut seen = obs(vec![], vec![]);
+            seen.scans = vec![craftkit::world::Scan {
+                id,
+                counts: vec![],
+                positions: found.iter().map(|(k, p)| (k.to_string(), *p)).collect(),
+            }];
+            seen
+        };
+        memory.scans_out.push((5, "scan_village".to_string()));
+        memory.observe(
+            &answer(
+                5,
+                &[
+                    ("minecraft:oak_door", [60, 64, 60]),
+                    ("minecraft:bell", [61, 65, 60]),
+                ],
+            ),
+            0.5,
+        );
+        memory.scans_out.push((6, "scan_ore".to_string()));
+        memory.observe(&answer(6, &[("minecraft:iron_ore", [20, 40, 20])]), 0.6);
+
+        assert_eq!(memory.scanned("bell").count(), 1, "the village kept");
+        assert_eq!(memory.scanned("_ore").count(), 1);
+        assert!(memory.scans_out.is_empty());
     }
 
     #[test]

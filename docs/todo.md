@@ -503,6 +503,11 @@ because it can be built and tested without a game, and because the model layer i
     it finds is the home's (doors, lights, chests, the bed, windows, stairs, carpets, ladders,
     pots, work blocks) and what it does not find is gone; `scan` takes `*` suffix kinds; door
     and window events take the house they are in first. Was: once a day, adding only.
+  - **The other reads** (the review's J1; owner: "other reads/scans should be done more
+    frequently too"): the village is read every five minutes while they are near it, and its
+    scan and the ore's are kept apart; the entity pass (every second) and the surroundings
+    pass (daily, the house read on its own) were already right. Was: the village read once,
+    and a mining trip's ore scan wiped it.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
