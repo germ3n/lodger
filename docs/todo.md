@@ -543,6 +543,11 @@ because it can be built and tested without a game, and because the model layer i
     the useful keys grouped): the lodger offers eleven keys (the model, how scary, pacing,
     words) as `settings` (ABI 21); the host's settings screen shows them, Done writes them into
     the config and loads the mod again, fetching a new model size at once. Was: the file alone.
+  - **The settings page scrolls** (owner: "looks bad and i cant scroll it"): the rows sit in
+    a dark panel between the title and a footer of Done and Cancel; the mouse wheel scrolls
+    them, rows out of the panel hide and take no clicks, a thin bar shows where the list is,
+    the groups are dim headings (`ListLayout`, with its tests). Was: rows ran past the screen's
+    foot and Done sat over the last of them.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
