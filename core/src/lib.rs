@@ -132,6 +132,8 @@ impl Mod for Lodger {
             context: config.model.context,
             temperature: config.brain.temperature,
             seed: start_seed(init),
+            gpu_layers: (config.model.gpu_share.clamp(0.0, 1.0) * size.layers() as f64).round()
+                as u32,
         });
 
         let log_path = if init.config_dir.is_empty() {

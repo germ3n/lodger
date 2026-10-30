@@ -80,7 +80,8 @@ fn load_engine(settings: &Settings, rng: Arc<Mutex<Rng>>) -> Result<Engine, Stri
 
     let mut backend = LlamaBackend::init().map_err(|err| err.to_string())?;
     backend.void_logs();
-    let model = LlamaModel::load_from_file(&backend, path, &LlamaModelParams::default())
+    let params = LlamaModelParams::default().with_n_gpu_layers(settings.gpu_layers);
+    let model = LlamaModel::load_from_file(&backend, path, &params)
         .map_err(|err| format!("{}: {err}", path.display()))?;
     let model = Box::into_raw(Box::new(model));
     let model_ref: &'static LlamaModel = unsafe { &*model };
@@ -287,10 +288,16 @@ fn decode_tokens(
         return Err("context exceeded".to_string());
     }
 
-    let width = usize::try_from(ctx.n_batch()).unwrap_or(1).max(1);
+    // Chunks, with a rest between, so the GPU is not held for a whole situation at once.
+    let width = usize::try_from(ctx.n_batch())
+        .unwrap_or(1)
+        .clamp(1, super::DECODE_CHUNK);
     let mut offset = 0usize;
 
     while offset < tokens.len() {
+        if offset > 0 {
+            std::thread::sleep(super::DECODE_REST);
+        }
         let count = (tokens.len() - offset).min(width);
         let last = offset + count == tokens.len();
         batch.clear();
@@ -473,6 +480,7 @@ mod real {
                 context: 512,
                 temperature: 0.0,
                 seed: 1,
+                gpu_layers: 0,
             })
         })
     }

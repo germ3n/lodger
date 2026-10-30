@@ -43,7 +43,14 @@ pub struct Settings {
     pub temperature: f64,
     /// Where the draws start. Logged, so a run can be replayed.
     pub seed: u64,
+    /// The model's layers on the GPU; the rest run on the CPU.
+    pub gpu_layers: u32,
 }
+
+/// How the prompt is fed to the model: this many tokens at a time, with a rest between, so a
+/// long situation is not one burst of GPU work the game's frames wait behind.
+pub const DECODE_CHUNK: usize = 64;
+pub const DECODE_REST: std::time::Duration = std::time::Duration::from_millis(1);
 
 /// A small, fast generator for the draws (SplitMix64): no dependency, a few instructions a
 /// number, and the same sequence from the same seed on every machine, which a replay needs.
@@ -503,6 +510,7 @@ mod tests {
             context: 512,
             temperature: 0.0,
             seed: 1,
+            gpu_layers: 0,
         }
     }
 
@@ -670,6 +678,7 @@ mod tests {
             context: 512,
             temperature: 0.0,
             seed: 1,
+            gpu_layers: 0,
         });
         assert!(
             model.status_line().contains("not loaded yet"),

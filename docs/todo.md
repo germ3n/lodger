@@ -529,6 +529,11 @@ because it can be built and tested without a game, and because the model layer i
     torches taken down into their chest, one at a time), `door_held` (a door they open shuts
     again, one time in four; `used_door`, ABI 19) and `bed_turned` (`set_state`'s `@turn`).
     Batch 3 is done. Was: in the catalogue or not at all.
+  - **Half the GPU for the game** (the review's M2; owner: "limit it to like 50% gpu cuz it
+    makes my game stutter"): `model.gpu_share` (0.5) puts half the model's layers on the GPU and
+    half on the CPU, and the prompt is decoded in chunks of 64 tokens with a millisecond's rest
+    between; the old `model.gpu_layers` was never passed to llama.cpp, whose default put every
+    layer on the GPU. Was: the whole model on the GPU, one burst per question.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

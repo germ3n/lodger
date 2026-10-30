@@ -51,7 +51,7 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 | `model.threads` | `2` | Threads llama.cpp uses while scoring. More is faster and takes more from the game. |
 | `model.context` | `512` | The context window. The situation text plus one question and its longest choice must fit; the brain truncates the memory's lines to make sure. |
 | `model.idle_minutes` | `10` | Unloads the model after this long with no target online. Loading again takes a second or two. |
-| `model.gpu_layers` | `0` | Layers offloaded to Metal or Vulkan. `0` is CPU only, the default, so every server behaves alike. Changing it is an experiment, not a setting. |
+| `model.gpu_share` | `0.5` | The share of the model's layers run on the GPU (Metal, Vulkan), the rest on the CPU: `0` the CPU alone, `1` all of it. Half by default, so the game keeps half the GPU for its frames (owner, 2026-11-09: "limit it to like 50% gpu cuz it makes my game stutter"); the prompt is also decoded in chunks of 64 tokens with a millisecond's rest between, so no frame waits on one long burst. Until 2026-11-09 the old `model.gpu_layers` was never passed on and llama.cpp put every layer on the GPU. |
 
 ## Brain
 

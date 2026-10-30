@@ -166,6 +166,15 @@ impl ModelSize {
         }
     }
 
+    /// How many layers the model has: what `model.gpu_share` is a share of.
+    pub fn layers(self) -> u32 {
+        match self {
+            Self::Small => 24,
+            Self::Medium => 28,
+            Self::Large => 36,
+        }
+    }
+
     /// The file name under `config/lodger/models/`.
     pub fn file_name(self) -> &'static str {
         match self {
@@ -231,7 +240,9 @@ pub struct Model {
     pub threads: u32,
     pub context: u32,
     pub idle_minutes: u32,
-    pub gpu_layers: u32,
+    /// The share of the model's layers on the GPU: 0 is the CPU alone, 1 all of them. Half by
+    /// default, so the game's frames keep half the GPU (owner, 2026-11-09).
+    pub gpu_share: f64,
 }
 
 // Fractions are f64, not f32: a 0.4 written back to the player's file as 0.4000000059604645 is
@@ -327,7 +338,7 @@ impl Default for Model {
             threads: 2,
             context: 512,
             idle_minutes: 10,
-            gpu_layers: 0,
+            gpu_share: 0.5,
         }
     }
 }
