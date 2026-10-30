@@ -1,7 +1,12 @@
 # Config
 
 `config/lodger.json`, written with every default on first run. Every key is listed here; a key
-missing from the file takes its default, and an unknown key is logged and ignored. Keys under
+missing from the file takes its default, and an unknown key is logged and ignored. A value of
+the wrong type does not stop the mod: a whole number written with a point (`2.0`) is read as
+whole; text that reads as what the key wants (`"2"`, `"0.25"`, `"true"`, `"off"`) is taken as
+that; anything else leaves that key at its preset's value; each is logged as a warning naming
+the key. Only a file that is not JSON at all, or a value out of its bounds, refuses to load,
+with the reason in the log. Keys under
 `brain` and `stages` are read at each decision, so a change applies to the next one; the rest are
 read at world load.
 

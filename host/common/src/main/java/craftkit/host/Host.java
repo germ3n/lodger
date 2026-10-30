@@ -67,6 +67,9 @@ public final class Host {
 				for (String key : mod.unknownKeys()) {
 					LOGGER.warn("{}: unknown config key {}, ignored", mod.id(), key);
 				}
+				for (String warning : mod.warnings()) {
+					LOGGER.warn("{}: config: {}", mod.id(), warning);
+				}
 
 				if (mod.wroteConfig()) {
 					LOGGER.info("{}: wrote {} with every default", mod.id(), mod.manifest().map(Manifest::config).orElse("its config"));

@@ -36,7 +36,11 @@ public record Setting(String key, String label, String group, String kind, List<
 			case "number" -> {
 				double stepped = now.getAsDouble() + (up ? step : -step);
 				double kept = Math.max(min, Math.min(max, Math.round(stepped / step) * step));
-				yield new com.google.gson.JsonPrimitive(Math.round(kept * 1000) / 1000.0);
+				// A whole step keeps the number whole: `2`, never `2.0`, which a mind reading a
+				// count refuses, and the mod would not load (the dev client, 2026-11-09).
+				yield step == Math.rint(step)
+						? new com.google.gson.JsonPrimitive(Math.round(kept))
+						: new com.google.gson.JsonPrimitive(Math.round(kept * 1000) / 1000.0);
 			}
 			default -> {
 				int at = options.indexOf(now.getAsString());

@@ -212,6 +212,7 @@ impl Mod for Lodger {
         let reply = InitReply {
             config: serde_json::to_value(&config).map_err(|err| err.to_string())?,
             unknown: config.unknown_keys(),
+            warnings: config.warnings.clone(),
             settings: settings(&config),
             resources: vec![Resource {
                 id: "model".to_string(),

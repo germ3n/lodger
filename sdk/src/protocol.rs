@@ -65,6 +65,11 @@ pub struct InitReply {
     /// Keys the config file had that the mod does not know, for the host to log once.
     #[serde(default)]
     pub unknown: Vec<String>,
+    /// Values the config file had of the wrong type, each mended or left at its default, in
+    /// words for the host to log once (`brain.most_plans: invalid type ...; the default kept`).
+    /// ABI 22.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<String>,
     /// Files the mod needs that are not in its jar. The host fetches the missing ones before the
     /// game is playable: on a client, a screen over the title screen with a progress bar; on a
     /// dedicated server, at startup with progress in the log. See `docs/sdk.md`.

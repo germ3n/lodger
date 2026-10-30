@@ -548,6 +548,13 @@ because it can be built and tested without a game, and because the model layer i
     them, rows out of the panel hide and take no clicks, a thin bar shows where the list is,
     the groups are dim headings (`ListLayout`, with its tests). Was: rows ran past the screen's
     foot and Done sat over the last of them.
+  - **A config value of the wrong type no longer stops the mod** (the dev client: `2.0` for
+    `brain.most_plans`, written by the settings screen, refused the config and the mod with it,
+    so its settings button was gone; owner: "make that more robust when it comes to parsing"):
+    the settings screen writes whole steps whole; the mind reads `2.0` as `2`, takes text that
+    reads as the key's type, and leaves any other wrong value at the preset's, each named in a
+    warning the host logs (`InitReply.warnings`, ABI 22). Tests: the config's three, the
+    setting's whole step. Was: the first wrong type refused the whole file.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

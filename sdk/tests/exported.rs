@@ -49,6 +49,7 @@ impl Mod for Tiny {
                 settings: Vec::new(),
                 config: serde_json::json!({ "given": init.config, "own_dir": init.own_dir() }),
                 unknown: vec![],
+                warnings: Vec::new(),
                 resources: vec![],
             },
         ))

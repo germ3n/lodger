@@ -124,7 +124,10 @@ again for its new resources. ABI 21 (2026-11-09): `InitReply.settings`, the keys
 the host's settings screen (a button for each such mod on the title screen): each a key, a
 label, a group and a kind (`choice`, `toggle`, `number` with its range); Done writes the changes
 into the config file and initialises the mod again, and anything that leaves to fetch (a new
-model size) brings the preparing screen up.
+model size) brings the preparing screen up. ABI 22 (2026-11-10): `InitReply.warnings`, config
+values of the wrong type the mod mended or left at their defaults, in words, which the host logs
+once (`lodger: config: brain.most_plans: invalid type ...; the default kept`); the settings
+screen writes a number with a whole step as a whole number (`2`, never `2.0`).
 
 ## Resources
 

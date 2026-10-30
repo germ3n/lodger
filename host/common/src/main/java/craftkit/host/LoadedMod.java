@@ -33,6 +33,8 @@ public final class LoadedMod {
 	private final List<String> unknownKeys;
 	private final boolean wroteConfig;
 	private volatile List<Resource> resources;
+	/** Config values of the wrong type the mod mended or left at their defaults, in words. */
+	private volatile List<String> warnings = List.of();
 	/** The settings the mod offers on the settings screen. */
 	private volatile List<Setting> settings = List.of();
 	/** Where the mod was loaded from and reads its config, for {@link #reconfigure}. */
@@ -156,6 +158,7 @@ public final class LoadedMod {
 		made.gameDir = gameDir;
 		made.configDir = configDir;
 		made.settings = settingsOf(reply);
+		made.warnings = warningsOf(reply);
 
 		return made;
 	}
@@ -193,8 +196,27 @@ public final class LoadedMod {
 		}
 		resources = List.copyOf(fresh);
 		settings = settingsOf(reply);
+		warnings = warningsOf(reply);
+		for (String warning : warnings) {
+			Log.LOGGER.warn("{}: config: {}", manifest.get().id(), warning);
+		}
 
 		return "";
+	}
+
+	/** The reply's config warnings (ABI 22); none from a mod that sends none. */
+	static List<String> warningsOf(JsonObject reply) {
+		List<String> out = new ArrayList<>();
+		if (reply.has("warnings") && reply.get("warnings").isJsonArray()) {
+			reply.getAsJsonArray("warnings").forEach(w -> out.add(w.getAsString()));
+		}
+
+		return List.copyOf(out);
+	}
+
+	/** Config values the mod mended or left at their defaults, for the log. */
+	public List<String> warnings() {
+		return warnings;
 	}
 
 	private static List<Setting> settingsOf(JsonObject reply) {

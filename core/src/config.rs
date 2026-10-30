@@ -221,6 +221,10 @@ pub struct Config {
     /// Keys the schema does not know, kept so the body can log them. Never written back.
     #[serde(flatten, skip_serializing)]
     pub unknown: BTreeMap<String, serde_json::Value>,
+    /// Values of the wrong type, each mended or left at the preset's (`Config::mend`), for
+    /// the host to log. Never written back.
+    #[serde(skip)]
+    pub warnings: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -319,6 +323,7 @@ impl Default for Config {
             events: Events::default(),
             multiplayer: Multiplayer::default(),
             unknown: BTreeMap::new(),
+            warnings: Vec::new(),
         }
     }
 }
@@ -400,6 +405,100 @@ impl Default for Multiplayer {
     }
 }
 
+/// Numbers written whole with a point (`2.0`) read as whole numbers, so a count written by a
+/// settings screen or by hand that way still loads: `2.0` for `brain.most_plans` refused the
+/// whole config, and the mod with it (the dev client, 2026-11-09). A fraction keeps its point.
+fn whole_numbers(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Number(number) => {
+            if let Some(float) = number.as_f64().filter(|_| number.is_f64()) {
+                if float.fract() == 0.0 && float.abs() < 9.0e15 {
+                    *value = serde_json::Value::from(float as i64);
+                }
+            }
+        }
+        serde_json::Value::Array(items) => items.iter_mut().for_each(whole_numbers),
+        serde_json::Value::Object(map) => map.values_mut().for_each(whole_numbers),
+        _ => {}
+    }
+}
+
+/// Every value in a config file with its path of keys; a list is one value.
+fn collect_leaves(
+    value: &serde_json::Value,
+    path: &mut Vec<String>,
+    out: &mut Vec<(Vec<String>, serde_json::Value)>,
+) {
+    match value {
+        serde_json::Value::Object(map) => {
+            for (key, value) in map {
+                path.push(key.clone());
+                collect_leaves(value, path, out);
+                path.pop();
+            }
+        }
+        _ if !path.is_empty() => out.push((path.clone(), value.clone())),
+        _ => {}
+    }
+}
+
+/// `value` under its path of keys: `["brain", "most_plans"]` and `2` as `{"brain":{"most_plans":2}}`.
+fn nested(path: &[String], value: serde_json::Value) -> serde_json::Value {
+    path.iter().rev().fold(
+        value,
+        |inner, key| serde_json::json!({ key.clone(): inner }),
+    )
+}
+
+/// Sets the value at a path, or takes it out with `None`.
+fn set_at(root: &mut serde_json::Value, path: &[String], value: Option<serde_json::Value>) {
+    let Some((last, parents)) = path.split_last() else {
+        return;
+    };
+    let mut at = root;
+    for key in parents {
+        match at.get_mut(key) {
+            Some(next) => at = next,
+            None => return,
+        }
+    }
+    if let Some(map) = at.as_object_mut() {
+        match value {
+            Some(value) => {
+                map.insert(last.clone(), value);
+            }
+            None => {
+                map.remove(last);
+            }
+        }
+    }
+}
+
+/// What a value of the wrong type may have meant: text that reads as a number or as a yes or
+/// no, a number or a yes or no as text. None when it means nothing else.
+fn coerced(value: &serde_json::Value) -> Option<serde_json::Value> {
+    match value {
+        serde_json::Value::String(text) => {
+            let text = text.trim();
+            match text.to_lowercase().as_str() {
+                "true" | "yes" | "on" => return Some(serde_json::Value::Bool(true)),
+                "false" | "no" | "off" => return Some(serde_json::Value::Bool(false)),
+                _ => {}
+            }
+            if let Ok(whole) = text.parse::<i64>() {
+                return Some(serde_json::Value::from(whole));
+            }
+            text.parse::<f64>()
+                .ok()
+                .filter(|f| f.is_finite())
+                .map(serde_json::Value::from)
+        }
+        serde_json::Value::Number(number) => Some(serde_json::Value::String(number.to_string())),
+        serde_json::Value::Bool(yes) => Some(serde_json::Value::String(yes.to_string())),
+        _ => None,
+    }
+}
+
 impl Config {
     /// Reads the file's text. An empty text is the defaults, as a missing file is. The preset's
     /// values are laid under the file's: a key the file names keeps its value, the rest take
@@ -409,22 +508,75 @@ impl Config {
             return Ok(Self::default());
         }
 
-        let file: serde_json::Value =
+        let mut file: serde_json::Value =
             serde_json::from_str(text).map_err(|err| format!("config: {err}"))?;
+        whole_numbers(&mut file);
         let preset_name = file
             .get("preset")
             .and_then(|p| p.as_str())
             .unwrap_or("balanced");
         let preset = Preset::named(preset_name)
             .ok_or_else(|| "preset must be calm, balanced, intense or relentless".to_string())?;
-        let mut merged = serde_json::to_value(preset.config()).map_err(|err| err.to_string())?;
+        let base = serde_json::to_value(preset.config()).map_err(|err| err.to_string())?;
+        let mut merged = base.clone();
         merge_into(&mut merged, &file);
 
-        let config: Self =
-            serde_json::from_value(merged).map_err(|err| format!("config: {err}"))?;
+        let mut config: Self = match serde_json::from_value(merged) {
+            Ok(config) => config,
+            Err(_) => {
+                let (kept, warnings) = Self::mend(&base, &file);
+                let mut merged = base;
+                merge_into(&mut merged, &kept);
+                let mut config: Self =
+                    serde_json::from_value(merged).map_err(|err| format!("config: {err}"))?;
+                config.warnings = warnings;
+                config
+            }
+        };
         config.check()?;
+        config.warnings.sort();
 
         Ok(config)
+    }
+
+    /// The file with each value of the wrong type mended or left out, one key at a time over
+    /// the preset: text that reads as the number or the yes/no the key wants (`"2"`, `"true"`)
+    /// is taken as that, anything else falls back to the preset's value, with a warning naming
+    /// the key. One bad key no longer refuses the whole config, and the mod with it (owner,
+    /// 2026-11-09: "make that more robust when it comes to parsing").
+    fn mend(
+        base: &serde_json::Value,
+        file: &serde_json::Value,
+    ) -> (serde_json::Value, Vec<String>) {
+        let mut kept = file.clone();
+        let mut warnings = Vec::new();
+        let mut leaves = Vec::new();
+        collect_leaves(file, &mut Vec::new(), &mut leaves);
+        let reads = |path: &[String], value: &serde_json::Value| {
+            let mut one = base.clone();
+            merge_into(&mut one, &nested(path, value.clone()));
+            serde_json::from_value::<Self>(one).err()
+        };
+        for (path, value) in leaves {
+            let Some(err) = reads(&path, &value) else {
+                continue;
+            };
+            let key = path.join(".");
+            match coerced(&value).filter(|c| reads(&path, c).is_none()) {
+                Some(mended) => {
+                    warnings.push(format!("{key}: read {value} as {mended}"));
+                    set_at(&mut kept, &path, Some(mended));
+                }
+                None => {
+                    let reason = err.to_string();
+                    let reason = reason.split(" at line").next().unwrap_or(&reason);
+                    warnings.push(format!("{key}: {reason}; the default kept"));
+                    set_at(&mut kept, &path, None);
+                }
+            }
+        }
+
+        (kept, warnings)
     }
 
     /// The bounds a value must keep, with the reason beside each.
@@ -539,6 +691,78 @@ mod tests {
         let config = Config::parse(r#"{ "brain": { "colour": "red" } }"#).unwrap();
 
         assert!(config.unknown_keys().is_empty());
+    }
+
+    #[test]
+    fn a_whole_number_written_with_a_point_still_loads() {
+        let config = Config::parse(
+            r#"{ "brain": { "most_plans": 2.0, "text_temperature": 0.5 }, "model": { "gpu_share": 1.0 } }"#,
+        )
+        .unwrap();
+
+        assert_eq!(config.brain.most_plans, 2);
+        assert_eq!(config.model.gpu_share, 1.0);
+        assert_eq!(
+            config.brain.text_temperature, 0.5,
+            "a fraction keeps its point"
+        );
+    }
+
+    #[test]
+    fn a_value_of_the_wrong_type_falls_back_alone_with_a_warning() {
+        let config = Config::parse(
+            r#"{ "preset": "calm", "brain": { "most_plans": "lots", "plan_every": 30 },
+                 "events": { "chat": 3 } }"#,
+        )
+        .unwrap();
+        let calm = Config::parse(r#"{ "preset": "calm" }"#).unwrap();
+
+        assert_eq!(
+            config.brain.most_plans, calm.brain.most_plans,
+            "the preset's"
+        );
+        assert_eq!(config.events.chat, calm.events.chat);
+        assert_eq!(
+            config.brain.plan_every, 30,
+            "the good key beside it is kept"
+        );
+        assert_eq!(config.warnings.len(), 2, "{:?}", config.warnings);
+        assert!(
+            config.warnings[0].starts_with("brain.most_plans: invalid type"),
+            "{:?}",
+            config.warnings
+        );
+        assert!(
+            config.warnings[1].starts_with("events.chat: "),
+            "{:?}",
+            config.warnings
+        );
+        assert!(!config.to_json().contains("warnings"), "never written back");
+    }
+
+    #[test]
+    fn text_that_reads_as_the_type_is_taken_as_it() {
+        let config = Config::parse(
+            r#"{ "brain": { "most_plans": " 2 " }, "events": { "chat": "off" }, "model": { "gpu_share": "0.25" } }"#,
+        )
+        .unwrap();
+
+        assert_eq!(config.brain.most_plans, 2);
+        assert!(!config.events.chat);
+        assert_eq!(config.model.gpu_share, 0.25);
+        assert_eq!(
+            config.warnings.len(),
+            3,
+            "each mended key is named: {:?}",
+            config.warnings
+        );
+    }
+
+    #[test]
+    fn a_good_file_has_no_warnings() {
+        let config = Config::parse(r#"{ "brain": { "most_plans": 2 } }"#).unwrap();
+
+        assert!(config.warnings.is_empty());
     }
 
     #[test]

@@ -25,6 +25,15 @@ class SettingTest {
 	}
 
 	@Test
+	void a_whole_step_writes_a_whole_number() {
+		Setting plans = setting("{\"key\":\"brain.most_plans\",\"kind\":\"number\",\"min\":1,\"max\":4,\"step\":1,\"value\":3}");
+		assertEquals("2", plans.next(new JsonPrimitive(3), false).toString(), "a count, not 2.0");
+		assertEquals("{\"brain\":{\"most_plans\":4}}", plans.change(plans.next(new JsonPrimitive(3), true)).toString());
+		Setting share = setting("{\"key\":\"model.gpu_share\",\"kind\":\"number\",\"min\":0,\"max\":1,\"step\":0.1,\"value\":0.9}");
+		assertEquals("1.0", share.next(new JsonPrimitive(0.9), true).toString(), "a share stays a fraction");
+	}
+
+	@Test
 	void a_dotted_key_becomes_a_nested_change() {
 		Setting size = setting("{\"key\":\"model.size\",\"kind\":\"choice\",\"options\":[\"3b\"],\"value\":\"3b\"}");
 		assertEquals("{\"model\":{\"size\":\"0.5b\"}}", size.change(new JsonPrimitive("0.5b")).toString());
