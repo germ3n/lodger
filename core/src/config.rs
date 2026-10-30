@@ -141,6 +141,9 @@ pub enum ModelSize {
 }
 
 impl ModelSize {
+    /// Every size, smallest first: the preparing screen's choices.
+    pub const ALL: [ModelSize; 3] = [ModelSize::Small, ModelSize::Medium, ModelSize::Large];
+
     pub fn named(name: &str) -> Option<Self> {
         match name {
             "0.5b" => Some(Self::Small),

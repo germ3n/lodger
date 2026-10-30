@@ -32,7 +32,10 @@ public final class LoadedMod {
 	private final String sdk;
 	private final List<String> unknownKeys;
 	private final boolean wroteConfig;
-	private final List<Resource> resources;
+	private volatile List<Resource> resources;
+	/** Where the mod was loaded from and reads its config, for {@link #reconfigure}. */
+	private Path gameDir;
+	private Path configDir;
 
 	private LoadedMod(String jarId, Optional<Manifest> manifest, Optional<Native> library, String failure, String name, String version, String sdk, List<String> unknownKeys, boolean wroteConfig, List<Resource> resources) {
 		this.jarId = jarId;
@@ -145,9 +148,49 @@ public final class LoadedMod {
 			}
 		}
 
-		return new LoadedMod(jar.id(), Optional.of(manifest), Optional.of(library), "",
+		LoadedMod made = new LoadedMod(jar.id(), Optional.of(manifest), Optional.of(library), "",
 				info.get("name").getAsString(), info.get("version").getAsString(), info.get("sdk").getAsString(),
 				List.copyOf(unknown), wrote, List.copyOf(resources));
+		made.gameDir = gameDir;
+		made.configDir = configDir;
+
+		return made;
+	}
+
+	/**
+	 * A change to the mod's config, written to its file, and the mod initialised again with it:
+	 * its resources are what the new config asks for. Before any world is open alone (the
+	 * preparing screen's model choice). Answers an error, or the empty string.
+	 */
+	public synchronized String reconfigure(com.google.gson.JsonObject change) {
+		if (library.isEmpty() || manifest.isEmpty() || configDir == null) {
+			return "the mod is not loaded";
+		}
+		ConfigFile config = new ConfigFile(configDir.resolve(manifest.get().config()));
+		JsonObject reply;
+		try {
+			config.merge(change);
+			JsonObject init = new JsonObject();
+			init.addProperty("config", config.read());
+			init.addProperty("game_dir", gameDir.toAbsolutePath().toString());
+			init.addProperty("config_dir", configDir.toAbsolutePath().toString());
+			init.addProperty("id", manifest.get().id());
+			reply = JsonParser.parseString(library.get().init(init.toString())).getAsJsonObject();
+		} catch (IOException | RuntimeException e) {
+			return e.getMessage();
+		}
+		if (reply.has("error")) {
+			return reply.get("error").getAsString();
+		}
+		List<Resource> fresh = new ArrayList<>();
+		if (reply.has("resources")) {
+			for (JsonElement element : reply.getAsJsonArray("resources")) {
+				fresh.add(Resource.parse(element.getAsJsonObject(), gameDir));
+			}
+		}
+		resources = List.copyOf(fresh);
+
+		return "";
 	}
 
 	private static LoadedMod failed(String jarId, Optional<Manifest> manifest, String why) {

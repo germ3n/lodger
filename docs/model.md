@@ -38,6 +38,11 @@ measure item in the todo replaces them with numbers.
 
 ## Downloading
 
+**Picking the size on the screen** (owner, 2026-11-09): the preparing screen shows a button
+with the size it is about to fetch (`Qwen2.5 1.5B, 1117 MB (click for another)`); each press
+picks the next of the three, writes `model.size` into the config and starts that download
+instead. A model already there skips the screen; the settings page changes it then.
+
 The model is not in the jar. 491 MB is too much to ship with a mod and Hugging Face serves it
 well. The mind declares it as a *resource* in its `init` reply (the SDK's `Resource`: the URL
 from `model.url`, the path from `model.path` under the game directory, the `GGUF` magic, the

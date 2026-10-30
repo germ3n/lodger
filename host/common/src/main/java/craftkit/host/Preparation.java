@@ -40,6 +40,8 @@ public final class Preparation {
 	private final Object licenseWait = new Object();
 	private final AtomicReference<Progress> progress = new AtomicReference<>(new Progress(Phase.READY, "", 1, "", ""));
 	private final AtomicReference<Downloader> current = new AtomicReference<>();
+	/** The resource being fetched, and whose: for the screen's choice while it downloads. */
+	private final AtomicReference<PendingLicense> fetching = new AtomicReference<>();
 	private Thread thread;
 
 	/**
@@ -120,6 +122,43 @@ public final class Preparation {
 		thread.start();
 	}
 
+	/** The resource on screen, with its mod: the terms waiting, or the one being fetched. */
+	public Optional<PendingLicense> shown() {
+		PendingLicense pending = pendingLicense.get();
+
+		return Optional.ofNullable(pending != null ? pending : fetching.get());
+	}
+
+	/**
+	 * The screen's model choice: the running work stopped, the change written to the mod's
+	 * config and the mod initialised again with it, and the work started over for what it now
+	 * needs. Off the render thread.
+	 */
+	public void choose(LoadedMod mod, Resource.Choice choice) {
+		Thread switching = new Thread(() -> {
+			cancel();
+			Thread running = thread;
+			if (running != null) {
+				running.interrupt();
+				try {
+					running.join(3000);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
+				}
+			}
+			pendingLicense.set(null);
+			String error = mod.reconfigure(choice.config());
+			if (!error.isEmpty()) {
+				progress.set(new Progress(Phase.FAILED, mod.name(), 0, "", mod.id() + ": " + error));
+				return;
+			}
+			start();
+		}, "craftkit-choose");
+		switching.setDaemon(true);
+		switching.start();
+	}
+
 	/** Stops a running download; the screen's Quit button and the server's shutdown use it. */
 	public void cancel() {
 		Downloader downloader = current.get();
@@ -171,10 +210,12 @@ public final class Preparation {
 
 				Downloader downloader = new Downloader(resource);
 				current.set(downloader);
+				fetching.set(new PendingLicense(mod, resource));
 				Thread watcher = watch(downloader);
 				downloader.run();
 				watcher.interrupt();
 				current.set(null);
+				fetching.set(null);
 
 				if (downloader.state() != Downloader.State.DONE) {
 					progress.set(new Progress(Phase.FAILED, resource.title(), downloader.fraction(), "", mod.id() + ": " + resource.id() + ": " + downloader.error()));

@@ -117,7 +117,10 @@ added or swapped, the swapped one kept), answered by the `loot_touched` event. A
 door's other half with it; `@next` for the next value), and `set_block`'s `state` applied at
 last (`facing=north`), which the host had ignored. ABI 18 (2026-11-09): `grow`, bone meal as a player uses it, until
 the block is something else. ABI 19 (2026-11-09): the `used_door` event, and `set_state`'s
-`@turn` turning a bed round where it stands.
+`@turn` turning a bed round where it stands. ABI 20 (2026-11-09): a `Resource`'s `choices`, other forms of it
+the player may pick on the preparing screen, each a label and the change to the mod's config
+that picks it; the host merges the change into the mod's config file and initialises the mod
+again for its new resources.
 
 ## Resources
 

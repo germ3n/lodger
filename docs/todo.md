@@ -534,6 +534,11 @@ because it can be built and tested without a game, and because the model layer i
     half on the CPU, and the prompt is decoded in chunks of 64 tokens with a millisecond's rest
     between; the old `model.gpu_layers` was never passed to llama.cpp, whose default put every
     layer on the GPU. Was: the whole model on the GPU, one burst per question.
+  - **The model picked on the download screen** (the review's O1; owner: "I want to be able
+    to change the model on that screen"): the model resource offers the three sizes as
+    `choices` (ABI 20); the screen's button cycles them, and a pick writes `model.size` into
+    the config, initialises the mod again and fetches that one instead. Was: the size from
+    the config file alone.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

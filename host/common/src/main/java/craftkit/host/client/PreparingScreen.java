@@ -28,6 +28,8 @@ public final class PreparingScreen extends Screen {
 	private Button quit;
 	private Button accept;
 	private Button readTerms;
+	/** The resource's choices, when it has any: the next one on each press. */
+	private Button choice;
 
 	public PreparingScreen(Screen parent, Preparation preparation) {
 		super(Component.translatable("craftkit.preparing.title"));
@@ -58,6 +60,17 @@ public final class PreparingScreen extends Screen {
 				.bounds(this.width / 2 - 154, y + 24, 308, 20).build());
 		accept.visible = false;
 		readTerms.visible = false;
+		choice = addRenderableWidget(Button.builder(Component.empty(), button -> preparation.shown().ifPresent(shown -> {
+			java.util.List<craftkit.host.Resource.Choice> choices = shown.resource().choices();
+			int now = 0;
+			for (int i = 0; i < choices.size(); i++) {
+				if (choices.get(i).chosen()) {
+					now = i;
+				}
+			}
+			preparation.choose(shown.mod(), choices.get((now + 1) % choices.size()));
+		})).bounds(this.width / 2 - 154, y - 24, 308, 20).build());
+		choice.visible = false;
 	}
 
 	@Override
@@ -74,6 +87,10 @@ public final class PreparingScreen extends Screen {
 		accept.visible = license;
 		readTerms.visible = license;
 		retry.active = !license;
+		java.util.Optional<craftkit.host.Resource.Choice> chosen = preparation.shown()
+				.flatMap(shown -> shown.resource().choices().stream().filter(craftkit.host.Resource.Choice::chosen).findFirst());
+		choice.visible = chosen.isPresent();
+		chosen.ifPresent(c -> choice.setMessage(Component.translatable("craftkit.preparing.choice", c.label())));
 
 		if (progress.done()) {
 			Minecraft.getInstance().gui.setScreen(parent);

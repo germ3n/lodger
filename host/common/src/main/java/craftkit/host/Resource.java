@@ -10,7 +10,18 @@ import java.util.HexFormat;
  * {@code Resource}): the lodger's model, for one. Required resources gate play (see
  * {@link Preparation}); optional ones download in the background.
  */
-public record Resource(String id, String title, String url, Path path, long sizeHint, byte[] magic, String sha256, boolean required, License license) {
+public record Resource(String id, String title, String url, Path path, long sizeHint, byte[] magic, String sha256, boolean required, License license, java.util.List<Choice> choices) {
+	/**
+	 * Another form of the resource a player may pick on the preparing screen (the model's sizes):
+	 * a label, the change to the mod's config that picks it, and whether it is the one now.
+	 */
+	public record Choice(String label, com.google.gson.JsonObject config, boolean chosen) {
+	}
+
+	public Resource(String id, String title, String url, Path path, long sizeHint, byte[] magic, String sha256, boolean required, License license) {
+		this(id, title, url, path, sizeHint, magic, sha256, required, license, java.util.List.of());
+	}
+
 	/** The terms a resource comes under, shown before its first download. */
 	public record License(String name, String url, String text) {
 		public static final License NONE = new License("", "", "");
@@ -64,7 +75,20 @@ public record Resource(String id, String title, String url, Path path, long size
 				json.has("magic") ? json.get("magic").getAsString().getBytes(java.nio.charset.StandardCharsets.UTF_8) : new byte[0],
 				sha256.toLowerCase(java.util.Locale.ROOT),
 				!json.has("required") || json.get("required").getAsBoolean(),
-				License.parse(json.has("license") && json.get("license").isJsonObject() ? json.getAsJsonObject("license") : null));
+				License.parse(json.has("license") && json.get("license").isJsonObject() ? json.getAsJsonObject("license") : null),
+				choices(json));
+	}
+
+	private static java.util.List<Choice> choices(JsonObject json) {
+		java.util.List<Choice> out = new java.util.ArrayList<>();
+		if (json.has("choices") && json.get("choices").isJsonArray()) {
+			for (com.google.gson.JsonElement element : json.getAsJsonArray("choices")) {
+				JsonObject c = element.getAsJsonObject();
+				out.add(new Choice(c.get("label").getAsString(), c.has("config") && c.get("config").isJsonObject() ? c.getAsJsonObject("config") : new JsonObject(), c.has("chosen") && c.get("chosen").getAsBoolean()));
+			}
+		}
+
+		return java.util.List.copyOf(out);
 	}
 
 	private static String required(JsonObject json, String key) {

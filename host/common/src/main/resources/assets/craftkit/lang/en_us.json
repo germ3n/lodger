@@ -11,6 +11,7 @@
 	"craftkit.preparing.terms": "Before downloading %s",
 	"craftkit.preparing.accept": "I accept",
 	"craftkit.preparing.read": "Read the full terms in a browser",
+	"craftkit.preparing.choice": "%s (click for another)",
 	"key.craftkit.debug": "craftkit debug screen",
 	"craftkit.debug.title": "craftkit debug: %s",
 	"craftkit.debug.filter": "filter events",

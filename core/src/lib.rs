@@ -123,6 +123,20 @@ impl Mod for Lodger {
                         .to_string(),
                     text: MODEL_LICENSE_TEXT.to_string(),
                 },
+                // The other sizes, to pick on the preparing screen before the download
+                // (owner, 2026-11-09: "I want to be able to change the model on that screen").
+                choices: ModelSize::ALL
+                    .iter()
+                    .map(|other| craftkit::Choice {
+                        label: format!(
+                            "Qwen2.5 {}, {} MB",
+                            other.name().to_uppercase(),
+                            other.megabytes()
+                        ),
+                        config: serde_json::json!({ "model": { "size": other.name() } }),
+                        chosen: *other == size,
+                    })
+                    .collect(),
             }],
         };
 
@@ -260,6 +274,35 @@ mod tests {
 
         assert_eq!(reply["unknown"], serde_json::json!(["colour"]));
         assert_eq!(reply["config"]["model"]["threads"], 4);
+    }
+
+    #[test]
+    fn the_model_offers_every_size_to_pick_with_the_configured_one_chosen() {
+        let _turn = turn();
+        let init = |config: &str| Init {
+            config: config.to_string(),
+            game_dir: "/game".to_string(),
+            config_dir: "/game/config".to_string(),
+            id: "lodger".to_string(),
+        };
+        let reply = harness().init_with(&init(""));
+        let choices = reply["resources"][0]["choices"].as_array().unwrap().clone();
+        assert_eq!(choices.len(), 3);
+        let chosen: Vec<&serde_json::Value> =
+            choices.iter().filter(|c| c["chosen"] == true).collect();
+        assert_eq!(chosen.len(), 1);
+        assert_eq!(chosen[0]["config"]["model"]["size"], "1.5b", "the default");
+        assert!(choices[2]["label"].as_str().unwrap().contains("3B"));
+
+        let reply = harness().init_with(&init(r#"{ "model": { "size": "0.5b" } }"#));
+        assert_eq!(
+            reply["resources"][0]["choices"][0]["chosen"], true,
+            "the small one now"
+        );
+        assert!(reply["resources"][0]["path"]
+            .as_str()
+            .unwrap()
+            .ends_with("qwen2.5-0.5b-q4_k_m.gguf"));
     }
 
     #[test]

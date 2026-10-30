@@ -73,7 +73,7 @@ pub struct InitReply {
 }
 
 /// A file a mod needs the host to fetch: the lodger's model, for one.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     /// Names the resource in the log, the screen and `status`.
     pub id: String,
@@ -100,6 +100,23 @@ pub struct Resource {
     /// resource (the host remembers). Empty for a file with no terms to show.
     #[serde(default)]
     pub license: License,
+    /// Other forms of it the player may pick on the preparing screen (a smaller or a larger
+    /// model): each a label and the change to the mod's config that picks it; the host writes
+    /// the change and initialises the mod again. ABI 20.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub choices: Vec<Choice>,
+}
+
+/// One form of a resource the player may pick.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Choice {
+    /// What the screen shows: `Qwen2.5 1.5B, 1117 MB`.
+    pub label: String,
+    /// The change to the mod's config that picks it, merged into the file.
+    pub config: serde_json::Value,
+    /// Whether it is the one the config picks now.
+    pub chosen: bool,
 }
 
 /// A resource's terms: a name, where to read them in full, and a short text the screen shows.
