@@ -70,6 +70,29 @@ pub struct InitReply {
     /// dedicated server, at startup with progress in the log. See `docs/sdk.md`.
     #[serde(default)]
     pub resources: Vec<Resource>,
+    /// The settings the host's settings screen shows, a few of the config's keys made easy to
+    /// change; the rest stay in the file. ABI 21.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub settings: Vec<Setting>,
+}
+
+/// One setting on the host's settings screen: a config key, how to change it, its value now.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Setting {
+    /// The key, dotted for a nested one: `model.size`.
+    pub key: String,
+    pub label: String,
+    /// The heading it sits under: `Model`, `How scary`.
+    pub group: String,
+    /// `choice` (one of `options`), `toggle` (true or false) or `number` (`min` to `max` by
+    /// `step`).
+    pub kind: String,
+    pub options: Vec<String>,
+    pub min: f64,
+    pub max: f64,
+    pub step: f64,
+    pub value: serde_json::Value,
 }
 
 /// A file a mod needs the host to fetch: the lodger's model, for one.

@@ -120,7 +120,11 @@ the block is something else. ABI 19 (2026-11-09): the `used_door` event, and `se
 `@turn` turning a bed round where it stands. ABI 20 (2026-11-09): a `Resource`'s `choices`, other forms of it
 the player may pick on the preparing screen, each a label and the change to the mod's config
 that picks it; the host merges the change into the mod's config file and initialises the mod
-again for its new resources.
+again for its new resources. ABI 21 (2026-11-09): `InitReply.settings`, the keys a mod offers on
+the host's settings screen (a button for each such mod on the title screen): each a key, a
+label, a group and a kind (`choice`, `toggle`, `number` with its range); Done writes the changes
+into the config file and initialises the mod again, and anything that leaves to fetch (a new
+model size) brings the preparing screen up.
 
 ## Resources
 

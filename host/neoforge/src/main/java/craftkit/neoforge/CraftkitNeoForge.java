@@ -79,6 +79,9 @@ public final class CraftkitNeoForge {
 	}
 
 	private void screenInit(ScreenEvent.Init.Post event) {
+		for (net.minecraft.client.gui.components.Button button : craftkit.host.client.TitleGate.settingsButtons(event.getScreen())) {
+			event.addListener(button);
+		}
 		craftkit.host.client.TitleGate.onScreen(net.minecraft.client.Minecraft.getInstance(), event.getScreen());
 	}
 

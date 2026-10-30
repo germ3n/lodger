@@ -8,6 +8,13 @@ read at world load.
 The hard rules in [What it never does](good-to-know.md#what-it-never-does) are not here. There
 is no key that turns one off.
 
+
+**In the game:** the title screen's "Lodger settings" button (top left) changes the useful keys
+without opening the file: the model's size and GPU share; the preset and the event groups
+(sounds, glitches, chat, the figure); plans at once and the seconds between decisions; the
+words (generated or the bank) and their variety. Done writes them here and loads the lodger
+again; a new model size is fetched at once.
+
 ## General
 
 | Key | Default | What it changes |

@@ -539,6 +539,10 @@ because it can be built and tested without a game, and because the model layer i
     `choices` (ABI 20); the screen's button cycles them, and a pick writes `model.size` into
     the config, initialises the mod again and fetches that one instead. Was: the size from
     the config file alone.
+  - **A settings page** (the review's O1, the queue's item 5; owner: a title screen button,
+    the useful keys grouped): the lodger offers eleven keys (the model, how scary, pacing,
+    words) as `settings` (ABI 21); the host's settings screen shows them, Done writes them into
+    the config and loads the mod again, fetching a new model size at once. Was: the file alone.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

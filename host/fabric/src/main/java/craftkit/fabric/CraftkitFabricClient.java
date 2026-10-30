@@ -35,7 +35,10 @@ public final class CraftkitFabricClient implements ClientModInitializer {
 		ClientConfigurationNetworking.registerGlobalReceiver(Hello.TYPE, (payload, context) -> {
 			// Being registered is the whole message.
 		});
-		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> TitleGate.onScreen(client, screen));
+		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
+			net.fabricmc.fabric.api.client.screen.v1.Screens.getWidgets(screen).addAll(TitleGate.settingsButtons(screen));
+			TitleGate.onScreen(client, screen);
+		});
 		ClientPlayNetworking.registerGlobalReceiver(HintPayload.TYPE, (payload, context) -> Hints.show(payload));
 		ClientPlayNetworking.registerGlobalReceiver(DebugTellPayload.TYPE, (payload, context) -> DebugScreen.receive(payload));
 		DebugScreen.sendWith(ClientPlayNetworking::send);

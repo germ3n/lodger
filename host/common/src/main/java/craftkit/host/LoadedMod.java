@@ -33,6 +33,8 @@ public final class LoadedMod {
 	private final List<String> unknownKeys;
 	private final boolean wroteConfig;
 	private volatile List<Resource> resources;
+	/** The settings the mod offers on the settings screen. */
+	private volatile List<Setting> settings = List.of();
 	/** Where the mod was loaded from and reads its config, for {@link #reconfigure}. */
 	private Path gameDir;
 	private Path configDir;
@@ -153,6 +155,7 @@ public final class LoadedMod {
 				List.copyOf(unknown), wrote, List.copyOf(resources));
 		made.gameDir = gameDir;
 		made.configDir = configDir;
+		made.settings = settingsOf(reply);
 
 		return made;
 	}
@@ -189,8 +192,25 @@ public final class LoadedMod {
 			}
 		}
 		resources = List.copyOf(fresh);
+		settings = settingsOf(reply);
 
 		return "";
+	}
+
+	private static List<Setting> settingsOf(JsonObject reply) {
+		List<Setting> out = new ArrayList<>();
+		if (reply.has("settings") && reply.get("settings").isJsonArray()) {
+			for (JsonElement element : reply.getAsJsonArray("settings")) {
+				out.add(Setting.parse(element.getAsJsonObject()));
+			}
+		}
+
+		return List.copyOf(out);
+	}
+
+	/** What the settings screen shows for this mod; none for a mod that offers none. */
+	public List<Setting> settings() {
+		return settings;
 	}
 
 	private static LoadedMod failed(String jarId, Optional<Manifest> manifest, String why) {

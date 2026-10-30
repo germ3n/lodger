@@ -43,6 +43,114 @@ pub struct Lodger {
 }
 
 /// Which size the config asks for; `parse` already refused any other name.
+/// The settings the title screen's settings page shows (owner, 2026-11-09: "the useful
+/// ones, grouped"): the model, how scary, pacing, words. The rest stay in the file.
+fn settings(config: &Config) -> Vec<craftkit::Setting> {
+    use serde_json::json;
+    let choice =
+        |key: &str, label: &str, group: &str, options: &[&str], value: &str| craftkit::Setting {
+            key: key.to_string(),
+            label: label.to_string(),
+            group: group.to_string(),
+            kind: "choice".to_string(),
+            options: options.iter().map(|o| o.to_string()).collect(),
+            value: json!(value),
+            ..Default::default()
+        };
+    let toggle = |key: &str, label: &str, group: &str, value: bool| craftkit::Setting {
+        key: key.to_string(),
+        label: label.to_string(),
+        group: group.to_string(),
+        kind: "toggle".to_string(),
+        value: json!(value),
+        ..Default::default()
+    };
+    let number =
+        |key: &str, label: &str, group: &str, (min, max, step): (f64, f64, f64), value: f64| {
+            craftkit::Setting {
+                key: key.to_string(),
+                label: label.to_string(),
+                group: group.to_string(),
+                kind: "number".to_string(),
+                min,
+                max,
+                step,
+                value: json!(value),
+                ..Default::default()
+            }
+        };
+    vec![
+        choice(
+            "model.size",
+            "Model size",
+            "Model",
+            &["0.5b", "1.5b", "3b"],
+            &config.model.size,
+        ),
+        number(
+            "model.gpu_share",
+            "GPU share",
+            "Model",
+            (0.0, 1.0, 0.1),
+            config.model.gpu_share,
+        ),
+        choice(
+            "preset",
+            "Preset",
+            "How scary",
+            &["calm", "balanced", "intense", "relentless"],
+            &config.preset,
+        ),
+        toggle("events.sounds", "Sounds", "How scary", config.events.sounds),
+        toggle(
+            "events.glitches",
+            "Screen glitches",
+            "How scary",
+            config.events.glitches,
+        ),
+        toggle(
+            "events.chat",
+            "Chat in your name",
+            "How scary",
+            config.events.chat,
+        ),
+        toggle(
+            "events.figure",
+            "The figure",
+            "How scary",
+            config.events.figure,
+        ),
+        number(
+            "brain.most_plans",
+            "Plans at once",
+            "Pacing",
+            (1.0, 6.0, 1.0),
+            config.brain.most_plans as f64,
+        ),
+        number(
+            "brain.plan_every",
+            "Seconds between decisions",
+            "Pacing",
+            (15.0, 600.0, 15.0),
+            config.brain.plan_every as f64,
+        ),
+        choice(
+            "brain.text",
+            "Words",
+            "Words",
+            &["generate", "bank"],
+            &config.brain.text,
+        ),
+        number(
+            "brain.text_temperature",
+            "Word variety",
+            "Words",
+            (0.0, 1.5, 0.1),
+            config.brain.text_temperature,
+        ),
+    ]
+}
+
 fn model_size(config: &Config) -> ModelSize {
     ModelSize::named(&config.model.size).unwrap_or(ModelSize::Small)
 }
@@ -104,6 +212,7 @@ impl Mod for Lodger {
         let reply = InitReply {
             config: serde_json::to_value(&config).map_err(|err| err.to_string())?,
             unknown: config.unknown_keys(),
+            settings: settings(&config),
             resources: vec![Resource {
                 id: "model".to_string(),
                 title: format!(
@@ -274,6 +383,35 @@ mod tests {
 
         assert_eq!(reply["unknown"], serde_json::json!(["colour"]));
         assert_eq!(reply["config"]["model"]["threads"], 4);
+    }
+
+    #[test]
+    fn the_settings_page_gets_the_useful_keys_grouped_with_their_values() {
+        let _turn = turn();
+        let reply = harness().init_with(&Init {
+            config: r#"{ "preset": "calm", "model": { "gpu_share": 0.3 } }"#.to_string(),
+            game_dir: "/game".to_string(),
+            config_dir: "/game/config".to_string(),
+            id: "lodger".to_string(),
+        });
+        let settings = reply["settings"].as_array().unwrap();
+        let find = |key: &str| settings.iter().find(|s| s["key"] == key).unwrap().clone();
+        assert_eq!(find("preset")["value"], "calm");
+        assert_eq!(find("model.gpu_share")["value"], 0.3);
+        assert_eq!(find("model.size")["options"].as_array().unwrap().len(), 3);
+        assert_eq!(find("events.chat")["value"], false, "calm turns chat off");
+        let groups: std::collections::BTreeSet<&str> = settings
+            .iter()
+            .map(|s| s["group"].as_str().unwrap())
+            .collect();
+        assert_eq!(groups.len(), 4, "{groups:?}");
+        // Every key is one the config knows: a typo here would be a setting that does nothing.
+        let config = serde_json::to_value(crate::config::Config::default()).unwrap();
+        for setting in settings {
+            let key = setting["key"].as_str().unwrap();
+            let found = key.split('.').try_fold(&config, |at, part| at.get(part));
+            assert!(found.is_some(), "{key} is not a config key");
+        }
     }
 
     #[test]

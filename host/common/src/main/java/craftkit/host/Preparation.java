@@ -107,6 +107,11 @@ public final class Preparation {
 		return false;
 	}
 
+	/** The mods it prepares: the title screen's settings button lists those with settings. */
+	public List<LoadedMod> mods() {
+		return mods;
+	}
+
 	public Progress progress() {
 		return progress.get();
 	}

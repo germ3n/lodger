@@ -47,6 +47,11 @@ public final class ConfigFile {
 		Files.writeString(path, new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(config) + System.lineSeparator(), StandardCharsets.UTF_8);
 	}
 
+	/** A change merged into another, for gathering several before one write. */
+	public static void mergeInto(com.google.gson.JsonObject into, com.google.gson.JsonObject change) {
+		merge(into, change);
+	}
+
 	static void merge(com.google.gson.JsonObject into, com.google.gson.JsonObject change) {
 		for (String key : change.keySet()) {
 			com.google.gson.JsonElement value = change.get(key);
