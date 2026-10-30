@@ -116,7 +116,8 @@ fresh loot that the host applies as the loot is made (the game's own unpacking, 
 added or swapped, the swapped one kept), answered by the `loot_touched` event. ABI 17 (2026-11-09): `set_state` (one property of a block, a
 door's other half with it; `@next` for the next value), and `set_block`'s `state` applied at
 last (`facing=north`), which the host had ignored. ABI 18 (2026-11-09): `grow`, bone meal as a player uses it, until
-the block is something else.
+the block is something else. ABI 19 (2026-11-09): the `used_door` event, and `set_state`'s
+`@turn` turning a bed round where it stands.
 
 ## Resources
 

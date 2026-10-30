@@ -196,6 +196,10 @@ Blocks the target placed, moved within reach, never broken for good.
 | --- | --- | --- | --- |
 | `open_door` | 1 | A door or trapdoor of the home is opened while the target is away or asleep. | A home with a door. |
 | `close_door` | 1 | A door the target left open is closed. | An open door in the home. |
+| `furniture_shifted` | 2 | Their crafting table, furnace or barrel is one block over from where it stood, everything still in it; never a chest. | One of those of theirs. |
+| `one_room_dark` | 3 | Every torch within five blocks of one of the home's lights is gone in the morning, six at most, and they are in their chest, every one. | Lights in the home, a chest of theirs. |
+| `door_held` | 2 | A door they open shuts again a moment later, as if held, one time in four; never from the menu. | The target opening a door. |
+| `bed_turned` | 3 | Their bed is turned round where it stands, the head where the foot was. | A bed. |
 | `door_hinge` | 3 | A door of the house they are in, theirs first, hangs on the other side of its frame (`set_state`, both halves). | A door. |
 | `window_tap` | 2 | Three taps on a window pane from outside, at night. | A window and night. |
 | `carpet_shift` | 2 | The carpets in a room are one block over. | 3 or more carpets in a room. |
@@ -205,7 +209,7 @@ Blocks the target placed, moved within reach, never broken for good.
 | `path_worn` | 3 | A line of dirt path from the door toward the lodger's place, as if walked a hundred times. | Grass between the door and the spot. |
 | `cairn` | 3 | A small stack of cobblestone at the end of the target's route, from the lodger's own digging. | A route and held stone. |
 | `hole` | 3 | A one-block hole three deep at the lodger's place, with a torch at the bottom. | A spot on natural ground. |
-| `alcove` | 4 | A one-block alcove dug into natural stone behind a wall of the house, hidden, with a torch in it and whatever the lodger holds. Found only by someone who looks. | A house wall against natural stone. |
+| `alcove` | 4 | One block of natural stone behind a wall of the house, away from it, is hollow: a torch in it, and the thing it took from them if it holds one. Only natural stone; the one dig beside what they built (owner, 2026-11-09). | A wall of the house. |
 | `backfill` | 3 | Up to five of the holes they dug by the house (natural ground within 16 blocks, newest first) are filled in again with dirt or stone it dug itself, never more than it holds. | A hole of theirs near the home, something dug to fill it. |
 | `sapling` | 2 | A sapling from a chest is planted at the spot. | A sapling in a chest and a spot on grass. |
 | `tree_grown` | 3 | The sapling by the house is a tree in the morning: bone meal from their chest (three at most), spent only if it grew. | A sapling around the home, bone meal in a chest of theirs. |

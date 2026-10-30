@@ -59,6 +59,7 @@ pub fn check(
         crate::events::Action::Answers
             | crate::events::Action::ChestAnswers
             | crate::events::Action::LootGift
+            | crate::events::Action::DoorHeld
     );
     if let Some(last) = memory.recent(1).next() {
         if last.event == event.id && last.ok && !answers {

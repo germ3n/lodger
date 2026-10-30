@@ -91,6 +91,8 @@ jar at the end of the session and left at the title screen.
    2 to 4 minutes with the fog edge pulsing, out over 30 to 40 s, starting while they face away
    or are indoors), and they may stack; ask whether `fog_close` and `red_rain` move onto the
    real fog. Then `village_abandoned`, then the rest of the catalogue.
+   **After the event review** (owner, 2026-11-09): a bug check pass over every module and an
+   optimization run over every per-tick path.
 2. **A dev stay with the real model:** the 1.5B is in the dev client's config folder and the
    default now; read `decisions.log` for `brain=model`, the reactions and the written lines.
 3. **Calibration round two** by [round one](calibration/round-1.md)'s list: the first

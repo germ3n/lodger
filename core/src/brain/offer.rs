@@ -46,6 +46,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             }
         }),
         Need::Ladder => crate::brain::act::ladder_column(memory).is_some(),
+        // `door_held` starts from the door they open (`Brain::consider_held`), never the menu.
+        Need::DoorUsed => false,
         Need::Hole => {
             !memory.holes.is_empty() && crate::brain::act::FILL.iter().any(|b| memory.stored(b) > 0)
         }

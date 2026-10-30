@@ -95,7 +95,7 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   shifted one block. It never opens a wall, never touches anything in view, and never fires
   anything that explodes: a lever with TNT within 16 blocks of what it powers is not a lever to
   the lodger. What it does dig is what a player digs: natural stone, dirt and ore, one block at a
-  time at a player's pace, never within 8 blocks of anything placed (checked on every command, the debug screen's Fire too) and never into a cave, water
+  time at a player's pace, never within 8 blocks of anything placed (checked on every command, the debug screen's Fire too) but `alcove`, which may take one block of natural stone from behind a house wall (owner, 2026-11-09) and never into a cave, water
   or lava it can see coming (see [Like a player](entity.md#like-a-player)).
 - **What it takes is the very thing it gives back.** The host keeps the taken stack with the
   world, enchantments, wear and name and all (until 2026-11-09 a taken enchanted tool came

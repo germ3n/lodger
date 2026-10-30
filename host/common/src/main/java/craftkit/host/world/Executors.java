@@ -1132,6 +1132,23 @@ public final class Executors {
 		BlockState state = level.getBlockState(pos);
 		String property = command.get("property").getAsString();
 		String value = command.get("value").getAsString();
+		// A bed turned round where it stands: its two halves swap, facing the other way, both
+		// set before either is checked, so it never breaks half way.
+		if (value.equals("@turn") && state.getBlock() instanceof net.minecraft.world.level.block.BedBlock) {
+			Direction facing = state.getValue(net.minecraft.world.level.block.BedBlock.FACING);
+			boolean isHead = state.getValue(net.minecraft.world.level.block.BedBlock.PART) == net.minecraft.world.level.block.state.properties.BedPart.HEAD;
+			BlockPos head = isHead ? pos : pos.relative(facing);
+			BlockPos foot = isHead ? pos.relative(facing.getOpposite()) : pos;
+			BlockState headState = level.getBlockState(head);
+			BlockState footState = level.getBlockState(foot);
+			if (!(headState.getBlock() instanceof net.minecraft.world.level.block.BedBlock) || !(footState.getBlock() instanceof net.minecraft.world.level.block.BedBlock)) {
+				return report(id, false, "not a whole bed");
+			}
+			Direction turned = facing.getOpposite();
+			level.setBlock(foot, headState.setValue(net.minecraft.world.level.block.BedBlock.FACING, turned), Block.UPDATE_CLIENTS);
+			level.setBlock(head, footState.setValue(net.minecraft.world.level.block.BedBlock.FACING, turned), Block.UPDATE_CLIENTS);
+			return report(id, true, "");
+		}
 		BlockState changed = withState(state, property + "=" + value);
 		if (changed == state) {
 			return report(id, false, "the block there has no " + property + " to change");

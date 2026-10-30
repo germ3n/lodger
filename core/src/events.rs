@@ -38,6 +38,8 @@ pub enum Need {
     Ladder,
     /// A hole the target dug near the home, and something it dug to fill it with.
     Hole,
+    /// The target just used a door: met only by that, never on the menu.
+    DoorUsed,
     /// A furnace the target used.
     Furnace,
     /// A furnace, and a chest with something to smelt and something to burn.
@@ -145,6 +147,7 @@ impl Need {
                 | Need::Heard
                 | Need::JustOpened
                 | Need::LootOpened
+                | Need::DoorUsed
                 | Need::Night
                 | Need::Day
                 | Need::Dawn
@@ -180,6 +183,7 @@ impl Need {
             Need::Plant(kind) => format!("no {kind} around the home"),
             Need::Ladder => "no ladder of four rungs".to_string(),
             Need::Hole => "no hole of theirs near the home, or nothing dug to fill it".to_string(),
+            Need::DoorUsed => "happens only as they open a door".to_string(),
             Need::Furnace => "no furnace used".to_string(),
             Need::Smeltable => "nothing to smelt with fuel".to_string(),
             Need::FurnaceOutput => "nothing finished in the furnace".to_string(),
@@ -391,6 +395,16 @@ pub enum Action {
     TreeGrown,
     /// A hole they dug near the house filled in again.
     Backfill,
+    /// A hollow dug into the stone behind a wall of the house, a torch and its things in it.
+    Alcove,
+    /// A work block of theirs one block over, contents and all.
+    ShiftFurniture,
+    /// Every torch of one room taken down and put in their chest.
+    RoomDark,
+    /// The door they open shuts again a moment later.
+    DoorHeld,
+    /// Their bed turned round where it stands.
+    BedTurned,
     /// An answer to what the target just typed, in their name, to them alone.
     Answers,
     /// A boat or minecart moved to the far side of the water, or its middle.
@@ -1312,6 +1326,61 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Backfill,
+        false,
+    ),
+    row(
+        "alcove",
+        4,
+        5,
+        &[Wall, TargetAwayOrAsleep],
+        4.0,
+        1,
+        Full,
+        Action::Alcove,
+        false,
+    ),
+    row(
+        "furniture_shifted",
+        2,
+        5,
+        &[Home, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Full,
+        Action::ShiftFurniture,
+        false,
+    ),
+    row(
+        "one_room_dark",
+        3,
+        5,
+        &[Light, UsedContainer, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::RoomDark,
+        false,
+    ),
+    row(
+        "door_held",
+        2,
+        5,
+        &[DoorUsed],
+        0.5,
+        6,
+        Half,
+        Action::DoorHeld,
+        true,
+    ),
+    row(
+        "bed_turned",
+        3,
+        5,
+        &[Bed, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::BedTurned,
         false,
     ),
     row(
@@ -2519,6 +2588,11 @@ impl Event {
             "pumpkin_face" => "carve a pumpkin to face the door",
             "tree_grown" => "grow the sapling by the house into a tree",
             "backfill" => "fill in a hole they dug by the house",
+            "alcove" => "dig a hollow behind a wall of the house",
+            "furniture_shifted" => "move a work block of theirs one block over",
+            "one_room_dark" => "take down every torch in one room",
+            "door_held" => "hold the door shut a moment as they open it",
+            "bed_turned" => "turn their bed round",
             "hostiles_stare" => "have the monsters stand and stare at them all night",
             "answers_you" => "answer what they typed",
             "stairs_turned" => "turn a stair block another way",

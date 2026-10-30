@@ -302,6 +302,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::PlateLaid => memory.used_container().map(|c| c.pos),
         Action::ToggleDoor
         | Action::DoorHinge
+        | Action::DoorHeld
         | Action::Wake
         | Action::PathWorn
         | Action::KillSign => home.and_then(|h| pick(&h.doors, rng)),
@@ -355,6 +356,31 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             .find(|(id, _)| id.ends_with("_sapling"))
             .map(|(_, p)| *p),
         Action::Backfill => memory.holes.last().map(|(p, _)| *p),
+        Action::Alcove => pick_ref(
+            memory
+                .walls
+                .iter()
+                .map(|(p, _)| *p)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            rng,
+        ),
+        // A crafting table, a furnace or a barrel of theirs: never a chest, which may be one
+        // half of two.
+        Action::ShiftFurniture => memory
+            .fixtures("crafting_table")
+            .next()
+            .map(|f| f.pos)
+            .or_else(|| memory.furnace().map(|f| f.pos))
+            .or_else(|| {
+                memory
+                    .containers
+                    .iter()
+                    .find(|c| c.theirs() && c.kind.ends_with("barrel"))
+                    .map(|c| c.pos)
+            }),
+        Action::RoomDark => home.and_then(|h| pick(&h.lights, rng)),
+        Action::BedTurned => home.and_then(|h| h.bed),
         Action::FlowersPotted => memory.fixtures("flower_pot").next().map(|f| f.pos),
         Action::PumpkinFace => memory
             .plants
@@ -511,6 +537,16 @@ pub fn spots(command: &Command) -> Vec<BlockPos> {
         _ => vec![],
     }
 }
+
+/// What an alcove may be dug into: natural stone, never dirt, never anything placed.
+pub const STONE: &[&str] = &[
+    "minecraft:stone",
+    "minecraft:deepslate",
+    "minecraft:andesite",
+    "minecraft:diorite",
+    "minecraft:granite",
+    "minecraft:tuff",
+];
 
 /// What it fills a hole with, from what it dug: the blocks a player's hole held.
 pub const FILL: &[&str] = &["minecraft:dirt", "minecraft:cobblestone", "minecraft:stone"];
@@ -1135,6 +1171,138 @@ pub fn commands(
                 })
                 .collect()
         }
+        // One block of natural stone behind the wall, away from the house: a torch in it, and
+        // what it holds of theirs if anything. The one dig beside what they built (owner,
+        // 2026-11-09), and only into stone.
+        Action::Alcove => match (pos, memory.home.as_ref()) {
+            (Some(wall), Some(home)) => {
+                let (dx, dz) = (wall[0] - home.center[0], wall[2] - home.center[2]);
+                let out = if dx.abs() >= dz.abs() {
+                    [dx.signum(), 0]
+                } else {
+                    [0, dz.signum()]
+                };
+                let hollow = [wall[0] + out[0], wall[1], wall[2] + out[1]];
+                let mut made = vec![
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: hollow,
+                            block: "minecraft:air".to_string(),
+                            state: String::new(),
+                            replace: STONE.iter().map(|b| b.to_string()).collect(),
+                            settle: 0,
+                            wall: String::new(),
+                            rest: false,
+                            only: true,
+                        },
+                        0,
+                    ),
+                    (torch(ids, hollow, 0), 5),
+                ];
+                if let Some(held) = &memory.held {
+                    made.push((
+                        Command::DropItem {
+                            id: ids(),
+                            pos: block_center(hollow),
+                            item: held.item.clone(),
+                            kept: "held".to_string(),
+                        },
+                        8,
+                    ));
+                }
+                made
+            }
+            _ => vec![],
+        },
+        Action::ShiftFurniture => pos
+            .map(|p| {
+                let way = [[1, 0], [-1, 0], [0, 1], [0, -1]][seed % 4];
+                vec![(
+                    Command::MoveBlock {
+                        id: ids(),
+                        from: p,
+                        to: [p[0] + way[0], p[1], p[2] + way[1]],
+                        around: 1,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // Each torch within five blocks of the one picked taken down, and at once put in their
+        // chest: a failure stops the rest, and no torch is ever lost between the two.
+        Action::RoomDark => match (pos, memory.used_container(), memory.home.as_ref()) {
+            (Some(spot), Some(chest), Some(home)) => home
+                .lights
+                .iter()
+                .filter(|l| distance(**l, spot) <= 5.0)
+                .take(6)
+                .enumerate()
+                .flat_map(|(i, light)| {
+                    [
+                        (
+                            Command::SetBlock {
+                                id: ids(),
+                                pos: *light,
+                                block: "minecraft:air".to_string(),
+                                state: String::new(),
+                                replace: vec![
+                                    "minecraft:torch".to_string(),
+                                    "minecraft:wall_torch".to_string(),
+                                ],
+                                settle: 0,
+                                wall: String::new(),
+                                rest: false,
+                                only: true,
+                            },
+                            i as u64 * 2,
+                        ),
+                        (
+                            Command::PutItem {
+                                id: ids(),
+                                into: chest.pos,
+                                slot: None,
+                                item: ItemStack {
+                                    id: "minecraft:torch".to_string(),
+                                    count: 1,
+                                    slot: 0,
+                                },
+                                kept: String::new(),
+                                wear: 0,
+                                name: String::new(),
+                            },
+                            i as u64 * 2 + 1,
+                        ),
+                    ]
+                })
+                .collect(),
+            _ => vec![],
+        },
+        // The door they just opened shuts again, a moment later.
+        Action::DoorHeld => pos
+            .map(|door| {
+                vec![(
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: door,
+                    },
+                    3,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::BedTurned => pos
+            .map(|bed| {
+                vec![(
+                    Command::SetState {
+                        id: ids(),
+                        pos: bed,
+                        property: "facing".to_string(),
+                        value: "@turn".to_string(),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::DoorHinge => pos
             .map(|door| {
                 vec![(
@@ -3849,6 +4017,73 @@ mod tests {
             "{:?}",
             made[0].0
         );
+    }
+
+    #[test]
+    fn an_alcove_is_stone_only_and_the_room_goes_dark_a_torch_at_a_time_into_the_chest() {
+        let mut memory = rich_memory();
+        memory.held = Some(crate::memory::Held {
+            item: stack("minecraft:iron_pickaxe", 1, 0),
+            from: [2, 64, 0],
+            slot: 4,
+            ..Default::default()
+        });
+        let now = Now::default();
+        let alcove = find("alcove").unwrap();
+        let wall = memory.walls[0].0;
+        let made = commands(alcove, Some(wall), &memory, &mut ids(), &now, None);
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { block, only: true, replace, pos, .. }
+                if block == "minecraft:air" && replace.iter().all(|r| STONE.contains(&r.as_str())) && *pos != wall),
+            "behind the wall, stone only: {:?}",
+            made[0].0
+        );
+        assert!(
+            matches!(&made[1].0, Command::SetBlock { block, .. } if block == "minecraft:torch")
+        );
+        assert!(matches!(&made[2].0, Command::DropItem { kept, .. } if kept == "held"));
+
+        let mut memory = rich_memory();
+        memory.home.as_mut().unwrap().lights = vec![[1, 65, 1], [2, 65, 2], [30, 65, 30]];
+        let dark = find("one_room_dark").unwrap();
+        let made = commands(dark, Some([1, 65, 1]), &memory, &mut ids(), &now, None);
+        assert_eq!(
+            made.len(),
+            4,
+            "the two near, each taken then put: not the far one"
+        );
+        for pair in made.chunks(2) {
+            assert!(
+                matches!(&pair[0].0, Command::SetBlock { block, .. } if block == "minecraft:air")
+            );
+            assert!(
+                matches!(&pair[1].0, Command::PutItem { item, .. } if item.id == "minecraft:torch" && item.count == 1)
+            );
+            assert_eq!(
+                pair[1].1,
+                pair[0].1 + 1,
+                "put at once after its torch came down"
+            );
+        }
+
+        let turn = commands(
+            find("bed_turned").unwrap(),
+            Some([0, 64, 0]),
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(matches!(&turn[0].0, Command::SetState { value, .. } if value == "@turn"));
+        let held = commands(
+            find("door_held").unwrap(),
+            Some([3, 64, 0]),
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(matches!(&held[0], (Command::ToggleBlock { pos, .. }, 3) if *pos == [3, 64, 0]));
     }
 
     #[test]

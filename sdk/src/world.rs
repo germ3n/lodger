@@ -202,6 +202,8 @@ pub enum EventKind {
     /// A chest's fresh loot got the mod's armed offering (`arm_loot`): `detail` is the item
     /// placed, empty for an offering spent with nothing to give.
     LootTouched,
+    /// The player opened or closed a door: `pos` is the door.
+    UsedDoor,
     ChangedDimension,
     /// Hit an entity; `detail` is its kind, `pos` where it stood.
     Hit,
@@ -541,7 +543,8 @@ pub enum Command {
         tries: u32,
     },
     /// Change one property of the block at `pos` (`hinge` to `right`, or `@next` for the next
-    /// value); a door's other half changes with it. ABI 17.
+    /// value); a door's other half changes with it. ABI 17. `@turn` on a bed turns it round
+    /// where it stands, both halves at once. ABI 19.
     SetState {
         id: u64,
         pos: BlockPos,

@@ -192,6 +192,9 @@ pub const REPLY_CHANCE_ABOUT: f64 = 0.6;
 pub const REPLY_CHANCE_OTHER: f64 = 0.15;
 pub const REPLIES_A_DAY: usize = 3;
 
+/// How likely a door they open shuts again a moment later (`door_held`).
+pub const HELD_CHANCE: f64 = 0.25;
+
 /// How likely another chest answers the one they open (`chest_answers`).
 pub const ECHO_CHANCE: f64 = 0.3;
 
@@ -537,6 +540,11 @@ impl Brain {
             }
         }
 
+        // A door they open: now and then it shuts again a moment later.
+        if let Some(door) = memory.door_used_now.take() {
+            commands.extend(self.consider_held(door, now, day, memory, arc, config, log));
+        }
+
         // A chest of theirs opened: perhaps another closes in the house at the same moment.
         if memory.opened_now.is_some() {
             commands.extend(self.consider_echo(now, day, memory, arc, config, log));
@@ -772,10 +780,12 @@ impl Brain {
         };
         // Digging near what they built is refused whoever asked, the debug screen's Fire too:
         // the host keeps a placed block itself from being replaced, but not the ground under it.
-        if let Some(dug) = made
-            .iter()
-            .find_map(|(command, _)| act::dug(command).filter(|p| !act::clear_of_built(memory, *p)))
-        {
+        // `alcove` alone digs beside what they built: one block of natural stone (owner,
+        // 2026-11-09), the host refusing anything else.
+        let digs_near = event.id != "alcove";
+        if let Some(dug) = made.iter().find_map(|(command, _)| {
+            act::dug(command).filter(|p| digs_near && !act::clear_of_built(memory, *p))
+        }) {
             let why = "too near what they built";
             log.note(&format!(
                 "{} would dig at {}: {why}",
@@ -994,6 +1004,42 @@ impl Brain {
             item,
             kept,
         })
+    }
+
+    /// Whether the door they just used shuts again (`door_held`): the row's rules and a
+    /// chance of [`HELD_CHANCE`].
+    #[allow(clippy::too_many_arguments)]
+    fn consider_held(
+        &mut self,
+        door: BlockPos,
+        now: &Now,
+        day: f32,
+        memory: &mut Memory,
+        arc: &Arc,
+        config: &Config,
+        log: &mut log::Log,
+    ) -> Vec<Command> {
+        let Some(event) = events::find("door_held") else {
+            return Vec::new();
+        };
+        if !offer::switched_on(event, config)
+            || rules::check(event, None, memory, arc.stage, day, config).is_err()
+            || self.rng.next_f64() >= HELD_CHANCE
+        {
+            return Vec::new();
+        }
+        let mut ids = || self.id();
+        let made = act::commands(event, Some(door), memory, &mut ids, now, None);
+        memory.record(event.id, Some(door), day, true, "");
+        log.acted(event.id, Some(door), made.len());
+        for (command, later) in made {
+            self.later.push(Later {
+                at_tick: now.tick + later,
+                command,
+            });
+        }
+
+        Vec::new()
     }
 
     /// Whether another chest of the house answers the one the target just opened: the row's
@@ -1850,7 +1896,7 @@ impl Brain {
                 if let Some(was) = report
                     .reason
                     .strip_prefix("replaced ")
-                    .filter(|_| report.done)
+                    .filter(|_| report.done && pending.event != "one_room_dark")
                 {
                     let held = if was == "minecraft:grass_block" {
                         "minecraft:dirt"
@@ -1864,7 +1910,9 @@ impl Brain {
                     act::took(memory, pending.pos);
                 }
                 if report.done
-                    && (pending.event == "return_taken" || pending.event == "place_taken")
+                    && (pending.event == "return_taken"
+                        || pending.event == "place_taken"
+                        || pending.event == "alcove")
                 {
                     memory.held = None;
                 }
@@ -3523,6 +3571,80 @@ mod tests {
             None,
             "not before stage two"
         );
+    }
+
+    #[test]
+    fn an_alcove_may_dig_beside_their_wall_where_nothing_else_may() {
+        let config = Config::default();
+        let mut memory = home_memory();
+        memory
+            .walls
+            .push(([4, 64, 0], "minecraft:oak_planks".to_string()));
+        memory.placed.push([4, 64, 0]);
+        let mut arc = Arc {
+            stage: 4,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        let id = brain.next_plan_id();
+        brain.plans.push(Plan {
+            id,
+            event: "alcove".to_string(),
+            pos: Some([4, 64, 0]),
+            until_tick: 24_000,
+            forced: true,
+            ..Plan::default()
+        });
+        let sent = brain.tick(
+            &Now {
+                tick: 20,
+                ..Now::default()
+            },
+            0.0,
+            &mut memory,
+            &mut arc,
+            &config,
+            &mut log,
+            None,
+        );
+        assert!(
+            sent.iter().any(|c| act::dug(c).is_some()),
+            "dug beside the wall: {sent:?}"
+        );
+    }
+
+    #[test]
+    fn a_door_they_open_now_and_then_shuts_again_a_moment_later() {
+        let mut config = Config::default();
+        config.events.cooldown_scale = 0.0;
+        config.brain.plan_every = 100_000;
+        let mut memory = home_memory();
+        memory.last.online = true;
+        let mut arc = Arc {
+            stage: 2,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(3);
+        let mut shut = 0;
+        for i in 0..40u64 {
+            memory.door_used_now = Some([3, 64, 0]);
+            let now = Now {
+                tick: 20 + i * 40,
+                ..Now::default()
+            };
+            brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+            shut += brain
+                .later
+                .iter()
+                .filter(
+                    |l| matches!(l.command, Command::ToggleBlock { pos, .. } if pos == [3, 64, 0]),
+                )
+                .count();
+            brain.later.clear();
+        }
+        assert!(shut > 0 && shut < 30, "now and then: {shut} of forty");
     }
 
     #[test]

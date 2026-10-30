@@ -138,6 +138,9 @@ public final class Senses {
 			craftkit.host.Log.LOGGER.info("sense: used {} at {} ({})", blockId(player.level().getBlockState(pos)), pos.toShortString(), entity == null ? "no block entity" : entity.getClass().getSimpleName());
 		}
 
+		if (player.level().getBlockState(pos).getBlock() instanceof net.minecraft.world.level.block.DoorBlock) {
+			event(player, "used_door", pos, blockId(player.level().getBlockState(pos)), null);
+		}
 		if (entity instanceof Container container) {
 			openedAt.put(player.getUUID(), pos.immutable());
 			event(player, "opened_container", pos, blockId(player.level().getBlockState(pos)), contents(container));

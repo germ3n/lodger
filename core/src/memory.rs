@@ -339,6 +339,10 @@ pub struct Memory {
     pub decor: Vec<Decor>,
     /// The last thing the target said in chat, whatever it was about.
     pub last_said: String,
+    /// A door the target just used, taken by the brain on its next tick (`door_held`). Not
+    /// saved.
+    #[serde(skip)]
+    pub door_used_now: Option<BlockPos>,
     /// An offering is armed for the target's next fresh loot (`arm_loot`). Not saved: the
     /// host forgets it on a restart, so it is armed again.
     #[serde(skip)]
@@ -1105,6 +1109,7 @@ impl Memory {
                         self.walls.retain(|(p, _)| *p != pos);
                     }
                 }
+                EventKind::UsedDoor => self.door_used_now = event.pos,
                 // Their fresh loot got its offering: what it gave it no longer holds.
                 EventKind::LootTouched => {
                     self.loot_armed = false;

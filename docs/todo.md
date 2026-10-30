@@ -523,6 +523,12 @@ because it can be built and tested without a game, and because the model layer i
     bone meal spent only if it grew; `grow`, ABI 18) and `backfill` (their holes by the house
     filled with what it dug); the memory keeps the natural ground they dig near the home.
     Was: in the catalogue alone.
+  - **The house, part four:** `alcove` (one block of natural stone hollowed behind a house wall,
+    a torch and its things in it; the owner's one exception to the dig rule), and four new:
+    `furniture_shifted` (a work block one over, contents and all), `one_room_dark` (a room's
+    torches taken down into their chest, one at a time), `door_held` (a door they open shuts
+    again, one time in four; `used_door`, ABI 19) and `bed_turned` (`set_state`'s `@turn`).
+    Batch 3 is done. Was: in the catalogue or not at all.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
