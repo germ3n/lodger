@@ -13,6 +13,7 @@ pub mod brain;
 pub mod config;
 pub mod debug;
 pub mod events;
+pub mod habits;
 pub mod memory;
 pub mod model;
 pub mod rules;

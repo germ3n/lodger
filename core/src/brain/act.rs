@@ -304,8 +304,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::DoorHinge
         | Action::DoorHeld
         | Action::Wake
-        | Action::PathWorn
         | Action::KillSign => home.and_then(|h| pick(&h.doors, rng)),
+        // The path wears where they walk: the door they come and go by (N1).
+        Action::PathWorn => memory.usual_door(),
         Action::ToggleFixture(kind) | Action::SoundAtFixture(kind, _) => pick_ref(
             memory
                 .fixtures(kind)
@@ -316,7 +317,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         ),
         Action::Taps(kind, _, _) => {
             if kind.is_empty() {
-                home.and_then(|h| pick(&h.doors, rng))
+                // A knock comes at the door they use (N1).
+                memory.usual_door()
             } else {
                 pick_ref(
                     memory
@@ -2976,6 +2978,27 @@ mod tests {
             ],
         });
         memory
+    }
+
+    #[test]
+    fn the_worn_path_and_the_knock_come_to_the_door_they_use() {
+        let mut memory = memory();
+        memory.home.as_mut().unwrap().doors.push([-3, 64, 0]);
+        memory.last.pos = [0.5, 64.0, 0.5];
+        for _ in 0..3 {
+            memory.habit_door([-3, 64, 0]);
+        }
+        let mut rng = Rng::new(1);
+        for _ in 0..8 {
+            assert_eq!(
+                place(find("path_worn").unwrap(), &memory, &mut rng),
+                Some([-3, 64, 0])
+            );
+            assert_eq!(
+                place(find("knock").unwrap(), &memory, &mut rng),
+                Some([-3, 64, 0])
+            );
+        }
     }
 
     /// The memory with everything the catalogue could ask for.

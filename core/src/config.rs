@@ -344,7 +344,7 @@ impl Default for Model {
             url: String::new(),
             path: String::new(),
             threads: 2,
-            context: 512,
+            context: 1536,
             idle_minutes: 10,
             gpu_share: 0.5,
         }
@@ -674,7 +674,7 @@ mod tests {
 
         assert_eq!(config.brain.plan_every, 30);
         assert_eq!(config.brain.queue, 64);
-        assert_eq!(config.model.context, 512);
+        assert_eq!(config.model.context, 1536);
     }
 
     #[test]

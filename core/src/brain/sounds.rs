@@ -846,6 +846,9 @@ pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos>
             .map(|c| c.pos)
             .collect();
         pick(&chests)
+    } else if matches!(event, "knock" | "knock_heavy" | "door_scratch") {
+        // Something wanting in comes to the door they use (N1).
+        memory.usual_door()
     } else {
         memory.home.as_ref().and_then(|h| pick(&h.doors))
     }

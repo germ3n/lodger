@@ -427,10 +427,24 @@ pub struct Memory {
     /// The building blocks the target placed, with their ids, for the events that change one
     /// into its cousin (owner, 2026-11-09: "replace certain blocks of the house").
     pub walls: Vec<(BlockPos, String)>,
+    /// Their habits: the door, the day, sleep, what they carry, lights, looking back
+    /// (`crate::habits`).
+    pub habits: crate::habits::Habits,
 }
 
 /// Caps, with the reason beside each.
 const MOST_LINES_WRITTEN: usize = 128;
+/// The most characters of the situation's lines before the last ones at the default context
+/// (`describe_chars(1536)`); the brain passes its own config's (`describe_within`).
+pub const DESCRIBE_CHARS: usize = 4_676;
+
+/// How many characters of memory lines fit a context of `tokens`: 200 tokens kept for the
+/// frame, the question, its longest choice and a writing prompt's examples, and 3.5 characters
+/// a token, under what Qwen's tokenizer gets from plain English (about 4), so it errs short.
+/// A prompt past the context fails and the question falls to the rules.
+pub fn describe_chars(tokens: u32) -> usize {
+    (tokens.saturating_sub(200) as usize * 7) / 2
+}
 /// How long a walk taken once must be to stand as the route until one is walked twice.
 pub const FIRST_ROUTE: f64 = 32.0;
 const MOST_CONTAINERS: usize = 32; // the least-opened of those not theirs dropped first
@@ -813,8 +827,14 @@ impl Memory {
         let player = observations.players.iter().find(|p| p.index == index);
 
         match player {
-            Some(player) => self.observe_player(player),
-            None => self.last.online = false,
+            Some(player) => {
+                self.observe_player(player);
+                self.sample_habits(player, day);
+            }
+            None => {
+                self.last.online = false;
+                self.habits.at_home = None;
+            }
         }
 
         if !observations.entities.is_empty() {
@@ -923,6 +943,7 @@ impl Memory {
                 }
                 EventKind::SleptBegan => {
                     self.trigger("slept");
+                    self.habit_slept(day);
                     if !self.milestones.iter().any(|m| m.kind == "first_sleep") {
                         self.milestone("first_sleep", day, event.pos, "");
                     }
@@ -996,6 +1017,9 @@ impl Memory {
                                 },
                                 MOST_FIXTURES,
                             );
+                        }
+                        if is_light(&event.detail) {
+                            self.habits.lights_placed += 1;
                         }
                         if is_light(&event.detail) || is_door(&event.detail) {
                             let home = self.home.get_or_insert_with(|| Home {
@@ -1109,7 +1133,12 @@ impl Memory {
                         self.walls.retain(|(p, _)| *p != pos);
                     }
                 }
-                EventKind::UsedDoor => self.door_used_now = event.pos,
+                EventKind::UsedDoor => {
+                    self.door_used_now = event.pos;
+                    if let Some(pos) = event.pos {
+                        self.habit_door(pos);
+                    }
+                }
                 // Their fresh loot got its offering: what it gave it no longer holds.
                 EventKind::LootTouched => {
                     self.loot_armed = false;
@@ -1897,8 +1926,32 @@ impl Memory {
         self.done.iter().rev().take(count)
     }
 
-    /// The lines the brain reads. A template, never prose: see `docs/memory.md`.
+    /// The lines that tell more than the core of `describe`, most telling first: the habits
+    /// (N1). Each only once there is enough to say it; `describe` takes them while they fit.
+    pub fn detail_lines(&self) -> Vec<String> {
+        self.habit_lines()
+    }
+
+    /// How long the core lines of `describe` are without the details, for the budget's test.
+    #[cfg(test)]
+    fn describe_core_len(&self, day: f32) -> usize {
+        let all = self.describe(day);
+        let details = self.detail_lines();
+        all[..all.len() - 1]
+            .iter()
+            .filter(|l| !details.contains(l))
+            .map(|l| l.len() + 1)
+            .sum()
+    }
+
+    /// The lines the brain reads, within the default context's budget. A template, never
+    /// prose: see `docs/memory.md`.
     pub fn describe(&self, day: f32) -> Vec<String> {
+        self.describe_within(day, DESCRIBE_CHARS)
+    }
+
+    /// [`Memory::describe`] with the details taken while the lines stay under `chars`.
+    pub fn describe_within(&self, day: f32, chars: usize) -> Vec<String> {
         let mut lines = Vec::new();
 
         if let Some(home) = &self.home {
@@ -2102,6 +2155,18 @@ impl Memory {
 
         if let Some(line) = self.chat.last() {
             lines.push(format!("The player said: \"{}\".", line));
+        }
+
+        // The details last, while they fit: the situation, a question and its longest choice
+        // must stay inside the model's context, and a prompt past it fails and falls to the
+        // rules.
+        let mut used: usize = lines.iter().map(|l| l.len() + 1).sum();
+        for line in self.detail_lines() {
+            if used + line.len() + 1 > chars {
+                break;
+            }
+            used += line.len() + 1;
+            lines.push(line);
         }
 
         lines.push(format!(
@@ -3101,5 +3166,110 @@ mod tests {
             lines.iter().any(|l| l.contains("take one thing they use")),
             "{lines:?}"
         );
+    }
+
+    #[test]
+    fn the_habits_are_fed_by_what_the_target_does() {
+        let mut memory = Memory::default();
+        let event = |kind: EventKind, pos: BlockPos, detail: &str| Event {
+            player: 0,
+            kind,
+            pos: Some(pos),
+            detail: detail.to_string(),
+            ..Event::default()
+        };
+        memory.observe(
+            &obs(
+                vec![player(0, [0.0, 64.0, 0.0], 0.0)],
+                vec![
+                    event(EventKind::PlacedBlock, [0, 64, 0], "minecraft:red_bed"),
+                    event(EventKind::PlacedBlock, [3, 64, 0], "minecraft:oak_door"),
+                    event(EventKind::PlacedBlock, [1, 65, 1], "minecraft:torch"),
+                    event(EventKind::UsedDoor, [3, 65, 0], ""),
+                ],
+            ),
+            0.1,
+        );
+        memory.observe(
+            &obs(
+                vec![player(0, [0.0, 64.0, 0.0], 0.0)],
+                vec![event(EventKind::SleptBegan, [0, 64, 0], "")],
+            ),
+            0.53,
+        );
+
+        assert_eq!(memory.habits.lights_placed, 1);
+        assert_eq!(memory.habits.doors, vec![([3, 64, 0], 1)]);
+        assert_eq!(memory.habits.nights_slept, 1);
+        assert_eq!(memory.habits.samples, 2, "a sample each observation here");
+        memory.observe(&obs(vec![], vec![]), 0.6);
+        assert_eq!(memory.habits.at_home, None, "away from the game");
+    }
+
+    #[test]
+    fn a_full_memory_keeps_to_its_budget_and_ends_on_now() {
+        let mut memory = Memory {
+            target: Some(0),
+            want: "a place of its own".to_string(),
+            ..Memory::default()
+        };
+        memory.home = Some(Home {
+            center: [0, 64, 0],
+            floor_y: 64,
+            doors: vec![[3, 64, 0], [-3, 64, 0]],
+            ..Home::default()
+        });
+        memory.last.mood = "uneasy".to_string();
+        memory
+            .chat
+            .push("who keeps opening my door at night and why".to_string());
+        for i in 0..5 {
+            memory.record("take", Some([2, 64, i]), 1.0 + i as f32 * 0.1, true, "");
+        }
+        memory.habits.hours = [
+            [40, 30, 0, 0, 0],
+            [0, 0, 40, 0, 0],
+            [0, 0, 0, 40, 0],
+            [40, 0, 0, 0, 0],
+        ];
+        memory.habits.doors = vec![([3, 64, 0], 9)];
+        memory.habits.leaves = vec![2_000; 5];
+        memory.habits.returns = vec![12_000; 5];
+        memory.habits.nights_slept = 5;
+        memory.habits.sleep_times = vec![12_600; 5];
+        memory.habits.days_seen = 5;
+        memory.habits.carried = vec![
+            ("minecraft:iron_sword".to_string(), 5),
+            ("minecraft:shield".to_string(), 5),
+            ("minecraft:iron_helmet".to_string(), 5),
+        ];
+        memory.habits.lights_placed = 40;
+        memory.habits.samples = 100;
+        memory.habits.uneasy = 60;
+
+        let budget = describe_chars(512);
+        let lines = memory.describe_within(1.6, budget);
+        let last = lines.last().unwrap();
+        assert!(last.starts_with("Now the player is"), "{lines:?}");
+        let before: usize = lines[..lines.len() - 1].iter().map(|l| l.len() + 1).sum();
+        assert!(
+            before <= budget.max(memory.describe_core_len(1.6)),
+            "{before} chars: {lines:?}"
+        );
+        assert!(
+            lines.iter().any(|l| l.contains("door on the east side")),
+            "the first detail fits: {lines:?}"
+        );
+        assert!(
+            lines.iter().any(|l| l == "They often look behind them."),
+            "512 tokens take every detail: {lines:?}"
+        );
+        let core = memory.describe_core_len(1.6);
+        let tight = memory.describe_within(1.6, core + 60);
+        assert!(tight.len() < lines.len(), "a tight budget drops details");
+        assert!(tight.last().unwrap().starts_with("Now the player is"));
+        let used: usize = tight[..tight.len() - 1].iter().map(|l| l.len() + 1).sum();
+        assert!(used <= core + 60, "{used} > {}", core + 60);
+        assert_eq!(describe_chars(1536), DESCRIBE_CHARS);
     }
 }

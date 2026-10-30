@@ -555,6 +555,16 @@ because it can be built and tested without a game, and because the model layer i
     reads as the key's type, and leaves any other wrong value at the preset's, each named in a
     warning the host logs (`InitReply.warnings`, ABI 22). Tests: the config's three, the
     setting's whole step. Was: the first wrong type refused the whole file.
+  - **Habits** (the review's N1; owner: every proposal taken): where each part of the day
+    goes, when they leave home and come back, nights slept or stayed up, the door they use
+    (the knock and the worn path come to it), what they carry and wear every day, how much they
+    light, how often they look back; sampled every hundred ticks, a line each once there is
+    enough. Tests: twelve. Was: sessions and the main hand only.
+  - **A bigger context, and the lines kept inside it** (owner: "can we increase context window
+    ... to 1500?"): `model.context` 1536 (a multiple of 32), and `describe` takes its detail
+    lines only while they fit the configured context (`describe_chars`). Real-model tests pass
+    at 1536. Was: 512, and nothing kept a long memory from overflowing it, which fails the
+    question to the rules.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

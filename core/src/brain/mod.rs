@@ -422,7 +422,7 @@ impl Brain {
                 "want",
                 WANT,
                 WANT_CHOICES.iter().map(|c| c.to_string()).collect(),
-                memory.describe(day),
+                memory.describe_within(day, crate::memory::describe_chars(config.model.context)),
                 now,
                 day,
                 arc.stage,
@@ -559,7 +559,8 @@ impl Brain {
             let trigger = memory.triggers.remove(0);
             {
                 self.last_react_tick = now.tick.max(1);
-                let mut lines = memory.describe(day);
+                let mut lines = memory
+                    .describe_within(day, crate::memory::describe_chars(config.model.context));
                 lines.push(format!("Just now: {}.", trigger_words(&trigger)));
                 if let Some(model) = model.filter(|m| m.loaded() && !config.brain.force_rules) {
                     let questions = vec![
@@ -623,7 +624,8 @@ impl Brain {
             };
             let asks = model.is_some() && !config.brain.force_rules;
             if asks {
-                let lines = memory.describe(day);
+                let lines = memory
+                    .describe_within(day, crate::memory::describe_chars(config.model.context));
                 self.ask_for_words(event, &lines, memory, config, model);
             }
             if let Some(plan) = self.plans.iter_mut().find(|p| p.id == id) {
@@ -1139,7 +1141,8 @@ impl Brain {
         if let Some(model) = model
             .filter(|m| m.loaded() && !config.brain.force_rules && config.brain.text == "generate")
         {
-            let mut lines = memory.describe(day);
+            let mut lines =
+                memory.describe_within(day, crate::memory::describe_chars(config.model.context));
             lines.push(format!("They just typed: {heard}"));
             let kind = Kind::Reply;
             let examples = kind.examples();
@@ -1246,7 +1249,8 @@ impl Brain {
         if menu.iter().all(|e| e.id == "wait") {
             return;
         }
-        let lines = memory.describe(day);
+        let lines =
+            memory.describe_within(day, crate::memory::describe_chars(config.model.context));
 
         // The model, when it is there and wanted: the two planning questions go to the worker
         // and the answer comes back on a later tick. Anything in the way, the rule brain.
