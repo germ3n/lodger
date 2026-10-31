@@ -144,6 +144,9 @@ impl Memory {
         };
         let quarter = (day_time / 6_000).min(3) as usize;
         self.habits.hours[quarter][place] += 1;
+        if place != 0 {
+            self.sample_site(at, day);
+        }
 
         // Leaving and coming back, with room between so the edge does not count twice.
         if let Some(d) = home_distance {

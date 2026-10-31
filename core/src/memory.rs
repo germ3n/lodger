@@ -432,6 +432,8 @@ pub struct Memory {
     pub habits: crate::habits::Habits,
     /// Who comes to the home and who is with the target now (`crate::people`).
     pub people: crate::people::People,
+    /// The places they stay away from home, most stayed at first (`crate::places`).
+    pub sites: Vec<crate::places::Site>,
 }
 
 /// Caps, with the reason beside each.
@@ -1933,6 +1935,7 @@ impl Memory {
     /// (N1). Each only once there is enough to say it; `describe` takes them while they fit.
     pub fn detail_lines(&self) -> Vec<String> {
         let mut lines = self.people_lines();
+        lines.extend(self.place_lines());
         lines.extend(self.habit_lines());
 
         lines
@@ -1979,7 +1982,7 @@ impl Memory {
         if let Some(container) = self.used_container() {
             lines.push(format!(
                 "The chest {} is opened most, {} times so far. It holds {}.",
-                place_words(self.home.as_ref(), container.pos),
+                self.where_words(container.pos),
                 container.opens,
                 if container.contents.is_empty() {
                     "nothing".to_string()
@@ -1997,8 +2000,22 @@ impl Memory {
 
         for done in self.recent(3) {
             let when = ago_words(day - done.day, "Today");
+            // Its own landmarks referred back to (N3): what it did there before.
+            let again = done
+                .pos
+                .filter(|_| done.ok)
+                .and_then(|p| self.landmark_near(p, done.day, &done.event))
+                .map(|l| {
+                    format!(
+                        ", where it once did {}",
+                        crate::events::find(&l.event)
+                            .map(|e| e.menu_words())
+                            .unwrap_or(&l.event)
+                    )
+                })
+                .unwrap_or_default();
             lines.push(format!(
-                "{} it {} {}.",
+                "{} it {} {}{again}.",
                 when,
                 if done.ok { "did" } else { "could not" },
                 crate::events::find(&done.event)
@@ -2023,7 +2040,7 @@ impl Memory {
                 landmark
                     .pos
                     .zip(self.home.as_ref())
-                    .map(|(p, h)| format!(", {}", place_words(Some(h), p)))
+                    .map(|(p, _)| format!(", {}", self.where_words(p)))
                     .unwrap_or_default()
             ));
         }
@@ -2054,18 +2071,18 @@ impl Memory {
                     .pos
                     .zip(self.home.as_ref())
                     .filter(|_| milestone.kind == "died")
-                    .map(|(p, h)| format!(", {}", place_words(Some(h), p)))
+                    .map(|(p, _)| format!(", {}", self.where_words(p)))
                     .unwrap_or_default()
             ));
         }
 
         if let Some(route) = self.route() {
-            if let Some(home) = &self.home {
+            if self.home.is_some() {
                 let end = self.route_end().unwrap_or(route.end());
                 lines.push(format!(
                     "They walk a way of {} blocks to {}, {} times so far.",
                     route.length().round() as i32,
-                    place_words(Some(home), end),
+                    self.where_words(end),
                     route.walked
                 ));
             }
@@ -2118,12 +2135,8 @@ impl Memory {
                         "sand" => "sand".to_string(),
                         _ => "trees".to_string(),
                     };
-                    if let Some(home) = &self.home {
-                        parts.push(format!(
-                            "{} {}",
-                            words,
-                            place_words(Some(home), feature.pos)
-                        ));
+                    if self.home.is_some() {
+                        parts.push(format!("{} {}", words, self.where_words(feature.pos)));
                     } else {
                         parts.push(words);
                     }
@@ -2296,33 +2309,6 @@ fn ago_words(ago: f32, today: &str) -> String {
         0 => today.to_string(),
         1 => "Yesterday".to_string(),
         n => format!("{n} days ago"),
-    }
-}
-
-fn place_words(home: Option<&Home>, pos: BlockPos) -> String {
-    match home {
-        Some(home) => {
-            let d = distance(home.center, pos);
-            if d <= 6.0 {
-                "in the house".to_string()
-            } else {
-                let dx = pos[0] - home.center[0];
-                let dz = pos[2] - home.center[2];
-                let dir = if dx.abs() > dz.abs() {
-                    if dx > 0 {
-                        "east"
-                    } else {
-                        "west"
-                    }
-                } else if dz > 0 {
-                    "south"
-                } else {
-                    "north"
-                };
-                format!("{} blocks {} of the house", d.round() as i32, dir)
-            }
-        }
-        None => "somewhere".to_string(),
     }
 }
 

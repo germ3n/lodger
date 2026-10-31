@@ -573,6 +573,10 @@ because it can be built and tested without a game, and because the model layer i
     carries its file's exact length and SHA-256, which the host checks; each its own license on
     the screen, and the 3B's is Qwen's research license. Tests: the sizes', the 4B's resource.
     Was: three sizes, approximate lengths, no sum, and the 3B shown as Apache.
+  - **Places** (the review's N3): the house in rooms by what stands in them, upstairs and
+    under the house; the sites they keep away from home (a mine, a second base, a spot); a
+    recent event near an earlier landmark refers back to it; distances along the ground.
+    Tests: six. Was: "in the house" or so many blocks off, by the 3D distance.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
