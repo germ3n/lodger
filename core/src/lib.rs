@@ -86,7 +86,7 @@ fn settings(config: &Config) -> Vec<craftkit::Setting> {
             "model.size",
             "Model size",
             "Model",
-            &["0.5b", "1.5b", "3b"],
+            &ModelSize::ALL.map(ModelSize::name),
             &config.model.size,
         ),
         number(
@@ -219,32 +219,32 @@ impl Mod for Lodger {
             resources: vec![Resource {
                 id: "model".to_string(),
                 title: format!(
-                    "Downloading the lodger's model, Qwen2.5 {} ({} MB)",
-                    size.name().to_uppercase(),
+                    "Downloading the lodger's model, {} ({} MB)",
+                    size.title(),
                     size.megabytes()
                 ),
                 url: model_url(&config),
                 path: path.to_string_lossy().into_owned(),
                 size_hint: size.size_hint(),
                 magic: "GGUF".to_string(),
-                sha256: String::new(),
+                // A file from `model.url` is the player's own, unchecked.
+                sha256: if config.model.url.is_empty() {
+                    size.sha256().to_string()
+                } else {
+                    String::new()
+                },
                 required: true,
                 license: License {
-                    name: "Apache License 2.0".to_string(),
-                    url: "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/blob/main/LICENSE"
-                        .to_string(),
-                    text: MODEL_LICENSE_TEXT.to_string(),
+                    name: size.license().name.to_string(),
+                    url: size.license().url.to_string(),
+                    text: size.license().text.to_string(),
                 },
                 // The other sizes, to pick on the preparing screen before the download
                 // (owner, 2026-11-09: "I want to be able to change the model on that screen").
                 choices: ModelSize::ALL
                     .iter()
                     .map(|other| craftkit::Choice {
-                        label: format!(
-                            "Qwen2.5 {}, {} MB",
-                            other.name().to_uppercase(),
-                            other.megabytes()
-                        ),
+                        label: format!("{}, {} MB", other.title(), other.megabytes()),
                         config: serde_json::json!({ "model": { "size": other.name() } }),
                         chosen: *other == size,
                     })
@@ -333,17 +333,6 @@ impl Mod for Lodger {
     }
 }
 
-/// What the license screen shows before the model is fetched. Qwen2.5-0.5B-Instruct is
-/// Apache-2.0, which allows this use; the screen is there so the player knows what is being
-/// downloaded, from whom, and under what terms, before 491 MB move (owner, 2026-11-09).
-const MODEL_LICENSE_TEXT: &str =
-    "The lodger thinks with a Qwen2.5-Instruct language model made by Alibaba \
-Cloud's Qwen team and released under the Apache License 2.0. It will be downloaded once from \
-Hugging Face, from Qwen's own repository, and kept on this computer. Nothing is sent \
-anywhere; the model runs here. Copyright 2024 Alibaba Cloud. Licensed under the Apache License, \
-Version 2.0; the full text is at the link below. By continuing you accept those terms for your \
-use of the model.";
-
 craftkit::export_mod!(Lodger);
 
 #[cfg(test)]
@@ -401,7 +390,7 @@ mod tests {
         let find = |key: &str| settings.iter().find(|s| s["key"] == key).unwrap().clone();
         assert_eq!(find("preset")["value"], "calm");
         assert_eq!(find("model.gpu_share")["value"], 0.3);
-        assert_eq!(find("model.size")["options"].as_array().unwrap().len(), 3);
+        assert_eq!(find("model.size")["options"].as_array().unwrap().len(), 4);
         assert_eq!(find("events.chat")["value"], false, "calm turns chat off");
         let groups: std::collections::BTreeSet<&str> = settings
             .iter()
@@ -428,7 +417,7 @@ mod tests {
         };
         let reply = harness().init_with(&init(""));
         let choices = reply["resources"][0]["choices"].as_array().unwrap().clone();
-        assert_eq!(choices.len(), 3);
+        assert_eq!(choices.len(), 4);
         let chosen: Vec<&serde_json::Value> =
             choices.iter().filter(|c| c["chosen"] == true).collect();
         assert_eq!(chosen.len(), 1);
@@ -463,8 +452,12 @@ mod tests {
             resource["path"],
             "/game/config/lodger/models/qwen2.5-1.5b-q4_k_m.gguf"
         );
-        assert_eq!(resource["size_hint"], 1_117_000_000u64);
-        assert!(resource["title"].as_str().unwrap().contains("1117 MB"));
+        assert_eq!(resource["size_hint"], 1_117_320_736u64);
+        assert!(resource["title"]
+            .as_str()
+            .unwrap()
+            .contains("Qwen2.5 1.5B (1117 MB)"));
+        assert_eq!(resource["sha256"], ModelSize::Medium.sha256());
         assert_eq!(resource["magic"], "GGUF");
         assert_eq!(resource["required"], true);
         assert_eq!(resource["license"]["name"], "Apache License 2.0");
@@ -476,6 +469,39 @@ mod tests {
             .as_str()
             .unwrap()
             .starts_with("https://huggingface.co/Qwen/"));
+        let labels: Vec<&str> = resource["choices"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|c| c["label"].as_str().unwrap())
+            .collect();
+        assert_eq!(labels.len(), 4);
+        assert_eq!(labels[3], "Qwen3 4B, 2497 MB");
+    }
+
+    #[test]
+    fn the_4b_is_offered_with_its_own_license_and_sum_and_a_url_of_ones_own_is_unchecked() {
+        let _turn = turn();
+        let config = r#"{ "model": { "size": "4b" } }"#;
+        let reply = harness().init(config);
+        let resource = &reply["resources"][0];
+        assert!(resource["path"]
+            .as_str()
+            .unwrap()
+            .ends_with("qwen3-4b-instruct-2507-q4_k_m.gguf"));
+        assert_eq!(resource["sha256"], ModelSize::Qwen3.sha256());
+        assert!(resource["license"]["url"]
+            .as_str()
+            .unwrap()
+            .contains("Qwen3-4B-Instruct-2507"));
+        let options = reply["settings"][0]["options"].as_array().unwrap();
+        assert!(options.contains(&serde_json::json!("4b")));
+
+        let own = harness().init(r#"{ "model": { "url": "https://example.org/mine.gguf" } }"#);
+        assert_eq!(
+            own["resources"][0]["sha256"], "",
+            "a file of one's own is not checked"
+        );
     }
 
     #[test]

@@ -130,27 +130,60 @@ impl Preset {
     }
 }
 
-/// The three sizes of Qwen2.5-Instruct the lodger can run, each Qwen's own `q4_k_m` GGUF. The
-/// 0.5B is the file `~/engine` runs. Sizes are the files' lengths as Hugging Face lists them,
-/// for the progress bar before the server says the length.
+/// The models the lodger can run: three sizes of Qwen2.5-Instruct, each Qwen's own `q4_k_m`
+/// GGUF, and Qwen3-4B-Instruct-2507 (owner, 2026-11-10: "how about we offer this too?"), whose
+/// `q4_k_m` GGUF comes from unsloth's repository, Qwen publishing none of its own that a
+/// download can reach. The 0.5B is the file `~/engine` runs. Sizes and SHA-256 sums are the
+/// files' own as Hugging Face's servers give them (`x-linked-size`, `x-linked-etag`,
+/// 2026-11-10), so the bar is right from the start and the host checks the file it fetched.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ModelSize {
     Small,
     Medium,
     Large,
+    /// Qwen3-4B-Instruct-2507: newer, a better reader, the biggest file.
+    Qwen3,
 }
 
+/// A model's license as the preparing screen shows it before the download.
+pub struct ModelLicense {
+    pub name: &'static str,
+    pub url: &'static str,
+    pub text: &'static str,
+}
+
+const APACHE_TEXT: &str = "The lodger thinks with a Qwen2.5-Instruct language model made by \
+Alibaba Cloud's Qwen team and released under the Apache License 2.0. It will be downloaded once \
+from Hugging Face, from Qwen's own repository, and kept on this computer. Nothing is sent \
+anywhere; the model runs here. Copyright 2024 Alibaba Cloud. Licensed under the Apache License, \
+Version 2.0; the full text is at the link below. By continuing you accept those terms for your \
+use of the model.";
+
+const RESEARCH_TEXT: &str = "The lodger thinks with Qwen2.5-3B-Instruct, a language model made \
+by Alibaba Cloud's Qwen team and released under the Qwen Research License Agreement, not the \
+Apache License of the smaller sizes: it allows research and non-commercial use. It will be \
+downloaded once from Hugging Face, from Qwen's own repository, and kept on this computer. \
+Nothing is sent anywhere; the model runs here. The full agreement is at the link below. By \
+continuing you accept its terms for your use of the model.";
+
+const QWEN3_TEXT: &str = "The lodger thinks with Qwen3-4B-Instruct-2507, a language model made \
+by Alibaba Cloud's Qwen team and released under the Apache License 2.0. It will be downloaded \
+once from Hugging Face, from unsloth's repository, which offers Qwen's model in the GGUF form \
+the lodger runs, and kept on this computer. Nothing is sent anywhere; the model runs here. \
+Copyright 2025 Alibaba Cloud. Licensed under the Apache License, Version 2.0; the full text is \
+at the link below. By continuing you accept those terms for your use of the model.";
+
 impl ModelSize {
-    /// Every size, smallest first: the preparing screen's choices.
-    pub const ALL: [ModelSize; 3] = [ModelSize::Small, ModelSize::Medium, ModelSize::Large];
+    /// Every model, smallest first: the preparing screen's choices.
+    pub const ALL: [ModelSize; 4] = [
+        ModelSize::Small,
+        ModelSize::Medium,
+        ModelSize::Large,
+        ModelSize::Qwen3,
+    ];
 
     pub fn named(name: &str) -> Option<Self> {
-        match name {
-            "0.5b" => Some(Self::Small),
-            "1.5b" => Some(Self::Medium),
-            "3b" => Some(Self::Large),
-            _ => None,
-        }
+        Self::ALL.into_iter().find(|size| size.name() == name)
     }
 
     pub fn name(self) -> &'static str {
@@ -158,6 +191,17 @@ impl ModelSize {
             Self::Small => "0.5b",
             Self::Medium => "1.5b",
             Self::Large => "3b",
+            Self::Qwen3 => "4b",
+        }
+    }
+
+    /// The model's name for the screen: `Qwen2.5 1.5B`, `Qwen3 4B`.
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Small => "Qwen2.5 0.5B",
+            Self::Medium => "Qwen2.5 1.5B",
+            Self::Large => "Qwen2.5 3B",
+            Self::Qwen3 => "Qwen3 4B",
         }
     }
 
@@ -166,6 +210,7 @@ impl ModelSize {
             Self::Small => "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
             Self::Medium => "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
             Self::Large => "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
+            Self::Qwen3 => "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
         }
     }
 
@@ -174,7 +219,7 @@ impl ModelSize {
         match self {
             Self::Small => 24,
             Self::Medium => 28,
-            Self::Large => 36,
+            Self::Large | Self::Qwen3 => 36,
         }
     }
 
@@ -184,16 +229,54 @@ impl ModelSize {
             Self::Small => "qwen2.5-0.5b-q4_k_m.gguf",
             Self::Medium => "qwen2.5-1.5b-q4_k_m.gguf",
             Self::Large => "qwen2.5-3b-q4_k_m.gguf",
+            Self::Qwen3 => "qwen3-4b-instruct-2507-q4_k_m.gguf",
         }
     }
 
-    /// About how many bytes, for the bar; the 0.5B's is exact, the others rounded to the
-    /// megabyte from Hugging Face's listing (2026-11-09).
+    /// The file's length in bytes, for the bar.
     pub fn size_hint(self) -> u64 {
         match self {
             Self::Small => 491_400_032,
-            Self::Medium => 1_117_000_000,
-            Self::Large => 2_019_000_000,
+            Self::Medium => 1_117_320_736,
+            Self::Large => 2_104_932_768,
+            Self::Qwen3 => 2_497_281_120,
+        }
+    }
+
+    /// The file's SHA-256, which the host checks after the download.
+    pub fn sha256(self) -> &'static str {
+        match self {
+            Self::Small => "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+            Self::Medium => "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+            Self::Large => "626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d",
+            Self::Qwen3 => "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+        }
+    }
+
+    /// Its license: Apache 2.0, but for the 3B, which is under Qwen's research license (the
+    /// screen said Apache for every size until 2026-11-10).
+    pub fn license(self) -> ModelLicense {
+        match self {
+            Self::Small => ModelLicense {
+                name: "Apache License 2.0",
+                url: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/blob/main/LICENSE",
+                text: APACHE_TEXT,
+            },
+            Self::Medium => ModelLicense {
+                name: "Apache License 2.0",
+                url: "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/blob/main/LICENSE",
+                text: APACHE_TEXT,
+            },
+            Self::Large => ModelLicense {
+                name: "Qwen Research License",
+                url: "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE",
+                text: RESEARCH_TEXT,
+            },
+            Self::Qwen3 => ModelLicense {
+                name: "Apache License 2.0",
+                url: "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507/blob/main/LICENSE",
+                text: QWEN3_TEXT,
+            },
         }
     }
 
@@ -592,7 +675,7 @@ impl Config {
         }
 
         if ModelSize::named(&self.model.size).is_none() {
-            return Err("model.size must be 0.5b, 1.5b or 3b".to_string());
+            return Err("model.size must be 0.5b, 1.5b, 3b or 4b".to_string());
         }
 
         if !(0.0..=2.0).contains(&self.brain.temperature) {
@@ -874,10 +957,30 @@ mod tests {
             assert!(size.url().ends_with("-instruct-q4_k_m.gguf"));
             assert!(size.file_name().ends_with(".gguf"));
         }
+        assert_eq!(ModelSize::named("4b"), Some(ModelSize::Qwen3));
+        assert!(ModelSize::Qwen3
+            .url()
+            .ends_with("Qwen3-4B-Instruct-2507-Q4_K_M.gguf"));
+        assert_eq!(ModelSize::named("7b"), None);
 
-        assert!(ModelSize::Small.size_hint() < ModelSize::Medium.size_hint());
-        assert!(ModelSize::Medium.size_hint() < ModelSize::Large.size_hint());
+        for pair in ModelSize::ALL.windows(2) {
+            assert!(pair[0].size_hint() < pair[1].size_hint(), "smallest first");
+        }
+        for size in ModelSize::ALL {
+            assert_eq!(size.sha256().len(), 64, "{}", size.name());
+            assert!(size.sha256().chars().all(|c| c.is_ascii_hexdigit()));
+            let names: Vec<&str> = ModelSize::ALL
+                .iter()
+                .filter(|o| o.file_name() == size.file_name())
+                .map(|o| o.name())
+                .collect();
+            assert_eq!(names, [size.name()], "each its own file");
+        }
         assert_eq!(ModelSize::Small.megabytes(), 491);
+        assert_eq!(ModelSize::Large.license().name, "Qwen Research License");
+        assert!(ModelSize::Large.license().text.contains("non-commercial"));
+        assert_eq!(ModelSize::Qwen3.license().name, "Apache License 2.0");
+        assert!(ModelSize::Qwen3.license().text.contains("unsloth"));
     }
 
     #[test]

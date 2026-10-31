@@ -13,10 +13,17 @@ scoring, the same queue, the same download, behind the mind's C ABI instead of a
 | --- | --- | --- | --- | --- |
 | `0.5b` | `qwen2.5-0.5b-instruct-q4_k_m.gguf`, 491 MB | about 700 MB | tens to a few hundred milliseconds | a small machine; the file `~/engine` runs, byte for byte; the dev client's choice |
 | `1.5b`, the default | `qwen2.5-1.5b-instruct-q4_k_m.gguf`, 1.1 GB | about 1.6 GB | a few times slower | most machines; the owner's default (2026-11-09) for sharper judgment and for writing its own few words (`brain.text`) |
-| `3b` | `qwen2.5-3b-instruct-q4_k_m.gguf`, 2.0 GB | about 3 GB | slower again, a second or more | a dedicated server with the headroom |
+| `3b` | `qwen2.5-3b-instruct-q4_k_m.gguf`, 2.1 GB | about 3 GB | slower again, a second or more | a dedicated server with the headroom; under the **Qwen Research License** (research and non-commercial use), not Apache |
+| `4b` | `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` from unsloth's repository, 2.5 GB | about 3.5 GB | about the 3B's | the newest and best reader (owner, 2026-11-10: "how about we offer this too?"); Apache-2.0; non-thinking only, so no `<think>` block gets in the way of scoring; the vendored llama.cpp (llama-cpp-sys-2 0.1.161) knows its `qwen3` architecture |
 
-All three are Apache-2.0 from the same repository family, and the scoring code is the same for
-each; only the file, its size and the download's length differ. Changing the size downloads the
+The 0.5B, 1.5B and 4B are Apache-2.0; the 3B is under Qwen's research license, which the
+preparing screen names and links before the download (it said Apache for every size until
+2026-11-10). Qwen's own GGUF repository for the 4B answers 401 to a plain download, so its file
+comes from unsloth's, which repackages Qwen's model under the same license. Each file's exact
+length and SHA-256 are in `ModelSize` (from Hugging Face's `x-linked-size` and `x-linked-etag`,
+2026-11-10), and the host checks the sum after the download; a file from `model.url` of one's
+own is not checked. The scoring code is the same for each; only the file, its size and the
+download's length differ. Changing the size downloads the
 new file at the next start (the title screen gate again) and keeps the old one until deleted.
 The timings are the engine's experience with the small one and estimates for the others; the
 measure item in the todo replaces them with numbers.
@@ -40,7 +47,7 @@ measure item in the todo replaces them with numbers.
 
 **Picking the size on the screen** (owner, 2026-11-09): the preparing screen shows a button
 with the size it is about to fetch (`Qwen2.5 1.5B, 1117 MB (click for another)`); each press
-picks the next of the three, writes `model.size` into the config and starts that download
+picks the next of the four, writes `model.size` into the config and starts that download
 instead. A model already there skips the screen; the settings page changes it then.
 
 The model is not in the jar. 491 MB is too much to ship with a mod and Hugging Face serves it

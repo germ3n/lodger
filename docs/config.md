@@ -57,7 +57,7 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 
 | Key | Default | What it changes |
 | --- | --- | --- |
-| `model.size` | `"1.5b"` | Which Qwen2.5-Instruct to run: `1.5b` (1.1 GB, about 1.6 GB of RAM, a few hundred milliseconds a question; the default since 2026-11-09, the owner's call, for sharper judgment and better words), `0.5b` (491 MB, about 700 MB of RAM, tens of milliseconds) or `3b` (2.0 GB, about 3 GB of RAM, slower again). Changing it downloads the new file at the next start; the old one stays until deleted. See [Which model](model.md#which-model). |
+| `model.size` | `"1.5b"` | Which model to run: `1.5b` (1.1 GB, about 1.6 GB of RAM, a few hundred milliseconds a question; the default since 2026-11-09, the owner's call, for sharper judgment and better words), `0.5b` (491 MB, about 700 MB of RAM, tens of milliseconds) , `3b` (2.1 GB, about 3 GB of RAM, slower again; Qwen's research license) or `4b`, Qwen3-4B-Instruct-2507 (2.5 GB, about 3.5 GB of RAM, the best reader). Changing it downloads the new file at the next start; the old one stays until deleted. See [Which model](model.md#which-model). |
 | `model.url` | empty | Where to fetch from. Empty means Qwen's own `q4_k_m` file for `model.size` on Hugging Face. |
 | `model.path` | empty | Where the model is kept. Empty means `config/lodger/models/<the size's file name>`. Relative to the game directory unless absolute. Must be a loose file: llama.cpp maps it. |
 | `model.threads` | `2` | Threads llama.cpp uses while scoring. More is faster and takes more from the game. |

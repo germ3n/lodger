@@ -568,6 +568,11 @@ because it can be built and tested without a game, and because the model layer i
   - **People** (the review's N4): who comes to the home (by name, once a day each) and who is
     with the target now, as detail lines; `Memory::alone`. Tests: four. Was: the players' names
     for the target ask only.
+  - **Qwen3-4B-Instruct-2507 offered** (owner: "how about we offer this too?"): `model.size`
+    `4b`, from unsloth's Q4_K_M (Qwen's own GGUF repo answers 401), 36 layers; every size now
+    carries its file's exact length and SHA-256, which the host checks; each its own license on
+    the screen, and the 3B's is Qwen's research license. Tests: the sizes', the 4B's resource.
+    Was: three sizes, approximate lengths, no sum, and the 3B shown as Apache.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 
