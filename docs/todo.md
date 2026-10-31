@@ -583,6 +583,12 @@ because it can be built and tested without a game, and because the model layer i
     they notice leans the rule brain (0.6 to 1.4) and is said to the model ("Words get their
     attention; sounds do not."). Tests: six, and the rule brain's. Was: the bold events only,
     one at a time, a new one closing the last as ignored.
+  - **A download that stalls goes on** (the dev client: the 4B "got stuck at 2059 out of 2381
+    mb"): thirty seconds without a byte closes the connection; the download goes on from where
+    it stopped with an HTTP range, five tries; a part file cut off by the network is kept and
+    taken up at the next start; the sum is checked over the whole file. Tests: six new against
+    a local server (quiet, resumed, range ignored, whole part, always failing, 404 not retried).
+    Was: no read limit, so a quiet connection hung forever, and any failure deleted the part.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

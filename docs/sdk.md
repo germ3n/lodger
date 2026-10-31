@@ -142,8 +142,10 @@ shown first, once: on a client a screen with the text, a button to read the full
 browser, Accept and Quit, the acceptance kept in `config/craftkit/accepted.json`; on a
 dedicated server the terms go to the log with the line to add to that file, and the resource
 waits for the operator (the owner's call, 2026-11-09: no one accepts terms on another's behalf). One downloader (`Downloader.java`) serves every mod, writes
-through a `.part` file, checks the magic on the first bytes and the hash at the end, and never
-replaces a good file with a failed download.
+through a `.part` file, checks the magic on the first bytes and the hash over the whole file at
+the end, and never replaces a good file with a failed download; a connection quiet for thirty
+seconds is dropped and the download goes on from where it stopped (an HTTP range, five tries),
+and a part file cut off by the network is taken up at the next start.
 
 ## The `Mod` trait
 

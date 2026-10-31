@@ -68,8 +68,13 @@ model is downloaded and loaded"):
   above all, fails on those bytes rather than after half a gigabyte.
 - **It is written under a temporary name,** `qwen.gguf.part`, and renamed when complete, so a
   failed download never replaces a good model and a half file is never loaded.
-- **`http://` or `https://` only.** Redirects are followed. The connect timeout is 15 seconds;
-  reading has none, since a slow connection is still a connection, and Quit cancels.
+- **`http://` or `https://` only.** Redirects are followed. The connect timeout is 15 seconds.
+  A slow connection is still a connection, but a quiet one is not: thirty seconds without a
+  byte and it is closed, and the download goes on from where it stopped with an HTTP range, up
+  to five tries with a pause between (a server that ignores the range sends the whole file
+  again). When every try fails the `.part` file stays, and the next start goes on from it; a
+  cancel, the wrong magic or a wrong SHA-256 removes it. The 4B's download hung at 2059 of
+  2381 MB on a connection gone quiet until 2026-11-10, when reading had no limit at all.
 - **`/lodger model status`** says whether the file is there and the model loaded. Deleting the
   file makes the next start fetch it again, from `model.url`.
 

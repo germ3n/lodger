@@ -13,7 +13,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -127,4 +132,147 @@ class DownloaderTest {
 		assertEquals(0.0, downloader.fraction(), 1e-9);
 		assertEquals(1000, downloader.total());
 	}
+
+	/** Requests' Range headers, in order, for the ranged server. */
+	private final List<String> ranges = new CopyOnWriteArrayList<>();
+
+	/**
+	 * A server that honours `Range: bytes=N-` (unless `ignoreRange`), and on its first
+	 * `stalls` requests sends `stallAfter` bytes and then goes quiet.
+	 */
+	private String serveRanged(byte[] body, int stalls, int stallAfter, boolean ignoreRange) throws IOException {
+		AtomicInteger requests = new AtomicInteger();
+		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		server.setExecutor(Executors.newCachedThreadPool());
+		server.createContext("/model.gguf", exchange -> {
+			String range = exchange.getRequestHeaders().getFirst("Range");
+			ranges.add(range == null ? "" : range);
+			int from = 0;
+			if (range != null && !ignoreRange) {
+				from = Integer.parseInt(range.substring("bytes=".length(), range.length() - 1));
+			}
+			if (from >= body.length && from > 0) {
+				exchange.sendResponseHeaders(416, -1);
+				exchange.close();
+				return;
+			}
+			if (from > 0) {
+				exchange.getResponseHeaders().add("Content-Range", "bytes " + from + "-" + (body.length - 1) + "/" + body.length);
+			}
+			exchange.sendResponseHeaders(from > 0 ? 206 : 200, body.length - from);
+			OutputStream out = exchange.getResponseBody();
+			try {
+				if (requests.getAndIncrement() < stalls) {
+					out.write(body, from, Math.min(stallAfter, body.length - from));
+					out.flush();
+					Thread.sleep(3_000);
+				} else {
+					out.write(body, from, body.length - from);
+				}
+				out.close();
+			} catch (IOException | InterruptedException ignored) {
+				// The client hung up on the quiet connection.
+			}
+		});
+		server.start();
+
+		return "http://127.0.0.1:" + server.getAddress().getPort() + "/model.gguf";
+	}
+
+	private static byte[] model(int size) {
+		byte[] body = new byte[size];
+		for (int i = 0; i < size; i++) {
+			body[i] = (byte) (i * 31);
+		}
+		System.arraycopy("GGUF".getBytes(StandardCharsets.UTF_8), 0, body, 0, 4);
+
+		return body;
+	}
+
+	private static Downloader quick(Resource resource) {
+		return new Downloader(resource, Duration.ofMillis(300), Duration.ofMillis(10));
+	}
+
+	@Test
+	void a_connection_that_goes_quiet_is_dropped_and_the_download_goes_on_from_where_it_stopped(@TempDir Path dir) throws Exception {
+		byte[] body = model(200_000);
+		Path path = dir.resolve("qwen.gguf");
+		Downloader downloader = quick(resource(serveRanged(body, 1, 120_000, false), path, "GGUF", sha256(body)));
+
+		downloader.run();
+
+		assertEquals(Downloader.State.DONE, downloader.state(), downloader.error());
+		assertArrayEquals(body, Files.readAllBytes(path));
+		assertEquals(2, downloader.tries());
+		assertEquals("", ranges.get(0));
+		assertTrue(ranges.get(1).startsWith("bytes="), ranges.toString());
+		assertTrue(Integer.parseInt(ranges.get(1).replaceAll("\\D", "")) > 0, "went on, not again: " + ranges);
+	}
+
+	@Test
+	void a_part_file_left_by_a_cut_download_is_taken_up_at_the_next_start(@TempDir Path dir) throws Exception {
+		byte[] body = model(100_000);
+		Path path = dir.resolve("qwen.gguf");
+		Files.write(dir.resolve("qwen.gguf.part"), java.util.Arrays.copyOf(body, 40_000));
+		Downloader downloader = quick(resource(serveRanged(body, 0, 0, false), path, "GGUF", sha256(body)));
+
+		downloader.run();
+
+		assertEquals(Downloader.State.DONE, downloader.state(), downloader.error());
+		assertEquals(List.of("bytes=40000-"), ranges);
+		assertArrayEquals(body, Files.readAllBytes(path));
+		assertEquals(body.length, downloader.total(), "what was there and what came");
+	}
+
+	@Test
+	void a_server_that_ignores_the_range_gives_the_whole_file_from_the_start(@TempDir Path dir) throws Exception {
+		byte[] body = model(50_000);
+		Path path = dir.resolve("qwen.gguf");
+		Files.write(dir.resolve("qwen.gguf.part"), java.util.Arrays.copyOf(body, 10_000));
+		Downloader downloader = quick(resource(serveRanged(body, 0, 0, true), path, "GGUF", sha256(body)));
+
+		downloader.run();
+
+		assertEquals(Downloader.State.DONE, downloader.state(), downloader.error());
+		assertArrayEquals(body, Files.readAllBytes(path), "not the old part twice");
+	}
+
+	@Test
+	void a_whole_part_file_needs_only_its_sum(@TempDir Path dir) throws Exception {
+		byte[] body = model(30_000);
+		Path path = dir.resolve("qwen.gguf");
+		Files.write(dir.resolve("qwen.gguf.part"), body);
+		Downloader downloader = quick(resource(serveRanged(body, 0, 0, false), path, "GGUF", sha256(body)));
+
+		downloader.run();
+
+		assertEquals(Downloader.State.DONE, downloader.state(), downloader.error());
+		assertArrayEquals(body, Files.readAllBytes(path));
+	}
+
+	@Test
+	void a_network_that_fails_every_time_keeps_what_came_for_the_next_start(@TempDir Path dir) throws Exception {
+		byte[] body = model(100_000);
+		Path path = dir.resolve("qwen.gguf");
+		Downloader downloader = quick(resource(serveRanged(body, 99, 5_000, false), path, "GGUF", ""));
+
+		downloader.run();
+
+		assertEquals(Downloader.State.FAILED, downloader.state());
+		assertEquals(5, downloader.tries());
+		assertTrue(downloader.error().contains("quiet"), downloader.error());
+		assertEquals(25_000, Files.size(dir.resolve("qwen.gguf.part")), "five quiet pieces kept");
+		assertFalse(Files.exists(path));
+	}
+
+	@Test
+	void a_missing_file_is_not_asked_for_again(@TempDir Path dir) throws IOException {
+		Downloader downloader = quick(resource(serve("gone".getBytes(StandardCharsets.UTF_8), 404), dir.resolve("qwen.gguf"), "", ""));
+
+		downloader.run();
+
+		assertEquals(1, downloader.tries());
+		assertFalse(Files.exists(dir.resolve("qwen.gguf.part")));
+	}
 }
+
