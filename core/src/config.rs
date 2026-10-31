@@ -161,7 +161,8 @@ use of the model.";
 
 const RESEARCH_TEXT: &str = "The lodger thinks with Qwen2.5-3B-Instruct, a language model made \
 by Alibaba Cloud's Qwen team and released under the Qwen Research License Agreement, not the \
-Apache License of the smaller sizes: it allows research and non-commercial use. It will be \
+Apache License of the smaller sizes: it allows non-commercial use only, which it defines as \
+research or evaluation, and commercial use needs a license from Alibaba Cloud. It will be \
 downloaded once from Hugging Face, from Qwen's own repository, and kept on this computer. \
 Nothing is sent anywhere; the model runs here. The full agreement is at the link below. By \
 continuing you accept its terms for your use of the model.";
@@ -269,7 +270,7 @@ impl ModelSize {
             },
             Self::Large => ModelLicense {
                 name: "Qwen Research License",
-                url: "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE",
+                url: "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/blob/main/LICENSE",
                 text: RESEARCH_TEXT,
             },
             Self::Qwen3 => ModelLicense {
