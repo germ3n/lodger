@@ -107,6 +107,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Around(kind) => memory.feature(kind).is_some(),
         Need::Vehicle => !memory.vehicles.is_empty(),
         Need::TargetUnderground => last.online && last.underground,
+        Need::Cave => memory.unentered_cave().is_some(),
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }

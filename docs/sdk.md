@@ -127,7 +127,10 @@ into the config file and initialises the mod again, and anything that leaves to 
 model size) brings the preparing screen up. ABI 22 (2026-11-10): `InitReply.warnings`, config
 values of the wrong type the mod mended or left at their defaults, in words, which the host logs
 once (`lodger: config: brain.most_plans: invalid type ...; the default kept`); the settings
-screen writes a number with a whole step as a whole number (`2`, never `2.0`).
+screen writes a number with a whole step as a whole number (`2`, never `2.0`). ABI 23
+(2026-11-10): `scan` reads every `step`th block (the limit counts the blocks read, not the box),
+keeps only `dark` blocks (no sky light, no block light) when asked, and answers at most `most`
+positions.
 
 ## Resources
 

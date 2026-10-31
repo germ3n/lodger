@@ -214,6 +214,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::IcePath
         | Action::BedOccupied => None,
         Action::OreMarked => memory.scanned("_ore").next(),
+        Action::LanternAhead => memory.lantern_spot(),
+        Action::CaveLit => memory.cave_torches().first().copied(),
         Action::WallSwap(suffix) => {
             let candidates: Vec<BlockPos> = memory
                 .walls
@@ -2286,6 +2288,9 @@ pub fn commands(
             .map(|village| {
                 vec![(
                     Command::Scan {
+                        step: 0,
+                        dark: false,
+                        most: 0,
                         id: ids(),
                         min: [village.pos[0] - 19, village.pos[1] - 8, village.pos[2] - 19],
                         max: [
@@ -2656,6 +2661,9 @@ pub fn commands(
             let at = block_of(memory.last.pos);
             vec![(
                 Command::Scan {
+                    step: 0,
+                    dark: false,
+                    most: 0,
                     id: ids(),
                     min: [at[0] - 12, at[1] - 6, at[2] - 12],
                     max: [at[0] + 12, at[1] + 6, at[2] + 12],
@@ -2677,6 +2685,44 @@ pub fn commands(
         Action::OreMarked => pos
             .map(|ore| vec![(torch(ids, [ore[0], ore[1] + 1, ore[2]], 1), 0)])
             .unwrap_or_default(),
+        // Their lantern, set down far in the dark, then taken from the chest: a lantern that
+        // finds no floor stays theirs (a failed step drops the rest).
+        Action::LanternAhead => match (pos, memory.in_used_container(|id| id.ends_with("lantern")))
+        {
+            (Some(spot), Some((chest, stack))) => vec![
+                (
+                    Command::SetBlock {
+                        id: ids(),
+                        pos: spot,
+                        block: stack.id.clone(),
+                        state: String::new(),
+                        replace: vec![],
+                        settle: 4,
+                        wall: String::new(),
+                        rest: true,
+                        only: false,
+                    },
+                    0,
+                ),
+                (
+                    Command::TakeItem {
+                        id: ids(),
+                        from: chest.pos,
+                        slot: stack.slot,
+                        count: 1,
+                        keep: String::new(),
+                    },
+                    10,
+                ),
+            ],
+            _ => vec![],
+        },
+        Action::CaveLit => memory
+            .cave_torches()
+            .into_iter()
+            .enumerate()
+            .map(|(i, p)| (torch(ids, p, 4), i as u64 * 40))
+            .collect(),
         Action::WallSwap(_) => pos
             .and_then(|p| memory.walls.iter().find(|(q, _)| *q == p))
             .and_then(|(p, id)| {
@@ -3221,6 +3267,17 @@ mod tests {
             walked: 3,
             first_day: 0.0,
         });
+        // A cave nobody went near, and a lantern in the chest.
+        for x in (30..=60).step_by(3) {
+            for y in [30, 33] {
+                for z in [40, 43] {
+                    memory.caves.push([x, y, z]);
+                }
+            }
+        }
+        memory.containers[0]
+            .contents
+            .push(stack("minecraft:lantern", 1, 9));
         memory
     }
 

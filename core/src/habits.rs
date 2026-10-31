@@ -56,6 +56,8 @@ pub struct Habits {
     /// Samples online, and those of them looking behind them twice or more in the last minute.
     pub samples: u32,
     pub uneasy: u32,
+    /// Where they placed lights underground, newest last: their tunnel spacing (`caves`).
+    pub cave_lights: Vec<BlockPos>,
 }
 
 /// `day_time` in words: `at dawn`, `in the morning`, `around noon`, `in the afternoon`,

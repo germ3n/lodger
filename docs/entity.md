@@ -256,8 +256,15 @@ hardcoded, why only spruce"; it was a table at first.)
 | `light_campfire` | 2 | A campfire is lit. | An unlit campfire. |
 | `candles_lit` | 3 | Every candle in the house is lit at night, or every lit one out. | Candles in the home. |
 | `cauldron` | 2 | A cauldron is full that was empty, or empty that was full. | A cauldron. |
-| `lantern_ahead` | 3 | Far down a tunnel or cave the target has not entered, one lantern, lit. | A dark passage within 48 blocks and a lantern in a chest. |
-| `cave_lit` | 3 | A cave near the home the target has not entered has torches in it, at the spacing the target uses in their own tunnels. | A cave within 48 blocks the target never entered. |
+| `lantern_ahead` | 3 | Far down a cave the target has not entered, one of their lanterns, lit: set down at the cave's dark place farthest from them, then taken from their chest (a lantern that finds no floor stays in the chest). Coded 2026-11-10. | A cave they have not entered (`Need::Cave`) and a lantern in the chest they use. |
+| `cave_lit` | 3 | A cave near the home the target has not entered has torches in it, up to six, from its near end inward, at the spacing the target uses in their own tunnels (the middle of their underground lights' gaps, 4 to 14 blocks; 8 before they have lit one). Its own torches. Coded 2026-11-10. | A cave they have not entered. |
+
+The caves come from the brain's cave read (`core/src/caves.rs`): every ten minutes while the
+target is above ground within 48 blocks of home, a scan around them of 97 by 41 by 97 blocks
+read every third block (`step`, ABI 23) for air with no sky light and no block light (`dark`):
+since 1.18 caves are mostly plain air, not `cave_air`. A cave is a crowd of six such places
+within 8 blocks; it is unentered when none of it is within 10 blocks of where they walked or
+stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 
 ### Beds and rest
 

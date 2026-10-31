@@ -112,6 +112,9 @@ pub struct Brain {
     /// The tick of the last village read.
     #[serde(skip)]
     pub last_village_read: u64,
+    /// The tick of the last cave read.
+    #[serde(skip)]
+    pub last_cave_read: u64,
     pub next_command_id: u64,
     pub rng: Rng,
     /// Decisions made, for the status line.
@@ -458,6 +461,9 @@ impl Brain {
                 );
                 let id = self.id();
                 commands.push(Command::Scan {
+                    step: 0,
+                    dark: false,
+                    most: 0,
                     id,
                     min,
                     max,
@@ -484,6 +490,9 @@ impl Brain {
             {
                 let id = self.id();
                 commands.push(Command::Scan {
+                    step: 0,
+                    dark: false,
+                    most: 0,
                     id,
                     min: [village[0] - 19, village[1] - 8, village[2] - 19],
                     max: [village[0] + 19, village[1] + 15, village[2] + 19],
@@ -494,6 +503,43 @@ impl Brain {
                 });
                 memory.scans_out.push((id, "village_read".to_string()));
                 self.last_village_read = now.tick.max(1);
+            }
+        }
+
+        // The caves around them, read every ten minutes while they are above ground within 48
+        // blocks of home: the dark air below, every third block, for `lantern_ahead` and
+        // `cave_lit` (`crate::caves`).
+        if let Some(home) = memory.home.as_ref().map(|h| h.center) {
+            let at = memory.last.pos;
+            let (dx, dz) = (at[0] - home[0] as f64, at[2] - home[2] as f64);
+            let near = memory.last.online
+                && !memory.last.underground
+                && (dx * dx + dz * dz).sqrt() <= 48.0;
+            if near
+                && (self.last_cave_read == 0
+                    || now.tick.saturating_sub(self.last_cave_read) >= 600 * TPS)
+            {
+                use crate::caves::{READ_ABOVE, READ_BELOW, READ_STEP, READ_WIDE};
+                let c = [
+                    at[0].floor() as i32,
+                    at[1].floor() as i32,
+                    at[2].floor() as i32,
+                ];
+                let id = self.id();
+                commands.push(Command::Scan {
+                    id,
+                    min: [c[0] - READ_WIDE, c[1] - READ_BELOW, c[2] - READ_WIDE],
+                    max: [c[0] + READ_WIDE, c[1] + READ_ABOVE, c[2] + READ_WIDE],
+                    kinds: vec![
+                        "minecraft:air".to_string(),
+                        "minecraft:cave_air".to_string(),
+                    ],
+                    step: READ_STEP,
+                    dark: true,
+                    most: crate::caves::MOST_CAVE as u32,
+                });
+                memory.scans_out.push((id, "cave_read".to_string()));
+                self.last_cave_read = now.tick.max(1);
             }
         }
 
@@ -513,6 +559,9 @@ impl Brain {
                 ];
                 let id = self.id();
                 commands.push(Command::Scan {
+                    step: 0,
+                    dark: false,
+                    most: 0,
                     id,
                     min: [c[0] - 8, c[1] - 3, c[2] - 8],
                     max: [c[0] + 8, c[1] + 5, c[2] + 8],

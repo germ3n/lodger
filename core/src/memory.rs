@@ -477,6 +477,9 @@ pub struct Memory {
     pub people: crate::people::People,
     /// The places they stay away from home, most stayed at first (`crate::places`).
     pub sites: Vec<crate::places::Site>,
+    /// The dark places of the last cave read: air with no light, below the surface, around
+    /// the target near home (`crate::caves`).
+    pub caves: Vec<BlockPos>,
 }
 
 /// Caps, with the reason beside each.
@@ -563,6 +566,11 @@ fn is_decor(kind: &str) -> bool {
             | "minecraft:painting"
             | "minecraft:armor_stand"
     )
+}
+
+/// The block a position is in.
+pub fn block_of(pos: [f64; 3]) -> BlockPos {
+    block(pos)
 }
 
 fn block(pos: [f64; 3]) -> BlockPos {
@@ -852,18 +860,27 @@ impl Memory {
                 });
                 continue;
             }
-            let found: Vec<(String, BlockPos)> = scan
-                .positions
-                .iter()
-                .take(MOST_SCANNED)
-                .map(|(kind, pos)| (kind.rsplit(':').next().unwrap_or(kind).to_string(), *pos))
-                .collect();
             let by = self
                 .scans_out
                 .iter()
                 .find(|(id, _)| *id == scan.id)
                 .map(|(_, event)| event.clone());
             self.scans_out.retain(|(id, _)| *id != scan.id);
+            if by.as_deref() == Some("cave_read") {
+                self.caves = scan
+                    .positions
+                    .iter()
+                    .take(crate::caves::MOST_CAVE)
+                    .map(|(_, pos)| *pos)
+                    .collect();
+                continue;
+            }
+            let found: Vec<(String, BlockPos)> = scan
+                .positions
+                .iter()
+                .take(MOST_SCANNED)
+                .map(|(kind, pos)| (kind.rsplit(':').next().unwrap_or(kind).to_string(), *pos))
+                .collect();
             match by.as_deref() {
                 Some("scan_ore") => self.ores = found,
                 _ => self.scanned = found,
@@ -1081,6 +1098,12 @@ impl Memory {
                         }
                         if is_light(&event.detail) {
                             self.habits.lights_placed += 1;
+                            if self.last.underground {
+                                self.habits.cave_lights.push(pos);
+                                if self.habits.cave_lights.len() > 32 {
+                                    self.habits.cave_lights.remove(0);
+                                }
+                            }
                         }
                         if is_light(&event.detail) || is_door(&event.detail) {
                             let home = self.home.get_or_insert_with(|| Home {

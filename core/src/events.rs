@@ -127,6 +127,8 @@ pub enum Need {
     ColouredStacks,
     /// A damageable favourite tool sits in a chest.
     ToolInContainer,
+    /// A cave near the home the target has not entered, from the cave read (`crate::caves`).
+    Cave,
 }
 
 impl Need {
@@ -215,6 +217,7 @@ impl Need {
             Need::Around(kind) => format!("no {} around the house", kind.replace('_', " ")),
             Need::Vehicle => "no boat or minecart near".to_string(),
             Need::TargetUnderground => "the target is not underground".to_string(),
+            Need::Cave => "no cave near that they have not been in".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -431,6 +434,10 @@ pub enum Action {
     ScanVillage,
     /// The rock around the target scanned for ore, while they mine.
     ScanOre,
+    /// One of their lanterns far down a cave they have not entered.
+    LanternAhead,
+    /// Torches down a cave they have not entered, at their own spacing.
+    CaveLit,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1816,6 +1823,30 @@ pub const CATALOGUE: &[Event] = &[
         Action::ScanOre,
         true,
     ),
+    // Caves they have not entered (batch 4, owner 2026-11-10: a lantern from their chest, the
+    // torches its own).
+    row(
+        "lantern_ahead",
+        3,
+        5,
+        &[Cave, InChest("lantern")],
+        3.0,
+        2,
+        Full,
+        Action::LanternAhead,
+        false,
+    ),
+    row(
+        "cave_lit",
+        3,
+        5,
+        &[Cave],
+        4.0,
+        2,
+        Full,
+        Action::CaveLit,
+        false,
+    ),
     row(
         "ore_marked",
         2,
@@ -2582,6 +2613,8 @@ impl Event {
             | Action::DoorAhead
             | Action::VillageDoors
             | Action::OreMarked
+            | Action::LanternAhead
+            | Action::CaveLit
             | Action::RotateFixture(..)
             | Action::ColdFurnace
             | Action::OpenOnEnter
@@ -2731,6 +2764,10 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "lantern_ahead" => {
+                "leave one of their lanterns lit far down a cave they have not been in"
+            }
+            "cave_lit" => "light a cave they have not been in, the way they light their tunnels",
             "wall_swap" => "change one block of the house for its cousin",
             "torch_blue" => "make one of their torches burn blue",
             "window_bars" => "turn a window pane to iron bars",

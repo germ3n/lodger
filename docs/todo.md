@@ -589,6 +589,11 @@ because it can be built and tested without a game, and because the model layer i
     taken up at the next start; the sum is checked over the whole file. Tests: six new against
     a local server (quiet, resumed, range ignored, whole part, always failing, 404 not retried).
     Was: no read limit, so a quiet connection hung forever, and any failure deleted the part.
+  - **`lantern_ahead` and `cave_lit`** (batch 4; owner: both, the lantern from their chest):
+    a cave read every ten minutes near home finds dark air (scan `step`, `dark`, `most`, ABI
+    23); the cave they have not been near gets one of their lanterns far down it, or torches
+    at their own tunnel spacing. Tests: five in `caves`, the scan sampling's in JUnit, the
+    catalogue's. Was: two rows not coded.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

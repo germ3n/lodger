@@ -212,9 +212,14 @@ public final class Executors {
 	private static JsonObject scan(ServerLevel level, JsonObject command, long id, Context context) {
 		BlockPos min = blockPos(command.getAsJsonArray("min"));
 		BlockPos max = blockPos(command.getAsJsonArray("max"));
-		long volume = (long) (Math.abs(max.getX() - min.getX()) + 1) * (Math.abs(max.getY() - min.getY()) + 1) * (Math.abs(max.getZ() - min.getZ()) + 1);
+		int step = command.has("step") ? command.get("step").getAsInt() : 0;
+		boolean dark = command.has("dark") && command.get("dark").getAsBoolean();
+		int most = command.has("most") ? command.get("most").getAsInt() : 0;
+		int[] lo = {min.getX(), min.getY(), min.getZ()};
+		int[] hi = {max.getX(), max.getY(), max.getZ()};
+		long volume = ScanBox.reads(lo, hi, step);
 		if (volume > SCAN_LIMIT) {
-			return report(id, false, "the box holds " + volume + " blocks; at most " + SCAN_LIMIT);
+			return report(id, false, "the scan reads " + volume + " blocks; at most " + SCAN_LIMIT);
 		}
 
 		List<String> wanted = new ArrayList<>();
@@ -224,14 +229,25 @@ public final class Executors {
 
 		java.util.Map<String, Integer> counts = new java.util.TreeMap<>();
 		JsonArray positions = new JsonArray();
-		for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
-			String block = Senses.blockId(level.getBlockState(pos));
-			counts.merge(block, 1, Integer::sum);
-			if (Kinds.wanted(block, wanted)) {
-				JsonArray entry = new JsonArray();
-				entry.add(block);
-				entry.add(Senses.blockPos(pos));
-				positions.add(entry);
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+		for (int x : ScanBox.axis(lo[0], hi[0], step)) {
+			for (int y : ScanBox.axis(lo[1], hi[1], step)) {
+				for (int z : ScanBox.axis(lo[2], hi[2], step)) {
+					pos.set(x, y, z);
+					String block = Senses.blockId(level.getBlockState(pos));
+					counts.merge(block, 1, Integer::sum);
+					if (!Kinds.wanted(block, wanted) || (most > 0 && positions.size() >= most)) {
+						continue;
+					}
+					if (dark && (level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos) > 0
+							|| level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, pos) > 0)) {
+						continue;
+					}
+					JsonArray entry = new JsonArray();
+					entry.add(block);
+					entry.add(Senses.blockPos(pos.immutable()));
+					positions.add(entry);
+				}
 			}
 		}
 

@@ -278,6 +278,17 @@ pub enum Command {
         min: BlockPos,
         max: BlockPos,
         kinds: Vec<String>,
+        /// Read every `step`th block on each axis from `min` (0 or 1 is every block), so a
+        /// wide box stays under the host's limit, which counts the blocks read. ABI 23.
+        #[serde(default, skip_serializing_if = "is_zero")]
+        step: u8,
+        /// Only blocks with no sky light and no block light: the dark inside of caves, which
+        /// since 1.18 are mostly plain air. ABI 23.
+        #[serde(default, skip_serializing_if = "is_false")]
+        dark: bool,
+        /// At most this many positions answered (0 for all). ABI 23.
+        #[serde(default, skip_serializing_if = "is_zero_u32")]
+        most: u32,
     },
     /// A sound to one player at a position, by id, once.
     PlaySound {
