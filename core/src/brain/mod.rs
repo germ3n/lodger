@@ -1303,7 +1303,13 @@ impl Brain {
             }
         }
 
-        let chosen = rules_brain::choose_wanting(&menu, arc.stage, &memory.want, &mut self.rng);
+        let chosen = rules_brain::choose_with(
+            &menu,
+            arc.stage,
+            &memory.want,
+            &|effect| memory.notice_rate(effect),
+            &mut self.rng,
+        );
         let menu_ids: Vec<String> = menu.iter().map(|e| e.id.to_string()).collect();
         self.settle(
             chosen, &menu_ids, lines, "rules", now, day, memory, arc, config, log, model, None,
@@ -1653,7 +1659,13 @@ impl Brain {
         if menu.is_empty() {
             return;
         }
-        let chosen = rules_brain::choose_wanting(&menu, arc.stage, &memory.want, &mut self.rng);
+        let chosen = rules_brain::choose_with(
+            &menu,
+            arc.stage,
+            &memory.want,
+            &|effect| memory.notice_rate(effect),
+            &mut self.rng,
+        );
         let Ask {
             day,
             menu: menu_ids,

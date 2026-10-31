@@ -2492,6 +2492,118 @@ impl Event {
         }
     }
 
+    /// What the event does to the target, for how they took it (the review's N2): `sounds`,
+    /// `words` (signs, chat, names, books), `things` (their things moved, taken, given),
+    /// `house` (blocks of the house and around it changed), `seen` (figures and creatures that
+    /// show themselves), `sky` (the screen and the sky), `night` (their sleep); empty for
+    /// nothing and the scans. Every action is named here, so a new one must be sorted.
+    pub fn effect(&self) -> &'static str {
+        match self.action {
+            Action::Wait | Action::ScanVillage | Action::ScanOre => "",
+            Action::Sound(_)
+            | Action::SoundAtTarget(_)
+            | Action::SoundFar(_)
+            | Action::SoundAtFixture(_, _)
+            | Action::Taps(_, _, _)
+            | Action::MiningSounds
+            | Action::SoundPair(..) => "sounds",
+            Action::Sign
+            | Action::KillSign
+            | Action::Message(..)
+            | Action::Says
+            | Action::SaysKills
+            | Action::Whisper
+            | Action::RepeatsYou
+            | Action::BookWord
+            | Action::RenameOne
+            | Action::NameAnimal
+            | Action::TabEntry
+            | Action::Answers
+            | Action::ChestAnswers => "words",
+            Action::OpenLid
+            | Action::ShuffleContainer
+            | Action::SplitStack
+            | Action::TidyContainer
+            | Action::SwapStacks
+            | Action::FillGap
+            | Action::CookOne
+            | Action::TakeOutput
+            | Action::ItemOnTable
+            | Action::EggOnBed
+            | Action::Take
+            | Action::ReturnTaken
+            | Action::PlaceTaken
+            | Action::ReturnUsed
+            | Action::HopperEmptied
+            | Action::ShulkerMoved
+            | Action::FullOfOne
+            | Action::MapMarked
+            | Action::LootGift
+            | Action::ToolUsed
+            | Action::TidyByColour
+            | Action::RotateFrame
+            | Action::FramesTurn
+            | Action::SwapPainting
+            | Action::StandTurn
+            | Action::StandDress
+            | Action::FrameEmptied
+            | Action::FrameSwap
+            | Action::MoveVehicle
+            | Action::PushVehicle(..) => "things",
+            Action::ToggleDoor
+            | Action::ToggleFixture(_)
+            | Action::ToggleCandles
+            | Action::MoveLight
+            | Action::AddTorch
+            | Action::LightPath
+            | Action::Hole
+            | Action::Cairn
+            | Action::Sapling
+            | Action::Grave
+            | Action::PathWorn
+            | Action::CarpetShift
+            | Action::Cauldron
+            | Action::DoorHinge
+            | Action::LadderGap
+            | Action::FlowersPotted
+            | Action::PumpkinFace
+            | Action::TreeGrown
+            | Action::Backfill
+            | Action::Alcove
+            | Action::ShiftFurniture
+            | Action::RoomDark
+            | Action::DoorHeld
+            | Action::BedTurned
+            | Action::BucketFloor
+            | Action::SnowCleared
+            | Action::Trample
+            | Action::HarvestOne
+            | Action::PlateLaid
+            | Action::DoorAhead
+            | Action::VillageDoors
+            | Action::OreMarked
+            | Action::RotateFixture(..)
+            | Action::ColdFurnace
+            | Action::OpenOnEnter
+            | Action::PlantFlower
+            | Action::ReplantOther
+            | Action::IcePath
+            | Action::WallSwap(..)
+            | Action::BedBreaks => "house",
+            Action::Stare
+            | Action::StandWatch
+            | Action::PetGrowl
+            | Action::MoveCreature(..)
+            | Action::GolemTurned
+            | Action::DyeSheep
+            | Action::HostilesStare
+            | Action::BedOccupied
+            | Action::Figure(..) => "seen",
+            Action::Hint(_, _) => "sky",
+            Action::RefuseRest | Action::Wake | Action::WokeElsewhere => "night",
+        }
+    }
+
     /// `2 to 5`, or `3` for one stage.
     pub fn stages_words(&self) -> String {
         if self.from_stage == self.to_stage {

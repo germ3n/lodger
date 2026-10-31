@@ -577,6 +577,12 @@ because it can be built and tested without a game, and because the model layer i
     under the house; the sites they keep away from home (a mine, a second base, a spot); a
     recent event near an earlier landmark refers back to it; distances along the ground.
     Tests: six. Was: "in the house" or so many blocks off, by the 3D distance.
+  - **How they took each event** (the review's N2): every landed event that does something to
+    them is watched for a day by its effect, eight at once: startled, looked, fixed (and in how
+    many minutes), ran, fought, beside lit, walled, watched and left; the share of each effect
+    they notice leans the rule brain (0.6 to 1.4) and is said to the model ("Words get their
+    attention; sounds do not."). Tests: six, and the rule brain's. Was: the bold events only,
+    one at a time, a new one closing the last as ignored.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

@@ -240,7 +240,50 @@ pub struct Reaction {
     /// `watched` (stood facing the spot a minute), `left` (left the game within a minute),
     /// `ignored` (a day passed), or empty while it is still being watched.
     pub kind: String,
+    /// What the event does to them (`Event::effect`): `sounds`, `words`, `things`, `house`,
+    /// `seen`, `sky`, `night`.
+    pub effect: String,
+    /// Where it was, or where the target stood when it had no place: what running is
+    /// measured from.
+    pub anchor: BlockPos,
+    /// The turns and look-backs the target had made in the last minute when it landed.
+    pub turns_at: u32,
+    pub looks_at: u32,
+    /// They turned or looked back more within ten seconds.
+    pub startled: bool,
+    /// Ticks facing the spot within 8 blocks, standing; three seconds is a look.
+    pub looked_ticks: u32,
+    pub looked: bool,
+    /// Minutes until they broke or placed a block where it changed one.
+    pub fixed_minutes: Option<u32>,
+    /// The nearest they were to it in the first minute.
+    pub nearest: f64,
+    /// They ran from it in the first minute, or hit something then (`seen` only).
+    pub ran: bool,
+    pub fought: bool,
 }
+
+impl Reaction {
+    /// Whether they took any notice: anything they did about it.
+    pub fn noticed(&self) -> bool {
+        matches!(self.kind.as_str(), "lit" | "walled" | "watched" | "left")
+            || self.startled
+            || self.looked
+            || self.fixed_minutes.is_some()
+            || self.ran
+            || self.fought
+    }
+}
+
+/// Ticks as a fraction of a day.
+const fn ticks(n: u32) -> f32 {
+    n as f32 / 24_000.0
+}
+
+/// A reaction is watched this long; then it is settled.
+const REACTION_DAYS: f32 = 1.0;
+/// At most this many reactions open at once, the oldest closed first.
+const MOST_OPEN_REACTIONS: usize = 8;
 
 /// What is around the home, from the host's daily pass: water and how wide, snow, sand, trees,
 /// crops, a village or a mineshaft, and where each is. Rewritten each day.
@@ -301,6 +344,8 @@ pub struct Snapshot {
     /// Hostile mobs within 48 blocks, from the last entity pass: zombies, skeletons, spiders.
     pub hostiles_near: Vec<Creature>,
     pub look_backs: u32,
+    /// Turns of more than 120 degrees in the last minute.
+    pub turns: u32,
     pub raining: bool,
     /// Under the ground: no sky light and below the surface.
     pub underground: bool,
@@ -408,8 +453,6 @@ pub struct Memory {
     pub sessions: Vec<Session>,
     /// What the target did after each event the lodger landed.
     pub reactions: Vec<Reaction>,
-    /// Ticks the target has stood facing the newest watched reaction's spot.
-    pub watching_ticks: u32,
     /// The clock as of the last tick, for the sessions.
     pub last_real_millis: u64,
     pub last_day_time: u32,
@@ -944,6 +987,14 @@ impl Memory {
                         if self.containers.iter().any(|c| c.pos == pos && c.theirs()) {
                             self.opened_now = Some(pos);
                         }
+                        // Opening the chest something was done to is coming to look.
+                        for reaction in self
+                            .reactions
+                            .iter_mut()
+                            .filter(|r| r.pos == Some(pos) && day - r.day < REACTION_DAYS)
+                        {
+                            reaction.looked = true;
+                        }
                     }
                 }
                 EventKind::SleptBegan => {
@@ -979,13 +1030,17 @@ impl Memory {
                         session.ended_real = self.last_real_millis;
                     }
                     // Leaving within a minute of an event is a reaction to it.
-                    if let Some(reaction) =
-                        self.reactions.iter_mut().rev().find(|r| r.kind.is_empty())
+                    let mut left = false;
+                    for reaction in self
+                        .reactions
+                        .iter_mut()
+                        .filter(|r| r.kind.is_empty() && day - r.day < ticks(1_200))
                     {
-                        if (day - reaction.day) * 24_000.0 < 1_200.0 {
-                            reaction.kind = "left".to_string();
-                            self.triggers.push("left".to_string());
-                        }
+                        reaction.kind = "left".to_string();
+                        left = true;
+                    }
+                    if left {
+                        self.triggers.push("left".to_string());
                     }
                 }
                 EventKind::PlacedBlock => {
@@ -993,6 +1048,7 @@ impl Memory {
                         self.mark_home_dirty(pos);
                         push_capped(&mut self.placed, pos, MOST_PLACED);
                         self.react_to_placing(pos, &event.detail);
+                        self.react_to_fixing(pos);
                         if !cousins(&event.detail).is_empty() {
                             self.walls.retain(|(p, _)| *p != pos);
                             push_capped(&mut self.walls, (pos, event.detail.clone()), MOST_WALLS);
@@ -1065,6 +1121,14 @@ impl Memory {
                         continue;
                     }
                     let killed = event.kind == EventKind::Killed;
+                    // Hitting out in the minute after something showed itself is fighting it.
+                    for reaction in self
+                        .reactions
+                        .iter_mut()
+                        .filter(|r| r.effect == "seen" && day - r.day < ticks(1_200))
+                    {
+                        reaction.fought = true;
+                    }
                     if killed && !self.tally.iter().any(|t| t.kind == kind && t.kills > 0) {
                         self.milestone("first_kill", day, event.pos, &kind);
                     }
@@ -1100,6 +1164,7 @@ impl Memory {
                 EventKind::BrokeBlock => {
                     if let Some(pos) = event.pos {
                         self.mark_home_dirty(pos);
+                        self.react_to_fixing(pos);
                         // Natural ground dug near the home, not something they had placed.
                         let natural = [
                             "dirt",
@@ -1365,6 +1430,7 @@ impl Memory {
         self.last.underground = player.sky_light == 0 && player.pos[1] < 56.0;
         self.last.main_hand = player.main_hand.id.clone();
         self.last.look_backs = player.movement.look_backs;
+        self.last.turns = player.movement.turns;
 
         // The trail: a point every two blocks; cut when they stand still a minute or sleep.
         let at = block(player.pos);
@@ -1382,29 +1448,7 @@ impl Memory {
             }
         }
 
-        // A reaction being watched: standing a minute facing the spot within 8 blocks.
-        let watched_spot = self
-            .reactions
-            .iter()
-            .rev()
-            .find(|r| r.kind.is_empty())
-            .and_then(|r| r.pos);
-        if let Some(spot) = watched_spot {
-            if player.movement.still_seconds >= 1.0 && in_view_from(player, spot, 8.0) {
-                self.watching_ticks += 1;
-                if self.watching_ticks >= 20 * 60 {
-                    if let Some(reaction) =
-                        self.reactions.iter_mut().rev().find(|r| r.kind.is_empty())
-                    {
-                        reaction.kind = "watched".to_string();
-                        self.triggers.push("watched".to_string());
-                    }
-                    self.watching_ticks = 0;
-                }
-            } else {
-                self.watching_ticks = 0;
-            }
-        }
+        self.watch_reactions(player);
 
         if player.movement.still_seconds >= 1.0 {
             let cell = [
@@ -1523,7 +1567,9 @@ impl Memory {
     }
 
     /// Records an event's outcome. One the target would notice (a bold row) that landed is a
-    /// landmark too, kept for the whole stay.
+    /// landmark too, kept for the whole stay. Every event that landed and does something to
+    /// them (`Event::effect`) is watched for a day for how they took it (N2), several at once,
+    /// the oldest closed when more than eight are open.
     pub fn record(&mut self, event: &str, pos: Option<BlockPos>, day: f32, ok: bool, reason: &str) {
         let done = Done {
             event: event.to_string(),
@@ -1532,16 +1578,23 @@ impl Memory {
             ok,
             reason: reason.to_string(),
         };
-        if ok
-            && crate::events::find(event)
-                .map(|e| !e.small)
-                .unwrap_or(false)
-        {
+        let found = crate::events::find(event);
+        if ok && found.is_some_and(|e| !e.small) {
             push_capped(&mut self.landmarks, done.clone(), MOST_LANDMARKS);
-            // An older reaction still open was ignored; this one is watched for a day.
-            for reaction in self.reactions.iter_mut().filter(|r| r.kind.is_empty()) {
-                reaction.kind = "ignored".to_string();
+        }
+        let effect = found.map(|e| e.effect()).unwrap_or("");
+        if ok && !effect.is_empty() {
+            let open: Vec<usize> = self
+                .reactions
+                .iter()
+                .enumerate()
+                .filter(|(_, r)| r.kind.is_empty())
+                .map(|(i, _)| i)
+                .collect();
+            if open.len() >= MOST_OPEN_REACTIONS {
+                self.reactions[open[0]].kind = "ignored".to_string();
             }
+            let anchor = pos.unwrap_or_else(|| block(self.last.pos));
             push_capped(
                 &mut self.reactions,
                 Reaction {
@@ -1549,12 +1602,81 @@ impl Memory {
                     day,
                     pos,
                     kind: String::new(),
+                    effect: effect.to_string(),
+                    anchor,
+                    turns_at: self.last.turns,
+                    looks_at: self.last.look_backs,
+                    nearest: distance(block(self.last.pos), anchor),
+                    ..Reaction::default()
                 },
                 MOST_REACTIONS,
             );
-            self.watching_ticks = 0;
         }
         push_capped(&mut self.done, done, MOST_DONE);
+    }
+
+    /// Each open reaction watched this tick: a look (three seconds facing the spot within 8
+    /// blocks, standing) and a watch (a minute of it), a start (more turns or look-backs within
+    /// ten seconds), running (in the first minute, 12 blocks farther from it than the nearest
+    /// they came, at a run, having come within 24).
+    fn watch_reactions(&mut self, player: &Player) {
+        let today = self.today;
+        let at = block(player.pos);
+        let mut watched = false;
+        for reaction in self
+            .reactions
+            .iter_mut()
+            .filter(|r| today - r.day < REACTION_DAYS)
+        {
+            let since = today - reaction.day;
+            if let Some(spot) = reaction.pos {
+                if player.movement.still_seconds >= 1.0 && in_view_from(player, spot, 8.0) {
+                    reaction.looked_ticks += 1;
+                    if reaction.looked_ticks >= 60 {
+                        reaction.looked = true;
+                    }
+                    if reaction.looked_ticks >= 20 * 60 && reaction.kind.is_empty() {
+                        reaction.kind = "watched".to_string();
+                        watched = true;
+                    }
+                } else {
+                    reaction.looked_ticks = 0;
+                }
+            }
+            if since < ticks(200)
+                && (player.movement.turns > reaction.turns_at
+                    || player.movement.look_backs > reaction.looks_at)
+            {
+                reaction.startled = true;
+            }
+            if since < ticks(1_200) {
+                let d = distance(at, reaction.anchor);
+                reaction.nearest = reaction.nearest.min(d);
+                if reaction.nearest <= 24.0
+                    && d >= reaction.nearest + 12.0
+                    && player.movement.pace >= 4.0
+                {
+                    reaction.ran = true;
+                }
+            }
+        }
+        if watched {
+            self.triggers.push("watched".to_string());
+        }
+    }
+
+    /// A block placed or broken where an open `house` reaction changed one: fixed, and how
+    /// many minutes it took them.
+    fn react_to_fixing(&mut self, pos: BlockPos) {
+        let today = self.today;
+        for reaction in self.reactions.iter_mut().filter(|r| {
+            r.effect == "house" && r.fixed_minutes.is_none() && today - r.day < REACTION_DAYS
+        }) {
+            let Some(spot) = reaction.pos else { continue };
+            if (0..3).all(|i| (spot[i] - pos[i]).abs() <= 1) {
+                reaction.fixed_minutes = Some(((today - reaction.day) * 20.0).round() as u32);
+            }
+        }
     }
 
     /// The clock, once a tick from the stay: real time and the time of day for the sessions,
@@ -1562,10 +1684,12 @@ impl Memory {
     pub fn clock(&mut self, now: &craftkit::world::Now, day: f32) {
         self.last_real_millis = now.real_millis;
         self.last_day_time = now.day_time;
-        if let Some(reaction) = self.reactions.iter_mut().rev().find(|r| r.kind.is_empty()) {
-            if day - reaction.day >= 1.0 {
-                reaction.kind = "ignored".to_string();
-            }
+        for reaction in self
+            .reactions
+            .iter_mut()
+            .filter(|r| r.kind.is_empty() && day - r.day >= REACTION_DAYS)
+        {
+            reaction.kind = "ignored".to_string();
         }
     }
 
@@ -1605,29 +1729,38 @@ impl Memory {
         self.routes.sort_by_key(|r| std::cmp::Reverse(r.walked));
     }
 
-    /// A block placed answers the newest open reaction: a light within 16 blocks lit the spot;
-    /// a block that closes the spot in on its last open side walled it ([`encloses`]). Building
+    /// A block placed answers the open reactions to things left in a place (a change to the
+    /// house, words, their things, something seen): a light within 16 blocks lit the spot; a
+    /// block that closes the spot in on its last open side walled it ([`encloses`]). Building
     /// near it is not walling it: the dev client's house went up around a sign and read as
-    /// walled (2026-11-09).
+    /// walled (2026-11-09). A sound's or the sky's spot is no place to light.
     fn react_to_placing(&mut self, pos: BlockPos, block_id: &str) {
-        let Some(reaction) = self.reactions.iter().rev().find(|r| r.kind.is_empty()) else {
-            return;
-        };
-        let Some(spot) = reaction.pos else { return };
-        let kind = if is_light(block_id) && distance(spot, pos) <= 16.0 {
-            "lit"
-        } else if !is_light(block_id)
-            && side_of(spot, pos).is_some()
-            && encloses(spot, &self.placed)
-        {
-            "walled"
-        } else {
-            return;
-        };
-        if let Some(reaction) = self.reactions.iter_mut().rev().find(|r| r.kind.is_empty()) {
-            reaction.kind = kind.to_string();
+        let light = is_light(block_id);
+        let mut answered: Vec<(usize, &'static str)> = Vec::new();
+        for (i, reaction) in self.reactions.iter().enumerate() {
+            if !reaction.kind.is_empty()
+                || !matches!(
+                    reaction.effect.as_str(),
+                    "house" | "words" | "things" | "seen"
+                )
+            {
+                continue;
+            }
+            let Some(spot) = reaction.pos else { continue };
+            if light && distance(spot, pos) <= 16.0 {
+                answered.push((i, "lit"));
+            } else if !light && side_of(spot, pos).is_some() && encloses(spot, &self.placed) {
+                answered.push((i, "walled"));
+            }
         }
-        self.triggers.push(kind.to_string());
+        let mut said: Vec<&'static str> = Vec::new();
+        for (i, kind) in answered {
+            self.reactions[i].kind = kind.to_string();
+            if !said.contains(&kind) {
+                said.push(kind);
+                self.triggers.push(kind.to_string());
+            }
+        }
     }
 
     /// Makes a player the target.
@@ -1931,10 +2064,95 @@ impl Memory {
         self.done.iter().rev().take(count)
     }
 
+    /// How they take each kind of event, from the settled reactions (a day passed, or they
+    /// did something about it): the effect, how many they noticed, and how many settled. Only
+    /// effects with three settled or more, most noticed first.
+    pub fn attention(&self) -> Vec<(String, u32, u32)> {
+        let mut by: Vec<(String, u32, u32)> = Vec::new();
+        for reaction in &self.reactions {
+            let settled = reaction.noticed() || self.today - reaction.day >= REACTION_DAYS;
+            if !settled || reaction.effect.is_empty() {
+                continue;
+            }
+            let noticed = u32::from(reaction.noticed());
+            match by.iter_mut().find(|(e, _, _)| *e == reaction.effect) {
+                Some((_, n, t)) => {
+                    *n += noticed;
+                    *t += 1;
+                }
+                None => by.push((reaction.effect.clone(), noticed, 1)),
+            }
+        }
+        by.retain(|(_, _, t)| *t >= 3);
+        by.sort_by(|a, b| (b.1 * a.2).cmp(&(a.1 * b.2)));
+
+        by
+    }
+
+    /// How much an effect gets their notice, 0 to 1, if it has been seen settled three times.
+    pub fn notice_rate(&self, effect: &str) -> Option<f64> {
+        self.attention()
+            .into_iter()
+            .find(|(e, _, _)| e == effect)
+            .map(|(_, n, t)| n as f64 / t as f64)
+    }
+
+    /// The reaction lines: what gets their attention and what does not, how fast they put
+    /// things right, whether they run or fight.
+    pub fn reaction_lines(&self) -> Vec<String> {
+        let mut lines = Vec::new();
+        let attention = self.attention();
+        let rate = |(_, n, t): &(String, u32, u32)| *n as f64 / *t as f64;
+        let best = attention.first().filter(|a| rate(a) >= 0.5);
+        let worst = attention.last().filter(|a| rate(a) <= 0.25);
+        let words = |effect: &str| match effect {
+            "sounds" => "Sounds",
+            "words" => "Words",
+            "things" => "Their things moved",
+            "house" => "Changes to the house",
+            "seen" => "Things that show themselves",
+            "sky" => "The sky",
+            _ => "What happens at night",
+        };
+        match (best, worst) {
+            (Some(b), Some(w)) if b.0 != w.0 => lines.push(format!(
+                "{} get their attention; {} do not.",
+                words(&b.0),
+                words(&w.0).to_lowercase()
+            )),
+            (Some(b), _) => lines.push(format!("{} get their attention.", words(&b.0))),
+            (None, Some(w)) => lines.push(format!("{} do not get their attention.", words(&w.0))),
+            _ => {}
+        }
+
+        let mut fixed: Vec<u32> = self
+            .reactions
+            .iter()
+            .filter_map(|r| r.fixed_minutes)
+            .collect();
+        if fixed.len() >= 2 {
+            fixed.sort_unstable();
+            lines.push(format!(
+                "They put things right within about {} minutes.",
+                fixed[fixed.len() / 2].max(1)
+            ));
+        }
+        let ran = self.reactions.iter().filter(|r| r.ran).count();
+        let fought = self.reactions.iter().filter(|r| r.fought).count();
+        if ran >= 2 && ran >= fought {
+            lines.push("When something shows itself, they run.".to_string());
+        } else if fought >= 2 {
+            lines.push("When something shows itself, they fight.".to_string());
+        }
+
+        lines
+    }
+
     /// The lines that tell more than the core of `describe`, most telling first: the habits
     /// (N1). Each only once there is enough to say it; `describe` takes them while they fit.
     pub fn detail_lines(&self) -> Vec<String> {
         let mut lines = self.people_lines();
+        lines.extend(self.reaction_lines());
         lines.extend(self.place_lines());
         lines.extend(self.habit_lines());
 
@@ -2573,6 +2791,7 @@ mod tests {
         memory.reactions.push(Reaction {
             event: "sign".to_string(),
             pos: Some(spot),
+            effect: "words".to_string(),
             ..Reaction::default()
         });
         let here = vec![player(0, [20.0, 64.0, 0.0], 0.0)];
@@ -3263,5 +3482,194 @@ mod tests {
         let used: usize = tight[..tight.len() - 1].iter().map(|l| l.len() + 1).sum();
         assert!(used <= core + 60, "{used} > {}", core + 60);
         assert_eq!(describe_chars(1536), DESCRIBE_CHARS);
+    }
+
+    fn mover(pos: [f64; 3], pace: f32, turns: u32) -> Player {
+        let mut p = player(0, pos, 0.0);
+        p.movement.pace = pace;
+        p.movement.turns = turns;
+        p
+    }
+
+    #[test]
+    fn every_event_that_lands_is_watched_and_several_at_once() {
+        let mut memory = Memory {
+            target: Some(0),
+            ..Memory::default()
+        };
+        memory.record("knock", Some([0, 64, 0]), 1.0, true, "");
+        memory.record("sign", Some([5, 64, 0]), 1.0, true, "");
+        memory.record("wait", None, 1.0, true, "");
+        memory.record("cairn", Some([9, 64, 0]), 1.0, false, "no room");
+
+        let kinds: Vec<(&str, &str)> = memory
+            .reactions
+            .iter()
+            .map(|r| (r.event.as_str(), r.effect.as_str()))
+            .collect();
+        assert_eq!(
+            kinds,
+            [("knock", "sounds"), ("sign", "words")],
+            "a small one too; not wait, not a refusal"
+        );
+        assert!(
+            memory.reactions.iter().all(|r| r.kind.is_empty()),
+            "both open"
+        );
+        assert_eq!(memory.landmarks.len(), 1, "landmarks stay the bold ones");
+
+        for i in 0..MOST_OPEN_REACTIONS {
+            memory.record("knock", None, 1.1 + i as f32 * 0.01, true, "");
+        }
+        assert_eq!(
+            memory.reactions[0].kind, "ignored",
+            "the oldest closed past eight open"
+        );
+        let open = memory
+            .reactions
+            .iter()
+            .filter(|r| r.kind.is_empty())
+            .count();
+        assert_eq!(open, MOST_OPEN_REACTIONS);
+    }
+
+    #[test]
+    fn a_start_a_look_a_fix_a_run_and_a_fight_are_each_seen() {
+        let mut memory = Memory::default();
+        memory.observe(&obs(vec![mover([0.0, 64.0, 0.0], 0.0, 1)], vec![]), 1.0);
+
+        // A knock: more turns within ten seconds is a start.
+        memory.record("knock", None, 1.0, true, "");
+        memory.observe(
+            &obs(vec![mover([0.0, 64.0, 0.0], 0.0, 3)], vec![]),
+            1.0 + ticks(100),
+        );
+        assert!(memory.reactions[0].startled);
+        assert!(memory.reactions[0].noticed());
+
+        // A hole: a block placed in it a quarter of a day on (a day is twenty minutes) is
+        // fixed after five minutes.
+        memory.record("hole", Some([3, 63, 3]), 1.1, true, "");
+        memory.observe(
+            &obs(
+                vec![mover([0.0, 64.0, 0.0], 0.0, 3)],
+                vec![at(
+                    EventKind::PlacedBlock,
+                    [3, 63, 3],
+                    "minecraft:dirt",
+                    vec![],
+                )],
+            ),
+            1.35,
+        );
+        assert_eq!(memory.reactions[1].fixed_minutes, Some(5));
+
+        // A figure: they come within 10 blocks, then sprint 20 farther off in the minute, and
+        // hit something.
+        memory.record("far_figure", Some([10, 64, 0]), 2.0, true, "");
+        memory.observe(
+            &obs(vec![mover([2.0, 64.0, 0.0], 1.0, 3)], vec![]),
+            2.0 + ticks(20),
+        );
+        memory.observe(
+            &obs(
+                vec![mover([-20.0, 64.0, 0.0], 6.0, 3)],
+                vec![at(EventKind::Hit, [-20, 64, 0], "minecraft:zombie", vec![])],
+            ),
+            2.0 + ticks(400),
+        );
+        let figure = &memory.reactions[2];
+        assert!(figure.ran, "{figure:?}");
+        assert!(figure.fought);
+
+        // A sign nobody looks at is not noticed until a day has passed, then settled unnoticed.
+        memory.record("sign", Some([40, 64, 40]), 3.0, true, "");
+        assert!(!memory.reactions[3].noticed());
+    }
+
+    #[test]
+    fn a_light_near_a_sound_is_no_answer_to_it_but_near_a_sign_it_is() {
+        let mut memory = Memory::default();
+        memory.record("knock", Some([0, 64, 0]), 1.0, true, "");
+        memory.record("sign", Some([2, 64, 0]), 1.0, true, "");
+        memory.observe(
+            &obs(
+                vec![player(0, [0.0, 64.0, 0.0], 0.0)],
+                vec![at(
+                    EventKind::PlacedBlock,
+                    [1, 65, 0],
+                    "minecraft:torch",
+                    vec![],
+                )],
+            ),
+            1.1,
+        );
+
+        assert_eq!(memory.reactions[0].kind, "");
+        assert_eq!(memory.reactions[1].kind, "lit");
+        assert_eq!(memory.triggers, vec!["lit".to_string()], "said once");
+    }
+
+    #[test]
+    fn opening_the_chest_it_moved_things_in_is_coming_to_look() {
+        let mut memory = Memory::default();
+        memory.record("shuffle_chest", Some([2, 64, 0]), 1.0, true, "");
+        memory.observe(
+            &obs(
+                vec![player(0, [0.0, 64.0, 0.0], 0.0)],
+                vec![at(
+                    EventKind::OpenedContainer,
+                    [2, 64, 0],
+                    "minecraft:chest",
+                    bread(),
+                )],
+            ),
+            1.2,
+        );
+
+        assert!(memory.reactions[0].looked);
+    }
+
+    #[test]
+    fn what_gets_their_attention_and_what_does_not_is_said_and_leans_the_rules() {
+        let mut memory = Memory {
+            today: 5.0,
+            ..Memory::default()
+        };
+        let reaction = |event: &str, effect: &str, startled: bool| Reaction {
+            event: event.to_string(),
+            effect: effect.to_string(),
+            day: 1.0,
+            kind: "ignored".to_string(),
+            startled,
+            ..Reaction::default()
+        };
+        for _ in 0..3 {
+            memory.reactions.push(reaction("sign", "words", true));
+            memory.reactions.push(reaction("knock", "sounds", false));
+        }
+        memory.reactions.push(reaction("hole", "house", true)); // too few to say
+        for minutes in [3, 9, 5] {
+            memory.reactions.push(Reaction {
+                fixed_minutes: Some(minutes),
+                ..reaction("hole", "house", false)
+            });
+        }
+
+        assert_eq!(memory.notice_rate("words"), Some(1.0));
+        assert_eq!(memory.notice_rate("sounds"), Some(0.0));
+        let lines = memory.reaction_lines();
+        assert!(
+            lines.contains(&"Words get their attention; sounds do not.".to_string()),
+            "{lines:?}"
+        );
+        assert!(
+            lines.contains(&"They put things right within about 5 minutes.".to_string()),
+            "{lines:?}"
+        );
+        assert!(
+            memory.detail_lines().starts_with(&lines),
+            "among the first details"
+        );
     }
 }
