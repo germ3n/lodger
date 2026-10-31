@@ -16,6 +16,7 @@ pub mod events;
 pub mod habits;
 pub mod memory;
 pub mod model;
+pub mod people;
 pub mod rules;
 pub mod stay;
 

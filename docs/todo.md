@@ -565,6 +565,9 @@ because it can be built and tested without a game, and because the model layer i
     lines only while they fit the configured context (`describe_chars`). Real-model tests pass
     at 1536. Was: 512, and nothing kept a long memory from overflowing it, which fails the
     question to the rules.
+  - **People** (the review's N4): who comes to the home (by name, once a day each) and who is
+    with the target now, as detail lines; `Memory::alone`. Tests: four. Was: the players' names
+    for the target ask only.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

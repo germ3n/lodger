@@ -430,6 +430,8 @@ pub struct Memory {
     /// Their habits: the door, the day, sleep, what they carry, lights, looking back
     /// (`crate::habits`).
     pub habits: crate::habits::Habits,
+    /// Who comes to the home and who is with the target now (`crate::people`).
+    pub people: crate::people::People,
 }
 
 /// Caps, with the reason beside each.
@@ -825,6 +827,7 @@ impl Memory {
 
         let Some(index) = self.target else { return };
         let player = observations.players.iter().find(|p| p.index == index);
+        self.observe_people(observations, day);
 
         match player {
             Some(player) => {
@@ -1929,7 +1932,10 @@ impl Memory {
     /// The lines that tell more than the core of `describe`, most telling first: the habits
     /// (N1). Each only once there is enough to say it; `describe` takes them while they fit.
     pub fn detail_lines(&self) -> Vec<String> {
-        self.habit_lines()
+        let mut lines = self.people_lines();
+        lines.extend(self.habit_lines());
+
+        lines
     }
 
     /// How long the core lines of `describe` are without the details, for the budget's test.
