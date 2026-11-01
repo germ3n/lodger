@@ -110,6 +110,10 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Cave => memory.unentered_cave().is_some(),
         Need::UnmarkedDeath => memory.unmarked_death().is_some(),
         Need::LastLight => memory.light_taken_to().is_some(),
+        Need::LightsBehind => !memory.lights_behind().is_empty(),
+        Need::SoulableLight => memory.soulable_light().is_some(),
+        Need::WarpableAnimal => last.online && memory.warp_animal().is_some(),
+        Need::JustWoke => false,
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }

@@ -130,7 +130,17 @@ once (`lodger: config: brain.most_plans: invalid type ...; the default kept`); t
 screen writes a number with a whole step as a whole number (`2`, never `2.0`). ABI 23
 (2026-11-10): `scan` reads every `step`th block (the limit counts the blocks read, not the box),
 keeps only `dark` blocks (no sky light, no block light) when asked, and answers at most `most`
-positions.
+positions. ABI 24 (2026-11-10): `swap_block`, another block in a block's place with every
+property they share kept (a wall torch's facing), only over one of `only`; `hide_block`, a block
+taken away for `seconds` and put back as it was, at the time or at once when its level saves or
+closes. ABI 25 (2026-11-10): `warp_mob`, an animal frozen with its head on a player, perhaps
+`scale`d, `flip`ped (the Dinnerbone name, hidden, never over a name of its own), `creep`ing a
+step closer while not looked at, perhaps moved `to` a place first; put back as it was, where it
+was, after `seconds` (two minutes at most) or when the player comes within six blocks; a mob saved
+while warped carries a tag of how it was and is put back when next seen. ABI 26 (2026-11-10):
+`shift_bed`, a bed one block to its side, both halves, never one someone lies in, a respawn point
+at it moved with it; `bed_beside`, a bed of another block beside one, the same facing; and
+`swap_block` over a bed turns both its halves together.
 
 ## Resources
 

@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps) {
 	}
 
 	private Executors() {
@@ -102,6 +102,10 @@ public final class Executors {
 				case "equip_entity" -> equipEntity(level, command, id);
 				case "damage_item" -> damageItem(level, command, id);
 				case "figure" -> figure(level, command, id, context);
+				case "swap_block" -> swapBlock(level, command, id);
+				case "shift_bed" -> done(id, Beds.shift(level, blockPos(command.getAsJsonArray("pos"))));
+				case "bed_beside" -> bedBeside(level, command, id);
+				case "hide_block" -> hideBlock(level, command, id, context);
 				case "remove_figure" -> {
 					ServerPlayer player = context.senses().player(level, command.has("player") ? command.get("player").getAsInt() : 0);
 					boolean removed = player != null && context.figures().remove(player, command.get("figure").getAsInt());
@@ -120,6 +124,7 @@ public final class Executors {
 				case "cancel_sleep" -> cancelSleep(level, command, id, context);
 				case "look_at" -> lookAt(level, command, id, context);
 				case "hold" -> hold(level, command, id, context);
+				case "warp_mob" -> warpMob(level, command, id, context);
 				case "move_player" -> movePlayer(level, command, id, context);
 				case "set_state" -> setState(level, command, id);
 				case "grow" -> grow(level, command, id);
@@ -297,9 +302,14 @@ public final class Executors {
 
 	/** The block ids a {@code set_block} may replace, beyond air; empty for air alone. */
 	private static List<String> replaceable(JsonObject command) {
+		return replaceable(command, "replace");
+	}
+
+	/** The block ids a command lists under a key. */
+	private static List<String> replaceable(JsonObject command, String key) {
 		List<String> ids = new ArrayList<>();
-		if (command.has("replace") && command.get("replace").isJsonArray()) {
-			for (JsonElement id : command.getAsJsonArray("replace")) {
+		if (command.has(key) && command.get(key).isJsonArray()) {
+			for (JsonElement id : command.getAsJsonArray(key)) {
 				ids.add(id.getAsString());
 			}
 		}
@@ -479,6 +489,63 @@ public final class Executors {
 				path, held, command.has("name_shown") && command.get("name_shown").getAsBoolean(),
 				command.has("seconds") ? command.get("seconds").getAsFloat() : 0,
 				command.has("vanish_within") ? command.get("vanish_within").getAsFloat() : 0);
+
+		return report(id, true, "");
+	}
+
+	/** Another block in a block's place, every property they share kept: a wall torch's facing, a lantern's hanging (ABI 24). */
+	private static JsonObject swapBlock(ServerLevel level, JsonObject command, long id) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		BlockState there = level.getBlockState(pos);
+		if (!replaceable(command, "only").contains(Senses.blockId(there))) {
+			return report(id, false, "the place holds " + Senses.blockId(there));
+		}
+		Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(blockId(command)));
+		if (block.isEmpty()) {
+			return report(id, false, "no such block");
+		}
+		// A bed is two blocks: both halves go at once, or the other breaks.
+		if (there.getBlock() instanceof net.minecraft.world.level.block.BedBlock) {
+			return done(id, Beds.recolour(level, pos, block.get().value()));
+		}
+		BlockState swapped = block.get().value().defaultBlockState();
+		for (net.minecraft.world.level.block.state.properties.Property<?> property : there.getProperties()) {
+			swapped = copy(there, swapped, property);
+		}
+		level.setBlock(pos, swapped, Block.UPDATE_ALL);
+
+		return report(id, true, "");
+	}
+
+	private static <T extends Comparable<T>> BlockState copy(BlockState from, BlockState to, net.minecraft.world.level.block.state.properties.Property<T> property) {
+		return to.hasProperty(property) ? to.setValue(property, from.getValue(property)) : to;
+	}
+
+	private static JsonObject bedBeside(ServerLevel level, JsonObject command, long id) {
+		Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(blockId(command)));
+		if (block.isEmpty()) {
+			return report(id, false, "no such block");
+		}
+
+		return done(id, Beds.beside(level, blockPos(command.getAsJsonArray("pos")), block.get().value()));
+	}
+
+	/** A report from a why-not: done when it is empty. */
+	private static JsonObject done(long id, String whyNot) {
+		return report(id, whyNot.isEmpty(), whyNot);
+	}
+
+	/** A block taken away for a while and put back as it was (ABI 24); only one of {@code only}, never one with contents. */
+	private static JsonObject hideBlock(ServerLevel level, JsonObject command, long id, Context context) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		BlockState there = level.getBlockState(pos);
+		if (there.isAir() || !replaceable(command, "only").contains(Senses.blockId(there))) {
+			return report(id, false, "the place holds " + Senses.blockId(there));
+		}
+		if (level.getBlockEntity(pos) != null) {
+			return report(id, false, "a block with contents is never hidden");
+		}
+		context.hidden().hide(level, pos, command.get("seconds").getAsFloat());
 
 		return report(id, true, "");
 	}
@@ -1221,6 +1288,29 @@ public final class Executors {
 		context.holds().add(mob, player, command.get("seconds").getAsFloat());
 
 		return report(id, true, "");
+	}
+
+	/** An animal warped for a while and put back (ABI 25): only an animal, never a held mob or one already warped. */
+	private static JsonObject warpMob(ServerLevel level, JsonObject command, long id, Context context) {
+		Entity entity = level.getEntity(command.get("entity").getAsInt());
+		if (!(entity instanceof net.minecraft.world.entity.animal.Animal animal)) {
+			return report(id, false, "no animal with that id here");
+		}
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		Vec3 to = null;
+		if (command.has("to") && command.get("to").isJsonArray()) {
+			JsonArray p = command.getAsJsonArray("to");
+			to = new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
+		}
+		boolean warped = context.warps().add(animal, player, command.get("seconds").getAsFloat(),
+				command.has("scale") ? command.get("scale").getAsDouble() : 1.0,
+				command.has("flip") && command.get("flip").getAsBoolean(),
+				command.has("creep") && command.get("creep").getAsBoolean(), to);
+
+		return warped ? report(id, true, "") : report(id, false, "it is held or warped already");
 	}
 
 	private static Container container(ServerLevel level, BlockPos pos) {

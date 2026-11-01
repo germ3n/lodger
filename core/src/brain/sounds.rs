@@ -491,6 +491,43 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // Right under the bed, as they lie down (batch 5): slow, then nothing.
+        "under_the_bed" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.silverfish.step", 0),
+                        ("minecraft:entity.silverfish.step", 12),
+                        ("minecraft:entity.silverfish.step", 24),
+                        ("minecraft:entity.silverfish.step", 36),
+                    ],
+                    (0.5, 0.6),
+                    0.5,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.wood.hit", 0),
+                        ("minecraft:block.wood.hit", 14),
+                        ("minecraft:block.wood.hit", 30),
+                    ],
+                    (1.5, 1.7),
+                    0.25,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.wool.step", 0),
+                        ("minecraft:entity.silverfish.step", 10),
+                        ("minecraft:block.wool.step", 22),
+                    ],
+                    (0.6, 0.7),
+                    0.4,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         "scratching" => {
             const WAYS: &[Variant] = &[
                 v(
@@ -894,6 +931,7 @@ mod tests {
             "your_voice",
             "steps_above",
             "scratching",
+            "under_the_bed",
             "ladder_climb",
             "pickup_pop",
             "cold_crackle",

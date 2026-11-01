@@ -133,6 +133,14 @@ pub enum Need {
     UnmarkedDeath,
     /// The light they placed last, and a way on from it along where they went.
     LastLight,
+    /// Lights of theirs behind them as they go, out of view (`crate::lights`).
+    LightsBehind,
+    /// A light of theirs with a soul fire form, out of view.
+    SoulableLight,
+    /// An animal to warp, theirs first, 12 to 32 blocks from the target (`crate::warped`).
+    WarpableAnimal,
+    /// The target just woke; never offered, the brain starts it (`foot_of_bed`).
+    JustWoke,
 }
 
 impl Need {
@@ -164,6 +172,9 @@ impl Need {
                 | Need::Animals
                 | Need::Hostiles
                 | Need::TargetUnderground
+                | Need::LightsBehind
+                | Need::WarpableAnimal
+                | Need::JustWoke
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
                 | Need::TargetApproachingChest
@@ -224,6 +235,10 @@ impl Need {
             Need::Cave => "no cave near that they have not been in".to_string(),
             Need::UnmarkedDeath => "no death of theirs left unmarked".to_string(),
             Need::LastLight => "no light of theirs with a way on from it".to_string(),
+            Need::LightsBehind => "no light of theirs behind them".to_string(),
+            Need::SoulableLight => "no torch or lantern of theirs out of view".to_string(),
+            Need::WarpableAnimal => "no animal 12 to 32 blocks from them".to_string(),
+            Need::JustWoke => "happens only as they wake".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -448,6 +463,18 @@ pub enum Action {
     DeathLight,
     /// The light they placed last, a few blocks on along the way they went.
     LightTaken,
+    /// Their lights behind them go out one by one, back a minute later.
+    LightsOut,
+    /// A light of theirs turned to soul fire.
+    SoulSwap,
+    /// An animal warped for a minute: too tall, upside down, creeping, its head on them.
+    WarpAnimal,
+    /// Their bed one block to its side.
+    ShiftBed,
+    /// Their bed another colour.
+    SheetsChanged,
+    /// A second bed beside theirs.
+    SecondBed,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -506,6 +533,8 @@ pub enum FigureWhere {
     InBed,
     /// Walking the route, start to end.
     Route,
+    /// At the foot of the bed, the far side from the target as they wake.
+    BedFoot,
 }
 
 /// One row of the catalogue.
@@ -984,6 +1013,62 @@ pub const CATALOGUE: &[Event] = &[
         2,
         Full,
         Action::EggOnBed,
+        false,
+    ),
+    // Batch 5 (owner, 2026-11-10): the bed moved, recoloured, doubled; under it; at its foot.
+    row(
+        "shift_bed",
+        3,
+        5,
+        &[Bed, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::ShiftBed,
+        false,
+    ),
+    row(
+        "sheets_changed",
+        3,
+        5,
+        &[Bed, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::SheetsChanged,
+        false,
+    ),
+    row(
+        "under_the_bed",
+        3,
+        5,
+        &[Bed, TargetInBed],
+        2.0,
+        3,
+        Half,
+        Action::Sound("minecraft:entity.silverfish.step"),
+        true,
+    ),
+    row(
+        "foot_of_bed",
+        4,
+        5,
+        &[Bed, JustWoke],
+        2.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::BedFoot, 0.5, 0.0),
+        false,
+    ),
+    row(
+        "second_bed",
+        4,
+        5,
+        &[Bed, TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::SecondBed,
         false,
     ),
     // Decoration and signs
@@ -1881,6 +1966,40 @@ pub const CATALOGUE: &[Event] = &[
         false,
     ),
     row(
+        "lights_out",
+        4,
+        5,
+        &[Night, LightsBehind],
+        1.0,
+        4,
+        Full,
+        Action::LightsOut,
+        false,
+    ),
+    row(
+        "soul_swap",
+        3,
+        5,
+        &[SoulableLight],
+        2.0,
+        3,
+        Full,
+        Action::SoulSwap,
+        false,
+    ),
+    // The owner's warped animals (2026-11-10).
+    row(
+        "warped_animal",
+        3,
+        5,
+        &[WarpableAnimal, TargetOutdoors],
+        1.0,
+        6,
+        Full,
+        Action::WarpAnimal,
+        false,
+    ),
+    row(
         "ore_marked",
         2,
         5,
@@ -2650,6 +2769,11 @@ impl Event {
             | Action::CaveLit
             | Action::DeathLight
             | Action::LightTaken
+            | Action::LightsOut
+            | Action::SoulSwap
+            | Action::ShiftBed
+            | Action::SheetsChanged
+            | Action::SecondBed
             | Action::RotateFixture(..)
             | Action::ColdFurnace
             | Action::OpenOnEnter
@@ -2666,7 +2790,8 @@ impl Event {
             | Action::DyeSheep
             | Action::HostilesStare
             | Action::BedOccupied
-            | Action::Figure(..) => "seen",
+            | Action::Figure(..)
+            | Action::WarpAnimal => "seen",
             Action::Hint(_, _) => "sky",
             Action::RefuseRest | Action::Wake | Action::WokeElsewhere => "night",
         }
@@ -2799,6 +2924,14 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "shift_bed" => "move their bed one block over",
+            "sheets_changed" => "change the colour of their bed",
+            "under_the_bed" => "scratch under their bed as they lie down",
+            "foot_of_bed" => "stand at the foot of their bed as they wake",
+            "second_bed" => "put a second bed beside theirs",
+            "warped_animal" => "make one of the animals wrong for a minute, watching them",
+            "lights_out" => "put out their lights behind them one by one, for a minute",
+            "soul_swap" => "turn one of their lights to soul fire",
             "death_light" => "leave a lit candle where they died",
             "light_taken" => "carry their last torch a few blocks on, the way they went",
             "lantern_ahead" => {

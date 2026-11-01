@@ -39,6 +39,8 @@ public final class Worlds {
 	private final Senses senses = new Senses();
 	private final Looks looks = new Looks();
 	private final Holds holds = new Holds();
+	private final Hidden hidden = new Hidden();
+	private final Warps warps = new Warps();
 	private final LootOffers loot = new LootOffers();
 	private final Later later = new Later();
 	private final Poses poses = new Poses();
@@ -101,6 +103,9 @@ public final class Worlds {
 	public void levelUnloaded(ServerLevel level) {
 		// No mob is saved frozen: what the level holds is let go before it closes.
 		holds.releaseIn(level);
+		// No light is saved gone: what the level hides is put back before it closes.
+		hidden.putBackIn(level);
+		warps.restoreIn(level);
 		Map<LoadedMod, Open> perMod = open.remove(level);
 		if (perMod == null) {
 			return;
@@ -128,11 +133,13 @@ public final class Worlds {
 		long realMillis = System.currentTimeMillis();
 		looks.tick();
 		holds.tick(server);
+		hidden.tick();
+		warps.tick(server);
 		later.tick();
 		poses.tick();
 		figures.tick();
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();

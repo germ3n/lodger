@@ -373,6 +373,38 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_false")]
         only: bool,
     },
+    /// Put another block in a block's place, keeping every property the two share (a wall
+    /// torch's facing, a lantern's hanging), and only over one of `only`: a torch's flame turned
+    /// to soul fire where it hangs. ABI 24.
+    SwapBlock {
+        id: u64,
+        pos: BlockPos,
+        block: String,
+        only: Vec<String>,
+    },
+    /// Take a block away for `seconds` and put it back as it was, only one of `only` (a light):
+    /// the host puts it back at the time, or at once when its level saves or closes, so a quit
+    /// never leaves it gone. Nothing is put back over what took the empty place meanwhile.
+    /// ABI 24.
+    HideBlock {
+        id: u64,
+        pos: BlockPos,
+        seconds: f32,
+        only: Vec<String>,
+    },
+    /// Move a bed one block to its side, both halves, colour and facing kept, onto whichever side
+    /// has room and solid floor under both; never one someone lies in. ABI 26.
+    ShiftBed {
+        id: u64,
+        pos: BlockPos,
+    },
+    /// Put a bed of `block` beside the bed at `pos`, the same facing, on whichever side has room
+    /// and solid floor under both halves. ABI 26.
+    BedBeside {
+        id: u64,
+        pos: BlockPos,
+        block: String,
+    },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
         id: u64,
@@ -601,6 +633,26 @@ pub enum Command {
         player: u32,
         seconds: f32,
     },
+    /// Warp an animal for `seconds` (at most two minutes), then put it back as it was, where
+    /// it was: frozen, its head always on `player`; `scale` times its size (1 for none);
+    /// `flip` upside down as the game turns a mob named Dinnerbone (never one with a name of
+    /// its own); `creep` a step closer each time the player looks away, along the ground. Moved
+    /// first to `to` when given. It ends early when the player comes within six blocks. A mob
+    /// saved while warped is put back when next seen. ABI 25.
+    WarpMob {
+        id: u64,
+        entity: u32,
+        player: u32,
+        seconds: f32,
+        #[serde(default = "one")]
+        scale: f32,
+        #[serde(default, skip_serializing_if = "is_false")]
+        flip: bool,
+        #[serde(default, skip_serializing_if = "is_false")]
+        creep: bool,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        to: Option<Pos>,
+    },
     /// Turn an entity's head toward a position and keep it there for `seconds`.
     LookAt {
         id: u64,
@@ -651,6 +703,10 @@ impl Command {
             | Command::ToggleBlock { id, .. }
             | Command::MoveBlock { id, .. }
             | Command::SetBlock { id, .. }
+            | Command::SwapBlock { id, .. }
+            | Command::HideBlock { id, .. }
+            | Command::ShiftBed { id, .. }
+            | Command::BedBeside { id, .. }
             | Command::OpenLid { id, .. }
             | Command::RotateFrame { id, .. }
             | Command::SwapPainting { id, .. }
@@ -658,6 +714,7 @@ impl Command {
             | Command::NameEntity { id, .. }
             | Command::DyeSheep { id, .. }
             | Command::MoveEntity { id, .. }
+            | Command::WarpMob { id, .. }
             | Command::PushEntity { id, .. }
             | Command::RotateBlock { id, .. }
             | Command::BreakBlock { id, .. }
@@ -697,6 +754,10 @@ pub struct Report {
     pub done: bool,
     /// Why not, when not.
     pub reason: String,
+}
+
+fn one() -> f32 {
+    1.0
 }
 
 fn is_zero(n: &u8) -> bool {

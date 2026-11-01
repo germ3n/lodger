@@ -384,6 +384,9 @@ pub struct Memory {
     pub decor: Vec<Decor>,
     /// The last thing the target said in chat, whatever it was about.
     pub last_said: String,
+    /// The target just woke, taken by the brain on its next tick (`foot_of_bed`). Not saved.
+    #[serde(skip)]
+    pub woke_now: bool,
     /// A door the target just used, taken by the brain on its next tick (`door_held`). Not
     /// saved.
     #[serde(skip)]
@@ -1473,6 +1476,9 @@ impl Memory {
         self.last.pos = player.pos;
         self.last.yaw = player.yaw;
         self.last.online = true;
+        if self.last.sleeping && !player.sleeping {
+            self.woke_now = true;
+        }
         self.last.sleeping = player.sleeping;
         self.last.walking = player.movement.pace > 0.5;
         self.last.underground = player.sky_light == 0 && player.pos[1] < 56.0;

@@ -603,6 +603,23 @@ because it can be built and tested without a game, and because the model layer i
   - **`death_light` and `light_taken`** (batch 4, two of the owner's four new): a lit candle
     where they last died, once a death; the light they placed last carried six to ten blocks
     on the way they went, away from the house, set down before the old one goes. Tests: four.
+  - **`lights_out` and `soul_swap`** (batch 4, the owner's other two): at night their lights
+    behind them go out one by one and come back a minute later (`hide_block`, put back at once
+    when a level closes); one of their torches or lanterns turns to soul fire, the same shape
+    (`swap_block`). ABI 24. Tests: four in `lights`, `Due`'s in JUnit.
+  - **Warped animals** (owner: "warped versions of the entity ... a cow or pig"; "3 but also
+    mobs outside if they dont own enough"): `warped_animal`, one of their animals or one
+    outside, frozen with its head on them and one or two of too tall, upside down, creeping
+    closer while they look away, sometimes in their doorway first; put back as it was after a
+    minute or when they come within six blocks (`warp_mob`, ABI 25, a tag of how it was so a
+    quit never leaves it wrong). Tests: three in `warped`, `WarpMath`'s in JUnit.
+  - **Batch 5, beds and rest** (owner: build `shift_bed`, all four new): `shift_bed` (one block
+    to the side, both halves, the respawn point moved with it), `sheets_changed` (another
+    colour, both halves at once), `under_the_bed` (scratching under it as they lie down),
+    `foot_of_bed` (the figure across the bed as they wake, one waking in three), `second_bed`
+    (once a stay). ABI 26. Tests: two in `act`. Was: `shift_bed` not coded.
+  - **The debug panel teleports on Shift+click only** (a stray click put the owner deep in a
+    cave). Was: any click on a spot.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

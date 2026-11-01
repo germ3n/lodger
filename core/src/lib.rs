@@ -15,12 +15,14 @@ pub mod config;
 pub mod debug;
 pub mod events;
 pub mod habits;
+pub mod lights;
 pub mod memory;
 pub mod model;
 pub mod people;
 pub mod places;
 pub mod rules;
 pub mod stay;
+pub mod warped;
 
 use config::{Config, ModelSize};
 use craftkit::{

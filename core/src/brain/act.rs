@@ -157,6 +157,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if super::sounds::HOUSE_SOUNDS.contains(&event.id) {
         return super::sounds::house_spot(event.id, memory, rng.next_u64() as usize);
     }
+    // Under the bed they lie in.
+    if event.id == "under_the_bed" {
+        return home.and_then(|h| h.bed).map(|b| [b[0], b[1] - 1, b[2]]);
+    }
     // A cold furnace's crackle comes from their furnace.
     if event.id == "cold_crackle" {
         return memory.furnace().map(|f| f.pos);
@@ -203,6 +207,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::OreMarked => memory.scanned("_ore").next(),
         Action::LanternAhead => memory.lantern_spot(),
         Action::DeathLight => memory.unmarked_death(),
+        Action::LightsOut => memory.lights_behind().first().map(|(p, _)| *p),
+        Action::WarpAnimal => memory.warp_animal().map(|c| block_of(c.pos)),
+        Action::SoulSwap => memory.soulable_light().map(|(p, _)| p),
         Action::LightTaken => memory.habits.last_light.as_ref().map(|(p, _)| *p),
         Action::CaveLit => memory.cave_torches().first().copied(),
         Action::WallSwap(suffix) => {
@@ -221,6 +228,19 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::Figure(FigureWhere::Doorway, _, _) => home.and_then(|h| pick(&h.doors, rng)),
         Action::Figure(FigureWhere::AtChest, _, _) => memory.used_container().map(|c| c.pos),
         Action::Figure(FigureWhere::InBed, _, _) => home.and_then(|h| h.bed),
+        // The floor two blocks past the bed from where they stand as they wake: the figure
+        // stands at its foot, across it from them.
+        Action::Figure(FigureWhere::BedFoot, _, _) => home.and_then(|h| h.bed).map(|b| {
+            let at = block_of(memory.last.pos);
+            let (dx, dz) = (b[0] - at[0], b[2] - at[2]);
+            let (sx, sz) = if dx.abs() >= dz.abs() {
+                (if dx >= 0 { 1 } else { -1 }, 0)
+            } else {
+                (0, dz.signum())
+            };
+            [b[0] + sx * 2, b[1] - 1, b[2] + sz * 2]
+        }),
+        Action::ShiftBed | Action::SheetsChanged | Action::SecondBed => home.and_then(|h| h.bed),
         Action::Figure(FigureWhere::AcrossWater, _, _) => memory.feature("water").map(|w| {
             // The far side: past the water's middle from the target, by its width.
             let at = block_of(memory.last.pos);
@@ -521,6 +541,8 @@ pub fn spots(command: &Command) -> Vec<BlockPos> {
     match command {
         Command::ToggleBlock { pos, .. }
         | Command::SetBlock { pos, .. }
+        | Command::SwapBlock { pos, .. }
+        | Command::HideBlock { pos, .. }
         | Command::RotateBlock { pos, .. }
         | Command::BreakBlock { pos, .. }
         | Command::SetSign { pos, .. } => vec![*pos],
@@ -2710,6 +2732,109 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        Action::ShiftBed => pos
+            .map(|bed| {
+                vec![(
+                    Command::ShiftBed {
+                        id: ids(),
+                        pos: bed,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // Another colour, both halves, same place and facing: every bed colour but the new one
+        // may be there.
+        Action::SheetsChanged => pos
+            .map(|bed| {
+                let colour = crate::memory::COLOURS[seed % crate::memory::COLOURS.len()];
+                let block = format!("minecraft:{colour}_bed");
+                let only = crate::memory::COLOURS
+                    .iter()
+                    .map(|c| format!("minecraft:{c}_bed"))
+                    .filter(|b| *b != block)
+                    .collect();
+                vec![(
+                    Command::SwapBlock {
+                        id: ids(),
+                        pos: bed,
+                        block,
+                        only,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::SecondBed => pos
+            .map(|bed| {
+                let colour = crate::memory::COLOURS[seed % crate::memory::COLOURS.len()];
+                vec![(
+                    Command::BedBeside {
+                        id: ids(),
+                        pos: bed,
+                        block: format!("minecraft:{colour}_bed"),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::WarpAnimal => match memory.warp_animal() {
+            Some(animal) => {
+                let w = crate::warped::warp(memory.times(event.id), seed, animal.named);
+                vec![(
+                    Command::WarpMob {
+                        id: ids(),
+                        entity: animal.id,
+                        player: target,
+                        seconds: 60.0,
+                        scale: w.scale,
+                        flip: w.flip,
+                        creep: w.creep,
+                        to: if w.doorway {
+                            memory.doorway_spot()
+                        } else {
+                            None
+                        },
+                    },
+                    0,
+                )]
+            }
+            None => vec![],
+        },
+        // The lights behind them out, nearest first, three quarters of a second apart, each
+        // back a minute after it went.
+        Action::LightsOut => memory
+            .lights_behind()
+            .into_iter()
+            .enumerate()
+            .map(|(i, (p, id))| {
+                (
+                    Command::HideBlock {
+                        id: ids(),
+                        pos: p,
+                        seconds: 60.0,
+                        only: vec![id],
+                    },
+                    i as u64 * 15,
+                )
+            })
+            .collect(),
+        Action::SoulSwap => match memory.soulable_light() {
+            Some((p, id)) => crate::lights::soul_of(&id)
+                .map(|soul| {
+                    vec![(
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: p,
+                            block: soul.to_string(),
+                            only: vec![id.clone()],
+                        },
+                        0,
+                    )]
+                })
+                .unwrap_or_default(),
+            None => vec![],
+        },
         // A candle, lit, on the ground where they died.
         Action::DeathLight => pos
             .map(|p| {
@@ -3317,6 +3442,19 @@ mod tests {
             walked: 3,
             first_day: 0.0,
         });
+        // A cow of theirs in sight, twenty blocks off.
+        memory.last.creatures_near.push(crate::memory::Creature {
+            id: 77,
+            kind: "cow".to_string(),
+            pos: [0.5, 1.0, 20.5],
+            named: false,
+            pet: false,
+        });
+        // A torch of theirs behind where they stand (the memory's player is at the origin,
+        // facing +z).
+        memory
+            .walls
+            .push(([0, 1, -6], "minecraft:torch".to_string()));
         // A death, and their last torch on the route.
         memory.milestones.push(crate::memory::Milestone {
             kind: "died".to_string(),
@@ -4423,5 +4561,74 @@ mod tests {
             "{:?}",
             made[0].0
         );
+    }
+
+    #[test]
+    fn the_beds_of_batch_five_go_where_they_should() {
+        let mut memory = memory();
+        memory.last.pos = [-2.5, 64.0, 0.5]; // woken on the bed's west side
+        let now = Now::default();
+        let mut rng = Rng::new(4);
+
+        // At the foot of the bed: the floor two blocks past it, across it from them.
+        let foot = find("foot_of_bed").unwrap();
+        assert_eq!(place(foot, &memory, &mut rng), Some([2, 63, 0]));
+        let made = commands(foot, Some([2, 63, 0]), &memory, &mut ids(), &now, None);
+        assert!(
+            matches!(&made[0].0, Command::Figure { pos, seconds, .. } if pos[1] == 64.0 && *seconds == 0.5),
+            "standing on the floor by the bed for half a second: {made:?}"
+        );
+
+        // Under the bed: the block below it, a still sound there.
+        let under = find("under_the_bed").unwrap();
+        assert_eq!(place(under, &memory, &mut rng), Some([0, 63, 0]));
+        let made = commands(under, Some([0, 63, 0]), &memory, &mut ids(), &now, None);
+        assert!(made.len() >= 3);
+        assert!(
+            made.iter()
+                .all(|(c, _)| matches!(c, Command::PlaySound { pos, .. } if pos[1] < 64.0)),
+            "{made:?}"
+        );
+
+        // The sheets: another colour, and the new one never among what may be there.
+        let sheets = find("sheets_changed").unwrap();
+        let made = commands(sheets, Some([0, 64, 0]), &memory, &mut ids(), &now, None);
+        match &made[0].0 {
+            Command::SwapBlock { block, only, .. } => {
+                assert!(block.ends_with("_bed"));
+                assert!(!only.contains(block));
+                assert_eq!(only.len(), crate::memory::COLOURS.len() - 1);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            &commands(find("shift_bed").unwrap(), Some([0, 64, 0]), &memory, &mut ids(), &now, None)[0].0,
+            Command::ShiftBed { pos, .. } if *pos == [0, 64, 0]
+        ));
+        assert!(matches!(
+            &commands(find("second_bed").unwrap(), Some([0, 64, 0]), &memory, &mut ids(), &now, None)[0].0,
+            Command::BedBeside { block, .. } if block.ends_with("_bed")
+        ));
+    }
+
+    #[test]
+    fn waking_is_noticed_once() {
+        use craftkit::world::{Observations, Player};
+        let mut memory = memory();
+        memory.target = Some(0);
+        let lying = |sleeping| Observations {
+            players: vec![Player {
+                sleeping,
+                ..Player::default()
+            }],
+            ..Observations::default()
+        };
+        memory.observe(&lying(true), 0.6);
+        assert!(!memory.woke_now);
+        memory.observe(&lying(false), 1.0);
+        assert!(memory.woke_now);
+        memory.woke_now = false;
+        memory.observe(&lying(false), 1.01);
+        assert!(!memory.woke_now, "once");
     }
 }

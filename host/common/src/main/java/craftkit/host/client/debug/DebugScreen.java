@@ -478,13 +478,20 @@ public final class DebugScreen extends Screen {
 		return y;
 	}
 
-	/** A line with a spot in it is a link: underlined under the mouse, a click goes there. */
+	/**
+	 * A line with a spot in it is a link: underlined under the mouse, Shift+click goes there. A
+	 * plain click does nothing (owner, 2026-11-10: a stray click put them deep in a cave).
+	 */
 	private void goTo(GuiGraphicsExtractor graphics, String text, int x, int y, int w, int h) {
 		Coordinates.find(text).ifPresent(spot -> {
-			hits.add(new Hit(x, y, w, h, () -> ask("{\"kind\":\"teleport\",\"pos\":" + spot.json() + "}")));
+			hits.add(new Hit(x, y, w, h, () -> {
+				if (net.minecraft.client.Minecraft.getInstance().hasShiftDown()) {
+					ask("{\"kind\":\"teleport\",\"pos\":" + spot.json() + "}");
+				}
+			}));
 			if (mx >= x && mx < x + w && my >= y && my < y + h) {
 				graphics.fill(x, y + h - 1, x + w, y + h, YELLOW);
-				tooltip = "click: go to " + spot.x() + " " + spot.y().map(String::valueOf).orElse("(the ground)") + " " + spot.z();
+				tooltip = "shift+click: go to " + spot.x() + " " + spot.y().map(String::valueOf).orElse("(the ground)") + " " + spot.z();
 			}
 		});
 	}

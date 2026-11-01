@@ -257,6 +257,9 @@ hardcoded, why only spruce"; it was a table at first.)
 | `candles_lit` | 3 | Every candle in the house is lit at night, or every lit one out. | Candles in the home. |
 | `cauldron` | 2 | A cauldron is full that was empty, or empty that was full. | A cauldron. |
 | `lantern_ahead` | 3 | Far down a cave the target has not entered, one of their lanterns, lit: set down at the cave's dark place farthest from them, then taken from their chest (a lantern that finds no floor stays in the chest). Coded 2026-11-10. | A cave they have not entered (`Need::Cave`) and a lantern in the chest they use. |
+| `warped_animal` | 3 | One of the target's animals (tamed, or by the home), or one outside when they keep none near, 12 to 32 blocks from them, goes wrong for a minute: it freezes with its head always on them, and is one or two of too tall (1.8 times), upside down (the game's Dinnerbone flip, never on an animal with a name of its own) and a step closer along the ground each time they look away; one time in three it stands just outside the door they use first. Walked up to within six blocks, it is at once as it was, where it was (`warp_mob`, ABI 25: a mob saved while warped is put back when next seen). Owner's idea, 2026-11-10. | An animal 12 to 32 blocks from them, they outdoors. |
+| `lights_out` | 4 | At night, the target's own lights behind them as they go (within 20 blocks, out of view, nearest first, up to five) go out one by one, three quarters of a second apart, and each is back a minute after it went, as it was (`hide_block`, ABI 24: put back at the time, or at once when the level saves or closes). Owner's idea, 2026-11-10. | Night, and lights they placed behind them. |
+| `soul_swap` | 3 | One of the target's torches or lanterns, the farthest out of view, burns with soul fire from then on, the same shape where it hangs (`swap_block`, ABI 24, keeps a wall torch's facing). Owner's idea, 2026-11-10. | A torch, lantern or campfire of theirs out of view. |
 | `death_light` | 2 | A candle, lit, on the ground where the target last died, once for each death. Owner's idea, 2026-11-10. | A death of theirs no candle of its own marks. |
 | `light_taken` | 3 | The torch or lantern the target placed last is gone, and the same light stands six to ten blocks on along the way they went (their trail, or the route away from the house), against a wall if nothing else holds it. Owner's idea, 2026-11-10. | A light they placed and have not broken, a way on from it out of view. |
 | `cave_lit` | 3 | A cave near the home the target has not entered has torches in it, up to six, from its near end inward, at the spacing the target uses in their own tunnels (the middle of their underground lights' gaps, 4 to 14 blocks; 8 before they have lit one). Its own torches. Coded 2026-11-10. | A cave they have not entered. |
@@ -272,8 +275,12 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `shift_bed` | 3 | The bed is one block over, same facing, while the target is away. | A bed and room to move it. |
-| `turn_bed` | 3 | The bed faces another wall. | A bed and room to turn it. |
+| `shift_bed` | 3 | The bed is one block over, to its side, both halves, colour and facing kept, while the target is away (`shift_bed`, ABI 26: never a bed someone lies in, only onto solid floor). Coded 2026-11-10. | A bed and room to move it. |
+| `turn_bed` | 3 | The bed faces another wall. Coded as batch 3's `bed_turned`. | A bed and room to turn it. |
+| `sheets_changed` | 3 | Their bed is another colour when they come home, both halves, same place and facing (`swap_block` turns a bed's two halves together). Owner's pick, 2026-11-10. | A bed, the target away or asleep. |
+| `under_the_bed` | 3 | As they lie down, a slow scratching right under their bed, three or four beats, then nothing: silverfish steps, knocks on wood, or wool and claws, one of three. Owner's pick, 2026-11-10. | A bed, the target in it. |
+| `foot_of_bed` | 4 | As they wake, the figure stands at the foot of their bed, across it from them, for half a second. One waking in three, its rules allowing; never offered, the waking starts it. Owner's pick, 2026-11-10. | A bed, the target waking. |
+| `second_bed` | 4 | A second bed stands beside theirs when they come home, the same facing, another colour (`bed_beside`, ABI 26). Once a stay. Owner's pick, 2026-11-10. | A bed and room beside it, the target away or asleep. |
 | `refuse_rest` | 3 | The next attempt to sleep is refused with vanilla's own `You may not rest now` message. Once per night. | The target trying to sleep. |
 | `bed_occupied` | 3 | `This bed is occupied`, vanilla's message, with nobody in it. The next try works. | The target trying to sleep. |
 | `wake` | 3 | The target is woken in the middle of the night, sleep cancelled, and the door is open. | The target asleep. |

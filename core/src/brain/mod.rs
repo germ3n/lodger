@@ -200,6 +200,8 @@ pub const HELD_CHANCE: f64 = 0.25;
 
 /// How likely another chest answers the one they open (`chest_answers`).
 pub const ECHO_CHANCE: f64 = 0.3;
+/// The chance the figure stands at the foot of the bed as they wake, its rules allowing.
+pub const WOKE_CHANCE: f64 = 0.35;
 
 /// How likely a chest of fresh loot gets its offering, and how likely the offering takes a
 /// loot item's place rather than an empty slot's (owner, 2026-11-09: "1 in 5", "mostly add").
@@ -592,6 +594,11 @@ impl Brain {
         // A door they open: now and then it shuts again a moment later.
         if let Some(door) = memory.door_used_now.take() {
             commands.extend(self.consider_held(door, now, day, memory, arc, config, log));
+        }
+
+        // They woke: perhaps the figure at the foot of the bed, for half a second.
+        if std::mem::take(&mut memory.woke_now) {
+            self.consider_woke(now, day, memory, arc, config, log);
         }
 
         // A chest of theirs opened: perhaps another closes in the house at the same moment.
@@ -1091,6 +1098,46 @@ impl Brain {
         }
 
         Vec::new()
+    }
+
+    /// Whether the figure stands at the foot of the bed as the target wakes: the row's rules
+    /// and a chance of [`WOKE_CHANCE`]; its commands go out with the later ones.
+    fn consider_woke(
+        &mut self,
+        now: &Now,
+        day: f32,
+        memory: &mut Memory,
+        arc: &Arc,
+        config: &Config,
+        log: &mut log::Log,
+    ) {
+        let Some(event) = events::find("foot_of_bed") else {
+            return;
+        };
+        if !offer::switched_on(event, config)
+            || rules::check(event, None, memory, arc.stage, day, config).is_err()
+            || !event
+                .needs
+                .iter()
+                .filter(|n| !matches!(n, events::Need::JustWoke))
+                .all(|n| offer::meets(*n, memory, now))
+            || self.rng.next_f64() >= WOKE_CHANCE
+        {
+            return;
+        }
+        let Some(pos) = act::place(event, memory, &mut self.rng) else {
+            return;
+        };
+        let mut ids = || self.id();
+        let made = act::commands(event, Some(pos), memory, &mut ids, now, None);
+        memory.record(event.id, Some(pos), day, true, "");
+        log.acted(event.id, Some(pos), made.len());
+        for (command, later) in made {
+            self.later.push(Later {
+                at_tick: now.tick + later,
+                command,
+            });
+        }
     }
 
     /// Whether another chest of the house answers the one the target just opened: the row's
