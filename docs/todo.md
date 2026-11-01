@@ -637,6 +637,10 @@ because it can be built and tested without a game, and because the model layer i
     they typed, on a sign by the door), `ping_fades`, `empty_message`. The stay test caught the
     death message outside `events.chat`; it is in the chat switch and group now. Tests: two in
     `act`.
+  - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
+    night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
+    `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by
+    `fabric.mod.json`'s `icon` and `neoforge.mods.toml`'s `logoFile`. Was: no icon.
   - **The debug panel teleports on Shift+click only** (a stray click put the owner deep in a
     cave). Was: any click on a spot.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only

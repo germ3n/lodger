@@ -85,6 +85,11 @@ that run's `mods/` folder (`host/fabric/runs/client/mods/`), since the host find
 through the loader, not a path. Without a lodger jar, the host starts, loads nothing, and
 `/craftkit status` says so.
 
+The icon (a door left ajar at night, two eyes in the gap) is drawn by `mod/art/icon.py`, pixel
+art on a 32 by 32 grid written as PNG by hand: `python3 mod/art/icon.py` writes the Modrinth
+upload, `mod/art/icon-512.png`, and the jars' `assets/lodger/icon.png` (128), which
+`fabric.mod.json` (`icon`) and `neoforge.mods.toml` (`logoFile`) name.
+
 ## Running a stay quickly
 
 A stay takes weeks of play by design. For development:

@@ -5,6 +5,7 @@ license = "MIT"
 modId = "lodger"
 version = "${version}"
 displayName = "lodger"
+logoFile = "assets/lodger/icon.png"
 authors = "razor"
 description = '''One quiet presence that moves into your world and learns you. A craftkit mod: the mind is Rust, in this jar's natives.'''
 [[dependencies.lodger]]

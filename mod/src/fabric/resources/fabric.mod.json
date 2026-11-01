@@ -8,6 +8,7 @@
 		"razor"
 	],
 	"license": "MIT",
+	"icon": "assets/lodger/icon.png",
 	"environment": "*",
 	"jars": [
 		{
