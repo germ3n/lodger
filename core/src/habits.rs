@@ -58,6 +58,8 @@ pub struct Habits {
     pub uneasy: u32,
     /// Where they placed lights underground, newest last: their tunnel spacing (`caves`).
     pub cave_lights: Vec<BlockPos>,
+    /// The light they placed last, where and what (`light_taken`); gone when they break it.
+    pub last_light: Option<(BlockPos, String)>,
 }
 
 /// `day_time` in words: `at dawn`, `in the morning`, `around noon`, `in the afternoon`,

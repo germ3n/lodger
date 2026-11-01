@@ -568,6 +568,23 @@ fn is_decor(kind: &str) -> bool {
     )
 }
 
+/// A light's block standing and on a wall, from the id of either: `minecraft:wall_torch` is
+/// `(minecraft:torch, minecraft:wall_torch)`; a lantern has no wall form.
+pub fn light_kinds(id: &str) -> (String, String) {
+    for (standing, wall) in [
+        ("minecraft:soul_torch", "minecraft:soul_wall_torch"),
+        ("minecraft:redstone_torch", "minecraft:redstone_wall_torch"),
+        ("minecraft:copper_torch", "minecraft:copper_wall_torch"),
+        ("minecraft:torch", "minecraft:wall_torch"),
+    ] {
+        if id == standing || id == wall {
+            return (standing.to_string(), wall.to_string());
+        }
+    }
+
+    (id.to_string(), String::new())
+}
+
 /// The block a position is in.
 pub fn block_of(pos: [f64; 3]) -> BlockPos {
     block(pos)
@@ -1098,6 +1115,7 @@ impl Memory {
                         }
                         if is_light(&event.detail) {
                             self.habits.lights_placed += 1;
+                            self.habits.last_light = Some((pos, event.detail.clone()));
                             if self.last.underground {
                                 self.habits.cave_lights.push(pos);
                                 if self.habits.cave_lights.len() > 32 {
@@ -1216,6 +1234,14 @@ impl Memory {
                         // What stood on it drops with it (a door, a torch, a lever on the
                         // floor), and the game sends no break for those.
                         let above = [pos[0], pos[1] + 1, pos[2]];
+                        if self
+                            .habits
+                            .last_light
+                            .as_ref()
+                            .is_some_and(|(p, _)| *p == pos || *p == above)
+                        {
+                            self.habits.last_light = None;
+                        }
                         self.placed.retain(|p| *p != pos);
                         if let Some(home) = &mut self.home {
                             home.lights.retain(|p| *p != pos && *p != above);

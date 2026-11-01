@@ -600,6 +600,9 @@ because it can be built and tested without a game, and because the model layer i
     is not offered and, asked anyway, not made. Tests: the cave case end to end; the old test's
     "no other house known" now expects no spot. Was: indoors was any spot without sky light,
     the home's door 200 blocks off stood in, and a sound's moving ways played at their feet.
+  - **`death_light` and `light_taken`** (batch 4, two of the owner's four new): a lit candle
+    where they last died, once a death; the light they placed last carried six to ten blocks
+    on the way they went, away from the house, set down before the old one goes. Tests: four.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

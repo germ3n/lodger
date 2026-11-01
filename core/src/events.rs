@@ -129,6 +129,10 @@ pub enum Need {
     ToolInContainer,
     /// A cave near the home the target has not entered, from the cave read (`crate::caves`).
     Cave,
+    /// A place they died that no light of its own marks yet.
+    UnmarkedDeath,
+    /// The light they placed last, and a way on from it along where they went.
+    LastLight,
 }
 
 impl Need {
@@ -218,6 +222,8 @@ impl Need {
             Need::Vehicle => "no boat or minecart near".to_string(),
             Need::TargetUnderground => "the target is not underground".to_string(),
             Need::Cave => "no cave near that they have not been in".to_string(),
+            Need::UnmarkedDeath => "no death of theirs left unmarked".to_string(),
+            Need::LastLight => "no light of theirs with a way on from it".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -438,6 +444,10 @@ pub enum Action {
     LanternAhead,
     /// Torches down a cave they have not entered, at their own spacing.
     CaveLit,
+    /// A lit candle where they last died.
+    DeathLight,
+    /// The light they placed last, a few blocks on along the way they went.
+    LightTaken,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1847,6 +1857,29 @@ pub const CATALOGUE: &[Event] = &[
         Action::CaveLit,
         false,
     ),
+    // A light where they died, and their last light taken along (batch 4, owner 2026-11-10).
+    row(
+        "death_light",
+        2,
+        5,
+        &[UnmarkedDeath],
+        1.0,
+        3,
+        Full,
+        Action::DeathLight,
+        false,
+    ),
+    row(
+        "light_taken",
+        3,
+        5,
+        &[LastLight],
+        2.0,
+        3,
+        Full,
+        Action::LightTaken,
+        false,
+    ),
     row(
         "ore_marked",
         2,
@@ -2615,6 +2648,8 @@ impl Event {
             | Action::OreMarked
             | Action::LanternAhead
             | Action::CaveLit
+            | Action::DeathLight
+            | Action::LightTaken
             | Action::RotateFixture(..)
             | Action::ColdFurnace
             | Action::OpenOnEnter
@@ -2764,6 +2799,8 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "death_light" => "leave a lit candle where they died",
+            "light_taken" => "carry their last torch a few blocks on, the way they went",
             "lantern_ahead" => {
                 "leave one of their lanterns lit far down a cave they have not been in"
             }

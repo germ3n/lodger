@@ -108,6 +108,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Vehicle => !memory.vehicles.is_empty(),
         Need::TargetUnderground => last.online && last.underground,
         Need::Cave => memory.unentered_cave().is_some(),
+        Need::UnmarkedDeath => memory.unmarked_death().is_some(),
+        Need::LastLight => memory.light_taken_to().is_some(),
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }

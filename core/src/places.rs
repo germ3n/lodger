@@ -195,6 +195,61 @@ impl Memory {
         })
     }
 
+    /// Where they last died, when no `death_light` of its own stands within three blocks of it.
+    pub fn unmarked_death(&self) -> Option<BlockPos> {
+        let died = self
+            .milestones
+            .iter()
+            .rev()
+            .find(|m| m.kind == "died")?
+            .pos?;
+        let marked = self
+            .landmarks
+            .iter()
+            .any(|l| l.event == "death_light" && l.pos.is_some_and(|p| distance(p, died) <= 3.0));
+
+        (!marked).then_some(died)
+    }
+
+    /// Where `light_taken` carries their last light: six to ten blocks on from it along the
+    /// way they went, the trail they are walking or the route, never back toward the house,
+    /// and not in view.
+    pub fn light_taken_to(&self) -> Option<BlockPos> {
+        let (from, _) = self.habits.last_light.as_ref()?;
+        let center = self.home.as_ref().map(|h| h.center);
+        let ways = std::iter::once(&self.trail).chain(self.route().map(|r| &r.points));
+        for way in ways {
+            let Some(near) = (0..way.len())
+                .min_by(|a, b| distance(way[*a], *from).total_cmp(&distance(way[*b], *from)))
+            else {
+                continue;
+            };
+            if distance(way[near], *from) > 6.0 {
+                continue;
+            }
+            // On is away from the house: toward the way's end farther from it.
+            let forward = match center {
+                Some(c) => distance(way[way.len() - 1], c) >= distance(way[0], c),
+                None => true,
+            };
+            let ahead: Vec<BlockPos> = if forward {
+                way[near..].to_vec()
+            } else {
+                way[..=near].iter().rev().copied().collect()
+            };
+            if let Some(to) = ahead
+                .into_iter()
+                .find(|p| (6.0..=10.0).contains(&distance(*p, *from)))
+            {
+                if !self.in_view(to, 16.0) {
+                    return Some(to);
+                }
+            }
+        }
+
+        None
+    }
+
     /// The places line: the sites they keep away from home.
     pub fn place_lines(&self) -> Vec<String> {
         let said: Vec<String> = self
@@ -389,6 +444,114 @@ mod tests {
         assert!(
             memory.landmark_near([30, 64, 6], 2.0, "cairn").is_none(),
             "too far"
+        );
+    }
+
+    #[test]
+    fn a_death_is_marked_once_and_a_newer_one_again() {
+        let mut memory = memory();
+        assert_eq!(memory.unmarked_death(), None);
+        let died = |pos: BlockPos, day: f32| crate::memory::Milestone {
+            kind: "died".to_string(),
+            day,
+            pos: Some(pos),
+            detail: String::new(),
+        };
+        memory.milestones.push(died([40, 60, 40], 1.0));
+        assert_eq!(memory.unmarked_death(), Some([40, 60, 40]));
+
+        memory.record("death_light", Some([40, 61, 40]), 1.1, true, "");
+        assert_eq!(memory.unmarked_death(), None, "marked");
+        memory.milestones.push(died([-80, 30, 5], 2.0));
+        assert_eq!(
+            memory.unmarked_death(),
+            Some([-80, 30, 5]),
+            "the newer death"
+        );
+    }
+
+    #[test]
+    fn their_last_light_goes_on_the_way_they_went_and_never_back_toward_the_house() {
+        let mut memory = memory();
+        // A walk out from the house along x, a point every two blocks.
+        memory.trail = (0..30).map(|i| [4 + i * 2, 64, 2]).collect();
+        memory.habits.last_light = Some(([20, 65, 3], "minecraft:wall_torch".to_string()));
+
+        let to = memory.light_taken_to().unwrap();
+        assert!(to[0] > 20, "on, away from the house: {to:?}");
+        let d = distance(to, [20, 65, 3]);
+        assert!((6.0..=10.0).contains(&d), "{d}");
+
+        // Walked the other way, toward the house: still away from it.
+        memory.trail.reverse();
+        assert!(memory.light_taken_to().unwrap()[0] > 20);
+
+        memory.habits.last_light = Some(([20, 65, 40], "minecraft:torch".to_string()));
+        assert_eq!(memory.light_taken_to(), None, "no way on near it");
+    }
+
+    #[test]
+    fn placing_a_light_makes_it_the_last_and_breaking_what_holds_it_forgets_it() {
+        use craftkit::world::{Event, EventKind, Observations, Player};
+        let mut memory = memory();
+        memory.target = Some(0);
+        let seen = |events: Vec<Event>| Observations {
+            players: vec![Player::default()],
+            events,
+            ..Observations::default()
+        };
+        let event = |kind: EventKind, pos: BlockPos, detail: &str| Event {
+            player: 0,
+            kind,
+            pos: Some(pos),
+            detail: detail.to_string(),
+            ..Event::default()
+        };
+        memory.observe(
+            &seen(vec![event(
+                EventKind::PlacedBlock,
+                [9, 65, 9],
+                "minecraft:torch",
+            )]),
+            0.1,
+        );
+        assert_eq!(
+            memory.habits.last_light,
+            Some(([9, 65, 9], "minecraft:torch".to_string()))
+        );
+        memory.observe(
+            &seen(vec![event(
+                EventKind::BrokeBlock,
+                [9, 64, 9],
+                "minecraft:dirt",
+            )]),
+            0.2,
+        );
+        assert_eq!(
+            memory.habits.last_light, None,
+            "the torch dropped with the ground under it"
+        );
+    }
+
+    #[test]
+    fn a_light_is_carried_as_what_it_is() {
+        assert_eq!(
+            crate::memory::light_kinds("minecraft:wall_torch"),
+            (
+                "minecraft:torch".to_string(),
+                "minecraft:wall_torch".to_string()
+            )
+        );
+        assert_eq!(
+            crate::memory::light_kinds("minecraft:soul_torch"),
+            (
+                "minecraft:soul_torch".to_string(),
+                "minecraft:soul_wall_torch".to_string()
+            )
+        );
+        assert_eq!(
+            crate::memory::light_kinds("minecraft:lantern"),
+            ("minecraft:lantern".to_string(), String::new())
         );
     }
 }

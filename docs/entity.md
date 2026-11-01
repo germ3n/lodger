@@ -257,6 +257,8 @@ hardcoded, why only spruce"; it was a table at first.)
 | `candles_lit` | 3 | Every candle in the house is lit at night, or every lit one out. | Candles in the home. |
 | `cauldron` | 2 | A cauldron is full that was empty, or empty that was full. | A cauldron. |
 | `lantern_ahead` | 3 | Far down a cave the target has not entered, one of their lanterns, lit: set down at the cave's dark place farthest from them, then taken from their chest (a lantern that finds no floor stays in the chest). Coded 2026-11-10. | A cave they have not entered (`Need::Cave`) and a lantern in the chest they use. |
+| `death_light` | 2 | A candle, lit, on the ground where the target last died, once for each death. Owner's idea, 2026-11-10. | A death of theirs no candle of its own marks. |
+| `light_taken` | 3 | The torch or lantern the target placed last is gone, and the same light stands six to ten blocks on along the way they went (their trail, or the route away from the house), against a wall if nothing else holds it. Owner's idea, 2026-11-10. | A light they placed and have not broken, a way on from it out of view. |
 | `cave_lit` | 3 | A cave near the home the target has not entered has torches in it, up to six, from its near end inward, at the spacing the target uses in their own tunnels (the middle of their underground lights' gaps, 4 to 14 blocks; 8 before they have lit one). Its own torches. Coded 2026-11-10. | A cave they have not entered. |
 
 The caves come from the brain's cave read (`core/src/caves.rs`): every ten minutes while the

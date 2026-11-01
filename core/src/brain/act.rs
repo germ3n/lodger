@@ -202,6 +202,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BedOccupied => None,
         Action::OreMarked => memory.scanned("_ore").next(),
         Action::LanternAhead => memory.lantern_spot(),
+        Action::DeathLight => memory.unmarked_death(),
+        Action::LightTaken => memory.habits.last_light.as_ref().map(|(p, _)| *p),
         Action::CaveLit => memory.cave_torches().first().copied(),
         Action::WallSwap(suffix) => {
             let candidates: Vec<BlockPos> = memory
@@ -2708,6 +2710,63 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // A candle, lit, on the ground where they died.
+        Action::DeathLight => pos
+            .map(|p| {
+                vec![(
+                    Command::SetBlock {
+                        id: ids(),
+                        pos: p,
+                        block: "minecraft:candle".to_string(),
+                        state: "lit=true".to_string(),
+                        replace: vec![],
+                        settle: 3,
+                        wall: String::new(),
+                        rest: true,
+                        only: false,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // The same light a few blocks on, against a wall if nothing else holds it, and then
+        // the old one gone: a light that finds no place stays where they put it.
+        Action::LightTaken => match (&memory.habits.last_light, memory.light_taken_to()) {
+            (Some((from, id)), Some(to)) => {
+                let (block, wall) = crate::memory::light_kinds(id);
+                vec![
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: to,
+                            block,
+                            state: String::new(),
+                            replace: vec![],
+                            settle: 3,
+                            wall,
+                            rest: false,
+                            only: false,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: *from,
+                            block: "minecraft:air".to_string(),
+                            state: String::new(),
+                            replace: vec![id.clone()],
+                            settle: 0,
+                            wall: String::new(),
+                            rest: false,
+                            only: true,
+                        },
+                        2,
+                    ),
+                ]
+            }
+            _ => vec![],
+        },
         Action::CaveLit => memory
             .cave_torches()
             .into_iter()
@@ -3258,6 +3317,14 @@ mod tests {
             walked: 3,
             first_day: 0.0,
         });
+        // A death, and their last torch on the route.
+        memory.milestones.push(crate::memory::Milestone {
+            kind: "died".to_string(),
+            day: 0.5,
+            pos: Some([20, 64, 20]),
+            detail: String::new(),
+        });
+        memory.habits.last_light = Some(([5, 64, 0], "minecraft:wall_torch".to_string()));
         // A cave nobody went near, and a lantern in the chest.
         for x in (30..=60).step_by(3) {
             for y in [30, 33] {
