@@ -115,6 +115,9 @@ pub struct Brain {
     /// The tick of the last cave read.
     #[serde(skip)]
     pub last_cave_read: u64,
+    /// The tick of the last field read.
+    #[serde(skip)]
+    pub last_field_read: u64,
     pub next_command_id: u64,
     pub rng: Rng,
     /// Decisions made, for the status line.
@@ -542,6 +545,40 @@ impl Brain {
                 });
                 memory.scans_out.push((id, "cave_read".to_string()));
                 self.last_cave_read = now.tick.max(1);
+            }
+        }
+
+        // The field by the home, read every ten minutes while they are within 64 blocks of it:
+        // every crop block around the crops the surroundings saw (`crate::farm`).
+        if let Some(crops) = memory.feature("crops").map(|f| f.pos) {
+            let at = memory.last.pos;
+            let (dx, dz) = (at[0] - crops[0] as f64, at[2] - crops[2] as f64);
+            let near = memory.last.online && (dx * dx + dz * dz).sqrt() <= 64.0;
+            if near
+                && (self.last_field_read == 0
+                    || now.tick.saturating_sub(self.last_field_read) >= 600 * TPS)
+            {
+                use crate::farm::{CROPS, MOST_FIELD, READ_HIGH, READ_WIDE};
+                let id = self.id();
+                commands.push(Command::Scan {
+                    id,
+                    min: [
+                        crops[0] - READ_WIDE,
+                        crops[1] - READ_HIGH,
+                        crops[2] - READ_WIDE,
+                    ],
+                    max: [
+                        crops[0] + READ_WIDE,
+                        crops[1] + READ_HIGH,
+                        crops[2] + READ_WIDE,
+                    ],
+                    kinds: CROPS.iter().map(|c| c.to_string()).collect(),
+                    step: 0,
+                    dark: false,
+                    most: MOST_FIELD as u32,
+                });
+                memory.scans_out.push((id, "field_read".to_string()));
+                self.last_field_read = now.tick.max(1);
             }
         }
 

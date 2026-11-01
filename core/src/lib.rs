@@ -14,6 +14,7 @@ pub mod caves;
 pub mod config;
 pub mod debug;
 pub mod events;
+pub mod farm;
 pub mod habits;
 pub mod lights;
 pub mod memory;

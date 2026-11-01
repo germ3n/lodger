@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges) {
 	}
 
 	private Executors() {
@@ -99,7 +99,7 @@ public final class Executors {
 				case "rotate_block" -> rotateBlock(level, blockPos(command.getAsJsonArray("pos")), id);
 				case "break_block" -> breakBlock(level, blockPos(command.getAsJsonArray("pos")), id);
 				case "set_frame_item" -> setFrameItem(level, command, id);
-				case "equip_entity" -> equipEntity(level, command, id);
+				case "equip_entity" -> equipEntity(level, command, id, data);
 				case "damage_item" -> damageItem(level, command, id);
 				case "figure" -> figure(level, command, id, context);
 				case "swap_block" -> swapBlock(level, command, id);
@@ -125,6 +125,10 @@ public final class Executors {
 				case "look_at" -> lookAt(level, command, id, context);
 				case "hold" -> hold(level, command, id, context);
 				case "warp_mob" -> warpMob(level, command, id, context);
+				case "place_entity" -> placeEntity(level, command, id, context, data);
+				case "release_bees" -> releaseBees(level, command, id, context);
+				case "move_leash" -> moveLeash(level, command, id);
+				case "charge" -> charge(level, command, id, context);
 				case "move_player" -> movePlayer(level, command, id, context);
 				case "set_state" -> setState(level, command, id);
 				case "grow" -> grow(level, command, id);
@@ -609,18 +613,17 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
-	private static JsonObject equipEntity(ServerLevel level, JsonObject command, long id) {
+	private static JsonObject equipEntity(ServerLevel level, JsonObject command, long id, WorldData data) {
 		Entity entity = level.getEntity(command.get("entity").getAsInt());
 		if (!(entity instanceof net.minecraft.world.entity.LivingEntity living) || entity instanceof ServerPlayer) {
 			return report(id, false, "no entity that wears things with that id here");
 		}
 
-		JsonObject item = command.getAsJsonObject("item");
-		Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(item.get("id").getAsString()));
-		if (kind.isEmpty()) {
-			return report(id, false, "no such item");
+		// The very stack kept (ABI 27: the scarecrow wears their own helmet), or a plain one.
+		ItemStack stack = stackOf(command, data);
+		if (stack == null || stack.isEmpty()) {
+			return report(id, false, "no such item, or nothing kept under that name");
 		}
-		ItemStack stack = new ItemStack(kind.get().value(), Math.max(1, item.get("count").getAsInt()));
 		net.minecraft.world.entity.EquipmentSlot slot = living.getEquipmentSlotForItem(stack);
 		if (!living.getItemBySlot(slot).isEmpty()) {
 			return report(id, false, "that slot is worn already");
@@ -1285,7 +1288,124 @@ public final class Executors {
 			return report(id, false, "the player is not here");
 		}
 
-		context.holds().add(mob, player, command.get("seconds").getAsFloat());
+		Vec3 at = null;
+		if (command.has("at") && command.get("at").isJsonArray()) {
+			JsonArray p = command.getAsJsonArray("at");
+			at = new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
+		}
+		context.holds().add(mob, player, command.get("seconds").getAsFloat(), at);
+
+		return report(id, true, "");
+	}
+
+	/** What {@code place_entity} may place: an armour stand, or a farm animal. */
+	private static final List<String> PLACEABLE = List.of("minecraft:armor_stand", "minecraft:cow", "minecraft:pig", "minecraft:sheep",
+			"minecraft:chicken", "minecraft:goat", "minecraft:horse", "minecraft:donkey", "minecraft:mule", "minecraft:llama",
+			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel");
+
+	/** An armour stand or a farm animal placed (ABI 27): for a while when seconds are given, wearing a kept stack when named. */
+	private static JsonObject placeEntity(ServerLevel level, JsonObject command, long id, Context context, WorldData data) {
+		String of = command.get("of").getAsString();
+		if (!PLACEABLE.contains(of)) {
+			return report(id, false, "not something it places");
+		}
+		Optional<Holder.Reference<net.minecraft.world.entity.EntityType<?>>> type = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(of));
+		if (type.isEmpty()) {
+			return report(id, false, "no such entity");
+		}
+		JsonArray p = command.getAsJsonArray("pos");
+		Vec3 pos = new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
+		BlockPos at = BlockPos.containing(pos);
+		if (!level.getBlockState(at).getCollisionShape(level, at).isEmpty()) {
+			return report(id, false, "no room there");
+		}
+		Entity entity = type.get().value().create(level, net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
+		if (entity == null) {
+			return report(id, false, "it could not be made");
+		}
+		float yaw = command.has("yaw") ? command.get("yaw").getAsFloat() : 0;
+		entity.snapTo(pos.x, pos.y, pos.z, yaw, 0);
+		entity.setYHeadRot(yaw);
+		if (command.has("kept") && !command.get("kept").getAsString().isEmpty() && entity instanceof net.minecraft.world.entity.LivingEntity living) {
+			ItemStack worn = data.giveBack(command.get("kept").getAsString());
+			if (worn != null && !worn.isEmpty()) {
+				living.setItemSlot(living.getEquipmentSlotForItem(worn), worn);
+			}
+		}
+		level.addFreshEntity(entity);
+		float seconds = command.has("seconds") ? command.get("seconds").getAsFloat() : 0;
+		if (seconds > 0) {
+			context.temporaries().add(entity, seconds);
+		}
+
+		return report(id, true, "");
+	}
+
+	/** A hive's bees out, held still around a place for a while, then home (ABI 27). */
+	private static JsonObject releaseBees(ServerLevel level, JsonObject command, long id, Context context) {
+		BlockPos hive = blockPos(command.getAsJsonArray("hive"));
+		if (!(level.getBlockEntity(hive) instanceof net.minecraft.world.level.block.entity.BeehiveBlockEntity beehive) || beehive.isEmpty()) {
+			return report(id, false, "no hive with bees there");
+		}
+		beehive.emptyAllLivingFromHive(null, level.getBlockState(hive), net.minecraft.world.level.block.entity.BeehiveBlockEntity.BeeReleaseStatus.BEE_RELEASED);
+		JsonArray p = command.getAsJsonArray("to");
+		Vec3 to = new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
+		ServerPlayer nearest = level.getNearestPlayer(to.x, to.y, to.z, 64, false) instanceof ServerPlayer sp ? sp : null;
+		List<net.minecraft.world.entity.animal.bee.Bee> bees = level.getEntitiesOfClass(net.minecraft.world.entity.animal.bee.Bee.class,
+				new net.minecraft.world.phys.AABB(hive).inflate(3));
+		if (bees.isEmpty() || nearest == null) {
+			return report(id, false, bees.isEmpty() ? "no bee came out" : "no player near");
+		}
+		for (int i = 0; i < bees.size(); i++) {
+			double angle = i * Math.PI * 2 / bees.size();
+			bees.get(i).teleportTo(to.x + Math.cos(angle) * 1.2, to.y + (i % 2) * 0.4, to.z + Math.sin(angle) * 1.2);
+			context.holds().add(bees.get(i), nearest, command.get("seconds").getAsFloat());
+		}
+
+		return report(id, true, "");
+	}
+
+	/** An animal on a lead tied to another fence post within eight blocks of its own (ABI 27). */
+	private static JsonObject moveLeash(ServerLevel level, JsonObject command, long id) {
+		Entity entity = level.getEntity(command.get("entity").getAsInt());
+		if (!(entity instanceof net.minecraft.world.entity.Leashable leashable) || !leashable.isLeashed()
+				|| !(leashable.getLeashHolder() instanceof net.minecraft.world.entity.decoration.LeashFenceKnotEntity knot)) {
+			return report(id, false, "no animal tied to a post with that id here");
+		}
+		BlockPos post = knot.getPos();
+		// The nearest other post: a fence within eight blocks, two up or down.
+		BlockPos other = null;
+		for (BlockPos at : BlockPos.betweenClosed(post.offset(-8, -2, -8), post.offset(8, 2, 8))) {
+			if (!at.equals(post) && level.getBlockState(at).is(net.minecraft.tags.BlockTags.FENCES)
+					&& (other == null || at.distSqr(post) < other.distSqr(post))) {
+				other = at.immutable();
+			}
+		}
+		if (other == null) {
+			return report(id, false, "no other post near");
+		}
+		leashable.setLeashedTo(net.minecraft.world.entity.decoration.LeashFenceKnotEntity.getOrCreateKnot(level, other), true);
+		boolean stillHeld = !level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, knot.getBoundingBox().inflate(12),
+				m -> m instanceof net.minecraft.world.entity.Leashable l && l.getLeashHolder() == knot).isEmpty();
+		if (!stillHeld) {
+			knot.discard();
+		}
+
+		return report(id, true, "");
+	}
+
+	/** An animal runs at a player and hits (ABI 27); with spare, never below half a heart. */
+	private static JsonObject charge(ServerLevel level, JsonObject command, long id, Context context) {
+		Entity entity = level.getEntity(command.get("entity").getAsInt());
+		if (!(entity instanceof net.minecraft.world.entity.animal.Animal animal)) {
+			return report(id, false, "no animal with that id here");
+		}
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		context.charges().add(animal, player, command.get("damage").getAsFloat(), command.get("hits").getAsInt(),
+				command.get("seconds").getAsFloat(), command.has("spare") && command.get("spare").getAsBoolean());
 
 		return report(id, true, "");
 	}

@@ -155,6 +155,8 @@ pub struct Entity {
     pub hostile: bool,
     /// The index of the player it faces within 10 degrees, if any.
     pub looking_at_player: Option<u32>,
+    /// Tied by a lead to a fence post. ABI 27.
+    pub leashed: bool,
 }
 
 /// The weather and the sky.
@@ -405,6 +407,48 @@ pub enum Command {
         pos: BlockPos,
         block: String,
     },
+    /// Place an entity of kind `of` at `pos` facing `yaw`: an armour stand, or a farm animal. With
+    /// `seconds` above 0 it is there for that long only, then gone, and gone at once when its
+    /// level saves or closes, or when next seen after a quit. ABI 27.
+    PlaceEntity {
+        id: u64,
+        of: String,
+        pos: Pos,
+        yaw: f32,
+        #[serde(default, skip_serializing_if = "is_zero_f32")]
+        seconds: f32,
+        /// Put on it the stack kept under this name (`take_item`'s `keep`): the scarecrow's
+        /// piece of their armour. ABI 27.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        kept: String,
+    },
+    /// The bees of the hive at `hive` out, hanging still around `to`, for `seconds`; then home.
+    /// ABI 27.
+    ReleaseBees {
+        id: u64,
+        hive: BlockPos,
+        to: Pos,
+        seconds: f32,
+    },
+    /// The lead of an animal tied to a fence post tied to another post within eight blocks of
+    /// the first instead. ABI 27.
+    MoveLeash {
+        id: u64,
+        entity: u32,
+    },
+    /// An animal turns on `player` for `seconds`: it runs at them and hits for `damage` (half
+    /// hearts) a second while it touches them, `hits` times at most; with `spare` never below
+    /// one half heart. Then it is as it was. ABI 27.
+    Charge {
+        id: u64,
+        entity: u32,
+        player: u32,
+        damage: f32,
+        hits: u32,
+        seconds: f32,
+        #[serde(default, skip_serializing_if = "is_false")]
+        spare: bool,
+    },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
         id: u64,
@@ -477,6 +521,10 @@ pub enum Command {
         id: u64,
         entity: u32,
         item: ItemStack,
+        /// Put on the very stack kept under this name (`take_item`'s `keep`), enchantments
+        /// and all, in place of a plain one of `item`. ABI 27.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        kept: String,
     },
     /// Wear down a damageable item in a container's slot by `amount` uses.
     DamageItem {
@@ -632,6 +680,9 @@ pub enum Command {
         entity: u32,
         player: u32,
         seconds: f32,
+        /// Face this point instead of the player: the house. ABI 27.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        at: Option<Pos>,
     },
     /// Warp an animal for `seconds` (at most two minutes), then put it back as it was, where
     /// it was: frozen, its head always on `player`; `scale` times its size (1 for none);
@@ -706,6 +757,10 @@ impl Command {
             | Command::SwapBlock { id, .. }
             | Command::HideBlock { id, .. }
             | Command::ShiftBed { id, .. }
+            | Command::PlaceEntity { id, .. }
+            | Command::ReleaseBees { id, .. }
+            | Command::MoveLeash { id, .. }
+            | Command::Charge { id, .. }
             | Command::BedBeside { id, .. }
             | Command::OpenLid { id, .. }
             | Command::RotateFrame { id, .. }
@@ -758,6 +813,10 @@ pub struct Report {
 
 fn one() -> f32 {
     1.0
+}
+
+fn is_zero_f32(n: &f32) -> bool {
+    *n == 0.0
 }
 
 fn is_zero(n: &u8) -> bool {
@@ -838,6 +897,7 @@ mod tests {
             entity: 301,
             player: 0,
             seconds: 250.0,
+            at: None,
         };
         let text = serde_json::to_string(&hold).unwrap();
         assert_eq!(

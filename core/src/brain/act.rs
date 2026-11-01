@@ -241,6 +241,27 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             [b[0] + sx * 2, b[1] - 1, b[2] + sz * 2]
         }),
         Action::ShiftBed | Action::SheetsChanged | Action::SecondBed => home.and_then(|h| h.bed),
+        Action::Scarecrow => field_middle(memory),
+        Action::BeesOut => memory
+            .fixtures("beehive")
+            .chain(memory.fixtures("bee_nest"))
+            .next()
+            .map(|f| f.pos),
+        Action::HorseMoved => leashed_horse(memory).map(|c| block_of(c.pos)),
+        Action::FieldWord => memory
+            .field_word()
+            .and_then(|(_, cells)| cells.first().copied()),
+        Action::FaceTheHouse => home.map(|h| h.center),
+        Action::OneMore => memory.kept_most().map(|(_, at)| block_of(at)),
+        Action::RowWithered => {
+            let rows = memory.field_rows();
+            (!rows.is_empty()).then(|| rows[rng.next_u64() as usize % rows.len()][0])
+        }
+        Action::EggsToDoor => memory.egg_line().first().map(|p| block_of(*p)),
+        Action::Charge(..) => memory
+            .animals_near_target()
+            .first()
+            .map(|c| block_of(c.pos)),
         Action::Figure(FigureWhere::AcrossWater, _, _) => memory.feature("water").map(|w| {
             // The far side: past the water's middle from the target, by its width.
             let at = block_of(memory.last.pos);
@@ -551,6 +572,39 @@ pub fn spots(command: &Command) -> Vec<BlockPos> {
         Command::MoveEntity { to, .. } => vec![block(*to)],
         _ => vec![],
     }
+}
+
+/// Whether an item is a piece of armour a stand wears.
+pub fn is_armour(id: &str) -> bool {
+    ["helmet", "chestplate", "leggings", "boots"]
+        .iter()
+        .any(|k| id.ends_with(k))
+}
+
+/// A horse of theirs (or a donkey, a mule, a llama, a camel) tied to a post near.
+pub fn leashed_horse(memory: &Memory) -> Option<&crate::memory::Creature> {
+    memory.last.creatures_near.iter().find(|c| {
+        memory.last.leashed.contains(&c.id)
+            && matches!(
+                c.kind.as_str(),
+                "horse" | "donkey" | "mule" | "llama" | "camel"
+            )
+    })
+}
+
+/// The game's yaw from one point to another: 0 faces +z, 90 faces -x.
+fn yaw_toward(from: Pos, to: Pos) -> f32 {
+    let (dx, dz) = (to[0] - from[0], to[2] - from[2]);
+
+    (-dx).atan2(dz).to_degrees() as f32
+}
+
+/// The middle of the field, where a scarecrow stands.
+fn field_middle(memory: &Memory) -> Option<BlockPos> {
+    let rows = memory.field_rows();
+    let row = rows.get(rows.len() / 2)?;
+
+    Some(row[row.len() / 2])
 }
 
 /// What an alcove may be dug into: natural stone, never dirt, never anything placed.
@@ -1652,6 +1706,7 @@ pub fn commands(
                 (
                     Command::Hold {
                         id: ids(),
+                        at: None,
                         entity: creature.id,
                         player: target,
                         seconds: 10.0 + (seed % 21) as f32,
@@ -2433,6 +2488,7 @@ pub fn commands(
                     (
                         Command::EquipEntity {
                             id: ids(),
+                            kept: String::new(),
                             entity: stand.id,
                             item: ItemStack {
                                 id: stack.id.clone(),
@@ -2732,6 +2788,232 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // Their stand moved into the field, or one from the chest set there, turned to the
+        // house, wearing the piece of their armour taken from the chest.
+        Action::Scarecrow => match (
+            pos,
+            memory.in_used_container(is_armour),
+            memory.home.as_ref(),
+        ) {
+            (Some(spot), Some((chest, piece)), Some(home)) => {
+                let stand_at = [spot[0] as f64 + 0.5, spot[1] as f64, spot[2] as f64 + 0.5];
+                let house = block_center(home.center);
+                let take = Command::TakeItem {
+                    id: ids(),
+                    from: chest.pos,
+                    slot: piece.slot,
+                    count: 1,
+                    keep: "scarecrow".to_string(),
+                };
+                if let Some(stand) = memory.decor("armor_stand").next() {
+                    vec![
+                        (take, 0),
+                        (
+                            Command::MoveEntity {
+                                id: ids(),
+                                entity: stand.id,
+                                to: stand_at,
+                            },
+                            2,
+                        ),
+                        (
+                            Command::PoseStand {
+                                id: ids(),
+                                entity: stand.id,
+                                at: Some(house),
+                                follow: None,
+                                seconds: 0.0,
+                            },
+                            3,
+                        ),
+                        (
+                            Command::EquipEntity {
+                                id: ids(),
+                                entity: stand.id,
+                                item: piece.clone(),
+                                kept: "scarecrow".to_string(),
+                            },
+                            4,
+                        ),
+                    ]
+                } else if let Some((_, item)) =
+                    memory.in_used_container(|id| id == "minecraft:armor_stand")
+                {
+                    vec![
+                        (take, 0),
+                        (
+                            Command::TakeItem {
+                                id: ids(),
+                                from: chest.pos,
+                                slot: item.slot,
+                                count: 1,
+                                keep: String::new(),
+                            },
+                            2,
+                        ),
+                        (
+                            Command::PlaceEntity {
+                                id: ids(),
+                                of: "minecraft:armor_stand".to_string(),
+                                pos: stand_at,
+                                yaw: yaw_toward(stand_at, house),
+                                seconds: 0.0,
+                                kept: "scarecrow".to_string(),
+                            },
+                            4,
+                        ),
+                    ]
+                } else {
+                    vec![]
+                }
+            }
+            _ => vec![],
+        },
+        // Out around the door they use, two minutes, then home.
+        Action::BeesOut => match (pos, memory.doorway_spot()) {
+            (Some(hive), Some(door)) => vec![(
+                Command::ReleaseBees {
+                    id: ids(),
+                    hive,
+                    to: [door[0], door[1] + 1.5, door[2]],
+                    seconds: 120.0,
+                },
+                0,
+            )],
+            _ => vec![],
+        },
+        Action::HorseMoved => leashed_horse(memory)
+            .map(|horse| {
+                vec![(
+                    Command::MoveLeash {
+                        id: ids(),
+                        entity: horse.id,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // Each crop of the word cut back to a seedling, a tenth of a second apart.
+        Action::FieldWord => memory
+            .field_word()
+            .map(|(_, cells)| {
+                cells
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, p)| {
+                        (
+                            Command::SetState {
+                                id: ids(),
+                                pos: p,
+                                property: "age".to_string(),
+                                value: "0".to_string(),
+                            },
+                            i as u64 * 2,
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        // Every animal in the pens, still, facing the house, two minutes.
+        Action::FaceTheHouse => match memory.home.as_ref() {
+            Some(home) => memory
+                .penned()
+                .into_iter()
+                .take(12)
+                .map(|c| {
+                    (
+                        Command::Hold {
+                            id: ids(),
+                            entity: c.id,
+                            player: target,
+                            seconds: 120.0,
+                            at: Some(block_center(home.center)),
+                        },
+                        0,
+                    )
+                })
+                .collect(),
+            None => vec![],
+        },
+        // One more of what they keep, beside the others, gone by noon.
+        Action::OneMore => memory
+            .kept_most()
+            .map(|(kind, at)| {
+                let to_noon = 6_000u32.saturating_sub(now.day_time) as f32 / 20.0;
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: format!("minecraft:{kind}"),
+                        pos: [at[0] + 1.5, at[1], at[2] + 1.5],
+                        yaw: (seed % 360) as f32,
+                        seconds: to_noon.clamp(60.0, 300.0),
+                        kept: String::new(),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        Action::RowWithered => pos
+            .and_then(|first| memory.field_rows().into_iter().find(|r| r[0] == first))
+            .map(|row| {
+                row.into_iter()
+                    .enumerate()
+                    .map(|(i, p)| {
+                        (
+                            Command::SetState {
+                                id: ids(),
+                                pos: p,
+                                property: "age".to_string(),
+                                value: "0".to_string(),
+                            },
+                            i as u64 * 2,
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        Action::EggsToDoor => memory
+            .egg_line()
+            .into_iter()
+            .enumerate()
+            .map(|(i, p)| {
+                (
+                    Command::DropItem {
+                        id: ids(),
+                        pos: p,
+                        item: ItemStack {
+                            id: "minecraft:egg".to_string(),
+                            count: 1,
+                            slot: 0,
+                        },
+                        kept: String::new(),
+                    },
+                    i as u64 * 10,
+                )
+            })
+            .collect(),
+        // The nearest animals run at them and hit, never past one half heart left: a nip at
+        // stage 3, real harm from 4, no kill (owner, 2026-11-09).
+        Action::Charge(count, damage, hits) => memory
+            .animals_near_target()
+            .into_iter()
+            .take(count as usize)
+            .enumerate()
+            .map(|(i, c)| {
+                (
+                    Command::Charge {
+                        id: ids(),
+                        entity: c.id,
+                        player: target,
+                        damage,
+                        hits,
+                        seconds: 30.0,
+                        spare: true,
+                    },
+                    i as u64 * 10,
+                )
+            })
+            .collect(),
         Action::ShiftBed => pos
             .map(|bed| {
                 vec![(
@@ -2985,6 +3267,7 @@ pub fn commands(
                     (
                         Command::Hold {
                             id: ids(),
+                            at: None,
                             entity: mob.id,
                             player: target,
                             seconds,
@@ -3441,6 +3724,46 @@ mod tests {
             points: (0..20).map(|i| [3 + i * 2, 64, 0]).collect(),
             walked: 3,
             first_day: 0.0,
+        });
+        // A field, a piece of armour and a stand, a hive, a horse on a lead, pens and a coop.
+        memory.field = (0..9)
+            .flat_map(|x| (0..6).map(move |z| [10 + x, 1, 30 + z]))
+            .collect();
+        memory.containers[0]
+            .contents
+            .push(stack("minecraft:iron_helmet", 1, 10));
+        memory.decor.push(crate::memory::Decor {
+            kind: "armor_stand".to_string(),
+            id: 90,
+            pos: [1, 64, 1],
+        });
+        memory.fixtures.push(crate::memory::Fixture {
+            kind: "beehive".to_string(),
+            pos: [-3, 64, 3],
+        });
+        for (id, kind, x) in [
+            (80, "horse", 6.5),
+            (81, "sheep", 8.5),
+            (82, "sheep", 9.5),
+            (83, "chicken", -9.5),
+            (84, "chicken", -8.5),
+        ] {
+            memory.last.creatures_near.push(crate::memory::Creature {
+                id,
+                kind: kind.to_string(),
+                pos: [x, 64.0, 6.5],
+                named: false,
+                pet: false,
+            });
+        }
+        memory.last.leashed.push(80);
+        // A pig right by where they stand.
+        memory.last.creatures_near.push(crate::memory::Creature {
+            id: 85,
+            kind: "pig".to_string(),
+            pos: [3.5, 1.0, 3.5],
+            named: false,
+            pet: false,
         });
         // A cow of theirs in sight, twenty blocks off.
         memory.last.creatures_near.push(crate::memory::Creature {
@@ -4630,5 +4953,69 @@ mod tests {
         memory.woke_now = false;
         memory.observe(&lying(false), 1.01);
         assert!(!memory.woke_now, "once");
+    }
+
+    #[test]
+    fn the_farm_of_batch_six_sends_what_it_should() {
+        let memory = rich_memory();
+        let now = Now {
+            day_time: 1_000,
+            ..Now::default()
+        };
+        let mut rng = Rng::new(6);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        // The scarecrow wears the very helmet taken: kept, then put on.
+        let scarecrow = made("scarecrow", &mut rng);
+        assert!(matches!(&scarecrow[0].0, Command::TakeItem { keep, .. } if keep == "scarecrow"));
+        let stand = memory.decor("armor_stand").next().unwrap().id;
+        assert!(scarecrow.iter().any(|(c, _)| matches!(c, Command::EquipEntity { kept, entity, .. } if kept == "scarecrow" && *entity == stand)));
+
+        // The animals face the house, not the player.
+        let facing = made("face_the_house", &mut rng);
+        assert!(!facing.is_empty());
+        assert!(facing.iter().all(
+            |(c, _)| matches!(c, Command::Hold { at: Some(at), .. } if *at == [0.5, 64.5, 0.5])
+        ));
+
+        // One more till noon: from an hour after dawn, the four minutes and more left.
+        let more = made("one_more", &mut rng);
+        assert!(
+            matches!(&more[0].0, Command::PlaceEntity { of, seconds, .. } if *of == format!("minecraft:{}", memory.kept_most().unwrap().0) && *seconds == 250.0),
+            "{more:?}"
+        );
+
+        // A nip spares them; the horse's lead moves; eggs go down one by one.
+        assert!(made("animals_nip", &mut rng).iter().all(|(c, _)| matches!(
+            c,
+            Command::Charge {
+                spare: true,
+                hits: 2,
+                ..
+            }
+        )));
+        assert_eq!(
+            made("animals_turn", &mut rng).len(),
+            memory.animals_near_target().len().min(3),
+            "the animals near, three at most"
+        );
+        assert!(matches!(
+            &made("horse_moved", &mut rng)[0].0,
+            Command::MoveLeash { entity: 80, .. }
+        ));
+        assert!(made("eggs_to_door", &mut rng).iter().all(
+            |(c, _)| matches!(c, Command::DropItem { item, .. } if item.id == "minecraft:egg")
+        ));
+
+        // The field: a word cut into it, a row withered, every cut a seedling.
+        for id in ["field_word", "row_withered"] {
+            let cut = made(id, &mut rng);
+            assert!(!cut.is_empty(), "{id}");
+            assert!(cut.iter().all(|(c, _)| matches!(c, Command::SetState { property, value, .. } if property == "age" && value == "0")));
+        }
     }
 }

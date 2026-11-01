@@ -140,7 +140,12 @@ was, after `seconds` (two minutes at most) or when the player comes within six b
 while warped carries a tag of how it was and is put back when next seen. ABI 26 (2026-11-10):
 `shift_bed`, a bed one block to its side, both halves, never one someone lies in, a respawn point
 at it moved with it; `bed_beside`, a bed of another block beside one, the same facing; and
-`swap_block` over a bed turns both its halves together.
+`swap_block` over a bed turns both its halves together. ABI 27 (2026-11-10): `place_entity`
+(an armour stand or a farm animal, for a while when `seconds` are given and then gone, gone at
+once when the level closes; wearing a `kept` stack), `release_bees` (a hive's bees held still
+around a place, then home), `move_leash` (a lead to the nearest other fence post within eight
+blocks), `charge` (an animal runs at a player and hits, `spare` keeping them above half a heart);
+`equip_entity`'s `kept`, `hold`'s `at` (face a point, not the player), and an entity's `leashed`.
 
 ## Resources
 

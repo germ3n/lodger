@@ -618,6 +618,13 @@ because it can be built and tested without a game, and because the model layer i
     colour, both halves at once), `under_the_bed` (scratching under it as they lie down),
     `foot_of_bed` (the figure across the bed as they wake, one waking in three), `second_bed`
     (once a stay). ABI 26. Tests: two in `act`. Was: `shift_bed` not coded.
+  - **Batch 6, farm and animals** (owner: all four rows built, all four new, and the animals
+    turning on them brought here): `scarecrow` (their stand and the very piece of their
+    armour), `bees_out`, `horse_moved`, `field_word` (a word cut into the field from a 3 by 5
+    font), `face_the_house`, `one_more` (gone by noon), `row_withered`, `eggs_to_door`,
+    `animals_nip` (stage 3, half a heart, twice) and `animals_turn` (4 and 5, never below half
+    a heart); a field read, `Need::Field` alive again. ABI 27. Tests: six in `farm`, one in
+    `act`. Was: four rows not coded, and `Need::Field` always false.
   - **The debug panel teleports on Shift+click only** (a stray click put the owner deep in a
     cave). Was: any click on a spot.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only

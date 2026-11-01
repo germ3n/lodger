@@ -422,6 +422,9 @@ public final class Senses {
 			e.addProperty("name", entity.hasCustomName() && entity.getCustomName() != null ? entity.getCustomName().getString() : "");
 			e.addProperty("owner", entity instanceof TamableAnimal tamed && tamed.getOwnerReference() != null ? tamed.getOwnerReference().getUUID().toString() : "");
 			e.addProperty("hostile", entity instanceof Enemy);
+			// Tied by a lead to a fence post (ABI 27, `horse_moved`).
+			e.addProperty("leashed", entity instanceof net.minecraft.world.entity.Leashable leashable && leashable.isLeashed()
+					&& leashable.getLeashHolder() instanceof net.minecraft.world.entity.decoration.LeashFenceKnotEntity);
 
 			if (entity instanceof LivingEntity living) {
 				Vec3 view = living.getViewVector(1.0f);

@@ -64,6 +64,8 @@ pub const HOME_KINDS: &[&str] = &[
     "minecraft:lily_of_the_valley",
     "minecraft:pumpkin",
     "*_sapling",
+    "minecraft:beehive",
+    "minecraft:bee_nest",
 ];
 
 /// Whether a block id is a flower the home read keeps (`flowers_potted`).
@@ -85,6 +87,8 @@ pub fn is_flower(id: &str) -> bool {
 
 /// The fixture kinds the home read covers: inside its box, what it does not find is gone.
 const READ_FIXTURES: &[&str] = &[
+    "beehive",
+    "bee_nest",
     "glass_pane",
     "glass",
     "stairs",
@@ -343,6 +347,8 @@ pub struct Snapshot {
     pub creatures_near: Vec<Creature>,
     /// Hostile mobs within 48 blocks, from the last entity pass: zombies, skeletons, spiders.
     pub hostiles_near: Vec<Creature>,
+    /// The ids of the animals near that are tied by a lead to a post (`horse_moved`).
+    pub leashed: Vec<u32>,
     pub look_backs: u32,
     /// Turns of more than 120 degrees in the last minute.
     pub turns: u32,
@@ -483,6 +489,8 @@ pub struct Memory {
     /// The dark places of the last cave read: air with no light, below the surface, around
     /// the target near home (`crate::caves`).
     pub caves: Vec<BlockPos>,
+    /// The crop blocks of the last field read, around the crops by the home (`crate::farm`).
+    pub field: Vec<BlockPos>,
 }
 
 /// Caps, with the reason beside each.
@@ -552,6 +560,8 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "hopper",
         "shulker_box",
         "ladder",
+        "beehive",
+        "bee_nest",
     ];
     let name = id.rsplit(':').next().unwrap_or(id);
 
@@ -886,6 +896,15 @@ impl Memory {
                 .find(|(id, _)| *id == scan.id)
                 .map(|(_, event)| event.clone());
             self.scans_out.retain(|(id, _)| *id != scan.id);
+            if by.as_deref() == Some("field_read") {
+                self.field = scan
+                    .positions
+                    .iter()
+                    .take(crate::farm::MOST_FIELD)
+                    .map(|(_, pos)| *pos)
+                    .collect();
+                continue;
+            }
             if by.as_deref() == Some("cave_read") {
                 self.caves = scan
                     .positions
@@ -951,6 +970,13 @@ impl Memory {
                 })
                 .collect();
 
+            self.last.leashed = observations
+                .entities
+                .iter()
+                .filter(|e| e.leashed)
+                .map(|e| e.id)
+                .take(MOST_CREATURES)
+                .collect();
             self.last.hostiles_near = observations
                 .entities
                 .iter()

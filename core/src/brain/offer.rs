@@ -100,7 +100,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Raining => last.raining,
         Need::NotRaining => !last.raining,
         Need::Route => memory.route().is_some(),
-        Need::Field => false,
+        Need::Field => !memory.field_rows().is_empty(),
         Need::Animals => memory.creatures("").count() >= 3,
         Need::Hostiles => memory.last.hostiles_near.len() >= 3,
         Need::Kills => memory.most_killed().is_some(),
@@ -114,6 +114,27 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::SoulableLight => memory.soulable_light().is_some(),
         Need::WarpableAnimal => last.online && memory.warp_animal().is_some(),
         Need::JustWoke => false,
+        Need::FieldWord => memory
+            .field_word()
+            .is_some_and(|(_, cells)| !cells.is_empty()),
+        Need::ScarecrowParts => {
+            memory
+                .in_used_container(crate::brain::act::is_armour)
+                .is_some()
+                && (memory.decor("armor_stand").next().is_some()
+                    || memory
+                        .in_used_container(|id| id == "minecraft:armor_stand")
+                        .is_some())
+        }
+        Need::Hive => {
+            memory.usual_door().is_some()
+                && (memory.fixtures("beehive").next().is_some()
+                    || memory.fixtures("bee_nest").next().is_some())
+        }
+        Need::LeashedHorse => crate::brain::act::leashed_horse(memory).is_some(),
+        Need::Penned(n) => memory.penned().len() >= n,
+        Need::Coop => !memory.egg_line().is_empty(),
+        Need::AnimalsNearTarget => last.online && !memory.animals_near_target().is_empty(),
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }

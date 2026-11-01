@@ -41,6 +41,8 @@ public final class Worlds {
 	private final Holds holds = new Holds();
 	private final Hidden hidden = new Hidden();
 	private final Warps warps = new Warps();
+	private final Temporaries temporaries = new Temporaries();
+	private final Charges charges = new Charges();
 	private final LootOffers loot = new LootOffers();
 	private final Later later = new Later();
 	private final Poses poses = new Poses();
@@ -106,6 +108,7 @@ public final class Worlds {
 		// No light is saved gone: what the level hides is put back before it closes.
 		hidden.putBackIn(level);
 		warps.restoreIn(level);
+		temporaries.goneIn(level);
 		Map<LoadedMod, Open> perMod = open.remove(level);
 		if (perMod == null) {
 			return;
@@ -135,11 +138,13 @@ public final class Worlds {
 		holds.tick(server);
 		hidden.tick();
 		warps.tick(server);
+		temporaries.tick(server);
+		charges.tick(server);
 		later.tick();
 		poses.tick();
 		figures.tick();
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();

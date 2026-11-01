@@ -309,19 +309,25 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | `harvest_one` | 2 | One ripe crop is harvested and its yield is in the chest. The soil is left as it was. | A field and a chest. |
 | `replant_other` | 3 | One crop is a different crop, from seeds in a chest. | A field and a chest with other seeds. |
 | `trample` | 3 | Farmland from the field toward the door, one line, while the target is away. | A field within 32 blocks of the home. |
-| `field_word` | 4 | Crops harvested, or a row left standing, so that from above the field reads one word of the want's list. | A field of 7 by 5 or more. |
-| `scarecrow` | 3 | An armour stand in the field, wearing one piece of the target's armour, facing the house. | An armour stand or the parts for one in a chest, and a field. |
+| `field_word` | 4 | Crops cut back to seedlings so that from above, north at the top, the field reads one word of the want's list in letters three by five: the longest that fits (`MINE`, `LOOK`, `GIVE`; `ME` in a field of 7). Coded 2026-11-10 from the brain's field read. | A field of 7 by 5 or more, four in five planted. |
+| `scarecrow` | 3 | An armour stand in the field, wearing one piece of the target's armour (the very piece, from their chest), facing the house: their own stand moved there, or one from the chest set down. Coded 2026-11-10. | A piece of armour and an armour stand (or one in a chest), and a field. |
 | `open_gate` | 2 | A pen's gate is open in the morning. The animals wandered. | A fence gate with animals behind it. |
 | `animal_indoors` | 3 | One of the target's animals is inside the house in the morning. Moved, not spawned; the gate is closed behind it. | A penned animal and a home with a door. |
 | `animal_gone` | 3 | One animal is missing from the pen, and is at the end of the target's route, grazing. | A pen and a route. |
 | `sheep_dyed` | 2 | A sheep is another colour, from dye in a chest. | A sheep and dye. |
-| `horse_moved` | 2 | The horse is tied to a different post. | A horse on a lead. |
+| `horse_moved` | 2 | The horse is tied to a different post, within eight blocks of the first (`move_leash`, ABI 27). Coded 2026-11-10. | A horse (or donkey, mule, llama, camel) on a lead. |
+| `face_the_house` | 4 | At dawn every animal in their pens (up to twelve) stands still facing the house for two minutes (`hold` with `at`, ABI 27). Owner's pick, 2026-11-10. | Three animals in the pens, dawn. |
+| `one_more` | 3 | In the morning one more of the kind they keep most stands with the others, and is gone by noon (`place_entity` for a while, ABI 27: gone at once when the level closes). Owner's pick, 2026-11-10. | Two animals in the pens, dawn. |
+| `row_withered` | 3 | One row of their crops is back to seedlings; the rest untouched. Owner's pick, 2026-11-10. | A field, the target away or asleep. |
+| `eggs_to_door` | 2 | Eggs in a line from the coop to the door they use, two blocks apart, up to six. Owner's pick, 2026-11-10. | Two chickens by the home and a door. |
+| `animals_nip` | 3 | The nearest farm animal turns on them: it runs at them and nips, half a heart, twice at most, and never below half a heart (`charge`, ABI 27). The owner's harm stages: a nip at 3. Owner's idea, 2026-11-09. | A farm animal within 16 blocks, the target outdoors. |
+| `animals_turn` | 4 | Up to three of the nearest farm animals turn on them for half a minute, a heart and a half a hit, three hits each at most, never below half a heart: real harm from stage 4, never a kill. Owner's idea, 2026-11-09. | Farm animals within 16 blocks, the target outdoors. |
 | `hostiles_stare` | 3 | At night every hostile mob within 48 blocks (up to sixteen) stops where it stands and turns to the target, and stays so, facing them as they move, attacking no one, until dawn burns or frees them. Hit once, a held mob takes it unmoved, still staring; hit twice, that one wakes alone and acts as it would (owner, 2026-11-09). None is spawned: a night with few has few. Owner's idea, 2026-11-09. | Three or more hostile mobs near, night. |
 | `stare` | 3 | Every animal and villager within 32 blocks stops, turns to the target and holds still looking at them for ten to thirty seconds (`hold`: they stand still rather than look and walk at once, which jittered). Never a hostile mob: that would be a fight. | Three or more animals or villagers nearby. |
 | `pet_growl` | 2 | A tamed wolf growls, or a cat hisses, facing an empty spot in the house, for a few seconds. | A tamed pet in the home. |
 | `pet_moved` | 2 | A sitting pet is sitting somewhere else, facing a corner. | A sitting pet in the home. |
 | `pet_outside` | 3 | The pet is outside the closed door in the morning. | A pet indoors and a door. |
-| `bees_out` | 3 | The bees are out of the hive at night, around the door. | A beehive within 16 blocks. |
+| `bees_out` | 3 | At night the bees of their hive are out, hanging still around the door they use for two minutes, then home (`release_bees`, ABI 27). Coded 2026-11-10. | A beehive of theirs and a door, night. |
 
 ### Chat and the player list
 

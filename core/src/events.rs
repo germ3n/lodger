@@ -141,6 +141,20 @@ pub enum Need {
     WarpableAnimal,
     /// The target just woke; never offered, the brain starts it (`foot_of_bed`).
     JustWoke,
+    /// A field of 7 by 5 or more that a word fits in (`crate::farm`).
+    FieldWord,
+    /// A piece of armour in their chest, and an armour stand or one in the chest.
+    ScarecrowParts,
+    /// A beehive of theirs, and a door.
+    Hive,
+    /// A horse of theirs tied to a post.
+    LeashedHorse,
+    /// This many of their farm animals in the pens by the home.
+    Penned(usize),
+    /// Two chickens or more by the home, and a door to lay eggs toward.
+    Coop,
+    /// Farm animals within 16 blocks of the target.
+    AnimalsNearTarget,
 }
 
 impl Need {
@@ -175,6 +189,10 @@ impl Need {
                 | Need::LightsBehind
                 | Need::WarpableAnimal
                 | Need::JustWoke
+                | Need::LeashedHorse
+                | Need::Penned(_)
+                | Need::Coop
+                | Need::AnimalsNearTarget
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
                 | Need::TargetApproachingChest
@@ -239,6 +257,13 @@ impl Need {
             Need::SoulableLight => "no torch or lantern of theirs out of view".to_string(),
             Need::WarpableAnimal => "no animal 12 to 32 blocks from them".to_string(),
             Need::JustWoke => "happens only as they wake".to_string(),
+            Need::FieldWord => "no field of 7 by 5 to spell in".to_string(),
+            Need::ScarecrowParts => "no armour, or no armour stand, of theirs".to_string(),
+            Need::Hive => "no beehive of theirs".to_string(),
+            Need::LeashedHorse => "no horse of theirs on a lead".to_string(),
+            Need::Penned(n) => format!("fewer than {n} animals in their pens"),
+            Need::Coop => "no coop by the home".to_string(),
+            Need::AnimalsNearTarget => "no farm animal near them".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -475,6 +500,24 @@ pub enum Action {
     SheetsChanged,
     /// A second bed beside theirs.
     SecondBed,
+    /// An armour stand in the field wearing a piece of their armour, facing the house.
+    Scarecrow,
+    /// The bees out around the door at night.
+    BeesOut,
+    /// Their horse tied to another post.
+    HorseMoved,
+    /// The field harvested into a word.
+    FieldWord,
+    /// Their animals stand facing the house.
+    FaceTheHouse,
+    /// One more of the kind they keep in the pen, till noon.
+    OneMore,
+    /// One row of the field back to seedlings.
+    RowWithered,
+    /// Eggs from the coop to the door.
+    EggsToDoor,
+    /// Animals turn on them: this many, this much harm a hit, this many hits.
+    Charge(u32, f32, u32),
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1069,6 +1112,118 @@ pub const CATALOGUE: &[Event] = &[
         1,
         Full,
         Action::SecondBed,
+        false,
+    ),
+    // Batch 6 (owner, 2026-11-10): the four rows built, four new, and the animals turning on
+    // them, by the harm stages: a nip from stage 3, real harm from 4, never a kill.
+    row(
+        "scarecrow",
+        3,
+        5,
+        &[Field, ScarecrowParts, TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::Scarecrow,
+        false,
+    ),
+    row(
+        "bees_out",
+        3,
+        5,
+        &[Hive, Night],
+        2.0,
+        3,
+        Full,
+        Action::BeesOut,
+        false,
+    ),
+    row(
+        "horse_moved",
+        2,
+        5,
+        &[LeashedHorse, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Full,
+        Action::HorseMoved,
+        false,
+    ),
+    row(
+        "field_word",
+        4,
+        5,
+        &[FieldWord, TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::FieldWord,
+        false,
+    ),
+    row(
+        "face_the_house",
+        4,
+        5,
+        &[Penned(3), Dawn],
+        2.0,
+        3,
+        Full,
+        Action::FaceTheHouse,
+        false,
+    ),
+    row(
+        "one_more",
+        3,
+        5,
+        &[Penned(2), Dawn],
+        3.0,
+        2,
+        Full,
+        Action::OneMore,
+        false,
+    ),
+    row(
+        "row_withered",
+        3,
+        5,
+        &[Field, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::RowWithered,
+        false,
+    ),
+    row(
+        "eggs_to_door",
+        2,
+        5,
+        &[Coop, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Full,
+        Action::EggsToDoor,
+        false,
+    ),
+    row(
+        "animals_nip",
+        3,
+        3,
+        &[AnimalsNearTarget, TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::Charge(1, 1.0, 2),
+        false,
+    ),
+    row(
+        "animals_turn",
+        4,
+        5,
+        &[AnimalsNearTarget, TargetOutdoors],
+        3.0,
+        3,
+        Full,
+        Action::Charge(3, 3.0, 3),
         false,
     ),
     // Decoration and signs
@@ -2774,6 +2929,10 @@ impl Event {
             | Action::ShiftBed
             | Action::SheetsChanged
             | Action::SecondBed
+            | Action::Scarecrow
+            | Action::FieldWord
+            | Action::RowWithered
+            | Action::EggsToDoor
             | Action::RotateFixture(..)
             | Action::ColdFurnace
             | Action::OpenOnEnter
@@ -2791,7 +2950,12 @@ impl Event {
             | Action::HostilesStare
             | Action::BedOccupied
             | Action::Figure(..)
-            | Action::WarpAnimal => "seen",
+            | Action::WarpAnimal
+            | Action::BeesOut
+            | Action::HorseMoved
+            | Action::FaceTheHouse
+            | Action::OneMore
+            | Action::Charge(..) => "seen",
             Action::Hint(_, _) => "sky",
             Action::RefuseRest | Action::Wake | Action::WokeElsewhere => "night",
         }
@@ -2924,6 +3088,16 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "scarecrow" => "stand a scarecrow in their field, wearing their armour",
+            "bees_out" => "let the bees out around their door",
+            "horse_moved" => "tie their horse to another post",
+            "field_word" => "harvest a word into their field",
+            "face_the_house" => "make their animals stand facing the house",
+            "one_more" => "put one more animal in their pen until noon",
+            "row_withered" => "wither one row of their crops",
+            "eggs_to_door" => "lay eggs in a line to their door",
+            "animals_nip" => "have an animal turn on them and nip",
+            "animals_turn" => "have their animals turn on them",
             "shift_bed" => "move their bed one block over",
             "sheets_changed" => "change the colour of their bed",
             "under_the_bed" => "scratch under their bed as they lie down",

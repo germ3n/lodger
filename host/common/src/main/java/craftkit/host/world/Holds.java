@@ -33,13 +33,16 @@ public final class Holds {
 		final Mob mob;
 		final UUID player;
 		final long untilTick;
+		/** The point it faces in place of the player, or null (ABI 27: the house). */
+		final Vec3 at;
 		float health;
 		int hits;
 
-		Hold(Mob mob, UUID player, long untilTick) {
+		Hold(Mob mob, UUID player, long untilTick, Vec3 at) {
 			this.mob = mob;
 			this.player = player;
 			this.untilTick = untilTick;
+			this.at = at;
 			this.health = mob.getHealth();
 		}
 
@@ -53,6 +56,11 @@ public final class Holds {
 
 	/** Holds a mob for a player; a mob already held is held for the new time. */
 	public void add(Mob mob, ServerPlayer player, float seconds) {
+		add(mob, player, seconds, null);
+	}
+
+	/** Holds a mob, facing {@code at} when given, else the player. */
+	public void add(Mob mob, ServerPlayer player, float seconds, Vec3 at) {
 		active.removeIf(h -> h.mob() == mob);
 		if (!mob.entityTags().contains(TAG)) {
 			if (mob.isNoAi()) {
@@ -64,7 +72,7 @@ public final class Holds {
 		mob.setTarget(null);
 		mob.getNavigation().stop();
 		mob.setDeltaMovement(Vec3.ZERO);
-		active.add(new Hold(mob, player.getUUID(), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20)));
+		active.add(new Hold(mob, player.getUUID(), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20), at));
 	}
 
 	public void tick(MinecraftServer server) {
@@ -89,8 +97,8 @@ public final class Holds {
 				continue;
 			}
 			ServerPlayer player = server.getPlayerList().getPlayer(hold.player);
-			if (player != null && player.level() == mob.level()) {
-				Vec3 to = player.getEyePosition().subtract(mob.getEyePosition());
+			if (hold.at != null || (player != null && player.level() == mob.level())) {
+				Vec3 to = (hold.at != null ? hold.at : player.getEyePosition()).subtract(mob.getEyePosition());
 				float yaw = Facing.yaw(to.x, to.z);
 				mob.setYRot(yaw);
 				mob.setYHeadRot(yaw);
