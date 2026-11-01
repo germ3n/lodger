@@ -167,6 +167,14 @@ pub enum Need {
     KillKinds,
     /// The target in the game and awake.
     TargetAwake,
+    /// A music disc in the chest they use.
+    Disc,
+    /// Their furnace's fuel and another fuel in their chest (`crate::workshop`).
+    SwapFuel,
+    /// A brewing ingredient in the chest they use.
+    BrewIngredient,
+    /// The makings of something in the chest they use.
+    Makings,
 }
 
 impl Need {
@@ -284,6 +292,10 @@ impl Need {
             Need::HeadKind => "they kill nothing that has a head".to_string(),
             Need::KillKinds => "fewer than two kinds killed".to_string(),
             Need::TargetAwake => "the target is away or asleep".to_string(),
+            Need::Disc => "no music disc in their chest".to_string(),
+            Need::SwapFuel => "no fuel in their furnace, or no other fuel in the chest".to_string(),
+            Need::BrewIngredient => "no brewing ingredient in their chest".to_string(),
+            Need::Makings => "nothing in their chest it could make something of".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -552,6 +564,24 @@ pub enum Action {
     DeathMessage,
     /// What they typed, on a sign by the door.
     WordsOnSign,
+    /// Their disc playing in their jukebox, or the one playing stopped.
+    JukeboxDisc,
+    /// The lectern's book open to another page.
+    LecternPage,
+    /// Their furnace's fuel another kind.
+    SwapFuel,
+    /// Their brewing stand given an ingredient.
+    Brewing,
+    /// An enchantment gone from an item in their chest.
+    GrindstoneStrip,
+    /// Their lamps blink a pattern.
+    LampsBlink,
+    /// The composter a level fuller.
+    ComposterFills,
+    /// Something they make, made, on the crafting table.
+    CraftedForYou,
+    /// A bell of theirs rings once.
+    BellRings,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1258,6 +1288,106 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Charge(3, 3.0, 3),
+        false,
+    ),
+    // Batch 9 (owner, 2026-11-10): every row built, four new.
+    row(
+        "jukebox",
+        3,
+        5,
+        &[Fixture("jukebox"), Disc, TargetApproachingDoor],
+        3.0,
+        2,
+        Full,
+        Action::JukeboxDisc,
+        false,
+    ),
+    row(
+        "lectern_page",
+        2,
+        5,
+        &[Fixture("lectern"), TargetAwayOrAsleep],
+        2.0,
+        3,
+        Half,
+        Action::LecternPage,
+        true,
+    ),
+    row(
+        "swap_fuel",
+        2,
+        5,
+        &[SwapFuel, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Half,
+        Action::SwapFuel,
+        true,
+    ),
+    row(
+        "brewing_done",
+        3,
+        5,
+        &[Fixture("brewing_stand"), BrewIngredient, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::Brewing,
+        false,
+    ),
+    row(
+        "grindstone_strip",
+        4,
+        5,
+        &[Fixture("grindstone"), UsedContainer, TargetAwayOrAsleep],
+        4.0,
+        1,
+        Full,
+        Action::GrindstoneStrip,
+        false,
+    ),
+    row(
+        "lamps_blink",
+        3,
+        5,
+        &[Fixture("redstone_lamp"), Night],
+        2.0,
+        3,
+        Full,
+        Action::LampsBlink,
+        false,
+    ),
+    row(
+        "composter_fills",
+        2,
+        5,
+        &[Fixture("composter"), Dawn],
+        1.0,
+        4,
+        Half,
+        Action::ComposterFills,
+        true,
+    ),
+    row(
+        "crafted_for_you",
+        3,
+        5,
+        &[Fixture("crafting_table"), Makings, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::CraftedForYou,
+        false,
+    ),
+    row(
+        "bell_rings",
+        3,
+        5,
+        &[Fixture("bell"), Night],
+        2.0,
+        3,
+        Full,
+        Action::BellRings,
         false,
     ),
     // Batch 8 (owner, 2026-11-10): sleepers while they are awake, an advancement again, a death
@@ -3040,6 +3170,12 @@ impl Event {
             | Action::FullOfOne
             | Action::MapMarked
             | Action::LootGift
+            | Action::JukeboxDisc
+            | Action::LecternPage
+            | Action::SwapFuel
+            | Action::Brewing
+            | Action::GrindstoneStrip
+            | Action::CraftedForYou
             | Action::ToolUsed
             | Action::TidyByColour
             | Action::RotateFrame
@@ -3099,6 +3235,9 @@ impl Event {
             | Action::WeaponOnWall
             | Action::HeadOnPost
             | Action::GraveEach
+            | Action::LampsBlink
+            | Action::ComposterFills
+            | Action::BellRings
             | Action::RotateFixture(..)
             | Action::ColdFurnace
             | Action::OpenOnEnter
@@ -3254,6 +3393,15 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "jukebox" => "play one of their discs in their jukebox",
+            "lectern_page" => "turn the page of the book on their lectern",
+            "swap_fuel" => "swap the fuel in their furnace for another",
+            "brewing_done" => "brew a potion in their brewing stand",
+            "grindstone_strip" => "take an enchantment off one of their things",
+            "lamps_blink" => "blink their lamps in a pattern",
+            "composter_fills" => "fill their composter a little",
+            "crafted_for_you" => "make something for them on the crafting table",
+            "bell_rings" => "ring their bell once",
             "sleep_message" => "tell them another player is sleeping",
             "advancement" => "show them an advancement of theirs again",
             "death_message" => "say in chat that they died",

@@ -177,16 +177,17 @@ never a witness's container.
 | --- | --- | --- | --- |
 | `cook_one` | 1 | One raw item from the target's chest is in a furnace with one fuel, and comes out cooked. | A furnace, a chest with something smeltable and a fuel. |
 | `take_output` | 2 | The finished output of a furnace is gone from the furnace and in the chest the target uses. | A furnace with output. |
-| `swap_fuel` | 2 | The fuel in a furnace is a different fuel kind from the target's chests, the counts kept fair in burn time. | A lit furnace, a chest with another fuel. |
+| `swap_fuel` | 2 | The fuel in a furnace is a different fuel kind from the target's chests, the counts kept fair in burn time (three coal for sixteen planks). Coded 2026-11-10. | A furnace with fuel, a chest with another fuel. |
 | `cold_furnace` | 3 | A furnace mid-smelt has lost its fuel, which is in the chest. The smelting stops. | A lit furnace. |
 | `item_on_table` | 2 | An item is laid on the crafting table as a dropped item that does not despawn: the held item, or one of the favourites from a chest. | A crafting table, a held item or a chest. |
-| `lectern_page` | 2 | The book on a lectern is open to another page. | A lectern with a book. |
+| `lectern_page` | 2 | The book on a lectern is open to another page (`turn_page`, ABI 29). Coded 2026-11-10. | A lectern with a book. |
 | `anvil_sound` | 2 | An anvil's sound from the workshop, at night, while the target is in bed. | An anvil and the target asleep. |
-| `brewing_done` | 3 | A brewing stand that had water bottles has a potion the target has the ingredients for, one of the three. The ingredients are gone from the chest. | A brewing stand with bottles and a chest with an ingredient and blaze powder. |
+| `brewing_done` | 3 | A brewing stand that had potions brews one of their ingredients into them, the game's own brewing: one ingredient from their chest into the stand, and a blaze powder too when the stand has no fuel (`brew`, ABI 29: refused unless the stand holds potions and its ingredient slot is empty). Coded 2026-11-10. | A brewing stand and an ingredient in the chest they use. |
 | `armor_stand_turn` | 3 | An armour stand's head is turned toward the door, or toward where the target sleeps. | An armour stand in the home. |
 | `armor_stand_dress` | 3 | One piece of armour from a chest is on the stand. | An armour stand and a chest with armour. |
 | `stand_watch` | 3 | The armour stands in the room turn their heads to follow the target while the target is in it, and hold the pose once the target looks straight at one. Back to normal when the target leaves. | An armour stand in the home. |
-| `grindstone_strip` | 4 | An enchanted tool in a chest has lost one enchantment, as a grindstone would take it. | A grindstone and an enchanted item in a chest. |
+| `grindstone_strip` | 4 | An enchanted tool in a chest has lost one enchantment, as a grindstone would take it (`strip`, ABI 29: the host picks the item and the enchantment, never a curse). Coded 2026-11-10. | A grindstone and an enchanted item in a chest. |
+| `crafted_for_you` | 3 | Something they make lies finished on their crafting table, the makings gone from their chest: four torches from a stick and a coal, bread from three wheat, planks from a log, sticks from planks. Owner's pick, 2026-11-10. | A crafting table, the makings in their chest. |
 
 ### The house
 
@@ -429,11 +430,14 @@ they use. Digging is what a player digs, at a player's pace, with a player's sou
 | `lever` | 2 | A lever in the home is flipped, and whatever it powers happens: a lamp, a door. Never a lever with TNT within 16 blocks of anything it powers; the host checks. | A lever. |
 | `note` | 2 | One note from a note block, at night, while the target is awake. | A note block within 32 blocks of the home. |
 | `note_tune` | 3 | Three notes from the note block, the first three of a disc the target owns. | A note block and a disc in a chest. |
-| `jukebox` | 3 | A disc from the target's chest is playing in their jukebox when they come home, or the one playing stops. | A jukebox and a disc. |
+| `jukebox` | 3 | A disc from the target's chest is playing in their jukebox as they come to the door, or the one playing stops, its disc back in the chest (`jukebox`, ABI 29). Coded 2026-11-10. | A jukebox and a disc in the chest they use, the target coming to the door. |
 | `door_opens_itself` | 3 | A door opens as the target approaches, with no plate and no one there. | A door in view. |
 | `plate_laid` | 3 | A wooden pressure plate from a chest, in front of the chest the target uses. | A plate in a chest. |
 | `piston_once` | 3 | A piston in the base extends and retracts once, at night, with its sound. Nothing is hooked to TNT. | A piston. |
 | `lamps_noon` | 3 | The redstone lamps are on at noon and off at night, for a day. | Redstone lamps. |
+| `lamps_blink` | 3 | At night their redstone lamps, up to six, blink together: three short, three long, three short, once, each ending as it was. Owner's pick, 2026-11-10. | Redstone lamps, night. |
+| `composter_fills` | 2 | Their composter is one level fuller in the morning, nothing put in (`set_state`'s `@up`, ABI 29, never past full). Owner's pick, 2026-11-10. | A composter, dawn. |
+| `bell_rings` | 3 | A bell of theirs rings once at night, swinging, with no one near it (`toggle_block` rings a bell). Owner's pick, 2026-11-10. | A bell, night. |
 
 ### Sounds
 

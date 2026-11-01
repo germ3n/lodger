@@ -266,6 +266,15 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             _ => None,
         },
         Action::GraveEach => spot(memory, rng),
+        Action::JukeboxDisc => memory.fixtures("jukebox").next().map(|f| f.pos),
+        Action::LecternPage => memory.fixtures("lectern").next().map(|f| f.pos),
+        Action::SwapFuel => memory.furnace().map(|f| f.pos),
+        Action::Brewing => memory.fixtures("brewing_stand").next().map(|f| f.pos),
+        Action::GrindstoneStrip => memory.used_container().map(|c| c.pos),
+        Action::LampsBlink => memory.fixtures("redstone_lamp").next().map(|f| f.pos),
+        Action::ComposterFills => memory.fixtures("composter").next().map(|f| f.pos),
+        Action::CraftedForYou => memory.fixtures("crafting_table").next().map(|f| f.pos),
+        Action::BellRings => memory.fixtures("bell").next().map(|f| f.pos),
         // Beside the door they use, two out, one to the other side from the head on the post.
         Action::WordsOnSign => match (memory.usual_door(), home) {
             (Some(door), Some(h)) => {
@@ -2897,6 +2906,145 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        Action::JukeboxDisc => match (pos, memory.disc_in_chest()) {
+            (Some(jukebox), Some((chest, disc))) => vec![(
+                Command::Jukebox {
+                    id: ids(),
+                    pos: jukebox,
+                    from: chest.pos,
+                    slot: disc.slot,
+                },
+                0,
+            )],
+            _ => vec![],
+        },
+        Action::LecternPage => pos
+            .map(|p| vec![(Command::TurnPage { id: ids(), pos: p }, 0)])
+            .unwrap_or_default(),
+        // Their fuel out to the chest, the other in, as long a burn.
+        Action::SwapFuel => match memory.fuel_swap() {
+            Some((furnace, fuel, chest, other, count)) => {
+                let Some(&free) = chest.empty_slots().first() else {
+                    return vec![];
+                };
+                vec![
+                    (
+                        Command::MoveItem {
+                            id: ids(),
+                            from: furnace.pos,
+                            from_slot: 1,
+                            to: chest.pos,
+                            to_slot: free,
+                            count: fuel.count,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::MoveItem {
+                            id: ids(),
+                            from: chest.pos,
+                            from_slot: other.slot,
+                            to: furnace.pos,
+                            to_slot: 1,
+                            count,
+                        },
+                        2,
+                    ),
+                ]
+            }
+            None => vec![],
+        },
+        Action::Brewing => match (pos, memory.brewing_ingredient()) {
+            (Some(stand), Some((chest, ingredient))) => vec![(
+                Command::Brew {
+                    id: ids(),
+                    stand,
+                    from: chest.pos,
+                    slot: ingredient.slot,
+                },
+                0,
+            )],
+            _ => vec![],
+        },
+        Action::GrindstoneStrip => pos
+            .map(|chest| {
+                vec![(
+                    Command::Strip {
+                        id: ids(),
+                        from: chest,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // Every lamp of theirs, up to six, three short, three long, three short, together.
+        Action::LampsBlink => memory
+            .fixtures("redstone_lamp")
+            .take(6)
+            .flat_map(|lamp| {
+                crate::workshop::blink_ticks()
+                    .into_iter()
+                    .map(|t| (lamp.pos, t))
+                    .collect::<Vec<_>>()
+            })
+            .map(|(p, t)| (Command::ToggleBlock { id: ids(), pos: p }, t))
+            .collect(),
+        Action::ComposterFills => pos
+            .map(|p| {
+                vec![(
+                    Command::SetState {
+                        id: ids(),
+                        pos: p,
+                        property: "level".to_string(),
+                        value: "@up".to_string(),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // The makings taken from their chest, what they make lying on the table.
+        Action::CraftedForYou => match (pos, memory.recipe_at_hand()) {
+            (Some(table), Some((recipe, chest, stacks))) => {
+                let mut made: Vec<(Command, u64)> = stacks
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, (stack, n))| {
+                        (
+                            Command::TakeItem {
+                                id: ids(),
+                                from: chest.pos,
+                                slot: stack.slot,
+                                count: n,
+                                keep: String::new(),
+                            },
+                            i as u64 * 2,
+                        )
+                    })
+                    .collect();
+                made.push((
+                    Command::DropItem {
+                        id: ids(),
+                        pos: [
+                            table[0] as f64 + 0.5,
+                            table[1] as f64 + 1.1,
+                            table[2] as f64 + 0.5,
+                        ],
+                        item: ItemStack {
+                            id: recipe.result.0.to_string(),
+                            count: recipe.result.1,
+                            slot: 0,
+                        },
+                        kept: String::new(),
+                    },
+                    10,
+                ));
+                made
+            }
+            _ => vec![],
+        },
+        Action::BellRings => pos
+            .map(|p| vec![(Command::ToggleBlock { id: ids(), pos: p }, 0)])
+            .unwrap_or_default(),
         // The game's own death line, one of a few, about them while they live.
         Action::DeathMessage => {
             const DEATHS: &[&str] = &[
@@ -3794,9 +3942,17 @@ mod tests {
             days: 1,
             in_home: false,
             last_opened_day: 0.0,
-            contents: vec![stack("minecraft:iron_ingot", 3, 2)],
+            contents: vec![
+                stack("minecraft:iron_ingot", 3, 2),
+                stack("minecraft:coal", 3, 1),
+            ],
         });
         for (kind, pos) in [
+            ("jukebox", [3, 64, -2]),
+            ("brewing_stand", [-3, 64, 2]),
+            ("grindstone", [-3, 64, -1]),
+            ("redstone_lamp", [0, 66, 0]),
+            ("composter", [5, 64, 5]),
             ("crafting_table", [1, 64, 2]),
             ("hopper", [2, 65, 0]),
             ("ladder", [-6, 64, 0]),
@@ -3866,6 +4022,15 @@ mod tests {
             hits: 20,
             kills: 14,
         });
+        // A disc, wood to burn, wart to brew, sticks to make torches of.
+        for (id, count, slot) in [
+            ("minecraft:music_disc_cat", 1, 12),
+            ("minecraft:oak_planks", 32, 13),
+            ("minecraft:nether_wart", 4, 14),
+            ("minecraft:stick", 8, 15),
+        ] {
+            memory.containers[0].contents.push(stack(id, count, slot));
+        }
         // A second kind, with a head; a sign of theirs; their sword; its kill sign.
         memory.tally.push(Tally {
             kind: "zombie".to_string(),
@@ -5436,6 +5601,80 @@ mod tests {
         assert!(
             matches!(&sign[1].0, Command::SetSign { lines, .. } if lines == &vec!["hello is anyone", "there"]),
             "{sign:?}"
+        );
+    }
+
+    #[test]
+    fn the_workshop_of_batch_nine_sends_what_it_should() {
+        let memory = rich_memory();
+        let now = Now::default();
+        let mut rng = Rng::new(9);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        assert!(matches!(
+            &made("jukebox", &mut rng)[0].0,
+            Command::Jukebox { slot: 12, .. }
+        ));
+        assert!(
+            matches!(&made("lectern_page", &mut rng)[0].0, Command::TurnPage { pos, .. } if *pos == [-1, 64, -2])
+        );
+        assert!(matches!(
+            &made("brewing_done", &mut rng)[0].0,
+            Command::Brew { slot: 14, .. }
+        ));
+        assert!(matches!(
+            &made("grindstone_strip", &mut rng)[0].0,
+            Command::Strip { .. }
+        ));
+        assert!(
+            matches!(&made("composter_fills", &mut rng)[0].0, Command::SetState { property, value, .. } if property == "level" && value == "@up")
+        );
+        assert!(
+            matches!(&made("bell_rings", &mut rng)[0].0, Command::ToggleBlock { pos, .. } if *pos == [10, 65, 0])
+        );
+
+        // The fuel: theirs out to a free slot, the other in, as long a burn.
+        let swap = made("swap_fuel", &mut rng);
+        assert!(matches!(
+            &swap[0].0,
+            Command::MoveItem {
+                from_slot: 1,
+                count: 3,
+                ..
+            }
+        ));
+        assert!(
+            matches!(
+                &swap[1].0,
+                Command::MoveItem {
+                    from_slot: 13,
+                    to_slot: 1,
+                    count: 16,
+                    ..
+                }
+            ),
+            "{swap:?}"
+        );
+
+        // The lamps: an even number of toggles, so the lamp ends as it was.
+        assert_eq!(made("lamps_blink", &mut rng).len() % 2, 0);
+
+        // Torches from their stick and coal, on the table.
+        let crafted = made("crafted_for_you", &mut rng);
+        assert!(
+            crafted
+                .iter()
+                .filter(|(c, _)| matches!(c, Command::TakeItem { .. }))
+                .count()
+                >= 1
+        );
+        assert!(
+            matches!(&crafted.last().unwrap().0, Command::DropItem { item, .. } if item.id == "minecraft:torch" && item.count == 4),
+            "{crafted:?}"
         );
     }
 }

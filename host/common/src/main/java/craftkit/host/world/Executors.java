@@ -103,6 +103,10 @@ public final class Executors {
 				case "damage_item" -> damageItem(level, command, id);
 				case "figure" -> figure(level, command, id, context);
 				case "swap_block" -> swapBlock(level, command, id);
+				case "jukebox" -> jukebox(level, command, id);
+				case "turn_page" -> turnPage(level, command, id);
+				case "brew" -> brew(level, command, id);
+				case "strip" -> strip(level, command, id);
 				case "shift_bed" -> done(id, Beds.shift(level, blockPos(command.getAsJsonArray("pos"))));
 				case "bed_beside" -> bedBeside(level, command, id);
 				case "hide_block" -> hideBlock(level, command, id, context);
@@ -288,6 +292,12 @@ public final class Executors {
 		if (block instanceof LeverBlock lever) {
 			lever.pull(state, level, pos, null);
 			return report(id, true, "");
+		}
+
+		// A bell rings, swinging, as if struck (batch 9).
+		if (block instanceof net.minecraft.world.level.block.BellBlock bell) {
+			boolean rang = bell.attemptToRing(level, pos, state.getValue(net.minecraft.world.level.block.BellBlock.FACING));
+			return report(id, rang, rang ? "" : "the bell would not ring");
 		}
 
 		if (state.hasProperty(BlockStateProperties.OPEN)) {
@@ -532,6 +542,109 @@ public final class Executors {
 		}
 
 		return done(id, Beds.beside(level, blockPos(command.getAsJsonArray("pos")), block.get().value()));
+	}
+
+	/** An empty jukebox plays their disc from a chest; one playing stops, its disc back (ABI 29). */
+	private static JsonObject jukebox(ServerLevel level, JsonObject command, long id) {
+		if (!(level.getBlockEntity(blockPos(command.getAsJsonArray("pos"))) instanceof net.minecraft.world.level.block.entity.JukeboxBlockEntity jukebox)) {
+			return report(id, false, "no jukebox there");
+		}
+		Container from = container(level, blockPos(command.getAsJsonArray("from")));
+		if (from == null) {
+			return report(id, false, "no container to take from or give back to");
+		}
+		if (!jukebox.getTheItem().isEmpty()) {
+			ItemStack disc = jukebox.getTheItem().copy();
+			for (int slot = 0; slot < from.getContainerSize(); slot++) {
+				if (from.getItem(slot).isEmpty()) {
+					jukebox.setTheItem(ItemStack.EMPTY);
+					from.setItem(slot, disc);
+					return report(id, true, "stopped");
+				}
+			}
+			jukebox.popOutTheItem();
+			return report(id, true, "stopped");
+		}
+		int slot = command.get("slot").getAsInt();
+		if (slot < 0 || slot >= from.getContainerSize() || !from.getItem(slot).has(net.minecraft.core.component.DataComponents.JUKEBOX_PLAYABLE)) {
+			return report(id, false, "no disc in that slot");
+		}
+		jukebox.setTheItem(from.removeItem(slot, 1));
+
+		return report(id, true, "");
+	}
+
+	/** The book on a lectern open to another page (ABI 29). */
+	private static JsonObject turnPage(ServerLevel level, JsonObject command, long id) {
+		if (!(level.getBlockEntity(blockPos(command.getAsJsonArray("pos"))) instanceof net.minecraft.world.level.block.entity.LecternBlockEntity lectern) || !lectern.hasBook()) {
+			return report(id, false, "no book on a lectern there");
+		}
+		try {
+			var count = net.minecraft.world.level.block.entity.LecternBlockEntity.class.getDeclaredMethod("getPageCount", ItemStack.class);
+			count.setAccessible(true);
+			int pages = (int) count.invoke(null, lectern.getBook());
+			if (pages < 2) {
+				return report(id, false, "the book has one page");
+			}
+			int to = (lectern.getPage() + 1 + level.getRandom().nextInt(pages - 1)) % pages;
+			var set = net.minecraft.world.level.block.entity.LecternBlockEntity.class.getDeclaredMethod("setPage", int.class);
+			set.setAccessible(true);
+			set.invoke(lectern, to);
+		} catch (ReflectiveOperationException e) {
+			return report(id, false, "the page would not turn: " + e.getMessage());
+		}
+
+		return report(id, true, "");
+	}
+
+	/** An ingredient into a brewing stand that holds potions, a blaze powder when it has no fuel: the game brews (ABI 29). */
+	private static JsonObject brew(ServerLevel level, JsonObject command, long id) {
+		if (!(level.getBlockEntity(blockPos(command.getAsJsonArray("stand"))) instanceof net.minecraft.world.level.block.entity.BrewingStandBlockEntity stand)) {
+			return report(id, false, "no brewing stand there");
+		}
+		boolean potions = !stand.getItem(0).isEmpty() || !stand.getItem(1).isEmpty() || !stand.getItem(2).isEmpty();
+		if (!potions || !stand.getItem(3).isEmpty()) {
+			return report(id, false, potions ? "the stand is brewing already" : "no potions in the stand");
+		}
+		Container from = container(level, blockPos(command.getAsJsonArray("from")));
+		int slot = command.get("slot").getAsInt();
+		if (from == null || slot < 0 || slot >= from.getContainerSize() || from.getItem(slot).isEmpty()) {
+			return report(id, false, "no ingredient in that slot");
+		}
+		stand.setItem(3, from.removeItem(slot, 1));
+		if (stand.getItem(4).isEmpty()) {
+			for (int i = 0; i < from.getContainerSize(); i++) {
+				if (from.getItem(i).is(net.minecraft.world.item.Items.BLAZE_POWDER)) {
+					stand.setItem(4, from.removeItem(i, 1));
+					break;
+				}
+			}
+		}
+		stand.setChanged();
+
+		return report(id, true, "");
+	}
+
+	/** One enchantment, never a curse, gone from an enchanted item in a container, as a grindstone would (ABI 29). */
+	private static JsonObject strip(ServerLevel level, JsonObject command, long id) {
+		Container from = container(level, blockPos(command.getAsJsonArray("from")));
+		if (from == null) {
+			return report(id, false, "no container there");
+		}
+		for (int slot = 0; slot < from.getContainerSize(); slot++) {
+			ItemStack stack = from.getItem(slot);
+			var enchantments = stack.getOrDefault(net.minecraft.core.component.DataComponents.ENCHANTMENTS, net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY);
+			var removable = enchantments.keySet().stream().filter(h -> !h.is(net.minecraft.tags.EnchantmentTags.CURSE)).toList();
+			if (removable.isEmpty()) {
+				continue;
+			}
+			var chosen = removable.get(level.getRandom().nextInt(removable.size()));
+			net.minecraft.world.item.enchantment.EnchantmentHelper.updateEnchantments(stack, m -> m.removeIf(h -> h.equals(chosen)));
+			from.setChanged();
+			return report(id, true, "");
+		}
+
+		return report(id, false, "nothing enchanted there");
 	}
 
 	/** A report from a why-not: done when it is empty. */
@@ -1258,6 +1371,12 @@ public final class Executors {
 				if (value.equals("@next")) {
 					java.util.List<T> values = new java.util.ArrayList<>(typed.getPossibleValues());
 					next = values.get((values.indexOf(now) + 1) % values.size());
+				} else if (value.equals("@up")) {
+					// One higher, never round to the bottom: a full composter stays full (ABI 29).
+					java.util.List<T> values = new java.util.ArrayList<>(typed.getPossibleValues());
+					java.util.Collections.sort(values);
+					int at = values.indexOf(now);
+					next = at + 1 < values.size() ? values.get(at + 1) : now;
 				} else {
 					next = typed.getValue(value).orElse(now);
 				}

@@ -637,6 +637,13 @@ because it can be built and tested without a game, and because the model layer i
     they typed, on a sign by the door), `ping_fades`, `empty_message`. The stay test caught the
     death message outside `events.chat`; it is in the chat switch and group now. Tests: two in
     `act`.
+  - **Batch 9, furnaces, workstations and redstone** (owner: all five rows, all four new):
+    `jukebox` (their disc as they come to the door, or the playing stops), `lectern_page`,
+    `swap_fuel` (a fair burn), `brewing_done` (the game's own brewing, given their ingredient),
+    `grindstone_strip` (never a curse), `lamps_blink` (three short, three long, three short),
+    `composter_fills` (`@up`), `crafted_for_you` (torches, bread, planks, sticks from their
+    makings), `bell_rings`. ABI 29. Tests: three in `workshop`, one in `act`. Was: five rows not
+    coded.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

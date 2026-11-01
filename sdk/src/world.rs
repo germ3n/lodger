@@ -449,6 +449,34 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_false")]
         spare: bool,
     },
+    /// A jukebox: an empty one plays the disc from `from`'s `slot`; one playing stops, its
+    /// disc into the first empty slot of `from`. ABI 29.
+    Jukebox {
+        id: u64,
+        pos: BlockPos,
+        from: BlockPos,
+        slot: u32,
+    },
+    /// The book on a lectern open to another page. ABI 29.
+    TurnPage {
+        id: u64,
+        pos: BlockPos,
+    },
+    /// One ingredient from `from`'s `slot` into a brewing stand that holds potions and an empty
+    /// ingredient slot, and a blaze powder from `from` when the stand has no fuel: the game
+    /// brews it. ABI 29.
+    Brew {
+        id: u64,
+        stand: BlockPos,
+        from: BlockPos,
+        slot: u32,
+    },
+    /// One enchantment gone from an enchanted item in a container, as a grindstone would take
+    /// it; the host picks the item and the enchantment. ABI 29.
+    Strip {
+        id: u64,
+        from: BlockPos,
+    },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
         id: u64,
@@ -645,7 +673,8 @@ pub enum Command {
     },
     /// Change one property of the block at `pos` (`hinge` to `right`, or `@next` for the next
     /// value); a door's other half changes with it. ABI 17. `@turn` on a bed turns it round
-    /// where it stands, both halves at once. ABI 19.
+    /// where it stands, both halves at once. ABI 19. `@up` one value higher, refused at the
+    /// top: a composter one level fuller. ABI 29.
     SetState {
         id: u64,
         pos: BlockPos,
@@ -767,6 +796,10 @@ impl Command {
             | Command::SwapBlock { id, .. }
             | Command::HideBlock { id, .. }
             | Command::ShiftBed { id, .. }
+            | Command::Jukebox { id, .. }
+            | Command::TurnPage { id, .. }
+            | Command::Brew { id, .. }
+            | Command::Strip { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }

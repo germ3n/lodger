@@ -144,6 +144,10 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::HeadKind => crate::brain::act::head_of_their_kills(memory).is_some(),
         Need::KillKinds => memory.tally.iter().filter(|t| t.kills > 0).count() >= 2,
         Need::TargetAwake => last.online && !last.sleeping,
+        Need::Disc => memory.disc_in_chest().is_some(),
+        Need::SwapFuel => memory.fuel_swap().is_some(),
+        Need::BrewIngredient => memory.brewing_ingredient().is_some(),
+        Need::Makings => memory.recipe_at_hand().is_some(),
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }

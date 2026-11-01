@@ -66,6 +66,11 @@ pub const HOME_KINDS: &[&str] = &[
     "*_sapling",
     "minecraft:beehive",
     "minecraft:bee_nest",
+    "minecraft:composter",
+    "minecraft:bell",
+    "minecraft:redstone_lamp",
+    "minecraft:brewing_stand",
+    "minecraft:grindstone",
 ];
 
 /// Whether a block id is a flower the home read keeps (`flowers_potted`).
@@ -98,6 +103,11 @@ const READ_FIXTURES: &[&str] = &[
     "crafting_table",
     "lectern",
     "jukebox",
+    "composter",
+    "bell",
+    "redstone_lamp",
+    "brewing_stand",
+    "grindstone",
 ];
 
 /// A door is two blocks; its lower half stands for it.
@@ -566,6 +576,8 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "ladder",
         "beehive",
         "bee_nest",
+        "brewing_stand",
+        "grindstone",
     ];
     let name = id.rsplit(':').next().unwrap_or(id);
 

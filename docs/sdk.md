@@ -151,7 +151,11 @@ ABI 28 (2026-11-10): `set_sign`'s `one_line` (the last line with text takes the 
 stack from a container's slot, only into an empty frame), and three `game_message` kinds:
 `advancement` (one the player has, its line, and the toast through the `advancement_toast` hint),
 `death` (one of the game's one-name death lines, by key) and `no_ping` (their own entry without a
-connection for a minute).
+connection for a minute). ABI 29 (2026-11-10): `jukebox` (an empty one plays a disc from a slot,
+one playing stops, its disc back), `turn_page` (a lectern's book to another page), `brew` (an
+ingredient into a stand that holds potions, a blaze powder when it has no fuel; the game brews),
+`strip` (one enchantment, never a curse, off an item in a container); `set_state`'s `@up` (one
+value higher, refused at the top) and `toggle_block` ringing a bell.
 
 ## Resources
 
