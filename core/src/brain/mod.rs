@@ -633,9 +633,26 @@ impl Brain {
             commands.extend(self.consider_held(door, now, day, memory, arc, config, log));
         }
 
+        // They killed one of what its kill sign counts: the count goes up.
+        if let Some(kind) = memory.killed_now.take() {
+            let counted = memory.most_killed().is_some_and(|t| t.kind == kind);
+            if counted && act::kill_sign_spot(memory).is_some() {
+                self.consider_started("count_up", 1.0, now, day, memory, arc, config, log);
+            }
+        }
+
         // They woke: perhaps the figure at the foot of the bed, for half a second.
         if std::mem::take(&mut memory.woke_now) {
-            self.consider_woke(now, day, memory, arc, config, log);
+            self.consider_started(
+                "foot_of_bed",
+                WOKE_CHANCE,
+                now,
+                day,
+                memory,
+                arc,
+                config,
+                log,
+            );
         }
 
         // A chest of theirs opened: perhaps another closes in the house at the same moment.
@@ -1137,10 +1154,13 @@ impl Brain {
         Vec::new()
     }
 
-    /// Whether the figure stands at the foot of the bed as the target wakes: the row's rules
-    /// and a chance of [`WOKE_CHANCE`]; its commands go out with the later ones.
-    fn consider_woke(
+    /// An event the target started (a kill, a waking): its row's rules, its other needs, and a
+    /// chance; its commands go out with the later ones.
+    #[allow(clippy::too_many_arguments)]
+    fn consider_started(
         &mut self,
+        event: &str,
+        chance: f64,
         now: &Now,
         day: f32,
         memory: &mut Memory,
@@ -1148,7 +1168,7 @@ impl Brain {
         config: &Config,
         log: &mut log::Log,
     ) {
-        let Some(event) = events::find("foot_of_bed") else {
+        let Some(event) = events::find(event) else {
             return;
         };
         if !offer::switched_on(event, config)
@@ -1156,9 +1176,9 @@ impl Brain {
             || !event
                 .needs
                 .iter()
-                .filter(|n| !matches!(n, events::Need::JustWoke))
+                .filter(|n| !matches!(n, events::Need::JustWoke | events::Need::KilledNow))
                 .all(|n| offer::meets(*n, memory, now))
-            || self.rng.next_f64() >= WOKE_CHANCE
+            || self.rng.next_f64() >= chance
         {
             return;
         }

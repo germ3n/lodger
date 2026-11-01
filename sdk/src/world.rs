@@ -515,6 +515,12 @@ pub enum Command {
         id: u64,
         entity: u32,
         item: ItemStack,
+        /// Move the stack in this container's `slot` into the frame instead, the very stack,
+        /// only into an empty frame: nothing is lost if the frame is full. ABI 28.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        from: Option<BlockPos>,
+        #[serde(default, skip_serializing_if = "is_zero_u32")]
+        slot: u32,
     },
     /// Put a piece of armour or a held item on an entity that wears it: an armour stand.
     EquipEntity {
@@ -605,6 +611,10 @@ pub enum Command {
         /// `set_block`'s `settle` may have landed off its spot. ABI 10.
         #[serde(default, skip_serializing_if = "is_zero")]
         settle: u8,
+        /// Put the first of `lines` in place of the last line that has text, keeping the
+        /// rest; refused on a sign with no text (`sign_word`). ABI 28.
+        #[serde(default, skip_serializing_if = "is_false")]
+        one_line: bool,
     },
     /// Cancel one player's sleep with the vanilla message, or refuse their next attempt within
     /// `seconds` with it.

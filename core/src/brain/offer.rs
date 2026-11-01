@@ -135,6 +135,14 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Penned(n) => memory.penned().len() >= n,
         Need::Coop => !memory.egg_line().is_empty(),
         Need::AnimalsNearTarget => last.online && !memory.animals_near_target().is_empty(),
+        Need::TheirSign => memory.fixtures("sign").next().is_some(),
+        Need::KilledNow => false,
+        Need::WeaponAndFrame => {
+            crate::brain::act::their_weapon(memory).is_some()
+                && memory.decor("item_frame").next().is_some()
+        }
+        Need::HeadKind => crate::brain::act::head_of_their_kills(memory).is_some(),
+        Need::KillKinds => memory.tally.iter().filter(|t| t.kills > 0).count() >= 2,
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }

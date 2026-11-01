@@ -242,6 +242,29 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::ShiftBed | Action::SheetsChanged | Action::SecondBed => home.and_then(|h| h.bed),
         Action::Scarecrow => field_middle(memory),
+        Action::SignWord => pick_ref(
+            memory
+                .fixtures("sign")
+                .map(|f| f.pos)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            rng,
+        ),
+        Action::CountUp => kill_sign_spot(memory),
+        Action::WeaponOnWall => memory.decor("item_frame").next().map(|d| d.pos),
+        // Two blocks out from the door they use and one to the side, clear of the kill sign.
+        Action::HeadOnPost => match (memory.usual_door(), home) {
+            (Some(door), Some(h)) => {
+                let step = step_toward(h.center, door);
+                Some([
+                    door[0] + step[0] * 2 + step[1],
+                    door[1],
+                    door[2] + step[1] * 2 + step[0],
+                ])
+            }
+            _ => None,
+        },
+        Action::GraveEach => spot(memory, rng),
         Action::BeesOut => memory
             .fixtures("beehive")
             .chain(memory.fixtures("bee_nest"))
@@ -572,6 +595,52 @@ pub fn spots(command: &Command) -> Vec<BlockPos> {
         Command::MoveEntity { to, .. } => vec![block(*to)],
         _ => vec![],
     }
+}
+
+/// The weapon they hold most, in a chest of theirs: the chest and the stack.
+pub fn their_weapon(memory: &Memory) -> Option<(&crate::memory::Container, &ItemStack)> {
+    const WEAPONS: &[&str] = &["_sword", "_axe", "bow", "crossbow", "trident", "mace"];
+    memory
+        .favourites
+        .iter()
+        .filter(|(id, _)| WEAPONS.iter().any(|w| id.ends_with(w)))
+        .find_map(|(id, _)| {
+            memory
+                .containers
+                .iter()
+                .filter(|c| c.theirs() && !c.is_furnace())
+                .find_map(|c| c.contents.iter().find(|s| s.id == *id).map(|s| (c, s)))
+        })
+}
+
+/// The kind they kill most of those with a head, and its head block.
+pub fn head_of_their_kills(memory: &Memory) -> Option<(&str, &'static str)> {
+    memory.tally.iter().filter(|t| t.kills > 0).find_map(|t| {
+        let head = match t.kind.as_str() {
+            "zombie" | "husk" | "drowned" | "zombie_villager" => "minecraft:zombie_head",
+            "skeleton" | "stray" | "bogged" => "minecraft:skeleton_skull",
+            "creeper" => "minecraft:creeper_head",
+            "piglin" | "zombified_piglin" | "piglin_brute" => "minecraft:piglin_head",
+            "wither_skeleton" => "minecraft:wither_skeleton_skull",
+            _ => return None,
+        };
+        Some((t.kind.as_str(), head))
+    })
+}
+
+/// Where its kill sign stands: two blocks out from the door it was put by, away from the
+/// house, as `kill_sign` put it.
+pub fn kill_sign_spot(memory: &Memory) -> Option<BlockPos> {
+    let home = memory.home.as_ref()?;
+    let door = memory
+        .landmarks
+        .iter()
+        .rev()
+        .find(|l| l.event == "kill_sign")?
+        .pos?;
+    let step = step_toward(home.center, door);
+
+    Some([door[0] + step[0] * 2, door[1], door[2] + step[1] * 2])
 }
 
 /// Whether an item is a piece of armour a stand wears.
@@ -2401,6 +2470,8 @@ pub fn commands(
                 (
                     Command::SetFrameItem {
                         id: ids(),
+                        from: None,
+                        slot: 0,
                         entity: frame.id,
                         item: ItemStack::default(),
                     },
@@ -2451,6 +2522,8 @@ pub fn commands(
                     (
                         Command::SetFrameItem {
                             id: ids(),
+                            from: None,
+                            slot: 0,
                             entity: frame.id,
                             item: ItemStack {
                                 id: stack.id.clone(),
@@ -2788,6 +2861,109 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // One line of their sign, the last with text, reads a word of its own.
+        Action::SignWord => pos
+            .map(|sign| {
+                vec![(
+                    Command::SetSign {
+                        id: ids(),
+                        one_line: true,
+                        pos: sign,
+                        lines: vec![words(Kind::SignWord, "", 0)],
+                        settle: 0,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // The kill sign counts the kill: the number as it is now.
+        Action::CountUp => match (pos, memory.most_killed()) {
+            (Some(sign), Some(tally)) => vec![(
+                Command::SetSign {
+                    id: ids(),
+                    one_line: false,
+                    pos: sign,
+                    lines: vec![format!(
+                        "{} {}",
+                        tally.kills,
+                        text::plural(&tally.kind, tally.kills)
+                    )],
+                    settle: 3,
+                },
+                0,
+            )],
+            _ => vec![],
+        },
+        // The very weapon, from its slot into their empty frame: a full frame refuses it and
+        // it stays in the chest.
+        Action::WeaponOnWall => match (their_weapon(memory), memory.decor("item_frame").next()) {
+            (Some((chest, weapon)), Some(frame)) => vec![(
+                Command::SetFrameItem {
+                    id: ids(),
+                    from: Some(chest.pos),
+                    slot: weapon.slot,
+                    entity: frame.id,
+                    item: weapon.clone(),
+                },
+                0,
+            )],
+            _ => vec![],
+        },
+        // A post, and on it the head of what they kill most, facing the door.
+        Action::HeadOnPost => match (pos, head_of_their_kills(memory), memory.usual_door()) {
+            (Some(p), Some((_, head)), Some(door)) => {
+                let yaw = yaw_toward(block_center(p), block_center(door));
+                let rotation = ((yaw / 22.5).round() as i32).rem_euclid(16);
+                vec![
+                    (on_ground(ids, p, "minecraft:oak_fence"), 0),
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: [p[0], p[1] + 1, p[2]],
+                            block: head.to_string(),
+                            state: format!("rotation={rotation}"),
+                            replace: vec![],
+                            settle: 3,
+                            wall: String::new(),
+                            rest: true,
+                            only: false,
+                        },
+                        10,
+                    ),
+                ]
+            }
+            _ => vec![],
+        },
+        // A row of graves at its place, two blocks apart: a stone each and a sign with the kind
+        // and the count, up to five kinds, most killed first.
+        Action::GraveEach => pos
+            .map(|p| {
+                memory
+                    .tally
+                    .iter()
+                    .filter(|t| t.kills > 0)
+                    .take(5)
+                    .enumerate()
+                    .flat_map(|(i, t)| {
+                        let x = p[0] + i as i32 * 2;
+                        let mut made = vec![(
+                            on_ground(ids, [x, p[1] + 1, p[2]], "minecraft:cobblestone"),
+                            i as u64 * 40,
+                        )];
+                        made.extend(
+                            sign_at(
+                                ids,
+                                [x, p[1] + 1, p[2] + 1],
+                                vec![t.kills.to_string(), text::plural(&t.kind, t.kills)],
+                            )
+                            .into_iter()
+                            .map(move |(c, d)| (c, d + i as u64 * 40 + 10)),
+                        );
+                        made
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
         // Their stand moved into the field, or one from the chest set there, turned to the
         // house, wearing the piece of their armour taken from the chest.
         Action::Scarecrow => match (
@@ -3361,7 +3537,7 @@ pub fn text_kind(event: &Event) -> Option<Kind> {
         Action::Whisper => Some(Kind::Whisper),
         Action::Answers => Some(Kind::Reply),
         Action::RenameOne | Action::ReturnUsed => Some(Kind::ItemName),
-        Action::BookWord => Some(Kind::SignWord),
+        Action::BookWord | Action::SignWord => Some(Kind::SignWord),
         _ => None,
     }
 }
@@ -3392,6 +3568,7 @@ fn sign_at(
         (
             Command::SetSign {
                 id: ids(),
+                one_line: false,
                 pos,
                 lines,
                 settle: 3,
@@ -3621,6 +3798,29 @@ mod tests {
             kind: "cow".to_string(),
             hits: 20,
             kills: 14,
+        });
+        // A second kind, with a head; a sign of theirs; their sword; its kill sign.
+        memory.tally.push(Tally {
+            kind: "zombie".to_string(),
+            hits: 5,
+            kills: 3,
+        });
+        memory.fixtures.push(crate::memory::Fixture {
+            kind: "sign".to_string(),
+            pos: [-2, 64, -2],
+        });
+        memory
+            .favourites
+            .push(("minecraft:iron_sword".to_string(), 4));
+        memory.containers[0]
+            .contents
+            .push(stack("minecraft:iron_sword", 1, 11));
+        memory.landmarks.push(crate::memory::Done {
+            event: "kill_sign".to_string(),
+            pos: Some([3, 64, 0]),
+            day: 0.5,
+            ok: true,
+            reason: String::new(),
         });
         memory.last_said = "who is there".to_string();
         memory.last.raining = true;
@@ -5017,5 +5217,87 @@ mod tests {
             assert!(!cut.is_empty(), "{id}");
             assert!(cut.iter().all(|(c, _)| matches!(c, Command::SetState { property, value, .. } if property == "age" && value == "0")));
         }
+    }
+
+    #[test]
+    fn the_signs_and_kills_of_batch_seven_send_what_they_should() {
+        let memory = rich_memory();
+        let now = Now::default();
+        let mut rng = Rng::new(7);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            (pos, commands(event, pos, &memory, &mut ids(), &now, None))
+        };
+
+        let (_, word) = made("sign_word", &mut rng);
+        assert!(
+            matches!(&word[0].0, Command::SetSign { one_line: true, lines, .. } if lines.len() == 1)
+        );
+
+        // The count: at the kill sign, two out from its door, the number as it is.
+        let (at, count) = made("count_up", &mut rng);
+        assert_eq!(at, Some([5, 64, 0]));
+        assert!(
+            matches!(&count[0].0, Command::SetSign { lines, one_line: false, .. } if lines[0] == "14 cows"),
+            "{count:?}"
+        );
+
+        let (_, weapon) = made("weapon_on_wall", &mut rng);
+        assert!(
+            matches!(
+                &weapon[0].0,
+                Command::SetFrameItem {
+                    from: Some(_),
+                    slot: 11,
+                    ..
+                }
+            ),
+            "{weapon:?}"
+        );
+
+        // The zombie's head, on a post, facing the door.
+        let (_, head) = made("head_on_post", &mut rng);
+        assert!(
+            matches!(&head[0].0, Command::SetBlock { block, .. } if block == "minecraft:oak_fence")
+        );
+        assert!(
+            matches!(&head[1].0, Command::SetBlock { block, state, .. } if block == "minecraft:zombie_head" && state.starts_with("rotation="))
+        );
+
+        // A grave for each kind: a stone and a sign each, the counts on them.
+        let (_, graves) = made("grave_each", &mut rng);
+        let signs: Vec<&Vec<String>> = graves
+            .iter()
+            .filter_map(|(c, _)| match c {
+                Command::SetSign { lines, .. } => Some(lines),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(signs.len(), 2);
+        assert_eq!(signs[0], &vec!["14".to_string(), "cows".to_string()]);
+        assert_eq!(signs[1], &vec!["3".to_string(), "zombies".to_string()]);
+    }
+
+    #[test]
+    fn a_kill_is_noticed_for_the_count() {
+        use craftkit::world::{Event, EventKind, Observations, Player};
+        let mut memory = memory();
+        memory.target = Some(0);
+        memory.observe(
+            &Observations {
+                players: vec![Player::default()],
+                events: vec![Event {
+                    player: 0,
+                    kind: EventKind::Killed,
+                    detail: "minecraft:cow".to_string(),
+                    ..Event::default()
+                }],
+                ..Observations::default()
+            },
+            0.3,
+        );
+
+        assert_eq!(memory.killed_now.as_deref(), Some("cow"));
     }
 }

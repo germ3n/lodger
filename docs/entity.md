@@ -297,7 +297,11 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | `frame_emptied` | 3 | An item frame is empty; its item is on the bed. | An item frame with an item and a bed. |
 | `painting_change` | 2 | A painting is another painting of the same size. | A painting. |
 | `sign` | 2 | A sign with one word from the want's list, at the spot or by the door. | A spot. |
-| `sign_word` | 3 | One line of a sign the target wrote reads one word from the want's list instead. The other lines are kept. | A sign with text in the home. |
+| `sign_word` | 3 | One line of a sign the target wrote reads one word of its own instead: the last line with text (`set_sign`'s `one_line`, ABI 28: a blank sign is refused). The other lines are kept. Coded 2026-11-10. | A sign they placed. |
+| `count_up` | 3 | Its kill sign's count rises by itself: each time they kill another of the kind it counts, the sign reads the new number (`15 cows`). Never offered; the kill starts it. Owner's pick, 2026-11-10. | Its kill sign, and a kill of that kind. |
+| `weapon_on_wall` | 3 | The weapon they use most hangs in an item frame of theirs, moved straight from its chest slot (`set_frame_item`'s `from`, ABI 28: only into an empty frame, so nothing is lost). Owner's pick, 2026-11-10. | Their weapon in a chest and a frame of theirs. |
+| `head_on_post` | 4 | A fence post two blocks out from the door they use, and on it the head of the kind they kill most (a zombie's, a skeleton's, a creeper's, a piglin's), facing the door. Owner's pick, 2026-11-10. | A kill of a kind with a head, a door. |
+| `grave_each` | 4 | A row of graves at its place, two blocks apart: for each kind they killed, most first and five at most, a stone and a sign with the count and the kind. Once a stay. Owner's pick, 2026-11-10. | Two kinds killed, a home. |
 | `banner_turned` | 2 | A banner faces another way. | A placed banner. |
 | `named_animal` | 3 | One of the target's animals has a name, one word from the want's list. | A penned animal without a name. |
 | `plant_flower` | 2 | A flower from a chest is planted by the door or on the route. | A chest with a flower. |

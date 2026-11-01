@@ -597,6 +597,20 @@ public final class Executors {
 			return report(id, false, "no item frame with that id here");
 		}
 
+		// The very stack from a container's slot, only into an empty frame (ABI 28).
+		if (command.has("from") && command.get("from").isJsonArray()) {
+			if (!frame.getItem().isEmpty()) {
+				return report(id, false, "the frame holds something");
+			}
+			Container from = container(level, blockPos(command.getAsJsonArray("from")));
+			int slot = command.has("slot") ? command.get("slot").getAsInt() : 0;
+			if (from == null || slot < 0 || slot >= from.getContainerSize() || from.getItem(slot).isEmpty()) {
+				return report(id, false, "nothing in that slot");
+			}
+			frame.setItem(from.removeItem(slot, 1));
+			return report(id, true, "");
+		}
+
 		JsonObject item = command.getAsJsonObject("item");
 		String itemId = item.has("id") ? item.get("id").getAsString() : "";
 		if (itemId.isEmpty()) {
@@ -1114,8 +1128,24 @@ public final class Executors {
 		}
 
 		List<Component> lines = new ArrayList<>();
-		for (JsonElement line : command.getAsJsonArray("lines")) {
-			lines.add(Component.literal(line.getAsString()));
+		if (command.has("one_line") && command.get("one_line").getAsBoolean()) {
+			// One line of theirs, the last with text, reads the word; the rest kept (ABI 28).
+			List<Component> had = sign.getText(SignTextSlot.FRONT).getMessages(false);
+			int last = -1;
+			for (int i = 0; i < SignText.LINES && i < had.size(); i++) {
+				lines.add(had.get(i));
+				if (!had.get(i).getString().isBlank()) {
+					last = i;
+				}
+			}
+			if (last < 0) {
+				return report(id, false, "the sign has no text");
+			}
+			lines.set(last, Component.literal(command.getAsJsonArray("lines").get(0).getAsString()));
+		} else {
+			for (JsonElement line : command.getAsJsonArray("lines")) {
+				lines.add(Component.literal(line.getAsString()));
+			}
 		}
 		while (lines.size() < SignText.LINES) {
 			lines.add(Component.empty());

@@ -625,6 +625,12 @@ because it can be built and tested without a game, and because the model layer i
     `animals_nip` (stage 3, half a heart, twice) and `animals_turn` (4 and 5, never below half
     a heart); a field read, `Need::Field` alive again. ABI 27. Tests: six in `farm`, one in
     `act`. Was: four rows not coded, and `Need::Field` always false.
+  - **Batch 7, decoration, signs and kills** (owner: `sign_word` built, all four new):
+    `sign_word` (the last written line of their sign), `count_up` (the kill sign's count rises
+    with each kill of its kind, started by the kill like `door_held` by a door), their weapon in
+    their empty frame straight from its slot, a mob head on a post by the door, a grave for each
+    kind. ABI 28. The brain's player-started events share one `consider_started`. Tests: two in
+    `act`. Was: `sign_word` not coded.
   - **The debug panel teleports on Shift+click only** (a stray click put the owner deep in a
     cave). Was: any click on a spot.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only

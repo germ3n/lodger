@@ -155,6 +155,16 @@ pub enum Need {
     Coop,
     /// Farm animals within 16 blocks of the target.
     AnimalsNearTarget,
+    /// A sign of theirs (one they placed).
+    TheirSign,
+    /// They just killed one of the kind its kill sign counts; never offered, the kill starts it.
+    KilledNow,
+    /// The weapon they use most in their chest, and an item frame of theirs.
+    WeaponAndFrame,
+    /// They kill most a kind that has a head (a zombie, a skeleton, a creeper, a piglin).
+    HeadKind,
+    /// Two kinds or more killed.
+    KillKinds,
 }
 
 impl Need {
@@ -193,6 +203,7 @@ impl Need {
                 | Need::Penned(_)
                 | Need::Coop
                 | Need::AnimalsNearTarget
+                | Need::KilledNow
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
                 | Need::TargetApproachingChest
@@ -264,6 +275,11 @@ impl Need {
             Need::Penned(n) => format!("fewer than {n} animals in their pens"),
             Need::Coop => "no coop by the home".to_string(),
             Need::AnimalsNearTarget => "no farm animal near them".to_string(),
+            Need::TheirSign => "no sign of theirs".to_string(),
+            Need::KilledNow => "happens only as they kill".to_string(),
+            Need::WeaponAndFrame => "no weapon of theirs in a chest, or no frame".to_string(),
+            Need::HeadKind => "they kill nothing that has a head".to_string(),
+            Need::KillKinds => "fewer than two kinds killed".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -518,6 +534,16 @@ pub enum Action {
     EggsToDoor,
     /// Animals turn on them: this many, this much harm a hit, this many hits.
     Charge(u32, f32, u32),
+    /// One written line of a sign of theirs reads a word of its own.
+    SignWord,
+    /// The kill sign's count goes up as they kill.
+    CountUp,
+    /// Their weapon in a frame of theirs.
+    WeaponOnWall,
+    /// A head on a post by the door.
+    HeadOnPost,
+    /// A grave for each kind they killed.
+    GraveEach,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1224,6 +1250,63 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Charge(3, 3.0, 3),
+        false,
+    ),
+    // Batch 7 (owner, 2026-11-10): a word in their sign, the count that rises, their weapon on
+    // the wall, a head on a post, a grave for each.
+    row(
+        "sign_word",
+        3,
+        5,
+        &[TheirSign, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::SignWord,
+        false,
+    ),
+    row(
+        "count_up",
+        3,
+        5,
+        &[KilledNow],
+        0.0,
+        u32::MAX,
+        Half,
+        Action::CountUp,
+        true,
+    ),
+    row(
+        "weapon_on_wall",
+        3,
+        5,
+        &[WeaponAndFrame, TargetAwayOrAsleep],
+        4.0,
+        1,
+        Full,
+        Action::WeaponOnWall,
+        false,
+    ),
+    row(
+        "head_on_post",
+        4,
+        5,
+        &[HeadKind, Door, TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::HeadOnPost,
+        false,
+    ),
+    row(
+        "grave_each",
+        4,
+        5,
+        &[KillKinds, Home, TargetAwayOrAsleep],
+        99.0,
+        1,
+        Full,
+        Action::GraveEach,
         false,
     ),
     // Decoration and signs
@@ -2846,6 +2929,8 @@ impl Event {
             | Action::MiningSounds
             | Action::SoundPair(..) => "sounds",
             Action::Sign
+            | Action::SignWord
+            | Action::CountUp
             | Action::KillSign
             | Action::Message(..)
             | Action::Says
@@ -2933,6 +3018,9 @@ impl Event {
             | Action::FieldWord
             | Action::RowWithered
             | Action::EggsToDoor
+            | Action::WeaponOnWall
+            | Action::HeadOnPost
+            | Action::GraveEach
             | Action::RotateFixture(..)
             | Action::ColdFurnace
             | Action::OpenOnEnter
@@ -3088,6 +3176,11 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "sign_word" => "change one line of their sign to a word of its own",
+            "count_up" => "add one to the count on its kill sign",
+            "weapon_on_wall" => "hang their weapon in their frame",
+            "head_on_post" => "put a head on a post by their door",
+            "grave_each" => "dig a grave for every kind they killed",
             "scarecrow" => "stand a scarecrow in their field, wearing their armour",
             "bees_out" => "let the bees out around their door",
             "horse_moved" => "tie their horse to another post",

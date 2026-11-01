@@ -390,6 +390,10 @@ pub struct Memory {
     pub decor: Vec<Decor>,
     /// The last thing the target said in chat, whatever it was about.
     pub last_said: String,
+    /// The kind the target just killed, taken by the brain on its next tick (`count_up`). Not
+    /// saved.
+    #[serde(skip)]
+    pub killed_now: Option<String>,
     /// The target just woke, taken by the brain on its next tick (`foot_of_bed`). Not saved.
     #[serde(skip)]
     pub woke_now: bool,
@@ -1191,6 +1195,9 @@ impl Memory {
                         continue;
                     }
                     let killed = event.kind == EventKind::Killed;
+                    if killed {
+                        self.killed_now = Some(kind.clone());
+                    }
                     // Hitting out in the minute after something showed itself is fighting it.
                     for reaction in self
                         .reactions
