@@ -807,8 +807,26 @@ pub fn commands(
         .collect()
 }
 
+/// The events whose sound comes from a door, a chest or a window of a house.
+pub const HOUSE_SOUNDS: &[&str] = &[
+    "door_sound",
+    "chest_sound",
+    "knock",
+    "knock_heavy",
+    "lever_click",
+    "your_voice",
+    "door_scratch",
+    "open_door",
+    "close_door",
+    "window_tap",
+    "door_hinge",
+];
+
 /// The block of a house the sound comes from: a door for a door's sound or a knock, a chest
-/// for a chest's; the house they are in first when it is not their home, else their home.
+/// for a chest's; the house they are in first when it is not their home, else their home when
+/// they are near it. None away from home and from any house: a door sound 55 blocks down in a
+/// cave, with no door anywhere near, played at the target's own feet (the dev client,
+/// 2026-11-10).
 pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos> {
     let want_chest = event == "chest_sound";
     let want_pane = event == "window_tap";
@@ -833,6 +851,7 @@ pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos>
                 return found;
             }
         }
+        return None;
     }
     if want_pane {
         let panes: Vec<BlockPos> = memory.fixtures("glass_pane").map(|f| f.pos).collect();
@@ -1016,8 +1035,8 @@ mod tests {
         memory.last.pos = [200.0, 64.0, 0.0];
         assert_eq!(
             house_spot("knock", &memory, 0),
-            Some([3, 64, 0]),
-            "no other house known"
+            None,
+            "200 blocks from home and in no house: no door to knock on (was the home's door, out of hearing)"
         );
         memory.here = Some(crate::memory::Here {
             doors: vec![[204, 64, 1]],
@@ -1032,5 +1051,53 @@ mod tests {
             Some([3, 64, 0]),
             "home first, near it"
         );
+    }
+
+    #[test]
+    fn a_cave_is_no_house_and_a_house_sound_there_is_neither_offered_nor_made() {
+        use craftkit::world::{Now, Observations, Player};
+        let mut memory = Memory::default();
+        memory.home = Some(crate::memory::Home {
+            center: [-2, 80, -14],
+            ..Default::default()
+        });
+        let underground = Player {
+            pos: [-133.0, 55.0, -86.0],
+            sky_light: 0,
+            ..Player::default()
+        };
+        memory.observe(
+            &Observations {
+                players: vec![underground],
+                ..Observations::default()
+            },
+            0.25,
+        );
+        assert!(memory.last.underground);
+        assert!(!memory.last.indoors, "a cave is not indoors");
+        assert_eq!(house_spot("door_sound", &memory, 0), None);
+
+        let config = crate::config::Config::default();
+        let now = Now {
+            day_time: 6_000,
+            ..Now::default()
+        };
+        let menu = crate::brain::offer::offer(
+            crate::events::CATALOGUE,
+            5,
+            &memory,
+            &now,
+            0.25,
+            &config,
+            &mut crate::model::Rng::new(1),
+        );
+        assert!(
+            menu.iter().all(|e| !HOUSE_SOUNDS.contains(&e.id)),
+            "{:?}",
+            menu.iter().map(|e| e.id).collect::<Vec<_>>()
+        );
+        let door = crate::events::find("door_sound").unwrap();
+        let made = crate::brain::act::commands(door, None, &memory, &mut || 1, &now, None);
+        assert!(made.is_empty(), "no spot, no sound: {made:?}");
     }
 }

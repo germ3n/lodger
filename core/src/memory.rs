@@ -1447,10 +1447,12 @@ impl Memory {
         self.last.pos = player.pos;
         self.last.yaw = player.yaw;
         self.last.online = true;
-        self.last.indoors = player.sky_light < 8;
         self.last.sleeping = player.sleeping;
         self.last.walking = player.movement.pace > 0.5;
         self.last.underground = player.sky_light == 0 && player.pos[1] < 56.0;
+        // Under a roof, not under the ground: a cave is no house (the dev client played a
+        // house's door sound 55 blocks down, 2026-11-10).
+        self.last.indoors = player.sky_light < 8 && !self.last.underground;
         self.last.main_hand = player.main_hand.id.clone();
         self.last.look_backs = player.movement.look_backs;
         self.last.turns = player.movement.turns;

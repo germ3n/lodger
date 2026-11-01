@@ -594,6 +594,12 @@ because it can be built and tested without a game, and because the model layer i
     23); the cave they have not been near gets one of their lanterns far down it, or torches
     at their own tunnel spacing. Tests: five in `caves`, the scan sampling's in JUnit, the
     catalogue's. Was: two rows not coded.
+  - **No house sounds in a cave** (the dev client: "a door sound just played while i was
+    underground"): a cave is no longer indoors (no sky light below y 56 is underground, not a
+    house); away from home and from any house a door, chest or window sound has no spot, so it
+    is not offered and, asked anyway, not made. Tests: the cave case end to end; the old test's
+    "no other house known" now expects no spot. Was: indoors was any spot without sky light,
+    the home's door 200 blocks off stood in, and a sound's moving ways played at their feet.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only
     choice. Was: asked, and logged.
 

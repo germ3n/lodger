@@ -154,20 +154,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     let home = memory.home.as_ref();
     // The house's sounds come from a real door or chest of the house they are in, theirs
     // first (owner, 2026-11-09: "any house, yours first").
-    if matches!(
-        event.id,
-        "door_sound"
-            | "chest_sound"
-            | "knock"
-            | "knock_heavy"
-            | "lever_click"
-            | "your_voice"
-            | "door_scratch"
-            | "open_door"
-            | "close_door"
-            | "window_tap"
-            | "door_hinge"
-    ) {
+    if super::sounds::HOUSE_SOUNDS.contains(&event.id) {
         return super::sounds::house_spot(event.id, memory, rng.next_u64() as usize);
     }
     // A cold furnace's crackle comes from their furnace.
@@ -704,6 +691,10 @@ pub fn commands(
     // A sound event plays one of its ways to sound, the next after the last: from the house's
     // door or chest, from far off, or around the target as it moves.
     if let Some(ways) = super::sounds::variants(event.id) {
+        // A house's sound with no house to come from is not made at all.
+        if pos.is_none() && super::sounds::HOUSE_SOUNDS.contains(&event.id) {
+            return vec![];
+        }
         let spot = match event.action {
             Action::SoundFar(_) => {
                 let angle = (seed % 8) as f64 * std::f64::consts::FRAC_PI_4;

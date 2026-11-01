@@ -220,6 +220,12 @@ pub fn offer<'a>(
             continue;
         }
 
+        if crate::brain::sounds::HOUSE_SOUNDS.contains(&event.id)
+            && crate::brain::sounds::house_spot(event.id, memory, 0).is_none()
+        {
+            continue;
+        }
+
         if crate::rules::check(event, None, memory, stage, day, config).is_err() {
             continue;
         }
