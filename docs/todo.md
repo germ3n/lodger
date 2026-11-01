@@ -631,6 +631,12 @@ because it can be built and tested without a game, and because the model layer i
     their empty frame straight from its slot, a mob head on a post by the door, a grave for each
     kind. ABI 28. The brain's player-started events share one `consider_started`. Tests: two in
     `act`. Was: `sign_word` not coded.
+  - **Batch 8, chat and the player list** (owner: both rows, all four new): `sleep_message`
+    ("1/2 players sleeping" while they are awake), `advancement` (one of theirs again, line and
+    toast), `death_message` (the game's own death line while they live), `words_on_sign` (what
+    they typed, on a sign by the door), `ping_fades`, `empty_message`. The stay test caught the
+    death message outside `events.chat`; it is in the chat switch and group now. Tests: two in
+    `act`.
   - **The debug panel teleports on Shift+click only** (a stray click put the owner deep in a
     cave). Was: any click on a spot.
   - **No ask for a menu of one:** the model was asked every interval with `wait` the only

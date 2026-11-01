@@ -57,6 +57,14 @@ public final class Glitches {
 			HintPayload hint = active.hint();
 			switch (hint.hint()) {
 				case "cut_music" -> minecraft.getMusicManager().stopPlaying();
+				// One of their advancements, its toast again, as if just earned.
+				case "advancement_toast" -> once(active, () -> {
+					var holder = minecraft.getConnection() == null ? null
+							: minecraft.getConnection().getAdvancements().get(net.minecraft.resources.Identifier.parse(hint.detail()));
+					if (holder != null) {
+						minecraft.gui.toastManager().addToast(new net.minecraft.client.gui.components.toasts.AdvancementToast(holder));
+					}
+				});
 				case "silence" -> {
 					minecraft.getSoundManager().stop(null, SoundSource.AMBIENT);
 					minecraft.getSoundManager().stop(null, SoundSource.WEATHER);

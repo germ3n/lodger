@@ -148,7 +148,10 @@ blocks), `charge` (an animal runs at a player and hits, `spare` keeping them abo
 `equip_entity`'s `kept`, `hold`'s `at` (face a point, not the player), and an entity's `leashed`.
 ABI 28 (2026-11-10): `set_sign`'s `one_line` (the last line with text takes the first of
 `lines`, the rest kept, a blank sign refused) and `set_frame_item`'s `from` and `slot` (the very
-stack from a container's slot, only into an empty frame).
+stack from a container's slot, only into an empty frame), and three `game_message` kinds:
+`advancement` (one the player has, its line, and the toast through the `advancement_toast` hint),
+`death` (one of the game's one-name death lines, by key) and `no_ping` (their own entry without a
+connection for a minute).
 
 ## Resources
 

@@ -176,6 +176,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SoundFar(_)
         | Action::TabEntry
         | Action::Message(_)
+        | Action::DeathMessage
         | Action::Says
         | Action::SaysKills
         | Action::Whisper
@@ -265,6 +266,18 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             _ => None,
         },
         Action::GraveEach => spot(memory, rng),
+        // Beside the door they use, two out, one to the other side from the head on the post.
+        Action::WordsOnSign => match (memory.usual_door(), home) {
+            (Some(door), Some(h)) => {
+                let step = step_toward(h.center, door);
+                Some([
+                    door[0] + step[0] * 2 - step[1],
+                    door[1],
+                    door[2] + step[1] * 2 - step[0],
+                ])
+            }
+            _ => None,
+        },
         Action::BeesOut => memory
             .fixtures("beehive")
             .chain(memory.fixtures("bee_nest"))
@@ -641,6 +654,29 @@ pub fn kill_sign_spot(memory: &Memory) -> Option<BlockPos> {
     let step = step_toward(home.center, door);
 
     Some([door[0] + step[0] * 2, door[1], door[2] + step[1] * 2])
+}
+
+/// Words cut into a sign's lines: whole words, at most fifteen letters a line, four lines,
+/// lower case; a word too long for a line is cut.
+pub fn sign_lines(text: &str) -> Vec<String> {
+    let mut lines: Vec<String> = Vec::new();
+    for word in text.to_lowercase().split_whitespace() {
+        let word: String = word.chars().take(15).collect();
+        match lines.last_mut() {
+            Some(line) if line.chars().count() + 1 + word.chars().count() <= 15 => {
+                line.push(' ');
+                line.push_str(&word);
+            }
+            _ => {
+                if lines.len() == 4 {
+                    break;
+                }
+                lines.push(word);
+            }
+        }
+    }
+
+    lines
 }
 
 /// Whether an item is a piece of armour a stand wears.
@@ -2861,6 +2897,37 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // The game's own death line, one of a few, about them while they live.
+        Action::DeathMessage => {
+            const DEATHS: &[&str] = &[
+                "death.fell.accident.generic",
+                "death.attack.drown",
+                "death.attack.inWall",
+                "death.attack.outOfWorld",
+                "death.attack.generic",
+                "death.attack.starve",
+                "death.attack.freeze",
+            ];
+            vec![(
+                Command::GameMessage {
+                    id: ids(),
+                    player: target,
+                    message: "death".to_string(),
+                    text: DEATHS[seed % DEATHS.len()].to_string(),
+                },
+                0,
+            )]
+        }
+        // What they last typed, in their own words, on a sign: up to four lines of fifteen.
+        Action::WordsOnSign => pos
+            .map(|p| {
+                let lines = sign_lines(&memory.last_said);
+                if lines.is_empty() {
+                    return vec![];
+                }
+                sign_at(ids, p, lines)
+            })
+            .unwrap_or_default(),
         // One line of their sign, the last with text, reads a word of its own.
         Action::SignWord => pos
             .map(|sign| {
@@ -5299,5 +5366,76 @@ mod tests {
         );
 
         assert_eq!(memory.killed_now.as_deref(), Some("cow"));
+    }
+
+    #[test]
+    fn what_they_typed_fits_a_sign_in_whole_words() {
+        assert_eq!(
+            sign_lines("Who keeps opening my DOOR at night and why does it"),
+            vec![
+                "who keeps",
+                "opening my door",
+                "at night and",
+                "why does it"
+            ]
+        );
+        assert_eq!(
+            sign_lines("a supercalifragilistic word"),
+            vec!["a", "supercalifragil", "word"]
+        );
+        assert!(sign_lines("   ").is_empty());
+        assert_eq!(
+            sign_lines("one two three four five six seven eight nine ten eleven twelve thirteen")
+                .len(),
+            4,
+            "four lines at most"
+        );
+    }
+
+    #[test]
+    fn the_chat_of_batch_eight_sends_what_it_should() {
+        let mut memory = rich_memory();
+        memory.last_said = "hello is anyone there".to_string();
+        let now = Now::default();
+        let mut rng = Rng::new(8);
+        let made = |id: &str, memory: &Memory, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, memory, rng);
+            commands(event, pos, memory, &mut ids(), &now, None)
+        };
+        let message = |c: &Command| match c {
+            Command::GameMessage { message, text, .. } => Some((message.clone(), text.clone())),
+            _ => None,
+        };
+
+        assert_eq!(
+            message(&made("sleep_message", &memory, &mut rng)[0].0),
+            Some(("sleepers".to_string(), String::new()))
+        );
+        assert_eq!(
+            message(&made("advancement", &memory, &mut rng)[0].0)
+                .unwrap()
+                .0,
+            "advancement"
+        );
+        assert_eq!(
+            message(&made("ping_fades", &memory, &mut rng)[0].0)
+                .unwrap()
+                .0,
+            "no_ping"
+        );
+        assert_eq!(
+            message(&made("empty_message", &memory, &mut rng)[0].0),
+            Some(("says".to_string(), String::new()))
+        );
+        let (kind, key) = message(&made("death_message", &memory, &mut rng)[0].0).unwrap();
+        assert_eq!(kind, "death");
+        assert!(key.starts_with("death."), "{key}");
+
+        let sign = made("words_on_sign", &memory, &mut rng);
+        assert!(
+            matches!(&sign[1].0, Command::SetSign { lines, .. } if lines == &vec!["hello is anyone", "there"]),
+            "{sign:?}"
+        );
     }
 }

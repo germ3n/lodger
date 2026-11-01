@@ -165,6 +165,8 @@ pub enum Need {
     HeadKind,
     /// Two kinds or more killed.
     KillKinds,
+    /// The target in the game and awake.
+    TargetAwake,
 }
 
 impl Need {
@@ -204,6 +206,7 @@ impl Need {
                 | Need::Coop
                 | Need::AnimalsNearTarget
                 | Need::KilledNow
+                | Need::TargetAwake
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
                 | Need::TargetApproachingChest
@@ -280,6 +283,7 @@ impl Need {
             Need::WeaponAndFrame => "no weapon of theirs in a chest, or no frame".to_string(),
             Need::HeadKind => "they kill nothing that has a head".to_string(),
             Need::KillKinds => "fewer than two kinds killed".to_string(),
+            Need::TargetAwake => "the target is away or asleep".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -544,6 +548,10 @@ pub enum Action {
     HeadOnPost,
     /// A grave for each kind they killed.
     GraveEach,
+    /// A death message about them while they live.
+    DeathMessage,
+    /// What they typed, on a sign by the door.
+    WordsOnSign,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1250,6 +1258,74 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Charge(3, 3.0, 3),
+        false,
+    ),
+    // Batch 8 (owner, 2026-11-10): sleepers while they are awake, an advancement again, a death
+    // message, their words on a sign, their ping gone, an empty message.
+    row(
+        "sleep_message",
+        3,
+        5,
+        &[Night, TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Message("sleepers"),
+        false,
+    ),
+    row(
+        "advancement",
+        4,
+        5,
+        &[TargetAwake],
+        3.0,
+        2,
+        Full,
+        Action::Message("advancement"),
+        false,
+    ),
+    row(
+        "death_message",
+        4,
+        5,
+        &[TargetAwake],
+        3.0,
+        2,
+        Full,
+        Action::DeathMessage,
+        false,
+    ),
+    row(
+        "words_on_sign",
+        3,
+        5,
+        &[TargetSaid, Door, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::WordsOnSign,
+        false,
+    ),
+    row(
+        "ping_fades",
+        3,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Message("no_ping"),
+        false,
+    ),
+    row(
+        "empty_message",
+        3,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Message("says"),
         false,
     ),
     // Batch 7 (owner, 2026-11-10): a word in their sign, the count that rises, their weapon on
@@ -2929,6 +3005,8 @@ impl Event {
             | Action::MiningSounds
             | Action::SoundPair(..) => "sounds",
             Action::Sign
+            | Action::DeathMessage
+            | Action::WordsOnSign
             | Action::SignWord
             | Action::CountUp
             | Action::KillSign
@@ -3176,6 +3254,12 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "sleep_message" => "tell them another player is sleeping",
+            "advancement" => "show them an advancement of theirs again",
+            "death_message" => "say in chat that they died",
+            "words_on_sign" => "write what they typed on a sign by their door",
+            "ping_fades" => "take away their connection in the player list for a minute",
+            "empty_message" => "send an empty message in their name",
             "sign_word" => "change one line of their sign to a word of its own",
             "count_up" => "add one to the count on its kill sign",
             "weapon_on_wall" => "hang their weapon in their frame",

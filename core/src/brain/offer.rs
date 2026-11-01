@@ -143,6 +143,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         }
         Need::HeadKind => crate::brain::act::head_of_their_kills(memory).is_some(),
         Need::KillKinds => memory.tally.iter().filter(|t| t.kills > 0).count() >= 2,
+        Need::TargetAwake => last.online && !last.sleeping,
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }
@@ -186,6 +187,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::SaysKills
         | Action::Whisper
         | Action::RepeatsYou
+        | Action::DeathMessage
         | Action::Answers => config.events.chat,
         _ => true,
     }
@@ -212,6 +214,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::SaysKills
         | Action::Whisper
         | Action::RepeatsYou
+        | Action::DeathMessage
         | Action::Answers => Some("chat"),
         Action::ChestAnswers => Some("sound"),
         _ => None,

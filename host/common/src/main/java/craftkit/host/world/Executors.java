@@ -710,6 +710,20 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
+	/** The game's death lines that name the one who died and no one else. */
+	private static final List<String> DEATHS = List.of("death.fell.accident.generic", "death.attack.drown", "death.attack.inWall",
+			"death.attack.outOfWorld", "death.attack.generic", "death.attack.starve", "death.attack.freeze");
+
+	/** A player's own entry in their list with this latency: -1 shows no connection. */
+	private static net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket latency(ServerPlayer player, int latency) {
+		var entry = new net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Entry(
+				player.getUUID(), player.getGameProfile(), true, latency, player.gameMode.getGameModeForPlayer(), null, true, 0, null);
+		var packet = new net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket(
+				java.util.EnumSet.of(net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), List.of());
+
+		return withEntries(packet, List.of(entry));
+	}
+
 	/** A player-info packet with these entries, written through its own codec since the entries field is private. */
 	static net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket withEntries(
 			net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket packet,
@@ -749,6 +763,39 @@ public final class Executors {
 			case "whisper" -> player.sendSystemMessage(Component.translatable("commands.message.display.incoming", name, Component.literal(text)).withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.ITALIC));
 			case "sleepers" -> player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(Component.translatable("sleep.players_sleeping", 1, 2)));
 			case "bed_occupied" -> player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(Component.translatable("block.minecraft.bed.occupied")));
+			// One of theirs again, as if just earned: the chat line, and the toast on their client.
+			case "advancement" -> {
+				List<net.minecraft.advancements.AdvancementHolder> had = new ArrayList<>();
+				for (net.minecraft.advancements.AdvancementHolder holder : level.getServer().getAdvancements().getAllAdvancements()) {
+					var display = holder.value().display();
+					if (display.isPresent() && display.get().announceToChat() && !display.get().hidden()
+							&& player.getAdvancements().getOrStartProgress(holder).isDone()) {
+						had.add(holder);
+					}
+				}
+				if (had.isEmpty()) {
+					return report(id, false, "they have no advancement to show");
+				}
+				var holder = had.get((int) (Math.abs(text.hashCode() + id) % had.size()));
+				player.sendSystemMessage(holder.value().display().get().type().createAnnouncement(holder, player));
+				context.sendHint().accept(player, new craftkit.host.net.HintPayload("advancement_toast", Optional.empty(), 1f, holder.id().toString()));
+			}
+			// A death message about them while they live (ABI 28): only the game's own one-name lines.
+			case "death" -> {
+				if (!DEATHS.contains(text)) {
+					return report(id, false, "no such death message");
+				}
+				player.sendSystemMessage(Component.translatable(text, name));
+			}
+			// Their own entry in the list shows no connection for a minute.
+			case "no_ping" -> {
+				player.connection.send(latency(player, -1));
+				context.later().at(60f, () -> {
+					if (!player.isRemoved()) {
+						player.connection.send(latency(player, player.connection.latency()));
+					}
+				});
+			}
 			default -> {
 				return report(id, false, "no message kind called " + message);
 			}

@@ -350,8 +350,12 @@ speaks nor shows in the list, and still reads.
 | `says_first` | 4 | A chat line in the target's name, unprompted, at night: one word from the want's list, or a bank line. | Night. |
 | `whisper_from_you` | 4 | A whisper to the target from the target: `<you> whispers to you: here`. | Any. |
 | `repeats_you` | 4 | The target's last chat line, said again, in their name, a minute later. The words are the target's own; nothing is added. | The target typed. |
-| `sleep_message` | 3 | `<your name> is sleeping` with the target awake. | Night. |
-| `advancement` | 4 | The advancement toast and chat line for one the target has, as if just earned, in their name. | The target has advancements. |
+| `sleep_message` | 3 | `1/2 players sleeping` on the action bar, the game's own words, at night with the target awake and alone. (`sleepers_wrong` says it as they lie down.) Coded 2026-11-10. | Night, the target awake. |
+| `advancement` | 4 | The chat line and the toast for one the target has, as if just earned, in their name (`game_message` `advancement`: the host picks one they have that announces itself; the toast is the client's own). Coded 2026-11-10. | The target awake, with an advancement. |
+| `death_message` | 4 | One of the game's own death lines about them while they live: `<you> fell from a high place`, `drowned`, `suffocated in a wall`, `fell out of the world`, `died`, `starved to death`, `froze to death`. Owner's pick, 2026-11-10. | The target awake. |
+| `words_on_sign` | 3 | What they last typed, in their own words, lower case, on a sign beside the door they use, up to four lines of fifteen. Owner's pick, 2026-11-10. | They typed, a door, the target away or asleep. |
+| `ping_fades` | 3 | Their own entry in the player list shows no connection for a minute, then their own again. Owner's pick, 2026-11-10. | The target awake. |
+| `empty_message` | 3 | `<you>` in their chat with nothing after it. Owner's pick, 2026-11-10. | The target awake. |
 
 ### Villages
 
