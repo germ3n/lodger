@@ -153,6 +153,12 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Holding(id) => last.online && last.main_hand == id,
         Need::FarFromVillage(n) => memory.far_from_village(n as f64),
         Need::RangBell => false,
+        Need::Tunnel => memory.newest_tunnel().is_some(),
+        Need::InTunnel => last.online && last.underground && memory.tunnel_at_target().is_some(),
+        Need::OreAhead => memory.ore_ahead().is_some(),
+        Need::Frame => memory.placed_obsidian.len() >= 10,
+        Need::TunnelLights => crate::brain::act::tunnel_lights(memory).len() >= 2,
+        Need::BehindThem => memory.behind_in_tunnel().is_some(),
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }

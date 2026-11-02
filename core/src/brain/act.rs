@@ -288,6 +288,15 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::GraveEach => spot(memory, rng),
         Action::JukeboxDisc => memory.fixtures("jukebox").next().map(|f| f.pos),
         Action::VillageLantern => memory.route_by_village(),
+        Action::MineBeside | Action::TunnelGoesOn | Action::SignDeep | Action::TunnelToward => {
+            memory.newest_tunnel().map(|t| t.end())
+        }
+        Action::TunnelSealed => memory.oldest_tunnel().map(|t| t.mouth()),
+        Action::PortalLit => memory.placed_obsidian.first().copied(),
+        Action::MinedOut => memory.ore_ahead(),
+        Action::LadderDown => spot(memory, rng),
+        Action::TorchesFarEnd => tunnel_lights(memory).first().copied(),
+        Action::WayBackCloses => memory.behind_in_tunnel(),
         Action::VillagerWord => memory.villager_near().map(|v| block_of(v.pos)),
         Action::VillageAbandoned => memory.gathering_door(),
         Action::BellTwice => memory.rang_bell_now,
@@ -730,6 +739,58 @@ pub fn sign_lines(text: &str) -> Vec<String> {
     lines
 }
 
+/// Their lights in the tunnel they stand in, farthest from them first.
+pub fn tunnel_lights(memory: &Memory) -> Vec<BlockPos> {
+    let Some(tunnel) = memory.tunnel_at_target() else {
+        return Vec::new();
+    };
+    let at = block_of(memory.last.pos);
+    let mut lights: Vec<BlockPos> = memory
+        .habits
+        .cave_lights
+        .iter()
+        .copied()
+        .filter(|l| tunnel.holds(*l))
+        .collect();
+    lights.sort_by(|a, b| distance(*b, at).total_cmp(&distance(*a, at)));
+
+    lights
+}
+
+/// A dig of its own: the block made air if it is natural rock (or air already), never what a
+/// player built.
+fn dig(ids: &mut impl FnMut() -> u64, pos: BlockPos) -> Command {
+    Command::SetBlock {
+        id: ids(),
+        pos,
+        block: "minecraft:air".to_string(),
+        state: String::new(),
+        replace: crate::tunnels::ROCK_IDS
+            .iter()
+            .map(|r| r.to_string())
+            .collect(),
+        settle: 0,
+        wall: String::new(),
+        rest: false,
+        only: false,
+    }
+}
+
+/// A block from nothing, only into air.
+fn fill(ids: &mut impl FnMut() -> u64, pos: BlockPos, block: &str) -> Command {
+    Command::SetBlock {
+        id: ids(),
+        pos,
+        block: block.to_string(),
+        state: String::new(),
+        replace: vec![],
+        settle: 0,
+        wall: String::new(),
+        rest: false,
+        only: false,
+    }
+}
+
 /// Whether an item is a piece of armour a stand wears.
 pub fn is_armour(id: &str) -> bool {
     ["helmet", "chestplate", "leggings", "boots"]
@@ -872,11 +933,17 @@ pub fn tidy_moves(contents: &[ItemStack], size: u32) -> Vec<(u32, u32, u32)> {
             slots[stack.slot as usize] = Some(stack.clone());
         }
     }
-    let mut wanted: Vec<ItemStack> = contents.to_vec();
+    // What the slots hold, not the list as given: two stacks said to share a slot, or a slot
+    // past the container, counted twice ran the target past the last slot and panicked
+    // (2026-11-10), which would take the whole mind down.
+    let mut wanted: Vec<ItemStack> = slots.iter().flatten().cloned().collect();
     wanted.sort_by(|a, b| a.id.cmp(&b.id).then(b.count.cmp(&a.count)));
 
     let mut moves = Vec::new();
     for (target, stack) in wanted.iter().enumerate() {
+        if target >= slots.len() {
+            break;
+        }
         let target = target as u32;
         let from = slots
             .iter()
@@ -2957,6 +3024,207 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // Their newest tunnel again, three blocks over, two high, lit at their spacing; its ore
+        // goes to their chest as it is dug (the brain, on the report).
+        Action::MineBeside => match memory.newest_tunnel() {
+            Some(t) => {
+                let way = t.way();
+                let side = [-way[1], way[0]];
+                let spacing = memory.torch_spacing().round().max(1.0) as usize;
+                let mut made = Vec::new();
+                for (i, c) in t.columns().into_iter().enumerate() {
+                    let p = [c[0] + side[0] * 3, c[1], c[2] + side[1] * 3];
+                    let t0 = i as u64 * 20;
+                    made.push((dig(ids, p), t0));
+                    made.push((dig(ids, [p[0], p[1] + 1, p[2]]), t0 + 5));
+                    if i % spacing == spacing / 2 {
+                        made.push((torch(ids, p, 0), t0 + 10));
+                    }
+                }
+                made
+            }
+            None => vec![],
+        },
+        // The mouth of their oldest tunnel walled with the lodger's own cobblestone.
+        Action::TunnelSealed => pos
+            .map(|m| {
+                vec![
+                    (fill(ids, m, "minecraft:cobblestone"), 0),
+                    (
+                        fill(ids, [m[0], m[1] + 1, m[2]], "minecraft:cobblestone"),
+                        15,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
+        // Digging toward them from twenty-five blocks past their tunnel's end, a column every
+        // four seconds, heard as it comes; it breaks through, or stops one block short.
+        Action::TunnelToward => match memory.newest_tunnel() {
+            Some(t) => {
+                let (end, way) = (t.end(), t.way());
+                let stop = if seed.is_multiple_of(2) { 1 } else { 2 };
+                let mut made = Vec::new();
+                for (i, k) in (stop..=25).rev().enumerate() {
+                    let p = [end[0] + way[0] * k, end[1], end[2] + way[1] * k];
+                    let t0 = i as u64 * 80;
+                    made.push((dig(ids, p), t0));
+                    made.push((dig(ids, [p[0], p[1] + 1, p[2]]), t0 + 10));
+                    made.push((
+                        Command::BlockSound {
+                            id: ids(),
+                            player: target,
+                            block: "minecraft:stone".to_string(),
+                            of: "break".to_string(),
+                            pos: block_center(p),
+                            volume: 0.6,
+                            pitch: 0.9,
+                        },
+                        t0 + 2,
+                    ));
+                }
+                made
+            }
+            None => vec![],
+        },
+        // Their frame lit, and their flint and steel a use the worse.
+        Action::PortalLit => match (
+            pos,
+            memory.in_used_container(|id| id == "minecraft:flint_and_steel"),
+        ) {
+            (Some(frame), Some((chest, flint))) => vec![
+                (
+                    Command::LightPortal {
+                        id: ids(),
+                        near: frame,
+                    },
+                    0,
+                ),
+                (
+                    Command::DamageItem {
+                        id: ids(),
+                        pos: chest.pos,
+                        slot: flint.slot,
+                        amount: 1,
+                    },
+                    2,
+                ),
+            ],
+            _ => vec![],
+        },
+        // The vein ahead dug out, a torch where it was.
+        Action::MinedOut => pos
+            .map(|ore| {
+                let vein: Vec<BlockPos> = memory
+                    .ores
+                    .iter()
+                    .map(|(_, p)| *p)
+                    .filter(|p| distance(*p, ore) <= 2.0)
+                    .collect();
+                let mut made: Vec<(Command, u64)> = vein
+                    .iter()
+                    .enumerate()
+                    .map(|(i, p)| (dig(ids, *p), i as u64 * 15))
+                    .collect();
+                made.push((torch(ids, ore, 1), vein.len() as u64 * 15 + 5));
+                made
+            })
+            .unwrap_or_default(),
+        // A shaft a block wide down from its place, as deep as their ladders go (four to
+        // twelve), the ladders up its side, then taken from their chest.
+        Action::LadderDown => {
+            match (pos, memory.in_used_container(|id| id == "minecraft:ladder")) {
+                (Some(top), Some((chest, ladders))) => {
+                    let deep = ladders.count.clamp(4, 12) as i32;
+                    let mut made = Vec::new();
+                    for y in 1..=deep {
+                        let p = [top[0], top[1] - y, top[2]];
+                        let t0 = y as u64 * 20;
+                        made.push((dig(ids, p), t0));
+                        made.push((
+                            Command::SetBlock {
+                                id: ids(),
+                                pos: p,
+                                block: "minecraft:ladder".to_string(),
+                                state: "facing=north".to_string(),
+                                replace: vec![],
+                                settle: 0,
+                                wall: String::new(),
+                                rest: false,
+                                only: false,
+                            },
+                            t0 + 5,
+                        ));
+                    }
+                    made.push((
+                        Command::TakeItem {
+                            id: ids(),
+                            from: chest.pos,
+                            slot: ladders.slot,
+                            count: deep as u32,
+                            keep: String::new(),
+                        },
+                        deep as u64 * 20 + 10,
+                    ));
+                    made
+                }
+                _ => vec![],
+            }
+        }
+        // Their tunnel five columns further, their size, unlit.
+        Action::TunnelGoesOn => match memory.newest_tunnel() {
+            Some(t) => {
+                let (end, way) = (t.end(), t.way());
+                (1..=5)
+                    .flat_map(|k| {
+                        let p = [end[0] + way[0] * k, end[1], end[2] + way[1] * k];
+                        let t0 = k as u64 * 20;
+                        [
+                            (dig(ids, p), t0),
+                            (dig(ids, [p[0], p[1] + 1, p[2]]), t0 + 5),
+                        ]
+                    })
+                    .collect()
+            }
+            None => vec![],
+        },
+        // Their tunnel's lights out from the far end toward them, a second apart, back in five
+        // minutes.
+        Action::TorchesFarEnd => tunnel_lights(memory)
+            .into_iter()
+            .enumerate()
+            .map(|(i, p)| {
+                (
+                    Command::HideBlock {
+                        id: ids(),
+                        pos: p,
+                        seconds: 300.0,
+                        only: [
+                            "minecraft:torch",
+                            "minecraft:wall_torch",
+                            "minecraft:soul_torch",
+                            "minecraft:soul_wall_torch",
+                            "minecraft:lantern",
+                        ]
+                        .iter()
+                        .map(|s| s.to_string())
+                        .collect(),
+                    },
+                    i as u64 * 20,
+                )
+            })
+            .collect(),
+        Action::SignDeep => pos
+            .map(|end| sign_at(ids, end, vec![words(Kind::SignWord, "", 0)]))
+            .unwrap_or_default(),
+        // Gravel behind them, floor and head, the way they came closed (they can dig it).
+        Action::WayBackCloses => pos
+            .map(|b| {
+                vec![
+                    (fill(ids, b, "minecraft:gravel"), 0),
+                    (fill(ids, [b[0], b[1] + 1, b[2]], "minecraft:gravel"), 4),
+                ]
+            })
+            .unwrap_or_default(),
         // A lantern of the village set down on their way, then gone from the village: one that
         // finds no ground stays where it hung.
         Action::VillageLantern => match (pos, memory.scanned("lantern").next()) {
@@ -4095,7 +4363,7 @@ pub fn text_kind(event: &Event) -> Option<Kind> {
         Action::Whisper => Some(Kind::Whisper),
         Action::Answers => Some(Kind::Reply),
         Action::RenameOne | Action::ReturnUsed => Some(Kind::ItemName),
-        Action::BookWord | Action::SignWord => Some(Kind::SignWord),
+        Action::BookWord | Action::SignWord | Action::SignDeep => Some(Kind::SignWord),
         _ => None,
     }
 }
@@ -4559,6 +4827,25 @@ mod tests {
         memory
             .walls
             .push(([0, 1, -6], "minecraft:torch".to_string()));
+        // A tunnel of theirs, east from far under the house, with an ore ahead, two lights in
+        // it, and obsidian for a frame; the memory's player stands in it.
+        memory.tunnels.push(crate::tunnels::Tunnel {
+            blocks: (0..14)
+                .flat_map(|x| [[x - 6, 0, 0], [x - 6, 1, 0]])
+                .collect(),
+            first_day: 0.2,
+            last_day: 0.4,
+        });
+        memory.ores.push(("iron_ore".to_string(), [14, 0, 1]));
+        memory.habits.cave_lights.extend([[-4, 1, 0], [4, 1, 0]]);
+        memory.placed_obsidian = (0..10).map(|i| [20, 64 + i, 20]).collect();
+        memory.store("minecraft:cobblestone", 4);
+        memory.containers[0]
+            .contents
+            .push(stack("minecraft:flint_and_steel", 1, 16));
+        memory.containers[0]
+            .contents
+            .push(stack("minecraft:ladder", 8, 17));
         // A death, and their last torch on the route.
         memory.milestones.push(crate::memory::Milestone {
             kind: "died".to_string(),
@@ -6204,5 +6491,82 @@ mod tests {
         );
 
         assert_eq!(memory.rang_bell_now, Some([60, 65, 60]));
+    }
+
+    #[test]
+    fn tidying_a_chest_said_to_hold_two_stacks_in_one_slot_never_panics() {
+        let contents = vec![
+            stack("minecraft:water_bucket", 1, 9),
+            stack("minecraft:lantern", 1, 9),
+            stack("minecraft:stone", 3, 30),
+            stack("minecraft:apple", 2, 1),
+        ];
+        let moves = tidy_moves(&contents, 27);
+        assert!(
+            moves.iter().all(|(from, to, _)| *from < 27 && *to < 27),
+            "{moves:?}"
+        );
+        assert!(tidy_moves(&contents, 0).is_empty());
+    }
+
+    #[test]
+    fn the_mines_of_batch_thirteen_send_what_they_should() {
+        let mut memory = rich_memory();
+        memory.last.pos = [5.5, 0.0, 0.5];
+        memory.last.online = true;
+        memory.last.underground = true;
+        let now = Now::default();
+        let mut rng = Rng::new(13);
+        let made = |id: &str, memory: &Memory, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, memory, rng);
+            commands(event, pos, memory, &mut ids(), &now, None)
+        };
+        let dug = |made: &Vec<(Command, u64)>| -> Vec<BlockPos> {
+            made.iter()
+                .filter_map(|(c, _)| match c {
+                    Command::SetBlock { block, pos, .. } if block == "minecraft:air" => Some(*pos),
+                    _ => None,
+                })
+                .collect()
+        };
+
+        // The copy runs three blocks beside theirs (it goes east, so three south), two high.
+        let beside = made("mine_beside", &memory, &mut rng);
+        let holes = dug(&beside);
+        assert_eq!(holes.len(), 28);
+        assert!(holes.iter().all(|p| p[2] == 3), "{holes:?}");
+        assert!(beside.iter().any(
+            |(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:torch")
+        ));
+
+        // Toward them: from twenty-five past the end, heard, to one or two short of it.
+        let toward = made("tunnel_toward", &memory, &mut rng);
+        let first = dug(&toward)[0];
+        assert_eq!(first, [7 + 25, 0, 0]);
+        assert!(toward
+            .iter()
+            .any(|(c, _)| matches!(c, Command::BlockSound { of, .. } if of == "break")));
+
+        // The way back: gravel five columns behind them, floor and head.
+        let closed = made("way_back_closes", &memory, &mut rng);
+        assert!(closed.iter().all(
+            |(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:gravel")
+        ));
+        assert!(matches!(&closed[0].0, Command::SetBlock { pos, .. } if *pos == [0, 0, 0]));
+
+        // The far end's light out first; the ladders as deep as there are (eight).
+        let lights = made("torches_far_end", &memory, &mut rng);
+        assert!(matches!(&lights[0].0, Command::HideBlock { pos, .. } if *pos == [-4, 1, 0]));
+        let shaft = made("ladder_down", &memory, &mut rng);
+        assert_eq!(shaft.iter().filter(|(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:ladder")).count(), 8);
+        assert!(matches!(
+            &shaft.last().unwrap().0,
+            Command::TakeItem { count: 8, .. }
+        ));
+        assert!(matches!(
+            &made("portal_lit", &memory, &mut rng)[0].0,
+            Command::LightPortal { .. }
+        ));
     }
 }

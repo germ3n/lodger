@@ -507,6 +507,12 @@ pub enum Command {
         entity: u32,
         kept: String,
     },
+    /// Light a Nether portal in an empty obsidian frame within six blocks of `near`, as flint
+    /// and steel would. ABI 32.
+    LightPortal {
+        id: u64,
+        near: BlockPos,
+    },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
         id: u64,
@@ -833,6 +839,7 @@ impl Command {
             | Command::Prints { id, .. }
             | Command::GatherVillagers { id, .. }
             | Command::OfferTrade { id, .. }
+            | Command::LightPortal { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }

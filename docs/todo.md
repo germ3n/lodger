@@ -663,6 +663,14 @@ because it can be built and tested without a game, and because the model layer i
     emptied into one house till dawn (packed, facing the wall, turning to them; the other doors
     open, the lanterns out; all back by dawn), and the bell they ring ringing again. ABI 31.
     Tests: three in `village`, two in `act`. Was: three rows not coded.
+  - **Batch 13, mines** (owner: all six rows, all four new): a tunnel memory (what they dig
+    underground, grouped as dug), a copy of their tunnel beside it (its ore to their chest),
+    their oldest tunnel walled with its own cobblestone, digging toward them that breaks through
+    or stops one short, their frame lit, the ore ahead mined out, a shaft with their ladders,
+    the tunnel longer, its torches out from the far end, a sign deep down, gravel behind them.
+    A dig's block is kept as a pick gives it (stone is cobblestone). ABI 32. And a panic found
+    on the way: `tidy_moves` ran past a chest's last slot on two stacks said to share one; it
+    sorts what the slots hold now. Tests: four in `tunnels`, two in `act`.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

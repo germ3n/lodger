@@ -419,14 +419,18 @@ they use. Digging is what a player digs, at a player's pace, with a player's sou
 | `echo_steps` | 2 | Footsteps that answer the target's from a side tunnel, in the mine. | The target in a tunnel with a branch. |
 | `scan_ore` | 2 | Nothing the target sees: while they mine, the lodger looks at the rock around them (the host's scan, 24 blocks across) for ore they have not found, so `ore_marked` has a vein to mark. | The target underground. |
 | `ore_marked` | 2 | A torch on an ore vein the target has not found, within sight of their tunnel. | An unfound vein within 12 blocks of a tunnel. |
-| `mine_beside` | 3 | While the target is away, a tunnel the size and length of their newest one is dug beside it, three blocks over, lit the way they light theirs (the memory's torch spacing). Its ore is in the chest they use; it keeps the stone. | A tunnel of 10 or more blocks the target dug, and a chest. |
-| `mined_out` | 3 | One ore vein the target was heading for, the one their tunnel points at, is gone when they reach it: a hollow with torches in it, as if mined an hour ago. | A vein within 16 blocks ahead of the target's tunnel. |
-| `tunnel_sealed` | 3 | The mouth of the target's oldest tunnel is walled with cobblestone, the lodger's own. | An old tunnel and held stone. |
-| `ladder_down` | 3 | A ladder from a chest down a one-block shaft the lodger dug, to its place, or to nothing. | A ladder in a chest and natural ground. |
+| `mine_beside` | 3 | While the target is away, a copy of their newest tunnel is dug three blocks beside it, two high, lit at their torch spacing; the ore it meets goes to the chest they use as it is dug, the stone to the lodger's store. Coded 2026-11-10. | A tunnel of theirs of ten blocks, a chest they use. |
+| `mined_out` | 3 | The ore vein ahead of their newest tunnel (within 16 blocks past its end, from the ore read) is dug out while they are away, a torch where it was. Coded 2026-11-10. | Ore ahead of a tunnel of theirs. |
+| `tunnel_sealed` | 3 | The mouth of their oldest tunnel is walled, floor and head, with cobblestone from the lodger's store (digging stone gives it cobblestone, as a pick does). Coded 2026-11-10. | A tunnel of theirs and two cobblestone dug. |
+| `ladder_down` | 3 | A one-block shaft dug down from its place, as deep as their ladders (four to twelve), the ladders up its side, then taken from their chest. Coded 2026-11-10. | Ladders in the chest they use, a home. |
 | `minecart_rolls` | 3 | The target's minecart rolls out of the tunnel on its own and stops at the mouth. | A minecart on a track. |
-| `tunnel_toward` | 4 | While the target digs a tunnel, a tunnel is dug toward theirs from 20 to 30 blocks off, the sounds coming closer over several minutes, and it breaks through a few blocks ahead of them, or stops one block short so the wall between is thin and torchlit from the other side. Nothing is in it. | The target digging a tunnel of 20 or more blocks, and solid rock on the far side. |
+| `tunnel_toward` | 4 | While the target is in their tunnel, digging comes toward them from 25 blocks past its end, a column every four seconds, each heard as it breaks, and it breaks through just ahead or stops one block short. Built to be heard and found: out of the view rule. Coded 2026-11-10. | The target in a tunnel of theirs. |
+| `tunnel_goes_on` | 3 | Their newest tunnel is five blocks longer when they come back to it, their size, unlit. Owner's pick, 2026-11-10. | A tunnel of theirs, the target away or asleep. |
+| `torches_far_end` | 3 | While they stand in their tunnel, its lights go out one by one from the far end toward them, a second apart, back in five minutes. Owner's pick, 2026-11-10. | The target in a tunnel of theirs with two of their lights. |
+| `sign_deep` | 3 | A sign at the far end of their newest tunnel, one word of its own. Owner's pick, 2026-11-10. | A tunnel of theirs, the target away or asleep. |
+| `way_back_closes` | 4 | Gravel falls into their tunnel five blocks behind them, floor and head, closing the way they came (they can dig it). Owner's pick, 2026-11-10. | The target in a tunnel of theirs with room behind them. |
 | `portal_sound` | 3 | The sound of a Nether portal in the house, with none near. | The target indoors. |
-| `portal_lit` | 3 | A portal frame the target built and never lit is lit, with flint and steel from a chest. The lodger does not go through. | An unlit frame and flint and steel. |
+| `portal_lit` | 3 | A portal frame they built (ten obsidian or more placed) is lit while they are away (`light_portal`, ABI 32), and their flint and steel is a use the worse. The lodger does not go through. Coded 2026-11-10. | A frame and flint and steel in the chest they use. |
 
 ### Redstone
 

@@ -134,6 +134,8 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::Figure(_, _, _)
             | crate::events::Action::BedBreaks
             | crate::events::Action::ScanVillage
+            | crate::events::Action::TunnelToward
+            | crate::events::Action::TorchesFarEnd
     )
 }
 

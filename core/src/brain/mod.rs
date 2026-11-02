@@ -985,6 +985,9 @@ impl Brain {
             }
             // A block it fills with comes out of what it dug too.
             if let Command::SetBlock { block, .. } = command {
+                if plan.event == "tunnel_sealed" {
+                    memory.store(block, -1);
+                }
                 if plan.event == "backfill" {
                     memory.store(block, -1);
                     if let Some(at) = memory.holes.iter().position(
@@ -2089,12 +2092,33 @@ impl Brain {
                     .strip_prefix("replaced ")
                     .filter(|_| report.done && pending.event != "one_room_dark")
                 {
-                    let held = if was == "minecraft:grass_block" {
-                        "minecraft:dirt"
-                    } else {
-                        was
-                    };
-                    memory.store(held, 1);
+                    // What a pick would give: stone is cobblestone, an ore its drop.
+                    let held = crate::tunnels::dug_as(was);
+                    let to_chest = pending.event == "mine_beside" && was.ends_with("_ore");
+                    match memory.used_container().map(|c| c.pos).filter(|_| to_chest) {
+                        // The ore of the tunnel it dug beside theirs goes to their chest.
+                        Some(chest) => {
+                            let id = self.id();
+                            self.later.push(Later {
+                                // At once: the next tick sends what is due.
+                                at_tick: 0,
+                                command: Command::PutItem {
+                                    id,
+                                    into: chest,
+                                    slot: None,
+                                    item: craftkit::world::ItemStack {
+                                        id: held,
+                                        count: 1,
+                                        slot: 0,
+                                    },
+                                    kept: String::new(),
+                                    wear: 0,
+                                    name: String::new(),
+                                },
+                            })
+                        }
+                        None => memory.store(&held, 1),
+                    }
                 }
                 if report.done && pending.event == "take" {
                     // The host took it; the memory holds it from here.
@@ -3528,7 +3552,11 @@ mod tests {
             );
         }
         assert_eq!(memory.stored("minecraft:dirt"), 2, "grass dug is dirt");
-        assert_eq!(memory.stored("minecraft:stone"), 1);
+        assert_eq!(
+            memory.stored("minecraft:cobblestone"),
+            1,
+            "stone dug is cobblestone, as a pick gives (it was kept as stone until 2026-11-10)"
+        );
 
         memory.store("minecraft:dirt", 1);
         memory.containers.push(crate::memory::Container {

@@ -509,6 +509,10 @@ pub struct Memory {
     pub caves: Vec<BlockPos>,
     /// The crop blocks of the last field read, around the crops by the home (`crate::farm`).
     pub field: Vec<BlockPos>,
+    /// Their tunnels, what they dug underground grouped as it was dug (`crate::tunnels`).
+    pub tunnels: Vec<crate::tunnels::Tunnel>,
+    /// Obsidian they placed: a portal frame (`portal_lit`).
+    pub placed_obsidian: Vec<BlockPos>,
 }
 
 /// Caps, with the reason beside each.
@@ -1162,6 +1166,9 @@ impl Memory {
                                 MOST_FIXTURES,
                             );
                         }
+                        if event.detail == "minecraft:obsidian" {
+                            push_capped(&mut self.placed_obsidian, pos, 64);
+                        }
                         if is_light(&event.detail) {
                             self.habits.lights_placed += 1;
                             self.habits.last_light = Some((pos, event.detail.clone()));
@@ -1256,6 +1263,13 @@ impl Memory {
                 }
                 EventKind::BrokeBlock => {
                     if let Some(pos) = event.pos {
+                        if self.last.underground
+                            && crate::tunnels::is_rock(&event.detail)
+                            && !self.placed.contains(&pos)
+                        {
+                            self.dug_underground(pos, day);
+                        }
+                        self.placed_obsidian.retain(|p| *p != pos);
                         self.mark_home_dirty(pos);
                         self.react_to_fixing(pos);
                         // Natural ground dug near the home, not something they had placed.

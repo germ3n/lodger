@@ -135,6 +135,7 @@ public final class Executors {
 				case "move_leash" -> moveLeash(level, command, id);
 				case "charge" -> charge(level, command, id, context);
 				case "gather_villagers" -> gatherVillagers(level, command, id, context);
+				case "light_portal" -> lightPortal(level, command, id);
 				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
 				case "set_state" -> setState(level, command, id);
@@ -1636,6 +1637,26 @@ public final class Executors {
 		}
 
 		return report(id, true, "");
+	}
+
+	/** A Nether portal lit in an empty obsidian frame within six blocks, as flint and steel would (ABI 32). */
+	private static JsonObject lightPortal(ServerLevel level, JsonObject command, long id) {
+		BlockPos near = blockPos(command.getAsJsonArray("near"));
+		for (BlockPos at : BlockPos.betweenClosed(near.offset(-6, -6, -6), near.offset(6, 6, 6))) {
+			if (!level.getBlockState(at).isAir()) {
+				continue;
+			}
+			for (Direction.Axis axis : new Direction.Axis[] {Direction.Axis.X, Direction.Axis.Z}) {
+				var shape = net.minecraft.world.level.portal.PortalShape.findEmptyPortalShape(level, at.immutable(), axis);
+				if (shape.isPresent()) {
+					shape.get().createPortalBlocks(level);
+					level.playSound(null, at, net.minecraft.sounds.SoundEvents.FLINTANDSTEEL_USE, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 1f);
+					return report(id, true, "");
+				}
+			}
+		}
+
+		return report(id, false, "no empty frame there");
 	}
 
 	/** The village emptied into one house till dawn (ABI 31). */

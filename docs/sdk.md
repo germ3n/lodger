@@ -166,7 +166,8 @@ hooks, the sky's (`stars_out`, `moon_wrong`, `night_early`), `red_rain` as red d
 village's middle packed into the house behind a door, facing its back wall, turning to the
 player within five blocks, each back where it stood after its time or when the level closes) and
 `offer_trade` (a kept stack for sale at a villager for an emerald, the trade taken away once
-used, so a restock never sells it again).
+used, so a restock never sells it again). ABI 32 (2026-11-10): `light_portal` (a Nether portal
+lit in an empty obsidian frame near a place, as flint and steel would).
 
 ## Resources
 

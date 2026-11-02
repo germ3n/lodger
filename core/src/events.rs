@@ -185,6 +185,18 @@ pub enum Need {
     FarFromVillage(u32),
     /// The target just rang a bell; never offered, the ringing starts it.
     RangBell,
+    /// A tunnel of theirs of ten columns or more (`crate::tunnels`).
+    Tunnel,
+    /// The target in one of their tunnels.
+    InTunnel,
+    /// Unfound ore ahead of their newest tunnel.
+    OreAhead,
+    /// Ten obsidian or more they placed: a frame.
+    Frame,
+    /// Their lights in the tunnel they stand in, two or more.
+    TunnelLights,
+    /// Room behind them in their tunnel to close.
+    BehindThem,
 }
 
 impl Need {
@@ -229,6 +241,9 @@ impl Need {
                 | Need::Holding(_)
                 | Need::FarFromVillage(_)
                 | Need::RangBell
+                | Need::InTunnel
+                | Need::TunnelLights
+                | Need::BehindThem
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
                 | Need::TargetApproachingChest
@@ -315,6 +330,12 @@ impl Need {
             Need::Holding(id) => format!("they do not hold a {}", crate::memory::bare(id)),
             Need::FarFromVillage(n) => format!("the target is within {n} blocks of the village"),
             Need::RangBell => "happens only as they ring a bell".to_string(),
+            Need::Tunnel => "no tunnel of theirs of ten blocks".to_string(),
+            Need::InTunnel => "the target is not in a tunnel of theirs".to_string(),
+            Need::OreAhead => "no ore ahead of their tunnel".to_string(),
+            Need::Frame => "no portal frame of theirs".to_string(),
+            Need::TunnelLights => "fewer than two lights in their tunnel".to_string(),
+            Need::BehindThem => "no room behind them in their tunnel".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -627,6 +648,26 @@ pub enum Action {
     VillageAbandoned,
     /// The bell they rang rings again.
     BellTwice,
+    /// A copy of their newest tunnel beside it.
+    MineBeside,
+    /// Their oldest tunnel's mouth walled.
+    TunnelSealed,
+    /// Digging toward them as they dig.
+    TunnelToward,
+    /// Their portal frame lit.
+    PortalLit,
+    /// The ore ahead of their tunnel mined out.
+    MinedOut,
+    /// A shaft down, their ladders in it.
+    LadderDown,
+    /// Their tunnel five blocks longer.
+    TunnelGoesOn,
+    /// Their tunnel's torches out from the far end toward them.
+    TorchesFarEnd,
+    /// A sign at the end of their tunnel.
+    SignDeep,
+    /// Gravel behind them in their tunnel.
+    WayBackCloses,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1335,6 +1376,122 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Charge(3, 3.0, 3),
+        false,
+    ),
+    // Batch 13 (owner, 2026-11-10): every mine row, and four new: the tunnel goes on, its
+    // torches out from the far end, a sign deep down, the way back closed.
+    row(
+        "mine_beside",
+        3,
+        5,
+        &[Tunnel, UsedContainer, TargetAwayOrAsleep],
+        4.0,
+        2,
+        Full,
+        Action::MineBeside,
+        false,
+    ),
+    row(
+        "tunnel_sealed",
+        3,
+        5,
+        &[
+            Tunnel,
+            Stored("minecraft:cobblestone", 2),
+            TargetAwayOrAsleep,
+        ],
+        4.0,
+        2,
+        Full,
+        Action::TunnelSealed,
+        false,
+    ),
+    row(
+        "tunnel_toward",
+        4,
+        5,
+        &[Tunnel, InTunnel],
+        4.0,
+        2,
+        Full,
+        Action::TunnelToward,
+        false,
+    ),
+    row(
+        "portal_lit",
+        3,
+        5,
+        &[Frame, InChest("flint_and_steel"), TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::PortalLit,
+        false,
+    ),
+    row(
+        "mined_out",
+        3,
+        5,
+        &[OreAhead, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::MinedOut,
+        false,
+    ),
+    row(
+        "ladder_down",
+        3,
+        5,
+        &[InChest("ladder"), Home, TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::LadderDown,
+        false,
+    ),
+    row(
+        "tunnel_goes_on",
+        3,
+        5,
+        &[Tunnel, TargetAwayOrAsleep],
+        3.0,
+        3,
+        Full,
+        Action::TunnelGoesOn,
+        false,
+    ),
+    row(
+        "torches_far_end",
+        3,
+        5,
+        &[InTunnel, TunnelLights],
+        2.0,
+        3,
+        Full,
+        Action::TorchesFarEnd,
+        false,
+    ),
+    row(
+        "sign_deep",
+        3,
+        5,
+        &[Tunnel, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::SignDeep,
+        false,
+    ),
+    row(
+        "way_back_closes",
+        4,
+        5,
+        &[InTunnel, BehindThem],
+        3.0,
+        2,
+        Full,
+        Action::WayBackCloses,
         false,
     ),
     // Batch 12 (owner, 2026-11-10): the village's lantern on their way, what it took for sale,
@@ -3487,6 +3644,7 @@ impl Event {
             | Action::WetSteps
             | Action::SoundPair(..) => "sounds",
             Action::Sign
+            | Action::SignDeep
             | Action::DeathMessage
             | Action::WordsOnSign
             | Action::SignWord
@@ -3595,6 +3753,15 @@ impl Event {
             | Action::TrailIn
             | Action::VillageLantern
             | Action::BellTwice
+            | Action::MineBeside
+            | Action::TunnelSealed
+            | Action::TunnelToward
+            | Action::PortalLit
+            | Action::MinedOut
+            | Action::LadderDown
+            | Action::TunnelGoesOn
+            | Action::TorchesFarEnd
+            | Action::WayBackCloses
             | Action::Snowman
             | Action::BoatInHouse
             | Action::RotateFixture(..)
@@ -3756,6 +3923,16 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "mine_beside" => "dig a copy of their tunnel beside it",
+            "tunnel_sealed" => "wall up the mouth of their oldest tunnel",
+            "tunnel_toward" => "dig toward them while they dig",
+            "portal_lit" => "light their portal",
+            "mined_out" => "mine out the ore ahead of their tunnel",
+            "ladder_down" => "dig a shaft down with their ladders",
+            "tunnel_goes_on" => "dig their tunnel five blocks further",
+            "torches_far_end" => "put out their tunnel's torches from the far end",
+            "sign_deep" => "leave a sign at the end of their tunnel",
+            "way_back_closes" => "close their tunnel behind them",
             "village_lantern" => "carry a village lantern onto their way",
             "villager_word" => "have a villager sell what it took",
             "village_abandoned" => "empty the village into one house until dawn",
