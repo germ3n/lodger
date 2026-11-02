@@ -199,6 +199,10 @@ pub enum Need {
     TunnelLights,
     /// Room behind them in their tunnel to close.
     BehindThem,
+    /// Something left for this event to build tonight (`crate::building`).
+    BuildLeft(&'static str),
+    /// Twenty building blocks or more of theirs: a house to copy.
+    Walls,
 }
 
 impl Need {
@@ -340,6 +344,8 @@ impl Need {
             Need::Frame => "no portal frame of theirs".to_string(),
             Need::TunnelLights => "fewer than two lights in their tunnel".to_string(),
             Need::BehindThem => "no room behind them in their tunnel".to_string(),
+            Need::BuildLeft(e) => format!("nothing left of {e} to build"),
+            Need::Walls => "fewer than twenty blocks of their building".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -676,6 +682,10 @@ pub enum Action {
     FigureSwing(f32),
     /// The far figure raises its arm once.
     FigureWave,
+    /// Tonight's share of a build, by the event.
+    Build(&'static str),
+    /// A room dug in a cave, a door, a chest holding what it took.
+    CaveRoom,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1392,6 +1402,118 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Charge(3, 3.0, 3),
+        false,
+    ),
+    // Batch 15, building (owner, 2026-11-10: every one; materials gathered first, topped up
+    // when short): a night's share at a time.
+    row(
+        "house_near",
+        4,
+        5,
+        &[Home, BuildLeft("house_near"), TargetAwayOrAsleep],
+        0.7,
+        3,
+        Full,
+        Action::Build("house_near"),
+        false,
+    ),
+    row(
+        "house_grows",
+        5,
+        5,
+        &[BuildLeft("house_grows"), TargetAwayOrAsleep],
+        0.7,
+        1,
+        Full,
+        Action::Build("house_grows"),
+        false,
+    ),
+    row(
+        "pillar",
+        3,
+        5,
+        &[Home, BuildLeft("pillar"), TargetAwayOrAsleep],
+        0.7,
+        8,
+        Full,
+        Action::Build("pillar"),
+        false,
+    ),
+    row(
+        "hut_on_route",
+        3,
+        5,
+        &[Route, BuildLeft("hut_on_route"), TargetAwayOrAsleep],
+        3.0,
+        1,
+        Full,
+        Action::Build("hut_on_route"),
+        false,
+    ),
+    row(
+        "dock",
+        3,
+        5,
+        &[BuildLeft("dock"), TargetAwayOrAsleep],
+        0.7,
+        8,
+        Full,
+        Action::Build("dock"),
+        false,
+    ),
+    row(
+        "bridge",
+        4,
+        4,
+        &[Around("water"), BuildLeft("bridge"), TargetAwayOrAsleep],
+        0.7,
+        8,
+        Full,
+        Action::Build("bridge"),
+        false,
+    ),
+    row(
+        "bridge_done",
+        5,
+        5,
+        &[BuildLeft("bridge_done"), TargetAwayOrAsleep],
+        0.7,
+        8,
+        Full,
+        Action::Build("bridge_done"),
+        false,
+    ),
+    row(
+        "copy_build",
+        4,
+        5,
+        &[Walls, BuildLeft("copy_build"), TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::Build("copy_build"),
+        false,
+    ),
+    row(
+        "copy_house",
+        5,
+        5,
+        &[Walls, BuildLeft("copy_house"), TargetAwayOrAsleep],
+        0.7,
+        12,
+        Full,
+        Action::Build("copy_house"),
+        false,
+    ),
+    row(
+        "cave_room",
+        3,
+        5,
+        &[Cave, TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::CaveRoom,
         false,
     ),
     // Batch 14 (owner, 2026-11-10): the figure's swing by the harm stages (a nip at 3, real
@@ -3847,6 +3969,8 @@ impl Event {
             | Action::TunnelGoesOn
             | Action::TorchesFarEnd
             | Action::WayBackCloses
+            | Action::Build(_)
+            | Action::CaveRoom
             | Action::Snowman
             | Action::BoatInHouse
             | Action::RotateFixture(..)
@@ -4010,6 +4134,15 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "house_near" => "build its own house near theirs, a third a night",
+            "house_grows" => "add a room to its house",
+            "pillar" => "raise its pillar a block",
+            "hut_on_route" => "build a log hut halfway along their route",
+            "dock" => "lengthen its dock where they fish",
+            "bridge" | "bridge_done" => "lengthen its bridge toward their shore",
+            "copy_build" => "lay the outline of their house at its place",
+            "copy_house" => "build more of the copy of their house",
+            "cave_room" => "dig itself a room in a cave",
             "figure_nip" => "have the figure behind them strike once",
             "figure_swing" => "have the figure behind them strike hard once",
             "figure_mirror" => "have the figure copy their steps from afar",

@@ -676,6 +676,14 @@ because it can be built and tested without a game, and because the model layer i
     heart), copies their steps from forty blocks off, stands outside their window looking in,
     stands among the villagers and is gone once they look away, waves from afar. ABI 33. Tests:
     one in `act`.
+  - **Batch 15, building** (owner: every one; materials gathered first, topped up when short):
+    blueprints laid a night's share at a time (`place_blueprint`, ABI 34): its house near theirs
+    over three nights with the chest holding what it took, the room it grows at stage 5, a
+    pillar a block a night to their roof, a log hut halfway along their route, a room dug in a
+    cave, a dock where they fish, a bridge across their water (finished at stage 5), the
+    outline and the copy of their house. Its stone spent first. Two bugs found on the way: a
+    stay test caught an overflow in "all at once" (saturating now), and the parallel-plans test
+    leaned on chance and now sets its player at home. Tests: eight in `building`.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

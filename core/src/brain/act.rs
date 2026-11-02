@@ -413,6 +413,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             Some(behind_close(memory))
         }
         Action::FigureWave => far_spot(memory, rng),
+        Action::Build(event) => memory.next_build(event).map(|(site, _, _)| site),
+        Action::CaveRoom => memory.unentered_cave().and_then(|c| c.first().copied()),
         Action::Figure(FigureWhere::Far, _, _) => {
             // Fifty to seventy blocks from the target, away from the home.
             let at = block_of(memory.last.pos);
@@ -3134,6 +3136,122 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // Tonight's share of a build, from what it gathered first (the brain spends the store);
+        // its house's chest takes what it holds once the ground is known.
+        Action::Build(event) => match memory.next_build(event) {
+            Some((site, _, parts)) => {
+                let chest = parts
+                    .iter()
+                    .find(|p| p.block == "minecraft:chest")
+                    .filter(|_| site[1] > -1_000 && memory.held.is_some())
+                    .map(|p| [site[0] + p.at[0], site[1] + p.at[1], site[2] + p.at[2]]);
+                let mut made = vec![(
+                    Command::PlaceBlueprint {
+                        id: ids(),
+                        at: site,
+                        parts: parts
+                            .iter()
+                            .map(|p| craftkit::BlueprintPart {
+                                at: p.at,
+                                block: p.block.to_string(),
+                                state: p.state.clone(),
+                            })
+                            .collect(),
+                        replace: crate::building::replaceable(event),
+                    },
+                    0,
+                )];
+                if let Some(chest) = chest {
+                    made.push((
+                        Command::PutItem {
+                            id: ids(),
+                            into: chest,
+                            slot: None,
+                            item: memory
+                                .held
+                                .as_ref()
+                                .map(|h| h.item.clone())
+                                .unwrap_or_default(),
+                            kept: "held".to_string(),
+                            wear: 0,
+                            name: String::new(),
+                        },
+                        20,
+                    ));
+                }
+                made
+            }
+            None => vec![],
+        },
+        // A room of three by three by three dug where the cave is, lit, a door at its way in,
+        // and a chest holding what it took.
+        Action::CaveRoom => pos
+            .map(|c| {
+                let mut made = Vec::new();
+                let mut t = 0;
+                for dy in 0..3 {
+                    for dx in -1..=1 {
+                        for dz in -1..=1 {
+                            made.push((dig(ids, [c[0] + dx, c[1] + dy, c[2] + dz]), t));
+                            t += 6;
+                        }
+                    }
+                }
+                made.push((torch(ids, [c[0] + 1, c[1], c[2] + 1], 0), t + 5));
+                made.push((
+                    Command::SetBlock {
+                        id: ids(),
+                        pos: [c[0] - 1, c[1], c[2] - 1],
+                        block: "minecraft:chest".to_string(),
+                        state: String::new(),
+                        replace: vec![],
+                        settle: 0,
+                        wall: String::new(),
+                        rest: true,
+                        only: false,
+                    },
+                    t + 10,
+                ));
+                if let Some(held) = &memory.held {
+                    made.push((
+                        Command::PutItem {
+                            id: ids(),
+                            into: [c[0] - 1, c[1], c[2] - 1],
+                            slot: None,
+                            item: held.item.clone(),
+                            kept: "held".to_string(),
+                            wear: 0,
+                            name: String::new(),
+                        },
+                        t + 20,
+                    ));
+                }
+                made.push((
+                    Command::PlaceBlueprint {
+                        id: ids(),
+                        at: [c[0], c[1] - 1, c[2] + 2],
+                        parts: vec![
+                            craftkit::BlueprintPart {
+                                at: [0, 1, 0],
+                                block: "minecraft:oak_door".to_string(),
+                                state: "facing=south,half=lower".to_string(),
+                            },
+                            craftkit::BlueprintPart {
+                                at: [0, 2, 0],
+                                block: "minecraft:oak_door".to_string(),
+                                state: "facing=south,half=upper".to_string(),
+                            },
+                        ],
+                        replace: crate::tunnels::ROCK_IDS
+                            .iter()
+                            .map(|r| r.to_string())
+                            .collect(),
+                    },
+                    t + 30,
+                ));
+                made
+            })
+            .unwrap_or_default(),
         // Right behind them for a second, it strikes once: by the harm stages, never a kill.
         Action::FigureSwing(damage) => pos
             .map(|p| {
@@ -4987,6 +5105,7 @@ mod tests {
         memory.ores.push(("iron_ore".to_string(), [14, 0, 1]));
         memory.habits.cave_lights.extend([[-4, 1, 0], [4, 1, 0]]);
         memory.placed_obsidian = (0..10).map(|i| [20, 64 + i, 20]).collect();
+        memory.last_fished = Some([4, 64, 30]);
         memory.store("minecraft:cobblestone", 4);
         memory.containers[0]
             .contents
@@ -5372,6 +5491,8 @@ mod tests {
                 || event.id == "returned_used"
                 || event.id == "loot_gift"
                 || event.id == "door_opens_itself"
+                // Its house must stand first: its own test below.
+                || event.id == "house_grows"
             {
                 continue;
             }

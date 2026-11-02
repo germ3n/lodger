@@ -977,12 +977,18 @@ impl Brain {
                     memory.scans_out.remove(0);
                 }
             }
+            // What it held, put in a chest of its own (its house, its cave room): held no more.
+            if matches!(command, Command::PutItem { kept, .. } if kept == "held") {
+                memory.held = None;
+            }
             // What it gives without having taken it comes out of what it dug.
             if let Command::PutItem { item, kept, .. } = command {
                 if kept.is_empty() && memory.stored(&item.id) > 0 {
                     memory.store(&item.id, -(item.count as i64));
                 }
             }
+            // A build's share: laid, the store spent where it has the block, the rest made up.
+            crate::building::account(memory, &plan.event, command, day);
             // A block it fills with comes out of what it dug too.
             if let Command::SetBlock { block, .. } = command {
                 if plan.event == "tunnel_sealed" {
@@ -2083,6 +2089,21 @@ impl Brain {
                         self.later.retain(|l| !dropped.contains(&l.command.id()));
                         self.pending
                             .retain(|p| !(p.event == pending.event && p.day == pending.day));
+                    }
+                }
+
+                // A build's ground, found by the host on its first share: kept for the rest.
+                if let Some(base) = report
+                    .reason
+                    .strip_prefix("base ")
+                    .and_then(|r| r.split_whitespace().next())
+                    .and_then(|y| y.parse::<i32>().ok())
+                {
+                    let kind = crate::building::build_of(&pending.event).to_string();
+                    if let Some(build) = memory.builds.iter_mut().find(|b| b.kind == kind) {
+                        if !build.ground_known() {
+                            build.site[1] = base;
+                        }
                     }
                 }
 
@@ -3287,6 +3308,11 @@ mod tests {
         config.brain.plan_every = 1;
         config.events.cooldown_scale = 0.0;
         let mut memory = home_memory();
+        // The target in the game at home: what waits for them to be away or asleep waits, so
+        // plans are held side by side (away from the game, every such plan ran the moment it was
+        // chosen, and once the catalogue grew none was left waiting beside another).
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
         let mut arc = Arc {
             stage: 3,
             ..Arc::default()

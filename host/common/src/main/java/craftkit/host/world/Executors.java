@@ -136,6 +136,7 @@ public final class Executors {
 				case "charge" -> charge(level, command, id, context);
 				case "gather_villagers" -> gatherVillagers(level, command, id, context);
 				case "light_portal" -> lightPortal(level, command, id);
+				case "place_blueprint" -> placeBlueprint(level, command, id);
 				case "figure_swing" -> figureSwing(level, command, id, context);
 				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
@@ -1652,6 +1653,48 @@ public final class Executors {
 				command.has("spare") && command.get("spare").getAsBoolean());
 
 		return swung ? report(id, true, "") : report(id, false, "no figure shown with that number");
+	}
+
+	/**
+	 * Blocks laid relative to a place (ABI 34): the ground found when the place's y is below
+	 * -1000 (the highest block that stops movement, leaves left out, water counting), and each
+	 * block only into air or over one of {@code replace}, never over contents. A door's lower
+	 * half goes in without telling its neighbours, so it does not break before its upper half.
+	 * Reports {@code base <y> placed <n>}.
+	 */
+	private static JsonObject placeBlueprint(ServerLevel level, JsonObject command, long id) {
+		JsonArray at = command.getAsJsonArray("at");
+		int x = at.get(0).getAsInt();
+		int y = at.get(1).getAsInt();
+		int z = at.get(2).getAsInt();
+		if (y <= -1000) {
+			BlockPos column = new BlockPos(x, 0, z);
+			if (!level.isLoaded(column)) {
+				return report(id, false, "the place is not loaded");
+			}
+			y = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column).getY() - 1;
+		}
+		List<String> replace = replaceable(command);
+		int placed = 0;
+		for (JsonElement element : command.getAsJsonArray("parts")) {
+			JsonObject part = element.getAsJsonObject();
+			JsonArray rel = part.getAsJsonArray("at");
+			BlockPos pos = new BlockPos(x + rel.get(0).getAsInt(), y + rel.get(1).getAsInt(), z + rel.get(2).getAsInt());
+			if (!level.isLoaded(pos) || taken(level, pos, replace, false) != null) {
+				continue;
+			}
+			Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(part.get("block").getAsString()));
+			if (block.isEmpty()) {
+				continue;
+			}
+			BlockState state = withState(block.get().value().defaultBlockState(), part.has("state") ? part.get("state").getAsString() : "");
+			boolean lowerHalf = state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
+					&& state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER;
+			level.setBlock(pos, state, lowerHalf ? Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE : Block.UPDATE_ALL);
+			placed++;
+		}
+
+		return report(id, placed > 0, "base " + y + " placed " + placed);
 	}
 
 	/** A Nether portal lit in an empty obsidian frame within six blocks, as flint and steel would (ABI 32). */

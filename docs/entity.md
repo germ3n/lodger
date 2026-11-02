@@ -548,7 +548,7 @@ mining events are in [Mines and caves](#mines-and-caves); these are the rest.
 | `tools_in_hand` | 3 | The figures hold what the target holds most, the memory's favourite tool, and the far figure swings it at the rock now and then. | A figure and a favourite tool. |
 | `your_spacing` | 3 | Torches it places, anywhere, are at the spacing the target uses in their own tunnels; its tunnels are the target's height and width. | A tunnel the target dug. |
 | `copy_crouch` | 4 | The far figure crouches when the target crouches, and stands when they stand, at 60 blocks. | A far figure showing. |
-| `copy_build` | 4 | A one-block-high outline of the target's house, in cobblestone the lodger dug, at its place, the right size and facing. | A home of 20 or more blocks and held stone. |
+| `copy_build` | 4 | A one-block-high outline of the target's house, in cobblestone, at its place, the size of their walls' footprint. Coded 2026-11-10. | Twenty building blocks of theirs, the target away or asleep. |
 | `wave` | 4 | The far figure raises its arm once, as a player swinging, and is gone. | A far figure showing. |
 | `through_the_hill` | 4 | It walks into one side of a hill in view and, a minute later, out of the other, the stone closing behind it both times. Approached, both faces are natural rock. | A hill of natural stone 10 to 30 blocks thick in view, the target 40 or more blocks off. |
 | `into_the_dark` | 3 | It stands at the edge of your torchlight, steps back one block out of it, the torch flickers, and the light finds nothing. | The target outdoors at night by a torch, open ground beyond. |
@@ -556,19 +556,24 @@ mining events are in [Mines and caves](#mines-and-caves); these are the rest.
 
 ### Building
 
-What it builds, it builds from what it dug, cut and picked, at a player's pace, out of sight,
-over nights (see the [rule](good-to-know.md#what-it-never-does)). Trees it fells it replants.
-More in [Ideas](ideas.md#building).
+What it builds, it builds from what it gathered: stone it dug (as cobblestone, as a pick gives
+it) and whatever else its store holds; what it lacks it makes up so a build never stalls (owner,
+2026-11-10: "gathered, topped up when short"). A night's share at a time, at a player's pace,
+out of sight, only into air or over grass, flowers, snow and the ground's own top (and water for
+a dock or bridge), never over anything a player built (see the
+[rule](good-to-know.md#what-it-never-does)). More in [Ideas](ideas.md#building).
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `pillar` | 3 | A cobblestone pillar at its place, one block higher each night, up to the height of the target's roof. | A spot and held stone. |
-| `cave_room` | 3 | A 3x3x3 room in the nearest cave, lit at the target's torch spacing, with a chest holding what it took and a door of logs it cut. | A cave within 64 blocks and a tree. |
-| `dock` | 3 | A log dock on the water where the target fishes, one block longer each night. | Water the target fishes in and a tree. |
-| `hut_on_route` | 3 | A 3x3 shelter of logs halfway along the target's longest route, a torch inside, nothing else. | A route of 60 or more blocks and a tree. |
-| `house_near` | 4 | A house of its own, 40 to 80 blocks from the target's, 5 by 5, its door facing theirs, one window, one torch, built over three nights of cobblestone and logs. Inside, a chest with what it took. It grows a room in stage five. | A spot in sight of the home, held stone and a tree. |
-| `bridge` | 4 | A one-block bridge of logs from its place toward the target's shore, a few blocks further each night, finished only in stage five. | Water between its place and the home. |
-| `copy_house` | 5 | A copy of the target's house in cobblestone and logs at its place, the same doors and windows, built over the last nights. | A home of 20 or more blocks. |
+| `pillar` | 3 | A cobblestone pillar at its place, one block higher each night, up to the height of the target's roof (five above their floor). Coded 2026-11-10. | A home, the target away or asleep. |
+| `cave_room` | 3 | A 3x3x3 room dug in the cave near the home they have not been in, lit, an oak door at its way in, and a chest with what it took. Coded 2026-11-10. | A cave they have not entered. |
+| `dock` | 3 | A plank dock out over the water from where they stood fishing, one block longer each night, eight at most. Coded 2026-11-10. | A place they fished, the target away or asleep. |
+| `hut_on_route` | 3 | A 3x3 shelter of logs, two high, a log roof, an opening along the way, halfway along their route, a torch inside. Coded 2026-11-10. | A route, the target away or asleep. |
+| `house_near` | 4 | A house of its own, 56 blocks from theirs on the side away from their route's far end, 5 by 5: a plank floor, cobblestone walls three high, a log roof, its door facing theirs, a pane in the wall across, a torch and a chest inside, built a third a night over three nights (`place_blueprint`, ABI 34: the ground found on the first night and kept). The chest takes what it holds once the ground is known. Coded 2026-11-10. | A home, the target away or asleep. |
+| `house_grows` | 5 | Its house grows a second room, five by four, behind it, through the back wall. Coded 2026-11-10. | Its house standing, the target away or asleep. |
+| `bridge` | 4 | A plank bridge from the far shore of the water toward the target's, three blocks a night, stopping two short of their shore. Coded 2026-11-10. | Water by the home, the target away or asleep. |
+| `bridge_done` | 5 | The bridge finished, to their shore. Coded 2026-11-10. | Its bridge, the target away or asleep. |
+| `copy_house` | 5 | A copy of the target's house at its place from their building blocks: stone as cobblestone, wood as logs, glass as glass, forty blocks a night. Coded 2026-11-10. | Twenty building blocks of theirs, the target away or asleep. |
 
 ### The figures
 

@@ -20,14 +20,14 @@ pub mod world;
 
 pub use debug::{DebugReply, DebugRequest};
 pub use protocol::{Choice, Init, InitReply, License, ModInfo, Resource, Setting, Status};
-pub use world::{Command, Now, Observations, Report, WorldInfo};
+pub use world::{BlueprintPart, Command, Now, Observations, Report, WorldInfo};
 
 /// The version of the SDK crate, which [`ModInfo`] carries so the host can log it.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The version of the C ABI. The host refuses a library built against another one, so a change
 /// to any exported function's signature or any JSON shape bumps this and `docs/sdk.md`'s table.
-pub const ABI_VERSION: u32 = 33;
+pub const ABI_VERSION: u32 = 34;
 
 /// What a Rust mod implements. One value per process, made by [`Mod::init`] when the host
 /// starts the mod, and asked by the host through the functions [`export_mod!`] exports.

@@ -154,6 +154,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::FarFromVillage(n) => memory.far_from_village(n as f64),
         Need::RangBell => false,
         Need::Villagers => memory.villager_near().is_some(),
+        Need::BuildLeft(event) => memory.next_build(event).is_some(),
+        Need::Walls => memory.walls.len() >= 20,
         Need::Tunnel => memory.newest_tunnel().is_some(),
         Need::InTunnel => last.online && last.underground && memory.tunnel_at_target().is_some(),
         Need::OreAhead => memory.ore_ahead().is_some(),

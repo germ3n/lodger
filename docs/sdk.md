@@ -170,7 +170,10 @@ used, so a restock never sells it again). ABI 32 (2026-11-10): `light_portal` (a
 lit in an empty obsidian frame near a place, as flint and steel would). ABI 33 (2026-11-10):
 `figure`'s `mirror` (it moves as the player moves, from where both stood) and `once_seen` (gone
 once it leaves their view after they saw it), and `figure_swing` (the figure swings once, perhaps
-a hit, `spare` keeping the player above half a heart).
+a hit, `spare` keeping the player above half a heart). ABI 34 (2026-11-10): `place_blueprint`
+(blocks laid relative to a place, the ground found and reported as `base <y> placed <n>` when its
+y is below -1000; each only into air or over `replace`, never over contents; a door's halves
+together).
 
 ## Resources
 

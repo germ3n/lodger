@@ -513,6 +513,10 @@ pub struct Memory {
     pub tunnels: Vec<crate::tunnels::Tunnel>,
     /// Obsidian they placed: a portal frame (`portal_lit`).
     pub placed_obsidian: Vec<BlockPos>,
+    /// What it builds, and how far each has got (`crate::building`).
+    pub builds: Vec<crate::building::Build>,
+    /// Where they last stood fishing (`dock`).
+    pub last_fished: Option<BlockPos>,
 }
 
 /// Caps, with the reason beside each.
@@ -1319,6 +1323,7 @@ impl Memory {
                     }
                 }
                 EventKind::RangBell => self.rang_bell_now = event.pos,
+                EventKind::Fished => self.last_fished = Some(block(self.last.pos)),
                 EventKind::UsedDoor => {
                     self.door_used_now = event.pos;
                     if let Some(pos) = event.pos {

@@ -524,6 +524,19 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_false")]
         spare: bool,
     },
+    /// Lay blocks relative to `at`: `parts`' each `at` an offset, `y` 0 the ground's own
+    /// block. With `at`'s y below -1000 the host finds the ground there (the highest block
+    /// that stops movement, leaves left out, water counting) and says it in its report
+    /// (`base 64 placed 12`). Each block goes only into air or over one of `replace`, never
+    /// over anything with contents or a player's building; a door's halves go in together.
+    /// ABI 34.
+    PlaceBlueprint {
+        id: u64,
+        at: BlockPos,
+        parts: Vec<BlueprintPart>,
+        #[serde(default)]
+        replace: Vec<String>,
+    },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
         id: u64,
@@ -859,6 +872,7 @@ impl Command {
             | Command::OfferTrade { id, .. }
             | Command::LightPortal { id, .. }
             | Command::FigureSwing { id, .. }
+            | Command::PlaceBlueprint { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }
@@ -901,6 +915,15 @@ impl Command {
             | Command::RemoveFigure { id, .. } => *id,
         }
     }
+}
+
+/// One block of a `place_blueprint`. ABI 34.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct BlueprintPart {
+    pub at: BlockPos,
+    pub block: String,
+    pub state: String,
 }
 
 /// How a command went.
