@@ -537,6 +537,16 @@ pub enum Command {
         #[serde(default)]
         replace: Vec<String>,
     },
+    /// For `seconds`, a second set of steps follows `player`: each step they take on the
+    /// ground is heard again `delay` ticks later, `behind` blocks back along their way, in the
+    /// sound of the block there. They stop when the player stops; crouching makes none. ABI 36.
+    Footsteps {
+        id: u64,
+        player: u32,
+        seconds: f32,
+        behind: f32,
+        delay: u32,
+    },
     /// The figure `figure`, seen by `player` alone, walks from `from` (on the ground) along
     /// `way` to the first rock face and digs in, a step at a time, the stone closing behind it,
     /// until it is gone; with `through`, a minute later it steps out of the hill's far face. All
@@ -893,6 +903,7 @@ impl Command {
             | Command::FigureSwing { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
+            | Command::Footsteps { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }

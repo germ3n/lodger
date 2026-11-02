@@ -205,6 +205,10 @@ pub enum Need {
     Walls,
     /// A light of theirs within ten blocks of the target.
     LightNear,
+    /// Noon: the sun high, from a quarter to an hour past midday.
+    Noon,
+    /// The target has just crouched still ten seconds; never offered, that starts it (`breath`).
+    CrouchedStill,
 }
 
 impl Need {
@@ -252,6 +256,8 @@ impl Need {
                 | Need::InTunnel
                 | Need::Villagers
                 | Need::LightNear
+                | Need::Noon
+                | Need::CrouchedStill
                 | Need::TunnelLights
                 | Need::BehindThem
                 | Need::TargetAte
@@ -350,6 +356,8 @@ impl Need {
             Need::BuildLeft(e) => format!("nothing left of {e} to build"),
             Need::Walls => "fewer than twenty blocks of their building".to_string(),
             Need::LightNear => "no light of theirs near them".to_string(),
+            Need::Noon => "not noon".to_string(),
+            Need::CrouchedStill => "happens only as they crouch still".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -695,6 +703,10 @@ pub enum Action {
     DigInto(bool),
     /// The figure at the edge of their light steps back out of it as the light flickers.
     IntoTheDark,
+    /// Their view turned two degrees and a step right behind them.
+    HandOnShoulder,
+    /// A second set of steps a moment behind theirs, stopping when they stop.
+    Footsteps,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1474,6 +1486,51 @@ pub const CATALOGUE: &[Event] = &[
         Full,
         Action::Figure(FigureWhere::FarWorking, 30.0, 32.0),
         false,
+    ),
+    // Batch 16, close and quiet (owner, 2026-11-10: "the close and quiet ones").
+    row(
+        "hand_on_shoulder",
+        3,
+        5,
+        &[Noon, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::HandOnShoulder,
+        false,
+    ),
+    row(
+        "breath",
+        3,
+        5,
+        &[CrouchedStill],
+        1.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.player.breath"),
+        true,
+    ),
+    row(
+        "footsteps_follow",
+        3,
+        5,
+        &[Night, TargetOutdoors, TargetWalking],
+        2.0,
+        3,
+        Half,
+        Action::Footsteps,
+        false,
+    ),
+    row(
+        "name_called",
+        3,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Hint("name_called", 4.0),
+        true,
     ),
     // Batch 15, building (owner, 2026-11-10: every one; materials gathered first, topped up
     // when short): a night's share at a time.
@@ -3920,7 +3977,8 @@ impl Event {
             | Action::MiningSounds
             | Action::FishingLine
             | Action::WetSteps
-            | Action::SoundPair(..) => "sounds",
+            | Action::SoundPair(..)
+            | Action::Footsteps => "sounds",
             Action::Sign
             | Action::SignDeep
             | Action::DeathMessage
@@ -4076,6 +4134,7 @@ impl Event {
             | Action::VillageAbandoned
             | Action::Charge(..) => "seen",
             Action::Hint(_, _) => "sky",
+            Action::HandOnShoulder => "seen",
             Action::RefuseRest | Action::Wake | Action::WokeElsewhere => "night",
         }
     }
@@ -4207,6 +4266,10 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "hand_on_shoulder" => "turn them a little, a step right behind them",
+            "breath" => "breathe at their ear while they crouch still",
+            "footsteps_follow" => "walk a step behind them in the dark",
+            "name_called" => "say their name where only the subtitles hear it",
             "into_the_mountain" => "have the figure dig into the rock ahead of them",
             "through_the_hill" => "have the figure walk through the hill",
             "into_the_dark" => "have the figure step back out of their light",

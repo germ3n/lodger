@@ -708,6 +708,51 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // Crouched still, breathing at their ear, slow, a little nearer each time; the brain
+        // drops what is left as soon as they move.
+        "breath" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 50),
+                        ("minecraft:entity.player.breath", 100),
+                        ("minecraft:entity.player.breath", 150),
+                        ("minecraft:entity.player.breath", 200),
+                    ],
+                    (0.55, 0.65),
+                    0.3,
+                    Ear,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 70),
+                        ("minecraft:entity.player.breath", 140),
+                        ("minecraft:entity.warden.heartbeat", 180),
+                        ("minecraft:entity.player.breath", 210),
+                    ],
+                    (0.5, 0.6),
+                    0.3,
+                    Ear,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 40),
+                        ("minecraft:entity.player.breath", 80),
+                        ("minecraft:entity.player.breath", 120),
+                        ("minecraft:entity.player.breath", 160),
+                        ("minecraft:entity.player.breath", 200),
+                        ("minecraft:entity.player.breath", 240),
+                    ],
+                    (0.6, 0.7),
+                    0.25,
+                    Ear,
+                ),
+            ];
+            WAYS
+        }
         "cave_air" => {
             const WAYS: &[Variant] = &[
                 v(&[("minecraft:ambient.cave", 0)], (0.8, 1.0), 0.8, Behind),
@@ -936,6 +981,7 @@ mod tests {
             "pickup_pop",
             "cold_crackle",
             "breath_close",
+            "breath",
             "cave_air",
             "door_scratch",
         ] {

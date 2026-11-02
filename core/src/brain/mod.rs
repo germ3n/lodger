@@ -84,6 +84,9 @@ pub struct Pending {
 pub struct Later {
     pub at_tick: u64,
     pub command: Command,
+    /// Sent only while the target is still crouched and still (`breath`): dropped as they move.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub while_still: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -207,6 +210,10 @@ pub const ECHO_CHANCE: f64 = 0.3;
 pub const BELL_CHANCE: f64 = 0.5;
 /// The chance the figure stands at the foot of the bed as they wake, its rules allowing.
 pub const WOKE_CHANCE: f64 = 0.35;
+/// The chance crouching still ten seconds brings the breathing at their ear (`breath`).
+pub const BREATH_CHANCE: f64 = 0.3;
+/// The events whose later sounds stop as soon as the target moves.
+const STOPS_WHEN_THEY_MOVE: &[&str] = &["breath"];
 
 /// How likely a chest of fresh loot gets its offering, and how likely the offering takes a
 /// loot item's place rather than an empty slot's (owner, 2026-11-09: "1 in 5", "mostly add").
@@ -348,7 +355,11 @@ impl Brain {
 
         // Follow-ups whose time has come.
         let mut kept = Vec::new();
+        let still = memory.last.online && memory.last.crouched_still;
         for later in self.later.drain(..) {
+            if later.while_still && !still {
+                continue;
+            }
             if later.at_tick <= now.tick {
                 commands.push(later.command);
             } else {
@@ -656,6 +667,11 @@ impl Brain {
                 log,
             );
             memory.rang_bell_now = None;
+        }
+
+        // They crouch still: perhaps breathing at their ear, until they move.
+        if std::mem::take(&mut memory.crouched_now) {
+            self.consider_started("breath", BREATH_CHANCE, now, day, memory, arc, config, log);
         }
 
         // They woke: perhaps the figure at the foot of the bed, for half a second.
@@ -1018,6 +1034,7 @@ impl Brain {
                 self.later.push(Later {
                     at_tick: now.tick + later_ticks,
                     command,
+                    while_still: false,
                 });
             }
         }
@@ -1174,6 +1191,7 @@ impl Brain {
             self.later.push(Later {
                 at_tick: now.tick + later,
                 command,
+                while_still: false,
             });
         }
 
@@ -1205,7 +1223,10 @@ impl Brain {
                 .filter(|n| {
                     !matches!(
                         n,
-                        events::Need::JustWoke | events::Need::KilledNow | events::Need::RangBell
+                        events::Need::JustWoke
+                            | events::Need::KilledNow
+                            | events::Need::RangBell
+                            | events::Need::CrouchedStill
                     )
                 })
                 .all(|n| offer::meets(*n, memory, now))
@@ -1220,10 +1241,12 @@ impl Brain {
         let made = act::commands(event, Some(pos), memory, &mut ids, now, None);
         memory.record(event.id, Some(pos), day, true, "");
         log.acted(event.id, Some(pos), made.len());
+        let while_still = STOPS_WHEN_THEY_MOVE.contains(&event.id);
         for (command, later) in made {
             self.later.push(Later {
                 at_tick: now.tick + later,
                 command,
+                while_still,
             });
         }
     }
@@ -1263,6 +1286,7 @@ impl Brain {
                 self.later.push(Later {
                     at_tick: now.tick + later,
                     command,
+                    while_still: false,
                 });
             }
         }
@@ -2136,6 +2160,7 @@ impl Brain {
                                     wear: 0,
                                     name: String::new(),
                                 },
+                                while_still: false,
                             })
                         }
                         None => memory.store(&held, 1),
@@ -3902,6 +3927,73 @@ mod tests {
             brain.later.clear();
         }
         assert!(shut > 0 && shut < 30, "now and then: {shut} of forty");
+    }
+
+    #[test]
+    fn crouched_still_it_breathes_at_their_ear_until_they_move() {
+        let mut config = Config::default();
+        config.events.cooldown_scale = 0.0;
+        config.brain.plan_every = 100_000;
+        let mut memory = home_memory();
+        memory.last.online = true;
+        let mut arc = Arc {
+            stage: 3,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(5);
+        let mut tick = 20;
+        // Crouched still: the breathing starts now and then, at their ear.
+        let mut started = false;
+        for _ in 0..40 {
+            memory.crouched_now = true;
+            memory.last.crouched_still = true;
+            let now = Now {
+                tick,
+                ..Now::default()
+            };
+            brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+            tick += 1;
+            if !brain.later.is_empty() {
+                started = true;
+                break;
+            }
+        }
+        assert!(started, "never in forty crouches");
+        assert!(
+            brain.later.iter().all(|l| l.while_still),
+            "every breath waits on their stillness"
+        );
+        // Still crouched: the first breath, at their ear, and more to come.
+        let now = Now {
+            tick,
+            ..Now::default()
+        };
+        let sent = brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+        let first = sent.iter().find_map(|c| match c {
+            Command::PlaySound { pos, sound, .. } => Some((*pos, sound.clone())),
+            _ => None,
+        });
+        let (pos, sound) = first.expect("the first breath");
+        assert_eq!(sound, "minecraft:entity.player.breath");
+        assert!(
+            (pos[1] - (memory.last.pos[1] + 1.6)).abs() < 0.01,
+            "at head height: {pos:?}"
+        );
+        assert!(!brain.later.is_empty(), "more breaths to come");
+
+        // They stand and walk: nothing more is heard.
+        memory.last.crouched_still = false;
+        let later = Now {
+            tick: tick + 400,
+            ..Now::default()
+        };
+        let sent = brain.tick(&later, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+        assert!(
+            !sent.iter().any(|c| matches!(c, Command::PlaySound { .. })),
+            "dropped as they moved: {sent:?}"
+        );
+        assert!(brain.later.is_empty());
     }
 
     #[test]

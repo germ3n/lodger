@@ -175,7 +175,9 @@ a hit, `spare` keeping the player above half a heart). ABI 34 (2026-11-10): `pla
 y is below -1000; each only into air or over `replace`, never over contents; a door's halves
 together). ABI 35 (2026-11-10): `figure`'s `copy_crouch` and `swinging`, and `dig_in` (the figure
 walks to the first rock face ahead and digs in, the stone closing behind, out of a hill's far
-side with `through`; block updates to that player alone, nothing in the world changed).
+side with `through`; block updates to that player alone, nothing in the world changed). ABI 36
+(2026-11-10): `footsteps` (a second set of steps behind a player, each of theirs heard again a
+moment later a few blocks back, stopping when they stop).
 
 ## Resources
 

@@ -367,6 +367,8 @@ pub struct Snapshot {
     pub underground: bool,
     /// The day they last ate, for the sound that answers it.
     pub ate_day: f32,
+    /// Crouched and still ten seconds or more (`breath`).
+    pub crouched_still: bool,
     /// The lodger's reading of how they feel, from the model's `How does the player feel?`:
     /// `calm`, `curious`, `uneasy`, `afraid`, `angry`, or empty before the first reading.
     pub mood: String,
@@ -411,6 +413,10 @@ pub struct Memory {
     /// The target just woke, taken by the brain on its next tick (`foot_of_bed`). Not saved.
     #[serde(skip)]
     pub woke_now: bool,
+    /// The target has just been crouched still ten seconds, taken by the brain on its next
+    /// tick (`breath`). Not saved.
+    #[serde(skip)]
+    pub crouched_now: bool,
     /// A door the target just used, taken by the brain on its next tick (`door_held`). Not
     /// saved.
     #[serde(skip)]
@@ -706,6 +712,9 @@ const STONES: &[&str] = &[
     "cracked_deepslate_bricks",
     "deepslate_tiles",
 ];
+/// Seconds crouched and still before the breathing at their ear (`breath`).
+pub const CROUCHED_STILL: f32 = 10.0;
+
 const BRICKS: &[&str] = &["bricks", "mud_bricks", "nether_bricks", "red_nether_bricks"];
 const TORCHES: &[&str] = &["torch", "soul_torch", "redstone_torch"];
 const WALL_TORCHES: &[&str] = &["wall_torch", "soul_wall_torch", "redstone_wall_torch"];
@@ -1550,6 +1559,11 @@ impl Memory {
         }
         self.last.sleeping = player.sleeping;
         self.last.walking = player.movement.pace > 0.5;
+        let crouched = player.sneaking && player.movement.still_seconds >= CROUCHED_STILL;
+        if crouched && !self.last.crouched_still {
+            self.crouched_now = true;
+        }
+        self.last.crouched_still = crouched;
         self.last.underground = player.sky_light == 0 && player.pos[1] < 56.0;
         // Under a roof, not under the ground: a cave is no house (the dev client played a
         // house's door sound 55 blocks down, 2026-11-10).

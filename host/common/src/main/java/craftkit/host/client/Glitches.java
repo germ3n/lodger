@@ -29,6 +29,7 @@ import java.util.Set;
  *   <li>{@code compass_points}, {@code painting_flip}: a compass turned, a painting upside down
  *       until looked at two seconds.</li>
  *   <li>{@code hunger_shake}, {@code heart_skip}, {@code subtitle}: the HUD, once.</li>
+ *   <li>{@code name_called}: the name in {@code detail} in the subtitles, from the hint's place, once.</li>
  *   <li>{@code crosshair_gone}: no crosshair while it lasts.</li>
  *   <li>{@code hotbar_slip}: the selected slot jumps to the item named in {@code detail}, once.</li>
  *   <li>{@code camera_nudge}: the view turns two degrees toward the hint's place, once.</li>
@@ -91,21 +92,21 @@ public final class Glitches {
 				});
 				// "Footsteps" in the subtitles, behind them, and no sound.
 				case "subtitle" -> once(active, () -> {
-					try {
-						var events = minecraft.getSoundManager().getSoundEvent(net.minecraft.resources.Identifier.parse("minecraft:block.stone.step"));
-						var field = net.minecraft.client.gui.Hud.class.getDeclaredField("subtitleOverlay");
-						field.setAccessible(true);
-						var overlay = (net.minecraft.client.gui.components.SubtitleOverlay) field.get(minecraft.gui.hud);
-						Vec3 behind = minecraft.player.position().subtract(minecraft.player.getViewVector(1f).scale(3));
-						var instance = new net.minecraft.client.resources.sounds.SimpleSoundInstance(
-								net.minecraft.sounds.SoundEvent.createVariableRangeEvent(net.minecraft.resources.Identifier.parse("minecraft:block.stone.step")),
-								net.minecraft.sounds.SoundSource.BLOCKS, 1f, 1f, minecraft.level.getRandom(), behind.x, behind.y, behind.z);
-						if (events != null) {
-							overlay.onPlaySound(instance, events, 16f);
-						}
-					} catch (ReflectiveOperationException ignored) {
-						// The HUD moved its fields: no subtitle, nothing else lost.
+					var events = minecraft.getSoundManager().getSoundEvent(net.minecraft.resources.Identifier.parse("minecraft:block.stone.step"));
+					if (events != null) {
+						subtitle(minecraft, events, minecraft.player.position().subtract(minecraft.player.getViewVector(1f).scale(3)));
 					}
+				});
+				// Their own name in the subtitles, from where the hint says, and no sound (batch 16).
+				case "name_called" -> once(active, () -> {
+					Vec3 at = hint.pos().map(Vec3::atCenterOf).orElse(minecraft.player.position());
+					String name = hint.detail().isEmpty() ? minecraft.player.getName().getString() : hint.detail();
+					subtitle(minecraft, new net.minecraft.client.sounds.WeighedSoundEvents(net.minecraft.resources.Identifier.parse("minecraft:entity.player.breath"), null) {
+						@Override
+						public net.minecraft.network.chat.Component getSubtitle() {
+							return net.minecraft.network.chat.Component.literal(name);
+						}
+					}, at);
 				});
 				// A painting stays upside down until they have looked straight at it two seconds.
 				case "painting_flip" -> hint.pos().ifPresent(pos -> {
@@ -279,6 +280,21 @@ public final class Glitches {
 	private static void once(Hints.Active active, Runnable run) {
 		if (DONE_ONCE.add(active.id())) {
 			run.run();
+		}
+	}
+
+	/** A line in the subtitles, as if a sound of `events` played at `at`, and no sound. */
+	private static void subtitle(Minecraft minecraft, net.minecraft.client.sounds.WeighedSoundEvents events, Vec3 at) {
+		try {
+			var field = net.minecraft.client.gui.Hud.class.getDeclaredField("subtitleOverlay");
+			field.setAccessible(true);
+			var overlay = (net.minecraft.client.gui.components.SubtitleOverlay) field.get(minecraft.gui.hud);
+			var instance = new net.minecraft.client.resources.sounds.SimpleSoundInstance(
+					net.minecraft.sounds.SoundEvent.createVariableRangeEvent(net.minecraft.resources.Identifier.parse("minecraft:block.stone.step")),
+					net.minecraft.sounds.SoundSource.BLOCKS, 1f, 1f, minecraft.level.getRandom(), at.x, at.y, at.z);
+			overlay.onPlaySound(instance, events, 16f);
+		} catch (ReflectiveOperationException ignored) {
+			// The HUD moved its fields: no subtitle, nothing else lost.
 		}
 	}
 

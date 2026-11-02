@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps) {
 	}
 
 	private Executors() {
@@ -152,6 +152,14 @@ public final class Executors {
 					yield report(id, true, "");
 				}
 				case "block_sound" -> blockSound(level, command, id, context);
+				case "footsteps" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					context.footsteps().add(player, command.get("seconds").getAsFloat(), command.get("behind").getAsFloat(), command.get("delay").getAsInt());
+					yield report(id, true, "");
+				}
 				default -> report(id, false, "the host does not carry out " + kind + " yet");
 			};
 		} catch (RuntimeException e) {

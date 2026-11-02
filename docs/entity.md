@@ -466,6 +466,8 @@ Heard by the target alone. Nothing in the world changes.
 | `pickup_pop` | 2 | Behind them, the pop of an item picked up, once or twice, or an experience orb taken; nothing on the ground. | The target online. |
 | `cold_crackle` | 2 | Their furnace crackles as if lit, once or a few times, and a candle goes out after. It is cold. | A furnace of theirs, the target indoors. |
 | `breath_close` | 3 | Breathing at their ear, half a block behind them at head height, once or slowly a few times; in its last way a heartbeat. | The target online. |
+| `breath` | 3 | When they crouch still for ten seconds, now and then, slow breathing at their ear, a little longer each way, one way with a heartbeat in it; it stops the moment they move (the brain drops what is left). Started by the crouch, never planned. Coded 2026-11-10. | Crouched still ten seconds. |
+| `footsteps_follow` | 3 | Walking in the open at night, a second set of steps a moment behind theirs, three blocks back along their way, in the sound of the ground there, stopping when they stop, for most of a minute (`footsteps`, ABI 36). Coded 2026-11-10. | Night, outdoors, walking. |
 | `cave_air` | 2 | The sound of a cave out in the open at night, behind them, going away, or coming closer. | The target outdoors, night. |
 | `door_scratch` | 3 | Scratching at a door of the house they are in, at night: quick, or in two bursts, or something small. | A door, the target indoors, night. |
 | `door_sound` | 1 | A door's sound from another room. No door moved. | A home with two rooms. |
@@ -529,6 +531,8 @@ The target's own HUD and camera, for a moment. Off with `events.glitches`.
 | `hunger_shake` | 2 | The hunger bar shakes as if starving, for three seconds, their saturation put back after. Coded 2026-11-10. | The target awake. |
 | `heart_skip` | 3 | The hearts blink as if hurt, once, with no damage. Coded 2026-11-10. | The target awake. |
 | `subtitle` | 2 | With subtitles on, `Footsteps` appears behind them, with no sound. Coded 2026-11-10. | The target awake. |
+| `name_called` | 3 | With subtitles on, their own name appears in the subtitles, four blocks behind them, with no sound. Coded 2026-11-10. | The target awake. |
+| `hand_on_shoulder` | 3 | At noon in the open, their view turns two degrees, as if a hand were on their shoulder, and a step sounds on the ground right behind them. Coded 2026-11-10. | Noon, outdoors. |
 | `camera_nudge` | 3 | The camera turns two degrees toward the figure, or the place, once. | A figure or a place. |
 | `fov_pull` | 4 | The field of view narrows over ten seconds and snaps back. | The target indoors. |
 | `tab_twice` | 3 | The target's own name appears twice in the player list for six seconds. Coded 2026-11-10. | The target awake. |

@@ -114,6 +114,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::SoulableLight => memory.soulable_light().is_some(),
         Need::WarpableAnimal => last.online && memory.warp_animal().is_some(),
         Need::JustWoke => false,
+        Need::CrouchedStill => false,
+        Need::Noon => (5_000..7_000).contains(&now.day_time),
         Need::FieldWord => memory
             .field_word()
             .is_some_and(|(_, cells)| !cells.is_empty()),
@@ -199,7 +201,9 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::MiningSounds
         | Action::FishingLine
         | Action::WetSteps
-        | Action::PetGrowl => config.events.sounds,
+        | Action::PetGrowl
+        | Action::Footsteps
+        | Action::HandOnShoulder => config.events.sounds,
         Action::Hint(_, _) => config.events.glitches,
         Action::Figure(_, _, _)
         | Action::FigureSwing(_)
@@ -233,7 +237,9 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::MiningSounds
         | Action::FishingLine
         | Action::WetSteps
-        | Action::PetGrowl => Some("sound"),
+        | Action::PetGrowl
+        | Action::Footsteps
+        | Action::HandOnShoulder => Some("sound"),
         Action::Hint(_, _) => Some("screen"),
         Action::Figure(_, _, _)
         | Action::FigureSwing(_)

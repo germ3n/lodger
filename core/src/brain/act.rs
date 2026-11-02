@@ -149,6 +149,17 @@ pub fn dug(command: &Command) -> Option<BlockPos> {
     }
 }
 
+/// The block `blocks` behind the target, the way they face turned round.
+fn behind(memory: &Memory, blocks: f64) -> BlockPos {
+    let yaw = (memory.last.yaw as f64).to_radians();
+    let at = memory.last.pos;
+    [
+        (at[0] - yaw.sin() * blocks).floor() as i32,
+        (at[1] + 1.0).floor() as i32,
+        (at[2] + yaw.cos() * blocks).floor() as i32,
+    ]
+}
+
 /// The place the event happens, from the memory, or none for a thing with no place.
 pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     let home = memory.home.as_ref();
@@ -175,6 +186,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     // Under the bed they lie in.
     if event.id == "under_the_bed" {
         return home.and_then(|h| h.bed).map(|b| [b[0], b[1] - 1, b[2]]);
+    }
+    // Breathing at the ear of the one who crouches.
+    if event.id == "breath" {
+        return Some(block_of(memory.last.pos));
     }
     // A cold furnace's crackle comes from their furnace.
     if event.id == "cold_crackle" {
@@ -220,6 +235,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ColdFurnace
         | Action::TidyByColour
         | Action::IcePath
+        | Action::HandOnShoulder
+        | Action::Footsteps
         | Action::BedOccupied => None,
         Action::OreMarked => memory.scanned("_ore").next(),
         Action::LanternAhead => memory.lantern_spot(),
@@ -2025,6 +2042,7 @@ pub fn commands(
                     .first()
                     .map(|(id, _)| id.clone())
                     .unwrap_or_default(),
+                "name_called" => memory.target_name.clone(),
                 _ => String::new(),
             };
             let hint_pos = match kind {
@@ -2032,6 +2050,8 @@ pub fn commands(
                     .place
                     .or_else(|| memory.home.as_ref().map(|h| h.center)),
                 "ripples" | "painting_flip" | "compass_points" => pos,
+                // Four blocks behind them, where the subtitle's arrow points.
+                "name_called" => Some(behind(memory, 4.0)),
                 _ => None,
             };
             vec![(
@@ -3310,6 +3330,55 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // Their view turned two degrees, as by a hand, and a step on the ground right behind.
+        Action::HandOnShoulder => {
+            let at = memory.last.pos;
+            let yaw = (memory.last.yaw as f64).to_radians();
+            let (back, right) = ([yaw.sin(), -yaw.cos()], [yaw.cos(), yaw.sin()]);
+            let side = if seed.is_multiple_of(2) { 1.0 } else { -1.0 };
+            // Toward their shoulder: a point ahead and to one side, so the turn is small.
+            let toward = [
+                (at[0] - back[0] * 8.0 + right[0] * side * 2.0).floor() as i32,
+                at[1].floor() as i32,
+                (at[2] - back[1] * 8.0 + right[1] * side * 2.0).floor() as i32,
+            ];
+            vec![
+                (
+                    Command::BlockSound {
+                        id: ids(),
+                        player: target,
+                        block: "under".to_string(),
+                        of: "step".to_string(),
+                        pos: [at[0] + back[0] * 0.8, at[1], at[2] + back[1] * 0.8],
+                        volume: 0.9,
+                        pitch: 0.9,
+                    },
+                    0,
+                ),
+                (
+                    Command::Hint {
+                        id: ids(),
+                        player: target,
+                        hint: "camera_nudge".to_string(),
+                        pos: Some(toward),
+                        seconds: 1.0,
+                        detail: String::new(),
+                    },
+                    2,
+                ),
+            ]
+        }
+        // A second set of steps a moment behind theirs, for most of a minute.
+        Action::Footsteps => vec![(
+            Command::Footsteps {
+                id: ids(),
+                player: target,
+                seconds: 45.0,
+                behind: 3.0,
+                delay: 6,
+            },
+            0,
+        )],
         // At the edge of their light, a step back out of it, the light flickering as it goes.
         Action::IntoTheDark => pos
             .map(|p| {

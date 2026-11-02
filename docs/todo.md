@@ -689,6 +689,12 @@ because it can be built and tested without a game, and because the model layer i
     client alone (`dig_in`); steps back out of their light as it flickers; crouches when they
     crouch; swings their tool at the rock from afar. ABI 35. The parallel-plans test now holds
     one plan and asks for a second, where it had leaned on chance. Tests: one in `act`.
+  - **Batch 16, close and quiet** (owner: "the close and quiet ones"): at noon in the open
+    their view turned two degrees and a step right behind them (`hand_on_shoulder`); crouched
+    still ten seconds, breathing at their ear that stops as they move (`breath`, a new crouch
+    sense, the brain dropping a sound's rest when they move); a second set of steps behind
+    theirs at night (`footsteps`, ABI 36); their name in the subtitles (`name_called`). Tests:
+    one in the brain, two in JUnit (`Stride`). Was: four rows not coded.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by
