@@ -157,6 +157,17 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if super::sounds::HOUSE_SOUNDS.contains(&event.id) {
         return super::sounds::house_spot(event.id, memory, rng.next_u64() as usize);
     }
+    // The painting nearest them; a compass's place.
+    if event.id == "painting_flip" {
+        let at = block_of(memory.last.pos);
+        return memory
+            .decor("painting")
+            .min_by(|a, b| distance(a.pos, at).total_cmp(&distance(b.pos, at)))
+            .map(|d| d.pos);
+    }
+    if event.id == "compass_points" {
+        return memory.place.or_else(|| spot(memory, rng));
+    }
     // Ripples on the water near them, from the shore on their side outward.
     if event.id == "ripples" {
         return memory.shore_toward_target(2.0).map(block_of);
@@ -179,6 +190,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SoundAtTarget(_)
         | Action::SoundFar(_)
         | Action::TabEntry
+        | Action::TabTwice
         | Action::Message(_)
         | Action::DeathMessage
         | Action::Says
@@ -233,6 +245,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::Figure(FigureWhere::Doorway, _, _) => home.and_then(|h| pick(&h.doors, rng)),
         Action::Figure(FigureWhere::AtChest, _, _) => memory.used_container().map(|c| c.pos),
         Action::Figure(FigureWhere::InBed, _, _) => home.and_then(|h| h.bed),
+        // Its feet three below the water's top, so its head is just under the surface.
+        Action::Figure(FigureWhere::UnderWater, _, _) => memory
+            .shore_toward_target(3.0)
+            .map(|p| [p[0].floor() as i32, p[1] as i32 - 3, p[2].floor() as i32]),
         // The floor two blocks past the bed from where they stand as they wake: the figure
         // stands at its foot, across it from them.
         Action::Figure(FigureWhere::BedFoot, _, _) => home.and_then(|h| h.bed).map(|b| {
@@ -1791,7 +1807,7 @@ pub fn commands(
                 "camera_nudge" => memory
                     .place
                     .or_else(|| memory.home.as_ref().map(|h| h.center)),
-                "ripples" => pos,
+                "ripples" | "painting_flip" | "compass_points" => pos,
                 _ => None,
             };
             vec![(
@@ -2197,6 +2213,14 @@ pub fn commands(
                 _ => vec![],
             }
         }
+        Action::TabTwice => vec![(
+            Command::PlayerList {
+                id: ids(),
+                player: target,
+                seconds: 6.0,
+            },
+            0,
+        )],
         Action::TabEntry => vec![(
             Command::PlayerList {
                 id: ids(),
@@ -5915,5 +5939,60 @@ mod tests {
         assert!(fishing.iter().any(
             |(c, _)| matches!(c, Command::PlaySound { sound, .. } if sound.ends_with("retrieve"))
         ));
+    }
+
+    #[test]
+    fn the_sky_and_screen_of_batch_eleven_send_what_they_should() {
+        let mut memory = rich_memory();
+        memory.place = Some([30, 64, 30]);
+        let now = Now::default();
+        let mut rng = Rng::new(11);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            (pos, commands(event, pos, &memory, &mut ids(), &now, None))
+        };
+        let hint = |c: &Command| match c {
+            Command::Hint {
+                hint, pos, seconds, ..
+            } => Some((hint.clone(), *pos, *seconds)),
+            _ => None,
+        };
+
+        for (id, seconds) in [
+            ("mist", 240.0),
+            ("dusk_noon", 300.0),
+            ("red_mist", 270.0),
+            ("darkness", 200.0),
+        ] {
+            let (_, sent) = made(id, &mut rng);
+            assert_eq!(
+                hint(&sent[0].0),
+                Some((id.to_string(), None, seconds)),
+                "{id}"
+            );
+        }
+        // The compass points at its place; the painting is the one nearest them.
+        let (_, compass) = made("compass_points", &mut rng);
+        assert_eq!(hint(&compass[0].0).unwrap().1, Some([30, 64, 30]));
+        let (painting, flip) = made("painting_flip", &mut rng);
+        assert!(painting.is_some());
+        assert_eq!(hint(&flip[0].0).unwrap().1, painting);
+        // Their name twice, six seconds.
+        let (_, twice) = made("tab_twice", &mut rng);
+        assert!(matches!(&twice[0].0, Command::PlayerList { seconds, .. } if *seconds == 6.0));
+    }
+
+    #[test]
+    fn the_face_under_the_water_has_its_head_below_the_top() {
+        let memory = rich_memory();
+        let water = memory
+            .feature("water")
+            .expect("the rich memory has water")
+            .pos;
+        let event = find("reflection").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1)).expect("a spot under the water");
+        // The figure stands one above its spot: feet two below the water's top, head under.
+        assert_eq!(p[1], water[1] - 3);
     }
 }

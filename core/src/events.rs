@@ -179,6 +179,8 @@ pub enum Need {
     TheirBoat,
     /// Water within this many blocks of the target.
     WaterNear(u32),
+    /// The target holds this item in their main hand.
+    Holding(&'static str),
 }
 
 impl Need {
@@ -220,6 +222,7 @@ impl Need {
                 | Need::KilledNow
                 | Need::TargetAwake
                 | Need::WaterNear(_)
+                | Need::Holding(_)
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
                 | Need::TargetApproachingChest
@@ -303,6 +306,7 @@ impl Need {
             Need::Makings => "nothing in their chest it could make something of".to_string(),
             Need::TheirBoat => "no boat of theirs".to_string(),
             Need::WaterNear(n) => format!("no water within {n} blocks of them"),
+            Need::Holding(id) => format!("they do not hold a {}", crate::memory::bare(id)),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -605,6 +609,8 @@ pub enum Action {
     UnderWater,
     /// Wet steps from the door to the bed.
     WetSteps,
+    /// Their own name twice in the player list for a few seconds.
+    TabTwice,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -665,6 +671,8 @@ pub enum FigureWhere {
     Route,
     /// At the foot of the bed, the far side from the target as they wake.
     BedFoot,
+    /// Just under still water near them, its head below the surface.
+    UnderWater,
 }
 
 /// One row of the catalogue.
@@ -1311,6 +1319,162 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Charge(3, 3.0, 3),
+        false,
+    ),
+    // Batch 11 (owner, 2026-11-10): the atmospheres as real fog (the review's D), the sky's
+    // hints by render hooks, the HUD's, a painting, a compass, a face under the water.
+    row(
+        "mist",
+        2,
+        5,
+        &[TargetAwake],
+        2.0,
+        4,
+        Full,
+        Action::Hint("mist", 240.0),
+        false,
+    ),
+    row(
+        "dusk_noon",
+        3,
+        5,
+        &[Day, TargetAwake],
+        3.0,
+        2,
+        Full,
+        Action::Hint("dusk_noon", 300.0),
+        false,
+    ),
+    row(
+        "red_mist",
+        4,
+        5,
+        &[Night, TargetAwake],
+        3.0,
+        3,
+        Full,
+        Action::Hint("red_mist", 270.0),
+        false,
+    ),
+    row(
+        "darkness",
+        4,
+        5,
+        &[Night, TargetAwake],
+        3.0,
+        3,
+        Full,
+        Action::Hint("darkness", 200.0),
+        false,
+    ),
+    row(
+        "moon_wrong",
+        3,
+        5,
+        &[Night, TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::Hint("moon_wrong", 8.0),
+        true,
+    ),
+    row(
+        "stars_out",
+        3,
+        5,
+        &[Night, NotRaining, TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::Hint("stars_out", 60.0),
+        true,
+    ),
+    row(
+        "night_early",
+        4,
+        5,
+        &[Day, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::Hint("night_early", 60.0),
+        false,
+    ),
+    row(
+        "painting_flip",
+        2,
+        5,
+        &[Decor("painting"), TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::Hint("painting_flip", 120.0),
+        true,
+    ),
+    row(
+        "compass_points",
+        3,
+        5,
+        &[Holding("minecraft:compass")],
+        2.0,
+        3,
+        Half,
+        Action::Hint("compass_points", 120.0),
+        true,
+    ),
+    row(
+        "hunger_shake",
+        2,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Hint("hunger_shake", 3.0),
+        true,
+    ),
+    row(
+        "heart_skip",
+        3,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Hint("heart_skip", 2.0),
+        true,
+    ),
+    row(
+        "subtitle",
+        2,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Hint("subtitle", 2.0),
+        true,
+    ),
+    row(
+        "tab_twice",
+        3,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::TabTwice,
+        true,
+    ),
+    row(
+        "reflection",
+        4,
+        5,
+        &[WaterNear(24), TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::UnderWater, 1.0, 0.0),
         false,
     ),
     // Batch 10 (owner, 2026-11-10): prints in the snow, the boat ahead, ripples, a bobber with
@@ -3376,6 +3540,7 @@ impl Event {
             | Action::IcePath
             | Action::WallSwap(..)
             | Action::BedBreaks => "house",
+            Action::TabTwice => "words",
             Action::Stare
             | Action::StandWatch
             | Action::PetGrowl
@@ -3525,6 +3690,20 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "mist" => "let a mist roll in",
+            "dusk_noon" => "drain the light at noon",
+            "red_mist" => "let a red mist roll in",
+            "darkness" => "close the dark in around them",
+            "moon_wrong" => "make the moon full",
+            "stars_out" => "put out the stars",
+            "night_early" => "move the sky two hours on",
+            "painting_flip" => "hang a painting upside down until they look at it",
+            "compass_points" => "turn their compass toward its place",
+            "hunger_shake" => "shake their hunger bar",
+            "heart_skip" => "make their hearts flash",
+            "subtitle" => "show footsteps in their subtitles",
+            "tab_twice" => "show their name twice in the player list",
+            "reflection" => "show a face under the water",
             "trail" => "leave footprints in the snow from their door",
             "trail_in" => "leave footprints in the snow up to their door",
             "boat_waiting" => "have their boat waiting at the shore ahead of them",

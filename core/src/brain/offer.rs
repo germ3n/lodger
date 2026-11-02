@@ -150,6 +150,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Makings => memory.recipe_at_hand().is_some(),
         Need::TheirBoat => memory.their_boat().is_some(),
         Need::WaterNear(n) => last.online && memory.water_near(n as f64).is_some(),
+        Need::Holding(id) => last.online && last.main_hand == id,
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }
@@ -196,6 +197,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::Whisper
         | Action::RepeatsYou
         | Action::DeathMessage
+        | Action::TabTwice
         | Action::Answers => config.events.chat,
         _ => true,
     }
@@ -225,6 +227,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::Whisper
         | Action::RepeatsYou
         | Action::DeathMessage
+        | Action::TabTwice
         | Action::Answers => Some("chat"),
         Action::ChestAnswers => Some("sound"),
         _ => None,

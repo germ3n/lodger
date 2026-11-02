@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"package": "craftkit.host.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"CompassAngleStateMixin",
+		"FogRendererMixin",
+		"PaintingRendererMixin",
+		"SkyRendererMixin",
+		"WeatherEffectRendererMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

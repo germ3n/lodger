@@ -650,6 +650,14 @@ because it can be built and tested without a game, and because the model layer i
     ripples; a real bobber needs a player holding the rod), a snowman by the door, their boat
     in the house, a squid still under the water facing them, wet steps from the door to the
     bed. ABI 30. Tests: three in `water`, one in `act`. Was: five rows not coded.
+  - **Batch 11, the sky, the light and the screen, with the atmospheres** (owner: every row,
+    `reflection` as a face under the water, real fog with render hooks): mist, dusk at noon,
+    red mist and darkness as real fog that eases in, breathes, eases out and stacks; red rain as
+    red drops; the stars out, the moon full, the sky two hours on; a painting upside down until
+    looked at; a compass turned to its place; the hunger bar, the hearts, a subtitle; their
+    name twice; a face just under the water. Five render hooks (fog, sky, rain colour, compass,
+    painting) in common code for both loaders, started on each to be sure they apply. Tests:
+    four in JUnit (`Atmosphere`), two in `act`. Was: overlays on the screen, nine rows not coded.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

@@ -18,7 +18,8 @@
 		]
 	},
 	"mixins": [
-		"craftkit.fabric.mixins.json"
+		"craftkit.fabric.mixins.json",
+		"craftkit.common.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=${fabric_loader_version}",

@@ -158,7 +158,11 @@ ingredient into a stand that holds potions, a blaze powder when it has no fuel; 
 value higher, refused at the top) and `toggle_block` ringing a bell. ABI 30 (2026-11-10):
 `prints` (footprints in the snow, a layer off at each step, left and right of a line) and
 `place_entity`'s `face` (held still facing a player for its time); the client's `ripples` and
-`bobber` hints.
+`bobber` hints. Without an ABI change (2026-11-10), the client's hints grew the atmospheres
+(`mist`, `red_mist`, `darkness`, `dusk_noon`, and `fog_close` as mist) as real fog through render
+hooks, the sky's (`stars_out`, `moon_wrong`, `night_early`), `red_rain` as red drops,
+`compass_points` and `painting_flip` with a `pos`, and `hunger_shake`, `heart_skip`,
+`subtitle`.
 
 ## Resources
 

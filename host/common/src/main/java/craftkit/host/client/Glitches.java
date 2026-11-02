@@ -22,17 +22,27 @@ import java.util.Set;
  *   <li>{@code lights_fail}: the screen goes dark, then back.</li>
  *   <li>{@code sun_blink}: black for a blink, twice.</li>
  *   <li>{@code lightning_silent}: a white flash, no thunder.</li>
- *   <li>{@code red_rain}: a red cast while it lasts.</li>
+ *   <li>{@code red_rain}: the drops red ({@link Atmospheres#rain}), no screen cast since 2026-11-10.</li>
+ *   <li>{@code mist}, {@code red_mist}, {@code darkness}, {@code dusk_noon}: real fog ({@link Atmospheres#fog}),
+ *       with drifting motes in the mists.</li>
+ *   <li>{@code stars_out}, {@code moon_wrong}, {@code night_early}: the sky ({@link Atmospheres#sky}).</li>
+ *   <li>{@code compass_points}, {@code painting_flip}: a compass turned, a painting upside down
+ *       until looked at two seconds.</li>
+ *   <li>{@code hunger_shake}, {@code heart_skip}, {@code subtitle}: the HUD, once.</li>
  *   <li>{@code crosshair_gone}: no crosshair while it lasts.</li>
  *   <li>{@code hotbar_slip}: the selected slot jumps to the item named in {@code detail}, once.</li>
  *   <li>{@code camera_nudge}: the view turns two degrees toward the hint's place, once.</li>
  *   <li>{@code fov_pull}: the field of view narrows over the hint's time and snaps back.</li>
- *   <li>{@code fog_close}: a dark ring closes in from the edges of the screen for a minute.</li>
+ *   <li>{@code fog_close}: mist rolling in, the real fog, since 2026-11-10 (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  * </ul>
  */
 public final class Glitches {
 	private static final Set<Long> DONE_ONCE = new HashSet<>();
+	/** Ticks each `painting_flip` has been looked at straight. */
+	private static final java.util.Map<Long, Integer> LOOKED = new java.util.HashMap<>();
+	/** Their saturation before `hunger_shake`, to put back. */
+	private static Float saturationBefore;
 	private static Integer fovBefore;
 	private static long lastSeen;
 
@@ -52,11 +62,74 @@ public final class Glitches {
 		}
 
 		boolean pullingFov = false;
+		boolean shaking = false;
 		long now = System.currentTimeMillis();
 		for (Hints.Active active : Hints.active()) {
 			HintPayload hint = active.hint();
 			switch (hint.hint()) {
 				case "cut_music" -> minecraft.getMusicManager().stopPlaying();
+				// The hunger bar shakes while saturation is nothing; it is put back after.
+				case "hunger_shake" -> {
+					shaking = true;
+					if (saturationBefore == null) {
+						saturationBefore = minecraft.player.getFoodData().getSaturationLevel();
+					}
+					minecraft.player.getFoodData().setSaturation(0);
+				}
+				// The hearts blink as they do when hurt, with no harm.
+				case "heart_skip" -> once(active, () -> {
+					try {
+						var hud = minecraft.gui.hud;
+						var ticks = net.minecraft.client.gui.Hud.class.getDeclaredField("tickCount");
+						var blink = net.minecraft.client.gui.Hud.class.getDeclaredField("healthBlinkTime");
+						ticks.setAccessible(true);
+						blink.setAccessible(true);
+						blink.setLong(hud, ticks.getInt(hud) + 20L);
+					} catch (ReflectiveOperationException ignored) {
+						// The HUD moved its fields: no blink, nothing else lost.
+					}
+				});
+				// "Footsteps" in the subtitles, behind them, and no sound.
+				case "subtitle" -> once(active, () -> {
+					try {
+						var events = minecraft.getSoundManager().getSoundEvent(net.minecraft.resources.Identifier.parse("minecraft:block.stone.step"));
+						var field = net.minecraft.client.gui.Hud.class.getDeclaredField("subtitleOverlay");
+						field.setAccessible(true);
+						var overlay = (net.minecraft.client.gui.components.SubtitleOverlay) field.get(minecraft.gui.hud);
+						Vec3 behind = minecraft.player.position().subtract(minecraft.player.getViewVector(1f).scale(3));
+						var instance = new net.minecraft.client.resources.sounds.SimpleSoundInstance(
+								net.minecraft.sounds.SoundEvent.createVariableRangeEvent(net.minecraft.resources.Identifier.parse("minecraft:block.stone.step")),
+								net.minecraft.sounds.SoundSource.BLOCKS, 1f, 1f, minecraft.level.getRandom(), behind.x, behind.y, behind.z);
+						if (events != null) {
+							overlay.onPlaySound(instance, events, 16f);
+						}
+					} catch (ReflectiveOperationException ignored) {
+						// The HUD moved its fields: no subtitle, nothing else lost.
+					}
+				});
+				// A painting stays upside down until they have looked straight at it two seconds.
+				case "painting_flip" -> hint.pos().ifPresent(pos -> {
+					if (minecraft.crosshairPickEntity instanceof net.minecraft.world.entity.decoration.painting.Painting painting
+							&& pos.distToCenterSqr(painting.position()) <= 2.5) {
+						LOOKED.merge(active.id(), 1, Integer::sum);
+					}
+				});
+				// The mists have body: motes drifting near the ground around them.
+				case "mist", "fog_close", "red_mist" -> {
+					float w = Atmospheres.weightOf(hint.hint());
+					var random = minecraft.level.getRandom();
+					int count = (int) (w * 3);
+					for (int i = 0; i < count; i++) {
+						double x = minecraft.player.getX() + random.nextDouble() * 20 - 10;
+						double y = minecraft.player.getY() + random.nextDouble() * 2.5;
+						double z = minecraft.player.getZ() + random.nextDouble() * 20 - 10;
+						if (hint.hint().equals("red_mist")) {
+							minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x6E0A0A, 1.6f), x, y, z, 0.01, 0, 0.01);
+						} else {
+							minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.WHITE_ASH, x, y, z, 0.02, 0, 0.02);
+						}
+					}
+				}
 				// Splashes crossing the water toward the shore they stand on, like steps (batch 10).
 				case "ripples" -> hint.pos().ifPresent(pos -> {
 					float t = active.progress(now);
@@ -141,6 +214,10 @@ public final class Glitches {
 			minecraft.options.fov().set(fovBefore);
 			fovBefore = null;
 		}
+		if (!shaking && saturationBefore != null) {
+			minecraft.player.getFoodData().setSaturation(saturationBefore);
+			saturationBefore = null;
+		}
 
 		// A one-shot's id is dropped once its hint is gone, so the set stays small.
 		if (now - lastSeen > 10_000) {
@@ -148,6 +225,7 @@ public final class Glitches {
 			Set<Long> live = new HashSet<>();
 			Hints.active().forEach(a -> live.add(a.id()));
 			DONE_ONCE.retainAll(live);
+			LOOKED.keySet().retainAll(live);
 		}
 	}
 
@@ -175,24 +253,17 @@ public final class Glitches {
 					}
 				}
 				case "lightning_silent" -> fill(graphics, width, height, 0xFFFFFF, progress < 0.3f ? 0.8f : 0.8f * (1 - progress));
-				case "fog_close" -> {
-					// A ring from the edges, darkest at the rim, deepest in the middle minute.
-					float depth = Math.min(progress * 6, Math.min(1, (1 - progress) * 6));
-					int rim = (int) (Math.min(width, height) * 0.35f * depth);
-					int a = (int) (200 * depth);
-					graphics.fillGradient(0, 0, width, rim, (a << 24) | 0x05050A, 0x05050A);
-					graphics.fillGradient(0, height - rim, width, height, 0x05050A, (a << 24) | 0x05050A);
-					graphics.fill(0, 0, rim / 2, height, ((a / 2) << 24) | 0x05050A);
-					graphics.fill(width - rim / 2, 0, width, height, ((a / 2) << 24) | 0x05050A);
-				}
-				case "red_rain" -> {
-					float alpha = Math.min(progress * 5, Math.min(1, (1 - progress) * 5)) * 0.22f;
-					fill(graphics, width, height, 0x7A0A0A, alpha);
-				}
+				// Dusk at noon drains the light from what fog cannot reach: a grey veil, eased.
+				case "dusk_noon" -> fill(graphics, width, height, 0x14121A, 0.35f * Atmospheres.weightOf("dusk_noon"));
 				default -> {
 				}
 			}
 		}
+	}
+
+	/** Whether a `painting_flip` has been looked at straight for two seconds. */
+	public static boolean lookedLongEnough(long id) {
+		return LOOKED.getOrDefault(id, 0) >= 40;
 	}
 
 	/** Whether the vanilla crosshair is to be left out this frame. */

@@ -404,7 +404,7 @@ Offered with water within 32 blocks of the home or the route.
 | `rain_indoors` | 3 | The same with rain. | The target indoors, rain outside. |
 | `lightning_silent` | 3 | A flash of lightning with no thunder, in clear weather, for the target alone. | The target outdoors at night. |
 | `thunder_clear` | 2 | Thunder, for the target alone, under a clear sky. | The target outdoors. |
-| `fog_close` | 3 | The fog closes in to sixteen blocks for a minute, then lifts. | The target outdoors. |
+| `fog_close` | 3 | The mist rolls in for a minute, then lifts: the real fog of `mist`, since 2026-11-10 (it was a dark ring on the screen). | The target outdoors. |
 
 ### Mines and caves
 
@@ -490,14 +490,29 @@ seconds and then stops; `events.glitches` turns the group off, with [The screen]
 | --- | --- | --- | --- |
 | `flicker` | 2 | One light near the target flickers for a few seconds, then is steady. | A light within 8 blocks of the target, indoors. |
 | `lights_fail` | 3 | Every light in the room gives no light, for five to twenty seconds, and the room is as dark as night. Then they are back. | The target indoors at night. |
-| `painting_flip` | 2 | A painting hangs upside down until the target has looked straight at it for two seconds. | A painting in view. |
+| `painting_flip` | 2 | The painting nearest them hangs upside down until they have looked straight at it for two seconds (a render hook turns it half round on the wall). Coded 2026-11-10. | A painting, the target indoors. |
 | `sun_blink` | 3 | The sun is gone, and the sky night-dark, for one to three seconds in the middle of the day. Then it is back and the time is right. | The target outdoors by day. |
-| `moon_wrong` | 3 | The moon is full when it is not, or twice its size, for a few seconds. | The target outdoors at night. |
-| `stars_out` | 3 | The stars are gone for a minute. | A clear night. |
-| `night_early` | 4 | The sky is two hours later than it is, for a minute, then right. | The target outdoors. |
-| `red_rain` | 4 | While it rains, the rain is dark red and the sky darker, for two to five minutes. | Rain, the target outdoors or at a window. |
-| `compass_points` | 3 | Any compass the target holds points at the lodger's place. | The want is a place, the target holding a compass. |
-| `reflection` | 4 | The target's reflection in still water faces the wrong way for a second. | Still water in view. |
+| `moon_wrong` | 3 | The moon is full when it is not, for a few seconds (the sky's hook; twice its size is beyond the hook). Coded 2026-11-10. | The target outdoors at night. |
+| `stars_out` | 3 | The stars fade out for a minute and back. Coded 2026-11-10. | A clear night, the target outdoors. |
+| `night_early` | 4 | The sun, moon and stars stand two hours later than they are, the sky dimmed, for a minute, eased in and out, then right. Coded 2026-11-10. | The target outdoors by day. |
+| `red_rain` | 4 | While it rains, the drops themselves are red (the rain's colour hook), for two to five minutes; no screen cast since 2026-11-10. The brain may pair it with `red_mist`. | Rain, the target outdoors or at a window. |
+| `compass_points` | 3 | A compass the target holds points at the lodger's place for two minutes (a hook on the compass's target). Coded 2026-11-10. | The target holding a compass. |
+| `reflection` | 4 | Water reflects nothing in the game, so a face under it instead (owner, 2026-11-10): the figure just under the surface of still water near them, its head below the top, for one second. Coded 2026-11-10. | Water within 24 blocks, the target outdoors. |
+
+#### The atmospheres
+
+Real fog on the target's client (the review's D, owner 2026-11-09: "not abrupt like other mods,
+make it good and spooky"): each eases in over most of a minute, holds with its edge breathing a
+tenth over nine seconds, and eases out over half a minute; they stack, each pulling the fog as
+it stands. A render hook at the end of the game's fog setup closes and tints it
+(`craftkit.host.client.Atmosphere`, `Atmospheres`); the sky takes the fog's colour.
+
+| Event | Stages | What happens | Needs |
+| --- | --- | --- | --- |
+| `mist` | 2 | Pale grey mist to thirteen blocks, motes drifting near the ground, four minutes. `fog_close` is this mist now, a minute long. Coded 2026-11-10. | The target awake. |
+| `dusk_noon` | 3 | At noon the light drains: the fog grey-violet to forty blocks, the sky dimmed, a grey veil, five minutes. Coded 2026-11-10. | Day, the target awake. |
+| `red_mist` | 4 | Deep red mist to twenty blocks, a rust sky, red motes, four and a half minutes. Coded 2026-11-10. | Night, the target awake. |
+| `darkness` | 4 | The dark closes to seven blocks, black, their own light still showing what is near, three minutes. Coded 2026-11-10. | Night, the target awake. |
 
 ### The screen
 
@@ -506,12 +521,12 @@ The target's own HUD and camera, for a moment. Off with `events.glitches`.
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
 | `hotbar_slip` | 2 | The selected hotbar slot moves to the favourite tool for one tick. | The favourite in the hotbar. |
-| `hunger_shake` | 2 | The hunger bar shakes as if starving, once. | Full hunger. |
-| `heart_skip` | 3 | The hearts flicker as if hurt, once, with no damage. | Full health. |
-| `subtitle` | 2 | With subtitles on, `Footsteps` appears, with no sound. | Subtitles on. |
+| `hunger_shake` | 2 | The hunger bar shakes as if starving, for three seconds, their saturation put back after. Coded 2026-11-10. | The target awake. |
+| `heart_skip` | 3 | The hearts blink as if hurt, once, with no damage. Coded 2026-11-10. | The target awake. |
+| `subtitle` | 2 | With subtitles on, `Footsteps` appears behind them, with no sound. Coded 2026-11-10. | The target awake. |
 | `camera_nudge` | 3 | The camera turns two degrees toward the figure, or the place, once. | A figure or a place. |
 | `fov_pull` | 4 | The field of view narrows over ten seconds and snaps back. | The target indoors. |
-| `tab_twice` | 3 | The target's own name appears twice in the player list for a few seconds. | Multiplayer. |
+| `tab_twice` | 3 | The target's own name appears twice in the player list for six seconds. Coded 2026-11-10. | The target awake. |
 | `sleepers_wrong` | 3 | `1/2 players sleeping` on a server with one player, or one too many. | The target trying to sleep. |
 | `crosshair_gone` | 3 | The crosshair is gone for a few seconds. | Any. |
 

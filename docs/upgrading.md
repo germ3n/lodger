@@ -114,6 +114,23 @@ moved.
 - **Events the loaders hook**: block use, break and place (the Fabric mixin on `BlockItem`),
   sleep, death (and the killer, read off the damage source), respawn, dimension change,
   attack, chat.
+- **The render hooks** (`host/common/src/main/java/craftkit/host/mixin/`, the
+  `craftkit.common.mixins.json` both loaders name, since 2026-11-10): each is one line into
+  `craftkit.host.client.Atmospheres`, and with `defaultRequire` 1 a hook that no longer matches
+  stops the client at the title screen, so a broken one is found at once.
+  - `FogRenderer.setupFog` at its return: the `FogData` (start, end, colour) before the caller
+    uploads it; the atmospheres close and tint it.
+  - `SkyRenderer.extractRenderState` at its tail: the `SkyRenderState` fields (`starBrightness`,
+    `moonPhase`, the sun, moon and star angles, `skyColor`).
+  - `WeatherEffectRenderer.prepareInstances`: its `ARGB.white(float)` call, the drops' colour,
+    redirected for red rain.
+  - `CompassAngleState.calculate`: its `CompassTarget.get` call, redirected for
+    `compass_points`.
+  - `PaintingRenderer.submit` at its head: the pose turned half round on the wall's normal for
+    `painting_flip` (`PoseStack.rotate`).
+  The HUD's `heart_skip` and `subtitle` read `Hud`'s private `tickCount`, `healthBlinkTime` and
+  `subtitleOverlay` by name; a renamed field only loses that effect. Common code compiles
+  against Fabric's `sponge-mixin` for the annotations alone.
 
 ## History
 

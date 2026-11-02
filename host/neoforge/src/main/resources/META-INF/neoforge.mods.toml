@@ -7,6 +7,9 @@ version = "${version}"
 displayName = "${mod_name}"
 authors = "${mod_author}"
 description = '''${description}'''
+# The render hooks the atmospheres and the sky's hints use, shared with Fabric (common code).
+[[mixins]]
+config = "craftkit.common.mixins.json"
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
