@@ -382,6 +382,37 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::Figure(FigureWhere::Route, _, _) => memory
             .route()
             .map(|r| [r.start()[0], -10_000, r.start()[2]]),
+        // Forty blocks to their side, on the ground, to mirror them.
+        Action::Figure(FigureWhere::Mirror, _, _) => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            let (sx, sz) = (yaw.cos(), yaw.sin());
+            Some([
+                at[0] + (sx * 40.0).round() as i32,
+                -10_000,
+                at[2] + (sz * 40.0).round() as i32,
+            ])
+        }
+        // Outside a window of the house: a pane, a block out from it away from the middle,
+        // its head at the pane.
+        Action::Figure(FigureWhere::Window, _, _) => {
+            match (memory.fixtures("glass_pane").next(), home) {
+                (Some(pane), Some(h)) => {
+                    let out = step_toward(h.center, pane.pos);
+                    Some([pane.pos[0] + out[0], pane.pos[1] - 2, pane.pos[2] + out[1]])
+                }
+                _ => None,
+            }
+        }
+        // Beside the villager nearest them.
+        Action::Figure(FigureWhere::Crowd, _, _) => memory.villager_near().map(|v| {
+            let p = block_of(v.pos);
+            [p[0] + 1, p[1] - 1, p[2]]
+        }),
+        Action::Figure(FigureWhere::Close, _, _) | Action::FigureSwing(_) => {
+            Some(behind_close(memory))
+        }
+        Action::FigureWave => far_spot(memory, rng),
         Action::Figure(FigureWhere::Far, _, _) => {
             // Fifty to seventy blocks from the target, away from the home.
             let at = block_of(memory.last.pos);
@@ -788,6 +819,85 @@ fn fill(ids: &mut impl FnMut() -> u64, pos: BlockPos, block: &str) -> Command {
         wall: String::new(),
         rest: false,
         only: false,
+    }
+}
+
+/// Two blocks behind the target, its feet at theirs (the figure stands one above the spot).
+fn behind_close(memory: &Memory) -> BlockPos {
+    let at = block_of(memory.last.pos);
+    let yaw = (memory.last.yaw as f64).to_radians();
+    let back = [yaw.sin(), -yaw.cos()];
+    [
+        at[0] + (back[0] * 2.0).round() as i32,
+        at[1] - 1,
+        at[2] + (back[1] * 2.0).round() as i32,
+    ]
+}
+
+/// The far figure's spot: fifty blocks off, away from the home, on the ground.
+fn far_spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
+    let far = find_far(memory);
+    far.or_else(|| {
+        let at = block_of(memory.last.pos);
+        let angle = rng.next_f64() * std::f64::consts::TAU;
+        Some([
+            at[0] + (angle.cos() * 50.0) as i32,
+            -10_000,
+            at[2] + (angle.sin() * 50.0) as i32,
+        ])
+    })
+}
+
+/// Fifty blocks from the target along the way from the home to them, on the ground.
+fn find_far(memory: &Memory) -> Option<BlockPos> {
+    let at = block_of(memory.last.pos);
+    let from = memory.home.as_ref()?.center;
+    let (dx, dz) = ((at[0] - from[0]) as f64, (at[2] - from[2]) as f64);
+    let length = (dx * dx + dz * dz).sqrt();
+    (length >= 1.0).then(|| {
+        [
+            at[0] + (dx / length * 50.0).round() as i32,
+            -10_000,
+            at[2] + (dz / length * 50.0).round() as i32,
+        ]
+    })
+}
+
+/// A figure shown to the target at a spot (the y one below where it stands, or below -1000 for
+/// the ground there), for a while.
+fn figure_shown(
+    ids: &mut impl FnMut() -> u64,
+    memory: &Memory,
+    target: u32,
+    p: BlockPos,
+    seconds: f32,
+    name_shown: bool,
+) -> Command {
+    let standing = if p[1] <= -1_000 {
+        [p[0] as f64 + 0.5, -10_000.0, p[2] as f64 + 0.5]
+    } else {
+        [p[0] as f64 + 0.5, p[1] as f64 + 1.0, p[2] as f64 + 0.5]
+    };
+    Command::Figure {
+        id: ids(),
+        figure: 1,
+        skin_of: target,
+        pos: standing,
+        path: Vec::new(),
+        held: memory
+            .favourites
+            .first()
+            .map(|(id, _)| ItemStack {
+                id: id.clone(),
+                count: 1,
+                slot: 0,
+            })
+            .unwrap_or_default(),
+        name_shown,
+        seconds,
+        vanish_within: 0.0,
+        mirror: false,
+        once_seen: false,
     }
 }
 
@@ -3024,6 +3134,42 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // Right behind them for a second, it strikes once: by the harm stages, never a kill.
+        Action::FigureSwing(damage) => pos
+            .map(|p| {
+                vec![
+                    (figure_shown(ids, memory, target, p, 1.2, false), 0),
+                    (
+                        Command::FigureSwing {
+                            id: ids(),
+                            player: target,
+                            figure: 1,
+                            damage,
+                            spare: true,
+                        },
+                        8,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
+        // The far figure, its name shown, raises its arm once and is gone.
+        Action::FigureWave => pos
+            .map(|p| {
+                vec![
+                    (figure_shown(ids, memory, target, p, 6.0, true), 0),
+                    (
+                        Command::FigureSwing {
+                            id: ids(),
+                            player: target,
+                            figure: 1,
+                            damage: 0.0,
+                            spare: true,
+                        },
+                        40,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         // Their newest tunnel again, three blocks over, two high, lit at their spacing; its ore
         // goes to their chest as it is dug (the brain, on the report).
         Action::MineBeside => match memory.newest_tunnel() {
@@ -4251,6 +4397,8 @@ pub fn commands(
                         name_shown: matches!(where_, FigureWhere::Far | FigureWhere::Behind),
                         seconds,
                         vanish_within: vanish,
+                        mirror: matches!(where_, FigureWhere::Mirror),
+                        once_seen: matches!(where_, FigureWhere::Crowd),
                     },
                     0,
                 )]
@@ -6568,5 +6716,58 @@ mod tests {
             &made("portal_lit", &memory, &mut rng)[0].0,
             Command::LightPortal { .. }
         ));
+    }
+
+    #[test]
+    fn the_figures_of_batch_fourteen_send_what_they_should() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0; // facing +z
+        let now = Now::default();
+        let mut rng = Rng::new(14);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        // Right behind them (two blocks back, -z), then a strike that spares them.
+        let nip = made("figure_nip", &mut rng);
+        assert!(
+            matches!(&nip[0].0, Command::Figure { pos, .. } if pos[2] == -1.5 && pos[1] == 64.0),
+            "{nip:?}"
+        );
+        assert!(
+            matches!(&nip[1], (Command::FigureSwing { damage, spare: true, .. }, 8) if *damage == 1.0)
+        );
+        assert!(
+            matches!(&made("figure_swing", &mut rng)[1].0, Command::FigureSwing { damage, .. } if *damage == 4.0)
+        );
+        // The wave harms no one.
+        assert!(
+            matches!(&made("figure_waves", &mut rng)[1].0, Command::FigureSwing { damage, .. } if *damage == 0.0)
+        );
+        // The mirror mirrors; the crowd's goes once seen.
+        assert!(matches!(
+            &made("figure_mirror", &mut rng)[0].0,
+            Command::Figure {
+                mirror: true,
+                once_seen: false,
+                ..
+            }
+        ));
+        assert!(matches!(
+            &made("figure_crowd", &mut rng)[0].0,
+            Command::Figure {
+                once_seen: true,
+                ..
+            }
+        ));
+        // At the window: outside the pane, its head at the glass.
+        let window = made("figure_window", &mut rng);
+        assert!(
+            matches!(&window[0].0, Command::Figure { pos, .. } if pos[1] == 64.0),
+            "{window:?}"
+        );
     }
 }

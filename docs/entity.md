@@ -582,6 +582,12 @@ More in [Ideas](ideas.md#building).
 | `at_the_chest` | 4 | Coming into the room, the target sees the figure at their chest, back to them. It closes the lid and is around the corner before they reach it. | A used container in a room with two ways out. |
 | `in_your_bed` | 4 | Coming home late at night, the target sees the figure lying in their bed through the door, and the bed is empty when the door opens. | A bed in view of the door, night. |
 | `replay` | 4 | The replay figure walks a recorded route, at the recorded pace, starting out of view. Looked at, it keeps walking. Approached within 24 blocks it rounds a corner and is gone, leaving the held item where it stood if it held one. | A recorded route of 20 or more points. |
+| `figure_nip` | 3 | The figure right behind them for a second, two blocks back: it swings once, a hit, half a heart, the hurt's jolt, never below half a heart (`figure_swing`, ABI 33). The owner's harm stages: a nip at 3. Coded 2026-11-10. | The target awake. |
+| `figure_swing` | 4 | The same, hard: two hearts, still never below half a heart, never a kill. Coded 2026-11-10. | The target awake. |
+| `figure_mirror` | 3 | The figure forty blocks to their side moves as they move, step for step, stopping when they stop, forty seconds, gone if they come within twenty (`figure`'s `mirror`, ABI 33). Owner's pick, 2026-11-10. | The target outdoors. |
+| `figure_window` | 4 | At night, while they are inside, the figure stands outside a window of theirs, its head at the glass, looking in, half a minute, gone when they come within six. Owner's pick, 2026-11-10. | A pane, night, the target indoors. |
+| `figure_crowd` | 3 | In the village, the figure stands still among the villagers, facing them, and is not there once they look away from it (`figure`'s `once_seen`, ABI 33). Owner's pick, 2026-11-10. | A villager near, the target outdoors. |
+| `figure_waves` | 3 | The far figure, its name shown, raises its arm once and is gone. Owner's pick, 2026-11-10. | The target outdoors. |
 
 ### The ending
 

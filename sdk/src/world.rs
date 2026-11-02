@@ -513,6 +513,17 @@ pub enum Command {
         id: u64,
         near: BlockPos,
     },
+    /// The figure `figure` shown to `player` swings its arm once; with `damage` above 0 the
+    /// player is hit for it (half hearts), a hurt's jolt and sound, and with `spare` never
+    /// below half a heart. ABI 33.
+    FigureSwing {
+        id: u64,
+        player: u32,
+        figure: u32,
+        damage: f32,
+        #[serde(default, skip_serializing_if = "is_false")]
+        spare: bool,
+    },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
         id: u64,
@@ -811,6 +822,13 @@ pub enum Command {
         seconds: f32,
         #[serde(default)]
         vanish_within: f32,
+        /// Mirror the player: it moves as they move, by the same steps, from where it was
+        /// shown. ABI 33.
+        #[serde(default, skip_serializing_if = "is_false")]
+        mirror: bool,
+        /// Gone the moment it leaves the player's view, once they have seen it. ABI 33.
+        #[serde(default, skip_serializing_if = "is_false")]
+        once_seen: bool,
     },
     RemoveFigure {
         id: u64,
@@ -840,6 +858,7 @@ impl Command {
             | Command::GatherVillagers { id, .. }
             | Command::OfferTrade { id, .. }
             | Command::LightPortal { id, .. }
+            | Command::FigureSwing { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }

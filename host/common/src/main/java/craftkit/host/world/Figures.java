@@ -48,6 +48,13 @@ public final class Figures {
 		int pathIndex;
 		long untilTick;
 		final double vanishWithin;
+		/** Mirrors the player from where both stood when shown (ABI 33). */
+		boolean mirror;
+		Vec3 shownAt;
+		Vec3 playerAt;
+		/** Gone once it leaves their view after they have seen it (ABI 33). */
+		boolean onceSeen;
+		boolean seen;
 
 		Figure(ServerPlayer player, int number, int entityId, UUID uuid, GameProfile profile, ItemStack held, Vec3 at, List<Vec3> path, long untilTick, double vanishWithin) {
 			this.player = player;
@@ -72,12 +79,21 @@ public final class Figures {
 	 * this number. A y below -1000 stands it on the ground at that column.
 	 */
 	public void show(ServerLevel level, ServerPlayer player, int number, ServerPlayer skinOf, Vec3 pos, List<Vec3> path, ItemStack held, boolean nameShown, float seconds, float vanishWithin) {
+		show(level, player, number, skinOf, pos, path, held, nameShown, seconds, vanishWithin, false, false);
+	}
+
+	/** {@link #show} mirroring the player, or gone once seen and looked away from (ABI 33). */
+	public void show(ServerLevel level, ServerPlayer player, int number, ServerPlayer skinOf, Vec3 pos, List<Vec3> path, ItemStack held, boolean nameShown, float seconds, float vanishWithin, boolean mirror, boolean onceSeen) {
 		remove(player, number);
 
 		Vec3 at = ground(level, pos);
 		UUID uuid = UUID.randomUUID();
 		GameProfile profile = new GameProfile(uuid, skinOf.getGameProfile().name(), skinOf.getGameProfile().properties());
 		Figure figure = new Figure(player, number, nextId++, uuid, profile, held, at, path, seconds > 0 ? tick + (long) (seconds * 20) : Long.MAX_VALUE, vanishWithin);
+		figure.mirror = mirror;
+		figure.shownAt = at;
+		figure.playerAt = player.position();
+		figure.onceSeen = onceSeen;
 		active.add(figure);
 		send(level, figure, nameShown);
 	}
@@ -103,14 +119,31 @@ public final class Figures {
 		Iterator<Figure> it = active.iterator();
 		while (it.hasNext()) {
 			Figure figure = it.next();
+			boolean looked = looksAt(figure);
+			if (looked) {
+				figure.seen = true;
+			}
 			boolean gone = figure.player.isRemoved() || tick > figure.untilTick
-					|| (figure.vanishWithin > 0 && figure.player.position().distanceTo(figure.at) < figure.vanishWithin);
+					|| (figure.vanishWithin > 0 && figure.player.position().distanceTo(figure.at) < figure.vanishWithin)
+					|| (figure.onceSeen && figure.seen && !looked);
 			if (gone) {
 				if (!figure.player.isRemoved()) {
 					unsend(figure);
 				}
 				it.remove();
 				continue;
+			}
+
+			// Mirroring: where it was shown, moved as far as the player has moved, a quarter
+			// second at a time.
+			if (figure.mirror && tick % 5 == 0) {
+				Vec3 moved = figure.player.position().subtract(figure.playerAt);
+				Vec3 to = figure.shownAt.add(moved.x, 0, moved.z);
+				if (to.distanceToSqr(figure.at) > 0.04 && figure.player.level() instanceof ServerLevel level) {
+					figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
+					figure.at = ground(level, new Vec3(to.x, -10_000, to.z));
+					sendEntity(figure);
+				}
 			}
 
 			if (!figure.path.isEmpty() && tick % STEP_TICKS == 0 && figure.player.level() instanceof ServerLevel level) {
@@ -127,6 +160,38 @@ public final class Figures {
 				sendEntity(figure);
 			}
 		}
+	}
+
+	/** Whether the player looks at a figure: within about 25 degrees of their view. */
+	private static boolean looksAt(Figure figure) {
+		Vec3 to = figure.at.add(0, 1.4, 0).subtract(figure.player.getEyePosition());
+		double length = to.length();
+
+		return length < 1e-3 || figure.player.getViewVector(1f).dot(to.scale(1 / length)) > 0.9;
+	}
+
+	/**
+	 * The figure shown to a player with this number swings its arm; with damage above 0 the
+	 * player is hit for it, the hurt's own jolt and sound, never below half a heart when
+	 * {@code spare} (ABI 33). False when no such figure is shown.
+	 */
+	public boolean swing(ServerPlayer player, int number, float damage, boolean spare) {
+		for (Figure figure : active) {
+			if (figure.player == player && figure.number == number) {
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket(figure.entityId,
+						net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
+				if (damage > 0 && player.level() instanceof ServerLevel level) {
+					float harm = spare ? Math.min(damage, Math.max(0, player.getHealth() - 1)) : damage;
+					player.playSound(net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_STRONG, 1f, 0.9f);
+					if (harm > 0) {
+						player.hurtServer(level, level.damageSources().generic(), harm);
+					}
+				}
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private static Vec3 ground(ServerLevel level, Vec3 pos) {

@@ -167,7 +167,10 @@ village's middle packed into the house behind a door, facing its back wall, turn
 player within five blocks, each back where it stood after its time or when the level closes) and
 `offer_trade` (a kept stack for sale at a villager for an emerald, the trade taken away once
 used, so a restock never sells it again). ABI 32 (2026-11-10): `light_portal` (a Nether portal
-lit in an empty obsidian frame near a place, as flint and steel would).
+lit in an empty obsidian frame near a place, as flint and steel would). ABI 33 (2026-11-10):
+`figure`'s `mirror` (it moves as the player moves, from where both stood) and `once_seen` (gone
+once it leaves their view after they saw it), and `figure_swing` (the figure swings once, perhaps
+a hit, `spare` keeping the player above half a heart).
 
 ## Resources
 

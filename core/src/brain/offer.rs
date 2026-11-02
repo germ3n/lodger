@@ -153,6 +153,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Holding(id) => last.online && last.main_hand == id,
         Need::FarFromVillage(n) => memory.far_from_village(n as f64),
         Need::RangBell => false,
+        Need::Villagers => memory.villager_near().is_some(),
         Need::Tunnel => memory.newest_tunnel().is_some(),
         Need::InTunnel => last.online && last.underground && memory.tunnel_at_target().is_some(),
         Need::OreAhead => memory.ore_ahead().is_some(),
@@ -197,7 +198,9 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::WetSteps
         | Action::PetGrowl => config.events.sounds,
         Action::Hint(_, _) => config.events.glitches,
-        Action::Figure(_, _, _) => config.events.figure,
+        Action::Figure(_, _, _) | Action::FigureSwing(_) | Action::FigureWave => {
+            config.events.figure
+        }
         Action::TabEntry
         | Action::Message(_)
         | Action::Says
@@ -227,7 +230,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::WetSteps
         | Action::PetGrowl => Some("sound"),
         Action::Hint(_, _) => Some("screen"),
-        Action::Figure(_, _, _) => Some("figure"),
+        Action::Figure(_, _, _) | Action::FigureSwing(_) | Action::FigureWave => Some("figure"),
         Action::TabEntry
         | Action::Message(_)
         | Action::Says

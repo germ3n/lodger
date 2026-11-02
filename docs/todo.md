@@ -671,6 +671,11 @@ because it can be built and tested without a game, and because the model layer i
     A dig's block is kept as a pick gives it (stone is cobblestone). ABI 32. And a panic found
     on the way: `tidy_moves` ran past a chest's last slot on two stacks said to share one; it
     sorts what the slots hold now. Tests: four in `tunnels`, two in `act`.
+  - **Batch 14, the figures** (owner: the swing by the harm stages, all four new): the figure
+    right behind them strikes once (a nip at 3, two hearts at 4 and 5, never below half a
+    heart), copies their steps from forty blocks off, stands outside their window looking in,
+    stands among the villagers and is gone once they look away, waves from afar. ABI 33. Tests:
+    one in `act`.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

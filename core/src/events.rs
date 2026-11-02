@@ -119,6 +119,8 @@ pub enum Need {
     PlacedLight,
     /// A placed glass pane.
     Pane,
+    /// A villager within 32 blocks of the target.
+    Villagers,
     /// The used container holds an item whose id ends with any of these.
     InChestAny(&'static [&'static str]),
     /// The target is walking toward the used chest, within six blocks.
@@ -242,6 +244,7 @@ impl Need {
                 | Need::FarFromVillage(_)
                 | Need::RangBell
                 | Need::InTunnel
+                | Need::Villagers
                 | Need::TunnelLights
                 | Need::BehindThem
                 | Need::TargetAte
@@ -330,6 +333,7 @@ impl Need {
             Need::Holding(id) => format!("they do not hold a {}", crate::memory::bare(id)),
             Need::FarFromVillage(n) => format!("the target is within {n} blocks of the village"),
             Need::RangBell => "happens only as they ring a bell".to_string(),
+            Need::Villagers => "no villager near them".to_string(),
             Need::Tunnel => "no tunnel of theirs of ten blocks".to_string(),
             Need::InTunnel => "the target is not in a tunnel of theirs".to_string(),
             Need::OreAhead => "no ore ahead of their tunnel".to_string(),
@@ -668,6 +672,10 @@ pub enum Action {
     SignDeep,
     /// Gravel behind them in their tunnel.
     WayBackCloses,
+    /// The figure right behind them swings once, this much harm (never below half a heart).
+    FigureSwing(f32),
+    /// The far figure raises its arm once.
+    FigureWave,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -730,6 +738,14 @@ pub enum FigureWhere {
     BedFoot,
     /// Just under still water near them, its head below the surface.
     UnderWater,
+    /// Forty blocks to their side, moving as they move.
+    Mirror,
+    /// Outside a window of the house, looking in.
+    Window,
+    /// Among the villagers near them.
+    Crowd,
+    /// Two blocks behind them.
+    Close,
 }
 
 /// One row of the catalogue.
@@ -1376,6 +1392,75 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Charge(3, 3.0, 3),
+        false,
+    ),
+    // Batch 14 (owner, 2026-11-10): the figure's swing by the harm stages (a nip at 3, real
+    // harm from 4, never a kill), and four new: it mirrors them, at the window, in the crowd,
+    // it waves.
+    row(
+        "figure_nip",
+        3,
+        3,
+        &[TargetAwake],
+        3.0,
+        2,
+        Full,
+        Action::FigureSwing(1.0),
+        false,
+    ),
+    row(
+        "figure_swing",
+        4,
+        5,
+        &[TargetAwake],
+        3.0,
+        3,
+        Full,
+        Action::FigureSwing(4.0),
+        false,
+    ),
+    row(
+        "figure_mirror",
+        3,
+        5,
+        &[TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::Mirror, 40.0, 20.0),
+        false,
+    ),
+    row(
+        "figure_window",
+        4,
+        5,
+        &[Pane, Night, TargetIndoors],
+        3.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::Window, 30.0, 6.0),
+        false,
+    ),
+    row(
+        "figure_crowd",
+        3,
+        5,
+        &[Villagers, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::Crowd, 40.0, 8.0),
+        false,
+    ),
+    row(
+        "figure_waves",
+        3,
+        5,
+        &[TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::FigureWave,
         false,
     ),
     // Batch 13 (owner, 2026-11-10): every mine row, and four new: the tunnel goes on, its
@@ -3782,6 +3867,8 @@ impl Event {
             | Action::HostilesStare
             | Action::BedOccupied
             | Action::Figure(..)
+            | Action::FigureSwing(_)
+            | Action::FigureWave
             | Action::WarpAnimal
             | Action::BeesOut
             | Action::HorseMoved
@@ -3923,6 +4010,12 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "figure_nip" => "have the figure behind them strike once",
+            "figure_swing" => "have the figure behind them strike hard once",
+            "figure_mirror" => "have the figure copy their steps from afar",
+            "figure_window" => "stand the figure outside their window",
+            "figure_crowd" => "stand the figure among the villagers",
+            "figure_waves" => "have the far figure wave",
             "mine_beside" => "dig a copy of their tunnel beside it",
             "tunnel_sealed" => "wall up the mouth of their oldest tunnel",
             "tunnel_toward" => "dig toward them while they dig",

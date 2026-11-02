@@ -136,6 +136,7 @@ public final class Executors {
 				case "charge" -> charge(level, command, id, context);
 				case "gather_villagers" -> gatherVillagers(level, command, id, context);
 				case "light_portal" -> lightPortal(level, command, id);
+				case "figure_swing" -> figureSwing(level, command, id, context);
 				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
 				case "set_state" -> setState(level, command, id);
@@ -506,7 +507,9 @@ public final class Executors {
 				new Vec3(pos.get(0).getAsDouble(), pos.get(1).getAsDouble(), pos.get(2).getAsDouble()),
 				path, held, command.has("name_shown") && command.get("name_shown").getAsBoolean(),
 				command.has("seconds") ? command.get("seconds").getAsFloat() : 0,
-				command.has("vanish_within") ? command.get("vanish_within").getAsFloat() : 0);
+				command.has("vanish_within") ? command.get("vanish_within").getAsFloat() : 0,
+				command.has("mirror") && command.get("mirror").getAsBoolean(),
+				command.has("once_seen") && command.get("once_seen").getAsBoolean());
 
 		return report(id, true, "");
 	}
@@ -1637,6 +1640,18 @@ public final class Executors {
 		}
 
 		return report(id, true, "");
+	}
+
+	/** The figure shown to a player swings once, perhaps a hit, never below half a heart with spare (ABI 33). */
+	private static JsonObject figureSwing(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		boolean swung = context.figures().swing(player, command.get("figure").getAsInt(), command.get("damage").getAsFloat(),
+				command.has("spare") && command.get("spare").getAsBoolean());
+
+		return swung ? report(id, true, "") : report(id, false, "no figure shown with that number");
 	}
 
 	/** A Nether portal lit in an empty obsidian frame within six blocks, as flint and steel would (ABI 32). */
