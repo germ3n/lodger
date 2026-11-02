@@ -404,6 +404,10 @@ pub struct Memory {
     /// saved.
     #[serde(skip)]
     pub killed_now: Option<String>,
+    /// A bell the target just rang, taken by the brain on its next tick (`bell_twice`). Not
+    /// saved.
+    #[serde(skip)]
+    pub rang_bell_now: Option<BlockPos>,
     /// The target just woke, taken by the brain on its next tick (`foot_of_bed`). Not saved.
     #[serde(skip)]
     pub woke_now: bool,
@@ -1300,6 +1304,7 @@ impl Memory {
                         self.walls.retain(|(p, _)| *p != pos);
                     }
                 }
+                EventKind::RangBell => self.rang_bell_now = event.pos,
                 EventKind::UsedDoor => {
                     self.door_used_now = event.pos;
                     if let Some(pos) = event.pos {

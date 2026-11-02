@@ -141,6 +141,10 @@ public final class Senses {
 		if (player.level().getBlockState(pos).getBlock() instanceof net.minecraft.world.level.block.DoorBlock) {
 			event(player, "used_door", pos, blockId(player.level().getBlockState(pos)), null);
 		}
+		// A bell rung (ABI 31, `bell_twice`).
+		if (player.level().getBlockState(pos).getBlock() instanceof net.minecraft.world.level.block.BellBlock) {
+			event(player, "rang_bell", pos, blockId(player.level().getBlockState(pos)), null);
+		}
 		if (entity instanceof Container container) {
 			openedAt.put(player.getUUID(), pos.immutable());
 			event(player, "opened_container", pos, blockId(player.level().getBlockState(pos)), contents(container));

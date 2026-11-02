@@ -23,6 +23,7 @@ pub mod people;
 pub mod places;
 pub mod rules;
 pub mod stay;
+pub mod village;
 pub mod warped;
 pub mod water;
 pub mod workshop;

@@ -43,6 +43,7 @@ public final class Worlds {
 	private final Warps warps = new Warps();
 	private final Temporaries temporaries = new Temporaries();
 	private final Charges charges = new Charges();
+	private final Gatherings gatherings = new Gatherings();
 	private final LootOffers loot = new LootOffers();
 	private final Later later = new Later();
 	private final Poses poses = new Poses();
@@ -109,6 +110,7 @@ public final class Worlds {
 		hidden.putBackIn(level);
 		warps.restoreIn(level);
 		temporaries.goneIn(level);
+		gatherings.putBackIn(level);
 		Map<LoadedMod, Open> perMod = open.remove(level);
 		if (perMod == null) {
 			return;
@@ -140,11 +142,12 @@ public final class Worlds {
 		warps.tick(server);
 		temporaries.tick(server);
 		charges.tick(server);
+		gatherings.tick(server);
 		later.tick();
 		poses.tick();
 		figures.tick();
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();

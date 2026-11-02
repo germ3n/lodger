@@ -35,14 +35,17 @@ public final class Holds {
 		final long untilTick;
 		/** The point it faces in place of the player, or null (ABI 27: the house). */
 		final Vec3 at;
+		/** Within this many blocks of the player it turns to them after all (the packed villagers); 0 never. */
+		final double turnWithin;
 		float health;
 		int hits;
 
-		Hold(Mob mob, UUID player, long untilTick, Vec3 at) {
+		Hold(Mob mob, UUID player, long untilTick, Vec3 at, double turnWithin) {
 			this.mob = mob;
 			this.player = player;
 			this.untilTick = untilTick;
 			this.at = at;
+			this.turnWithin = turnWithin;
 			this.health = mob.getHealth();
 		}
 
@@ -61,6 +64,11 @@ public final class Holds {
 
 	/** Holds a mob, facing {@code at} when given, else the player. */
 	public void add(Mob mob, ServerPlayer player, float seconds, Vec3 at) {
+		add(mob, player, seconds, at, 0);
+	}
+
+	/** Holds a mob facing {@code at}, turning to the player when they come within {@code turnWithin}. */
+	public void add(Mob mob, ServerPlayer player, float seconds, Vec3 at, double turnWithin) {
 		active.removeIf(h -> h.mob() == mob);
 		if (!mob.entityTags().contains(TAG)) {
 			if (mob.isNoAi()) {
@@ -72,7 +80,7 @@ public final class Holds {
 		mob.setTarget(null);
 		mob.getNavigation().stop();
 		mob.setDeltaMovement(Vec3.ZERO);
-		active.add(new Hold(mob, player.getUUID(), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20), at));
+		active.add(new Hold(mob, player.getUUID(), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20), at, turnWithin));
 	}
 
 	public void tick(MinecraftServer server) {
@@ -97,8 +105,9 @@ public final class Holds {
 				continue;
 			}
 			ServerPlayer player = server.getPlayerList().getPlayer(hold.player);
+			boolean near = player != null && player.level() == mob.level() && hold.turnWithin > 0 && player.distanceTo(mob) <= hold.turnWithin;
 			if (hold.at != null || (player != null && player.level() == mob.level())) {
-				Vec3 to = (hold.at != null ? hold.at : player.getEyePosition()).subtract(mob.getEyePosition());
+				Vec3 to = (hold.at != null && !near ? hold.at : player.getEyePosition()).subtract(mob.getEyePosition());
 				float yaw = Facing.yaw(to.x, to.z);
 				mob.setYRot(yaw);
 				mob.setYHeadRot(yaw);

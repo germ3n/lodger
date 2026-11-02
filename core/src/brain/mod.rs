@@ -203,6 +203,8 @@ pub const HELD_CHANCE: f64 = 0.25;
 
 /// How likely another chest answers the one they open (`chest_answers`).
 pub const ECHO_CHANCE: f64 = 0.3;
+/// The chance a bell they rang rings again, its rules allowing.
+pub const BELL_CHANCE: f64 = 0.5;
 /// The chance the figure stands at the foot of the bed as they wake, its rules allowing.
 pub const WOKE_CHANCE: f64 = 0.35;
 
@@ -639,6 +641,21 @@ impl Brain {
             if counted && act::kill_sign_spot(memory).is_some() {
                 self.consider_started("count_up", 1.0, now, day, memory, arc, config, log);
             }
+        }
+
+        // They rang a bell: perhaps it rings again, once.
+        if memory.rang_bell_now.is_some() {
+            self.consider_started(
+                "bell_twice",
+                BELL_CHANCE,
+                now,
+                day,
+                memory,
+                arc,
+                config,
+                log,
+            );
+            memory.rang_bell_now = None;
         }
 
         // They woke: perhaps the figure at the foot of the bed, for half a second.
@@ -1176,7 +1193,12 @@ impl Brain {
             || !event
                 .needs
                 .iter()
-                .filter(|n| !matches!(n, events::Need::JustWoke | events::Need::KilledNow))
+                .filter(|n| {
+                    !matches!(
+                        n,
+                        events::Need::JustWoke | events::Need::KilledNow | events::Need::RangBell
+                    )
+                })
                 .all(|n| offer::meets(*n, memory, now))
             || self.rng.next_f64() >= chance
         {
@@ -2081,6 +2103,7 @@ impl Brain {
                 if report.done
                     && (pending.event == "return_taken"
                         || pending.event == "place_taken"
+                        || pending.event == "villager_word"
                         || pending.event == "alcove")
                 {
                     memory.held = None;

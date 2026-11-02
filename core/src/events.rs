@@ -181,6 +181,10 @@ pub enum Need {
     WaterNear(u32),
     /// The target holds this item in their main hand.
     Holding(&'static str),
+    /// The target this many blocks or more from the village, or away from the game.
+    FarFromVillage(u32),
+    /// The target just rang a bell; never offered, the ringing starts it.
+    RangBell,
 }
 
 impl Need {
@@ -223,6 +227,8 @@ impl Need {
                 | Need::TargetAwake
                 | Need::WaterNear(_)
                 | Need::Holding(_)
+                | Need::FarFromVillage(_)
+                | Need::RangBell
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
                 | Need::TargetApproachingChest
@@ -307,6 +313,8 @@ impl Need {
             Need::TheirBoat => "no boat of theirs".to_string(),
             Need::WaterNear(n) => format!("no water within {n} blocks of them"),
             Need::Holding(id) => format!("they do not hold a {}", crate::memory::bare(id)),
+            Need::FarFromVillage(n) => format!("the target is within {n} blocks of the village"),
+            Need::RangBell => "happens only as they ring a bell".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -611,6 +619,14 @@ pub enum Action {
     WetSteps,
     /// Their own name twice in the player list for a few seconds.
     TabTwice,
+    /// A village lantern on their route.
+    VillageLantern,
+    /// What it took, for sale at a villager for an emerald.
+    VillagerWord,
+    /// The village empty, every villager in one house, until dawn.
+    VillageAbandoned,
+    /// The bell they rang rings again.
+    BellTwice,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1319,6 +1335,52 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Charge(3, 3.0, 3),
+        false,
+    ),
+    // Batch 12 (owner, 2026-11-10): the village's lantern on their way, what it took for sale,
+    // the village emptied till dawn, and the bell that rings again (G1).
+    row(
+        "village_lantern",
+        2,
+        5,
+        &[Scanned("lantern"), Route, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::VillageLantern,
+        false,
+    ),
+    row(
+        "villager_word",
+        4,
+        5,
+        &[Held, Creature("villager")],
+        5.0,
+        1,
+        Full,
+        Action::VillagerWord,
+        false,
+    ),
+    row(
+        "village_abandoned",
+        4,
+        5,
+        &[Scanned("_door"), Night, FarFromVillage(64)],
+        99.0,
+        1,
+        Full,
+        Action::VillageAbandoned,
+        false,
+    ),
+    row(
+        "bell_twice",
+        2,
+        5,
+        &[RangBell],
+        0.5,
+        6,
+        Half,
+        Action::BellTwice,
         false,
     ),
     // Batch 11 (owner, 2026-11-10): the atmospheres as real fog (the review's D), the sky's
@@ -3460,6 +3522,7 @@ impl Event {
             | Action::FullOfOne
             | Action::MapMarked
             | Action::LootGift
+            | Action::VillagerWord
             | Action::JukeboxDisc
             | Action::LecternPage
             | Action::SwapFuel
@@ -3530,6 +3593,8 @@ impl Event {
             | Action::BellRings
             | Action::Trail
             | Action::TrailIn
+            | Action::VillageLantern
+            | Action::BellTwice
             | Action::Snowman
             | Action::BoatInHouse
             | Action::RotateFixture(..)
@@ -3557,6 +3622,7 @@ impl Event {
             | Action::OneMore
             | Action::BoatWaiting
             | Action::UnderWater
+            | Action::VillageAbandoned
             | Action::Charge(..) => "seen",
             Action::Hint(_, _) => "sky",
             Action::RefuseRest | Action::Wake | Action::WokeElsewhere => "night",
@@ -3690,6 +3756,10 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "village_lantern" => "carry a village lantern onto their way",
+            "villager_word" => "have a villager sell what it took",
+            "village_abandoned" => "empty the village into one house until dawn",
+            "bell_twice" => "ring the bell again after they ring it",
             "mist" => "let a mist roll in",
             "dusk_noon" => "drain the light at noon",
             "red_mist" => "let a red mist roll in",

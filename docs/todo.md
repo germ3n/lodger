@@ -658,6 +658,11 @@ because it can be built and tested without a game, and because the model layer i
     name twice; a face just under the water. Five render hooks (fog, sky, rain colour, compass,
     painting) in common code for both loaders, started on each to be sure they apply. Tests:
     four in JUnit (`Atmosphere`), two in `act`. Was: overlays on the screen, nine rows not coded.
+  - **Batch 12, villages** (owner: `village_abandoned` as answered, `bell_twice` with it):
+    a village lantern on their route, what it took for sale at a villager once, the village
+    emptied into one house till dawn (packed, facing the wall, turning to them; the other doors
+    open, the lanterns out; all back by dawn), and the bell they ring ringing again. ABI 31.
+    Tests: three in `village`, two in `act`. Was: three rows not coded.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

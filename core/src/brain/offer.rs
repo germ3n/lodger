@@ -151,6 +151,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::TheirBoat => memory.their_boat().is_some(),
         Need::WaterNear(n) => last.online && memory.water_near(n as f64).is_some(),
         Need::Holding(id) => last.online && last.main_hand == id,
+        Need::FarFromVillage(n) => memory.far_from_village(n as f64),
+        Need::RangBell => false,
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }

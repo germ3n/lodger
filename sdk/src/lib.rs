@@ -27,7 +27,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The version of the C ABI. The host refuses a library built against another one, so a change
 /// to any exported function's signature or any JSON shape bumps this and `docs/sdk.md`'s table.
-pub const ABI_VERSION: u32 = 30;
+pub const ABI_VERSION: u32 = 31;
 
 /// What a Rust mod implements. One value per process, made by [`Mod::init`] when the host
 /// starts the mod, and asked by the host through the functions [`export_mod!`] exports.

@@ -287,6 +287,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         },
         Action::GraveEach => spot(memory, rng),
         Action::JukeboxDisc => memory.fixtures("jukebox").next().map(|f| f.pos),
+        Action::VillageLantern => memory.route_by_village(),
+        Action::VillagerWord => memory.villager_near().map(|v| block_of(v.pos)),
+        Action::VillageAbandoned => memory.gathering_door(),
+        Action::BellTwice => memory.rang_bell_now,
         Action::Trail | Action::TrailIn => memory.usual_door(),
         Action::BoatWaiting => memory.shore_toward_target(1.0).map(block_of),
         Action::FishingLine => memory.shore_toward_target(4.0).map(block_of),
@@ -2953,6 +2957,130 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // A lantern of the village set down on their way, then gone from the village: one that
+        // finds no ground stays where it hung.
+        Action::VillageLantern => match (pos, memory.scanned("lantern").next()) {
+            (Some(on_route), Some(lantern)) => {
+                let kind = memory
+                    .scanned
+                    .iter()
+                    .find(|(_, p)| *p == lantern)
+                    .map(|(k, _)| format!("minecraft:{k}"))
+                    .unwrap_or_else(|| "minecraft:lantern".to_string());
+                vec![
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: [on_route[0], on_route[1] + 1, on_route[2]],
+                            block: kind.clone(),
+                            state: String::new(),
+                            replace: vec![],
+                            settle: 3,
+                            wall: String::new(),
+                            rest: true,
+                            only: false,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: lantern,
+                            block: "minecraft:air".to_string(),
+                            state: String::new(),
+                            replace: vec![kind],
+                            settle: 0,
+                            wall: String::new(),
+                            rest: false,
+                            only: true,
+                        },
+                        2,
+                    ),
+                ]
+            }
+            _ => vec![],
+        },
+        // What it took, on a villager's trades for an emerald, once.
+        Action::VillagerWord => memory
+            .villager_near()
+            .map(|v| {
+                vec![(
+                    Command::OfferTrade {
+                        id: ids(),
+                        entity: v.id,
+                        kept: "held".to_string(),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // Every villager into one house till dawn, every other door open, the lanterns out;
+        // at dawn the doors shut again (the villagers and the lights come back on their own).
+        Action::VillageAbandoned => match (pos, memory.village_middle()) {
+            (Some(door), Some(middle)) => {
+                let to_dawn =
+                    (24_000u32.saturating_sub(now.day_time) as f32 / 20.0).clamp(60.0, 600.0);
+                let dawn = (to_dawn * 20.0) as u64;
+                let mut made = vec![(
+                    Command::GatherVillagers {
+                        id: ids(),
+                        center: middle,
+                        door,
+                        seconds: to_dawn,
+                        player: target,
+                    },
+                    0,
+                )];
+                for (i, other) in memory
+                    .village_doors()
+                    .into_iter()
+                    .filter(|d| *d != door)
+                    .take(16)
+                    .enumerate()
+                {
+                    let open = |ids: &mut dyn FnMut() -> u64, value: &str| Command::SetState {
+                        id: ids(),
+                        pos: other,
+                        property: "open".to_string(),
+                        value: value.to_string(),
+                    };
+                    made.push((open(ids, "true"), 5 + i as u64));
+                    made.push((open(ids, "false"), dawn + i as u64));
+                }
+                let lanterns: Vec<(String, BlockPos)> = memory
+                    .scanned
+                    .iter()
+                    .filter(|(k, _)| k.ends_with("lantern"))
+                    .take(16)
+                    .cloned()
+                    .collect();
+                for (i, (kind, p)) in lanterns.into_iter().enumerate() {
+                    made.push((
+                        Command::HideBlock {
+                            id: ids(),
+                            pos: p,
+                            seconds: to_dawn,
+                            only: vec![format!("minecraft:{kind}")],
+                        },
+                        30 + i as u64,
+                    ));
+                }
+                made
+            }
+            _ => vec![],
+        },
+        // The bell they rang, once more, a second and a half later.
+        Action::BellTwice => pos
+            .map(|bell| {
+                vec![(
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: bell,
+                    },
+                    30,
+                )]
+            })
+            .unwrap_or_default(),
         // Prints from the door to its place, or from the dark up to the door and none away.
         Action::Trail => match (pos, memory.home.as_ref()) {
             (Some(door), Some(_)) => {
@@ -4330,6 +4458,12 @@ mod tests {
         });
         memory.scanned.push(("oak_door".to_string(), [58, 64, 61]));
         memory.scanned.push(("bell".to_string(), [60, 65, 60]));
+        memory.scanned.push(("lantern".to_string(), [62, 67, 60]));
+        memory.rang_bell_now = Some([60, 65, 60]);
+        memory.scanned.push(("oak_door".to_string(), [58, 64, 60]));
+        memory
+            .scanned
+            .push(("spruce_door".to_string(), [66, 64, 58]));
         for (kind, pos) in [
             ("stairs", [4, 65, 3]),
             ("banner", [0, 66, 3]),
@@ -5994,5 +6128,81 @@ mod tests {
         let p = place(event, &memory, &mut Rng::new(1)).expect("a spot under the water");
         // The figure stands one above its spot: feet two below the water's top, head under.
         assert_eq!(p[1], water[1] - 3);
+    }
+
+    #[test]
+    fn the_village_of_batch_twelve_sends_what_it_should() {
+        let mut memory = rich_memory();
+        memory.held = Some(crate::memory::Held {
+            item: stack("minecraft:iron_pickaxe", 1, 0),
+            from: [2, 64, 0],
+            slot: 4,
+            taken_day: 0.5,
+        });
+        let now = Now {
+            day_time: 18_000,
+            ..Now::default()
+        };
+        let mut rng = Rng::new(12);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        // The village empties till dawn: the villagers in, every other door open and shut at
+        // dawn, the lanterns out till then.
+        let empty = made("village_abandoned", &mut rng);
+        assert!(
+            matches!(&empty[0].0, Command::GatherVillagers { seconds, .. } if *seconds == 300.0)
+        );
+        let opened = empty
+            .iter()
+            .filter(|(c, _)| matches!(c, Command::SetState { value, .. } if value == "true"))
+            .count();
+        let shut: Vec<u64> = empty
+            .iter()
+            .filter(|(c, _)| matches!(c, Command::SetState { value, .. } if value == "false"))
+            .map(|(_, t)| *t)
+            .collect();
+        assert_eq!(opened, shut.len());
+        assert!(shut.iter().all(|t| *t >= 6_000), "shut at dawn: {shut:?}");
+        assert!(empty
+            .iter()
+            .any(|(c, _)| matches!(c, Command::HideBlock { seconds, .. } if *seconds == 300.0)));
+
+        // What it took, for sale; the lantern on their way; the bell again.
+        assert!(
+            matches!(&made("villager_word", &mut rng)[0].0, Command::OfferTrade { kept, .. } if kept == "held")
+        );
+        let lantern = made("village_lantern", &mut rng);
+        assert!(
+            matches!(&lantern[1].0, Command::SetBlock { pos, only: true, .. } if *pos == [62, 67, 60])
+        );
+        assert!(
+            matches!(&made("bell_twice", &mut rng)[0], (Command::ToggleBlock { pos, .. }, 30) if *pos == [60, 65, 60])
+        );
+    }
+
+    #[test]
+    fn a_rung_bell_is_noticed() {
+        use craftkit::world::{Event, EventKind, Observations, Player};
+        let mut memory = memory();
+        memory.target = Some(0);
+        memory.observe(
+            &Observations {
+                players: vec![Player::default()],
+                events: vec![Event {
+                    player: 0,
+                    kind: EventKind::RangBell,
+                    pos: Some([60, 65, 60]),
+                    ..Event::default()
+                }],
+                ..Observations::default()
+            },
+            0.3,
+        );
+
+        assert_eq!(memory.rang_bell_now, Some([60, 65, 60]));
     }
 }

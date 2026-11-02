@@ -206,6 +206,8 @@ pub enum EventKind {
     LootTouched,
     /// The player opened or closed a door: `pos` is the door.
     UsedDoor,
+    /// The player rang a bell: `pos` is the bell. ABI 31.
+    RangBell,
     ChangedDimension,
     /// Hit an entity; `detail` is its kind, `pos` where it stood.
     Hit,
@@ -486,6 +488,24 @@ pub enum Command {
     Strip {
         id: u64,
         from: BlockPos,
+    },
+    /// Every villager within 48 blocks of `center` walked into the house whose door is `door`,
+    /// packed inside, held still facing its back wall, turning to `player` when they come
+    /// within five blocks; after `seconds` (ten minutes at most) each is back where it stood.
+    /// ABI 31.
+    GatherVillagers {
+        id: u64,
+        center: BlockPos,
+        door: BlockPos,
+        seconds: f32,
+        player: u32,
+    },
+    /// A villager offers the stack kept under `kept` (`take_item`'s `keep`) for one emerald,
+    /// once. ABI 31.
+    OfferTrade {
+        id: u64,
+        entity: u32,
+        kept: String,
     },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
@@ -811,6 +831,8 @@ impl Command {
             | Command::Brew { id, .. }
             | Command::Strip { id, .. }
             | Command::Prints { id, .. }
+            | Command::GatherVillagers { id, .. }
+            | Command::OfferTrade { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }

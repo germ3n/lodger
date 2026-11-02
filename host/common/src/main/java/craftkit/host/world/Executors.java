@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings) {
 	}
 
 	private Executors() {
@@ -134,6 +134,8 @@ public final class Executors {
 				case "release_bees" -> releaseBees(level, command, id, context);
 				case "move_leash" -> moveLeash(level, command, id);
 				case "charge" -> charge(level, command, id, context);
+				case "gather_villagers" -> gatherVillagers(level, command, id, context);
+				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
 				case "set_state" -> setState(level, command, id);
 				case "grow" -> grow(level, command, id);
@@ -1632,6 +1634,32 @@ public final class Executors {
 		if (!stillHeld) {
 			knot.discard();
 		}
+
+		return report(id, true, "");
+	}
+
+	/** The village emptied into one house till dawn (ABI 31). */
+	private static JsonObject gatherVillagers(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		int packed = context.gatherings().gather(level, blockPos(command.getAsJsonArray("center")), blockPos(command.getAsJsonArray("door")),
+				command.get("seconds").getAsFloat(), player, context.holds());
+
+		return packed > 0 ? report(id, true, "") : report(id, false, "no villager, or no room behind that door");
+	}
+
+	/** What it took, for sale at a villager for an emerald, once (ABI 31). */
+	private static JsonObject offerTrade(ServerLevel level, JsonObject command, long id, Context context, WorldData data) {
+		if (!(level.getEntity(command.get("entity").getAsInt()) instanceof net.minecraft.world.entity.npc.villager.AbstractVillager villager)) {
+			return report(id, false, "no villager with that id here");
+		}
+		ItemStack stack = data.giveBack(command.get("kept").getAsString());
+		if (stack == null || stack.isEmpty()) {
+			return report(id, false, "nothing kept under that name");
+		}
+		context.gatherings().sell(villager, stack);
 
 		return report(id, true, "");
 	}

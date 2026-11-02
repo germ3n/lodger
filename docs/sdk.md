@@ -162,7 +162,11 @@ value higher, refused at the top) and `toggle_block` ringing a bell. ABI 30 (202
 (`mist`, `red_mist`, `darkness`, `dusk_noon`, and `fog_close` as mist) as real fog through render
 hooks, the sky's (`stars_out`, `moon_wrong`, `night_early`), `red_rain` as red drops,
 `compass_points` and `painting_flip` with a `pos`, and `hunger_shake`, `heart_skip`,
-`subtitle`.
+`subtitle`. ABI 31 (2026-11-10): the `rang_bell` event; `gather_villagers` (every villager near a
+village's middle packed into the house behind a door, facing its back wall, turning to the
+player within five blocks, each back where it stood after its time or when the level closes) and
+`offer_trade` (a kept stack for sale at a villager for an emerald, the trade taken away once
+used, so a restock never sells it again).
 
 ## Resources
 

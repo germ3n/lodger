@@ -369,9 +369,10 @@ Offered only with a village within 128 blocks of the home.
 | `villager_at_door` | 3 | A villager stands outside the target's door at night, facing it, and is back home by morning. | A villager and night. |
 | `golem_turned` | 3 | The iron golem faces the target's house all night and all the next day, wherever it stands. | An iron golem. |
 | `village_doors` | 3 | Every door in the village is open in the morning. | A village with 4 or more doors. |
-| `village_lantern` | 2 | A village lantern is gone, and is on the target's path. | A village lantern and a route. |
-| `villager_word` | 4 | A villager's trade offers one item: the held item, for one emerald. Once bought, the trade is gone. | A villager and a held item. |
-| `village_abandoned` | 4 | While the target is away, the village empties: every villager is walked into one house and its door shut, every other door hangs open, the lanterns and torches are out (the lodger holds them), the bell is silent. Found, they stand packed in that house facing the wall, silent, and turn to the target as the door opens. Everything is put back by the next dawn: villagers home, lights up, doors as they were. Once a stay. Owner's idea, 2026-11-09. Not coded yet. | A scanned village with five or more villagers and a house that holds them, the target 64 or more blocks off. |
+| `village_lantern` | 2 | A village lantern is gone, and stands on the target's route where it passes the village (set down there first, so one that finds no ground stays where it hung). Coded 2026-11-10. | A village lantern and a route. |
+| `villager_word` | 4 | The villager nearest them sells what the lodger took (the very item, `offer_trade`, ABI 31) for one emerald, once; bought, the trade is gone, and so is the lodger's hold on it. Coded 2026-11-10. | Something it holds, a villager near. |
+| `village_abandoned` | 4 | While the target is 64 blocks or more away at night, the village empties: every villager within 48 blocks of its middle walked into the house whose door is nearest the middle, packed inside, facing its back wall, silent, turning to the target as they come within five blocks (`gather_villagers`, ABI 31); every other door open, the lanterns out (`hide_block`). By dawn, everyone is back where they stood, the doors shut, the lights lit. Once a stay. Owner's idea, 2026-11-09; coded 2026-11-10. | The village's doors read, night, the target far from the village. |
+| `bell_twice` | 2 | They ring a bell; a second and a half later it rings again, once, swinging, half the times they ring it (`rang_bell`, ABI 31; never offered, the ringing starts it). Owner's idea, 2026-11-09 (G1). | The target ringing a bell. |
 
 ### Water and boats
 
