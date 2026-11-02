@@ -537,6 +537,19 @@ pub enum Command {
         #[serde(default)]
         replace: Vec<String>,
     },
+    /// The figure `figure`, seen by `player` alone, walks from `from` (on the ground) along
+    /// `way` to the first rock face and digs in, a step at a time, the stone closing behind it,
+    /// until it is gone; with `through`, a minute later it steps out of the hill's far face. All
+    /// of it is block updates to that player's client: nothing in the world changes. ABI 35.
+    DigIn {
+        id: u64,
+        player: u32,
+        figure: u32,
+        from: BlockPos,
+        way: [i32; 2],
+        #[serde(default, skip_serializing_if = "is_false")]
+        through: bool,
+    },
     /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
     OpenLid {
         id: u64,
@@ -842,6 +855,12 @@ pub enum Command {
         /// Gone the moment it leaves the player's view, once they have seen it. ABI 33.
         #[serde(default, skip_serializing_if = "is_false")]
         once_seen: bool,
+        /// Crouching when the player crouches, standing when they stand. ABI 35.
+        #[serde(default, skip_serializing_if = "is_false")]
+        copy_crouch: bool,
+        /// Swinging what it holds now and then, as at the rock. ABI 35.
+        #[serde(default, skip_serializing_if = "is_false")]
+        swinging: bool,
     },
     RemoveFigure {
         id: u64,
@@ -873,6 +892,7 @@ impl Command {
             | Command::LightPortal { id, .. }
             | Command::FigureSwing { id, .. }
             | Command::PlaceBlueprint { id, .. }
+            | Command::DigIn { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }

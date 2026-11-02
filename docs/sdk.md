@@ -173,7 +173,9 @@ once it leaves their view after they saw it), and `figure_swing` (the figure swi
 a hit, `spare` keeping the player above half a heart). ABI 34 (2026-11-10): `place_blueprint`
 (blocks laid relative to a place, the ground found and reported as `base <y> placed <n>` when its
 y is below -1000; each only into air or over `replace`, never over contents; a door's halves
-together).
+together). ABI 35 (2026-11-10): `figure`'s `copy_crouch` and `swinging`, and `dig_in` (the figure
+walks to the first rock face ahead and digs in, the stone closing behind, out of a hill's far
+side with `through`; block updates to that player alone, nothing in the world changed).
 
 ## Resources
 

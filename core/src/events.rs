@@ -203,6 +203,8 @@ pub enum Need {
     BuildLeft(&'static str),
     /// Twenty building blocks or more of theirs: a house to copy.
     Walls,
+    /// A light of theirs within ten blocks of the target.
+    LightNear,
 }
 
 impl Need {
@@ -249,6 +251,7 @@ impl Need {
                 | Need::RangBell
                 | Need::InTunnel
                 | Need::Villagers
+                | Need::LightNear
                 | Need::TunnelLights
                 | Need::BehindThem
                 | Need::TargetAte
@@ -346,6 +349,7 @@ impl Need {
             Need::BehindThem => "no room behind them in their tunnel".to_string(),
             Need::BuildLeft(e) => format!("nothing left of {e} to build"),
             Need::Walls => "fewer than twenty blocks of their building".to_string(),
+            Need::LightNear => "no light of theirs near them".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -686,6 +690,11 @@ pub enum Action {
     Build(&'static str),
     /// A room dug in a cave, a door, a chest holding what it took.
     CaveRoom,
+    /// The figure digs into the rock ahead of them, the stone closing behind; with true, out
+    /// of the hill's far side a minute later.
+    DigInto(bool),
+    /// The figure at the edge of their light steps back out of it as the light flickers.
+    IntoTheDark,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -756,6 +765,12 @@ pub enum FigureWhere {
     Crowd,
     /// Two blocks behind them.
     Close,
+    /// Far, crouching when they crouch.
+    FarCopying,
+    /// Far, swinging their tool at the rock now and then.
+    FarWorking,
+    /// At the edge of their light, stepping back out of it.
+    EdgeOfLight,
 }
 
 /// One row of the catalogue.
@@ -1402,6 +1417,62 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Full,
         Action::Charge(3, 3.0, 3),
+        false,
+    ),
+    // Batch 15, like a player (owner, 2026-11-10: all of them).
+    row(
+        "into_the_mountain",
+        4,
+        5,
+        &[TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::DigInto(false),
+        false,
+    ),
+    row(
+        "through_the_hill",
+        4,
+        5,
+        &[TargetOutdoors],
+        4.0,
+        1,
+        Full,
+        Action::DigInto(true),
+        false,
+    ),
+    row(
+        "into_the_dark",
+        3,
+        5,
+        &[LightNear, Night, TargetOutdoors],
+        2.0,
+        3,
+        Full,
+        Action::IntoTheDark,
+        false,
+    ),
+    row(
+        "copy_crouch",
+        4,
+        5,
+        &[TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::FarCopying, 40.0, 32.0),
+        false,
+    ),
+    row(
+        "tools_in_hand",
+        3,
+        5,
+        &[TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::Figure(FigureWhere::FarWorking, 30.0, 32.0),
         false,
     ),
     // Batch 15, building (owner, 2026-11-10: every one; materials gathered first, topped up
@@ -3993,6 +4064,8 @@ impl Event {
             | Action::Figure(..)
             | Action::FigureSwing(_)
             | Action::FigureWave
+            | Action::DigInto(_)
+            | Action::IntoTheDark
             | Action::WarpAnimal
             | Action::BeesOut
             | Action::HorseMoved
@@ -4134,6 +4207,11 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "into_the_mountain" => "have the figure dig into the rock ahead of them",
+            "through_the_hill" => "have the figure walk through the hill",
+            "into_the_dark" => "have the figure step back out of their light",
+            "copy_crouch" => "have the far figure crouch when they crouch",
+            "tools_in_hand" => "have the far figure work the rock with their tool",
             "house_near" => "build its own house near theirs, a third a night",
             "house_grows" => "add a room to its house",
             "pillar" => "raise its pillar a block",

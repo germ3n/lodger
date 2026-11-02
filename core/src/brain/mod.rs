@@ -3323,6 +3323,16 @@ mod tests {
             tick: 20,
             ..Now::default()
         };
+        // One plan held, waiting far ahead: the brain must choose another beside it. Left to
+        // chance, two rarely overlapped once most events send at once (2026-11-10).
+        let held = brain.next_plan_id();
+        brain.plans.push(Plan {
+            id: held,
+            event: "knock".to_string(),
+            from_tick: now.tick + 50_000,
+            until_tick: now.tick + 60_000,
+            ..Plan::default()
+        });
         for _ in 0..40 {
             brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
             if brain.plans.len() >= 2 {

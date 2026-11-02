@@ -684,6 +684,11 @@ because it can be built and tested without a game, and because the model layer i
     outline and the copy of their house. Its stone spent first. Two bugs found on the way: a
     stay test caught an overflow in "all at once" (saturating now), and the parallel-plans test
     leaned on chance and now sets its player at home. Tests: eight in `building`.
+  - **Batch 15, like a player** (owner: all of them): the figure digs into the rock ahead and
+    the stone closes behind it, or walks through the hill and out its far side, all on their
+    client alone (`dig_in`); steps back out of their light as it flickers; crouches when they
+    crouch; swings their tool at the rock from afar. ABI 35. The parallel-plans test now holds
+    one plan and asks for a second, where it had leaned on chance. Tests: one in `act`.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

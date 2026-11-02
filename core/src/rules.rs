@@ -134,6 +134,8 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::Figure(_, _, _)
             | crate::events::Action::FigureSwing(_)
             | crate::events::Action::FigureWave
+            | crate::events::Action::DigInto(_)
+            | crate::events::Action::IntoTheDark
             | crate::events::Action::BedBreaks
             | crate::events::Action::ScanVillage
             | crate::events::Action::TunnelToward

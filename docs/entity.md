@@ -545,14 +545,14 @@ mining events are in [Mines and caves](#mines-and-caves); these are the rest.
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `tools_in_hand` | 3 | The figures hold what the target holds most, the memory's favourite tool, and the far figure swings it at the rock now and then. | A figure and a favourite tool. |
-| `your_spacing` | 3 | Torches it places, anywhere, are at the spacing the target uses in their own tunnels; its tunnels are the target's height and width. | A tunnel the target dug. |
-| `copy_crouch` | 4 | The far figure crouches when the target crouches, and stands when they stand, at 60 blocks. | A far figure showing. |
+| `tools_in_hand` | 3 | The far figure holds what the target holds most and swings it at the rock now and then (`figure`'s `swinging`, ABI 35). Coded 2026-11-10. | The target outdoors. |
+| `your_spacing` | 3 | The torches it places in caves and tunnels (`cave_lit`, `mine_beside`) are at the spacing the target uses in their own; its tunnels their height and width. Coded 2026-11-10. | A tunnel the target dug. |
+| `copy_crouch` | 4 | The far figure crouches when the target crouches, and stands when they stand (`figure`'s `copy_crouch`, ABI 35). Coded 2026-11-10. | The target outdoors. |
 | `copy_build` | 4 | A one-block-high outline of the target's house, in cobblestone, at its place, the size of their walls' footprint. Coded 2026-11-10. | Twenty building blocks of theirs, the target away or asleep. |
-| `wave` | 4 | The far figure raises its arm once, as a player swinging, and is gone. | A far figure showing. |
-| `through_the_hill` | 4 | It walks into one side of a hill in view and, a minute later, out of the other, the stone closing behind it both times. Approached, both faces are natural rock. | A hill of natural stone 10 to 30 blocks thick in view, the target 40 or more blocks off. |
-| `into_the_dark` | 3 | It stands at the edge of your torchlight, steps back one block out of it, the torch flickers, and the light finds nothing. | The target outdoors at night by a torch, open ground beyond. |
-| `into_the_mountain` | 4 | Seen from 40 to 80 blocks, the figure digs into a mountainside at a player's pace, a one-by-two tunnel, and the stone closes behind it block by block as it goes, until the face is smooth and it is gone. Walked up to, the face is natural stone; one block in, a torch, and behind it solid rock. Owner's idea, 2026-11-09. | A mountainside of natural stone in view from the route or home, and the target 40 or more blocks from it. |
+| `wave` | 4 | Built as `figure_waves` (batch 14). | A far figure showing. |
+| `through_the_hill` | 4 | Thirty blocks ahead of them, the figure walks to the first rock face, digs in a step at a time with the stone closing behind it, and a minute later steps out of the hill's far side. All of it block updates to their client (`dig_in`, ABI 35): approached, both faces are natural rock, nothing in the world changed. Coded 2026-11-10. | The target outdoors. |
+| `into_the_dark` | 3 | At night by a light of theirs, the figure stands at the edge of its reach, steps back one block out of it, the light flickers, and it is gone. Coded 2026-11-10. | A light of theirs within ten blocks, night, the target outdoors. |
+| `into_the_mountain` | 4 | Thirty blocks ahead of them, the figure walks to the rock face and digs into it, a one-by-two tunnel, the stone closing behind it block by block until the face is smooth and it is gone; on their client alone (`dig_in`, ABI 35). Owner's idea, 2026-11-09; coded 2026-11-10. | The target outdoors. |
 
 ### Building
 

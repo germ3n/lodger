@@ -138,6 +138,7 @@ public final class Executors {
 				case "light_portal" -> lightPortal(level, command, id);
 				case "place_blueprint" -> placeBlueprint(level, command, id);
 				case "figure_swing" -> figureSwing(level, command, id, context);
+				case "dig_in" -> digIn(level, command, id, context);
 				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
 				case "set_state" -> setState(level, command, id);
@@ -510,7 +511,9 @@ public final class Executors {
 				command.has("seconds") ? command.get("seconds").getAsFloat() : 0,
 				command.has("vanish_within") ? command.get("vanish_within").getAsFloat() : 0,
 				command.has("mirror") && command.get("mirror").getAsBoolean(),
-				command.has("once_seen") && command.get("once_seen").getAsBoolean());
+				command.has("once_seen") && command.get("once_seen").getAsBoolean(),
+				command.has("copy_crouch") && command.get("copy_crouch").getAsBoolean(),
+				command.has("swinging") && command.get("swinging").getAsBoolean());
 
 		return report(id, true, "");
 	}
@@ -1641,6 +1644,20 @@ public final class Executors {
 		}
 
 		return report(id, true, "");
+	}
+
+	/** The figure digs into the rock ahead, on its player's client alone (ABI 35). */
+	private static JsonObject digIn(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		JsonArray way = command.getAsJsonArray("way");
+		Direction direction = Direction.getApproximateNearest(way.get(0).getAsInt(), 0, way.get(1).getAsInt());
+		boolean dug = context.figures().digIn(level, player, command.get("figure").getAsInt(), blockPos(command.getAsJsonArray("from")), direction,
+				command.has("through") && command.get("through").getAsBoolean());
+
+		return dug ? report(id, true, "") : report(id, false, "no rock face ahead");
 	}
 
 	/** The figure shown to a player swings once, perhaps a hit, never below half a heart with spare (ABI 33). */

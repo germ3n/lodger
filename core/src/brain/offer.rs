@@ -156,6 +156,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Villagers => memory.villager_near().is_some(),
         Need::BuildLeft(event) => memory.next_build(event).is_some(),
         Need::Walls => memory.walls.len() >= 20,
+        Need::LightNear => last.online && crate::brain::act::light_near(memory).is_some(),
         Need::Tunnel => memory.newest_tunnel().is_some(),
         Need::InTunnel => last.online && last.underground && memory.tunnel_at_target().is_some(),
         Need::OreAhead => memory.ore_ahead().is_some(),
@@ -200,9 +201,11 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::WetSteps
         | Action::PetGrowl => config.events.sounds,
         Action::Hint(_, _) => config.events.glitches,
-        Action::Figure(_, _, _) | Action::FigureSwing(_) | Action::FigureWave => {
-            config.events.figure
-        }
+        Action::Figure(_, _, _)
+        | Action::FigureSwing(_)
+        | Action::FigureWave
+        | Action::DigInto(_)
+        | Action::IntoTheDark => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
         | Action::Says
@@ -232,7 +235,11 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::WetSteps
         | Action::PetGrowl => Some("sound"),
         Action::Hint(_, _) => Some("screen"),
-        Action::Figure(_, _, _) | Action::FigureSwing(_) | Action::FigureWave => Some("figure"),
+        Action::Figure(_, _, _)
+        | Action::FigureSwing(_)
+        | Action::FigureWave
+        | Action::DigInto(_)
+        | Action::IntoTheDark => Some("figure"),
         Action::TabEntry
         | Action::Message(_)
         | Action::Says

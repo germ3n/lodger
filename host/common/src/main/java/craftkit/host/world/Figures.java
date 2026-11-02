@@ -55,6 +55,11 @@ public final class Figures {
 		/** Gone once it leaves their view after they have seen it (ABI 33). */
 		boolean onceSeen;
 		boolean seen;
+		/** Crouches as they crouch (ABI 35). */
+		boolean copyCrouch;
+		boolean crouched;
+		/** Swings now and then, as at the rock (ABI 35). */
+		boolean swinging;
 
 		Figure(ServerPlayer player, int number, int entityId, UUID uuid, GameProfile profile, ItemStack held, Vec3 at, List<Vec3> path, long untilTick, double vanishWithin) {
 			this.player = player;
@@ -84,6 +89,11 @@ public final class Figures {
 
 	/** {@link #show} mirroring the player, or gone once seen and looked away from (ABI 33). */
 	public void show(ServerLevel level, ServerPlayer player, int number, ServerPlayer skinOf, Vec3 pos, List<Vec3> path, ItemStack held, boolean nameShown, float seconds, float vanishWithin, boolean mirror, boolean onceSeen) {
+		show(level, player, number, skinOf, pos, path, held, nameShown, seconds, vanishWithin, mirror, onceSeen, false, false);
+	}
+
+	/** {@link #show} copying their crouch and swinging now and then (ABI 35). */
+	public void show(ServerLevel level, ServerPlayer player, int number, ServerPlayer skinOf, Vec3 pos, List<Vec3> path, ItemStack held, boolean nameShown, float seconds, float vanishWithin, boolean mirror, boolean onceSeen, boolean copyCrouch, boolean swinging) {
 		remove(player, number);
 
 		Vec3 at = ground(level, pos);
@@ -94,6 +104,8 @@ public final class Figures {
 		figure.shownAt = at;
 		figure.playerAt = player.position();
 		figure.onceSeen = onceSeen;
+		figure.copyCrouch = copyCrouch;
+		figure.swinging = swinging;
 		active.add(figure);
 		send(level, figure, nameShown);
 	}
@@ -113,9 +125,10 @@ public final class Figures {
 		return removed;
 	}
 
-	/** Once a tick: the paths walked, the vanishing, the time. */
+	/** Once a tick: the paths walked, the vanishing, the time, the digs. */
 	public void tick() {
 		tick++;
+		tickDigs();
 		Iterator<Figure> it = active.iterator();
 		while (it.hasNext()) {
 			Figure figure = it.next();
@@ -132,6 +145,16 @@ public final class Figures {
 				}
 				it.remove();
 				continue;
+			}
+
+			// Crouching as they crouch; swinging at the rock now and then.
+			if (figure.copyCrouch && figure.player.isShiftKeyDown() != figure.crouched) {
+				figure.crouched = figure.player.isShiftKeyDown();
+				pose(figure, figure.crouched ? net.minecraft.world.entity.Pose.CROUCHING : net.minecraft.world.entity.Pose.STANDING);
+			}
+			if (figure.swinging && (tick + figure.entityId) % 70 == 0) {
+				figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket(figure.entityId,
+						net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
 			}
 
 			// Mirroring: where it was shown, moved as far as the player has moved, a quarter
@@ -159,6 +182,140 @@ public final class Figures {
 				figure.at = ground(level, figure.path.get(figure.pathIndex));
 				sendEntity(figure);
 			}
+		}
+	}
+
+	/** The figure's pose to its player: crouching or standing. */
+	@SuppressWarnings("unchecked")
+	private static void pose(Figure figure, net.minecraft.world.entity.Pose pose) {
+		try {
+			var field = net.minecraft.world.entity.Entity.class.getDeclaredField("DATA_POSE");
+			field.setAccessible(true);
+			var accessor = (net.minecraft.network.syncher.EntityDataAccessor<net.minecraft.world.entity.Pose>) field.get(null);
+			figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(figure.entityId,
+					List.of(net.minecraft.network.syncher.SynchedEntityData.DataValue.create(accessor, pose))));
+		} catch (ReflectiveOperationException ignored) {
+			// The pose field moved: the figure stands, nothing else lost.
+		}
+	}
+
+	/** One figure's dig through the rock, on its player's client alone (ABI 35). */
+	private static final class Dig {
+		final ServerPlayer player;
+		final int number;
+		final ServerLevel level;
+		final net.minecraft.core.Direction way;
+		BlockPos at;
+		int steps;
+		final int depth;
+		final boolean through;
+		long nextTick;
+		/** The blocks shown as air to the player, to give back. */
+		final List<BlockPos> opened = new ArrayList<>();
+		/** Hidden in the hill, waiting to come out of its far side. */
+		boolean inside;
+
+		Dig(ServerPlayer player, int number, ServerLevel level, net.minecraft.core.Direction way, BlockPos at, int depth, boolean through, long nextTick) {
+			this.player = player;
+			this.number = number;
+			this.level = level;
+			this.way = way;
+			this.at = at;
+			this.depth = depth;
+			this.through = through;
+			this.nextTick = nextTick;
+		}
+	}
+
+	private final List<Dig> digs = new ArrayList<>();
+
+	/**
+	 * The figure walks from a place along a way to the first rock face (stone at its feet and
+	 * head, within 24 blocks) and digs in; with {@code through}, it comes out of the far face a
+	 * minute later. False when there is no rock face ahead.
+	 */
+	public boolean digIn(ServerLevel level, ServerPlayer player, int number, BlockPos from, net.minecraft.core.Direction way, boolean through) {
+		BlockPos ground = BlockPos.containing(ground(level, new Vec3(from.getX() + 0.5, -10_000, from.getZ() + 0.5)));
+		BlockPos at = ground;
+		for (int i = 0; i < 24; i++) {
+			BlockPos next = at.relative(way);
+			BlockPos onGround = BlockPos.containing(ground(level, Vec3.atBottomCenterOf(next).with(net.minecraft.core.Direction.Axis.Y, -10_000)));
+			if (rock(level, next.atY(at.getY())) && rock(level, next.atY(at.getY()).above())) {
+				show(level, player, number, player, Vec3.atBottomCenterOf(at), List.of(), player.getMainHandItem().copy(), false, 0, 0);
+				digs.add(new Dig(player, number, level, way, at, 6, through, tick + 30));
+				return true;
+			}
+			at = onGround;
+		}
+
+		return false;
+	}
+
+	private static boolean rock(ServerLevel level, BlockPos pos) {
+		var state = level.getBlockState(pos);
+
+		return !state.isAir() && state.isSolidRender() && state.getBlock().getExplosionResistance() >= 3;
+	}
+
+	private void tickDigs() {
+		Iterator<Dig> it = digs.iterator();
+		while (it.hasNext()) {
+			Dig dig = it.next();
+			if (dig.player.isRemoved()) {
+				it.remove();
+				continue;
+			}
+			if (tick < dig.nextTick) {
+				continue;
+			}
+			if (dig.inside) {
+				// Out of the far face: the first air along the way, within thirty blocks.
+				BlockPos at = dig.at;
+				for (int i = 0; i < 30; i++) {
+					at = at.relative(dig.way);
+					if (dig.level.getBlockState(at).isAir() && dig.level.getBlockState(at.above()).isAir()) {
+						show(dig.level, dig.player, dig.number, dig.player, Vec3.atBottomCenterOf(at), List.of(Vec3.atCenterOf(at.relative(dig.way, 2)).with(net.minecraft.core.Direction.Axis.Y, -10_000)), dig.player.getMainHandItem().copy(), false, 6, 0);
+						break;
+					}
+				}
+				it.remove();
+				continue;
+			}
+			// A step in: the rock ahead opened for them, the figure in it, the rock behind back.
+			BlockPos next = dig.at.relative(dig.way);
+			for (BlockPos open : List.of(next, next.above())) {
+				dig.player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(open, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()));
+				dig.opened.add(open);
+			}
+			dig.player.playSound(net.minecraft.sounds.SoundEvents.STONE_BREAK, 0.6f, 0.9f);
+			show(dig.level, dig.player, dig.number, dig.player, Vec3.atBottomCenterOf(next), List.of(), dig.player.getMainHandItem().copy(), false, 0, 0);
+			BlockPos behind = dig.at;
+			if (dig.steps > 0) {
+				giveBack(dig, behind);
+			}
+			dig.at = next;
+			dig.steps++;
+			dig.nextTick = tick + 25;
+			if (dig.steps >= dig.depth) {
+				remove(dig.player, dig.number);
+				for (BlockPos open : new ArrayList<>(dig.opened)) {
+					giveBack(dig, open);
+				}
+				if (dig.through) {
+					dig.inside = true;
+					dig.nextTick = tick + 1_200;
+				} else {
+					it.remove();
+				}
+			}
+		}
+	}
+
+	/** The real block at a place, sent back to the player: the rock closes. */
+	private static void giveBack(Dig dig, BlockPos pos) {
+		for (BlockPos p : List.of(pos, pos.above())) {
+			dig.player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(dig.level, p));
+			dig.opened.remove(p);
 		}
 	}
 

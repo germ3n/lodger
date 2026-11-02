@@ -412,7 +412,23 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::Figure(FigureWhere::Close, _, _) | Action::FigureSwing(_) => {
             Some(behind_close(memory))
         }
-        Action::FigureWave => far_spot(memory, rng),
+        Action::FigureWave
+        | Action::Figure(FigureWhere::FarCopying, _, _)
+        | Action::Figure(FigureWhere::FarWorking, _, _) => far_spot(memory, rng),
+        // Thirty blocks ahead of where they face, on the ground: where the figure starts for the
+        // rock.
+        Action::DigInto(_) => {
+            let at = block_of(memory.last.pos);
+            let way = facing_way(memory.last.yaw);
+            Some([at[0] + way[0] * 30, -10_000, at[2] + way[1] * 30])
+        }
+        // Seven blocks past their light from them, on the ground: the edge of its reach.
+        Action::IntoTheDark | Action::Figure(FigureWhere::EdgeOfLight, _, _) => light_near(memory)
+            .map(|light| {
+                let at = block_of(memory.last.pos);
+                let away = step_toward(at, light);
+                [light[0] + away[0] * 7, -10_000, light[2] + away[1] * 7]
+            }),
         Action::Build(event) => memory.next_build(event).map(|(site, _, _)| site),
         Action::CaveRoom => memory.unentered_cave().and_then(|c| c.first().copied()),
         Action::Figure(FigureWhere::Far, _, _) => {
@@ -824,6 +840,29 @@ fn fill(ids: &mut impl FnMut() -> u64, pos: BlockPos, block: &str) -> Command {
     }
 }
 
+/// The way they face, as one block along the nearer axis.
+fn facing_way(yaw: f32) -> [i32; 2] {
+    let yaw = (yaw as f64).to_radians();
+    let (x, z) = (-yaw.sin(), yaw.cos());
+    if x.abs() >= z.abs() {
+        [if x >= 0.0 { 1 } else { -1 }, 0]
+    } else {
+        [0, if z >= 0.0 { 1 } else { -1 }]
+    }
+}
+
+/// A light of theirs within ten blocks of the target, the nearest.
+pub fn light_near(memory: &Memory) -> Option<BlockPos> {
+    let at = block_of(memory.last.pos);
+    memory
+        .their_lights()
+        .into_iter()
+        .map(|(p, _)| p)
+        .chain(memory.home.iter().flat_map(|h| h.lights.iter().copied()))
+        .filter(|p| distance(*p, at) <= 10.0)
+        .min_by(|a, b| distance(*a, at).total_cmp(&distance(*b, at)))
+}
+
 /// Two blocks behind the target, its feet at theirs (the figure stands one above the spot).
 fn behind_close(memory: &Memory) -> BlockPos {
     let at = block_of(memory.last.pos);
@@ -900,6 +939,8 @@ fn figure_shown(
         vanish_within: 0.0,
         mirror: false,
         once_seen: false,
+        copy_crouch: false,
+        swinging: false,
     }
 }
 
@@ -3252,6 +3293,51 @@ pub fn commands(
                 made
             })
             .unwrap_or_default(),
+        // The figure walks to the rock ahead and digs in, the stone closing behind; through the
+        // hill and out its far side a minute later with `through`. All on their client.
+        Action::DigInto(through) => pos
+            .map(|from| {
+                vec![(
+                    Command::DigIn {
+                        id: ids(),
+                        player: target,
+                        figure: 1,
+                        from,
+                        way: facing_way(memory.last.yaw),
+                        through,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // At the edge of their light, a step back out of it, the light flickering as it goes.
+        Action::IntoTheDark => pos
+            .map(|p| {
+                let at = block_of(memory.last.pos);
+                let away = step_toward(at, [p[0], at[1], p[2]]);
+                let mut shown = figure_shown(ids, memory, target, p, 2.5, false);
+                if let Command::Figure { path, pos, .. } = &mut shown {
+                    *path = vec![
+                        *pos,
+                        [pos[0] + away[0] as f64, pos[1], pos[2] + away[1] as f64],
+                    ];
+                }
+                vec![
+                    (shown, 0),
+                    (
+                        Command::Hint {
+                            id: ids(),
+                            player: target,
+                            hint: "flicker".to_string(),
+                            pos: None,
+                            seconds: 1.5,
+                            detail: String::new(),
+                        },
+                        10,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         // Right behind them for a second, it strikes once: by the harm stages, never a kill.
         Action::FigureSwing(damage) => pos
             .map(|p| {
@@ -4517,6 +4603,8 @@ pub fn commands(
                         vanish_within: vanish,
                         mirror: matches!(where_, FigureWhere::Mirror),
                         once_seen: matches!(where_, FigureWhere::Crowd),
+                        copy_crouch: matches!(where_, FigureWhere::FarCopying),
+                        swinging: matches!(where_, FigureWhere::FarWorking),
                     },
                     0,
                 )]
@@ -6890,5 +6978,46 @@ mod tests {
             matches!(&window[0].0, Command::Figure { pos, .. } if pos[1] == 64.0),
             "{window:?}"
         );
+    }
+
+    #[test]
+    fn like_a_player_sends_what_it_should() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 90.0; // facing -x
+        memory.last.online = true;
+        memory.home.as_mut().unwrap().lights = vec![[3, 65, 0]];
+        let now = Now::default();
+        let mut rng = Rng::new(15);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        // Thirty blocks the way they face, on the ground, toward the rock.
+        assert!(matches!(&made("into_the_mountain", &mut rng)[0].0,
+            Command::DigIn { from, way, through: false, .. } if *way == [-1, 0] && from[0] == -30 && from[1] <= -1_000));
+        assert!(matches!(
+            &made("through_the_hill", &mut rng)[0].0,
+            Command::DigIn { through: true, .. }
+        ));
+        // The far figure copying their crouch; the one at work.
+        assert!(matches!(
+            &made("copy_crouch", &mut rng)[0].0,
+            Command::Figure {
+                copy_crouch: true,
+                swinging: false,
+                ..
+            }
+        ));
+        assert!(matches!(
+            &made("tools_in_hand", &mut rng)[0].0,
+            Command::Figure { swinging: true, .. }
+        ));
+        // At the edge of their light, a step back, and the flicker.
+        let dark = made("into_the_dark", &mut rng);
+        assert!(matches!(&dark[0].0, Command::Figure { path, .. } if path.len() == 2));
+        assert!(matches!(&dark[1].0, Command::Hint { hint, .. } if hint == "flicker"));
     }
 }
