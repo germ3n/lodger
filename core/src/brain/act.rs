@@ -157,6 +157,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if super::sounds::HOUSE_SOUNDS.contains(&event.id) {
         return super::sounds::house_spot(event.id, memory, rng.next_u64() as usize);
     }
+    // Ripples on the water near them, from the shore on their side outward.
+    if event.id == "ripples" {
+        return memory.shore_toward_target(2.0).map(block_of);
+    }
     // Under the bed they lie in.
     if event.id == "under_the_bed" {
         return home.and_then(|h| h.bed).map(|b| [b[0], b[1] - 1, b[2]]);
@@ -267,6 +271,24 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         },
         Action::GraveEach => spot(memory, rng),
         Action::JukeboxDisc => memory.fixtures("jukebox").next().map(|f| f.pos),
+        Action::Trail | Action::TrailIn => memory.usual_door(),
+        Action::BoatWaiting => memory.shore_toward_target(1.0).map(block_of),
+        Action::FishingLine => memory.shore_toward_target(4.0).map(block_of),
+        // Beside the door, two out, on the side away from the words on the sign.
+        Action::Snowman => match (memory.usual_door(), home) {
+            (Some(door), Some(h)) => {
+                let step = step_toward(h.center, door);
+                Some([
+                    door[0] + step[0] * 3 + step[1] * 2,
+                    door[1],
+                    door[2] + step[1] * 3 + step[0] * 2,
+                ])
+            }
+            _ => None,
+        },
+        Action::BoatInHouse => home.map(|h| [h.center[0], h.floor_y, h.center[2]]),
+        Action::UnderWater => memory.shore_toward_target(4.0).map(block_of),
+        Action::WetSteps => memory.usual_door(),
         Action::LecternPage => memory.fixtures("lectern").next().map(|f| f.pos),
         Action::SwapFuel => memory.furnace().map(|f| f.pos),
         Action::Brewing => memory.fixtures("brewing_stand").next().map(|f| f.pos),
@@ -1769,6 +1791,7 @@ pub fn commands(
                 "camera_nudge" => memory
                     .place
                     .or_else(|| memory.home.as_ref().map(|h| h.center)),
+                "ripples" => pos,
                 _ => None,
             };
             vec![(
@@ -2906,6 +2929,172 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // Prints from the door to its place, or from the dark up to the door and none away.
+        Action::Trail => match (pos, memory.home.as_ref()) {
+            (Some(door), Some(_)) => {
+                let to = spot(memory, &mut Rng::new(seed as u64)).unwrap_or(door);
+                vec![(
+                    Command::Prints {
+                        id: ids(),
+                        from: door,
+                        to,
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
+        Action::TrailIn => match (pos, memory.home.as_ref()) {
+            (Some(door), Some(home)) => {
+                let step = step_toward(home.center, door);
+                vec![(
+                    Command::Prints {
+                        id: ids(),
+                        from: [door[0] + step[0] * 20, door[1], door[2] + step[1] * 20],
+                        to: door,
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
+        Action::BoatWaiting | Action::BoatInHouse => match (pos, memory.their_boat()) {
+            (Some(p), Some(boat)) => vec![(
+                Command::MoveEntity {
+                    id: ids(),
+                    entity: boat.id,
+                    to: [p[0] as f64 + 0.5, p[1] as f64 + 0.6, p[2] as f64 + 0.5],
+                },
+                0,
+            )],
+            _ => vec![],
+        },
+        // A bobber cast, splashes and a catch, over a minute, with no one there; ripples where
+        // it lies.
+        Action::FishingLine => pos
+            .map(|p| {
+                let at = block_center(p);
+                let mut made = vec![(
+                    Command::Hint {
+                        id: ids(),
+                        player: target,
+                        hint: "bobber".to_string(),
+                        pos: Some(p),
+                        seconds: 60.0,
+                        detail: String::new(),
+                    },
+                    0,
+                )];
+                made.push((
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:entity.fishing_bobber.throw",
+                        at,
+                        0.7,
+                    ),
+                    0,
+                ));
+                for (i, t) in [200u64, 520, 900].into_iter().enumerate() {
+                    made.push((
+                        sound_at(
+                            ids,
+                            target,
+                            "minecraft:entity.fishing_bobber.splash",
+                            at,
+                            0.6,
+                        ),
+                        t,
+                    ));
+                    if i == 2 {
+                        made.push((
+                            sound_at(
+                                ids,
+                                target,
+                                "minecraft:entity.fishing_bobber.retrieve",
+                                at,
+                                0.7,
+                            ),
+                            t + 10,
+                        ));
+                    }
+                }
+                made
+            })
+            .unwrap_or_default(),
+        // Two snow blocks and a pumpkin on them, facing the door.
+        Action::Snowman => match (pos, memory.usual_door()) {
+            (Some(p), Some(door)) => {
+                let yaw = yaw_toward(block_center(p), block_center(door));
+                let facing = match ((yaw.rem_euclid(360.0) + 45.0) / 90.0) as i32 % 4 {
+                    0 => "south",
+                    1 => "west",
+                    2 => "north",
+                    _ => "east",
+                };
+                vec![
+                    (on_ground(ids, p, "minecraft:snow_block"), 0),
+                    (
+                        on_ground(ids, [p[0], p[1] + 1, p[2]], "minecraft:snow_block"),
+                        10,
+                    ),
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: [p[0], p[1] + 2, p[2]],
+                            block: "minecraft:carved_pumpkin".to_string(),
+                            state: format!("facing={facing}"),
+                            replace: vec![],
+                            settle: 3,
+                            wall: String::new(),
+                            rest: true,
+                            only: false,
+                        },
+                        20,
+                    ),
+                ]
+            }
+            _ => vec![],
+        },
+        // A squid under the water near them, still, facing them, twenty seconds.
+        Action::UnderWater => pos
+            .map(|p| {
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:squid".to_string(),
+                        pos: [p[0] as f64 + 0.5, p[1] as f64 - 1.5, p[2] as f64 + 0.5],
+                        yaw: 0.0,
+                        seconds: 20.0,
+                        kept: String::new(),
+                        face: Some(target),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // Wet steps from the door to the bed, a step every half second, a drip with each.
+        Action::WetSteps => memory
+            .door_to_bed()
+            .into_iter()
+            .enumerate()
+            .flat_map(|(i, p)| {
+                let t = i as u64 * 10;
+                [
+                    (sound_at(ids, target, "minecraft:block.mud.step", p, 0.5), t),
+                    (
+                        sound_at(
+                            ids,
+                            target,
+                            "minecraft:block.pointed_dripstone.drip_water",
+                            p,
+                            0.4,
+                        ),
+                        t + 4,
+                    ),
+                ]
+            })
+            .collect(),
         Action::JukeboxDisc => match (pos, memory.disc_in_chest()) {
             (Some(jukebox), Some((chest, disc))) => vec![(
                 Command::Jukebox {
@@ -3245,6 +3434,7 @@ pub fn commands(
                         (
                             Command::PlaceEntity {
                                 id: ids(),
+                                face: None,
                                 of: "minecraft:armor_stand".to_string(),
                                 pos: stand_at,
                                 yaw: yaw_toward(stand_at, house),
@@ -3334,6 +3524,7 @@ pub fn commands(
                 vec![(
                     Command::PlaceEntity {
                         id: ids(),
+                        face: None,
                         of: format!("minecraft:{kind}"),
                         pos: [at[0] + 1.5, at[1], at[2] + 1.5],
                         yaw: (seed % 360) as f32,
@@ -5676,5 +5867,53 @@ mod tests {
             matches!(&crafted.last().unwrap().0, Command::DropItem { item, .. } if item.id == "minecraft:torch" && item.count == 4),
             "{crafted:?}"
         );
+    }
+
+    #[test]
+    fn the_water_and_snow_of_batch_ten_send_what_they_should() {
+        let memory = rich_memory();
+        let now = Now::default();
+        let mut rng = Rng::new(10);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            (pos, commands(event, pos, &memory, &mut ids(), &now, None))
+        };
+
+        // Prints out from the door, and in to it from twenty blocks off.
+        let door = memory.usual_door().unwrap();
+        let (_, out) = made("trail", &mut rng);
+        assert!(matches!(&out[0].0, Command::Prints { from, .. } if *from == door));
+        let (_, back) = made("trail_in", &mut rng);
+        assert!(
+            matches!(&back[0].0, Command::Prints { from, to, .. } if *to == door && distance(*from, door) >= 19.0)
+        );
+
+        // The squid faces them; the snowman ends in a pumpkin; the steps drip.
+        let (_, shape) = made("under_the_water", &mut rng);
+        assert!(
+            matches!(&shape[0].0, Command::PlaceEntity { of, face: Some(_), seconds, .. } if of == "minecraft:squid" && *seconds == 20.0)
+        );
+        let (_, snowman) = made("snowman", &mut rng);
+        assert_eq!(snowman.len(), 3);
+        assert!(
+            matches!(&snowman[2].0, Command::SetBlock { block, state, .. } if block == "minecraft:carved_pumpkin" && state.starts_with("facing="))
+        );
+        let (_, steps) = made("wet_steps", &mut rng);
+        assert!(
+            steps.len() >= 6
+                && steps
+                    .iter()
+                    .all(|(c, _)| matches!(c, Command::PlaySound { .. }))
+        );
+
+        // The bobber: its ripples for a minute, a cast, splashes, a catch.
+        let (_, fishing) = made("fishing_line", &mut rng);
+        assert!(
+            matches!(&fishing[0].0, Command::Hint { hint, seconds, .. } if hint == "bobber" && *seconds == 60.0)
+        );
+        assert!(fishing.iter().any(
+            |(c, _)| matches!(c, Command::PlaySound { sound, .. } if sound.ends_with("retrieve"))
+        ));
     }
 }

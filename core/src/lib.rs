@@ -24,6 +24,7 @@ pub mod places;
 pub mod rules;
 pub mod stay;
 pub mod warped;
+pub mod water;
 pub mod workshop;
 
 use config::{Config, ModelSize};

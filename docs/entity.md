@@ -382,19 +382,23 @@ Offered with water within 32 blocks of the home or the route.
 | `boat_moved` | 2 | The target's boat is on the other bank, or their minecart at the other end of its track. | A boat or minecart the target used. |
 | `boat_adrift` | 3 | The boat is in the middle of the water, still, going nowhere. | A boat and open water. |
 | `boat_drifts` | 2 | While the target watches from the shore, the boat drifts off on its own, slowly, away from them. (Owner's idea, 2026-11-09: "boats and minecarts move on their own".) | A boat on the water and the target outdoors. |
-| `boat_waiting` | 3 | The boat is at the shore the target is walking toward, before they get there. | A boat and the target travelling. |
+| `boat_waiting` | 3 | The boat is at the shore the target is walking toward, before they get there: on their side of the water, a block in from its edge. Coded 2026-11-10. | Their boat, water within 48 blocks, the target walking. |
 | `bucket_floor` | 3 | One block of water in the house's floor, in a corner. | A bucket in a chest and a floor block out of the way. |
 | `ice_path` | 3 | A line of ice across the water from the far shore toward the house, in summer. | Still water of 8 or more blocks across. |
-| `ripples` | 3 | Ripples on still water in a line toward the shore, as under footsteps, for the target alone. | Still water in view, the target outdoors. |
-| `fishing_line` | 4 | A fishing bobber on the water with no one holding the rod, a minute, then gone. The figure, if seen at all, is around the bend of the shore. | Water and a fishing rod in a chest. |
+| `ripples` | 3 | Ripples and small splashes cross the water toward the shore on their side, in a line, as under footsteps, for the target alone (the client's `ripples` hint). Coded 2026-11-10. | Water within 32 blocks, the target outdoors. |
+| `fishing_line` | 4 | Fishing with no one there, faked (a real bobber needs a player holding the rod; owner, 2026-11-10): a cast, the bobber's splashes and a catch over a minute at one spot on their water, the fishing ripples there for the target alone (the client's `bobber` hint). Coded 2026-11-10. | Water within 32 blocks and a fishing rod in a chest. |
+| `boat_in_house` | 4 | Their boat sits in the middle of the house in the morning. Owner's pick, 2026-11-10. | Their boat and a home, the target away or asleep. |
+| `under_the_water` | 3 | A dark shape, a squid, hangs still under the water on their side, facing them, for twenty seconds, then is gone (`place_entity` with `face`, ABI 30). Owner's pick, 2026-11-10. | Water within 24 blocks, the target outdoors. |
+| `wet_steps` | 3 | Wet steps and a drip with each walk from the door they use to their bed while they are inside. Owner's pick, 2026-11-10. | A bed and a door, the target indoors. |
 | `drip` | 2 | Dripping water, indoors, with no water near. | The target indoors. |
 
 ### Snow, sand and weather
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `trail` | 3 | Footprints the target's size in the snow or sand by the home, from the door toward the lodger's place, that the target did not make. Gone with the next snowfall or when walked over. | Snow or sand within 24 blocks of the home. |
-| `trail_in` | 4 | Footprints leading *to* the door, from the dark, and none leading away. | Snow or sand at the door. |
+| `trail` | 3 | Footprints in the snow by the home, from the door toward the lodger's place, that the target did not make: a snow layer taken off at each step, left and right (`prints`, ABI 30; snow only, sand cannot show them). Gone with the next snowfall. Coded 2026-11-10. | Snow around the home and a door. |
+| `trail_in` | 4 | Footprints leading *to* the door, from twenty blocks out in the dark, and none leading away. Coded 2026-11-10. | Snow around the home and a door. |
+| `snowman` | 3 | Two snow blocks and a carved pumpkin stacked beside the door, facing it, not a golem. Owner's pick, 2026-11-10. | Snow around the home and a door. |
 | `snow_cleared` | 2 | The snow is gone from the path between the door and the route, one block wide. | Snow layers on the path. |
 | `snow_indoors` | 3 | Snow falls inside the house for a few seconds, for the target alone. | The target indoors, snow outside. |
 | `rain_indoors` | 3 | The same with rain. | The target indoors, rain outside. |

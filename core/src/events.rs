@@ -175,6 +175,10 @@ pub enum Need {
     BrewIngredient,
     /// The makings of something in the chest they use.
     Makings,
+    /// A boat of theirs near the home.
+    TheirBoat,
+    /// Water within this many blocks of the target.
+    WaterNear(u32),
 }
 
 impl Need {
@@ -215,6 +219,7 @@ impl Need {
                 | Need::AnimalsNearTarget
                 | Need::KilledNow
                 | Need::TargetAwake
+                | Need::WaterNear(_)
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
                 | Need::TargetApproachingChest
@@ -296,6 +301,8 @@ impl Need {
             Need::SwapFuel => "no fuel in their furnace, or no other fuel in the chest".to_string(),
             Need::BrewIngredient => "no brewing ingredient in their chest".to_string(),
             Need::Makings => "nothing in their chest it could make something of".to_string(),
+            Need::TheirBoat => "no boat of theirs".to_string(),
+            Need::WaterNear(n) => format!("no water within {n} blocks of them"),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -582,6 +589,22 @@ pub enum Action {
     CraftedForYou,
     /// A bell of theirs rings once.
     BellRings,
+    /// Footprints in the snow from the door to its place.
+    Trail,
+    /// Footprints in the snow to the door, none away.
+    TrailIn,
+    /// Their boat at the shore they walk toward.
+    BoatWaiting,
+    /// A bobber's splashes and catches on the water, no one there.
+    FishingLine,
+    /// Two snow blocks and a pumpkin by the door.
+    Snowman,
+    /// Their boat in the middle of the house.
+    BoatInHouse,
+    /// A shape under the water, still, facing them.
+    UnderWater,
+    /// Wet steps from the door to the bed.
+    WetSteps,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1289,6 +1312,107 @@ pub const CATALOGUE: &[Event] = &[
         Full,
         Action::Charge(3, 3.0, 3),
         false,
+    ),
+    // Batch 10 (owner, 2026-11-10): prints in the snow, the boat ahead, ripples, a bobber with
+    // no one there; a snowman, the boat in the house, a shape under the water, wet steps.
+    row(
+        "trail",
+        3,
+        5,
+        &[Around("snow"), Door, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::Trail,
+        false,
+    ),
+    row(
+        "trail_in",
+        4,
+        5,
+        &[Around("snow"), Door, TargetAwayOrAsleep],
+        4.0,
+        2,
+        Full,
+        Action::TrailIn,
+        false,
+    ),
+    row(
+        "boat_waiting",
+        3,
+        5,
+        &[TheirBoat, WaterNear(48), TargetWalking, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::BoatWaiting,
+        false,
+    ),
+    row(
+        "ripples",
+        3,
+        5,
+        &[WaterNear(32), TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::Hint("ripples", 6.0),
+        true,
+    ),
+    row(
+        "fishing_line",
+        4,
+        5,
+        &[WaterNear(32), InChest("fishing_rod"), TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::FishingLine,
+        false,
+    ),
+    row(
+        "snowman",
+        3,
+        5,
+        &[Around("snow"), Door, TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::Snowman,
+        false,
+    ),
+    row(
+        "boat_in_house",
+        4,
+        5,
+        &[TheirBoat, Home, TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::BoatInHouse,
+        false,
+    ),
+    row(
+        "under_the_water",
+        3,
+        5,
+        &[WaterNear(24), TargetOutdoors],
+        2.0,
+        3,
+        Full,
+        Action::UnderWater,
+        false,
+    ),
+    row(
+        "wet_steps",
+        3,
+        5,
+        &[Bed, Door, TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::WetSteps,
+        true,
     ),
     // Batch 9 (owner, 2026-11-10): every row built, four new.
     row(
@@ -3133,6 +3257,8 @@ impl Event {
             | Action::SoundAtFixture(_, _)
             | Action::Taps(_, _, _)
             | Action::MiningSounds
+            | Action::FishingLine
+            | Action::WetSteps
             | Action::SoundPair(..) => "sounds",
             Action::Sign
             | Action::DeathMessage
@@ -3238,6 +3364,10 @@ impl Event {
             | Action::LampsBlink
             | Action::ComposterFills
             | Action::BellRings
+            | Action::Trail
+            | Action::TrailIn
+            | Action::Snowman
+            | Action::BoatInHouse
             | Action::RotateFixture(..)
             | Action::ColdFurnace
             | Action::OpenOnEnter
@@ -3260,6 +3390,8 @@ impl Event {
             | Action::HorseMoved
             | Action::FaceTheHouse
             | Action::OneMore
+            | Action::BoatWaiting
+            | Action::UnderWater
             | Action::Charge(..) => "seen",
             Action::Hint(_, _) => "sky",
             Action::RefuseRest | Action::Wake | Action::WokeElsewhere => "night",
@@ -3393,6 +3525,15 @@ impl Event {
             "rain_indoors" => "let it rain indoors for a moment",
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
+            "trail" => "leave footprints in the snow from their door",
+            "trail_in" => "leave footprints in the snow up to their door",
+            "boat_waiting" => "have their boat waiting at the shore ahead of them",
+            "ripples" => "make ripples cross the water toward them",
+            "fishing_line" => "fish in their water with no one there",
+            "snowman" => "stack a snowman by their door",
+            "boat_in_house" => "put their boat inside their house",
+            "under_the_water" => "show them a shape under the water",
+            "wet_steps" => "walk wet steps from their door to their bed",
             "jukebox" => "play one of their discs in their jukebox",
             "lectern_page" => "turn the page of the book on their lectern",
             "swap_fuel" => "swap the fuel in their furnace for another",

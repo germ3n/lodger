@@ -421,6 +421,16 @@ pub enum Command {
         /// piece of their armour. ABI 27.
         #[serde(default, skip_serializing_if = "String::is_empty")]
         kept: String,
+        /// Hold it still facing this player for its time: the shape under the water. ABI 30.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        face: Option<u32>,
+    },
+    /// Footprints a player's size in the snow from `from` to `to`: a snow layer taken off at
+    /// each step, left and right of the line, where there is snow; refused under three. ABI 30.
+    Prints {
+        id: u64,
+        from: BlockPos,
+        to: BlockPos,
     },
     /// The bees of the hive at `hive` out, hanging still around `to`, for `seconds`; then home.
     /// ABI 27.
@@ -800,6 +810,7 @@ impl Command {
             | Command::TurnPage { id, .. }
             | Command::Brew { id, .. }
             | Command::Strip { id, .. }
+            | Command::Prints { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }

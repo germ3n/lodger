@@ -155,7 +155,10 @@ connection for a minute). ABI 29 (2026-11-10): `jukebox` (an empty one plays a d
 one playing stops, its disc back), `turn_page` (a lectern's book to another page), `brew` (an
 ingredient into a stand that holds potions, a blaze powder when it has no fuel; the game brews),
 `strip` (one enchantment, never a curse, off an item in a container); `set_state`'s `@up` (one
-value higher, refused at the top) and `toggle_block` ringing a bell.
+value higher, refused at the top) and `toggle_block` ringing a bell. ABI 30 (2026-11-10):
+`prints` (footprints in the snow, a layer off at each step, left and right of a line) and
+`place_entity`'s `face` (held still facing a player for its time); the client's `ripples` and
+`bobber` hints.
 
 ## Resources
 

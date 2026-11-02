@@ -148,6 +148,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::SwapFuel => memory.fuel_swap().is_some(),
         Need::BrewIngredient => memory.brewing_ingredient().is_some(),
         Need::Makings => memory.recipe_at_hand().is_some(),
+        Need::TheirBoat => memory.their_boat().is_some(),
+        Need::WaterNear(n) => last.online && memory.water_near(n as f64).is_some(),
         Need::TargetAte => {
             last.online && last.ate_day > 0.0 && (memory.today - last.ate_day) < 0.002
         }
@@ -182,6 +184,8 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::SoundPair(_, _, _)
         | Action::Taps(_, _, _)
         | Action::MiningSounds
+        | Action::FishingLine
+        | Action::WetSteps
         | Action::PetGrowl => config.events.sounds,
         Action::Hint(_, _) => config.events.glitches,
         Action::Figure(_, _, _) => config.events.figure,
@@ -209,6 +213,8 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::SoundPair(_, _, _)
         | Action::Taps(_, _, _)
         | Action::MiningSounds
+        | Action::FishingLine
+        | Action::WetSteps
         | Action::PetGrowl => Some("sound"),
         Action::Hint(_, _) => Some("screen"),
         Action::Figure(_, _, _) => Some("figure"),

@@ -644,6 +644,12 @@ because it can be built and tested without a game, and because the model layer i
     `composter_fills` (`@up`), `crafted_for_you` (torches, bread, planks, sticks from their
     makings), `bell_rings`. ABI 29. Tests: three in `workshop`, one in `act`. Was: five rows not
     coded.
+  - **Batch 10, water, boats, snow and weather** (owner: all five rows, all four new): prints in
+    the snow out from the door and in to it (`prints`), the boat waiting on their shore,
+    ripples crossing toward them, a bobber with no one fishing (sounds and the fishing
+    ripples; a real bobber needs a player holding the rod), a snowman by the door, their boat
+    in the house, a squid still under the water facing them, wet steps from the door to the
+    bed. ABI 30. Tests: three in `water`, one in `act`. Was: five rows not coded.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

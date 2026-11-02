@@ -57,6 +57,32 @@ public final class Glitches {
 			HintPayload hint = active.hint();
 			switch (hint.hint()) {
 				case "cut_music" -> minecraft.getMusicManager().stopPlaying();
+				// Splashes crossing the water toward the shore they stand on, like steps (batch 10).
+				case "ripples" -> hint.pos().ifPresent(pos -> {
+					float t = active.progress(now);
+					Vec3 from = Vec3.atCenterOf(pos);
+					Vec3 toward = minecraft.player.position().subtract(from);
+					Vec3 way = new Vec3(toward.x, 0, toward.z).normalize();
+					Vec3 at = from.subtract(way.scale(10 * (1 - t)));
+					if (minecraft.level.getGameTime() % 4 == 0) {
+						for (int i = 0; i < 4; i++) {
+							minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.SPLASH,
+									at.x + (minecraft.level.getRandom().nextDouble() - 0.5) * 0.6, pos.getY() + 1.0,
+									at.z + (minecraft.level.getRandom().nextDouble() - 0.5) * 0.6, 0, 0.05, 0);
+						}
+					}
+				});
+				// A bobber's wake at one spot, no bobber, no one fishing (batch 10).
+				case "bobber" -> hint.pos().ifPresent(pos -> {
+					if (minecraft.level.getRandom().nextInt(6) == 0) {
+						minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.FISHING,
+								pos.getX() + 0.5 + (minecraft.level.getRandom().nextDouble() - 0.5) * 0.3, pos.getY() + 1.0,
+								pos.getZ() + 0.5 + (minecraft.level.getRandom().nextDouble() - 0.5) * 0.3, 0, 0, 0);
+					}
+					if (minecraft.level.getRandom().nextInt(80) == 0) {
+						minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.SPLASH, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, 0, 0.1, 0);
+					}
+				});
 				// One of their advancements, its toast again, as if just earned.
 				case "advancement_toast" -> once(active, () -> {
 					var holder = minecraft.getConnection() == null ? null

@@ -104,6 +104,7 @@ public final class Executors {
 				case "figure" -> figure(level, command, id, context);
 				case "swap_block" -> swapBlock(level, command, id);
 				case "jukebox" -> jukebox(level, command, id);
+				case "prints" -> prints(level, command, id);
 				case "turn_page" -> turnPage(level, command, id);
 				case "brew" -> brew(level, command, id);
 				case "strip" -> strip(level, command, id);
@@ -542,6 +543,44 @@ public final class Executors {
 		}
 
 		return done(id, Beds.beside(level, blockPos(command.getAsJsonArray("pos")), block.get().value()));
+	}
+
+	/** Footprints in the snow from one block to another: a layer off at each step, left and right of the line (ABI 30). */
+	private static JsonObject prints(ServerLevel level, JsonObject command, long id) {
+		BlockPos from = blockPos(command.getAsJsonArray("from"));
+		BlockPos to = blockPos(command.getAsJsonArray("to"));
+		double dx = to.getX() - from.getX();
+		double dz = to.getZ() - from.getZ();
+		double length = Math.sqrt(dx * dx + dz * dz);
+		if (length < 2) {
+			return report(id, false, "too short a way");
+		}
+		double ux = dx / length;
+		double uz = dz / length;
+		int made = 0;
+		for (int i = 1; i <= Math.min(40, (int) length); i++) {
+			// Left foot, right foot: half a block either side of the line.
+			double side = (i % 2 == 0 ? 0.45 : -0.45);
+			int x = (int) Math.floor(from.getX() + 0.5 + ux * i - uz * side);
+			int z = (int) Math.floor(from.getZ() + 0.5 + uz * i + ux * side);
+			for (int y = from.getY() + 3; y >= from.getY() - 4; y--) {
+				BlockPos at = new BlockPos(x, y, z);
+				BlockState state = level.getBlockState(at);
+				if (state.is(net.minecraft.world.level.block.Blocks.SNOW)) {
+					int layers = state.getValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS);
+					level.setBlock(at, layers > 1
+							? state.setValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS, layers - 1)
+							: net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+					made++;
+					break;
+				}
+				if (!state.isAir()) {
+					break;
+				}
+			}
+		}
+
+		return made >= 3 ? report(id, true, "") : report(id, false, "no snow along the way");
 	}
 
 	/** An empty jukebox plays their disc from a chest; one playing stops, its disc back (ABI 29). */
@@ -1497,7 +1536,7 @@ public final class Executors {
 	/** What {@code place_entity} may place: an armour stand, or a farm animal. */
 	private static final List<String> PLACEABLE = List.of("minecraft:armor_stand", "minecraft:cow", "minecraft:pig", "minecraft:sheep",
 			"minecraft:chicken", "minecraft:goat", "minecraft:horse", "minecraft:donkey", "minecraft:mule", "minecraft:llama",
-			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel");
+			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel", "minecraft:squid");
 
 	/** An armour stand or a farm animal placed (ABI 27): for a while when seconds are given, wearing a kept stack when named. */
 	private static JsonObject placeEntity(ServerLevel level, JsonObject command, long id, Context context, WorldData data) {
@@ -1532,6 +1571,13 @@ public final class Executors {
 		float seconds = command.has("seconds") ? command.get("seconds").getAsFloat() : 0;
 		if (seconds > 0) {
 			context.temporaries().add(entity, seconds);
+		}
+		// Still, facing a player, for its time (ABI 30: the shape under the water).
+		if (command.has("face") && !command.get("face").isJsonNull() && entity instanceof net.minecraft.world.entity.Mob mob) {
+			ServerPlayer facing = context.senses().player(level, command.get("face").getAsInt());
+			if (facing != null) {
+				context.holds().add(mob, facing, seconds > 0 ? seconds : 20);
+			}
 		}
 
 		return report(id, true, "");
