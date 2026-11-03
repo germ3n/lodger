@@ -253,7 +253,11 @@ impl Stay {
     pub fn status_line(&self) -> String {
         if !self.arc.moved_in() {
             if self.arc.over() {
-                return "the stay is over".to_string();
+                return if self.arc.ended.is_empty() {
+                    "the stay is over".to_string()
+                } else {
+                    format!("the stay is over: it {}", self.arc.ended)
+                };
             }
 
             return "not moved in yet".to_string();

@@ -386,8 +386,41 @@ impl Brain {
         }
         self.later = kept;
 
+        // After the stay: kept, a door of theirs open now and then.
+        if arc.over() {
+            let mut ids = || self.id();
+            commands.extend(crate::ending::after(arc, memory, now, &mut ids));
+            return commands;
+        }
         if !arc.moved_in() {
             return commands;
+        }
+        // Stage five: the ending's beats, as their hour comes.
+        if arc.stage == 5 {
+            let mut ids = || self.id();
+            let made = crate::ending::tick(arc, memory, config, now, &mut ids);
+            if !made.is_empty() {
+                log.note(&format!(
+                    "the ending ({}): {} commands",
+                    arc.ending,
+                    made.len()
+                ));
+            }
+            for (command, wait) in made {
+                if wait == 0 {
+                    commands.push(command);
+                } else {
+                    self.later.push(Later {
+                        at_tick: now.tick + wait,
+                        command,
+                        while_still: false,
+                    });
+                }
+            }
+            if arc.over() {
+                log.note(&format!("the stay is over: it {}", arc.ended));
+                return commands;
+            }
         }
 
         // The surroundings, once a day around the home, and again when the home moved: the
@@ -1045,6 +1078,12 @@ impl Brain {
             }
             // A build's share: laid, the store spent where it has the block, the rest made up.
             crate::building::account(memory, &plan.event, command, day);
+            // A light of its own, kept for the endings.
+            if let Command::SetBlock { pos, block, .. } = command {
+                if block.ends_with("torch") || block.ends_with("lantern") {
+                    memory.its_light(*pos);
+                }
+            }
             // A block it fills with comes out of what it dug too.
             if let Command::SetBlock { block, .. } = command {
                 if plan.event == "tunnel_sealed" {

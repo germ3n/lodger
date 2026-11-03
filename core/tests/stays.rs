@@ -500,17 +500,24 @@ fn a_calm_preset_acts_less_than_a_relentless_one() {
 }
 
 #[test]
-fn the_stay_is_over_after_stage_five_and_nothing_happens_after() {
-    let config = r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [1, 1, 1, 1, 1] } }"#;
-    let stay = stay_after(8, config, 9);
+fn the_stay_is_over_after_stage_five_s_ending_and_nothing_happens_after() {
+    // Stages one to four a day each; stage five is the ending's three days from its first
+    // dawn (since 2026-11-10; it was a day of nothing), so the stay is over by day eight.
+    let config = r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [1, 1, 1, 1, 1], "ending": "leave" } }"#;
+    let stay = stay_after(10, config, 9);
     assert!(stay.arc.over(), "{}", stay.status_line());
+    assert_eq!(stay.status_line(), "the stay is over: it left");
 
-    let run = run(8, config);
+    let run = run(10, config);
+    assert!(
+        run.commands.iter().any(|(_, c)| matches!(c, Command::PlaySound { sound, .. } if sound == "minecraft:music.game")),
+        "the ending played"
+    );
     let late: Vec<_> = run
         .commands
         .iter()
         .filter(|(tick, command)| {
-            *tick >= 6 * 24_000 && !matches!(command, Command::Surroundings { .. })
+            *tick >= 8 * 24_000 && !matches!(command, Command::Surroundings { .. })
         })
         .collect();
     assert!(late.is_empty(), "after the stay ended: {late:?}");

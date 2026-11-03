@@ -414,6 +414,11 @@ pub struct Memory {
     /// (`answer_knock`). Not saved.
     #[serde(skip)]
     pub knocked_now: Option<BlockPos>,
+    /// The lights it placed itself, for the endings (its torches out one by one, or lit at
+    /// once).
+    pub its_lights: Vec<BlockPos>,
+    /// The world's difficulty, as last seen, for the endings.
+    pub difficulty: String,
     /// The day the target went into another dimension (gone from the world without leaving
     /// the game), until they come back (`busy_away`).
     pub elsewhere_since: Option<f32>,
@@ -564,6 +569,7 @@ const MOST_DECOR: usize = 32;
 const MOST_CREATURES: usize = 48;
 const MOST_TALLY: usize = 32; // the least-hit kind dropped first
 const MOST_LANDMARKS: usize = 512; // a stay never reaches it
+const MOST_ITS_LIGHTS: usize = 128;
 const MOST_MILESTONES: usize = 128;
 const MOST_SCANNED: usize = 64;
 const MOST_VEHICLES: usize = 8;
@@ -899,6 +905,9 @@ impl Memory {
 
         if let Some(world) = &observations.world {
             self.last.raining = world.raining;
+            if !world.difficulty.is_empty() {
+                self.difficulty = world.difficulty.clone();
+            }
         }
 
         if let Some(around) = &observations.surroundings {
@@ -2070,6 +2079,13 @@ impl Memory {
             Some("decor")
         } else {
             None
+        }
+    }
+
+    /// A light it placed, for the endings.
+    pub fn its_light(&mut self, pos: BlockPos) {
+        if !self.its_lights.contains(&pos) {
+            push_capped(&mut self.its_lights, pos, MOST_ITS_LIGHTS);
         }
     }
 

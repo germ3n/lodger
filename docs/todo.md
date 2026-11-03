@@ -722,6 +722,18 @@ because it can be built and tested without a game, and because the model layer i
     (`set_frame_item`'s `swap`) and drops what a frame held where asked, or at the frame, never
     deleting it (`drop_at`). ABI 40. Tests: one in `act`. Was: two events that lost a player's
     things.
+  - **The endings** (owner: "all three as written"): stage five chooses its ending (the config,
+    or the want met and the difficulty) and runs it as a script of beats over the three days
+    from its next dawn (`core/src/ending.rs`): it leaves (what it holds back, its torches out,
+    its chest on their step, its house gone and a torch where its door was), takes (no sleep,
+    the doors open, the frames on the bed, the signs one word, the figure closer each time,
+    the tunnels walled, the bell hourly, red rain, the figure walking up to them, on hard one
+    death keeping everything), or keeps (its second room, the figure in its window, a path to
+    its door, its doorway lit, and a door of theirs open every three weeks after). The want is
+    read at last; the lights it places are kept; the world's difficulty is sensed. ABI 41. Where
+    it differs from the table is written under it in `entity.md`. Tests: seven in `ending`, the
+    stay test now plays the ending and checks nothing follows it. Was: stage five a day of
+    nothing, then over.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

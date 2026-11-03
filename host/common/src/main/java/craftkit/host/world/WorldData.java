@@ -64,6 +64,11 @@ public final class WorldData extends SavedData {
 		return stack;
 	}
 
+	/** The keys kept that begin with {@code prefix}. */
+	public java.util.List<String> keysStarting(String prefix) {
+		return kept.keySet().stream().filter(k -> k.startsWith(prefix)).toList();
+	}
+
 	public void set(String base64) {
 		if (!base64.equals(bytes)) {
 			bytes = base64;

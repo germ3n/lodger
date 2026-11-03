@@ -48,6 +48,7 @@ public final class Worlds {
 	private final Shoves shoves = new Shoves();
 	private final Bobbers bobbers = new Bobbers();
 	private final FrameShows frameShows = new FrameShows();
+	private final Deaths deaths = new Deaths();
 	private final Gatherings gatherings = new Gatherings();
 	private final LootOffers loot = new LootOffers();
 	private final Later later = new Later();
@@ -152,12 +153,13 @@ public final class Worlds {
 		shoves.tick(server);
 		bobbers.tick(server);
 		frameShows.tick(server);
+		deaths.tick(server);
 		gatherings.tick(server);
 		later.tick();
 		poses.tick();
 		figures.tick();
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves, bobbers, frameShows);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves, bobbers, frameShows, deaths);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();
@@ -171,6 +173,8 @@ public final class Worlds {
 					return;
 				}
 
+				// What a death held for a player is given back once they stand alive again.
+				deaths.sweep(server, world.data());
 				JsonElement commands = JsonParser.parseString(library.worldTick(world.handle(), now));
 				if (commands.isJsonObject() && commands.getAsJsonObject().has("error")) {
 					Log.LOGGER.warn("{}: tick: {}", mod.id(), commands.getAsJsonObject().get("error").getAsString());

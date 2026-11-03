@@ -15,6 +15,7 @@ pub mod caves;
 pub mod config;
 pub mod debug;
 pub mod elsewhere;
+pub mod ending;
 pub mod events;
 pub mod farm;
 pub mod habits;

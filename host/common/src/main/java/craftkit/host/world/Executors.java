@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves, Bobbers bobbers, FrameShows frameShows) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves, Bobbers bobbers, FrameShows frameShows, Deaths deaths) {
 	}
 
 	private Executors() {
@@ -168,6 +168,15 @@ public final class Executors {
 					}
 					yield report(id, walking > 0, walking > 0 ? "walking " + walking : "none of them here");
 				}
+				case "kill_player" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					String why = context.deaths().kill(player, data);
+					yield report(id, why == null, why == null ? "" : why);
+				}
+				case "spill_container" -> spillContainer(level, command, id);
 				case "carry_block" -> {
 					Entity entity = level.getEntity(command.get("entity").getAsInt());
 					if (!(entity instanceof net.minecraft.world.entity.monster.Enderman enderman)) {
@@ -1802,6 +1811,33 @@ public final class Executors {
 		}
 
 		return report(id, placed > 0, "base " + y + " placed " + placed);
+	}
+
+	/** Every stack of a container dropped at a place, kept from despawning; with {@code remove} the empty container gone (ABI 41). */
+	private static JsonObject spillContainer(ServerLevel level, JsonObject command, long id) {
+		BlockPos from = blockPos(command.getAsJsonArray("from"));
+		Container container = container(level, from);
+		if (container == null) {
+			return report(id, false, "no container there");
+		}
+		JsonArray to = command.getAsJsonArray("to");
+		int spilled = 0;
+		for (int slot = 0; slot < container.getContainerSize(); slot++) {
+			ItemStack stack = container.removeItemNoUpdate(slot);
+			if (!stack.isEmpty()) {
+				ItemEntity entity = new ItemEntity(level, to.get(0).getAsDouble(), to.get(1).getAsDouble(), to.get(2).getAsDouble(), stack, 0, 0, 0);
+				entity.setUnlimitedLifetime();
+				level.addFreshEntity(entity);
+				spilled++;
+			}
+		}
+		container.setChanged();
+		if (command.has("remove") && command.get("remove").getAsBoolean()) {
+			level.removeBlockEntity(from);
+			level.setBlock(from, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+		}
+
+		return report(id, true, "spilled " + spilled);
 	}
 
 	/** A Nether portal lit in an empty obsidian frame within six blocks, as flint and steel would (ABI 32). */

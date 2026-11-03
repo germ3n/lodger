@@ -185,7 +185,10 @@ within a second and a half), `frames_show` (item frames show one item to one pla
 `bobber` (a player's bobber pulled under on their screen with no bite on the server). ABI 39
 (2026-11-10): `carry_block` (an enderman holds a block). ABI 40 (2026-11-10): `set_frame_item`'s
 `swap` (the frame's own stack and a container slot's traded) and `drop_at` (what the frame held
-lands there, or at the frame: never deleted, as it was before).
+lands there, or at the frame: never deleted, as it was before). ABI 41 (2026-11-10): the world's
+`difficulty`, `spill_container` (a container's stacks dropped at a place, the container taken
+away with `remove`), `kill_player` (one death as if fallen out of the world, keeping everything:
+held in the world's data and given back on respawn).
 
 ## Resources
 

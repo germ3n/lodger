@@ -165,6 +165,9 @@ pub struct Entity {
 pub struct WorldState {
     pub raining: bool,
     pub thundering: bool,
+    /// The world's difficulty: `peaceful`, `easy`, `normal`, `hard`. ABI 41.
+    #[serde(default)]
+    pub difficulty: String,
     /// 0 to 7, 0 the full moon.
     pub moon_phase: u8,
 }
@@ -549,6 +552,22 @@ pub enum Command {
         seconds: f32,
         behind: f32,
         delay: u32,
+    },
+    /// Every stack in the container at `from` dropped at `to`, as items that do not despawn;
+    /// with `remove` the container then taken away, empty, as nothing. ABI 41.
+    SpillContainer {
+        id: u64,
+        from: BlockPos,
+        to: Pos,
+        #[serde(default, skip_serializing_if = "is_false")]
+        remove: bool,
+    },
+    /// The player dies, once, as if fallen out of the world, keeping everything they carry and
+    /// their experience: what they carry is held by the host and given back as they respawn,
+    /// kept in the world's data meanwhile. Never in creative or spectator. ABI 41.
+    KillPlayer {
+        id: u64,
+        player: u32,
     },
     /// The enderman `entity` holds `block`, as if it had picked it up: it may set it down
     /// again as endermen do. ABI 39.
@@ -968,6 +987,8 @@ impl Command {
             | Command::Shove { id, .. }
             | Command::FramesShow { id, .. }
             | Command::CarryBlock { id, .. }
+            | Command::SpillContainer { id, .. }
+            | Command::KillPlayer { id, .. }
             | Command::Bobber { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }

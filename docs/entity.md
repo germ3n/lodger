@@ -612,7 +612,7 @@ a dock or bridge), never over anything a player built (see the
 
 | Event | Stages | What happens |
 | --- | --- | --- |
-| `settle` | 5 | The ending's own script over one to three days. See [How it ends](#how-it-ends). |
+| `settle` | 5 | The ending's own script over three days, not a catalogue row: `core/src/ending.rs`. See [How it ends](#how-it-ends). |
 | `wait` | all | Nothing. Always offered, always allowed. |
 
 ### Chains
@@ -798,6 +798,43 @@ once per day with the day's beats as the choices, so two players' endings differ
 agree in shape. Nothing in stage five repeats a thing from the same day, and nothing in it is
 small: the budget is off, the cooldowns are off, and the caps alone hold, so a stay's last night
 can spend everything it has left.
+
+**As coded (2026-11-10, `core/src/ending.rs`).** The ending is chosen on stage five's first
+tick (`stages.ending`, or with `difficulty` the want met leaves, refused takes on normal and hard
+and keeps on easy and peaceful; the want read as: three blocks of theirs within five of its
+place, or a chest of theirs there with something in it; three things it showed them looked at
+and never run from; their favourite left in the chest it uses). The script starts at the next
+dawn and its beats run in order as the clock reaches them; a moment (a sound, a sight, the
+screen) that comes more than two thousand ticks late is skipped, a change to the world is done
+late. Where it differs from the table, for now:
+
+- **Leaves.** What it holds goes back (it holds one thing at a time, so one, not one an hour);
+  its torches go out one by one, the farthest from the house first (the lights it placed itself
+  are kept from 2026-11-10 on); the chest of its house is spilled on their doorstep
+  (`spill_container`, ABI 41); the figure at its door a full minute, then in; their pets held
+  facing its house ten minutes (held, not sitting); its torch out at dusk; the music (the
+  game's music as a sound); the flicker; the figure at the edge of the light, gone once looked
+  away from; at dawn its house to air, its floor to grass, its chest taken, a torch where its
+  door was. The animals it moved are not walked home: what it moved is not kept.
+- **Takes.** Their animals stare at the house (twice that day); the sun out three times before
+  noon; no sleep that night; every door of the house open at midnight and their pets put out;
+  every frame emptied onto the bed in a line toward the door, the very items; one line of every
+  sign of theirs says the want's word (`here`, `again`, `yours`; the line it replaced is not
+  given back); the figure behind them at 64, 48 and 32 blocks; their tunnels walled at the mouth
+  with cobblestone; the village bell every hour of the day; on the last night its torches lit,
+  theirs dark on their screen alone (`hide_block`, five minutes), red rain; the figure from its
+  place, holding what it holds, walks up to a block from them at a walk; on hard, one death as
+  if fallen out of the world (`kill_player`, ABI 41: what they carry held in the world's data
+  and given back as they respawn, their experience with it); at dawn the doors shut again.
+- **Keeps.** The second room of its house (an empty room, no copy of their bedroom); the figure
+  in its window every two hours of the night; a cobblestone path from their door to its door
+  over the ground's own top; their pets at its door at noon and home two hours on; at midnight
+  its door open, a torch beside it, the figure in the doorway until they look away; at dawn it
+  stops for good, and every three in-game weeks after, while they are away or asleep, the door
+  they use is found open. It has no fence, so no gate; the music is not brought back.
+- The model does not yet choose between two forms of a beat; temper is not kept, so it has no
+  say in the ending. The stay's status line (the debug screen) says `the stay is over: it left`,
+  `took` or `stayed`; the host's `/lodger status` lists the mods and not yet the stay.
 
 After any ending the stay is closed in `lodger.dat` and no lodger moves into that world again
 unless `/lodger reset`. The one death the hard ending deals is the only harm the lodger ever does,

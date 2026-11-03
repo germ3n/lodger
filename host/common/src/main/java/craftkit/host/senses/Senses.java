@@ -271,6 +271,7 @@ public final class Senses {
 			world.addProperty("raining", level.isRaining());
 			world.addProperty("thundering", level.isThundering());
 			world.addProperty("moon_phase", 0);
+			world.addProperty("difficulty", level.getDifficulty().getSerializedName());
 			observations.add("world", world);
 		}
 

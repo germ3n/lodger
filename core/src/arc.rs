@@ -1,5 +1,5 @@
-//! The stages: when the lodger moves in, when a stage ends, and the day's budget of events. The
-//! endings' three-day scripts are a later item; today stage five ends the stay quietly.
+//! The stages: when the lodger moves in, when a stage ends, and the day's budget of events.
+//! Stage five is the ending's three-day script (`crate::ending`), which ends the stay itself.
 
 use crate::config::Config;
 use crate::memory::Memory;
@@ -17,6 +17,15 @@ pub struct Arc {
     /// What the day's budget has spent, and which day that was.
     pub spent_today: f32,
     pub budget_day: u64,
+    /// The ending, chosen as stage five begins: `leave`, `take`, `keep`; empty before.
+    pub ending: String,
+    /// The game day the ending's script begins (its first dawn), and its beats done.
+    pub script_day: u64,
+    pub beats_done: usize,
+    /// How it ended, once over: `left`, `took`, `stayed`.
+    pub ended: String,
+    /// After it stayed: the next game day a door of theirs is found open.
+    pub next_open_day: u64,
 }
 
 impl Arc {
@@ -43,6 +52,10 @@ impl Arc {
         }
 
         if self.over() {
+            return None;
+        }
+        // The ending's script ends the stay; one chosen and running is never cut short.
+        if self.stage == 5 && !self.ending.is_empty() {
             return None;
         }
 
