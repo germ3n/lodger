@@ -294,9 +294,9 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | --- | --- | --- | --- |
 | `frame_rotate` | 1 | An item frame's item is rotated one notch. | An item frame with an item. |
 | `frames_turn` | 3 | Every item frame in the room is turned to the same orientation, while the target is away. | Three or more item frames in a room. |
-| `frame_swap` | 3 | The item in a frame is swapped with one from a chest. | An item frame and a chest. |
+| `frame_swap` | 3 | The item in a frame is traded with a thing of one from their chest: the very stacks, the frame's into that slot (`set_frame_item`'s `swap`, ABI 40; until 2026-11-10 the frame's was lost). | An item frame and a chest. |
 | `item_frames_face` | 3 | While they are indoors, every item frame of the house shows the same thing, to them alone, for three minutes: what it took, or else what they hold most; then what each really holds again (`frames_show`, ABI 38: the frame's item as their client sees it; nothing in a frame changes). Coded 2026-11-10. | An item frame, indoors. |
-| `frame_emptied` | 3 | An item frame is empty; its item is on the bed. | An item frame with an item and a bed. |
+| `frame_emptied` | 3 | An item frame is empty; its own item is on the bed, the very stack (`set_frame_item`'s `drop_at`, ABI 40; until 2026-11-10 it was deleted and a stand-in laid there). | An item frame with an item and a bed. |
 | `painting_change` | 2 | A painting is another painting of the same size. | A painting. |
 | `sign` | 2 | A sign with one word from the want's list, at the spot or by the door. | A spot. |
 | `sign_word` | 3 | One line of a sign the target wrote reads one word of its own instead: the last line with text (`set_sign`'s `one_line`, ABI 28: a blank sign is refused). The other lines are kept. Coded 2026-11-10. | A sign they placed. |

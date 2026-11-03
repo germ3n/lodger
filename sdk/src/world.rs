@@ -660,6 +660,14 @@ pub enum Command {
         from: Option<BlockPos>,
         #[serde(default, skip_serializing_if = "is_zero_u32")]
         slot: u32,
+        /// With `from`: the frame's own item goes into that slot as the slot's goes into the
+        /// frame, the very stacks traded. ABI 40.
+        #[serde(default, skip_serializing_if = "is_false")]
+        swap: bool,
+        /// Where what the frame held lands when it is emptied or given another item: there,
+        /// or at the frame when absent; never lost. ABI 40.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        drop_at: Option<Pos>,
     },
     /// Put a piece of armour or a held item on an entity that wears it: an armour stand.
     EquipEntity {

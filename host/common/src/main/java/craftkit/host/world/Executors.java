@@ -829,9 +829,11 @@ public final class Executors {
 			return report(id, false, "no item frame with that id here");
 		}
 
-		// The very stack from a container's slot, only into an empty frame (ABI 28).
+		// The very stack from a container's slot, only into an empty frame (ABI 28), or traded
+		// for the frame's own with `swap` (ABI 40).
 		if (command.has("from") && command.get("from").isJsonArray()) {
-			if (!frame.getItem().isEmpty()) {
+			boolean swap = command.has("swap") && command.get("swap").getAsBoolean();
+			if (!frame.getItem().isEmpty() && !swap) {
 				return report(id, false, "the frame holds something");
 			}
 			Container from = container(level, blockPos(command.getAsJsonArray("from")));
@@ -839,24 +841,41 @@ public final class Executors {
 			if (from == null || slot < 0 || slot >= from.getContainerSize() || from.getItem(slot).isEmpty()) {
 				return report(id, false, "nothing in that slot");
 			}
-			frame.setItem(from.removeItem(slot, 1));
+			ItemStack had = frame.getItem().copy();
+			ItemStack one = from.getItem(slot).getCount() == 1 || had.isEmpty() ? from.removeItem(slot, 1) : null;
+			if (one == null) {
+				return report(id, false, "a stack of more than one, and the frame's has nowhere to go");
+			}
+			frame.setItem(one);
+			if (!had.isEmpty()) {
+				from.setItem(slot, had);
+			}
+			from.setChanged();
 			return report(id, true, "");
 		}
 
 		JsonObject item = command.getAsJsonObject("item");
 		String itemId = item.has("id") ? item.get("id").getAsString() : "";
-		if (itemId.isEmpty()) {
-			frame.setItem(ItemStack.EMPTY);
-			return report(id, true, "");
-		}
-
-		Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(itemId));
-		if (kind.isEmpty()) {
+		Optional<Holder.Reference<Item>> kind = itemId.isEmpty() ? Optional.empty() : BuiltInRegistries.ITEM.get(Identifier.parse(itemId));
+		if (!itemId.isEmpty() && kind.isEmpty()) {
 			return report(id, false, "no such item");
 		}
-		frame.setItem(new ItemStack(kind.get().value(), Math.max(1, item.get("count").getAsInt())));
+		// What the frame held is never lost: it lands where asked, or at the frame (ABI 40;
+		// until then it was deleted).
+		ItemStack had = frame.getItem().copy();
+		frame.setItem(kind.map(k -> new ItemStack(k.value(), Math.max(1, item.get("count").getAsInt()))).orElse(ItemStack.EMPTY));
+		if (!had.isEmpty()) {
+			Vec3 at = frame.position();
+			if (command.has("drop_at") && command.get("drop_at").isJsonArray()) {
+				JsonArray p = command.getAsJsonArray("drop_at");
+				at = new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
+			}
+			ItemEntity dropped = new ItemEntity(level, at.x, at.y, at.z, had, 0, 0, 0);
+			dropped.setUnlimitedLifetime();
+			level.addFreshEntity(dropped);
+		}
 
-		return report(id, true, "");
+		return report(id, true, kind.isPresent() || had.isEmpty() ? "" : "dropped " + BuiltInRegistries.ITEM.getKey(had.getItem()));
 	}
 
 	private static JsonObject equipEntity(ServerLevel level, JsonObject command, long id, WorldData data) {

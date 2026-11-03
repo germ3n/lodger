@@ -715,6 +715,13 @@ because it can be built and tested without a game, and because the model layer i
     things at home is done at once (`busy_away`, a new sense of being gone without leaving).
     Tests: three in `elsewhere`, two in the brain, one in `act`, one in JUnit (`Subtitles`).
     Was: three rows not coded; the other dimensions' stays did nothing.
+  - **A frame's own item was lost** (found reading the code for the endings): `frame_emptied`
+    emptied the frame, deleting its item, and dropped a stand-in (their favourite) on the bed;
+    `frame_swap` took the chest's item away and made a new one of its id in the frame,
+    deleting the frame's and any enchantment or name. Now the host trades the very stacks
+    (`set_frame_item`'s `swap`) and drops what a frame held where asked, or at the frame, never
+    deleting it (`drop_at`). ABI 40. Tests: one in `act`. Was: two events that lost a player's
+    things.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

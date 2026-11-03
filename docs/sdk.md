@@ -183,7 +183,9 @@ moment the player looks away, back where it was held when looked at and when let
 edge, a fall of three blocks at most). ABI 38 (2026-11-10): the `knocked` event (a door struck twice
 within a second and a half), `frames_show` (item frames show one item to one player for a while),
 `bobber` (a player's bobber pulled under on their screen with no bite on the server). ABI 39
-(2026-11-10): `carry_block` (an enderman holds a block).
+(2026-11-10): `carry_block` (an enderman holds a block). ABI 40 (2026-11-10): `set_frame_item`'s
+`swap` (the frame's own stack and a container slot's traded) and `drop_at` (what the frame held
+lands there, or at the frame: never deleted, as it was before).
 
 ## Resources
 

@@ -2823,78 +2823,49 @@ pub fn commands(
                 ]
             })
             .unwrap_or_default(),
+        // The frame's own item, out of it and onto the bed, the very stack (the host drops it
+        // there; until 2026-11-10 the frame's was deleted and a stand-in laid on the bed).
         Action::FrameEmptied => match (
             memory.decor("item_frame").next(),
             memory.home.as_ref().and_then(|h| h.bed),
         ) {
-            (Some(frame), Some(bed)) => vec![
-                (
-                    Command::SetFrameItem {
-                        id: ids(),
-                        from: None,
-                        slot: 0,
-                        entity: frame.id,
-                        item: ItemStack::default(),
-                    },
-                    0,
-                ),
-                // The host answers what the frame held? It does not; the memory does not know
-                // it either, so the bed gets a stand-in the frame could have held.
-                (
-                    Command::DropItem {
-                        id: ids(),
-                        pos: [
-                            bed[0] as f64 + 0.5,
-                            bed[1] as f64 + 0.7,
-                            bed[2] as f64 + 0.5,
-                        ],
-                        item: ItemStack {
-                            id: memory
-                                .favourites
-                                .first()
-                                .map(|(id, _)| id.clone())
-                                .unwrap_or_else(|| "minecraft:stick".to_string()),
-                            count: 1,
-                            slot: 0,
-                        },
-                        kept: String::new(),
-                    },
-                    1,
-                ),
-            ],
+            (Some(frame), Some(bed)) => vec![(
+                Command::SetFrameItem {
+                    id: ids(),
+                    from: None,
+                    slot: 0,
+                    entity: frame.id,
+                    item: ItemStack::default(),
+                    swap: false,
+                    drop_at: Some([
+                        bed[0] as f64 + 0.5,
+                        bed[1] as f64 + 0.7,
+                        bed[2] as f64 + 0.5,
+                    ]),
+                },
+                0,
+            )],
             _ => vec![],
         },
+        // A thing of one from their chest into the frame, the frame's into that slot: the very
+        // stacks traded (until 2026-11-10 the frame's was lost and the chest's made anew).
         Action::FrameSwap => match (memory.decor("item_frame").next(), memory.used_container()) {
             (Some(frame), Some(chest)) => {
                 let Some(stack) = chest.contents.iter().find(|s| s.count == 1) else {
                     return vec![];
                 };
-                vec![
-                    (
-                        Command::TakeItem {
-                            id: ids(),
-                            from: chest.pos,
-                            slot: stack.slot,
-                            count: 1,
-                            keep: String::new(),
-                        },
-                        0,
-                    ),
-                    (
-                        Command::SetFrameItem {
-                            id: ids(),
-                            from: None,
-                            slot: 0,
-                            entity: frame.id,
-                            item: ItemStack {
-                                id: stack.id.clone(),
-                                count: 1,
-                                slot: 0,
-                            },
-                        },
-                        1,
-                    ),
-                ]
+                vec![(
+                    Command::SetFrameItem {
+                        id: ids(),
+                        from: Some(chest.pos),
+                        slot: stack.slot,
+                        entity: frame.id,
+                        item: ItemStack::default(),
+                        swap: true,
+                        drop_at: None,
+                    },
+                    0,
+                )]
             }
             _ => vec![],
         },
@@ -4172,6 +4143,8 @@ pub fn commands(
                     slot: weapon.slot,
                     entity: frame.id,
                     item: weapon.clone(),
+                    swap: false,
+                    drop_at: None,
                 },
                 0,
             )],
@@ -7354,6 +7327,43 @@ mod tests {
         assert!(matches!(
             &made("footsteps_follow", &mut rng)[0].0,
             Command::Footsteps { behind, .. } if *behind == 3.0
+        ));
+    }
+
+    #[test]
+    fn a_frame_s_own_item_is_never_lost_emptied_onto_the_bed_or_traded_for_the_chest_s() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let now = Now::default();
+        let mut rng = Rng::new(18);
+        let mut made = |id: &str| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, &mut rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+        let bed = memory.home.as_ref().unwrap().bed.unwrap();
+        let emptied = made("frame_emptied");
+        assert_eq!(
+            emptied.len(),
+            1,
+            "no stand-in made from nothing: {emptied:?}"
+        );
+        assert!(matches!(&emptied[0].0,
+            Command::SetFrameItem { item, drop_at: Some(at), from: None, .. }
+                if item.id.is_empty() && at[0] == bed[0] as f64 + 0.5 && at[2] == bed[2] as f64 + 0.5));
+        let swapped = made("frame_swap");
+        assert_eq!(
+            swapped.len(),
+            1,
+            "nothing taken out of the chest first: {swapped:?}"
+        );
+        assert!(matches!(
+            &swapped[0].0,
+            Command::SetFrameItem {
+                from: Some(_),
+                swap: true,
+                ..
+            }
         ));
     }
 
