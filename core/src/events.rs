@@ -209,6 +209,8 @@ pub enum Need {
     Noon,
     /// The target has just crouched still ten seconds; never offered, that starts it (`breath`).
     CrouchedStill,
+    /// Three or more of their farm animals within sixteen blocks of the target.
+    Herd,
 }
 
 impl Need {
@@ -258,6 +260,7 @@ impl Need {
                 | Need::LightNear
                 | Need::Noon
                 | Need::CrouchedStill
+                | Need::Herd
                 | Need::TunnelLights
                 | Need::BehindThem
                 | Need::TargetAte
@@ -358,6 +361,7 @@ impl Need {
             Need::LightNear => "no light of theirs near them".to_string(),
             Need::Noon => "not noon".to_string(),
             Need::CrouchedStill => "happens only as they crouch still".to_string(),
+            Need::Herd => "fewer than three farm animals near them".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -707,6 +711,13 @@ pub enum Action {
     HandOnShoulder,
     /// A second set of steps a moment behind theirs, stopping when they stop.
     Footsteps,
+    /// The farm animals near them walk toward them together and stop a few blocks off.
+    Pack,
+    /// The hostile mobs near hold and stare, a step closer each time they look away, back where
+    /// they stood when looked at.
+    HostilesClose,
+    /// A push at the next edge or ladder they stand on, never a fall of more than three.
+    Shove,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1531,6 +1542,40 @@ pub const CATALOGUE: &[Event] = &[
         Half,
         Action::Hint("name_called", 4.0),
         true,
+    ),
+    // Batch 16, the close ones (owner, 2026-11-10: `pack`, `hostiles_close`, `shove`).
+    row(
+        "pack",
+        3,
+        5,
+        &[Herd, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::Pack,
+        false,
+    ),
+    row(
+        "hostiles_close",
+        4,
+        5,
+        &[Hostiles, Night, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::HostilesClose,
+        false,
+    ),
+    row(
+        "shove",
+        4,
+        5,
+        &[TargetAwake],
+        3.0,
+        2,
+        Full,
+        Action::Shove,
+        false,
     ),
     // Batch 15, building (owner, 2026-11-10: every one; materials gathered first, topped up
     // when short): a night's share at a time.
@@ -4132,6 +4177,9 @@ impl Event {
             | Action::BoatWaiting
             | Action::UnderWater
             | Action::VillageAbandoned
+            | Action::Pack
+            | Action::HostilesClose
+            | Action::Shove
             | Action::Charge(..) => "seen",
             Action::Hint(_, _) => "sky",
             Action::HandOnShoulder => "seen",
@@ -4267,6 +4315,9 @@ impl Event {
             "scan_ore" => "look at the rock around them",
             "ore_marked" => "put a torch on an ore they have not found",
             "hand_on_shoulder" => "turn them a little, a step right behind them",
+            "pack" => "walk their animals toward them together",
+            "hostiles_close" => "bring the monsters closer whenever they look away",
+            "shove" => "push them at the next edge, a short fall",
             "breath" => "breathe at their ear while they crouch still",
             "footsteps_follow" => "walk a step behind them in the dark",
             "name_called" => "say their name where only the subtitles hear it",

@@ -177,7 +177,10 @@ together). ABI 35 (2026-11-10): `figure`'s `copy_crouch` and `swinging`, and `di
 walks to the first rock face ahead and digs in, the stone closing behind, out of a hill's far
 side with `through`; block updates to that player alone, nothing in the world changed). ABI 36
 (2026-11-10): `footsteps` (a second set of steps behind a player, each of theirs heard again a
-moment later a few blocks back, stopping when they stop).
+moment later a few blocks back, stopping when they stop). ABI 37 (2026-11-10): `hold`'s `creep` (a step nearer each
+moment the player looks away, back where it was held when looked at and when let go), `approach`
+(mobs walk up to a player together and stop a few blocks off), `shove` (a push off the next safe
+edge, a fall of three blocks at most).
 
 ## Resources
 

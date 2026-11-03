@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves) {
 	}
 
 	private Executors() {
@@ -152,6 +152,30 @@ public final class Executors {
 					yield report(id, true, "");
 				}
 				case "block_sound" -> blockSound(level, command, id, context);
+				case "approach" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					int walking = 0;
+					for (var each : command.getAsJsonArray("entities")) {
+						Entity entity = level.getEntity(each.getAsInt());
+						Mob mob = entity == null ? null : Senses.mob(entity);
+						if (mob != null && !mob.entityTags().contains(Holds.TAG) && !mob.entityTags().contains(Warps.TAG)) {
+							context.approaches().add(mob, player, command.get("stop").getAsFloat(), command.get("seconds").getAsFloat());
+							walking++;
+						}
+					}
+					yield report(id, walking > 0, walking > 0 ? "walking " + walking : "none of them here");
+				}
+				case "shove" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					context.shoves().arm(player, command.get("seconds").getAsFloat(), command.get("most_drop").getAsInt());
+					yield report(id, true, "armed");
+				}
 				case "footsteps" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -1546,7 +1570,8 @@ public final class Executors {
 			JsonArray p = command.getAsJsonArray("at");
 			at = new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
 		}
-		context.holds().add(mob, player, command.get("seconds").getAsFloat(), at);
+		boolean creep = command.has("creep") && command.get("creep").getAsBoolean();
+		context.holds().add(mob, player, command.get("seconds").getAsFloat(), at, 0, creep);
 
 		return report(id, true, "");
 	}

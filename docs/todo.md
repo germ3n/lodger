@@ -695,6 +695,11 @@ because it can be built and tested without a game, and because the model layer i
     sense, the brain dropping a sound's rest when they move); a second set of steps behind
     theirs at night (`footsteps`, ABI 36); their name in the subtitles (`name_called`). Tests:
     one in the brain, two in JUnit (`Stride`). Was: four rows not coded.
+  - **Batch 16, the close ones** (owner: `pack`, `hostiles_close`, `shove`): their animals walk
+    up to them together and stop four blocks off (`approach`); the monsters hold and stare and
+    come nearer whenever they look away, back where they stood when looked at (`hold`'s
+    `creep`); a push off the next edge of two or three blocks (`shove`, never harm). ABI 37.
+    Tests: one in `act`, two in JUnit (`Edge`). Was: three rows not coded.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

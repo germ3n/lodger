@@ -805,6 +805,30 @@ pub enum Command {
         /// Face this point instead of the player: the house. ABI 27.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         at: Option<Pos>,
+        /// A step closer along the ground each moment the player looks away, to six blocks,
+        /// and back where it was held the moment they look at it; back there when let go. ABI 37.
+        #[serde(default, skip_serializing_if = "is_false")]
+        creep: bool,
+    },
+    /// The mobs `entities` walk toward `player` together, as they walk, and stop `stop` blocks
+    /// off, facing them, until `seconds` have passed; then they are as they were. Their AI is
+    /// never turned off. ABI 37.
+    Approach {
+        id: u64,
+        entities: Vec<u32>,
+        player: u32,
+        stop: f32,
+        seconds: f32,
+    },
+    /// For `seconds`, the first moment `player` stands at an edge (a drop of two to `most_drop`
+    /// blocks to solid ground just past it) or on a ladder with ground that near below, not
+    /// crouching and with more than two hearts, they are pushed off it, once, with a step
+    /// behind them. Never a fall of more than `most_drop`, never fatal. ABI 37.
+    Shove {
+        id: u64,
+        player: u32,
+        seconds: f32,
+        most_drop: u32,
     },
     /// Warp an animal for `seconds` (at most two minutes), then put it back as it was, where
     /// it was: frozen, its head always on `player`; `scale` times its size (1 for none);
@@ -904,6 +928,8 @@ impl Command {
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }
+            | Command::Approach { id, .. }
+            | Command::Shove { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }
@@ -1054,13 +1080,19 @@ mod tests {
             player: 0,
             seconds: 250.0,
             at: None,
+            creep: false,
         };
         let text = serde_json::to_string(&hold).unwrap();
         assert_eq!(
-            text,
-            r#"{"kind":"hold","id":4,"entity":301,"player":0,"seconds":250.0}"#
+            text, r#"{"kind":"hold","id":4,"entity":301,"player":0,"seconds":250.0}"#,
+            "no creep unless asked"
         );
         assert_eq!(hold.id(), 4);
+        let creeping: Command = serde_json::from_str(
+            r#"{"kind":"hold","id":5,"entity":302,"player":0,"seconds":180.0,"creep":true}"#,
+        )
+        .unwrap();
+        assert!(matches!(creeping, Command::Hold { creep: true, .. }));
     }
 
     #[test]

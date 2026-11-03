@@ -26,6 +26,12 @@ public final class Holds {
 	public static final float MOST_SECONDS = 600;
 	private static final int SWEEP_EVERY = 100;
 
+	/** On a creeping mob: where it was held, `x,y,z`, so one saved mid-creep goes back there. */
+	public static final String FROM = "craftkit_held_from:";
+	/** A creeping mob comes no nearer than this. */
+	private static final double CREEPS_TO = 6;
+	private static final int CREEP_EVERY = 30;
+
 	/** The hits a held mob takes unmoved before it wakes: the first it ignores, the second frees it. */
 	public static final int HITS_TO_WAKE = 2;
 
@@ -37,15 +43,18 @@ public final class Holds {
 		final Vec3 at;
 		/** Within this many blocks of the player it turns to them after all (the packed villagers); 0 never. */
 		final double turnWithin;
+		/** Where it was held, when it creeps (ABI 37); null when it does not. */
+		final Vec3 from;
 		float health;
 		int hits;
 
-		Hold(Mob mob, UUID player, long untilTick, Vec3 at, double turnWithin) {
+		Hold(Mob mob, UUID player, long untilTick, Vec3 at, double turnWithin, boolean creep) {
 			this.mob = mob;
 			this.player = player;
 			this.untilTick = untilTick;
 			this.at = at;
 			this.turnWithin = turnWithin;
+			this.from = creep ? mob.position() : null;
 			this.health = mob.getHealth();
 		}
 
@@ -69,7 +78,24 @@ public final class Holds {
 
 	/** Holds a mob facing {@code at}, turning to the player when they come within {@code turnWithin}. */
 	public void add(Mob mob, ServerPlayer player, float seconds, Vec3 at, double turnWithin) {
+		add(mob, player, seconds, at, turnWithin, false);
+	}
+
+	/**
+	 * Holds a mob; with {@code creep} it comes a step nearer along the ground each moment the
+	 * player looks away, to six blocks, and is back where it was held the moment they look at
+	 * it (`hostiles_close`, batch 16), and back there when let go.
+	 */
+	public void add(Mob mob, ServerPlayer player, float seconds, Vec3 at, double turnWithin, boolean creep) {
+		Hold before = active.stream().filter(h -> h.mob() == mob).findFirst().orElse(null);
+		if (before != null && before.from != null) {
+			mob.teleportTo(before.from.x, before.from.y, before.from.z);
+		}
 		active.removeIf(h -> h.mob() == mob);
+		mob.entityTags().stream().filter(t -> t.startsWith(FROM)).toList().forEach(mob::removeTag);
+		if (creep) {
+			mob.addTag(FROM + mob.getX() + "," + mob.getY() + "," + mob.getZ());
+		}
 		if (!mob.entityTags().contains(TAG)) {
 			if (mob.isNoAi()) {
 				mob.addTag(TAG_STILL);
@@ -80,7 +106,7 @@ public final class Holds {
 		mob.setTarget(null);
 		mob.getNavigation().stop();
 		mob.setDeltaMovement(Vec3.ZERO);
-		active.add(new Hold(mob, player.getUUID(), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20), at, turnWithin));
+		active.add(new Hold(mob, player.getUUID(), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20), at, turnWithin, creep));
 	}
 
 	public void tick(MinecraftServer server) {
@@ -114,6 +140,9 @@ public final class Holds {
 				mob.setYBodyRot(yaw);
 				mob.setXRot(Facing.pitch(to.x, to.y, to.z));
 			}
+			if (hold.from != null && player != null && player.level() == mob.level()) {
+				creep(hold, mob, player);
+			}
 		}
 
 		if (tick % SWEEP_EVERY == 0) {
@@ -138,7 +167,43 @@ public final class Holds {
 		});
 	}
 
+	/** Looked at, back where it was held; looked away from, now and then a step nearer. */
+	private void creep(Hold hold, Mob mob, ServerPlayer player) {
+		Vec3 view = player.getViewVector(1f);
+		Vec3 to = mob.position().subtract(player.getEyePosition());
+		if (WarpMath.lookedAt(view.x, view.y, view.z, to.x, to.y, to.z)) {
+			if (mob.position().distanceToSqr(hold.from) > 0.01) {
+				mob.teleportTo(hold.from.x, hold.from.y, hold.from.z);
+			}
+			return;
+		}
+		if (tick % CREEP_EVERY != 0 || player.distanceTo(mob) <= CREEPS_TO) {
+			return;
+		}
+		double[] step = WarpMath.stepToward(mob.getX(), mob.getZ(), player.getX(), player.getZ());
+		ServerLevel level = (ServerLevel) mob.level();
+		// The ground there, a block up or down from where it stands, with room for it.
+		for (int dy : new int[] {0, 1, -1}) {
+			double y = Math.floor(mob.getY()) + dy;
+			net.minecraft.core.BlockPos feet = net.minecraft.core.BlockPos.containing(step[0], y, step[1]);
+			if (level.getBlockState(feet.below()).isFaceSturdy(level, feet.below(), net.minecraft.core.Direction.UP)
+					&& level.noCollision(mob, mob.getDimensions(mob.getPose()).makeBoundingBox(new Vec3(step[0], y, step[1])))) {
+				mob.teleportTo(step[0], y, step[1]);
+				return;
+			}
+		}
+	}
+
 	private static void release(Mob mob) {
+		for (String tag : mob.entityTags().stream().filter(t -> t.startsWith(FROM)).toList()) {
+			String[] at = tag.substring(FROM.length()).split(",");
+			try {
+				mob.teleportTo(Double.parseDouble(at[0]), Double.parseDouble(at[1]), Double.parseDouble(at[2]));
+			} catch (RuntimeException ignored) {
+				// A tag not of ours: left where it stands.
+			}
+			mob.removeTag(tag);
+		}
 		mob.setNoAi(mob.entityTags().contains(TAG_STILL));
 		mob.removeTag(TAG);
 		mob.removeTag(TAG_STILL);

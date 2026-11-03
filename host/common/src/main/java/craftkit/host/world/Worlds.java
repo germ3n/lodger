@@ -44,6 +44,8 @@ public final class Worlds {
 	private final Temporaries temporaries = new Temporaries();
 	private final Charges charges = new Charges();
 	private final Footsteps footsteps = new Footsteps();
+	private final Approaches approaches = new Approaches();
+	private final Shoves shoves = new Shoves();
 	private final Gatherings gatherings = new Gatherings();
 	private final LootOffers loot = new LootOffers();
 	private final Later later = new Later();
@@ -144,12 +146,14 @@ public final class Worlds {
 		temporaries.tick(server);
 		charges.tick(server);
 		footsteps.tick(server);
+		approaches.tick(server);
+		shoves.tick(server);
 		gatherings.tick(server);
 		later.tick();
 		poses.tick();
 		figures.tick();
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();

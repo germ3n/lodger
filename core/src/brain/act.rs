@@ -149,14 +149,15 @@ pub fn dug(command: &Command) -> Option<BlockPos> {
     }
 }
 
-/// The block `blocks` behind the target, the way they face turned round.
+/// The block `blocks` behind the target, the way they face turned round (yaw 0 faces +z, as
+/// `sounds::commands` reads it).
 fn behind(memory: &Memory, blocks: f64) -> BlockPos {
     let yaw = (memory.last.yaw as f64).to_radians();
     let at = memory.last.pos;
     [
-        (at[0] - yaw.sin() * blocks).floor() as i32,
+        (at[0] + yaw.sin() * blocks).floor() as i32,
         (at[1] + 1.0).floor() as i32,
-        (at[2] + yaw.cos() * blocks).floor() as i32,
+        (at[2] - yaw.cos() * blocks).floor() as i32,
     ]
 }
 
@@ -237,6 +238,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::IcePath
         | Action::HandOnShoulder
         | Action::Footsteps
+        | Action::Pack
+        | Action::HostilesClose
+        | Action::Shove
         | Action::BedOccupied => None,
         Action::OreMarked => memory.scanned("_ore").next(),
         Action::LanternAhead => memory.lantern_spot(),
@@ -2107,6 +2111,7 @@ pub fn commands(
                         entity: creature.id,
                         player: target,
                         seconds: 10.0 + (seed % 21) as f32,
+                        creep: false,
                     },
                     0,
                 )
@@ -4348,6 +4353,7 @@ pub fn commands(
                             player: target,
                             seconds: 120.0,
                             at: Some(block_center(home.center)),
+                            creep: false,
                         },
                         0,
                     )
@@ -4680,6 +4686,60 @@ pub fn commands(
             })
             .unwrap_or_default(),
         // Until dawn: the night's remaining ticks, a minute at least, ten minutes at most.
+        // Their animals, together, walk up to them and stop four blocks off, facing them.
+        Action::Pack => {
+            let herd: Vec<u32> = memory
+                .animals_near_target()
+                .iter()
+                .take(12)
+                .map(|c| c.id)
+                .collect();
+            if herd.len() < 3 {
+                return vec![];
+            }
+            vec![(
+                Command::Approach {
+                    id: ids(),
+                    entities: herd,
+                    player: target,
+                    stop: 4.0,
+                    seconds: 40.0,
+                },
+                0,
+            )]
+        }
+        // The monsters near hold and stare, and come closer whenever they look away; three
+        // minutes, then back where they stood and as they were.
+        Action::HostilesClose => memory
+            .last
+            .hostiles_near
+            .iter()
+            .take(16)
+            .map(|mob| {
+                (
+                    Command::Hold {
+                        id: ids(),
+                        at: None,
+                        entity: mob.id,
+                        player: target,
+                        seconds: 180.0,
+                        creep: true,
+                    },
+                    0,
+                )
+            })
+            .collect(),
+        // A push at the next edge they stand at, within two minutes, never more than three
+        // blocks down.
+        Action::Shove => vec![(
+            Command::Shove {
+                id: ids(),
+                player: target,
+                seconds: 120.0,
+                most_drop: 3,
+            },
+            0,
+        )],
         Action::HostilesStare => {
             let to_dawn = 23_000u32.saturating_sub(now.day_time) as f32 / 20.0;
             let seconds = to_dawn.clamp(60.0, 600.0);
@@ -4696,6 +4756,7 @@ pub fn commands(
                             entity: mob.id,
                             player: target,
                             seconds,
+                            creep: false,
                         },
                         0,
                     )
@@ -5237,6 +5298,16 @@ mod tests {
             named: false,
             pet: false,
         });
+        // Two sheep grazing near them, with the pig a herd (`pack`).
+        for (id, x) in [(86, -5.5), (87, -6.5)] {
+            memory.last.creatures_near.push(crate::memory::Creature {
+                id,
+                kind: "sheep".to_string(),
+                pos: [x, 1.0, -4.5],
+                named: false,
+                pet: false,
+            });
+        }
         // A cow of theirs in sight, twenty blocks off.
         memory.last.creatures_near.push(crate::memory::Creature {
             id: 77,
@@ -7047,6 +7118,61 @@ mod tests {
             matches!(&window[0].0, Command::Figure { pos, .. } if pos[1] == 64.0),
             "{window:?}"
         );
+    }
+
+    #[test]
+    fn the_close_ones_of_batch_sixteen_send_what_they_should() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 1.0, 0.5];
+        memory.last.yaw = 0.0; // facing +z
+        memory.last.online = true;
+        memory.target_name = "Player612".to_string();
+        let now = Now::default();
+        let mut rng = Rng::new(16);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        // Their farm animals near, together, stopping four blocks off; never the villager.
+        let pack = made("pack", &mut rng);
+        assert!(
+            matches!(&pack[0].0, Command::Approach { entities, stop, .. }
+                if entities.len() >= 3 && *stop == 4.0 && !entities.contains(&204)),
+            "{pack:?}"
+        );
+        // Every monster near held, creeping.
+        let close = made("hostiles_close", &mut rng);
+        assert_eq!(close.len(), memory.last.hostiles_near.len());
+        assert!(close
+            .iter()
+            .all(|(c, _)| matches!(c, Command::Hold { creep: true, .. })));
+        // A push armed, three blocks at most.
+        assert!(matches!(
+            &made("shove", &mut rng)[0].0,
+            Command::Shove { most_drop: 3, .. }
+        ));
+        // A step right behind them, then the view turned a little toward a point ahead.
+        let hand = made("hand_on_shoulder", &mut rng);
+        assert!(
+            matches!(&hand[0].0, Command::BlockSound { pos, .. } if pos[2] < 0.0 && pos[2] > -0.5),
+            "{hand:?}"
+        );
+        assert!(
+            matches!(&hand[1].0, Command::Hint { hint, pos: Some(p), .. } if hint == "camera_nudge" && p[2] > 5),
+            "{hand:?}"
+        );
+        // Their name, from behind them.
+        let called = made("name_called", &mut rng);
+        assert!(
+            matches!(&called[0].0, Command::Hint { detail, pos: Some(p), .. } if detail == "Player612" && p[2] < 0),
+            "{called:?}"
+        );
+        assert!(matches!(
+            &made("footsteps_follow", &mut rng)[0].0,
+            Command::Footsteps { behind, .. } if *behind == 3.0
+        ));
     }
 
     #[test]
