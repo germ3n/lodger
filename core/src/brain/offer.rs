@@ -116,6 +116,11 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::JustWoke => false,
         Need::CrouchedStill => false,
         Need::Herd => last.online && memory.animals_near_target().len() >= 3,
+        Need::Knocked => false,
+        Need::FramesToShow => {
+            memory.decor("item_frame").next().is_some()
+                && crate::brain::act::frame_shows(memory).is_some()
+        }
         Need::Noon => (5_000..7_000).contains(&now.day_time),
         Need::FieldWord => memory
             .field_word()

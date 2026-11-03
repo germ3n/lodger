@@ -295,6 +295,7 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | `frame_rotate` | 1 | An item frame's item is rotated one notch. | An item frame with an item. |
 | `frames_turn` | 3 | Every item frame in the room is turned to the same orientation, while the target is away. | Three or more item frames in a room. |
 | `frame_swap` | 3 | The item in a frame is swapped with one from a chest. | An item frame and a chest. |
+| `item_frames_face` | 3 | While they are indoors, every item frame of the house shows the same thing, to them alone, for three minutes: what it took, or else what they hold most; then what each really holds again (`frames_show`, ABI 38: the frame's item as their client sees it; nothing in a frame changes). Coded 2026-11-10. | An item frame, indoors. |
 | `frame_emptied` | 3 | An item frame is empty; its item is on the bed. | An item frame with an item and a bed. |
 | `painting_change` | 2 | A painting is another painting of the same size. | A painting. |
 | `sign` | 2 | A sign with one word from the want's list, at the spot or by the door. | A spot. |
@@ -390,6 +391,7 @@ Offered with water within 32 blocks of the home or the route.
 | `ice_path` | 3 | A line of ice across the water from the far shore toward the house, in summer. | Still water of 8 or more blocks across. |
 | `ripples` | 3 | Ripples and small splashes cross the water toward the shore on their side, in a line, as under footsteps, for the target alone (the client's `ripples` hint). Coded 2026-11-10. | Water within 32 blocks, the target outdoors. |
 | `fishing_line` | 4 | Fishing with no one there, faked (a real bobber needs a player holding the rod; owner, 2026-11-10): a cast, the bobber's splashes and a catch over a minute at one spot on their water, the fishing ripples there for the target alone (the client's `bobber` hint). Coded 2026-11-10. | Water within 32 blocks and a fishing rod in a chest. |
+| `fish_on_line` | 2 | They fish: the next time their bobber sits in the water, within two minutes, it splashes and goes under and stays under for ten seconds, on their screen; the server's own hook is kept from any real bite meanwhile, so reeled in it brings nothing (`bobber`, ABI 38). Coded 2026-11-10. | A fishing rod in hand, water within sixteen blocks. |
 | `boat_in_house` | 4 | Their boat sits in the middle of the house in the morning. Owner's pick, 2026-11-10. | Their boat and a home, the target away or asleep. |
 | `under_the_water` | 3 | A dark shape, a squid, hangs still under the water on their side, facing them, for twenty seconds, then is gone (`place_entity` with `face`, ABI 30). Owner's pick, 2026-11-10. | Water within 24 blocks, the target outdoors. |
 | `wet_steps` | 3 | Wet steps and a drip with each walk from the door they use to their bed while they are inside. Owner's pick, 2026-11-10. | A bed and a door, the target indoors. |
@@ -479,6 +481,7 @@ Heard by the target alone. Nothing in the world changes.
 | `late_eating` | 2 | The same with eating: one more bite after the target's. | The target eating. |
 | `place_sound` | 2 | A block-placed sound behind the target. Nothing placed. | The target indoors. |
 | `knock` | 2 | Soft knocks on a door of the house the target is in, at night: three evenly, or two, a pause and one, or four quick, or one; the door shut, no one there. A door-close sound pitched up and quiet (owner, 2026-11-09: soft knocks early, the heavy one later). | A door, the target indoors, night. |
+| `answer_knock` | 2 | They knock on a door (strike it twice within a second and a half, the `knocked` sense, ABI 38); half the time it knocks back from that door a second later: two knocks, or three, or one slow one. Started by the knock, never planned. Coded 2026-11-10. | They just knocked. |
 | `knock_heavy` | 4 | Something heavy at the door at night: slow pounding, two, three or five, the sound of a zombie at a wooden door pitched low; nothing there when it is opened. | A door, the target indoors, night. |
 | `lever_click` | 2 | A lever's click, in a house with no lever. | The target indoors. |
 | `page_turn` | 2 | Pages turning by the lectern. | A lectern. |
@@ -533,6 +536,7 @@ The target's own HUD and camera, for a moment. Off with `events.glitches`.
 | `hunger_shake` | 2 | The hunger bar shakes as if starving, for three seconds, their saturation put back after. Coded 2026-11-10. | The target awake. |
 | `heart_skip` | 3 | The hearts blink as if hurt, once, with no damage. Coded 2026-11-10. | The target awake. |
 | `subtitle` | 2 | With subtitles on, `Footsteps` appears behind them, with no sound. Coded 2026-11-10. | The target awake. |
+| `wrong_sky` | 3 | At noon in the open, for a minute, the moon is where the sun should be and the sun is under the world, on their screen alone (the sky hook). Coded 2026-11-10. | Noon, outdoors. |
 | `name_called` | 3 | With subtitles on, their own name appears in the subtitles, four blocks behind them, with no sound. Coded 2026-11-10. | The target awake. |
 | `hand_on_shoulder` | 3 | At noon in the open, their view turns two degrees, as if a hand were on their shoulder, and a step sounds on the ground right behind them. Coded 2026-11-10. | Noon, outdoors. |
 | `camera_nudge` | 3 | The camera turns two degrees toward the figure, or the place, once. | A figure or a place. |

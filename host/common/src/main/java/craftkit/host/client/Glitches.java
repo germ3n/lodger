@@ -25,7 +25,7 @@ import java.util.Set;
  *   <li>{@code red_rain}: the drops red ({@link Atmospheres#rain}), no screen cast since 2026-11-10.</li>
  *   <li>{@code mist}, {@code red_mist}, {@code darkness}, {@code dusk_noon}: real fog ({@link Atmospheres#fog}),
  *       with drifting motes in the mists.</li>
- *   <li>{@code stars_out}, {@code moon_wrong}, {@code night_early}: the sky ({@link Atmospheres#sky}).</li>
+ *   <li>{@code stars_out}, {@code moon_wrong}, {@code night_early}, {@code wrong_sky}: the sky ({@link Atmospheres#sky}).</li>
  *   <li>{@code compass_points}, {@code painting_flip}: a compass turned, a painting upside down
  *       until looked at two seconds.</li>
  *   <li>{@code hunger_shake}, {@code heart_skip}, {@code subtitle}: the HUD, once.</li>

@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -64,6 +65,12 @@ public final class CraftkitFabric implements ModInitializer {
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			if (player instanceof ServerPlayer serverPlayer) {
 				senses.noticedUsedBlock(serverPlayer, hit.getBlockPos());
+			}
+			return InteractionResult.PASS;
+		});
+		AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) -> {
+			if (player instanceof ServerPlayer serverPlayer) {
+				senses.noticedStruckBlock(serverPlayer, pos);
 			}
 			return InteractionResult.PASS;
 		});

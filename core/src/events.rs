@@ -211,6 +211,11 @@ pub enum Need {
     CrouchedStill,
     /// Three or more of their farm animals within sixteen blocks of the target.
     Herd,
+    /// The target just knocked on a door; never offered, the knock starts it.
+    Knocked,
+    /// An item frame in the house, and something to show in every one: what it holds, or
+    /// their favourite.
+    FramesToShow,
 }
 
 impl Need {
@@ -261,6 +266,7 @@ impl Need {
                 | Need::Noon
                 | Need::CrouchedStill
                 | Need::Herd
+                | Need::Knocked
                 | Need::TunnelLights
                 | Need::BehindThem
                 | Need::TargetAte
@@ -362,6 +368,8 @@ impl Need {
             Need::Noon => "not noon".to_string(),
             Need::CrouchedStill => "happens only as they crouch still".to_string(),
             Need::Herd => "fewer than three farm animals near them".to_string(),
+            Need::Knocked => "happens only as they knock on a door".to_string(),
+            Need::FramesToShow => "no item frame, or nothing to show in one".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -718,6 +726,10 @@ pub enum Action {
     HostilesClose,
     /// A push at the next edge or ladder they stand on, never a fall of more than three.
     Shove,
+    /// Every frame of the house shows the one thing, to them alone, for a while.
+    FramesShow,
+    /// Their bobber pulled under and kept under, nothing on it.
+    BobberUnder,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1541,6 +1553,51 @@ pub const CATALOGUE: &[Event] = &[
         3,
         Half,
         Action::Hint("name_called", 4.0),
+        true,
+    ),
+    // Batch 16, more (owner, 2026-11-10: `answer_knock`, the frames, the sky, the line).
+    row(
+        "answer_knock",
+        2,
+        5,
+        &[Knocked],
+        0.5,
+        4,
+        Half,
+        Action::Sound("minecraft:block.wooden_door.close"),
+        true,
+    ),
+    row(
+        "item_frames_face",
+        3,
+        5,
+        &[FramesToShow, TargetIndoors],
+        3.0,
+        2,
+        Full,
+        Action::FramesShow,
+        false,
+    ),
+    row(
+        "wrong_sky",
+        3,
+        5,
+        &[Noon, TargetOutdoors],
+        3.0,
+        2,
+        Half,
+        Action::Hint("wrong_sky", 60.0),
+        false,
+    ),
+    row(
+        "fish_on_line",
+        2,
+        5,
+        &[Holding("fishing_rod"), WaterNear(16)],
+        2.0,
+        3,
+        Half,
+        Action::BobberUnder,
         true,
     ),
     // Batch 16, the close ones (owner, 2026-11-10: `pack`, `hostiles_close`, `shove`).
@@ -4024,6 +4081,7 @@ impl Event {
             | Action::WetSteps
             | Action::SoundPair(..)
             | Action::Footsteps => "sounds",
+            Action::FramesShow => "things",
             Action::Sign
             | Action::SignDeep
             | Action::DeathMessage
@@ -4180,6 +4238,7 @@ impl Event {
             | Action::Pack
             | Action::HostilesClose
             | Action::Shove
+            | Action::BobberUnder
             | Action::Charge(..) => "seen",
             Action::Hint(_, _) => "sky",
             Action::HandOnShoulder => "seen",
@@ -4316,6 +4375,10 @@ impl Event {
             "ore_marked" => "put a torch on an ore they have not found",
             "hand_on_shoulder" => "turn them a little, a step right behind them",
             "pack" => "walk their animals toward them together",
+            "answer_knock" => "knock back on the door they knocked on",
+            "item_frames_face" => "show the one thing in every frame of the house",
+            "wrong_sky" => "put the moon in the noon sky",
+            "fish_on_line" => "pull their bobber under with nothing on it",
             "hostiles_close" => "bring the monsters closer whenever they look away",
             "shove" => "push them at the next edge, a short fall",
             "breath" => "breathe at their ear while they crouch still",

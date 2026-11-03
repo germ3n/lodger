@@ -217,6 +217,31 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // Their own knock, answered from the door a moment later: two back, or three, or one.
+        "answer_knock" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[(DOOR_CLOSE, 20), (DOOR_CLOSE, 28)],
+                    (1.6, 1.7),
+                    0.45,
+                    Still,
+                ),
+                v(
+                    &[(DOOR_CLOSE, 30), (DOOR_CLOSE, 38)],
+                    (1.5, 1.6),
+                    0.4,
+                    Still,
+                ),
+                v(
+                    &[(DOOR_CLOSE, 20), (DOOR_CLOSE, 28), (DOOR_CLOSE, 36)],
+                    (1.6, 1.7),
+                    0.4,
+                    Still,
+                ),
+                v(&[(DOOR_CLOSE, 40)], (1.4, 1.5), 0.5, Still),
+            ];
+            WAYS
+        }
         "knock_heavy" => {
             const WAYS: &[Variant] = &[
                 v(
@@ -982,6 +1007,7 @@ mod tests {
             "cold_crackle",
             "breath_close",
             "breath",
+            "answer_knock",
             "cave_air",
             "door_scratch",
         ] {

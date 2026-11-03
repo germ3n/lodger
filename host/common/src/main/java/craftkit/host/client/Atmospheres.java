@@ -87,6 +87,13 @@ public final class Atmospheres {
 		if (weightOf("moon_wrong") > 0) {
 			sky.moonPhase = MoonPhase.FULL_MOON;
 		}
+		// The moon where the sun should be, at noon, the sun under the world (batch 16): from
+		// the moment its minute is half in until it is half out.
+		if (weightOf("wrong_sky") > 0.5f) {
+			float sun = sky.sunAngle;
+			sky.sunAngle = sky.moonAngle;
+			sky.moonAngle = sun;
+		}
 		float later = weightOf("night_early");
 		if (later > 0) {
 			// Two hours of a twenty-four hour turn.

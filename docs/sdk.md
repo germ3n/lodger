@@ -180,7 +180,9 @@ side with `through`; block updates to that player alone, nothing in the world ch
 moment later a few blocks back, stopping when they stop). ABI 37 (2026-11-10): `hold`'s `creep` (a step nearer each
 moment the player looks away, back where it was held when looked at and when let go), `approach`
 (mobs walk up to a player together and stop a few blocks off), `shove` (a push off the next safe
-edge, a fall of three blocks at most).
+edge, a fall of three blocks at most). ABI 38 (2026-11-10): the `knocked` event (a door struck twice
+within a second and a half), `frames_show` (item frames show one item to one player for a while),
+`bobber` (a player's bobber pulled under on their screen with no bite on the server).
 
 ## Resources
 

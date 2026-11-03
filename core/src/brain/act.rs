@@ -149,6 +149,17 @@ pub fn dug(command: &Command) -> Option<BlockPos> {
     }
 }
 
+/// What every frame of the house shows (`item_frames_face`): the thing it holds, or the one
+/// they hold most.
+pub fn frame_shows(memory: &Memory) -> Option<String> {
+    memory
+        .held
+        .as_ref()
+        .map(|h| h.item.id.clone())
+        .or_else(|| memory.favourites.first().map(|(id, _)| id.clone()))
+        .filter(|id| !id.is_empty())
+}
+
 /// The block `blocks` behind the target, the way they face turned round (yaw 0 faces +z, as
 /// `sounds::commands` reads it).
 fn behind(memory: &Memory, blocks: f64) -> BlockPos {
@@ -187,6 +198,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     // Under the bed they lie in.
     if event.id == "under_the_bed" {
         return home.and_then(|h| h.bed).map(|b| [b[0], b[1] - 1, b[2]]);
+    }
+    // The knock answered from the door they knocked on.
+    if event.id == "answer_knock" {
+        return memory.knocked_now;
     }
     // Breathing at the ear of the one who crouches.
     if event.id == "breath" {
@@ -241,6 +256,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::Pack
         | Action::HostilesClose
         | Action::Shove
+        | Action::FramesShow
+        | Action::BobberUnder
         | Action::BedOccupied => None,
         Action::OreMarked => memory.scanned("_ore").next(),
         Action::LanternAhead => memory.lantern_spot(),
@@ -4686,6 +4703,34 @@ pub fn commands(
             })
             .unwrap_or_default(),
         // Until dawn: the night's remaining ticks, a minute at least, ten minutes at most.
+        // Every frame of the house shows the one thing, to them alone, for three minutes.
+        Action::FramesShow => match frame_shows(memory) {
+            Some(item) => {
+                let frames: Vec<u32> = memory.decor("item_frame").map(|d| d.id).collect();
+                vec![(
+                    Command::FramesShow {
+                        id: ids(),
+                        player: target,
+                        frames,
+                        item,
+                        seconds: 180.0,
+                    },
+                    0,
+                )]
+            }
+            None => vec![],
+        },
+        // The next time their bobber sits in the water, within two minutes, it goes under and
+        // stays under ten seconds, nothing on it.
+        Action::BobberUnder => vec![(
+            Command::Bobber {
+                id: ids(),
+                player: target,
+                seconds: 120.0,
+                under: 10.0,
+            },
+            0,
+        )],
         // Their animals, together, walk up to them and stop four blocks off, facing them.
         Action::Pack => {
             let herd: Vec<u32> = memory
@@ -6991,6 +7036,26 @@ mod tests {
     }
 
     #[test]
+    fn a_knock_on_a_door_is_noticed() {
+        use craftkit::world::{Event, EventKind, Observations, Player};
+        let mut memory = memory();
+        memory.target = Some(0);
+        let knock = r#"{"player":0,"kind":"knocked","pos":[3,64,0],"detail":"minecraft:oak_door"}"#;
+        let event: Event = serde_json::from_str(knock).unwrap();
+        assert_eq!(event.kind, EventKind::Knocked);
+        memory.observe(
+            &Observations {
+                players: vec![Player::default()],
+                events: vec![event],
+                ..Observations::default()
+            },
+            0.3,
+        );
+
+        assert_eq!(memory.knocked_now, Some([3, 64, 0]));
+    }
+
+    #[test]
     fn tidying_a_chest_said_to_hold_two_stacks_in_one_slot_never_panics() {
         let contents = vec![
             stack("minecraft:water_bucket", 1, 9),
@@ -7173,6 +7238,52 @@ mod tests {
             &made("footsteps_follow", &mut rng)[0].0,
             Command::Footsteps { behind, .. } if *behind == 3.0
         ));
+    }
+
+    #[test]
+    fn the_frames_the_sky_the_line_and_the_knock_send_what_they_should() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.knocked_now = Some([3, 64, 0]);
+        let now = Now::default();
+        let mut rng = Rng::new(17);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        // Every frame near the home, the one thing they hold most.
+        let frames = made("item_frames_face", &mut rng);
+        let want: Vec<u32> = memory.decor("item_frame").map(|d| d.id).collect();
+        assert!(
+            matches!(&frames[0].0, Command::FramesShow { frames, item, .. }
+                if *frames == want && Some(item) == memory.favourites.first().map(|(id, _)| id)),
+            "{frames:?}"
+        );
+        // What it took, when it holds something, is what every frame shows.
+        let mut holding = memory.clone();
+        holding.held = Some(crate::memory::Held {
+            item: stack("minecraft:clock", 1, 0),
+            ..Default::default()
+        });
+        assert_eq!(frame_shows(&holding).as_deref(), Some("minecraft:clock"));
+        assert!(matches!(
+            &made("fish_on_line", &mut rng)[0].0,
+            Command::Bobber { under, .. } if *under == 10.0
+        ));
+        assert!(matches!(
+            &made("wrong_sky", &mut rng)[0].0,
+            Command::Hint { hint, seconds, .. } if hint == "wrong_sky" && *seconds == 60.0
+        ));
+        // Knocks back from the door they knocked on, a moment after theirs.
+        let knock = made("answer_knock", &mut rng);
+        assert!(!knock.is_empty());
+        assert!(
+            knock.iter().all(|(c, t)| *t >= 20
+                && matches!(c, Command::PlaySound { pos, .. } if *pos == [3.5, 64.5, 0.5])),
+            "{knock:?}"
+        );
     }
 
     #[test]

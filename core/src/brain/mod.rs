@@ -212,6 +212,8 @@ pub const BELL_CHANCE: f64 = 0.5;
 pub const WOKE_CHANCE: f64 = 0.35;
 /// The chance crouching still ten seconds brings the breathing at their ear (`breath`).
 pub const BREATH_CHANCE: f64 = 0.3;
+/// The chance a door they knock on knocks back (`answer_knock`).
+pub const KNOCK_CHANCE: f64 = 0.5;
 /// The events whose later sounds stop as soon as the target moves.
 const STOPS_WHEN_THEY_MOVE: &[&str] = &["breath"];
 
@@ -667,6 +669,21 @@ impl Brain {
                 log,
             );
             memory.rang_bell_now = None;
+        }
+
+        // They knocked on a door: perhaps it knocks back.
+        if memory.knocked_now.is_some() {
+            self.consider_started(
+                "answer_knock",
+                KNOCK_CHANCE,
+                now,
+                day,
+                memory,
+                arc,
+                config,
+                log,
+            );
+            memory.knocked_now = None;
         }
 
         // They crouch still: perhaps breathing at their ear, until they move.
@@ -1227,6 +1244,7 @@ impl Brain {
                             | events::Need::KilledNow
                             | events::Need::RangBell
                             | events::Need::CrouchedStill
+                            | events::Need::Knocked
                     )
                 })
                 .all(|n| offer::meets(*n, memory, now))
@@ -3927,6 +3945,45 @@ mod tests {
             brain.later.clear();
         }
         assert!(shut > 0 && shut < 30, "now and then: {shut} of forty");
+    }
+
+    #[test]
+    fn a_door_they_knock_on_knocks_back_now_and_then() {
+        let mut config = Config::default();
+        config.events.cooldown_scale = 0.0;
+        config.brain.plan_every = 100_000;
+        let mut memory = home_memory();
+        memory.last.online = true;
+        let mut arc = Arc {
+            stage: 2,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(8);
+        let most = events::find("answer_knock").unwrap().most_per_stay;
+        let mut answered = Vec::new();
+        for i in 0..40u64 {
+            memory.knocked_now = Some([3, 64, 0]);
+            let now = Now {
+                tick: 20 + i * 40,
+                ..Now::default()
+            };
+            brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+            assert!(memory.knocked_now.is_none(), "the knock is taken");
+            if !brain.later.is_empty() {
+                answered.push(i);
+            }
+            brain.later.clear();
+        }
+        assert_eq!(
+            answered.len() as u32,
+            most,
+            "answered to its cap: {answered:?}"
+        );
+        assert!(
+            *answered.last().unwrap() >= most as u64,
+            "not every knock: {answered:?}"
+        );
     }
 
     #[test]

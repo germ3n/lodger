@@ -700,6 +700,12 @@ because it can be built and tested without a game, and because the model layer i
     come nearer whenever they look away, back where they stood when looked at (`hold`'s
     `creep`); a push off the next edge of two or three blocks (`shove`, never harm). ABI 37.
     Tests: one in `act`, two in JUnit (`Edge`). Was: three rows not coded.
+  - **Batch 16, more** (owner: `answer_knock`, the frames, the sky, the line): a door they
+    knock on (struck twice, a new `knocked` sense on both loaders) knocks back half the time;
+    every frame of the house shows the one thing to them alone (`frames_show`); the moon at
+    noon for a minute (the sky hook); their bobber pulled under with nothing on it (`bobber`,
+    the server's hook kept from a real bite). ABI 38. Tests: two in `act`, one in the brain.
+    Was: four rows not coded.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

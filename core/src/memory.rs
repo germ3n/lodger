@@ -410,6 +410,10 @@ pub struct Memory {
     /// saved.
     #[serde(skip)]
     pub rang_bell_now: Option<BlockPos>,
+    /// A door the target just knocked on, taken by the brain on its next tick
+    /// (`answer_knock`). Not saved.
+    #[serde(skip)]
+    pub knocked_now: Option<BlockPos>,
     /// The target just woke, taken by the brain on its next tick (`foot_of_bed`). Not saved.
     #[serde(skip)]
     pub woke_now: bool,
@@ -1332,6 +1336,7 @@ impl Memory {
                     }
                 }
                 EventKind::RangBell => self.rang_bell_now = event.pos,
+                EventKind::Knocked => self.knocked_now = event.pos,
                 EventKind::Fished => self.last_fished = Some(block(self.last.pos)),
                 EventKind::UsedDoor => {
                     self.door_used_now = event.pos;

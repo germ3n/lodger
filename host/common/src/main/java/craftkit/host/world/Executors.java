@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves, Bobbers bobbers, FrameShows frameShows) {
 	}
 
 	private Executors() {
@@ -167,6 +167,32 @@ public final class Executors {
 						}
 					}
 					yield report(id, walking > 0, walking > 0 ? "walking " + walking : "none of them here");
+				}
+				case "bobber" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					context.bobbers().arm(player, command.get("seconds").getAsFloat(), command.get("under").getAsFloat());
+					yield report(id, true, "armed");
+				}
+				case "frames_show" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					Optional<Holder.Reference<net.minecraft.world.item.Item>> item = BuiltInRegistries.ITEM.get(Identifier.parse(command.get("item").getAsString()));
+					if (item.isEmpty()) {
+						yield report(id, false, "no such item");
+					}
+					List<net.minecraft.world.entity.decoration.ItemFrame> frames = new ArrayList<>();
+					for (var each : command.getAsJsonArray("frames")) {
+						if (level.getEntity(each.getAsInt()) instanceof net.minecraft.world.entity.decoration.ItemFrame frame) {
+							frames.add(frame);
+						}
+					}
+					int shown = context.frameShows().show(player, frames, new net.minecraft.world.item.ItemStack(item.get()), command.get("seconds").getAsFloat());
+					yield report(id, shown > 0, shown > 0 ? "shown in " + shown : "no frame of those here");
 				}
 				case "shove" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());

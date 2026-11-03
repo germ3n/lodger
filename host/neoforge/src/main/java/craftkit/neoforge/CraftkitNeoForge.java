@@ -118,6 +118,11 @@ public final class CraftkitNeoForge {
 				senses.noticedUsedBlock(player, event.getPos());
 			}
 		});
+		NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.LeftClickBlock event) -> {
+			if (event.getEntity() instanceof ServerPlayer player && event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START) {
+				senses.noticedStruckBlock(player, event.getPos());
+			}
+		});
 		NeoForge.EVENT_BUS.addListener((BlockEvent.EntityPlaceEvent event) -> {
 			if (event.getEntity() instanceof ServerPlayer player) {
 				senses.noticedPlacedBlock(player, event.getPos(), event.getPlacedBlock());

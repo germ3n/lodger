@@ -151,6 +151,29 @@ public final class Senses {
 		}
 	}
 
+	/** The last door each player struck, and when: two strikes on one door make a knock. */
+	private final Map<UUID, long[]> struck = new HashMap<>();
+	/** The ticks between a knock's two strikes, at most. */
+	static final int KNOCK_WITHIN = 30;
+
+	/** A block struck (the start of a left click): two on one door within a second and a half are a knock (ABI 38). */
+	public void noticedStruckBlock(ServerPlayer player, BlockPos pos) {
+		BlockState state = player.level().getBlockState(pos);
+		if (!(state.getBlock() instanceof net.minecraft.world.level.block.DoorBlock)) {
+			struck.remove(player.getUUID());
+			return;
+		}
+		BlockPos lower = state.getValue(net.minecraft.world.level.block.DoorBlock.HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER ? pos.below() : pos;
+		long now = player.level().getGameTime();
+		long[] before = struck.get(player.getUUID());
+		if (before != null && before[0] == lower.asLong() && now - before[1] <= KNOCK_WITHIN) {
+			struck.remove(player.getUUID());
+			event(player, "knocked", lower, blockId(state), null);
+			return;
+		}
+		struck.put(player.getUUID(), new long[] {lower.asLong(), now});
+	}
+
 	public void noticedPlacedBlock(ServerPlayer player, BlockPos pos, BlockState state) {
 		event(player, "placed_block", pos, blockId(state), null);
 	}

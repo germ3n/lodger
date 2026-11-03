@@ -208,6 +208,9 @@ pub enum EventKind {
     UsedDoor,
     /// The player rang a bell: `pos` is the bell. ABI 31.
     RangBell,
+    /// The player knocked on a door, struck it twice within a second and a half: `pos` is
+    /// the door's lower half. ABI 38.
+    Knocked,
     ChangedDimension,
     /// Hit an entity; `detail` is its kind, `pos` where it stood.
     Hit,
@@ -546,6 +549,24 @@ pub enum Command {
         seconds: f32,
         behind: f32,
         delay: u32,
+    },
+    /// For `seconds`, the item frames `frames` show `item` to `player` alone, whatever they
+    /// hold; then what they hold again. Nothing in them changes. ABI 38.
+    FramesShow {
+        id: u64,
+        player: u32,
+        frames: Vec<u32>,
+        item: String,
+        seconds: f32,
+    },
+    /// For `seconds`, the first time `player`'s bobber sits in the water it is pulled under on
+    /// their screen and kept under for `under` seconds, with no fish on it: reeled in, it
+    /// brings nothing. ABI 38.
+    Bobber {
+        id: u64,
+        player: u32,
+        seconds: f32,
+        under: f32,
     },
     /// The figure `figure`, seen by `player` alone, walks from `from` (on the ground) along
     /// `way` to the first rock face and digs in, a step at a time, the stone closing behind it,
@@ -930,6 +951,8 @@ impl Command {
             | Command::Footsteps { id, .. }
             | Command::Approach { id, .. }
             | Command::Shove { id, .. }
+            | Command::FramesShow { id, .. }
+            | Command::Bobber { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }
             | Command::MoveLeash { id, .. }

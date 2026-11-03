@@ -61,7 +61,7 @@ pub fn check(
             | crate::events::Action::LootGift
             | crate::events::Action::DoorHeld
             | crate::events::Action::CountUp
-    );
+    ) || matches!(event.id, "answer_knock" | "breath");
     if let Some(last) = memory.recent(1).next() {
         if last.event == event.id && last.ok && !answers {
             return Err(Refused::SameAsLast);
@@ -139,6 +139,8 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::Pack
             | crate::events::Action::HostilesClose
             | crate::events::Action::Shove
+            | crate::events::Action::FramesShow
+            | crate::events::Action::BobberUnder
             | crate::events::Action::BedBreaks
             | crate::events::Action::ScanVillage
             | crate::events::Action::TunnelToward
