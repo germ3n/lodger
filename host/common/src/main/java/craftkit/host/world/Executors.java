@@ -168,6 +168,18 @@ public final class Executors {
 					}
 					yield report(id, walking > 0, walking > 0 ? "walking " + walking : "none of them here");
 				}
+				case "carry_block" -> {
+					Entity entity = level.getEntity(command.get("entity").getAsInt());
+					if (!(entity instanceof net.minecraft.world.entity.monster.Enderman enderman)) {
+						yield report(id, false, "no enderman with that id here");
+					}
+					Optional<Holder.Reference<Block>> block = BuiltInRegistries.BLOCK.get(Identifier.parse(command.get("block").getAsString()));
+					if (block.isEmpty()) {
+						yield report(id, false, "no such block");
+					}
+					enderman.setCarriedBlock(block.get().value().defaultBlockState());
+					yield report(id, true, "");
+				}
 				case "bobber" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

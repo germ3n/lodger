@@ -414,6 +414,13 @@ pub struct Memory {
     /// (`answer_knock`). Not saved.
     #[serde(skip)]
     pub knocked_now: Option<BlockPos>,
+    /// The day the target went into another dimension (gone from the world without leaving
+    /// the game), until they come back (`busy_away`).
+    pub elsewhere_since: Option<f32>,
+    /// The target has just come back from another dimension, after this many days; taken by
+    /// the brain on its next tick (`busy_away`). Not saved.
+    #[serde(skip)]
+    pub back_after: Option<f32>,
     /// The target just woke, taken by the brain on its next tick (`foot_of_bed`). Not saved.
     #[serde(skip)]
     pub woke_now: bool,
@@ -977,6 +984,14 @@ impl Memory {
                 self.sample_habits(player, day);
             }
             None => {
+                // Gone from this world without leaving the game: into another dimension.
+                let left = observations
+                    .events
+                    .iter()
+                    .any(|e| e.player == index && e.kind == EventKind::Left);
+                if self.last.online && !left {
+                    self.elsewhere_since = Some(day);
+                }
                 self.last.online = false;
                 self.habits.at_home = None;
             }
@@ -1220,6 +1235,9 @@ impl Memory {
                 }
                 EventKind::ChangedDimension => {
                     self.milestone("crossed", day, event.pos, &event.detail);
+                    if let Some(since) = self.elsewhere_since.take() {
+                        self.back_after = Some(day - since);
+                    }
                 }
                 EventKind::Ate => {
                     self.last.ate_day = day;
@@ -2053,6 +2071,21 @@ impl Memory {
         } else {
             None
         }
+    }
+
+    /// The block they build with most at home, by the walls it knows (`ender_holds`).
+    pub fn block_built_most(&self) -> Option<String> {
+        let mut counts: Vec<(&str, usize)> = Vec::new();
+        for (_, id) in &self.walls {
+            match counts.iter_mut().find(|(i, _)| *i == id.as_str()) {
+                Some((_, n)) => *n += 1,
+                None => counts.push((id.as_str(), 1)),
+            }
+        }
+        counts
+            .into_iter()
+            .max_by_key(|(_, n)| *n)
+            .map(|(id, _)| id.to_string())
     }
 
     pub fn has_fixture(&self, kind: &str) -> bool {

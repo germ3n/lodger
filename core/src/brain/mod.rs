@@ -212,6 +212,22 @@ pub const BELL_CHANCE: f64 = 0.5;
 pub const WOKE_CHANCE: f64 = 0.35;
 /// The chance crouching still ten seconds brings the breathing at their ear (`breath`).
 pub const BREATH_CHANCE: f64 = 0.3;
+/// The bold things that may have happened at home while they were in another dimension
+/// (`busy_away`), in the order tried: the first whose rules and needs hold runs.
+pub const WHILE_AWAY: &[&str] = &[
+    "house_near",
+    "pillar",
+    "hut_on_route",
+    "dock",
+    "bridge",
+    "cairn",
+    "light_path",
+    "path_worn",
+    "grave",
+    "sapling",
+];
+/// Gone this long or more (days: three minutes of a twenty-minute day) for `busy_away`.
+pub const AWAY_LEAST: f32 = 0.15;
 /// The chance a door they knock on knocks back (`answer_knock`).
 pub const KNOCK_CHANCE: f64 = 0.5;
 /// The events whose later sounds stop as soon as the target moves.
@@ -669,6 +685,13 @@ impl Brain {
                 log,
             );
             memory.rang_bell_now = None;
+        }
+
+        // Back from another dimension a while: something happened at home meanwhile.
+        if let Some(gone) = memory.back_after.take() {
+            if gone >= AWAY_LEAST {
+                self.consider_back(now, day, memory, arc, config, log);
+            }
         }
 
         // They knocked on a door: perhaps it knocks back.
@@ -1266,6 +1289,59 @@ impl Brain {
                 command,
                 while_still,
             });
+        }
+    }
+
+    /// Coming back from another dimension (`busy_away`): the first of [`WHILE_AWAY`] that its
+    /// rules allow and whose lasting needs hold runs at once, as a forced plan, so it was done
+    /// before they could see it. Its passing needs (the hour, them away) are of the time they
+    /// were gone, so they are not asked.
+    fn consider_back(
+        &mut self,
+        now: &Now,
+        day: f32,
+        memory: &mut Memory,
+        arc: &Arc,
+        config: &Config,
+        log: &mut log::Log,
+    ) {
+        let Some(busy) = events::find("busy_away") else {
+            return;
+        };
+        if rules::check(busy, None, memory, arc.stage, day, config).is_err() {
+            return;
+        }
+        for id in WHILE_AWAY {
+            let Some(event) = events::find(id) else {
+                continue;
+            };
+            if !offer::switched_on(event, config)
+                || rules::check(event, None, memory, arc.stage, day, config).is_err()
+                || !event
+                    .needs
+                    .iter()
+                    .filter(|n| n.lasting())
+                    .all(|n| offer::meets(*n, memory, now))
+            {
+                continue;
+            }
+            let pos = act::place(event, memory, &mut self.rng);
+            let id = self.next_plan_id();
+            self.plans.push(Plan {
+                id,
+                event: event.id.to_string(),
+                pos,
+                from_tick: now.tick,
+                until_tick: now.tick + 600 * TPS,
+                forced: true,
+                ..Plan::default()
+            });
+            memory.record(busy.id, pos, day, true, event.id);
+            log.note(&format!(
+                "they came back from another world: {} happened while they were gone",
+                event.id
+            ));
+            return;
         }
     }
 
@@ -3945,6 +4021,60 @@ mod tests {
             brain.later.clear();
         }
         assert!(shut > 0 && shut < 30, "now and then: {shut} of forty");
+    }
+
+    #[test]
+    fn back_from_another_world_a_while_something_happened_at_home() {
+        let config = Config::default();
+        let mut memory = home_memory();
+        memory.last.online = true;
+        memory.place = Some([30, 64, 30]);
+        memory.store("minecraft:cobblestone", 16);
+        let mut arc = Arc {
+            stage: 3,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(9);
+        let now = Now {
+            tick: 20,
+            ..Now::default()
+        };
+
+        // Gone a moment: nothing.
+        memory.back_after = Some(AWAY_LEAST / 2.0);
+        brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+        assert!(brain.plans.iter().all(|p| !p.forced), "{:?}", brain.plans);
+
+        // Gone a while: one of the bold things, run at once, in view or not, so it is done
+        // before they can see it.
+        memory.back_after = Some(AWAY_LEAST * 4.0);
+        let sent = brain.tick(&now, 0.0, &mut memory, &mut arc, &config, &mut log, None);
+        let busy = memory
+            .recent(8)
+            .find(|d| d.event == "busy_away")
+            .expect("busy while they were away")
+            .clone();
+        assert!(WHILE_AWAY.contains(&busy.reason.as_str()), "{busy:?}");
+        let ran: Vec<u64> = brain
+            .pending
+            .iter()
+            .filter(|p| p.event == busy.reason)
+            .map(|p| p.id)
+            .collect();
+        assert!(!ran.is_empty(), "{} sent nothing", busy.reason);
+        assert!(
+            sent.iter().any(|c| ran.contains(&c.id())),
+            "at once: {sent:?}"
+        );
+    }
+
+    #[test]
+    fn every_while_away_event_is_in_the_catalogue() {
+        for id in WHILE_AWAY {
+            let event = events::find(id).unwrap_or_else(|| panic!("{id}"));
+            assert!(!event.small, "{id} is a bold one");
+        }
     }
 
     #[test]

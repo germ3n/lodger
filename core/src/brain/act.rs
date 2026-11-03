@@ -258,6 +258,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::Shove
         | Action::FramesShow
         | Action::BobberUnder
+        | Action::GhastName
+        | Action::EnderHolds
+        | Action::WhileAway
         | Action::BedOccupied => None,
         Action::OreMarked => memory.scanned("_ore").next(),
         Action::LanternAhead => memory.lantern_spot(),
@@ -4703,6 +4706,66 @@ pub fn commands(
             })
             .unwrap_or_default(),
         // Until dawn: the night's remaining ticks, a minute at least, ten minutes at most.
+        // In the Nether: the ghasts' cries are their name for five minutes, and one cries now,
+        // far off, so it is heard.
+        Action::GhastName => {
+            let at = memory.last.pos;
+            let angle = (seed % 8) as f64 * std::f64::consts::FRAC_PI_4;
+            vec![
+                (
+                    Command::Hint {
+                        id: ids(),
+                        player: target,
+                        hint: "ghast_name".to_string(),
+                        pos: None,
+                        seconds: 300.0,
+                        detail: memory.target_name.clone(),
+                    },
+                    0,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:entity.ghast.ambient".to_string(),
+                        pos: [
+                            at[0] + 28.0 * angle.cos(),
+                            at[1] + 8.0,
+                            at[2] + 28.0 * angle.sin(),
+                        ],
+                        volume: 2.5,
+                        pitch: 0.9,
+                    },
+                    20,
+                ),
+            ]
+        }
+        // An enderman near them holds what they build with most. The block comes from
+        // `crate::elsewhere`, which knows what they build at home; here, the nearest enderman.
+        Action::EnderHolds => {
+            let at = block_of(memory.last.pos);
+            let enderman = memory
+                .last
+                .hostiles_near
+                .iter()
+                .filter(|m| m.kind == "enderman")
+                .min_by(|a, b| {
+                    distance(block_of(a.pos), at).total_cmp(&distance(block_of(b.pos), at))
+                });
+            match (enderman, written) {
+                (Some(e), Some(block)) => vec![(
+                    Command::CarryBlock {
+                        id: ids(),
+                        entity: e.id,
+                        block: block.to_string(),
+                    },
+                    0,
+                )],
+                _ => vec![],
+            }
+        }
+        // Runs another event: the brain picks it (`Brain::consider_back`).
+        Action::WhileAway => vec![],
         // Every frame of the house shows the one thing, to them alone, for three minutes.
         Action::FramesShow => match frame_shows(memory) {
             Some(item) => {
@@ -5766,6 +5829,10 @@ mod tests {
                 || event.id == "door_opens_itself"
                 // Its house must stand first: its own test below.
                 || event.id == "house_grows"
+                // The block comes from home and the enderman from the End: `elsewhere`'s tests.
+                || event.id == "ender_holds"
+                // Runs another event in its stead: the brain's test.
+                || event.id == "busy_away"
             {
                 continue;
             }
@@ -7033,6 +7100,56 @@ mod tests {
         );
 
         assert_eq!(memory.rang_bell_now, Some([60, 65, 60]));
+    }
+
+    #[test]
+    fn gone_into_another_dimension_and_back_is_noticed_and_leaving_the_game_is_not_that() {
+        use craftkit::world::{Event, EventKind, Observations, Player};
+        let here = Observations {
+            players: vec![Player::default()],
+            ..Observations::default()
+        };
+        let mut memory = memory();
+        memory.target = Some(0);
+        memory.observe(&here, 1.0);
+        memory.observe(&Observations::default(), 1.2);
+        assert_eq!(
+            memory.elsewhere_since,
+            Some(1.2),
+            "gone, no word of leaving"
+        );
+        memory.observe(
+            &Observations {
+                players: vec![Player::default()],
+                events: vec![Event {
+                    player: 0,
+                    kind: EventKind::ChangedDimension,
+                    detail: "minecraft:overworld".to_string(),
+                    ..Event::default()
+                }],
+                ..Observations::default()
+            },
+            1.5,
+        );
+        assert!((memory.back_after.unwrap() - 0.3).abs() < 1e-4);
+        assert_eq!(memory.elsewhere_since, None);
+
+        // Leaving the game is not another world.
+        let mut left = self::memory();
+        left.target = Some(0);
+        left.observe(&here, 1.0);
+        left.observe(
+            &Observations {
+                events: vec![Event {
+                    player: 0,
+                    kind: EventKind::Left,
+                    ..Event::default()
+                }],
+                ..Observations::default()
+            },
+            1.2,
+        );
+        assert_eq!(left.elsewhere_since, None);
     }
 
     #[test]

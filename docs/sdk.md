@@ -182,7 +182,8 @@ moment the player looks away, back where it was held when looked at and when let
 (mobs walk up to a player together and stop a few blocks off), `shove` (a push off the next safe
 edge, a fall of three blocks at most). ABI 38 (2026-11-10): the `knocked` event (a door struck twice
 within a second and a half), `frames_show` (item frames show one item to one player for a while),
-`bobber` (a player's bobber pulled under on their screen with no bite on the server).
+`bobber` (a player's bobber pulled under on their screen with no bite on the server). ABI 39
+(2026-11-10): `carry_block` (an enderman holds a block).
 
 ## Resources
 

@@ -706,6 +706,15 @@ because it can be built and tested without a game, and because the model layer i
     noon for a minute (the sky hook); their bobber pulled under with nothing on it (`bobber`,
     the server's hook kept from a real bite). ABI 38. Tests: two in `act`, one in the brain.
     Was: four rows not coded.
+  - **Batch 16, the Nether and the End** (owner: all three): the stays of the other dimensions
+    act through `elsewhere` (the overworld's says each tick what its rules allow and what they
+    need from home; theirs say what they did, and the overworld's records it, so the caps,
+    cooldowns and budget hold): in the Nether the ghasts' cries read as their name in the
+    subtitles (a subtitle hook); in the End an enderman holds the block they build with most
+    (`carry_block`, ABI 39); back from another dimension after three minutes, one of its bold
+    things at home is done at once (`busy_away`, a new sense of being gone without leaving).
+    Tests: three in `elsewhere`, two in the brain, one in `act`, one in JUnit (`Subtitles`).
+    Was: three rows not coded; the other dimensions' stays did nothing.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

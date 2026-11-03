@@ -30,6 +30,7 @@ import java.util.Set;
  *       until looked at two seconds.</li>
  *   <li>{@code hunger_shake}, {@code heart_skip}, {@code subtitle}: the HUD, once.</li>
  *   <li>{@code name_called}: the name in {@code detail} in the subtitles, from the hint's place, once.</li>
+ *   <li>{@code ghast_name}: while it lasts, every ghast's sound reads in the subtitles as the name in {@code detail}.</li>
  *   <li>{@code crosshair_gone}: no crosshair while it lasts.</li>
  *   <li>{@code hotbar_slip}: the selected slot jumps to the item named in {@code detail}, once.</li>
  *   <li>{@code camera_nudge}: the view turns two degrees toward the hint's place, once.</li>
@@ -281,6 +282,24 @@ public final class Glitches {
 		if (DONE_ONCE.add(active.id())) {
 			run.run();
 		}
+	}
+
+	/**
+	 * A sound's subtitle as the overlay shows it (the subtitle hook): while a `ghast_name` hint
+	 * is on, a ghast's sound reads as the name in its detail; anything else as it was.
+	 */
+	public static net.minecraft.network.chat.Component subtitleOf(String soundPath, net.minecraft.network.chat.Component subtitle) {
+		if (subtitle == null) {
+			return null;
+		}
+		for (Hints.Active active : Hints.active()) {
+			HintPayload hint = active.hint();
+			if (Subtitles.renames(hint.hint(), soundPath) && !hint.detail().isEmpty()) {
+				return net.minecraft.network.chat.Component.literal(hint.detail());
+			}
+		}
+
+		return subtitle;
 	}
 
 	/** A line in the subtitles, as if a sound of `events` played at `at`, and no sound. */

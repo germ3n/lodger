@@ -216,6 +216,12 @@ pub enum Need {
     /// An item frame in the house, and something to show in every one: what it holds, or
     /// their favourite.
     FramesToShow,
+    /// The target in the Nether: met only there (`crate::elsewhere`), never in the overworld.
+    InNether,
+    /// The target in the End, an enderman near them: met only there.
+    InEnd,
+    /// The target has just come back from another dimension, a while gone; never offered.
+    CameBack,
 }
 
 impl Need {
@@ -267,6 +273,9 @@ impl Need {
                 | Need::CrouchedStill
                 | Need::Herd
                 | Need::Knocked
+                | Need::InNether
+                | Need::InEnd
+                | Need::CameBack
                 | Need::TunnelLights
                 | Need::BehindThem
                 | Need::TargetAte
@@ -370,6 +379,9 @@ impl Need {
             Need::Herd => "fewer than three farm animals near them".to_string(),
             Need::Knocked => "happens only as they knock on a door".to_string(),
             Need::FramesToShow => "no item frame, or nothing to show in one".to_string(),
+            Need::InNether => "happens only in the Nether".to_string(),
+            Need::InEnd => "happens only in the End, by an enderman".to_string(),
+            Need::CameBack => "happens only as they come back from another dimension".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -730,6 +742,13 @@ pub enum Action {
     FramesShow,
     /// Their bobber pulled under and kept under, nothing on it.
     BobberUnder,
+    /// In the Nether, the ghasts' cries in the subtitles are their name.
+    GhastName,
+    /// In the End, an enderman near them holds the block they build with most.
+    EnderHolds,
+    /// Coming back from another dimension, one of its bold events happened while they were
+    /// gone: the brain picks which and runs it at once (`Brain::consider_back`).
+    WhileAway,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1554,6 +1573,40 @@ pub const CATALOGUE: &[Event] = &[
         Half,
         Action::Hint("name_called", 4.0),
         true,
+    ),
+    // Batch 16, the Nether and the End (owner, 2026-11-10: all three).
+    row(
+        "ghast_name",
+        3,
+        5,
+        &[InNether],
+        2.0,
+        3,
+        Half,
+        Action::GhastName,
+        false,
+    ),
+    row(
+        "ender_holds",
+        3,
+        5,
+        &[InEnd],
+        2.0,
+        2,
+        Full,
+        Action::EnderHolds,
+        false,
+    ),
+    row(
+        "busy_away",
+        3,
+        5,
+        &[CameBack],
+        1.0,
+        3,
+        Full,
+        Action::WhileAway,
+        false,
     ),
     // Batch 16, more (owner, 2026-11-10: `answer_knock`, the frames, the sky, the line).
     row(
@@ -4240,7 +4293,9 @@ impl Event {
             | Action::Shove
             | Action::BobberUnder
             | Action::Charge(..) => "seen",
-            Action::Hint(_, _) => "sky",
+            Action::Hint(_, _) | Action::GhastName => "sky",
+            Action::EnderHolds => "seen",
+            Action::WhileAway => "house",
             Action::HandOnShoulder => "seen",
             Action::RefuseRest | Action::Wake | Action::WokeElsewhere => "night",
         }
@@ -4376,6 +4431,9 @@ impl Event {
             "hand_on_shoulder" => "turn them a little, a step right behind them",
             "pack" => "walk their animals toward them together",
             "answer_knock" => "knock back on the door they knocked on",
+            "ghast_name" => "make the ghasts cry their name",
+            "ender_holds" => "give an enderman the block they build with",
+            "busy_away" => "do something at home while they are in another world",
             "item_frames_face" => "show the one thing in every frame of the house",
             "wrong_sky" => "put the moon in the noon sky",
             "fish_on_line" => "pull their bobber under with nothing on it",

@@ -550,6 +550,13 @@ pub enum Command {
         behind: f32,
         delay: u32,
     },
+    /// The enderman `entity` holds `block`, as if it had picked it up: it may set it down
+    /// again as endermen do. ABI 39.
+    CarryBlock {
+        id: u64,
+        entity: u32,
+        block: String,
+    },
     /// For `seconds`, the item frames `frames` show `item` to `player` alone, whatever they
     /// hold; then what they hold again. Nothing in them changes. ABI 38.
     FramesShow {
@@ -952,6 +959,7 @@ impl Command {
             | Command::Approach { id, .. }
             | Command::Shove { id, .. }
             | Command::FramesShow { id, .. }
+            | Command::CarryBlock { id, .. }
             | Command::Bobber { id, .. }
             | Command::PlaceEntity { id, .. }
             | Command::ReleaseBees { id, .. }

@@ -117,6 +117,9 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::CrouchedStill => false,
         Need::Herd => last.online && memory.animals_near_target().len() >= 3,
         Need::Knocked => false,
+        // Met in the other dimension's own stay (`crate::elsewhere`), never here.
+        Need::InNether | Need::InEnd => false,
+        Need::CameBack => false,
         Need::FramesToShow => {
             memory.decor("item_frame").next().is_some()
                 && crate::brain::act::frame_shows(memory).is_some()

@@ -113,7 +113,8 @@ moved.
 - **Saved data**: `SavedDataType` and the codec in `WorldData`.
 - **Events the loaders hook**: block use, break and place (the Fabric mixin on `BlockItem`),
   sleep, death (and the killer, read off the damage source), respawn, dimension change,
-  attack, chat.
+  attack, chat, and a block struck (Fabric's `AttackBlockCallback`, NeoForge's
+  `LeftClickBlock` at `START`) for the `knocked` sense.
 - **The render hooks** (`host/common/src/main/java/craftkit/host/mixin/`, the
   `craftkit.common.mixins.json` both loaders name, since 2026-11-10): each is one line into
   `craftkit.host.client.Atmospheres`, and with `defaultRequire` 1 a hook that no longer matches
@@ -128,8 +129,12 @@ moved.
     `compass_points`.
   - `PaintingRenderer.submit` at its head: the pose turned half round on the wall's normal for
     `painting_flip` (`PoseStack.rotate`).
+  - `SubtitleOverlay.onPlaySound`: its `WeighedSoundEvents.getSubtitle()` call, redirected so
+    a ghast's subtitle reads as a name for `ghast_name` (into `Glitches.subtitleOf`).
   The HUD's `heart_skip` and `subtitle` read `Hud`'s private `tickCount`, `healthBlinkTime` and
-  `subtitleOverlay` by name; a renamed field only loses that effect. Common code compiles
+  `subtitleOverlay` by name, and `frames_show` and `bobber` the private `ItemFrame.DATA_ITEM`,
+  `FishingHook.DATA_BITING`, `nibble`, `timeUntilHooked` and `timeUntilLured`; a renamed field
+  only loses that effect, with a warning in the log. Common code compiles
   against Fabric's `sponge-mixin` for the annotations alone.
 
 ## History

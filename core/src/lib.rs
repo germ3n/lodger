@@ -14,6 +14,7 @@ pub mod building;
 pub mod caves;
 pub mod config;
 pub mod debug;
+pub mod elsewhere;
 pub mod events;
 pub mod farm;
 pub mod habits;
@@ -52,6 +53,8 @@ pub struct Lodger {
     pub model: Model,
     /// The decision log, one per process, under the mod's own folder.
     pub log: Mutex<brain::log::Log>,
+    /// What the overworld's stay and the other dimensions' tell each other (`elsewhere`).
+    pub elsewhere: Mutex<elsewhere::Elsewhere>,
 }
 
 /// Which size the config asks for; `parse` already refused any other name.
@@ -283,7 +286,15 @@ impl Mod for Lodger {
             config.log.decisions,
         ));
 
-        Ok((Lodger { config, model, log }, reply))
+        Ok((
+            Lodger {
+                config,
+                model,
+                log,
+                elsewhere: Mutex::new(elsewhere::Elsewhere::default()),
+            },
+            reply,
+        ))
     }
 
     fn warm(&self) -> Result<(), String> {
@@ -322,8 +333,17 @@ impl Mod for Lodger {
 
     fn tick(&self, world: &mut Stay, now: &Now) -> Vec<Command> {
         let mut log = self.log.lock().unwrap_or_else(|err| err.into_inner());
+        let mut shared = self.elsewhere.lock().unwrap_or_else(|err| err.into_inner());
+        if world.world != "minecraft:overworld" {
+            if !self.config.enabled {
+                return Vec::new();
+            }
+            return world.tick_elsewhere(now, &mut shared);
+        }
 
-        world.tick_with(now, &self.config, &mut log, Some(&self.model))
+        let commands = world.tick_with(now, &self.config, &mut log, Some(&self.model));
+        world.share(now, &self.config, &mut shared);
+        commands
     }
 
     fn report(&self, world: &mut Stay, reports: &[Report]) {
