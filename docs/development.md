@@ -185,6 +185,14 @@ cargo test -p lodger-core -- --ignored model::     # needs the real model at cor
   functions, as the host would, with good and bad config, and check that nothing panics across
   the boundary.
 
+- **What a tick costs** (`the_tick_costs` in `core/tests/stays.rs`, ignored, run in release:
+  `cargo test --release -p lodger-core --test stays -- --ignored the_tick_costs --nocapture`):
+  twelve scripted days through the harness, every game tick observed and ticked as the host
+  does it, JSON in and out, timed. On 2026-11-10 (an M-series Mac): 288,000 ticks, a mean of
+  2 µs, p99 5 µs, p99.9 11 µs, the worst 296 µs (the first tick of a day: the day's surveys and
+  reads); the save 44 KB. A game tick is 50 ms, so the mind's own part is not where the time
+  goes; the model's questions run on their own thread. It fails when p99 passes 2 ms.
+
 **The host** has fewer, because it is thin:
 
 ```sh

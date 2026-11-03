@@ -547,3 +547,69 @@ fn the_memory_learns_the_house_the_chest_the_favourite_and_the_route_from_the_sc
     let saved = stay.save();
     assert!(saved.len() < 256 * 1024, "{} bytes saved", saved.len());
 }
+
+/// What a tick costs (the optimization run, 2026-11-10): twelve scripted days through the
+/// harness, the host's own path (JSON in and out), every game tick observed and ticked as the
+/// host does it, timed. Run in release: `cargo test --release -p lodger-core --test stays --
+/// --ignored the_tick_costs --nocapture`.
+#[test]
+#[ignore]
+fn the_tick_costs() {
+    let _turn = TURN.lock().unwrap_or_else(|err| err.into_inner());
+    let harness = craftkit::harness!().unwrap();
+    harness.init(r#"{ "stages": { "start_after_days": 1, "most_days": [2, 3, 3, 3, 3] } }"#);
+    let info = WorldInfo {
+        id: "minecraft:overworld".to_string(),
+        seed: 11,
+        name: "timed".to_string(),
+    };
+    let world = harness.open_world(&info, &[]).unwrap();
+    let mut script = Script::new();
+    let mut costs: Vec<(u128, u64)> = Vec::new();
+    while script.tick < 12 * 24_000 {
+        let observations = script.observations();
+        let started = std::time::Instant::now();
+        world.observe(&observations);
+        let commands = world.tick(&script.now());
+        let reports: Vec<Report> = commands
+            .iter()
+            .map(|command| Report {
+                id: command.id(),
+                done: true,
+                reason: String::new(),
+            })
+            .collect();
+        if !reports.is_empty() {
+            world.report(&reports);
+        }
+        costs.push((started.elapsed().as_micros(), script.tick));
+        script.tick += 1;
+    }
+    let saved = world.save();
+    world.close();
+    let mut sorted: Vec<u128> = costs.iter().map(|(c, _)| *c).collect();
+    sorted.sort_unstable();
+    let total: u128 = sorted.iter().sum();
+    let at = |q: f64| sorted[((sorted.len() - 1) as f64 * q) as usize];
+    let mut worst = costs.clone();
+    worst.sort_by_key(|w| std::cmp::Reverse(w.0));
+    println!(
+        "{} ticks: mean {} us, p50 {} us, p99 {} us, p99.9 {} us, max {} us; save {} bytes",
+        sorted.len(),
+        total / sorted.len() as u128,
+        at(0.5),
+        at(0.99),
+        at(0.999),
+        sorted.last().unwrap(),
+        saved.len()
+    );
+    for (cost, tick) in worst.iter().take(8) {
+        println!(
+            "  {cost} us at tick {tick} (day {}, {})",
+            tick / 24_000,
+            tick % 24_000
+        );
+    }
+    // A game tick is 50 ms; the mind should take a small part of it, every tick.
+    assert!(at(0.99) < 2_000, "p99 {} us", at(0.99));
+}
