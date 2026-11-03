@@ -734,6 +734,20 @@ because it can be built and tested without a game, and because the model layer i
     it differs from the table is written under it in `entity.md`. Tests: seven in `ending`, the
     stay test now plays the ending and checks nothing follows it. Was: stage five a day of
     nothing, then over.
+  - **The bug check, the mind's memory** (four reviewers read the code, 2026-11-10; each finding
+    checked before it was fixed): every observation was taken in on day zero (the mod read a
+    default clock), so the habits, the adopted chests, the reactions' ages, how long they were
+    gone and `ate_day` never moved; it reads the last tick's clock now. A still-cell west or
+    north of the origin was rounded toward zero, the home centred up to five blocks off
+    (`div_euclid` now). Once full, the sites, tunnels, routes, still-cells and things carried
+    dropped the newcomer at once (a thirteenth site's sample even went to another site); the
+    least of the others makes room now. After a restart in multiplayer another player could
+    take the target's index; the target and the others are found by uuid. The debug screen's
+    stage left an old ending's script behind and `forget_all` lost the uuid (pets never
+    matched). The intense and relentless presets deal the hard ending's death on normal, and on
+    every difficulty. A new overworld clears what the last said to the Nether and the End.
+    Tests: one each in `places`, `tunnels`, `arc`, two in `memory`, one in the stays, the
+    death's presets in `ending`. Was: all of that.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

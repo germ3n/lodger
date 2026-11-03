@@ -33,6 +33,21 @@ impl Arc {
         self.stage > 5
     }
 
+    /// A stage set from outside (the debug screen): begun now, and an ending not yet begun,
+    /// so stage five chooses and runs its script afresh (until 2026-11-10 an old script's state
+    /// stayed and ended the stay at once, or ran its beats back to back).
+    pub fn set_stage(&mut self, stage: u8, day: f32) {
+        self.stage = stage;
+        self.stage_began_day = day;
+        self.landed_this_stage = 0;
+        if stage <= 5 {
+            self.ending.clear();
+            self.script_day = 0;
+            self.beats_done = 0;
+            self.ended.clear();
+        }
+    }
+
     pub fn moved_in(&self) -> bool {
         (1..=5).contains(&self.stage)
     }
@@ -115,6 +130,22 @@ impl Arc {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_stage_set_from_outside_starts_its_ending_afresh() {
+        let mut arc = Arc {
+            stage: 6,
+            ending: "leave".to_string(),
+            script_day: 9,
+            beats_done: 10,
+            ended: "left".to_string(),
+            ..Arc::default()
+        };
+        arc.set_stage(5, 20.0);
+        assert_eq!((arc.stage, arc.stage_began_day), (5, 20.0));
+        assert!(arc.ending.is_empty() && arc.ended.is_empty());
+        assert_eq!((arc.script_day, arc.beats_done), (0, 0));
+    }
 
     #[test]
     fn it_moves_in_after_the_configured_days_and_leaves_stage_one_on_its_condition() {

@@ -103,6 +103,16 @@ pub fn want_met(memory: &Memory) -> bool {
     }
 }
 
+/// Whether the taking ending's one death is dealt: on hard; with `intense`, on normal too; with
+/// `relentless`, on every difficulty (`config.rs`'s presets say so).
+pub fn deals_death(config: &Config, memory: &Memory) -> bool {
+    match config.preset.as_str() {
+        "relentless" => true,
+        "intense" => matches!(memory.difficulty.as_str(), "normal" | "hard"),
+        _ => memory.difficulty == "hard",
+    }
+}
+
 /// What a beat does.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Beat {
@@ -321,6 +331,9 @@ pub fn tick(
         now.day_time - step.at
     };
     if step.beat.moment() && late > LATE {
+        return Vec::new();
+    }
+    if step.beat == Beat::Death && !deals_death(config, memory) {
         return Vec::new();
     }
 
@@ -900,9 +913,6 @@ pub fn commands(
             vec![(comes, 0)]
         }
         Beat::Death => {
-            if memory.difficulty != "hard" {
-                return Vec::new();
-            }
             vec![(
                 Command::KillPlayer {
                     id: ids(),
@@ -1311,6 +1321,22 @@ mod tests {
                 && matches!(c, Command::SetState { pos, value, .. } if *pos == [3, 64, 0] && value == "false")),
             "the doors shut again at the end"
         );
+
+        assert!(!deals_death(&Config::default(), &memory));
+        assert!(deals_death(
+            &crate::config::Preset::Intense.config(),
+            &memory
+        ));
+        let mut easy = lived_in();
+        easy.difficulty = "easy".to_string();
+        assert!(!deals_death(
+            &crate::config::Preset::Intense.config(),
+            &easy
+        ));
+        assert!(deals_death(
+            &crate::config::Preset::Relentless.config(),
+            &easy
+        ));
 
         let mut hard = lived_in();
         hard.difficulty = "hard".to_string();

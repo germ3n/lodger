@@ -890,9 +890,30 @@ impl Memory {
     pub fn observe(&mut self, observations: &Observations, day: f32) {
         self.today = day;
         for player in &observations.players {
-            if !self.others.iter().any(|(i, _, _)| *i == player.index) && self.others.len() < 16 {
+            // An index is the host's join order for the server's life: after a restart another
+            // player may hold it. A uuid already known takes its new index (2026-11-10).
+            if let Some(known) = self
+                .others
+                .iter_mut()
+                .find(|(_, _, uuid)| !uuid.is_empty() && *uuid == player.uuid)
+            {
+                known.0 = player.index;
+                known.1 = player.name.clone();
+            } else if (!player.uuid.is_empty()
+                || !self.others.iter().any(|(i, _, _)| *i == player.index))
+                && self.others.len() < 16
+            {
                 self.others
                     .push((player.index, player.name.clone(), player.uuid.clone()));
+            }
+            // Whoever held this index before and is someone else holds none now.
+            for other in self.others.iter_mut() {
+                if other.0 == player.index && !player.uuid.is_empty() && other.2 != player.uuid {
+                    other.0 = u32::MAX;
+                }
+            }
+            if !self.target_uuid.is_empty() && player.uuid == self.target_uuid {
+                self.target = Some(player.index);
             }
         }
         // The first player seen is the target, unless the brain is to pick among several and
@@ -984,7 +1005,15 @@ impl Memory {
         }
 
         let Some(index) = self.target else { return };
-        let player = observations.players.iter().find(|p| p.index == index);
+        // The target by their uuid when it is known: another player at their old index is not
+        // them.
+        let player = observations
+            .players
+            .iter()
+            .find(|p| p.index == index)
+            .filter(|p| {
+                self.target_uuid.is_empty() || p.uuid.is_empty() || p.uuid == self.target_uuid
+            });
         self.observe_people(observations, day);
 
         match player {
@@ -1623,16 +1652,18 @@ impl Memory {
         self.watch_reactions(player);
 
         if player.movement.still_seconds >= 1.0 {
+            // Cells by floor division, so -1 is in cell -1, not 0 (until 2026-11-10 a home west
+            // or north of the origin was centred up to five blocks off).
             let cell = [
-                player.pos[0].floor() as i32 / CELL,
-                player.pos[1].floor() as i32 / CELL,
-                player.pos[2].floor() as i32 / CELL,
+                (player.pos[0].floor() as i32).div_euclid(CELL),
+                (player.pos[1].floor() as i32).div_euclid(CELL),
+                (player.pos[2].floor() as i32).div_euclid(CELL),
             ];
             match self.still_cells.iter_mut().find(|(c, _)| *c == cell) {
                 Some((_, ticks)) => *ticks += 1,
                 None => {
-                    self.still_cells.push((cell, 1));
-                    if self.still_cells.len() > MOST_CELLS {
+                    // The least of the others makes room, never the new one.
+                    if self.still_cells.len() >= MOST_CELLS {
                         let least = self
                             .still_cells
                             .iter()
@@ -1642,6 +1673,7 @@ impl Memory {
                             .unwrap_or(0);
                         self.still_cells.remove(least);
                     }
+                    self.still_cells.push((cell, 1));
                 }
             }
 
@@ -1881,12 +1913,7 @@ impl Memory {
         match same {
             Some(route) => route.walked += 1,
             None => {
-                self.routes.push(Route {
-                    points: trail,
-                    walked: 1,
-                    first_day: self.today,
-                });
-                if self.routes.len() > MOST_ROUTES {
+                if self.routes.len() >= MOST_ROUTES {
                     let least = self
                         .routes
                         .iter()
@@ -1896,6 +1923,11 @@ impl Memory {
                         .unwrap_or(0);
                     self.routes.remove(least);
                 }
+                self.routes.push(Route {
+                    points: trail,
+                    walked: 1,
+                    first_day: self.today,
+                });
             }
         }
         self.routes.sort_by_key(|r| std::cmp::Reverse(r.walked));
@@ -2744,6 +2776,82 @@ fn about_the_lodger(text: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn a_home_west_and_north_of_the_origin_is_centred_where_they_stand() {
+        use craftkit::world::{Movement, Observations, Player};
+        for at in [[-11.5, 64.0, -11.5], [-2.5, 64.0, -2.5], [9.5, 64.0, 9.5]] {
+            let mut memory = Memory {
+                target: Some(0),
+                ..Memory::default()
+            };
+            let still = Observations {
+                players: vec![Player {
+                    pos: at,
+                    movement: Movement {
+                        still_seconds: 5.0,
+                        ..Movement::default()
+                    },
+                    ..Player::default()
+                }],
+                ..Observations::default()
+            };
+            memory.observe(&still, 0.1);
+            let center = memory.home.as_ref().unwrap().center;
+            assert!(
+                (center[0] as f64 - at[0]).abs() <= 3.0 && (center[2] as f64 - at[2]).abs() <= 3.0,
+                "{at:?} centred at {center:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn after_a_restart_the_target_is_found_by_their_uuid_not_their_old_index() {
+        use craftkit::world::{Observations, Player};
+        let player = |index: u32, name: &str, uuid: &str, x: f64| Player {
+            index,
+            name: name.to_string(),
+            uuid: uuid.to_string(),
+            pos: [x, 64.0, 0.0],
+            ..Player::default()
+        };
+        let mut memory = Memory::default();
+        memory.observe(
+            &Observations {
+                players: vec![player(0, "alice", "a-1", 1.0)],
+                ..Observations::default()
+            },
+            0.1,
+        );
+        assert_eq!(memory.target, Some(0));
+        // The server restarts; bob joins first and is index 0, alice is 1.
+        memory.observe(
+            &Observations {
+                players: vec![
+                    player(0, "bob", "b-2", 50.0),
+                    player(1, "alice", "a-1", 7.0),
+                ],
+                ..Observations::default()
+            },
+            0.2,
+        );
+        assert_eq!(memory.target, Some(1));
+        assert_eq!(memory.last.pos[0], 7.0, "alice observed, not bob");
+        assert!(
+            memory.others.iter().any(|(i, n, _)| *i == 0 && n == "bob"),
+            "{:?}",
+            memory.others
+        );
+        // Bob alone at index 0: not alice.
+        memory.observe(
+            &Observations {
+                players: vec![player(0, "bob", "b-2", 50.0)],
+                ..Observations::default()
+            },
+            0.3,
+        );
+        assert!(!memory.last.online);
+    }
     use super::*;
     use craftkit::world::{Event, Movement};
 

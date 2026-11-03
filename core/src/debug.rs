@@ -48,9 +48,7 @@ pub fn answer(
             if *stage > 6 {
                 return DebugReply::message("stages run 0 to 5; 6 is over");
             }
-            stay.arc.stage = *stage;
-            stay.arc.stage_began_day = day;
-            stay.arc.landed_this_stage = 0;
+            stay.arc.set_stage(*stage, day);
             log.note(&format!("stage set to {stage} from the debug screen"));
             let mut reply = snapshot(stay, config, log, now, day);
             reply.message = format!("stage {stage}");
@@ -64,9 +62,7 @@ pub fn answer(
                     "moved in: stage 1".to_string()
                 }
                 "next_stage" => {
-                    stay.arc.stage = (stay.arc.stage + 1).min(6);
-                    stay.arc.stage_began_day = day;
-                    stay.arc.landed_this_stage = 0;
+                    stay.arc.set_stage((stay.arc.stage + 1).min(6), day);
                     format!("stage {}", stay.arc.stage)
                 }
                 "plan_now" => {
@@ -103,9 +99,11 @@ pub fn answer(
                 "forget_all" => {
                     let target = stay.memory.target;
                     let name = stay.memory.target_name.clone();
+                    let uuid = stay.memory.target_uuid.clone();
                     stay.memory = Default::default();
                     stay.memory.target = target;
                     stay.memory.target_name = name;
+                    stay.memory.target_uuid = uuid;
                     stay.brain.plans.clear();
                     stay.brain.later.clear();
                     stay.brain.pending.clear();

@@ -200,8 +200,7 @@ impl Memory {
             match self.habits.carried.iter_mut().find(|(i, _)| *i == id) {
                 Some((_, days)) => *days += 1,
                 None => {
-                    self.habits.carried.push((id, 1));
-                    if self.habits.carried.len() > MOST_CARRIED {
+                    if self.habits.carried.len() >= MOST_CARRIED {
                         let least = self
                             .habits
                             .carried
@@ -212,6 +211,7 @@ impl Memory {
                             .unwrap_or(0);
                         self.habits.carried.remove(least);
                     }
+                    self.habits.carried.push((id, 1));
                 }
             }
         }

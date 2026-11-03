@@ -163,12 +163,8 @@ impl Memory {
                 tunnel.last_day = day;
             }
             None => {
-                self.tunnels.push(Tunnel {
-                    blocks: vec![pos],
-                    first_day: day,
-                    last_day: day,
-                });
-                if self.tunnels.len() > MOST_TUNNELS {
+                // The least of the others makes room, never the new one.
+                if self.tunnels.len() >= MOST_TUNNELS {
                     let least = self
                         .tunnels
                         .iter()
@@ -178,6 +174,11 @@ impl Memory {
                         .unwrap_or(0);
                     self.tunnels.remove(least);
                 }
+                self.tunnels.push(Tunnel {
+                    blocks: vec![pos],
+                    first_day: day,
+                    last_day: day,
+                });
             }
         }
     }
@@ -232,6 +233,22 @@ impl Memory {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn with_sixteen_kept_a_new_tunnel_is_still_learned() {
+        let mut memory = Memory::default();
+        for i in 0..MOST_TUNNELS as i32 {
+            memory.dug_underground([i * 100, 20, 0], 1.0);
+            memory.dug_underground([i * 100 + 1, 20, 0], 1.0);
+        }
+        dig(&mut memory, 30, 5_000, 2.0);
+        assert_eq!(memory.tunnels.len(), MOST_TUNNELS);
+        assert_eq!(
+            memory.newest_tunnel().map(|t| t.mouth()),
+            Some([0, 20, 5_000]),
+            "the new one, thirty long"
+        );
+    }
 
     /// A tunnel dug east along z 0 at y 20, two high, `n` columns from x 0.
     fn dig(memory: &mut Memory, n: i32, z: i32, day: f32) {

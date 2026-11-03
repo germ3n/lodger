@@ -525,6 +525,14 @@ fn the_stay_is_over_after_stage_five_s_ending_and_nothing_happens_after() {
 
 #[test]
 fn the_memory_learns_the_house_the_chest_the_favourite_and_the_route_from_the_script() {
+    // The days are the stay's own as it observes (until 2026-11-10 every observation was day
+    // zero, and nothing that counts days ever moved).
+    {
+        let stay = stay_after(4, r#"{ "stages": { "start_after_days": 0 } }"#, 2);
+        assert!(stay.memory.today > 3.0, "today is {}", stay.memory.today);
+        assert!(stay.memory.habits.samples > 0, "the habits are sampled");
+    }
+
     let stay = stay_after(4, r#"{ "stages": { "start_after_days": 0 } }"#, 2);
     let memory = &stay.memory;
 

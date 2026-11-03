@@ -59,14 +59,9 @@ impl Memory {
         {
             Some(index) => index,
             None => {
-                self.sites.push(Site {
-                    kind: "spot".to_string(),
-                    pos: at,
-                    samples: 0,
-                    days: 0,
-                    last_day: -1,
-                });
-                if self.sites.len() > MOST_SITES {
+                // The least of the others makes room, never the new one (until 2026-11-10 the
+                // new one went at once and its sample landed on another site).
+                if self.sites.len() >= MOST_SITES {
                     let least = self
                         .sites
                         .iter()
@@ -76,6 +71,13 @@ impl Memory {
                         .unwrap_or(0);
                     self.sites.remove(least);
                 }
+                self.sites.push(Site {
+                    kind: "spot".to_string(),
+                    pos: at,
+                    samples: 0,
+                    days: 0,
+                    last_day: -1,
+                });
                 self.sites.len() - 1
             }
         };
@@ -304,6 +306,37 @@ fn flat(a: BlockPos, b: BlockPos) -> f64 {
 mod tests {
     use super::*;
     use crate::memory::{Container, Fixture, Home};
+
+    #[test]
+    fn a_thirteenth_site_is_kept_and_the_least_of_the_others_makes_room() {
+        let mut memory = memory();
+        for i in 0..MOST_SITES as i32 {
+            for _ in 0..(i + 2) {
+                memory.sample_site([100 + i * 60, 64, 100], 1.0);
+            }
+        }
+        assert_eq!(memory.sites.len(), MOST_SITES);
+        memory.placed = vec![[-500, 64, 0], [-501, 64, 0], [-500, 65, 0]];
+        memory.sample_site([-500, 64, 0], 2.0);
+        assert_eq!(memory.sites.len(), MOST_SITES);
+        assert!(
+            memory
+                .sites
+                .iter()
+                .any(|s| s.pos == [-500, 64, 0] && s.samples == 1),
+            "the new one kept, with its sample: {:?}",
+            memory.sites
+        );
+        assert!(
+            !memory.sites.iter().any(|s| s.pos == [100, 64, 100]),
+            "the least stayed at made room"
+        );
+        assert!(
+            memory.sites.iter().all(|s| s.kind != "base"),
+            "no other site took its kind (one sample is not yet a base): {:?}",
+            memory.sites
+        );
+    }
 
     fn memory() -> Memory {
         Memory {

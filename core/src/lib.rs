@@ -316,6 +316,12 @@ impl Mod for Lodger {
         self.model.reseed(self.model.seed() ^ info.seed as u64);
 
         let mut stay = Stay::open(info, saved)?;
+        // A new overworld: what the last world's said to the Nether and the End is not this
+        // one's (`elsewhere`).
+        if info.id == "minecraft:overworld" {
+            *self.elsewhere.lock().unwrap_or_else(|err| err.into_inner()) =
+                elsewhere::Elsewhere::default();
+        }
         // In multiplayer with `multiplayer.pick` at `model`, the brain picks the target; with
         // `first`, the first player seen is it (the memory's default).
         stay.memory.defer_target = self.config.multiplayer.pick == "model";
@@ -324,10 +330,13 @@ impl Mod for Lodger {
     }
 
     fn observe(&self, world: &mut Stay, observations: &Observations) {
-        // The day is the stay's own; before its first tick it has none, and day zero serves.
+        // The day is the stay's own, by the clock of its last tick (observations come just
+        // before each tick); before its first tick it has none, and day zero serves. Until
+        // 2026-11-10 it read a default clock, day zero always: habits, adopted chests, how long
+        // they were gone and every reaction's age never moved.
         let day = world
             .first_day
-            .map(|_| world.day(&Now::default()))
+            .map(|_| world.day(&world.last_now))
             .unwrap_or(0.0);
         world.observe(observations, day);
     }
