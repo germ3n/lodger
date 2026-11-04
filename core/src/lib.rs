@@ -60,7 +60,7 @@ pub struct Lodger {
 
 /// Which size the config asks for; `parse` already refused any other name.
 /// The settings the title screen's settings page shows (owner, 2026-11-09: "the useful
-/// ones, grouped"): the model, how scary, pacing, words. The rest stay in the file.
+/// ones, grouped"): the model, what it does, pacing, words. The rest stay in the file.
 fn settings(config: &Config) -> Vec<craftkit::Setting> {
     use serde_json::json;
     let choice =
@@ -113,27 +113,32 @@ fn settings(config: &Config) -> Vec<craftkit::Setting> {
         choice(
             "preset",
             "Preset",
-            "How scary",
+            "What it does",
             &["calm", "balanced", "intense", "relentless"],
             &config.preset,
         ),
-        toggle("events.sounds", "Sounds", "How scary", config.events.sounds),
+        toggle(
+            "events.sounds",
+            "Sounds",
+            "What it does",
+            config.events.sounds,
+        ),
         toggle(
             "events.glitches",
             "Screen glitches",
-            "How scary",
+            "What it does",
             config.events.glitches,
         ),
         toggle(
             "events.chat",
             "Chat in your name",
-            "How scary",
+            "What it does",
             config.events.chat,
         ),
         toggle(
             "events.figure",
             "The figure",
-            "How scary",
+            "What it does",
             config.events.figure,
         ),
         number(

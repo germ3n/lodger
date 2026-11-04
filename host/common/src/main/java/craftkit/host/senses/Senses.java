@@ -63,7 +63,8 @@ public final class Senses {
 	private final Map<ServerLevel, List<JsonObject>> chat = new HashMap<>();
 	private final Map<ServerLevel, List<JsonObject>> scans = new HashMap<>();
 	private final Map<ServerLevel, JsonObject> surroundings = new HashMap<>();
-	private boolean modsSent;
+	/** The levels told which other mods are loaded: each once (until 2026-11-10 one level a run). */
+	private final java.util.Set<ServerLevel> modsSentTo = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
 	private final List<JsonObject> mods = new ArrayList<>();
 	private long tick;
 	/** The last events taken in, newest last, for the debug screen. */
@@ -122,6 +123,7 @@ public final class Senses {
 
 	/** A level closing: nothing waits for it any more, and nothing keeps it alive. */
 	public void forget(ServerLevel level) {
+		modsSentTo.remove(level);
 		events.remove(level);
 		chat.remove(level);
 		scans.remove(level);
@@ -341,11 +343,10 @@ public final class Senses {
 			observations.add("surroundings", around);
 		}
 
-		if (!modsSent && !mods.isEmpty()) {
+		if (!mods.isEmpty() && modsSentTo.add(level)) {
 			JsonArray array = new JsonArray();
 			mods.forEach(array::add);
 			observations.add("mods", array);
-			modsSent = true;
 		}
 
 		return observations;

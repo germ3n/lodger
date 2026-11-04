@@ -792,7 +792,13 @@ because it can be built and tested without a game, and because the model layer i
     of the wrong shape threw on the render thread, a refused settings change stayed in the
     file, each download try left an HTTP client open, and red rain turned the snow red. All
     fixed. Tests: one in JUnit (`Setting`). Not fixed: the `mods` observation is sent once a
-    run, but nothing reads it yet. Was: all of that.
+    run, but nothing reads it yet (fixed below). Was: all of that.
+  - **The two left from the bug check** (owner: "do fix these too"): the enderman's block came
+    from nothing; now it is one of its own, from what it dug, and spent at home, and with none to
+    give no enderman holds one. The other mods loaded were told to one level once a run and read
+    by nothing; every level is told once now, the memory keeps them and the debug screen shows
+    them (a gauge, `mods`). Tests: `elsewhere`'s enderman test, one in `memory`. Was: both.
+  - **The settings group `How scary` is `What it does`** (owner: "rename that"). Was: How scary.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

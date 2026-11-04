@@ -42,11 +42,22 @@ impl Stay {
             if let Some(event) = events::find(id) {
                 self.memory.record(id, None, day, true, &world);
                 self.arc.spend(event.cost());
+                // The enderman's block came out of what it holds, never from nothing.
+                if id == "ender_holds" {
+                    if let Some(block) = &shared.block {
+                        self.memory.store(block, -1);
+                    }
+                }
             }
         }
         shared.target = self.memory.target;
         shared.name = self.memory.target_name.clone();
-        shared.block = self.memory.block_built_most();
+        // The block they build with most, when it has one of its own (from its digging) to
+        // give: until 2026-11-10 it was made from nothing.
+        shared.block = self
+            .memory
+            .block_built_most()
+            .filter(|b| self.memory.stored(b) > 0);
         shared.allowed.clear();
         if !self.arc.moved_in() || !config.enabled {
             return;
@@ -218,17 +229,28 @@ mod tests {
         home.memory.target = Some(0);
         home.arc.stage = 2;
         home.memory.walls = vec![
-            ([1, 64, 0], "minecraft:spruce_planks".to_string()),
-            ([2, 64, 0], "minecraft:spruce_planks".to_string()),
-            ([3, 64, 0], "minecraft:cobblestone".to_string()),
+            ([1, 64, 0], "minecraft:cobblestone".to_string()),
+            ([2, 64, 0], "minecraft:cobblestone".to_string()),
+            ([3, 64, 0], "minecraft:spruce_planks".to_string()),
         ];
+        // None of its own to give: no enderman holds one.
+        let mut shared = Elsewhere::default();
+        home.arc.stage = 3;
+        home.share(&Now::default(), &config, &mut shared);
+        assert!(
+            !shared.allowed.contains(&"ender_holds"),
+            "{:?}",
+            shared.allowed
+        );
+        home.memory.store("minecraft:cobblestone", 1);
+        home.arc.stage = 2;
         let mut shared = Elsewhere::default();
         home.share(&Now::default(), &config, &mut shared);
         assert!(shared.allowed.is_empty(), "stage two: {:?}", shared.allowed);
         home.arc.stage = 3;
         home.share(&Now::default(), &config, &mut shared);
         assert!(shared.allowed.contains(&"ender_holds"));
-        assert_eq!(shared.block.as_deref(), Some("minecraft:spruce_planks"));
+        assert_eq!(shared.block.as_deref(), Some("minecraft:cobblestone"));
 
         let mut end = stay("minecraft:the_end");
         let mut seen = player_at([0.0, 64.0, 0.0]);
@@ -254,9 +276,12 @@ mod tests {
             }
         }
         assert!(
-            matches!(&sent[0], Command::CarryBlock { entity: 900, block, .. } if block == "minecraft:spruce_planks"),
+            matches!(&sent[0], Command::CarryBlock { entity: 900, block, .. } if block == "minecraft:cobblestone"),
             "{sent:?}"
         );
+        // Counted at home, and spent from what it holds.
+        home.share(&Now::default(), &config, &mut shared);
+        assert_eq!(home.memory.stored("minecraft:cobblestone"), 0);
         // Never the ghasts' in the End, nor the enderman's in the Nether.
         assert!(sent.iter().all(|c| !matches!(c, Command::Hint { .. })));
     }
@@ -268,6 +293,7 @@ mod tests {
         home.memory.target = Some(0);
         home.arc.stage = 4;
         home.memory.walls = vec![([1, 64, 0], "minecraft:stone_bricks".to_string())];
+        home.memory.store("minecraft:stone_bricks", 2);
         let mut shared = Elsewhere::default();
         home.share(&Now::default(), &config, &mut shared);
         let mut end = stay("minecraft:the_end");

@@ -417,6 +417,9 @@ pub struct Memory {
     /// The kind its kill sign counts, as it wrote it (`count_up` counts that kind, not
     /// whatever is killed most now).
     pub kill_sign_kind: String,
+    /// The other mods the game runs with, by id and version, as the host told them: for the
+    /// debug screen, and for a mind that would keep out of another mod's way.
+    pub mods: Vec<(String, String)>,
     /// The lights it placed itself, for the endings (its torches out one by one, or lit at
     /// once).
     pub its_lights: Vec<BlockPos>,
@@ -927,6 +930,14 @@ impl Memory {
             }
         }
 
+        if !observations.mods.is_empty() {
+            self.mods = observations
+                .mods
+                .iter()
+                .take(64)
+                .map(|m| (m.id.clone(), m.version.clone()))
+                .collect();
+        }
         if let Some(world) = &observations.world {
             self.last.raining = world.raining;
             if !world.difficulty.is_empty() {
@@ -2820,6 +2831,25 @@ mod tests {
                 "{at:?} centred at {center:?}"
             );
         }
+    }
+
+    #[test]
+    fn the_other_mods_are_kept_as_the_host_tells_them() {
+        use craftkit::world::{LoadedModInfo, Observations};
+        let mut memory = Memory::default();
+        memory.observe(
+            &Observations {
+                mods: vec![LoadedModInfo {
+                    id: "sodium".to_string(),
+                    version: "0.7".to_string(),
+                }],
+                ..Observations::default()
+            },
+            0.1,
+        );
+        assert_eq!(memory.mods, vec![("sodium".to_string(), "0.7".to_string())]);
+        memory.observe(&Observations::default(), 0.2);
+        assert_eq!(memory.mods.len(), 1, "told once, kept");
     }
 
     #[test]

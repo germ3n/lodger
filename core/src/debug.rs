@@ -181,6 +181,28 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             None => format!("none of {most}; next decision in {next}s"),
         },
     ));
+    // The other mods: how many, and the first few by name.
+    gauges.push(Gauge::new(
+        "mods",
+        memory.mods.len() as f32,
+        memory.mods.len().max(1) as f32,
+        if memory.mods.is_empty() {
+            "no other mods told".to_string()
+        } else {
+            let names: Vec<&str> = memory
+                .mods
+                .iter()
+                .take(6)
+                .map(|(id, _)| id.as_str())
+                .collect();
+            format!(
+                "{} other mods: {}{}",
+                memory.mods.len(),
+                names.join(", "),
+                if memory.mods.len() > 6 { ", ..." } else { "" }
+            )
+        },
+    ));
     gauges.push(Gauge::new(
         "decisions",
         brain.decisions as f32,
