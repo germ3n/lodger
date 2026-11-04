@@ -1039,6 +1039,31 @@ The `[x]` lines above, each dated. Summary by day:
   rule brain, the log, scripted stays), the debug screen, the glitch renderers, the kill tally,
   the landmarks, the text banks, the upgrade guide. First seen in a dev client the same day.
 
+## Next (owner's answers, 2026-11-10)
+
+- [ ] **Arrows** (owner: "near misses, then hits"): stage 3 a real arrow from the dark into the
+  block beside their head, from where the figure stands with a bow; stage 4 it hits by the harm
+  stages (a heart at 4, two at 5), never a kill; the arrows stay stuck where they land.
+- [ ] **Potions** (owner: all four): a splash from the dark at their feet (darkness, slowness,
+  blindness, a moment's levitation; never damage, poison or wither); its brew in their chest,
+  named `for the night`; one of their potions turned another kind (never a harmful one), its old
+  name kept; a lingering cloud at their door at dawn that fades as they step out.
+- [ ] **Other mods** (owner: all three): with another horror mod loaded it acts less often and
+  never at the same moment; it takes from other mods' storage too; it moves other mods'
+  decorations as it does vanilla ones.
+- [ ] **The confrontation, a fourth ending** (owner: "a fourth ending: you confront it"): in
+  stage 5, at night, at its house (or its place), strike its door or the figure; without that,
+  one of the three scripted endings plays. Three phases, one health bar named after them: its
+  warped animals in waves while it watches from its roof; the duel in their skin with a copy of
+  their best gear (strafes, blocks, sprint-hits, pearls), splitting at half health into three to
+  five copies, one real; the copies pulled together into a big thing made of what it took,
+  dropping their things as it breaks. Scaled to their gear and the difficulty. Win: everything
+  back and all three trophies (its lantern, a soul lantern named `<name>'s light`; its head in
+  their skin, named `the lodger`; its weapon, named, with an enchantment it learned). Lose: one
+  death on any difficulty, everything kept, it keeps what it took and leaves (no animal waves on
+  peaceful). A real beacon in its house from stage 5's first night, lit only at night, to lead
+  them there.
+
 ## At the very end
 
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner, 2026-11-09): what decides or
