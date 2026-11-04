@@ -93,7 +93,12 @@ public final class CraftkitFabric implements ModInitializer {
 				senses.noticedKilled(killer, entity);
 			}
 		});
-		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> senses.noticedRespawned(newPlayer));
+		// `alive` is leaving the End, no death: a crossing, which the observation reports.
+		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
+			if (!alive) {
+				senses.noticedRespawned(newPlayer);
+			}
+		});
 		ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, from, to) ->
 				senses.noticedChangedDimension(player, from.dimension().identifier().toString(), to.dimension().identifier().toString()));
 		AttackEntityCallback.EVENT.register((player, level, hand, target, hit) -> {

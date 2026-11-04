@@ -123,8 +123,13 @@ public final class CraftkitNeoForge {
 				senses.noticedStruckBlock(player, event.getPos());
 			}
 		});
+		// A block placed from a block item, as Fabric's hook on `BlockItem` sees it: not the
+		// farmland a hoe makes, a stripped log, a path or a fire (until 2026-11-10 NeoForge
+		// counted those as their building).
 		NeoForge.EVENT_BUS.addListener((BlockEvent.EntityPlaceEvent event) -> {
-			if (event.getEntity() instanceof ServerPlayer player) {
+			if (event.getEntity() instanceof ServerPlayer player
+					&& (player.getMainHandItem().getItem() instanceof net.minecraft.world.item.BlockItem
+							|| player.getOffhandItem().getItem() instanceof net.minecraft.world.item.BlockItem)) {
 				senses.noticedPlacedBlock(player, event.getPos(), event.getPlacedBlock());
 			}
 		});
@@ -146,8 +151,9 @@ public final class CraftkitNeoForge {
 				senses.noticedKilled(killer, event.getEntity());
 			}
 		});
+		// Leaving the End is no death: a crossing, which the observation reports.
 		NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerRespawnEvent event) -> {
-			if (event.getEntity() instanceof ServerPlayer player) {
+			if (event.getEntity() instanceof ServerPlayer player && !event.isEndConquered()) {
 				senses.noticedRespawned(player);
 			}
 		});

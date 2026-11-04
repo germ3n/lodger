@@ -174,6 +174,14 @@ public final class LoadedMod {
 		}
 		ConfigFile config = new ConfigFile(configDir.resolve(manifest.get().config()));
 		JsonObject reply;
+		// What the file said before: put back if the mod refuses the change, so the next launch
+		// is not refused too (until 2026-11-10 the refused change stayed in the file).
+		String before;
+		try {
+			before = config.exists() ? config.read() : null;
+		} catch (IOException e) {
+			return e.getMessage();
+		}
 		try {
 			config.merge(change);
 			JsonObject init = new JsonObject();
@@ -183,16 +191,22 @@ public final class LoadedMod {
 			init.addProperty("id", manifest.get().id());
 			reply = JsonParser.parseString(library.get().init(init.toString())).getAsJsonObject();
 		} catch (IOException | RuntimeException e) {
+			restore(config, before);
 			return e.getMessage();
 		}
 		if (reply.has("error")) {
+			restore(config, before);
 			return reply.get("error").getAsString();
 		}
 		List<Resource> fresh = new ArrayList<>();
-		if (reply.has("resources")) {
-			for (JsonElement element : reply.getAsJsonArray("resources")) {
-				fresh.add(Resource.parse(element.getAsJsonObject(), gameDir));
+		try {
+			if (reply.has("resources")) {
+				for (JsonElement element : reply.getAsJsonArray("resources")) {
+					fresh.add(Resource.parse(element.getAsJsonObject(), gameDir));
+				}
 			}
+		} catch (RuntimeException e) {
+			return "the mod's resources: " + e.getMessage();
 		}
 		resources = List.copyOf(fresh);
 		settings = settingsOf(reply);
@@ -202,6 +216,18 @@ public final class LoadedMod {
 		}
 
 		return "";
+	}
+
+	/** The config file as it was before a refused change; written back, or left if it cannot be. */
+	private static void restore(ConfigFile config, String before) {
+		if (before == null) {
+			return;
+		}
+		try {
+			java.nio.file.Files.writeString(config.path(), before, StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			Log.LOGGER.warn("the config could not be put back: {}", e.getMessage());
+		}
 	}
 
 	/** The reply's config warnings (ABI 22); none from a mod that sends none. */

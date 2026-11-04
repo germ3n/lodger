@@ -31,6 +31,14 @@ public record Setting(String key, String label, String group, String kind, List<
 
 	/** The value after one press: the next option, the other state, or a step up (`up`) or down, kept in range. */
 	public JsonElement next(JsonElement now, boolean up) {
+		// A value of the wrong shape, or a choice with nothing to choose, stays as it is: a
+		// press never throws on the render thread (until 2026-11-10 it could).
+		if (now == null || !now.isJsonPrimitive()
+				|| (kind.equals("toggle") && !now.getAsJsonPrimitive().isBoolean())
+				|| (kind.equals("number") && (!now.getAsJsonPrimitive().isNumber() || step <= 0))
+				|| (!kind.equals("toggle") && !kind.equals("number") && options.isEmpty())) {
+			return now == null ? com.google.gson.JsonNull.INSTANCE : now;
+		}
 		return switch (kind) {
 			case "toggle" -> new com.google.gson.JsonPrimitive(!now.getAsBoolean());
 			case "number" -> {

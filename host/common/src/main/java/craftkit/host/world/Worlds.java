@@ -107,6 +107,27 @@ public final class Worlds {
 		}
 
 		open.put(level, perMod);
+		openCount = open.size();
+	}
+
+	/** Worlds open, for the shutdown hook on another thread. */
+	private volatile int openCount;
+
+	/**
+	 * Waits, at most {@code millis}, for every world to be saved and closed: the JVM is ending
+	 * and the server's own stopping saves them, after its tick (the shutdown hook would unload
+	 * the mods under it otherwise, and the stopping lose their saves and the world's).
+	 */
+	public void awaitClosed(long millis) {
+		long until = System.currentTimeMillis() + millis;
+		while (openCount > 0 && System.currentTimeMillis() < until) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+		}
 	}
 
 	public void levelUnloaded(ServerLevel level) {
@@ -117,17 +138,24 @@ public final class Worlds {
 		warps.restoreIn(level);
 		temporaries.goneIn(level);
 		gatherings.putBackIn(level);
+		senses.forget(level);
 		Map<LoadedMod, Open> perMod = open.remove(level);
+		openCount = open.size();
 		if (perMod == null) {
 			return;
 		}
 
 		Surroundings.forget(level);
 		perMod.forEach((mod, world) -> {
-			save(mod, world);
-			String error = LoadedMod.errorOf(mod.library().get().worldClose(world.handle()));
-			if (!error.isEmpty()) {
-				Log.LOGGER.warn("{}: close: {}", mod.id(), error);
+			// Never out of here: this runs in the server's stopping, before its own saves.
+			try {
+				save(mod, world);
+				String error = LoadedMod.errorOf(mod.library().get().worldClose(world.handle()));
+				if (!error.isEmpty()) {
+					Log.LOGGER.warn("{}: close: {}", mod.id(), error);
+				}
+			} catch (RuntimeException e) {
+				Log.LOGGER.warn("{}: save and close: {}", mod.id(), e.toString());
 			}
 		});
 	}

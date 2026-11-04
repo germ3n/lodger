@@ -106,7 +106,33 @@ public final class Senses {
 
 	public void noticedLeft(ServerPlayer player) {
 		event(player, "left", null, "", null);
+		// What was kept of them is this session's: rejoining starts it again (until 2026-11-10
+		// a chest open as they left read as closed when they came back).
+		UUID uuid = player.getUUID();
+		movement.remove(uuid);
+		wasSleeping.remove(uuid);
+		wasRiding.remove(uuid);
+		hadContainerOpen.remove(uuid);
+		openedAt.remove(uuid);
+		refuseSleepUntil.remove(uuid);
+		struck.remove(uuid);
+		lastDimension.remove(uuid);
+		lastPos.remove(uuid);
 	}
+
+	/** A level closing: nothing waits for it any more, and nothing keeps it alive. */
+	public void forget(ServerLevel level) {
+		events.remove(level);
+		chat.remove(level);
+		scans.remove(level);
+		surroundings.remove(level);
+	}
+
+	/** Each player's dimension and place as last observed: a change is a crossing, a jump a teleport. */
+	private final Map<UUID, String> lastDimension = new HashMap<>();
+	private final Map<UUID, Vec3> lastPos = new HashMap<>();
+	/** The last block use each player made, and its tick: the same twice in a tick is one (both hands). */
+	private final Map<UUID, long[]> lastUse = new HashMap<>();
 
 	/** What the host does with a chest's fresh loot, just unpacked: a mod's offering (`LootOffers`). */
 	public interface LootHook {
@@ -122,6 +148,15 @@ public final class Senses {
 
 	/** A block used: if it holds a container, that is a container opened, with its contents. */
 	public void noticedUsedBlock(ServerPlayer player, BlockPos pos) {
+		// A spectator opens nothing and never unpacks loot; one use is heard once, though the
+		// loaders ask for each hand (until 2026-11-10 both happened).
+		if (player.isSpectator()) {
+			return;
+		}
+		long[] before = lastUse.put(player.getUUID(), new long[] {pos.asLong(), tick});
+		if (before != null && before[0] == pos.asLong() && before[1] == tick) {
+			return;
+		}
 		BlockEntity entity = player.level().getBlockEntity(pos);
 
 		// Fresh loot: unpacked now, as the game would on opening, so an offering can join it
@@ -195,6 +230,11 @@ public final class Senses {
 	}
 
 	public void noticedChangedDimension(ServerPlayer player, String from, String to) {
+		// Once per crossing: the observation reports one the loaders did not (leaving the End,
+		// a respawn in another dimension), and this one need not be reported again there.
+		if (to.equals(lastDimension.put(player.getUUID(), to))) {
+			return;
+		}
 		event(player, "changed_dimension", null, to, null);
 	}
 
@@ -314,6 +354,20 @@ public final class Senses {
 	private JsonObject observePlayer(ServerLevel level, ServerPlayer player) {
 		UUID uuid = player.getUUID();
 		Vec3 pos = player.position();
+		// Another dimension than last observed: a crossing, whichever way it came.
+		String dimension = level.dimension().identifier().toString();
+		String was = lastDimension.get(uuid);
+		if (was != null && !was.equals(dimension)) {
+			noticedChangedDimension(player, was, dimension);
+		}
+		lastDimension.put(uuid, dimension);
+		// A jump of more than eight blocks in a tick is a teleport, a portal or a respawn, not
+		// a run: the movement is read afresh from here (until 2026-11-10 a portal read as
+		// fleeing at a hundred blocks a second).
+		Vec3 last = lastPos.put(uuid, pos);
+		if (last == null || last.distanceToSqr(pos) > 64 || (was != null && !was.equals(dimension))) {
+			movement.remove(uuid);
+		}
 		MovementTracker tracker = movement.computeIfAbsent(uuid, u -> new MovementTracker());
 		tracker.sample(pos.x, pos.y, pos.z, player.getYRot(), player.isSprinting());
 
@@ -405,7 +459,8 @@ public final class Senses {
 		for (Entity entity : level.getEntities(player, player.getBoundingBox().inflate(LOOK_RANGE), e -> e != player && !(e instanceof net.minecraft.world.entity.item.ItemEntity))) {
 			Vec3 to = entity.position().add(0, entity.getBbHeight() / 2, 0).subtract(eye);
 			double distance = to.length();
-			if (distance < nearestDistance && to.normalize().dot(view) > Math.cos(Math.toRadians(5))) {
+			// Seen, not through a wall (until 2026-11-10 one behind a wall counted).
+			if (distance < nearestDistance && to.normalize().dot(view) > Math.cos(Math.toRadians(5)) && player.hasLineOfSight(entity)) {
 				nearest = entity;
 				nearestDistance = distance;
 			}

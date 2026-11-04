@@ -58,6 +58,8 @@ public final class Glitches {
 				minecraft.options.fov().set(fovBefore);
 				fovBefore = null;
 			}
+			// Their saturation was the last world's player's: nothing to put back here.
+			saturationBefore = null;
 			Hints.clear();
 			DONE_ONCE.clear();
 			return;
@@ -199,7 +201,12 @@ public final class Glitches {
 								0, -0.05, 0);
 					}
 				}
+				// Not while a screen is open: the options save the field of view as it stands, and
+				// a narrowed one would be kept for good (until 2026-11-10 it could be).
 				case "fov_pull" -> {
+					if (minecraft.gui.screen() != null) {
+						break;
+					}
 					pullingFov = true;
 					if (fovBefore == null) {
 						fovBefore = minecraft.options.fov().get();

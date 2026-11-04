@@ -25,6 +25,18 @@ class SettingTest {
 	}
 
 	@Test
+	void a_press_on_a_setting_of_the_wrong_shape_changes_nothing_and_never_throws() {
+		Setting empty = setting("{\"key\":\"x\",\"value\":\"a\"}");
+		assertEquals("a", empty.next(new JsonPrimitive("a"), true).getAsString(), "a choice with no options");
+		Setting none = setting("{\"key\":\"x\",\"kind\":\"toggle\"}");
+		assertEquals(com.google.gson.JsonNull.INSTANCE, none.next(com.google.gson.JsonNull.INSTANCE, true), "no value");
+		Setting count = setting("{\"key\":\"x\",\"kind\":\"number\",\"min\":0,\"max\":4,\"step\":0,\"value\":1}");
+		assertEquals(1, count.next(new JsonPrimitive(1), true).getAsInt(), "a step of nothing");
+		Setting flag = setting("{\"key\":\"x\",\"kind\":\"toggle\",\"value\":\"yes\"}");
+		assertEquals("yes", flag.next(new JsonPrimitive("yes"), true).getAsString(), "a toggle that is not a boolean");
+	}
+
+	@Test
 	void a_whole_step_writes_a_whole_number() {
 		Setting plans = setting("{\"key\":\"brain.most_plans\",\"kind\":\"number\",\"min\":1,\"max\":4,\"step\":1,\"value\":3}");
 		assertEquals("2", plans.next(new JsonPrimitive(3), false).toString(), "a count, not 2.0");

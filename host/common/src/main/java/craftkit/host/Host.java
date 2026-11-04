@@ -277,6 +277,8 @@ public final class Host {
 	}
 
 	public void close() {
+		// A server still running saves and closes its worlds as it stops; wait for that first.
+		worlds.awaitClosed(30_000);
 		for (LoadedMod mod : mods) {
 			try {
 				mod.close();

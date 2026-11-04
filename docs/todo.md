@@ -778,6 +778,21 @@ because it can be built and tested without a game, and because the model layer i
     enderman's own block was overwritten; `stand_dress` re-made their armour from its id,
     losing enchantments and names. All fixed. A take without a keep spends the item by design
     (a sapling planted), now said so. Tests: one in JUnit (`Spare`). Was: all of that.
+  - **The bug check, the senses and the client** (2026-11-10): the JVM's shutdown hook unloaded
+    the mods while the server was still to save (a Ctrl-C on a dedicated server could lose the
+    stay's last state and skip the world's own saves); it waits for the worlds to close now, and
+    a close never throws out of the server's stopping. The senses kept a closed level alive and
+    a player's state across leaving; a portal or a teleport read as fleeing at a hundred blocks
+    a second (the movement starts afresh after a jump); leaving the End, or respawning in
+    another dimension, was never a crossing (the observation reports any change now, and
+    leaving the End is no death); a spectator's click unpacked loot, and one use was heard for
+    each hand; NeoForge counted a hoe's farmland or a stripped log as their building; one
+    looked at behind a wall counted. On the client a field-of-view pull could be saved for good
+    by the options, a shake's saturation was put on the next world's player, a settings press
+    of the wrong shape threw on the render thread, a refused settings change stayed in the
+    file, each download try left an HTTP client open, and red rain turned the snow red. All
+    fixed. Tests: one in JUnit (`Setting`). Not fixed: the `mods` observation is sent once a
+    run, but nothing reads it yet. Was: all of that.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

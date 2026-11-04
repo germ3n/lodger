@@ -164,10 +164,16 @@ public final class Downloader {
 	private void fetch(Path part) throws IOException, InterruptedException {
 		long have = Files.exists(part) ? Files.size(part) : 0;
 		bytes.set(have);
-		HttpClient client = HttpClient.newBuilder()
+		// Closed after the try, with its selector thread (until 2026-11-10 one was left per try).
+		try (HttpClient client = HttpClient.newBuilder()
 				.followRedirects(HttpClient.Redirect.NORMAL)
 				.connectTimeout(CONNECT)
-				.build();
+				.build()) {
+			fetchWith(client, part, have);
+		}
+	}
+
+	private void fetchWith(HttpClient client, Path part, long have) throws IOException, InterruptedException {
 		HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(resource.url())).GET();
 		if (have > 0) {
 			request.header("Range", "bytes=" + have + "-");
