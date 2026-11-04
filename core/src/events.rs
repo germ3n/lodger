@@ -222,6 +222,9 @@ pub enum Need {
     InEnd,
     /// The target has just come back from another dimension, a while gone; never offered.
     CameBack,
+    /// It holds nothing it took: one thing at a time (until 2026-11-10 a second take lost the
+    /// first).
+    HoldsNothing,
 }
 
 impl Need {
@@ -273,6 +276,8 @@ impl Need {
                 | Need::CrouchedStill
                 | Need::Herd
                 | Need::Knocked
+                | Need::SoulableLight
+                | Need::LastLight
                 | Need::InNether
                 | Need::InEnd
                 | Need::CameBack
@@ -382,6 +387,7 @@ impl Need {
             Need::InNether => "happens only in the Nether".to_string(),
             Need::InEnd => "happens only in the End, by an enderman".to_string(),
             Need::CameBack => "happens only as they come back from another dimension".to_string(),
+            Need::HoldsNothing => "it holds something already".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -948,7 +954,7 @@ pub const CATALOGUE: &[Event] = &[
         "take",
         2,
         5,
-        &[FavouriteInContainer, TargetAwayOrAsleep],
+        &[FavouriteInContainer, HoldsNothing, TargetAwayOrAsleep],
         2.0,
         6,
         Full,

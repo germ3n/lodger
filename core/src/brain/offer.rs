@@ -120,6 +120,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         // Met in the other dimension's own stay (`crate::elsewhere`), never here.
         Need::InNether | Need::InEnd => false,
         Need::CameBack => false,
+        Need::HoldsNothing => memory.held.is_none(),
         Need::FramesToShow => {
             memory.decor("item_frame").next().is_some()
                 && crate::brain::act::frame_shows(memory).is_some()

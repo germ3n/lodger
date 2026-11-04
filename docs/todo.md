@@ -748,6 +748,19 @@ because it can be built and tested without a game, and because the model layer i
     every difficulty. A new overworld clears what the last said to the Nether and the End.
     Tests: one each in `places`, `tunnels`, `arc`, two in `memory`, one in the stays, the
     death's presets in `ending`. Was: all of that.
+  - **The bug check, the brain** (2026-11-10): a second `take` while it held something lost the
+    first (the host keeps one "held"); it holds one thing at a time now (`HoldsNothing`), and
+    what it records taking is the favourite `take` chose (it was the first favourite or the
+    first stack, not always what was taken), never from a furnace or a chest not theirs. What
+    it held was forgotten when a put of it was sent; now when the put is done, so a full chest
+    keeps it held. A plan's hour was read off a default clock: noon never came, and the night's
+    events ran by day; the real clock now. A restart left a reply and the house's read waiting
+    on the old clock. The two needs that turn on the view (a soul-swappable light, the last
+    light) cancelled their plans at a glance instead of waiting. `count_up` counted whatever
+    they kill most, not the kind on its sign, and wrote while they looked at it. A plan that made
+    nothing was recorded as landed; one within its cooldown at its moment was given up, now it
+    waits. Sounds "beside" them played on their left. Tests: two in `act`, one in the brain,
+    one in `sounds`. Was: all of that.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by

@@ -414,6 +414,9 @@ pub struct Memory {
     /// (`answer_knock`). Not saved.
     #[serde(skip)]
     pub knocked_now: Option<BlockPos>,
+    /// The kind its kill sign counts, as it wrote it (`count_up` counts that kind, not
+    /// whatever is killed most now).
+    pub kill_sign_kind: String,
     /// The lights it placed itself, for the endings (its torches out one by one, or lit at
     /// once).
     pub its_lights: Vec<BlockPos>,
@@ -2194,6 +2197,15 @@ impl Memory {
         self.in_view(pos, blocks)
     }
 
+    /// The tally its kill sign counts: the kind it wrote, or the kind killed most before it
+    /// kept which.
+    pub fn sign_tally(&self) -> Option<&Tally> {
+        if self.kill_sign_kind.is_empty() {
+            return self.most_killed();
+        }
+        self.tally.iter().find(|t| t.kind == self.kill_sign_kind)
+    }
+
     /// The kind the target has killed most, with its count, once they have killed three.
     pub fn most_killed(&self) -> Option<&Tally> {
         self.tally.first().filter(|t| t.kills >= 3)
@@ -2243,7 +2255,12 @@ impl Memory {
     /// The favourite item that sits in a used container, with the container and the slot.
     pub fn favourite_in_container(&self) -> Option<(&Container, &ItemStack)> {
         for (favourite, _) in &self.favourites {
-            for container in &self.containers {
+            // Theirs, and never a furnace.
+            for container in self
+                .containers
+                .iter()
+                .filter(|c| c.theirs() && !c.is_furnace())
+            {
                 if let Some(stack) = container.contents.iter().find(|s| s.id == *favourite) {
                     return Some((container, stack));
                 }

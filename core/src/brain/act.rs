@@ -4,19 +4,20 @@
 //! moment has come.
 
 use crate::brain::text::{self, Kind};
-use crate::events::{Action, Event, FigureWhere, Need, Where};
+use crate::events::{Action, Event, FigureWhere, Where};
 use crate::memory::distance;
 use crate::memory::{Held, Memory};
 use crate::model::Rng;
 use craftkit::world::{BlockPos, Command, ItemStack, Now, Pos};
 
 /// Whether the event's moment is here: its needs still hold.
-pub fn ready(event: &Event, memory: &Memory, _config: &crate::config::Config) -> bool {
-    let now = Now::default();
-    event.needs.iter().all(|need| {
-        matches!(*need, Need::Night | Need::Day | Need::Dawn)
-            || super::offer::meets(*need, memory, &now)
-    })
+/// Whether every need of the event holds now, the hour's with them (until 2026-11-10 the hour
+/// was read from a default clock: noon never came, and the night and the day were not asked).
+pub fn ready(event: &Event, memory: &Memory, now: &Now) -> bool {
+    event
+        .needs
+        .iter()
+        .all(|need| super::offer::meets(*need, memory, now))
 }
 
 /// Whether an item id is something a furnace turns into something else.
@@ -4116,7 +4117,7 @@ pub fn commands(
             })
             .unwrap_or_default(),
         // The kill sign counts the kill: the number as it is now.
-        Action::CountUp => match (pos, memory.most_killed()) {
+        Action::CountUp => match (pos, memory.sign_tally()) {
             (Some(sign), Some(tally)) => vec![(
                 Command::SetSign {
                     id: ids(),
@@ -4972,15 +4973,16 @@ fn sign_at(
 /// The host took the favourite: the memory holds it now and the container's contents lose it.
 pub fn took(memory: &mut Memory, pos: Option<BlockPos>) {
     let Some(pos) = pos else { return };
-    let favourite = memory.favourites.first().map(|(id, _)| id.clone());
+    // The favourite `take` chose (`Memory::favourite_in_container`): the first of their
+    // favourites in that chest. Until 2026-11-10 the first favourite or else the first stack,
+    // which was not always what the host took.
+    let favourites: Vec<String> = memory.favourites.iter().map(|(id, _)| id.clone()).collect();
     let Some(container) = memory.containers.iter_mut().find(|c| c.pos == pos) else {
         return;
     };
-    let Some(index) = container
-        .contents
+    let Some(index) = favourites
         .iter()
-        .position(|s| Some(&s.id) == favourite.as_ref())
-        .or_else(|| (!container.contents.is_empty()).then_some(0))
+        .find_map(|f| container.contents.iter().position(|s| s.id == *f))
     else {
         return;
     };
@@ -5050,6 +5052,85 @@ mod tests {
             ],
         });
         memory
+    }
+
+    #[test]
+    fn it_takes_what_take_chose_holds_one_thing_and_waits_for_the_hour() {
+        let mut memory = memory();
+        // Their first favourite in no chest; the second in it, after a torch.
+        memory.favourites = vec![
+            ("minecraft:diamond_sword".to_string(), 9),
+            ("minecraft:bread".to_string(), 5),
+        ];
+        memory.containers[0].contents = vec![
+            stack("minecraft:torch", 8, 0),
+            stack("minecraft:bread", 3, 5),
+        ];
+        let (_, chosen) = memory.favourite_in_container().unwrap();
+        assert_eq!(chosen.slot, 5);
+        took(&mut memory, Some([2, 64, 0]));
+        let held = memory.held.clone().expect("held");
+        assert_eq!((held.item.id.as_str(), held.slot), ("minecraft:bread", 5));
+        assert!(memory.containers[0]
+            .contents
+            .iter()
+            .any(|s| s.id == "minecraft:torch" && s.count == 8));
+        // Holding it, no second take.
+        assert!(!crate::brain::offer::meets(
+            crate::events::Need::HoldsNothing,
+            &memory,
+            &Now::default()
+        ));
+        // A furnace is never where its favourite is found.
+        let mut furnace = self::memory();
+        furnace.containers[0].kind = "minecraft:furnace".to_string();
+        assert!(furnace.favourite_in_container().is_none());
+
+        // The hour, asked with the real clock: noon at noon, not before.
+        let mut out = self::memory();
+        out.last.online = true;
+        let sky = find("wrong_sky").unwrap();
+        let morning = Now {
+            day_time: 1_000,
+            ..Now::default()
+        };
+        let noon = Now {
+            day_time: 6_000,
+            ..Now::default()
+        };
+        assert!(!ready(sky, &out, &morning));
+        assert!(ready(sky, &out, &noon));
+        let footsteps = find("footsteps_follow").unwrap();
+        out.last.walking = true;
+        assert!(
+            !ready(footsteps, &out, &noon),
+            "a night's event waits for the night"
+        );
+    }
+
+    #[test]
+    fn its_kill_sign_counts_the_kind_it_wrote() {
+        let mut memory = memory();
+        memory.tally = vec![
+            crate::memory::Tally {
+                kind: "zombie".to_string(),
+                kills: 9,
+                ..Default::default()
+            },
+            crate::memory::Tally {
+                kind: "cow".to_string(),
+                kills: 5,
+                ..Default::default()
+            },
+        ];
+        memory.kill_sign_kind = "cow".to_string();
+        assert_eq!(memory.sign_tally().map(|t| t.kind.as_str()), Some("cow"));
+        memory.kill_sign_kind.clear();
+        assert_eq!(
+            memory.sign_tally().map(|t| t.kind.as_str()),
+            Some("zombie"),
+            "before it kept one"
+        );
     }
 
     #[test]

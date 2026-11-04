@@ -865,8 +865,8 @@ pub fn commands(
                 Away => 2.0 + 6.0 * along,
                 Ear => 0.5,
             };
-            // Their right: the way they face, turned a quarter.
-            let right = [-back[1], back[0]];
+            // Their right: facing +z (yaw 0) it is -x, west (until 2026-11-10 it was their left).
+            let right = [back[1], -back[0]];
             let pos = match (variant.moves, spot) {
                 (Still, Some(spot)) => spot,
                 (Above, _) => {
@@ -1120,6 +1120,11 @@ mod tests {
         assert!(
             wall.windows(2).all(|w| w[0] == w[1]),
             "one place in the wall"
+        );
+        // A block and a half to their right: facing +z, that is west, -x.
+        assert!(
+            wall[0][0] < -1.4 && wall[0][2].abs() < 0.01,
+            "to their right: {wall:?}"
         );
         let climb = heights("ladder_climb", 0, &mut ids);
         assert!(

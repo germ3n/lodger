@@ -77,6 +77,10 @@ pub struct Pending {
     pub event: String,
     pub pos: Option<BlockPos>,
     pub day: f32,
+    /// It puts what it holds somewhere (its house's chest, its cave room): held no more once
+    /// it is done.
+    #[serde(default)]
+    pub puts_held: bool,
 }
 
 /// A command to send at a later tick: a chest's close after its open.
@@ -699,8 +703,12 @@ impl Brain {
 
         // They killed one of what its kill sign counts: the count goes up.
         if let Some(kind) = memory.killed_now.take() {
-            let counted = memory.most_killed().is_some_and(|t| t.kind == kind);
-            if counted && act::kill_sign_spot(memory).is_some() {
+            // The kind on the sign, not whatever they kill most now; and never while they look
+            // at it (`consider_started` asks the rules without a place).
+            let counted = memory.sign_tally().is_some_and(|t| t.kind == kind);
+            let seen = act::kill_sign_spot(memory)
+                .is_none_or(|s| memory.in_view(s, config.events.min_distance as f64));
+            if counted && !seen {
                 self.consider_started("count_up", 1.0, now, day, memory, arc, config, log);
             }
         }
@@ -970,7 +978,7 @@ impl Brain {
             return Step::Wait(String::new());
         }
         if !plan.forced {
-            if !act::ready(event, memory, config) {
+            if !act::ready(event, memory, now) {
                 let why = offer::unmet(event, memory, now).unwrap_or_default();
                 return Step::Wait(format!("waiting: {why}"));
             }
@@ -1028,6 +1036,14 @@ impl Brain {
         if seen {
             return Step::Wait("in view".to_string());
         }
+        // Within its cooldown, or the same as the last, is a reason to wait while its window
+        // lasts, as `cancel_reason` says; until 2026-11-10 it gave the plan up.
+        if matches!(
+            checked,
+            Err(rules::Refused::Cooldown) | Err(rules::Refused::SameAsLast)
+        ) {
+            return Step::Wait(checked.unwrap_err().words().to_string());
+        }
         if let Err(refused) = checked {
             memory.record(&plan.event, plan.pos, day, false, refused.words());
             self.outcome(&plan.event, refused.words());
@@ -1052,8 +1068,20 @@ impl Brain {
                 },
             );
         }
+        // Nothing made is nothing done: not a landmark, not toward its cap (until 2026-11-10
+        // it was recorded as landed). Waiting is the one event that is meant to make nothing.
         if made.is_empty() && !plan.forced {
-            memory.record(&plan.event, plan.pos, day, true, "");
+            memory.record(
+                &plan.event,
+                plan.pos,
+                day,
+                plan.event == "wait",
+                if plan.event == "wait" {
+                    ""
+                } else {
+                    "nothing to do it with"
+                },
+            );
         }
         for command in made.iter().map(|(c, _)| c) {
             for line in act::texts(command) {
@@ -1066,10 +1094,6 @@ impl Brain {
                     memory.scans_out.remove(0);
                 }
             }
-            // What it held, put in a chest of its own (its house, its cave room): held no more.
-            if matches!(command, Command::PutItem { kept, .. } if kept == "held") {
-                memory.held = None;
-            }
             // What it gives without having taken it comes out of what it dug.
             if let Command::PutItem { item, kept, .. } = command {
                 if kept.is_empty() && memory.stored(&item.id) > 0 {
@@ -1078,6 +1102,12 @@ impl Brain {
             }
             // A build's share: laid, the store spent where it has the block, the rest made up.
             crate::building::account(memory, &plan.event, command, day);
+            // The kind the kill sign counts, as written.
+            if plan.event == "kill_sign" && matches!(command, Command::SetSign { .. }) {
+                if let Some(tally) = memory.most_killed() {
+                    memory.kill_sign_kind = tally.kind.clone();
+                }
+            }
             // A light of its own, kept for the endings.
             if let Command::SetBlock { pos, block, .. } = command {
                 if block.ends_with("torch") || block.ends_with("lantern") {
@@ -1101,11 +1131,13 @@ impl Brain {
         }
         let mut sent = Vec::new();
         for (command, later_ticks) in made {
+            let puts_held = matches!(&command, Command::PutItem { kept, .. } if kept == "held");
             self.pending.push(Pending {
                 id: command.id(),
                 event: plan.event.clone(),
                 pos: plan.pos,
                 day,
+                puts_held,
             });
             if later_ticks == 0 {
                 sent.push(command);
@@ -1555,6 +1587,11 @@ impl Brain {
         back(&mut self.next_survey_tick);
         back(&mut self.last_react_tick);
         back(&mut self.waiting_for_target_since);
+        back(&mut self.next_here_scan);
+        if let Some(reply) = &mut self.reply {
+            back(&mut reply.due_tick);
+            back(&mut reply.until_tick);
+        }
         if let Some(ask) = &mut self.asking {
             back(&mut ask.asked_tick);
         }
@@ -2298,6 +2335,9 @@ impl Brain {
                         }
                         None => memory.store(&held, 1),
                     }
+                }
+                if report.done && pending.puts_held {
+                    memory.held = None;
                 }
                 if report.done && pending.event == "take" {
                     // The host took it; the memory holds it from here.
@@ -4114,6 +4154,65 @@ mod tests {
             let event = events::find(id).unwrap_or_else(|| panic!("{id}"));
             assert!(!event.small, "{id} is a bold one");
         }
+    }
+
+    #[test]
+    fn what_it_holds_is_held_until_a_put_of_it_is_done_and_a_restart_keeps_a_reply_due() {
+        let mut memory = home_memory();
+        memory.held = Some(crate::memory::Held {
+            item: craftkit::world::ItemStack {
+                id: "minecraft:clock".to_string(),
+                count: 1,
+                slot: 0,
+            },
+            ..Default::default()
+        });
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(10);
+        brain.pending.push(Pending {
+            id: 7,
+            event: "house_near".to_string(),
+            puts_held: true,
+            ..Pending::default()
+        });
+        brain.report(
+            &[Report {
+                id: 7,
+                done: false,
+                reason: "the container is full".to_string(),
+            }],
+            &mut memory,
+            &mut log,
+        );
+        assert!(memory.held.is_some(), "a failed put keeps it held");
+        brain.pending.push(Pending {
+            id: 8,
+            event: "house_near".to_string(),
+            puts_held: true,
+            ..Pending::default()
+        });
+        brain.report(
+            &[Report {
+                id: 8,
+                done: true,
+                reason: String::new(),
+            }],
+            &mut memory,
+            &mut log,
+        );
+        assert!(memory.held.is_none(), "put away, held no more");
+
+        // The game restarts with a reply due: it is still due, and the house's read with it.
+        brain.reply = Some(ChatReply {
+            due_tick: 5_000_100,
+            until_tick: 5_002_000,
+            ..ChatReply::default()
+        });
+        brain.next_here_scan = 5_000_600;
+        brain.rebase(5_000_000);
+        let reply = brain.reply.as_ref().unwrap();
+        assert_eq!((reply.due_tick, reply.until_tick), (100, 2_000));
+        assert_eq!(brain.next_here_scan, 600);
     }
 
     #[test]
