@@ -1081,3 +1081,8 @@ The `[x]` lines above, each dated. Summary by day:
 - [ ] **Split the project into two repositories** (owner, 2026-11-09): one for the SDK
   (`sdk/`, the craftkit host in `host/`, their docs and CI) and one for the lodger (`core/`,
   `mod/`, its docs), the lodger depending on the published SDK crate and host jar.
+
+
+- [ ] **After the split, a license and notices in each** (owner, 2026-11-10): the MIT license
+  (this repository has it, `LICENSE`) in both, and `~/chainv4`'s `gen_notices.py` brought over
+  to write each one's `THIRD_PARTY_NOTICES.txt` from its dependencies.
