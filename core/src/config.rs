@@ -334,6 +334,10 @@ pub struct Model {
     /// The share of the model's layers on the GPU: 0 is the CPU alone, 1 all of them. Half by
     /// default, so the game's frames keep half the GPU (owner, 2026-11-09).
     pub gpu_share: f64,
+    /// Milliseconds the model rests between each piece of its work while it thinks (a chunk
+    /// of a question, a token): higher leaves more of the GPU and the CPU to the game at any
+    /// moment, and its answers come slower. 1 by default, at most 100 (owner, 2026-11-10).
+    pub pause_ms: u32,
 }
 
 // Fractions are f64, not f32: a 0.4 written back to the player's file as 0.4000000059604645 is
@@ -430,6 +434,7 @@ impl Default for Model {
             threads: 2,
             context: 1536,
             idle_minutes: 10,
+            pause_ms: 1,
             gpu_share: 0.5,
         }
     }
@@ -671,6 +676,9 @@ impl Config {
             return Err("model.context must be at least 256".to_string());
         }
 
+        if self.model.pause_ms > 100 {
+            return Err("model.pause_ms must be 100 or less".to_string());
+        }
         if self.model.threads == 0 {
             return Err("model.threads must be at least 1".to_string());
         }
@@ -861,6 +869,7 @@ mod tests {
         for (text, name) in [
             (r#"{ "model": { "context": 64 } }"#, "model.context"),
             (r#"{ "model": { "threads": 0 } }"#, "model.threads"),
+            (r#"{ "model": { "pause_ms": 500 } }"#, "model.pause_ms"),
             (r#"{ "model": { "size": "7b" } }"#, "model.size"),
             (r#"{ "brain": { "temperature": 3 } }"#, "brain.temperature"),
             (

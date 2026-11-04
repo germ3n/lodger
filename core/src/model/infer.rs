@@ -294,9 +294,16 @@ fn decode_tokens(
         .clamp(1, super::DECODE_CHUNK);
     let mut offset = 0usize;
 
+    // The rest the config asks for: between chunks always, and before each piece of work when
+    // it asks for more than the least (`model.pause_ms`), so the game keeps the GPU between.
+    let pause = super::PAUSE_MS.load(std::sync::atomic::Ordering::Relaxed);
+    let rest = std::time::Duration::from_millis(pause as u64).max(super::DECODE_REST);
+    if pause > 1 {
+        std::thread::sleep(rest);
+    }
     while offset < tokens.len() {
         if offset > 0 {
-            std::thread::sleep(super::DECODE_REST);
+            std::thread::sleep(rest);
         }
         let count = (tokens.len() - offset).min(width);
         let last = offset + count == tokens.len();
@@ -481,6 +488,7 @@ mod real {
                 temperature: 0.0,
                 seed: 1,
                 gpu_layers: 0,
+                pause_ms: 1,
             })
         })
     }

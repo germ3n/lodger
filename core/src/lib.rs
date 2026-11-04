@@ -110,6 +110,13 @@ fn settings(config: &Config) -> Vec<craftkit::Setting> {
             (0.0, 1.0, 0.1),
             config.model.gpu_share,
         ),
+        number(
+            "model.pause_ms",
+            "Pause while thinking (ms)",
+            "Model",
+            (0.0, 50.0, 5.0),
+            config.model.pause_ms as f64,
+        ),
         choice(
             "preset",
             "Preset",
@@ -279,6 +286,7 @@ impl Mod for Lodger {
             seed: start_seed(init),
             gpu_layers: (config.model.gpu_share.clamp(0.0, 1.0) * size.layers() as f64).round()
                 as u32,
+            pause_ms: config.model.pause_ms,
         });
 
         let log_path = if init.config_dir.is_empty() {

@@ -2539,6 +2539,7 @@ mod tests {
             temperature: 0.0,
             seed: 1,
             gpu_layers: 0,
+            pause_ms: 1,
         };
         Model::with_worker(settings, Worker::start(move || Ok(fake)).unwrap())
     }

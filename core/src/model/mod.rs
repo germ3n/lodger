@@ -45,12 +45,16 @@ pub struct Settings {
     pub seed: u64,
     /// The model's layers on the GPU; the rest run on the CPU.
     pub gpu_layers: u32,
+    /// The rest between each piece of work, in milliseconds (`model.pause_ms`).
+    pub pause_ms: u32,
 }
 
 /// How the prompt is fed to the model: this many tokens at a time, with a rest between, so a
 /// long situation is not one burst of GPU work the game's frames wait behind.
 pub const DECODE_CHUNK: usize = 64;
 pub const DECODE_REST: std::time::Duration = std::time::Duration::from_millis(1);
+/// The rest the config asks for (`model.pause_ms`), for every decode: set as the model starts.
+pub static PAUSE_MS: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(1);
 
 /// A small, fast generator for the draws (SplitMix64): no dependency, a few instructions a
 /// number, and the same sequence from the same seed on every machine, which a replay needs.
@@ -98,6 +102,10 @@ pub struct Model {
 impl Model {
     pub fn new(settings: Settings) -> Self {
         let rng = Arc::new(Mutex::new(Rng::new(settings.seed)));
+        PAUSE_MS.store(
+            settings.pause_ms.min(100),
+            std::sync::atomic::Ordering::Relaxed,
+        );
 
         Self {
             settings,
@@ -511,6 +519,7 @@ mod tests {
             temperature: 0.0,
             seed: 1,
             gpu_layers: 0,
+            pause_ms: 1,
         }
     }
 
@@ -679,6 +688,7 @@ mod tests {
             temperature: 0.0,
             seed: 1,
             gpu_layers: 0,
+            pause_ms: 1,
         });
         assert!(
             model.status_line().contains("not loaded yet"),

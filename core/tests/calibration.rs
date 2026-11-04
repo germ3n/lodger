@@ -163,6 +163,7 @@ fn three_days_against_the_real_model_print_every_decision() {
         temperature: 0.7,
         seed: 7,
         gpu_layers: 0,
+        pause_ms: 1,
     });
     model.warm().expect("the model loads");
     let mut log = Log::new(None, 16, true);

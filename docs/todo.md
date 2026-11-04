@@ -799,6 +799,10 @@ because it can be built and tested without a game, and because the model layer i
     by nothing; every level is told once now, the memory keeps them and the debug screen shows
     them (a gauge, `mods`). Tests: `elsewhere`'s enderman test, one in `memory`. Was: both.
   - **The settings group `How scary` is `What it does`** (owner: "rename that"). Was: How scary.
+  - **`model.pause_ms`** (owner: "is there a way to limit the amount of compute it uses"): the
+    rest between each piece of the model's work, 1 ms by default, up to 100, on the settings
+    page; higher leaves more of the GPU and CPU to the game. Tests: the config's refusals. Was:
+    a fixed millisecond between chunks.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by
