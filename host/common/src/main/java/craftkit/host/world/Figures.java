@@ -38,6 +38,8 @@ public final class Figures {
 
 	private static final class Figure {
 		final ServerPlayer player;
+		/** The level it was shown in: a player in another one sees it no more. */
+		net.minecraft.world.level.Level level;
 		final int number;
 		final int entityId;
 		final UUID uuid;
@@ -100,6 +102,7 @@ public final class Figures {
 		UUID uuid = UUID.randomUUID();
 		GameProfile profile = new GameProfile(uuid, skinOf.getGameProfile().name(), skinOf.getGameProfile().properties());
 		Figure figure = new Figure(player, number, nextId++, uuid, profile, held, at, path, seconds > 0 ? tick + (long) (seconds * 20) : Long.MAX_VALUE, vanishWithin);
+		figure.level = level;
 		figure.mirror = mirror;
 		figure.shownAt = at;
 		figure.playerAt = player.position();
@@ -136,13 +139,14 @@ public final class Figures {
 			if (looked) {
 				figure.seen = true;
 			}
-			boolean gone = figure.player.isRemoved() || tick > figure.untilTick
+			// Dead and respawned, or gone to another dimension: the client may keep its world
+			// (a respawn in the same one does), so the figure is taken back through the
+			// connection, which the new player shares (until 2026-11-10 it stayed there).
+			boolean gone = figure.player.isRemoved() || figure.player.level() != figure.level || tick > figure.untilTick
 					|| (figure.vanishWithin > 0 && figure.player.position().distanceTo(figure.at) < figure.vanishWithin)
 					|| (figure.onceSeen && figure.seen && !looked);
 			if (gone) {
-				if (!figure.player.isRemoved()) {
-					unsend(figure);
-				}
+				unsend(figure);
 				it.remove();
 				continue;
 			}
@@ -261,7 +265,17 @@ public final class Figures {
 		Iterator<Dig> it = digs.iterator();
 		while (it.hasNext()) {
 			Dig dig = it.next();
-			if (dig.player.isRemoved()) {
+			if (dig.player.isRemoved() || dig.player.level() != dig.level) {
+				// The rock it opened, closed again on their client before it goes, when the
+				// client still shows that world (a respawn in the same dimension); another
+				// dimension's client dropped it, and those places are not this world's there.
+				var now = dig.player.connection == null ? null : dig.player.connection.player;
+				if (now != null && now.level() == dig.level) {
+					for (BlockPos open : new ArrayList<>(dig.opened)) {
+						giveBack(dig, open);
+					}
+				}
+				remove(dig.player, dig.number);
 				it.remove();
 				continue;
 			}
@@ -389,6 +403,9 @@ public final class Figures {
 	}
 
 	private void unsend(Figure figure) {
+		if (figure.player.connection == null) {
+			return;
+		}
 		figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
 		figure.player.connection.send(new ClientboundPlayerInfoRemovePacket(List.of(figure.uuid)));
 	}

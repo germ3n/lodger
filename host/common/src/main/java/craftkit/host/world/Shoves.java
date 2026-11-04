@@ -116,4 +116,9 @@ public final class Shoves {
 
 		return null;
 	}
+
+	/** Everything for every player, forgotten: the world is closing, and none of it is the next one's. */
+	public void clear() {
+		armed.clear();
+	}
 }

@@ -83,4 +83,9 @@ public final class FrameShows {
 
 		return item != null;
 	}
+
+	/** Everything for every player, forgotten: the world is closing, and none of it is the next one's. */
+	public void clear() {
+		active.clear();
+	}
 }

@@ -34,6 +34,11 @@ public final class Gatherings {
 	private record Gathered(AbstractVillager villager, ServerLevel level, Vec3 from, long untilTick) {
 	}
 
+	/** On a gathered villager: where it stood, `x,y,z`. */
+	public static final String FROM = "craftkit_gathered_from:";
+	/** On a villager selling what the lodger took: one sale. */
+	public static final String SELLING = "craftkit_selling";
+
 	private record Sale(AbstractVillager villager, MerchantOffer offer) {
 	}
 
@@ -70,8 +75,11 @@ public final class Gatherings {
 		for (int i = 0; i < villagers.size(); i++) {
 			Villager villager = villagers.get(i);
 			BlockPos spot = spots.get(i % spots.size());
-			double crowd = (i / spots.size()) * 0.25;
+			// Crowded, never into the walls: a quarter block more for each round, at most a third.
+			double crowd = Math.min(0.33, (i / spots.size()) * 0.25);
 			gathered.add(new Gathered(villager, level, villager.position(), until));
+			// Where it stood, kept on it: one saved while gathered goes back when next seen.
+			villager.addTag(FROM + villager.getX() + "," + villager.getY() + "," + villager.getZ());
 			villager.teleportTo(spot.getX() + 0.5 + crowd, spot.getY(), spot.getZ() + 0.5 - crowd);
 			holds.add(villager, player, Math.min(seconds, MOST_SECONDS), wall, TURN_WITHIN);
 		}
@@ -84,11 +92,21 @@ public final class Gatherings {
 	public void sell(AbstractVillager villager, net.minecraft.world.item.ItemStack stack) {
 		MerchantOffer offer = new MerchantOffer(new net.minecraft.world.item.trading.ItemCost(net.minecraft.world.item.Items.EMERALD, 1), stack, 1, 0, 0.05f);
 		villager.getOffers().add(offer);
+		villager.addTag(SELLING);
 		sales.add(new Sale(villager, offer));
+	}
+
+	/** The lodger's trade on a villager: one emerald for a thing, one use. */
+	private static boolean ours(MerchantOffer offer) {
+		return offer.getMaxUses() == 1 && offer.getBaseCostA().is(net.minecraft.world.item.Items.EMERALD)
+				&& offer.getBaseCostA().getCount() == 1 && offer.getCostB().isEmpty();
 	}
 
 	public void tick(MinecraftServer server) {
 		tick++;
+		if (tick % 100 == 0) {
+			sweep(server);
+		}
 		Iterator<Gathered> it = gathered.iterator();
 		while (it.hasNext()) {
 			Gathered g = it.next();
@@ -98,11 +116,19 @@ public final class Gatherings {
 			}
 		}
 		sales.removeIf(sale -> {
-			if (sale.villager().isRemoved()) {
+			AbstractVillager villager = sale.villager();
+			if (villager.isRemoved()) {
+				// Killed before it sold: what it was selling drops where it fell, never lost.
+				if (villager.isDeadOrDying() && !sale.offer().isOutOfStock() && villager.level() instanceof ServerLevel level) {
+					var item = new net.minecraft.world.entity.item.ItemEntity(level, villager.getX(), villager.getY() + 0.5, villager.getZ(), sale.offer().getResult().copy());
+					item.setUnlimitedLifetime();
+					level.addFreshEntity(item);
+				}
 				return true;
 			}
 			if (sale.offer().isOutOfStock()) {
-				sale.villager().getOffers().remove(sale.offer());
+				villager.getOffers().remove(sale.offer());
+				villager.removeTag(SELLING);
 				return true;
 			}
 			return false;
@@ -123,6 +149,54 @@ public final class Gatherings {
 	private static void putBack(Gathered g) {
 		if (!g.villager().isRemoved()) {
 			g.villager().teleportTo(g.from().x, g.from().y, g.from().z);
+			clearFrom(g.villager());
+		}
+	}
+
+	private static void clearFrom(net.minecraft.world.entity.Entity villager) {
+		villager.entityTags().stream().filter(t -> t.startsWith(FROM)).toList().forEach(villager::removeTag);
+	}
+
+	/**
+	 * Villagers saved while gathered (their chunk unloaded as the player went away): back where
+	 * they stood when next seen (until 2026-11-10 they stayed in the house).
+	 */
+	private void sweep(MinecraftServer server) {
+		for (ServerLevel level : server.getAllLevels()) {
+			for (net.minecraft.world.entity.Entity entity : level.getAllEntities()) {
+				if (!(entity instanceof Villager villager)) {
+					continue;
+				}
+				// A sale saved with it (its chunk unloaded, the game quit): watched again, so it
+				// sells once; sold, taken away, so a restock never sells it twice (until
+				// 2026-11-10 a restock sold the very thing again and again).
+				if (villager.entityTags().contains(SELLING) && sales.stream().noneMatch(s -> s.villager() == villager)) {
+					for (MerchantOffer offer : List.copyOf(villager.getOffers())) {
+						if (ours(offer)) {
+							if (offer.getUses() > 0 || offer.isOutOfStock()) {
+								villager.getOffers().remove(offer);
+							} else {
+								sales.add(new Sale(villager, offer));
+							}
+						}
+					}
+					if (sales.stream().noneMatch(s -> s.villager() == villager)) {
+						villager.removeTag(SELLING);
+					}
+				}
+				if (gathered.stream().anyMatch(g -> g.villager() == villager)) {
+					continue;
+				}
+				for (String tag : villager.entityTags().stream().filter(t -> t.startsWith(FROM)).toList()) {
+					String[] at = tag.substring(FROM.length()).split(",");
+					try {
+						villager.teleportTo(Double.parseDouble(at[0]), Double.parseDouble(at[1]), Double.parseDouble(at[2]));
+					} catch (RuntimeException ignored) {
+						// Not one of ours: left where it stands.
+					}
+					villager.removeTag(tag);
+				}
+			}
 		}
 	}
 }

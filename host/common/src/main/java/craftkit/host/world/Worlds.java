@@ -137,6 +137,17 @@ public final class Worlds {
 		for (ServerLevel level : new ArrayList<>(open.keySet())) {
 			levelUnloaded(level);
 		}
+		// The host lives as long as the game: what it keeps per player is this world's, not the
+		// next one opened (until 2026-11-10 a death held in one world was given back in another,
+		// and a push or a loot offering armed in one waited in the next).
+		deaths.clear();
+		shoves.clear();
+		footsteps.clear();
+		bobbers.clear();
+		frameShows.clear();
+		approaches.clear();
+		charges.clear();
+		loot.clear();
 	}
 
 	public void tick(MinecraftServer server) {

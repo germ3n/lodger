@@ -65,11 +65,14 @@ public final class LootOffers {
 		}
 		boolean swap = !full.isEmpty() && (empty.isEmpty() || random.nextFloat() < (o.has("replace") ? o.get("replace").getAsFloat() : 0));
 		int slot;
+		// A swap only where what it swaps out can be kept (until 2026-11-10 a loot item could
+		// be overwritten with nowhere to keep it).
+		if (swap && data == null) {
+			swap = false;
+		}
 		if (swap) {
 			slot = full.get(random.nextInt(full.size()));
-			if (data != null) {
-				data.keep("loot_taken", chest.getItem(slot));
-			}
+			data.keep("loot_taken", chest.getItem(slot));
 		} else if (!empty.isEmpty()) {
 			slot = empty.get(random.nextInt(empty.size()));
 		} else {
@@ -96,5 +99,10 @@ public final class LootOffers {
 		Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(id));
 
 		return kind.map(k -> new ItemStack(k.value(), Math.max(1, item.get("count").getAsInt()))).orElse(null);
+	}
+
+	/** Everything for every player, forgotten: the world is closing, and none of it is the next one's. */
+	public void clear() {
+		armed.clear();
 	}
 }

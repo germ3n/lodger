@@ -2880,6 +2880,8 @@ pub fn commands(
                 memory.decor("armor_stand").next(),
                 memory.in_used_container(armour),
             ) {
+                // The very piece, kept between the chest and the stand, its enchantments and
+                // name with it (until 2026-11-10 a new one of its id was made, and those lost).
                 (Some(stand), Some((chest, stack))) => vec![
                     (
                         Command::TakeItem {
@@ -2887,14 +2889,14 @@ pub fn commands(
                             from: chest.pos,
                             slot: stack.slot,
                             count: 1,
-                            keep: String::new(),
+                            keep: "stand_dress".to_string(),
                         },
                         0,
                     ),
                     (
                         Command::EquipEntity {
                             id: ids(),
-                            kept: String::new(),
+                            kept: "stand_dress".to_string(),
                             entity: stand.id,
                             item: ItemStack {
                                 id: stack.id.clone(),

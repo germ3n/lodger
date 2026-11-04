@@ -140,4 +140,9 @@ public final class Bobbers {
 
 		return biting != null;
 	}
+
+	/** Everything for every player, forgotten: the world is closing, and none of it is the next one's. */
+	public void clear() {
+		armed.clear();
+	}
 }

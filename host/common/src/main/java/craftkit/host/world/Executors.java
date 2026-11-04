@@ -186,6 +186,10 @@ public final class Executors {
 					if (block.isEmpty()) {
 						yield report(id, false, "no such block");
 					}
+					// Never in place of one it carries (which may be from their building).
+					if (enderman.getCarriedBlock() != null) {
+						yield report(id, false, "it carries a block already");
+					}
 					enderman.setCarriedBlock(block.get().value().defaultBlockState());
 					yield report(id, true, "");
 				}
@@ -900,6 +904,10 @@ public final class Executors {
 		}
 		net.minecraft.world.entity.EquipmentSlot slot = living.getEquipmentSlotForItem(stack);
 		if (!living.getItemBySlot(slot).isEmpty()) {
+			// A kept stack goes back where it was kept (until 2026-11-10 it was lost here).
+			if (command.has("kept") && !command.get("kept").getAsString().isEmpty()) {
+				data.keep(command.get("kept").getAsString(), stack);
+			}
 			return report(id, false, "that slot is worn already");
 		}
 		living.setItemSlot(slot, stack);
@@ -961,8 +969,10 @@ public final class Executors {
 		// The packet's entries are built from players; a ghost has none, so it is set by hand.
 		packet = withEntries(packet, List.of(entry));
 		player.connection.send(packet);
+		// Taken out through the connection even after a respawn, which shares it (until
+		// 2026-11-10 a death left the ghost in the list until they rejoined).
 		context.later().at(command.get("seconds").getAsFloat(), () -> {
-			if (!player.isRemoved()) {
+			if (player.connection != null) {
 				player.connection.send(new net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket(List.of(ghost)));
 			}
 		});
@@ -1083,6 +1093,11 @@ public final class Executors {
 		BlockPos at = null;
 		for (int[] offset : Moves.offsets(around)) {
 			BlockPos candidate = to.offset(offset[0], offset[1], offset[2]);
+			// Inside the world: past its top or bottom every block reads as air and nothing
+			// can be set there (until 2026-11-10 the block and its contents were lost).
+			if (level.isOutsideBuildHeight(candidate)) {
+				continue;
+			}
 			// A torch is moved as a player would move it: never to where nothing holds it; a box
 			// moved around sits on something solid.
 			if (candidate.equals(from) || !level.getBlockState(candidate).isAir() || !state.canSurvive(level, candidate)) {
@@ -1287,6 +1302,8 @@ public final class Executors {
 		}
 
 		// What it takes it holds: the very stack, kept with the world, when the mod names a key.
+		// With no key the mod spends it (a sapling planted, ladders laid, the makings of what it
+		// crafts): the docs of `take_item` say so.
 		ItemStack taken = source.split(count);
 		if (command.has("keep") && !command.get("keep").getAsString().isEmpty()) {
 			data.keep(command.get("keep").getAsString(), taken);
@@ -1625,6 +1642,11 @@ public final class Executors {
 		Mob mob = entity == null ? null : Senses.mob(entity);
 		if (mob == null) {
 			return report(id, false, "no mob with that id here");
+		}
+		// A warped mob is the warp's to put back: held too, the two would leave it frozen for
+		// good (until 2026-11-10).
+		if (mob.entityTags().contains(Warps.TAG)) {
+			return report(id, false, "the mob is warped");
 		}
 		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 		if (player == null) {

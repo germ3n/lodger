@@ -65,7 +65,14 @@ public final class Charges {
 			mob.getNavigation().moveTo(player, 1.6);
 			mob.getLookControl().setLookAt(player);
 			if (mob.distanceTo(player) <= REACH && tick >= charge.nextHit) {
-				float harm = charge.spare ? Math.min(charge.damage, Math.max(0, player.getHealth() - 1)) : charge.damage;
+				// Spared, as the blow lands: the game scales a mob's hit by the difficulty after
+				// this (half again on hard), so the room left is divided by that first (until
+				// 2026-11-10 a spared hit could kill on hard). Never spared is never asked for.
+				float scale = switch (player.level().getDifficulty()) {
+					case HARD -> 1.5f;
+					default -> 1.0f;
+				};
+				float harm = Spare.harm(charge.damage, player.getHealth(), scale);
 				if (harm > 0) {
 					player.hurtServer((ServerLevel) mob.level(), mob.level().damageSources().mobAttack(mob), harm);
 				}
@@ -73,5 +80,10 @@ public final class Charges {
 				charge.nextHit = tick + HIT_EVERY;
 			}
 		}
+	}
+
+	/** Everything for every player, forgotten: the world is closing, and none of it is the next one's. */
+	public void clear() {
+		active.clear();
 	}
 }

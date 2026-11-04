@@ -21,6 +21,8 @@ import java.util.UUID;
 public final class Deaths {
 	/** The world data's key for a slot held over a death: the prefix, the player, the slot. */
 	public static final String KEY = "craftkit_death:";
+	/** And for their experience, kept as a record on a sheet of paper that is never given. */
+	public static final String XP = "craftkit_death_xp:";
 
 	private record Held(UUID player, WorldData data, int level, float progress, int total) {
 	}
@@ -48,6 +50,14 @@ public final class Deaths {
 			}
 		}
 		held.add(new Held(player.getUUID(), data, player.experienceLevel, player.experienceProgress, player.totalExperience));
+		// The experience too, in the world's data, so a quit on the death screen loses none.
+		net.minecraft.nbt.CompoundTag xp = new net.minecraft.nbt.CompoundTag();
+		xp.putInt("level", player.experienceLevel);
+		xp.putFloat("progress", player.experienceProgress);
+		xp.putInt("total", player.totalExperience);
+		ItemStack record = new ItemStack(net.minecraft.world.item.Items.PAPER);
+		record.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(xp));
+		data.keep(XP + player.getUUID(), record);
 		// No experience dropped: it comes back with the rest.
 		player.experienceLevel = 0;
 		player.experienceProgress = 0;
@@ -66,9 +76,6 @@ public final class Deaths {
 			ServerPlayer player = server.getPlayerList().getPlayer(each.player);
 			if (player != null && !player.isDeadOrDying()) {
 				giveBack(player, each.data);
-				player.setExperienceLevels(each.level);
-				player.experienceProgress = each.progress;
-				player.totalExperience = each.total;
 				it.remove();
 			}
 		}
@@ -81,13 +88,26 @@ public final class Deaths {
 		}
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 			if (!player.isDeadOrDying() && held.stream().noneMatch(h -> h.player.equals(player.getUUID()))
-					&& !data.keysStarting(KEY + player.getUUID() + ":").isEmpty()) {
+					&& (!data.keysStarting(KEY + player.getUUID() + ":").isEmpty() || !data.keysStarting(XP + player.getUUID()).isEmpty())) {
 				giveBack(player, data);
 			}
 		}
 	}
 
+	/** Every one held, forgotten: the world is closing, its data keeps them till it opens. */
+	public void clear() {
+		held.clear();
+	}
+
 	private static void giveBack(ServerPlayer player, WorldData data) {
+		ItemStack record = data.giveBack(XP + player.getUUID());
+		var xp = record == null ? null : record.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+		if (xp != null) {
+			var tag = xp.copyTag();
+			player.setExperienceLevels(tag.getIntOr("level", 0));
+			player.experienceProgress = tag.getFloatOr("progress", 0);
+			player.totalExperience = tag.getIntOr("total", 0);
+		}
 		Inventory inventory = player.getInventory();
 		for (String key : data.keysStarting(KEY + player.getUUID() + ":")) {
 			ItemStack stack = data.giveBack(key);

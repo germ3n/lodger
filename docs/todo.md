@@ -761,6 +761,23 @@ because it can be built and tested without a game, and because the model layer i
     nothing was recorded as landed; one within its cooldown at its moment was given up, now it
     waits. Sounds "beside" them played on their left. Tests: two in `act`, one in the brain,
     one in `sounds`. Was: all of that.
+  - **The bug check, the host's world** (2026-11-10): the hard ending's death kept the
+    experience in memory alone (a quit on the death screen lost it) and gave a death held in one
+    world back in the next opened; the experience is kept in the world's data now, and what the
+    host keeps per player (deaths, pushes, footsteps, bobbers, frames shown, approaches,
+    charges, loot offerings) is forgotten as a world closes. A sale of what it took was guarded
+    in memory alone: after a restart or an unloaded chunk a restock sold the very thing again;
+    the villager is marked and a saved sale watched again, taken away once sold, and a villager
+    killed before it sold drops the thing. `equip_entity` lost the kept stack when the slot was
+    worn; a temporary entity went with what it wore or carried (a saddle, a donkey's chest,
+    the player's stack); a spared hit could kill on hard (the game scales it after); gathered
+    villagers saved in the house stayed there, and a big village pushed them into the walls; a
+    block moved past the world's top was lost with its contents; a warped mob held too froze
+    for good; a figure, its tab entry and the rock a figure dug stayed on the client after a
+    death or a dimension change; a loot swap with nowhere to keep the item overwrote it; an
+    enderman's own block was overwritten; `stand_dress` re-made their armour from its id,
+    losing enchantments and names. All fixed. A take without a keep spends the item by design
+    (a sapling planted), now said so. Tests: one in JUnit (`Spare`). Was: all of that.
   - **An icon** (owner: "generate an icon for modrinth", and in the jar too): a door left ajar at
     night, two pale eyes in the gap, pixel art drawn by `mod/art/icon.py` (no image library);
     `mod/art/icon-512.png` for Modrinth, `assets/lodger/icon.png` (128) in both jars, named by
