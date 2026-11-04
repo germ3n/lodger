@@ -219,7 +219,8 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::FigureSwing(_)
         | Action::FigureWave
         | Action::DigInto(_)
-        | Action::IntoTheDark => config.events.figure,
+        | Action::IntoTheDark
+        | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
         | Action::Says
@@ -255,7 +256,8 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::FigureSwing(_)
         | Action::FigureWave
         | Action::DigInto(_)
-        | Action::IntoTheDark => Some("figure"),
+        | Action::IntoTheDark
+        | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)
         | Action::Says

@@ -553,6 +553,52 @@ pub enum Command {
         behind: f32,
         delay: u32,
     },
+    /// A real arrow from `from` (on the ground there when its y is below -1000) at `at`, aimed
+    /// as a skeleton aims; it harms `damage` if it hits `player` (0 for none, and never below half
+    /// a heart), cannot be picked up, and stays where it lands. ABI 42.
+    Shoot {
+        id: u64,
+        player: u32,
+        from: Pos,
+        at: Pos,
+        damage: f32,
+    },
+    /// A splash potion of one effect thrown from `from` (the ground there below -1000) at
+    /// `player`'s feet: `darkness`, `slowness`, `blindness`, `nausea` or `levitation` alone,
+    /// for `seconds` (levitation at most two); the host refuses any other. ABI 42.
+    SplashPotion {
+        id: u64,
+        player: u32,
+        from: Pos,
+        effect: String,
+        seconds: f32,
+    },
+    /// A potion of its own brewing put into a container, named, with these effects (`effect`,
+    /// seconds): none that harms (the host refuses instant damage, poison, wither). ABI 42.
+    PutPotion {
+        id: u64,
+        into: BlockPos,
+        name: String,
+        effects: Vec<(String, f32)>,
+    },
+    /// The potion in a container's slot becomes another kind, its name as it was: never one
+    /// that harms (the host keeps to night vision, invisibility, water breathing, fire
+    /// resistance, leaping, swiftness, slow falling). ABI 42.
+    ChangePotion {
+        id: u64,
+        pos: BlockPos,
+        slot: u32,
+        into: String,
+    },
+    /// A lingering cloud of one effect at `pos`, `radius` wide, gone as soon as it touches
+    /// anyone, or after `seconds`: slowness or weakness alone. ABI 42.
+    EffectCloud {
+        id: u64,
+        pos: Pos,
+        effect: String,
+        seconds: f32,
+        radius: f32,
+    },
     /// Every stack in the container at `from` dropped at `to`, as items that do not despawn;
     /// with `remove` the container then taken away, empty, as nothing. ABI 41.
     SpillContainer {
@@ -988,6 +1034,11 @@ impl Command {
             | Command::FramesShow { id, .. }
             | Command::CarryBlock { id, .. }
             | Command::SpillContainer { id, .. }
+            | Command::Shoot { id, .. }
+            | Command::SplashPotion { id, .. }
+            | Command::PutPotion { id, .. }
+            | Command::ChangePotion { id, .. }
+            | Command::EffectCloud { id, .. }
             | Command::KillPlayer { id, .. }
             | Command::Bobber { id, .. }
             | Command::PlaceEntity { id, .. }

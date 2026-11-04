@@ -1045,13 +1045,16 @@ The `[x]` lines above, each dated. Summary by day:
 
 ## Next (owner's answers, 2026-11-10)
 
-- [ ] **Arrows** (owner: "near misses, then hits"): stage 3 a real arrow from the dark into the
+- [x] **Arrows** (2026-11-10, owner: "near misses, then hits"): stage 3 a real arrow from the dark into the
   block beside their head, from where the figure stands with a bow; stage 4 it hits by the harm
   stages (a heart at 4, two at 5), never a kill; the arrows stay stuck where they land.
-- [ ] **Potions** (owner: all four): a splash from the dark at their feet (darkness, slowness,
+- [x] **Potions** (2026-11-10, owner: all four): a splash from the dark at their feet (darkness, slowness,
   blindness, a moment's levitation; never damage, poison or wither); its brew in their chest,
   named `for the night`; one of their potions turned another kind (never a harmful one), its old
   name kept; a lingering cloud at their door at dawn that fades as they step out.
+  Done: seven rows (`arrow_near`, `arrow_grazes`, `arrow_hits`, `splash_dark`, `brew_left`,
+  `potion_changed`, `door_cloud`), five commands (ABI 42), the host keeping to what does not
+  harm whatever it is asked. Tests: one in `act`. Was: the arrow a sound alone, no potions.
 - [ ] **Other mods** (owner: all three): with another horror mod loaded it acts less often and
   never at the same moment; it takes from other mods' storage too; it moves other mods'
   decorations as it does vanilla ones.

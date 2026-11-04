@@ -262,6 +262,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::GhastName
         | Action::EnderHolds
         | Action::WhileAway
+        | Action::Shoot(_)
+        | Action::SplashDark
+        | Action::BrewLeft
+        | Action::PotionChanged
+        | Action::DoorCloud
         | Action::BedOccupied => None,
         Action::OreMarked => memory.scanned("_ore").next(),
         Action::LanternAhead => memory.lantern_spot(),
@@ -4742,6 +4747,144 @@ pub fn commands(
         }
         // Runs another event: the brain picks it (`Brain::consider_back`).
         Action::WhileAway => vec![],
+        // From the dark behind them and to one side, the figure with a bow for a moment, then
+        // the arrow: past their head with no harm, or at them.
+        Action::Shoot(damage) => {
+            let at = memory.last.pos;
+            let yaw = (memory.last.yaw as f64).to_radians();
+            let back = [yaw.sin(), -yaw.cos()];
+            let right = [back[1], -back[0]];
+            let side = if seed.is_multiple_of(2) { 1.0 } else { -1.0 };
+            let from = [
+                at[0] + back[0] * 12.0 + right[0] * side * 8.0,
+                -10_000.0,
+                at[2] + back[1] * 12.0 + right[1] * side * 8.0,
+            ];
+            let aim = if damage > 0.0 {
+                [at[0], at[1] + 1.1, at[2]]
+            } else {
+                // A block and a little beside their head, on the side it shoots from.
+                [
+                    at[0] + right[0] * side * 1.3,
+                    at[1] + 1.7,
+                    at[2] + right[1] * side * 1.3,
+                ]
+            };
+            let mut shown = figure_shown(
+                ids,
+                memory,
+                target,
+                [from[0].floor() as i32, -10_000, from[2].floor() as i32],
+                3.0,
+                false,
+            );
+            if let Command::Figure { held, .. } = &mut shown {
+                *held = ItemStack {
+                    id: "minecraft:bow".to_string(),
+                    count: 1,
+                    slot: 0,
+                };
+            }
+            vec![
+                (shown, 0),
+                (
+                    Command::Shoot {
+                        id: ids(),
+                        player: target,
+                        from,
+                        at: aim,
+                        damage,
+                    },
+                    20,
+                ),
+            ]
+        }
+        // A potion from the dark at their feet: what darkens or slows, never what harms.
+        Action::SplashDark => {
+            let (effect, seconds) = [
+                ("darkness", 10.0),
+                ("slowness", 8.0),
+                ("blindness", 5.0),
+                ("levitation", 1.5),
+                ("nausea", 8.0),
+            ][seed % 5];
+            let at = memory.last.pos;
+            let yaw = (memory.last.yaw as f64).to_radians();
+            vec![(
+                Command::SplashPotion {
+                    id: ids(),
+                    player: target,
+                    from: [at[0] + yaw.sin() * 7.0, -10_000.0, at[2] - yaw.cos() * 7.0],
+                    effect: effect.to_string(),
+                    seconds,
+                },
+                0,
+            )]
+        }
+        // Its brew, in the chest they use: night vision and darkness at once, for the night.
+        Action::BrewLeft => match memory.used_container() {
+            Some(chest) => vec![(
+                Command::PutPotion {
+                    id: ids(),
+                    into: chest.pos,
+                    name: "for the night".to_string(),
+                    effects: vec![
+                        ("night_vision".to_string(), 120.0),
+                        ("darkness".to_string(), 60.0),
+                    ],
+                },
+                0,
+            )],
+            None => vec![],
+        },
+        // One of their potions, another kind, its name as it was.
+        Action::PotionChanged => match memory.in_used_container(|id| id.ends_with("potion")) {
+            Some((chest, stack)) => vec![(
+                Command::ChangePotion {
+                    id: ids(),
+                    pos: chest.pos,
+                    slot: stack.slot,
+                    into: [
+                        "night_vision",
+                        "invisibility",
+                        "water_breathing",
+                        "fire_resistance",
+                        "leaping",
+                        "swiftness",
+                        "slow_falling",
+                    ][seed % 7]
+                        .to_string(),
+                },
+                0,
+            )],
+            None => vec![],
+        },
+        // A cloud on the step outside the door they use, for the morning.
+        Action::DoorCloud => match (memory.usual_door(), memory.home.as_ref()) {
+            (Some(door), Some(home)) => {
+                let step = step_toward(home.center, door);
+                vec![(
+                    Command::EffectCloud {
+                        id: ids(),
+                        pos: [
+                            (door[0] + step[0]) as f64 + 0.5,
+                            door[1] as f64,
+                            (door[2] + step[1]) as f64 + 0.5,
+                        ],
+                        effect: if seed.is_multiple_of(2) {
+                            "slowness"
+                        } else {
+                            "weakness"
+                        }
+                        .to_string(),
+                        seconds: 600.0,
+                        radius: 1.5,
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
         // Every frame of the house shows the one thing, to them alone, for three minutes.
         Action::FramesShow => match frame_shows(memory) {
             Some(item) => {
@@ -5166,10 +5309,12 @@ mod tests {
         memory
             .plants
             .push(("minecraft:pumpkin".to_string(), [-6, 64, 6]));
-        // A book and quill and a map in the chest they use, for `book_word` and `map_marked`.
+        // A book and quill and a map in the chest they use, for `book_word` and `map_marked`;
+        // a potion, for `potion_changed`.
         memory.containers[0].contents.extend([
             stack("minecraft:writable_book", 1, 12),
             stack("minecraft:filled_map", 1, 13),
+            stack("minecraft:potion", 1, 20),
         ]);
         memory.containers[0]
             .contents
@@ -7494,6 +7639,61 @@ mod tests {
                 && matches!(c, Command::PlaySound { pos, .. } if *pos == [3.5, 64.5, 0.5])),
             "{knock:?}"
         );
+    }
+
+    #[test]
+    fn arrows_and_potions_send_what_they_should() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0; // facing +z: behind is -z
+        memory.last.online = true;
+        let now = Now::default();
+        let mut rng = Rng::new(19);
+        let made = |id: &str, rng: &mut Rng| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, rng);
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        // The figure with a bow behind them, then the arrow: past their head, harmless.
+        let near = made("arrow_near", &mut rng);
+        assert!(matches!(&near[0].0, Command::Figure { held, .. } if held.id == "minecraft:bow"));
+        let (from, at, damage) = match &near[1].0 {
+            Command::Shoot {
+                from, at, damage, ..
+            } => (*from, *at, *damage),
+            other => panic!("{other:?}"),
+        };
+        assert_eq!(damage, 0.0);
+        assert!(
+            from[2] < -10.0 && from[1] <= -1_000.0,
+            "behind, on the ground: {from:?}"
+        );
+        assert!(
+            (at[0] - 0.5).abs() > 1.0 && at[1] > 65.5,
+            "beside the head: {at:?}"
+        );
+        assert!(near[1].1 > near[0].1, "the figure first");
+        // Grazes at four, hits at five; at them.
+        assert!(matches!(&made("arrow_grazes", &mut rng)[1].0,
+            Command::Shoot { damage, at, .. } if *damage == 2.0 && (at[0] - 0.5).abs() < 0.01));
+        assert!(
+            matches!(&made("arrow_hits", &mut rng)[1].0, Command::Shoot { damage, .. } if *damage == 4.0)
+        );
+
+        assert!(matches!(&made("splash_dark", &mut rng)[0].0,
+            Command::SplashPotion { effect, seconds, .. }
+                if ["darkness", "slowness", "blindness", "levitation", "nausea"].contains(&effect.as_str())
+                    && (effect != "levitation" || *seconds <= 2.0)));
+        assert!(matches!(&made("brew_left", &mut rng)[0].0,
+            Command::PutPotion { name, effects, .. } if name == "for the night" && !effects.is_empty()));
+        assert!(matches!(
+            &made("potion_changed", &mut rng)[0].0,
+            Command::ChangePotion { slot: 20, .. }
+        ));
+        // The cloud on the step outside the door they use, a block out from the house.
+        assert!(matches!(&made("door_cloud", &mut rng)[0].0,
+            Command::EffectCloud { pos, .. } if pos[0] == 4.5));
     }
 
     #[test]

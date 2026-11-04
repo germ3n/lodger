@@ -755,6 +755,18 @@ pub enum Action {
     /// Coming back from another dimension, one of its bold events happened while they were
     /// gone: the brain picks which and runs it at once (`Brain::consider_back`).
     WhileAway,
+    /// From the dark, where the figure stands with a bow, a real arrow: beside their head with
+    /// 0, at them with this much harm (never below half a heart).
+    Shoot(f32),
+    /// A splash potion from the dark at their feet: darkness, slowness, blindness or a moment's
+    /// levitation.
+    SplashDark,
+    /// A potion of its brewing in their chest, named `for the night`.
+    BrewLeft,
+    /// One of their potions another kind, never a harmful one, its name as it was.
+    PotionChanged,
+    /// A lingering cloud at their door at dawn, gone as they step out.
+    DoorCloud,
     /// A torch on an ore vein the scan found.
     OreMarked,
     /// A fixture of this kind turned a quarter turn.
@@ -1579,6 +1591,84 @@ pub const CATALOGUE: &[Event] = &[
         Half,
         Action::Hint("name_called", 4.0),
         true,
+    ),
+    // Arrows and potions (owner, 2026-11-10: "near misses, then hits"; every potion idea).
+    row(
+        "arrow_near",
+        3,
+        5,
+        &[Night, TargetOutdoors],
+        1.5,
+        3,
+        Full,
+        Action::Shoot(0.0),
+        false,
+    ),
+    row(
+        "arrow_grazes",
+        4,
+        4,
+        &[Night, TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::Shoot(2.0),
+        false,
+    ),
+    row(
+        "arrow_hits",
+        5,
+        5,
+        &[Night, TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::Shoot(4.0),
+        false,
+    ),
+    row(
+        "splash_dark",
+        3,
+        5,
+        &[Night, TargetOutdoors],
+        1.5,
+        4,
+        Full,
+        Action::SplashDark,
+        false,
+    ),
+    row(
+        "brew_left",
+        3,
+        5,
+        &[UsedContainer, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::BrewLeft,
+        false,
+    ),
+    row(
+        "potion_changed",
+        3,
+        5,
+        &[InChestAny(&["potion"]), TargetAwayOrAsleep],
+        3.0,
+        2,
+        Full,
+        Action::PotionChanged,
+        true,
+    ),
+    row(
+        "door_cloud",
+        3,
+        5,
+        &[Dawn, Door],
+        2.0,
+        2,
+        Full,
+        Action::DoorCloud,
+        false,
     ),
     // Batch 16, the Nether and the End (owner, 2026-11-10: all three).
     row(
@@ -4140,7 +4230,7 @@ impl Event {
             | Action::WetSteps
             | Action::SoundPair(..)
             | Action::Footsteps => "sounds",
-            Action::FramesShow => "things",
+            Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
             | Action::SignDeep
             | Action::DeathMessage
@@ -4298,6 +4388,9 @@ impl Event {
             | Action::HostilesClose
             | Action::Shove
             | Action::BobberUnder
+            | Action::Shoot(_)
+            | Action::SplashDark
+            | Action::DoorCloud
             | Action::Charge(..) => "seen",
             Action::Hint(_, _) | Action::GhastName => "sky",
             Action::EnderHolds => "seen",
@@ -4438,6 +4531,13 @@ impl Event {
             "pack" => "walk their animals toward them together",
             "answer_knock" => "knock back on the door they knocked on",
             "ghast_name" => "make the ghasts cry their name",
+            "arrow_near" => "shoot an arrow from the dark, just past their head",
+            "arrow_grazes" => "shoot an arrow from the dark that grazes them",
+            "arrow_hits" => "shoot an arrow from the dark that hits them",
+            "splash_dark" => "throw a potion at their feet from the dark",
+            "brew_left" => "leave a potion of its own in their chest",
+            "potion_changed" => "turn one of their potions into another",
+            "door_cloud" => "leave a cloud at their door for the morning",
             "ender_holds" => "give an enderman the block they build with",
             "busy_away" => "do something at home while they are in another world",
             "item_frames_face" => "show the one thing in every frame of the house",

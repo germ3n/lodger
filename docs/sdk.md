@@ -188,7 +188,11 @@ within a second and a half), `frames_show` (item frames show one item to one pla
 lands there, or at the frame: never deleted, as it was before). ABI 41 (2026-11-10): the world's
 `difficulty`, `spill_container` (a container's stacks dropped at a place, the container taken
 away with `remove`), `kill_player` (one death as if fallen out of the world, keeping everything:
-held in the world's data and given back on respawn).
+held in the world's data and given back on respawn). ABI 42 (2026-11-10): `shoot` (a real arrow,
+spared, never picked up, staying where it lands), `splash_potion` (one of five effects at a
+player's feet), `put_potion` (a named potion of its brewing, nothing that harms), `change_potion`
+(a potion another, safe kind, its name kept), `effect_cloud` (slowness or weakness, gone at its
+first touch).
 
 ## Resources
 

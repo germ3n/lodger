@@ -489,6 +489,13 @@ Heard by the target alone. Nothing in the world changes.
 | `lever_click` | 2 | A lever's click, in a house with no lever. | The target indoors. |
 | `page_turn` | 2 | Pages turning by the lectern. | A lectern. |
 | `arrow_hit` | 3 | An arrow hits the wall behind the target. Nothing is there. | The target indoors. |
+| `arrow_near` | 3 | At night in the open, the figure stands a moment in the dark behind them and to one side, a bow in its hand; then a real arrow flies past their head and sticks where it lands, harmless (`shoot`, ABI 42: no harm, never picked up, never gone). Coded 2026-11-10. | Night, outdoors. |
+| `arrow_grazes` | 4 | The same, at them: a heart, never below half a heart. Coded 2026-11-10. | Night, outdoors. |
+| `arrow_hits` | 5 | The same: two hearts, never below half a heart. Coded 2026-11-10. | Night, outdoors. |
+| `splash_dark` | 3 | A splash potion from the dark lands at their feet: darkness, slowness, blindness, nausea, or levitation for a moment and a half (a fall of no harm). Never damage, poison or wither: the host throws those five alone (`splash_potion`, ABI 42). Coded 2026-11-10. | Night, outdoors. |
+| `brew_left` | 3 | A potion of its brewing in the chest they use, named `for the night`: night vision and darkness at once (`put_potion`, ABI 42: nothing that harms). Coded 2026-11-10. | A chest they use, the target away or asleep. |
+| `potion_changed` | 3 | One of their potions is another kind, its name as it was: night vision, invisibility, water breathing, fire resistance, leaping, swiftness or slow falling, never one that harms (`change_potion`, ABI 42). Coded 2026-11-10. | A potion in the chest they use, the target away or asleep. |
+| `door_cloud` | 3 | At dawn a lingering cloud of slowness or weakness on the step outside the door they use, gone the moment it touches them (`effect_cloud`, ABI 42). Coded 2026-11-10. | Dawn, a door. |
 | `wolf_far` | 2 | A wolf whines far off, long and low, in a biome with none (26.3 has no howl). | Night. |
 | `disc_phantom` | 3 | A disc the target does not own plays from the jukebox, which is empty. | A jukebox. |
 | `silence` | 3 | Cave sounds and ambient sounds are silenced for an evening. | The target online at night. |

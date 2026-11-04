@@ -168,6 +168,11 @@ public final class Executors {
 					}
 					yield report(id, walking > 0, walking > 0 ? "walking " + walking : "none of them here");
 				}
+				case "shoot" -> shoot(level, command, id, context);
+				case "splash_potion" -> splashPotion(level, command, id, context);
+				case "put_potion" -> putPotion(level, command, id);
+				case "change_potion" -> changePotion(level, command, id);
+				case "effect_cloud" -> effectCloud(level, command, id);
 				case "kill_player" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -1833,6 +1838,157 @@ public final class Executors {
 		}
 
 		return report(id, placed > 0, "base " + y + " placed " + placed);
+	}
+
+	/** A place from a command, on the ground there (a block and a half up) when its y is below -1000. */
+	private static Vec3 grounded(ServerLevel level, JsonArray p) {
+		double x = p.get(0).getAsDouble();
+		double y = p.get(1).getAsDouble();
+		double z = p.get(2).getAsDouble();
+		if (y <= -1000) {
+			y = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, BlockPos.containing(x, 0, z)).getY() + 1.5;
+		}
+		return new Vec3(x, y, z);
+	}
+
+	/** The effects a splash, a cloud or its brew may carry: none that harms (ABI 42). */
+	private static final java.util.Set<String> SPLASHES = java.util.Set.of("darkness", "slowness", "blindness", "nausea", "levitation");
+	private static final java.util.Set<String> CLOUDS = java.util.Set.of("slowness", "weakness");
+	private static final java.util.Set<String> HARMFUL = java.util.Set.of("instant_damage", "poison", "wither", "fatal_poison", "bad_omen", "raid_omen", "trial_omen");
+	/** The kinds a potion of theirs may become: none that harms. */
+	private static final java.util.Set<String> SAFE_POTIONS = java.util.Set.of("night_vision", "invisibility", "water_breathing", "fire_resistance", "leaping", "swiftness", "slow_falling");
+
+	private static Optional<Holder.Reference<net.minecraft.world.effect.MobEffect>> effect(String name) {
+		return BuiltInRegistries.MOB_EFFECT.get(Identifier.withDefaultNamespace(name));
+	}
+
+	/** A real arrow from the dark, aimed as a skeleton aims; spared, never picked up, staying where it lands (ABI 42). */
+	private static JsonObject shoot(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		Vec3 from = grounded(level, command.getAsJsonArray("from"));
+		JsonArray a = command.getAsJsonArray("at");
+		Vec3 at = new Vec3(a.get(0).getAsDouble(), a.get(1).getAsDouble(), a.get(2).getAsDouble());
+		var arrow = new net.minecraft.world.entity.projectile.arrow.Arrow(level, from.x, from.y, from.z, new ItemStack(net.minecraft.world.item.Items.ARROW), null);
+		arrow.pickup = net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.CREATIVE_ONLY;
+		float damage = Spare.harm(Math.max(0, command.get("damage").getAsFloat()), player.getHealth(), 1);
+		// An arrow's harm is its speed times its base: at 1.6, the base is the harm over 1.6.
+		arrow.setBaseDamage(damage / 1.6);
+		double dx = at.x - from.x;
+		double dz = at.z - from.z;
+		double dy = at.y - from.y;
+		arrow.shoot(dx, dy + Math.sqrt(dx * dx + dz * dz) * 0.2, dz, 1.6f, 0);
+		// It stays where it lands, to be found: never gone after a minute in the ground.
+		try {
+			java.lang.reflect.Field life = net.minecraft.world.entity.projectile.arrow.AbstractArrow.class.getDeclaredField("life");
+			life.setAccessible(true);
+			life.setInt(arrow, Integer.MIN_VALUE / 2);
+		} catch (ReflectiveOperationException | RuntimeException ignored) {
+			// The field moved: it goes after a minute, as any arrow does.
+		}
+		level.addFreshEntity(arrow);
+		level.playSound(null, from.x, from.y, from.z, net.minecraft.sounds.SoundEvents.ARROW_SHOOT, net.minecraft.sounds.SoundSource.HOSTILE, 0.8f, 1f);
+
+		return report(id, true, damage > 0 ? "aimed at them, " + damage : "aimed past them");
+	}
+
+	/** A splash potion of one effect thrown at their feet from the dark (ABI 42). */
+	private static JsonObject splashPotion(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		String name = command.get("effect").getAsString();
+		var effect = effect(name);
+		if (!SPLASHES.contains(name) || effect.isEmpty()) {
+			return report(id, false, "not an effect it throws");
+		}
+		float seconds = Math.min(command.get("seconds").getAsFloat(), name.equals("levitation") ? 2 : 15);
+		ItemStack potion = new ItemStack(net.minecraft.world.item.Items.SPLASH_POTION);
+		potion.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(Optional.empty(), Optional.empty(),
+				List.of(new net.minecraft.world.effect.MobEffectInstance(effect.get(), (int) (seconds * 20))), Optional.empty()));
+		Vec3 from = grounded(level, command.getAsJsonArray("from"));
+		var thrown = new net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion(level, from.x, from.y, from.z, potion);
+		double dx = player.getX() - from.x;
+		double dz = player.getZ() - from.z;
+		thrown.shoot(dx, player.getY() - from.y + Math.sqrt(dx * dx + dz * dz) * 0.2, dz, 0.75f, 0);
+		level.addFreshEntity(thrown);
+
+		return report(id, true, "");
+	}
+
+	/** Its brew, put into a container, named; nothing in it that harms (ABI 42). */
+	private static JsonObject putPotion(ServerLevel level, JsonObject command, long id) {
+		Container into = container(level, blockPos(command.getAsJsonArray("into")));
+		if (into == null) {
+			return report(id, false, "no container there");
+		}
+		List<net.minecraft.world.effect.MobEffectInstance> effects = new ArrayList<>();
+		for (JsonElement each : command.getAsJsonArray("effects")) {
+			JsonArray pair = each.getAsJsonArray();
+			String name = pair.get(0).getAsString();
+			var effect = effect(name);
+			if (HARMFUL.contains(name) || effect.isEmpty()) {
+				return report(id, false, "not an effect it brews: " + name);
+			}
+			effects.add(new net.minecraft.world.effect.MobEffectInstance(effect.get(), (int) (Math.min(pair.get(1).getAsFloat(), 600) * 20)));
+		}
+		ItemStack potion = new ItemStack(net.minecraft.world.item.Items.POTION);
+		potion.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(Optional.empty(), Optional.of(0x2B2234), effects, Optional.empty()));
+		potion.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal(command.get("name").getAsString()));
+		for (int slot = 0; slot < into.getContainerSize(); slot++) {
+			if (into.getItem(slot).isEmpty()) {
+				into.setItem(slot, potion);
+				into.setChanged();
+				return report(id, true, "");
+			}
+		}
+
+		return report(id, false, "the container is full");
+	}
+
+	/** A potion of theirs, another kind, its name kept (ABI 42). */
+	private static JsonObject changePotion(ServerLevel level, JsonObject command, long id) {
+		Container in = container(level, blockPos(command.getAsJsonArray("pos")));
+		int slot = command.get("slot").getAsInt();
+		if (in == null || slot < 0 || slot >= in.getContainerSize()) {
+			return report(id, false, "no such slot");
+		}
+		ItemStack stack = in.getItem(slot);
+		var had = stack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+		String into = command.get("into").getAsString();
+		var kind = BuiltInRegistries.POTION.get(Identifier.withDefaultNamespace(into));
+		if (had == null || !SAFE_POTIONS.contains(into) || kind.isEmpty()) {
+			return report(id, false, "no potion there, or not a kind it turns one into");
+		}
+		Component name = stack.getHoverName();
+		stack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(kind.get()));
+		stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, name.copy().withStyle(s -> s.withItalic(false)));
+		in.setChanged();
+
+		return report(id, true, "");
+	}
+
+	/** A lingering cloud of one effect, gone as it first touches someone (ABI 42). */
+	private static JsonObject effectCloud(ServerLevel level, JsonObject command, long id) {
+		String name = command.get("effect").getAsString();
+		var effect = effect(name);
+		if (!CLOUDS.contains(name) || effect.isEmpty()) {
+			return report(id, false, "not an effect it leaves");
+		}
+		JsonArray p = command.getAsJsonArray("pos");
+		float radius = Math.max(0.5f, Math.min(command.get("radius").getAsFloat(), 3));
+		var cloud = new net.minecraft.world.entity.AreaEffectCloud(level, p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
+		cloud.setRadius(radius);
+		cloud.setRadiusOnUse(-radius);
+		cloud.setWaitTime(0);
+		cloud.setDuration((int) (Math.min(command.get("seconds").getAsFloat(), 1200) * 20));
+		cloud.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect.get(), 200));
+		level.addFreshEntity(cloud);
+
+		return report(id, true, "");
 	}
 
 	/** Every stack of a container dropped at a place, kept from despawning; with {@code remove} the empty container gone (ABI 41). */
