@@ -101,6 +101,8 @@ tasks.register('processResources', Sync) {
 		from(new File(repo, 'LICENSE')) {
 			rename { "${it}_lodger" }
 		}
+		// The notices for what the jar carries (`gen_notices.py` at the root writes them).
+		from(new File(repo, 'THIRD_PARTY_NOTICES.txt'))
 	}
 }
 
