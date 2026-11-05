@@ -249,6 +249,10 @@ skipped in silence.
 
 ## Third-party notices
 
+`python3 gen_notices.py` writes `THIRD_PARTY_NOTICES.txt` at the root from `Cargo.lock`, the
+crates' own license files and llama.cpp's (adapted from `~/chainv4`'s, 2026-11-10). Run it after
+any dependency changes; it stops with a message when a crate no longer carries what it expects.
+
 The jar carries llama.cpp (MIT) and ggml (MIT) compiled into the native, plus every Rust crate
 in `core/Cargo.lock` and the Java dependencies Loom bundles. `scripts/gen_notices.py`, adapted
 from `~/engine`'s, writes `THIRD_PARTY_NOTICES.txt` from the lockfile and Gradle's dependency
