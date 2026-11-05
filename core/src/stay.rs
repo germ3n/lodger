@@ -254,10 +254,11 @@ impl Stay {
     pub fn status_line(&self) -> String {
         if !self.arc.moved_in() {
             if self.arc.over() {
-                return if self.arc.ended.is_empty() {
-                    "the stay is over".to_string()
-                } else {
-                    format!("the stay is over: it {}", self.arc.ended)
+                return match self.arc.ended.as_str() {
+                    "" => "the stay is over".to_string(),
+                    "beaten" => "the stay is over: they beat it".to_string(),
+                    "kept" => "the stay is over: it won, and kept what it took".to_string(),
+                    ended => format!("the stay is over: it {ended}"),
                 };
             }
 

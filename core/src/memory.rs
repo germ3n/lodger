@@ -430,6 +430,9 @@ pub struct Memory {
     pub its_lights: Vec<BlockPos>,
     /// The world's difficulty, as last seen, for the endings.
     pub difficulty: String,
+    /// The debug screen asked for the fight now, where the target stands. Not saved.
+    #[serde(skip)]
+    pub fight_now: bool,
     /// How the confrontation ended (`won`, `lost`, `fled`), taken by the ending on its next
     /// tick. Not saved.
     #[serde(skip)]

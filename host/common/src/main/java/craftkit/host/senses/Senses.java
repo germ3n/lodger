@@ -231,6 +231,11 @@ public final class Senses {
 		event(player, "respawned", player.blockPosition(), "", null);
 	}
 
+	/** A confrontation ended: `fight_won`, `fight_lost` or `fight_fled` (ABI 43). */
+	public void noticedFight(ServerPlayer player, String kind) {
+		event(player, kind, null, "", null);
+	}
+
 	public void noticedChangedDimension(ServerPlayer player, String from, String to) {
 		// Once per crossing: the observation reports one the loaders did not (leaving the End,
 		// a respawn in another dimension), and this one need not be reported again there.

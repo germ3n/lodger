@@ -49,6 +49,7 @@ public final class Worlds {
 	private final Bobbers bobbers = new Bobbers();
 	private final FrameShows frameShows = new FrameShows();
 	private final Deaths deaths = new Deaths();
+	private final Fights fights = new Fights(charges, deaths, senses);
 	private final Gatherings gatherings = new Gatherings();
 	private final LootOffers loot = new LootOffers();
 	private final Later later = new Later();
@@ -138,6 +139,7 @@ public final class Worlds {
 		warps.restoreIn(level);
 		temporaries.goneIn(level);
 		gatherings.putBackIn(level);
+		fights.endIn(level);
 		senses.forget(level);
 		Map<LoadedMod, Open> perMod = open.remove(level);
 		openCount = open.size();
@@ -169,6 +171,7 @@ public final class Worlds {
 		// next one opened (until 2026-11-10 a death held in one world was given back in another,
 		// and a push or a loot offering armed in one waited in the next).
 		deaths.clear();
+		fights.clearAll();
 		shoves.clear();
 		footsteps.clear();
 		bobbers.clear();
@@ -193,12 +196,13 @@ public final class Worlds {
 		bobbers.tick(server);
 		frameShows.tick(server);
 		deaths.tick(server);
+		fights.tick(server);
 		gatherings.tick(server);
 		later.tick();
 		poses.tick();
 		figures.tick();
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves, bobbers, frameShows, deaths);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves, bobbers, frameShows, deaths, fights);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();

@@ -30,6 +30,7 @@ pub struct Arc {
     pub fighting_since: u64,
     /// Its beacon is built (stage five's first night), lit at night and capped by day.
     pub beacon_built: bool,
+    pub beacon_capped: bool,
     /// Another horror mod is loaded: half the day's budget, so the two do not drown each other
     /// out (owner, 2026-11-10). Read off the memory each tick; not saved.
     #[serde(skip)]
@@ -49,6 +50,7 @@ impl Arc {
         self.stage_began_day = day;
         self.landed_this_stage = 0;
         if stage <= 5 {
+            self.fighting_since = 0;
             self.ending.clear();
             self.script_day = 0;
             self.beats_done = 0;

@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves, Bobbers bobbers, FrameShows frameShows, Deaths deaths) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves, Bobbers bobbers, FrameShows frameShows, Deaths deaths, Fights fights) {
 	}
 
 	private Executors() {
@@ -169,6 +169,21 @@ public final class Executors {
 					yield report(id, walking > 0, walking > 0 ? "walking " + walking : "none of them here");
 				}
 				case "shoot" -> shoot(level, command, id, context);
+				case "confront" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					JsonArray roof = command.getAsJsonArray("roof");
+					List<String> blocks = new ArrayList<>();
+					command.getAsJsonArray("blocks").forEach(b -> blocks.add(b.getAsString()));
+					if (blocks.isEmpty()) {
+						blocks.add("minecraft:cobblestone");
+					}
+					String why = context.fights().start(level, player, blockPos(command.getAsJsonArray("at")),
+							new Vec3(roof.get(0).getAsDouble(), roof.get(1).getAsDouble(), roof.get(2).getAsDouble()), blocks, data);
+					yield report(id, why == null, why == null ? "the fight is on" : why);
+				}
 				case "splash_potion" -> splashPotion(level, command, id, context);
 				case "put_potion" -> putPotion(level, command, id);
 				case "change_potion" -> changePotion(level, command, id);

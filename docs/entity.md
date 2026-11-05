@@ -843,6 +843,22 @@ late. Where it differs from the table, for now:
   say in the ending. The stay's status line (the debug screen) says `the stay is over: it left`,
   `took` or `stayed`; the host's `/lodger status` lists the mods and not yet the stay.
 
+**The fourth ending: you confront it** (owner, 2026-11-10). In stage five, at night, knock on its
+door (strike it twice), or with no house stand at its place, and it rises out of the ground
+before you. One boss bar in your name over three stages, with a bend between each: warped animals
+in waves while it watches from its roof (none on peaceful); it drops onto all fours and crawls at
+you, stands too tall with its head backwards, and duels you in your skin and a copy of your best
+gear, strafing, sprint-hitting, pearling behind you, twitching, upside down a second at a time; at
+three fifths it shakes and copies of you peel off it, one real; at seven twentieths they crawl
+together and sink, and its blocks rise out of the ground into a construct with your sword, its
+knees and elbows bending the wrong way, slamming the ground, an arm torn off and grown back as two
+at its first third. Win and it falls apart into its blocks, the figure looks at you and sinks, and
+you have its lantern (`<you>'s light`), its head (`the lodger`) and its weapon (`what it
+learned`, an enchantment more), with what it held; the stay ends `beaten`. Lose and you die once
+keeping everything, and it leaves with what it took (`kept`). Run, and it can be come to again
+the next night. Its health and its hits are scaled to your armour, your weapon and the
+difficulty. A beacon on its roof, lit only at night from stage five's first dusk, shows the way.
+
 After any ending the stay is closed in `lodger.dat` and no lodger moves into that world again
 unless `/lodger reset`. The one death the hard ending deals is the only harm the lodger ever does,
 it is at the end of a stay of two weeks, and it keeps the inventory: the point is that it happened,

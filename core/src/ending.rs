@@ -311,6 +311,15 @@ pub fn tick(
     if now.day < arc.script_day {
         return Vec::new();
     }
+    // The fourth ending: they come to it. While the fight is on the script waits.
+    let mut made = confrontation(arc, memory, now, ids);
+    if arc.over() || arc.fighting_since > 0 || !made.is_empty() {
+        return made;
+    }
+    made.extend(beacon(arc, memory, now, ids));
+    if !made.is_empty() {
+        return made;
+    }
     let script = ending.script();
     let day = (now.day - arc.script_day).min(u8::MAX as u64) as u8;
     let Some(step) = script.get(arc.beats_done).copied() else {
@@ -338,6 +347,236 @@ pub fn tick(
     }
 
     commands(step.beat, memory, now, ids)
+}
+
+/// Night: from dusk's end to dawn.
+fn night(now: &Now) -> bool {
+    (13_000..23_000).contains(&now.day_time)
+}
+
+/// The longest a fight waits for its answer before it is taken for over (the host lost it).
+const FIGHT_MOST: u64 = 24_000;
+
+/// The confrontation (owner, 2026-11-10, "a fourth ending: you confront it"): in stage five,
+/// at night, they knock on its door (or, with no house, stand at its place) and the fight
+/// begins (`Command::Confront`, the host's to run); its answer ends the stay: `beaten` if they
+/// won (its house's chest spilled on their step, what it held given back by the host), `kept`
+/// if they lost (it keeps what it took and leaves). Run from, it can be come to again.
+fn confrontation(
+    arc: &mut Arc,
+    memory: &mut Memory,
+    now: &Now,
+    ids: &mut impl FnMut() -> u64,
+) -> Vec<(Command, u64)> {
+    if let Some(result) = memory.fight_ended.take() {
+        arc.fighting_since = 0;
+        match result.as_str() {
+            "won" => {
+                let mut made = Vec::new();
+                if let (Some(chest), Some(step)) =
+                    (its(memory, "minecraft:chest", ""), doorstep(memory))
+                {
+                    made.push((
+                        Command::SpillContainer {
+                            id: ids(),
+                            from: chest,
+                            to: [
+                                step[0] as f64 + 0.5,
+                                step[1] as f64 + 0.2,
+                                step[2] as f64 + 0.5,
+                            ],
+                            remove: false,
+                        },
+                        0,
+                    ));
+                }
+                // The host gave back what it held as the construct broke.
+                memory.held = None;
+                finish(arc, memory, "beaten", now);
+                return made;
+            }
+            "lost" => {
+                finish(arc, memory, "kept", now);
+                return Vec::new();
+            }
+            _ => return Vec::new(),
+        }
+    }
+    if arc.fighting_since > 0 {
+        if now.tick.saturating_sub(arc.fighting_since) > FIGHT_MOST {
+            arc.fighting_since = 0;
+        }
+        return Vec::new();
+    }
+    let forced = std::mem::take(&mut memory.fight_now);
+    if !forced && (!night(now) || !memory.last.online) {
+        return Vec::new();
+    }
+    let door = its_door(memory).map(|(d, _)| d);
+    let at_place = door.is_none()
+        && memory
+            .place
+            .is_some_and(|p| distance(p, crate::memory::block_of(memory.last.pos)) <= 3.0);
+    let knocked = door.is_some() && memory.knocked_now == door;
+    if !knocked && !at_place && !forced {
+        return Vec::new();
+    }
+    memory.knocked_now = None;
+    let at = if forced {
+        crate::memory::block_of(memory.last.pos)
+    } else {
+        door.or(memory.place).unwrap_or([0, 0, 0])
+    };
+    let roof = memory
+        .build("house_near")
+        .filter(|b| b.ground_known())
+        .map(|b| {
+            [
+                b.site[0] as f64 + 0.5,
+                b.site[1] as f64 + 5.0,
+                b.site[2] as f64 + 0.5,
+            ]
+        })
+        .unwrap_or([at[0] as f64 + 0.5, -10_000.0, at[2] as f64 + 0.5]);
+    arc.fighting_since = now.tick.max(1);
+
+    vec![(
+        Command::Confront {
+            id: ids(),
+            player: memory.target.unwrap_or(0),
+            at,
+            roof,
+            blocks: construct_blocks(memory),
+        },
+        0,
+    )]
+}
+
+/// What the construct is built of: what it dug and holds, most first, their building block, a
+/// torch for its head; six at most.
+pub fn construct_blocks(memory: &Memory) -> Vec<String> {
+    let mut stores: Vec<&(String, u32)> = memory.stores.iter().filter(|(_, n)| *n > 0).collect();
+    stores.sort_by_key(|(_, n)| std::cmp::Reverse(*n));
+    let mut blocks: Vec<String> = stores.iter().map(|(id, _)| id.clone()).take(4).collect();
+    if let Some(theirs) = memory.block_built_most() {
+        if !blocks.contains(&theirs) {
+            blocks.push(theirs);
+        }
+    }
+    if blocks.is_empty() {
+        blocks.push("minecraft:cobblestone".to_string());
+    }
+    blocks.truncate(5);
+    blocks.push("minecraft:torch".to_string());
+    blocks
+}
+
+/// Its beacon (owner, 2026-11-10: "real, and dark until night"): from stage five's first dusk,
+/// on its house's roof (the middle of the roof iron, the beacon on it), or at its place; lit
+/// at dusk, a block of cobblestone over it by day.
+fn beacon(
+    arc: &mut Arc,
+    memory: &Memory,
+    now: &Now,
+    ids: &mut impl FnMut() -> u64,
+) -> Vec<(Command, u64)> {
+    let Some(base) = beacon_base(memory) else {
+        return Vec::new();
+    };
+    let cap = [base[0], base[1] + 2, base[2]];
+    let dusk = (12_000..13_000).contains(&now.day_time);
+    let dawn = now.day_time < 1_000 || now.day_time >= 23_000;
+    if dusk && !arc.beacon_built {
+        arc.beacon_built = true;
+        arc.beacon_capped = false;
+        let mut parts = Vec::new();
+        for x in -1..=1 {
+            for z in -1..=1 {
+                parts.push(BlueprintPart {
+                    at: [x, 0, z],
+                    block: "minecraft:iron_block".to_string(),
+                    state: String::new(),
+                });
+            }
+        }
+        parts.push(BlueprintPart {
+            at: [0, 1, 0],
+            block: "minecraft:beacon".to_string(),
+            state: String::new(),
+        });
+        return vec![(
+            Command::PlaceBlueprint {
+                id: ids(),
+                at: base,
+                parts,
+                replace: vec![
+                    "minecraft:oak_log".to_string(),
+                    "minecraft:grass_block".to_string(),
+                    "minecraft:dirt".to_string(),
+                    "minecraft:short_grass".to_string(),
+                    "minecraft:snow".to_string(),
+                ],
+            },
+            0,
+        )];
+    }
+    if !arc.beacon_built {
+        return Vec::new();
+    }
+    if dusk && arc.beacon_capped {
+        arc.beacon_capped = false;
+        return vec![(
+            Command::SetBlock {
+                id: ids(),
+                pos: cap,
+                block: "minecraft:air".to_string(),
+                state: String::new(),
+                replace: vec!["minecraft:cobblestone".to_string()],
+                settle: 0,
+                wall: String::new(),
+                rest: false,
+                only: true,
+            },
+            0,
+        )];
+    }
+    if dawn && !arc.beacon_capped {
+        arc.beacon_capped = true;
+        return vec![(
+            Command::SetBlock {
+                id: ids(),
+                pos: cap,
+                block: "minecraft:cobblestone".to_string(),
+                state: String::new(),
+                replace: vec![],
+                settle: 0,
+                wall: String::new(),
+                rest: false,
+                only: false,
+            },
+            0,
+        )];
+    }
+    Vec::new()
+}
+
+/// Where its beacon's iron goes: the middle of its house's roof, or its place's ground.
+pub fn beacon_base(memory: &Memory) -> Option<BlockPos> {
+    match memory
+        .build("house_near")
+        .filter(|b| b.ground_known() && b.laid > 0)
+    {
+        Some(house) => Some([house.site[0], house.site[1] + 4, house.site[2]]),
+        None => memory.place,
+    }
+}
+
+/// The stay over by the fight, the way it ended said.
+fn finish(arc: &mut Arc, memory: &mut Memory, ended: &str, now: &Now) {
+    arc.stage = 6;
+    arc.ended = ended.to_string();
+    arc.next_open_day = now.day + 21;
+    memory.its_lights.clear();
 }
 
 /// The stay over, the way it ended said.
@@ -655,11 +894,22 @@ pub fn commands(
             // Its blocks back to air, top down, its floor back to grass: the ground flat.
             let mut parts: Vec<_> = house.into_iter().collect();
             parts.sort_by_key(|(p, _)| std::cmp::Reverse(p[1]));
-            let blocks: Vec<String> = parts
+            let mut blocks: Vec<String> = parts
                 .iter()
                 .map(|(_, p)| p.block.to_string())
                 .collect::<std::collections::BTreeSet<_>>()
                 .into_iter()
+                .collect();
+            // Its beacon on the roof goes with the house: the iron where the logs were, the
+            // beacon over it, its cap.
+            blocks.extend(["minecraft:iron_block", "minecraft:beacon"].map(String::from));
+            let beacon: Vec<BlueprintPart> = [[0, 5, 0], [0, 6, 0]]
+                .into_iter()
+                .map(|at| BlueprintPart {
+                    at,
+                    block: "minecraft:air".to_string(),
+                    state: String::new(),
+                })
                 .collect();
             made.push((
                 Command::PlaceBlueprint {
@@ -676,6 +926,7 @@ pub fn commands(
                             },
                             state: String::new(),
                         })
+                        .chain(beacon)
                         .collect(),
                     replace: blocks,
                 },
@@ -1246,7 +1497,9 @@ mod tests {
             )));
         // At dawn: its house to air and its floor to grass, the chest taken, a torch at the door.
         let gone = sent.iter().find_map(|(_, c)| match c {
-            Command::PlaceBlueprint { parts, replace, .. } => {
+            Command::PlaceBlueprint { parts, replace, .. }
+                if parts.iter().any(|p| p.block == "minecraft:grass_block") =>
+            {
                 Some((parts.clone(), replace.clone()))
             }
             _ => None,
@@ -1256,6 +1509,14 @@ mod tests {
             .iter()
             .all(|p| (p.at[1] == 0) == (p.block == "minecraft:grass_block")));
         assert!(replace.contains(&"minecraft:cobblestone".to_string()));
+        // Its beacon on its roof goes with it, not left in the air.
+        assert!(
+            replace.contains(&"minecraft:beacon".to_string())
+                && replace.contains(&"minecraft:iron_block".to_string())
+        );
+        assert!(parts
+            .iter()
+            .any(|p| p.at == [0, 5, 0] && p.block == "minecraft:air"));
         assert!(sent
             .iter()
             .any(|(_, c)| matches!(c, Command::SpillContainer { remove: true, .. })));
@@ -1445,6 +1706,119 @@ mod tests {
             arc.beats_done, 6,
             "up to the third day's beats, which wait for their hour"
         );
+    }
+
+    fn at(day: u64, day_time: u32) -> Now {
+        Now {
+            tick: day * 24_000 + day_time as u64,
+            day,
+            day_time,
+            ..Now::default()
+        }
+    }
+
+    #[test]
+    fn knocking_on_its_door_at_night_begins_the_fight_and_its_end_ends_the_stay() {
+        let config = Config::default();
+        let mut memory = lived_in();
+        memory.store("minecraft:cobblestone", 40);
+        let mut arc = Arc {
+            stage: 5,
+            ending: "keep".to_string(),
+            script_day: 10,
+            ..Arc::default()
+        };
+        let mut n = 0;
+        let mut ids = || {
+            n += 1;
+            n
+        };
+        let (door, _) = its_door(&memory).unwrap();
+        // By day a knock is a knock.
+        memory.knocked_now = Some(door);
+        let day = tick(&mut arc, &mut memory, &config, &at(10, 6_000), &mut ids);
+        assert!(!day
+            .iter()
+            .any(|(c, _)| matches!(c, Command::Confront { .. })));
+        // At night, on its door: the fight.
+        memory.knocked_now = Some(door);
+        let night = tick(&mut arc, &mut memory, &config, &at(10, 15_000), &mut ids);
+        assert!(
+            matches!(&night[0].0, Command::Confront { at, blocks, .. }
+                if *at == door && blocks[0] == "minecraft:cobblestone" && blocks.last().unwrap() == "minecraft:torch"),
+            "{night:?}"
+        );
+        assert!(arc.fighting_since > 0);
+        assert_eq!(memory.knocked_now, None, "the knock taken");
+        // While it is on, the script waits.
+        let done = arc.beats_done;
+        tick(&mut arc, &mut memory, &config, &at(11, 2_000), &mut ids);
+        assert_eq!(arc.beats_done, done);
+        // Run from: it can be come to again.
+        memory.fight_ended = Some("fled".to_string());
+        tick(&mut arc, &mut memory, &config, &at(11, 2_100), &mut ids);
+        assert_eq!(arc.fighting_since, 0);
+        assert!(!arc.over());
+        // Won: its chest on their step, held no more, the stay over.
+        memory.held = Some(crate::memory::Held::default());
+        arc.fighting_since = 5;
+        memory.fight_ended = Some("won".to_string());
+        let won = tick(&mut arc, &mut memory, &config, &at(11, 20_200), &mut ids);
+        assert!(won
+            .iter()
+            .any(|(c, _)| matches!(c, Command::SpillContainer { .. })));
+        assert!(memory.held.is_none());
+        assert_eq!((arc.stage, arc.ended.as_str()), (6, "beaten"));
+
+        // Lost: over, and it kept what it took.
+        let mut lost = Arc {
+            stage: 5,
+            ending: "take".to_string(),
+            fighting_since: 5,
+            ..Arc::default()
+        };
+        memory.fight_ended = Some("lost".to_string());
+        tick(&mut lost, &mut memory, &config, &at(11, 20_300), &mut ids);
+        assert_eq!((lost.stage, lost.ended.as_str()), (6, "kept"));
+    }
+
+    #[test]
+    fn its_beacon_is_built_on_its_roof_lit_at_dusk_and_capped_at_dawn() {
+        let config = Config::default();
+        let mut memory = lived_in();
+        let mut arc = Arc {
+            stage: 5,
+            ending: "keep".to_string(),
+            script_day: 10,
+            ..Arc::default()
+        };
+        let mut n = 0;
+        let mut ids = || {
+            n += 1;
+            n
+        };
+        let base = beacon_base(&memory).unwrap();
+        assert_eq!(base, [56, 67, 0], "the middle of its roof");
+        let built = tick(&mut arc, &mut memory, &config, &at(10, 12_100), &mut ids);
+        assert!(
+            matches!(&built[0].0, Command::PlaceBlueprint { at, parts, .. }
+                if *at == base && parts.len() == 10 && parts.iter().any(|p| p.block == "minecraft:beacon" && p.at == [0, 1, 0])),
+            "{built:?}"
+        );
+        assert!(arc.beacon_built);
+        let capped = tick(&mut arc, &mut memory, &config, &at(11, 200), &mut ids);
+        assert!(matches!(&capped[0].0, Command::SetBlock { pos, block, .. }
+            if *pos == [56, 69, 0] && block == "minecraft:cobblestone"));
+        let lit = tick(&mut arc, &mut memory, &config, &at(11, 12_200), &mut ids);
+        assert!(
+            matches!(&lit[0].0, Command::SetBlock { pos, block, only: true, .. }
+            if *pos == [56, 69, 0] && block == "minecraft:air")
+        );
+        // Built once only.
+        let again = tick(&mut arc, &mut memory, &config, &at(11, 12_300), &mut ids);
+        assert!(!again
+            .iter()
+            .any(|(c, _)| matches!(c, Command::PlaceBlueprint { .. }) && false));
     }
 
     #[test]

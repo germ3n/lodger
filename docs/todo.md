@@ -1065,7 +1065,7 @@ The `[x]` lines above, each dated. Summary by day:
   shelves and cabinets furniture, moved first by `shift_furniture`. A mod's chest the target
   opens was already theirs to the memory. Tests: three in `memory`, one in `arc`. Was: no other
   mod known.
-- [ ] **The confrontation, a fourth ending** (owner: "a fourth ending: you confront it"): in
+- [x] **The confrontation, a fourth ending** (2026-11-10; owner: "a fourth ending: you confront it"): in
   stage 5, at night, at its house (or its place), strike its door or the figure; without that,
   one of the three scripted endings plays. Three phases, one health bar named after them: its
   warped animals in waves while it watches from its roof; the duel in their skin with a copy of
@@ -1090,6 +1090,16 @@ The `[x]` lines above, each dated. Summary by day:
   torn off grown back as two, the torso stretching, the head twisting round); the end (it falls
   apart, its blocks dropping as items, the figure standing where it was, looking at them,
   sinking into the ground; the lantern, the head, the weapon).
+  Done: the mind starts it (`ending::confrontation`: stage five, night, a knock on its door or
+  standing at its place; the debug screen's `Fight it now` anywhere), pauses the script while
+  it is on, and ends the stay on its answer (`beaten`, `kept`; run from, it can be come to
+  again); its beacon is built on its roof at stage five's first dusk, capped by day and lit at
+  dusk, and goes with its house when it leaves. The host runs the fight (`Fights`, `confront`,
+  ABI 43): a 26.3 mannequin in their skin and a copy of their gear, its own health kept apart
+  from the mannequin's so it never dies as an entity, the construct's limbs block displays posed
+  each tick. Tests: two in `ending`. Not yet seen in the game: the first launch checks it.
+- [x] **No split** (owner, 2026-11-10: "nevermind on the splitting the repo"): one repository;
+  `gen_notices.py` comes here instead.
 
 ## At the very end
 

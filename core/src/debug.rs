@@ -96,6 +96,19 @@ pub fn answer(
                     stay.arc.spent_today = 0.0;
                     "every event may happen again, and the day's budget is whole".to_string()
                 }
+                "fight_now" => {
+                    // Stage five, an ending chosen and its script begun, and the fight asked for
+                    // where they stand: for trying it without waiting weeks.
+                    if stay.arc.stage != 5 {
+                        stay.arc.set_stage(5, day);
+                    }
+                    if stay.arc.ending.is_empty() {
+                        stay.arc.ending = "keep".to_string();
+                    }
+                    stay.arc.script_day = 0;
+                    stay.memory.fight_now = true;
+                    "the fight begins where they stand".to_string()
+                }
                 "forget_all" => {
                     let target = stay.memory.target;
                     let name = stay.memory.target_name.clone();
@@ -474,6 +487,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             ActionRow::new("plan_now", "Decide now"),
             ActionRow::new("clear_plan", "Drop the plan"),
             ActionRow::new("forget_cooldowns", "Forget cooldowns"),
+            ActionRow::new("fight_now", "Fight it now"),
             ActionRow::new("forget_all", "Forget everything"),
         ],
     }

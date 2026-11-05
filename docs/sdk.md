@@ -192,7 +192,8 @@ held in the world's data and given back on respawn). ABI 42 (2026-11-10): `shoot
 spared, never picked up, staying where it lands), `splash_potion` (one of five effects at a
 player's feet), `put_potion` (a named potion of its brewing, nothing that harms), `change_potion`
 (a potion another, safe kind, its name kept), `effect_cloud` (slowness or weakness, gone at its
-first touch).
+first touch). ABI 43 (2026-11-10): `confront` (the fight, the host's to run) and the
+`fight_won`, `fight_lost`, `fight_fled` events.
 
 ## Resources
 
