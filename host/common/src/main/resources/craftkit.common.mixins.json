@@ -5,6 +5,8 @@
 	"client": [
 		"CompassAngleStateMixin",
 		"FogRendererMixin",
+		"LivingEntityRendererMixin",
+		"ModelFeatureRendererMixin",
 		"PaintingRendererMixin",
 		"SkyRendererMixin",
 		"SubtitleOverlayMixin",

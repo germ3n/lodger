@@ -49,7 +49,7 @@ public final class Worlds {
 	private final Bobbers bobbers = new Bobbers();
 	private final FrameShows frameShows = new FrameShows();
 	private final Deaths deaths = new Deaths();
-	private final Fights fights = new Fights(charges, deaths, senses);
+	private final Fights fights;
 	private final Gatherings gatherings = new Gatherings();
 	private final LootOffers loot = new LootOffers();
 	private final Later later = new Later();
@@ -66,6 +66,7 @@ public final class Worlds {
 
 	/** @param sendHint how this loader sends a hint payload to a player. */
 	public Worlds(List<LoadedMod> mods, BiConsumer<ServerPlayer, HintPayload> sendHint) {
+		this.fights = new Fights(charges, deaths, senses, sendHint);
 		this.mods = mods;
 		this.sendHint = sendHint;
 		senses.lootHook((player, chest) -> loot.apply(player, chest, modId -> {

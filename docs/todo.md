@@ -1121,6 +1121,18 @@ The `[x]` lines above, each dated. Summary by day:
   heard; the mods list cut at 64; another horror mod's thing near stayed "near" for good; the
   debug screen's fight and stage left an old script and beacon behind. Tests: the ending's,
   memory's and config's updated. Was: all of that.
+- [x] **The warped animals, their own models** (owner, 2026-11-10: "the blocks look kinda silly
+  ... stretching the actual model"): the block limbs are gone; the server names each wave's
+  animals in a `warp_models` hint and the client bends their own models as they are posed for
+  drawing (two render hooks, `LivingEntityRenderer.extractRenderState` for the entity's id and
+  `ModelFeatureRenderer.prepareModel` after `setupAnim`): every part stretched or squashed along
+  its length and across, and turned up to 0.8 radians wrong, by a fixed draw so it never
+  flickers, the whole body tall and thin or low and wide; a third still wear a face (theirs,
+  now and then). Skeletons have their bows (a mob made by the mod gets none from the game), and
+  the waves no longer pile up: the next comes once at most two of the last are left and after a
+  breath, a wave of a minute and a half has its last sink away (until now one came every fifty
+  seconds on top of the last). Tests: one in JUnit (`Warp`). Was: block limbs, bowless
+  skeletons, piled waves.
 - [x] **No split** (owner, 2026-11-10: "nevermind on the splitting the repo"): one repository;
   `gen_notices.py` comes here instead.
 

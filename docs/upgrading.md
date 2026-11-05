@@ -129,6 +129,9 @@ moved.
     `compass_points`.
   - `PaintingRenderer.submit` at its head: the pose turned half round on the wall's normal for
     `painting_flip` (`PoseStack.rotate`).
+  - `LivingEntityRenderer.extractRenderState` at its tail (the entity's id kept for its render
+    state) and `ModelFeatureRenderer.prepareModel`'s `Model.setupAnim` call, redirected: the
+    fight's warped animals bent as they are posed (`WarpedModels`).
   - `SubtitleOverlay.onPlaySound`: its `WeighedSoundEvents.getSubtitle()` call, redirected so
     a ghast's subtitle reads as a name for `ghast_name` (into `Glitches.subtitleOf`).
   The HUD's `heart_skip` and `subtitle` read `Hud`'s private `tickCount`, `healthBlinkTime` and

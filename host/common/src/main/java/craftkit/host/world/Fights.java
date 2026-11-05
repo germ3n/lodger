@@ -132,6 +132,8 @@ public final class Fights {
 		final List<Warped> warped = new ArrayList<>();
 		/** They fell to something else while it was on: the one death that keeps everything, next tick. */
 		boolean saving;
+		/** The breath before the next wave, till this tick; 0 for none. */
+		long breathUntil;
 		final int index;
 		final List<Part> parts = new ArrayList<>();
 		int wave;
@@ -177,9 +179,11 @@ public final class Fights {
 	private final Charges charges;
 	private final Deaths deaths;
 	private final Senses senses;
+	private final java.util.function.BiConsumer<ServerPlayer, craftkit.host.net.HintPayload> sendHint;
 	private long tick;
 
-	public Fights(Charges charges, Deaths deaths, Senses senses) {
+	public Fights(Charges charges, Deaths deaths, Senses senses, java.util.function.BiConsumer<ServerPlayer, craftkit.host.net.HintPayload> sendHint) {
+		this.sendHint = sendHint;
 		this.charges = charges;
 		this.deaths = deaths;
 		this.senses = senses;
@@ -336,17 +340,33 @@ public final class Fights {
 			case WAVES -> {
 				face(m, player.position());
 				drive(f, player);
-				if (f.animals.isEmpty() || in > 20 * 50) {
-					if (f.wave >= 4) {
-						f.warped.forEach(Fights::gone);
-						f.warped.clear();
-						f.animals.clear();
-						m.noPhysics = false;
-						m.setNoGravity(false);
-						next(f, Phase.BEND1);
-					} else {
-						wave(f, player);
-						f.phaseTick = f.tick;
+				// A wave lasting a minute and a half: its last sink away, never left to pile up
+				// under the next (until 2026-11-10 a wave came every fifty seconds on top of the last).
+				if (f.wave > 0 && in > 20 * 90) {
+					for (Warped w : f.warped) {
+						dust(f.level, w.mob.position(), Blocks.DIRT.defaultBlockState(), 8);
+						gone(w);
+					}
+					f.warped.clear();
+					f.animals.clear();
+				}
+				// The next wave once at most two of the last are left, after a breath of five seconds.
+				if (f.wave == 0 || f.animals.size() <= 2) {
+					if (f.breathUntil == 0) {
+						f.breathUntil = f.tick + (f.wave == 0 ? 1 : 100);
+					} else if (f.tick >= f.breathUntil) {
+						f.breathUntil = 0;
+						if (f.wave >= 4) {
+							f.warped.forEach(Fights::gone);
+							f.warped.clear();
+							f.animals.clear();
+							m.noPhysics = false;
+							m.setNoGravity(false);
+							next(f, Phase.BEND1);
+						} else {
+							wave(f, player);
+							f.phaseTick = f.tick;
+						}
 					}
 				}
 			}
@@ -717,7 +737,7 @@ public final class Fights {
 	 */
 	private void wave(Fight f, ServerPlayer player) {
 		f.wave++;
-		int n = 4 + 2 * switch (f.level.getDifficulty()) {
+		int n = 3 + 2 * switch (f.level.getDifficulty()) {
 			case HARD -> 3;
 			case NORMAL -> 2;
 			default -> 1;
@@ -752,6 +772,13 @@ public final class Fights {
 				// Not burnt by a morning, and dropping nothing it wears.
 				animal.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
 				animal.setDropChance(EquipmentSlot.HEAD, 0);
+				// A skeleton has its bow, as one born to the night would (the game gives it at a
+				// natural spawn alone), and the goal that uses it.
+				if (animal instanceof net.minecraft.world.entity.monster.skeleton.AbstractSkeleton skeleton) {
+					skeleton.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+					skeleton.setDropChance(EquipmentSlot.MAINHAND, 0);
+					skeleton.reassessWeaponGoal();
+				}
 				if (animal instanceof net.minecraft.world.entity.monster.Creeper creeper) {
 					// Its blast hurts them and breaks nothing: no radius of its own, the harm the fight's.
 					Reflect.field(creeper, net.minecraft.world.entity.monster.Creeper.class, "explosionRadius", 0);
@@ -761,21 +788,7 @@ public final class Fights {
 			hideName(animal);
 			f.animals.add(animal);
 			Warped warped = new Warped(animal);
-			int limbs = 1 + random.nextInt(3);
-			for (int l = 0; l < limbs; l++) {
-				Display.BlockDisplay limb = EntityTypes.BLOCK_DISPLAY.create(f.level, EntitySpawnReason.EVENT);
-				if (limb == null) {
-					continue;
-				}
-				Reflect.blockState(limb, block(FLESH.get(random.nextInt(FLESH.size()))));
-				// x, y, z on the body; its tilt; its thickness and length.
-				warped.poses.add(new float[] {
-						(random.nextFloat() - 0.5f) * 0.9f, 0.2f + random.nextFloat() * 0.8f, (random.nextFloat() - 0.5f) * 1.0f,
-						(random.nextFloat() - 0.5f) * 2.4f, (random.nextFloat() - 0.5f) * 2.4f,
-						0.12f + random.nextFloat() * 0.25f, 0.5f + random.nextFloat() * 1.1f});
-				extra(f, warped, limb);
-			}
-			if (random.nextInt(2) == 0) {
+			if (random.nextInt(3) == 0) {
 				Display.ItemDisplay face = EntityTypes.ITEM_DISPLAY.create(f.level, EntitySpawnReason.EVENT);
 				if (face != null) {
 					ItemStack head;
@@ -794,6 +807,12 @@ public final class Fights {
 			}
 			f.warped.add(warped);
 		}
+		// Their models bent on the player's screen, each its own way (`WarpedModels`).
+		StringBuilder ids = new StringBuilder();
+		for (Warped w : f.warped) {
+			ids.append(ids.isEmpty() ? "" : ",").append(w.mob.getId());
+		}
+		sendHint.accept(player, new craftkit.host.net.HintPayload("warp_models", java.util.Optional.empty(), 600, ids.toString()));
 		f.level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 0.7f, 0.5f);
 	}
 
