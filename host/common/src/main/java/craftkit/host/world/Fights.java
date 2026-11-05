@@ -834,9 +834,14 @@ public final class Fights {
 			Warped w = it.next();
 			Mob a = w.mob;
 			if (a.isRemoved() || a.isDeadOrDying()) {
-				// A creeper gone without dying went off: the harm is the fight's.
-				if (a instanceof net.minecraft.world.entity.monster.Creeper && !a.isDeadOrDying() && a.distanceTo(player) < 4) {
-					hurt(f, player, 7);
+				// A creeper gone with its health left went off (the game marks it dead as it does,
+				// so dying alone cannot tell; until 2026-11-10 its blast was never felt): the harm
+				// is the fight's, by how near they stood.
+				if (a instanceof net.minecraft.world.entity.monster.Creeper && a.isRemoved() && a.getHealth() > 0 && a.distanceTo(player) < 5) {
+					hurt(f, player, Math.max(2, 9 - 1.5f * a.distanceTo(player)));
+					Vec3 away = player.position().subtract(a.position()).normalize();
+					player.push(away.x * 0.9, 0.45, away.z * 0.9);
+					player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(player));
 				}
 				gone(w);
 				it.remove();

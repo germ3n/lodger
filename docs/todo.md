@@ -1133,6 +1133,11 @@ The `[x]` lines above, each dated. Summary by day:
   breath, a wave of a minute and a half has its last sink away (until now one came every fifty
   seconds on top of the last). Tests: one in JUnit (`Warp`). Was: block limbs, bowless
   skeletons, piled waves.
+- [x] **The creepers' blast** (owner, 2026-11-10: "creepers aren't dealing any damage"): 26.3 marks
+  an exploding creeper dead before it goes, so the fight took its blast for a kill and dealt
+  nothing; a creeper gone with its health left went off, and the blast is dealt by how near they
+  stood (nine at its heart to two at five blocks, scaled as a mob's hit), with a push away. Was:
+  no harm at all.
 - [x] **No split** (owner, 2026-11-10: "nevermind on the splitting the repo"): one repository;
   `gen_notices.py` comes here instead.
 
