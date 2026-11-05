@@ -1077,6 +1077,19 @@ The `[x]` lines above, each dated. Summary by day:
   death on any difficulty, everything kept, it keeps what it took and leaves (no animal waves on
   peaceful). A real beacon in its house from stage 5's first night, lit only at night, to lead
   them there.
+  The fight's shape (owner, 2026-11-10: "rise out of the ground ... deforming and bending its
+  limbs, turning grotesque, in between stages"; the sequence below confirmed as is): the rising
+  (the ground before its door cracks, it rises lying face up over three seconds and bends
+  upright at the waist, the bar filling); stage 1 waves, it watching from its roof; bend 1 (it
+  drops onto all fours, crawls at them flat and fast, stands too tall, its head backwards a
+  beat); stage 2 the duel (twitching a block aside and back, upside down a second at a time);
+  bend 2 at three fifths (it freezes and shakes, copies peel off it and walk out, heads
+  backwards); stage 2b the copies; bend 3 at seven twentieths (the copies crawl together and
+  sink, its stored blocks rise and snap together into a body, their sword last); stage 3 the
+  construct (elbows and knees bending the wrong way, slams and sweeps, at each third an arm
+  torn off grown back as two, the torso stretching, the head twisting round); the end (it falls
+  apart, its blocks dropping as items, the figure standing where it was, looking at them,
+  sinking into the ground; the lantern, the head, the weapon).
 
 ## At the very end
 

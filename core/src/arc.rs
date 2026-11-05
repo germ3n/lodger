@@ -26,6 +26,10 @@ pub struct Arc {
     pub ended: String,
     /// After it stayed: the next game day a door of theirs is found open.
     pub next_open_day: u64,
+    /// The confrontation is on, since this tick: the script waits while it is.
+    pub fighting_since: u64,
+    /// Its beacon is built (stage five's first night), lit at night and capped by day.
+    pub beacon_built: bool,
     /// Another horror mod is loaded: half the day's budget, so the two do not drown each other
     /// out (owner, 2026-11-10). Read off the memory each tick; not saved.
     #[serde(skip)]

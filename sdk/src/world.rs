@@ -214,6 +214,12 @@ pub enum EventKind {
     /// The player knocked on a door, struck it twice within a second and a half: `pos` is
     /// the door's lower half. ABI 38.
     Knocked,
+    /// A confrontation (`confront`) ended: they won it. ABI 43.
+    FightWon,
+    /// They lost it (they died once, keeping everything). ABI 43.
+    FightLost,
+    /// They ran from it, or left: it is over without an end. ABI 43.
+    FightFled,
     ChangedDimension,
     /// Hit an entity; `detail` is its kind, `pos` where it stood.
     Hit,
@@ -552,6 +558,22 @@ pub enum Command {
         seconds: f32,
         behind: f32,
         delay: u32,
+    },
+    /// The confrontation (the fourth ending): a fight with `player` at `at` (its door, or its
+    /// place), in three phases under one boss bar in the player's name. Waves of warped animals
+    /// while a mannequin in their skin watches from `roof` (none on peaceful); then the duel,
+    /// the mannequin in a copy of their best gear, splitting into copies at less than three
+    /// fifths of its health; then a construct built of `blocks`, dropping them as it breaks. Its
+    /// health and hits are scaled to their armour and the difficulty. Won, they get its
+    /// lantern, its head and its weapon, and what it held (`kept` "held") back; lost, they die
+    /// once keeping everything. Answered by a `fight_won`, `fight_lost` or `fight_fled` event.
+    /// ABI 43.
+    Confront {
+        id: u64,
+        player: u32,
+        at: BlockPos,
+        roof: Pos,
+        blocks: Vec<String>,
     },
     /// A real arrow from `from` (on the ground there when its y is below -1000) at `at`, aimed
     /// as a skeleton aims; it harms `damage` if it hits `player` (0 for none, and never below half
@@ -1035,6 +1057,7 @@ impl Command {
             | Command::CarryBlock { id, .. }
             | Command::SpillContainer { id, .. }
             | Command::Shoot { id, .. }
+            | Command::Confront { id, .. }
             | Command::SplashPotion { id, .. }
             | Command::PutPotion { id, .. }
             | Command::ChangePotion { id, .. }

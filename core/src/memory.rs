@@ -430,6 +430,10 @@ pub struct Memory {
     pub its_lights: Vec<BlockPos>,
     /// The world's difficulty, as last seen, for the endings.
     pub difficulty: String,
+    /// How the confrontation ended (`won`, `lost`, `fled`), taken by the ending on its next
+    /// tick. Not saved.
+    #[serde(skip)]
+    pub fight_ended: Option<String>,
     /// The day the target went into another dimension (gone from the world without leaving
     /// the game), until they come back (`busy_away`).
     pub elsewhere_since: Option<f32>,
@@ -1486,6 +1490,9 @@ impl Memory {
                 }
                 EventKind::RangBell => self.rang_bell_now = event.pos,
                 EventKind::Knocked => self.knocked_now = event.pos,
+                EventKind::FightWon => self.fight_ended = Some("won".to_string()),
+                EventKind::FightLost => self.fight_ended = Some("lost".to_string()),
+                EventKind::FightFled => self.fight_ended = Some("fled".to_string()),
                 EventKind::Fished => self.last_fished = Some(block(self.last.pos)),
                 EventKind::UsedDoor => {
                     self.door_used_now = event.pos;
