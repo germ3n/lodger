@@ -1869,7 +1869,8 @@ public final class Executors {
 	/** The effects a splash, a cloud or its brew may carry: none that harms (ABI 42). */
 	private static final java.util.Set<String> SPLASHES = java.util.Set.of("darkness", "slowness", "blindness", "nausea", "levitation");
 	private static final java.util.Set<String> CLOUDS = java.util.Set.of("slowness", "weakness");
-	private static final java.util.Set<String> HARMFUL = java.util.Set.of("instant_damage", "poison", "wither", "fatal_poison", "bad_omen", "raid_omen", "trial_omen");
+	/** The effects its brew may hold: none that harms or carries them anywhere (until 2026-11-10 a list of the harmful let levitation and the rest through). */
+	private static final java.util.Set<String> BREWS = java.util.Set.of("night_vision", "darkness", "invisibility", "slowness", "weakness", "nausea", "glowing", "luck", "unluck", "water_breathing", "fire_resistance");
 	/** The kinds a potion of theirs may become: none that harms. */
 	private static final java.util.Set<String> SAFE_POTIONS = java.util.Set.of("night_vision", "invisibility", "water_breathing", "fire_resistance", "leaping", "swiftness", "slow_falling");
 
@@ -1886,6 +1887,16 @@ public final class Executors {
 		Vec3 from = grounded(level, command.getAsJsonArray("from"));
 		JsonArray a = command.getAsJsonArray("at");
 		Vec3 at = new Vec3(a.get(0).getAsDouble(), a.get(1).getAsDouble(), a.get(2).getAsDouble());
+		// Aimed where they are now, not where they stood when it was asked a second ago: at their
+		// chest, or a block and a third beside their head on the side it shoots from.
+		Vec3 eye = player.getEyePosition();
+		if (command.get("damage").getAsFloat() > 0) {
+			at = player.position().add(0, 1.1, 0);
+		} else {
+			Vec3 across = new Vec3(eye.z - from.z, 0, from.x - eye.x).normalize();
+			Vec3 side = at.subtract(eye).dot(across) >= 0 ? across : across.scale(-1);
+			at = eye.add(side.scale(1.3)).add(0, 0.1, 0);
+		}
 		var arrow = new net.minecraft.world.entity.projectile.arrow.Arrow(level, from.x, from.y, from.z, new ItemStack(net.minecraft.world.item.Items.ARROW), null);
 		arrow.pickup = net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.CREATIVE_ONLY;
 		float damage = Spare.harm(Math.max(0, command.get("damage").getAsFloat()), player.getHealth(), 1);
@@ -1899,7 +1910,8 @@ public final class Executors {
 		try {
 			java.lang.reflect.Field life = net.minecraft.world.entity.projectile.arrow.AbstractArrow.class.getDeclaredField("life");
 			life.setAccessible(true);
-			life.setInt(arrow, Integer.MIN_VALUE / 2);
+			// Saved as a short: the least a short holds, about half an hour in the ground.
+			life.setInt(arrow, Short.MIN_VALUE);
 		} catch (ReflectiveOperationException | RuntimeException ignored) {
 			// The field moved: it goes after a minute, as any arrow does.
 		}
@@ -1920,7 +1932,7 @@ public final class Executors {
 		if (!SPLASHES.contains(name) || effect.isEmpty()) {
 			return report(id, false, "not an effect it throws");
 		}
-		float seconds = Math.min(command.get("seconds").getAsFloat(), name.equals("levitation") ? 2 : 15);
+		float seconds = Math.max(0.5f, Math.min(command.get("seconds").getAsFloat(), name.equals("levitation") ? 2 : 15));
 		ItemStack potion = new ItemStack(net.minecraft.world.item.Items.SPLASH_POTION);
 		potion.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(Optional.empty(), Optional.empty(),
 				List.of(new net.minecraft.world.effect.MobEffectInstance(effect.get(), (int) (seconds * 20))), Optional.empty()));
@@ -1945,10 +1957,10 @@ public final class Executors {
 			JsonArray pair = each.getAsJsonArray();
 			String name = pair.get(0).getAsString();
 			var effect = effect(name);
-			if (HARMFUL.contains(name) || effect.isEmpty()) {
+			if (!BREWS.contains(name) || effect.isEmpty()) {
 				return report(id, false, "not an effect it brews: " + name);
 			}
-			effects.add(new net.minecraft.world.effect.MobEffectInstance(effect.get(), (int) (Math.min(pair.get(1).getAsFloat(), 600) * 20)));
+			effects.add(new net.minecraft.world.effect.MobEffectInstance(effect.get(), (int) (Math.max(1, Math.min(pair.get(1).getAsFloat(), 600)) * 20)));
 		}
 		ItemStack potion = new ItemStack(net.minecraft.world.item.Items.POTION);
 		potion.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(Optional.empty(), Optional.of(0x2B2234), effects, Optional.empty()));
@@ -1977,6 +1989,16 @@ public final class Executors {
 		var kind = BuiltInRegistries.POTION.get(Identifier.withDefaultNamespace(into));
 		if (had == null || !SAFE_POTIONS.contains(into) || kind.isEmpty()) {
 			return report(id, false, "no potion there, or not a kind it turns one into");
+		}
+		// Another kind than it is: the next safe one when asked for its own.
+		var asked = kind.get();
+		if (had.potion().filter(p -> p.equals(asked)).isPresent()) {
+			List<String> safe = new ArrayList<>(new java.util.TreeSet<>(SAFE_POTIONS));
+			String other = safe.get((safe.indexOf(into) + 1) % safe.size());
+			kind = BuiltInRegistries.POTION.get(Identifier.withDefaultNamespace(other));
+			if (kind.isEmpty()) {
+				return report(id, false, "no other kind");
+			}
 		}
 		Component name = stack.getHoverName();
 		stack.set(net.minecraft.core.component.DataComponents.POTION_CONTENTS, new net.minecraft.world.item.alchemy.PotionContents(kind.get()));

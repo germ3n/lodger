@@ -308,12 +308,13 @@ pub fn tick(
             return Vec::new();
         }
     };
-    if now.day < arc.script_day {
-        return Vec::new();
-    }
-    // The fourth ending: they come to it. While the fight is on the script waits.
+    // The fourth ending: they come to it, from stage five's first night. While the fight is on
+    // the script waits.
     let mut made = confrontation(arc, memory, now, ids);
     if arc.over() || arc.fighting_since > 0 || !made.is_empty() {
+        return made;
+    }
+    if now.day < arc.script_day {
         return made;
     }
     made.extend(beacon(arc, memory, now, ids));
@@ -392,12 +393,14 @@ fn confrontation(
                 }
                 // The host gave back what it held as the construct broke.
                 memory.held = None;
+                made.extend(capped(arc, memory, ids));
                 finish(arc, memory, "beaten", now);
                 return made;
             }
             "lost" => {
+                let made = capped(arc, memory, ids);
                 finish(arc, memory, "kept", now);
-                return Vec::new();
+                return made;
             }
             _ => return Vec::new(),
         }
@@ -422,10 +425,14 @@ fn confrontation(
         return Vec::new();
     }
     memory.knocked_now = None;
+    // In front of its door, outside: where it rises.
     let at = if forced {
         crate::memory::block_of(memory.last.pos)
     } else {
-        door.or(memory.place).unwrap_or([0, 0, 0])
+        its_door(memory)
+            .map(|(_, out)| out)
+            .or(memory.place)
+            .unwrap_or([0, 0, 0])
     };
     let roof = memory
         .build("house_near")
@@ -558,6 +565,27 @@ fn beacon(
         )];
     }
     Vec::new()
+}
+
+/// Its beacon capped for good as the fight ends the stay: it shines no more.
+fn capped(arc: &Arc, memory: &Memory, ids: &mut impl FnMut() -> u64) -> Vec<(Command, u64)> {
+    match beacon_base(memory) {
+        Some(base) if arc.beacon_built && !arc.beacon_capped => vec![(
+            Command::SetBlock {
+                id: ids(),
+                pos: [base[0], base[1] + 2, base[2]],
+                block: "minecraft:cobblestone".to_string(),
+                state: String::new(),
+                replace: vec![],
+                settle: 0,
+                wall: String::new(),
+                rest: false,
+                only: false,
+            },
+            0,
+        )],
+        _ => Vec::new(),
+    }
 }
 
 /// Where its beacon's iron goes: the middle of its house's roof, or its place's ground.
@@ -1743,9 +1771,10 @@ mod tests {
         // At night, on its door: the fight.
         memory.knocked_now = Some(door);
         let night = tick(&mut arc, &mut memory, &config, &at(10, 15_000), &mut ids);
+        let (_, out) = its_door(&memory).unwrap();
         assert!(
             matches!(&night[0].0, Command::Confront { at, blocks, .. }
-                if *at == door && blocks[0] == "minecraft:cobblestone" && blocks.last().unwrap() == "minecraft:torch"),
+                if *at == out && blocks[0] == "minecraft:cobblestone" && blocks.last().unwrap() == "minecraft:torch"),
             "{night:?}"
         );
         assert!(arc.fighting_since > 0);
@@ -1816,9 +1845,13 @@ mod tests {
         );
         // Built once only.
         let again = tick(&mut arc, &mut memory, &config, &at(11, 12_300), &mut ids);
-        assert!(!again
-            .iter()
-            .any(|(c, _)| matches!(c, Command::PlaceBlueprint { .. }) && false));
+        assert!(
+            !again
+                .iter()
+                .any(|(c, _)| matches!(c, Command::PlaceBlueprint { parts, .. }
+                if parts.iter().any(|p| p.block == "minecraft:beacon"))),
+            "built once only: {again:?}"
+        );
     }
 
     #[test]

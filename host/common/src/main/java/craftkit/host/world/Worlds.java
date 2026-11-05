@@ -111,6 +111,11 @@ public final class Worlds {
 		openCount = open.size();
 	}
 
+	/** Whether a player's death may go ahead: during a fight, only the one that keeps everything. */
+	public boolean allowDeath(net.minecraft.server.level.ServerPlayer player) {
+		return fights.allowDeath(player);
+	}
+
 	/** Worlds open, for the shutdown hook on another thread. */
 	private volatile int openCount;
 

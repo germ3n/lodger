@@ -51,7 +51,7 @@ public final class CraftkitNeoForge {
 		}
 
 		host.worlds().senses().mods(new NeoForgePlatform().loadedMods());
-		hookSenses(host.worlds().senses());
+		hookSenses(host.worlds().senses(), host.worlds());
 	}
 
 	private void serverStarting(ServerStartingEvent event) {
@@ -102,7 +102,7 @@ public final class CraftkitNeoForge {
 	}
 
 	/** The game's events into the senses. NeoForge's side of the Minecraft-facing edge. */
-	private void hookSenses(Senses senses) {
+	private void hookSenses(Senses senses, craftkit.host.world.Worlds worlds) {
 		NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
 			if (event.getEntity() instanceof ServerPlayer player) {
 				senses.noticedJoined(player);
@@ -145,6 +145,11 @@ public final class CraftkitNeoForge {
 			}
 		});
 		NeoForge.EVENT_BUS.addListener((LivingDeathEvent event) -> {
+			// A death during the fight with the lodger is its one death, keeping everything.
+			if (event.getEntity() instanceof ServerPlayer player && !worlds.allowDeath(player)) {
+				event.setCanceled(true);
+				return;
+			}
 			if (event.getEntity() instanceof ServerPlayer player) {
 				senses.noticedDied(player);
 			} else if (event.getSource().getEntity() instanceof ServerPlayer killer) {

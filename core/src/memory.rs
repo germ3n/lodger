@@ -359,8 +359,8 @@ pub struct Snapshot {
     pub creatures_near: Vec<Creature>,
     /// Hostile mobs within 48 blocks, from the last entity pass: zombies, skeletons, spiders.
     pub hostiles_near: Vec<Creature>,
-    /// Something of another horror mod's within 64 blocks of the target: the lodger holds off
-    /// while it is (owner, 2026-11-10: "never at the same moment").
+    /// Something of another horror mod's within 64 blocks of the target in the last seconds:
+    /// the lodger holds off while it is (owner, 2026-11-10: "never at the same moment").
     pub other_horror_near: bool,
     /// The ids of the animals near that are tied by a lead to a post (`horse_moved`).
     pub leashed: Vec<u32>,
@@ -422,6 +422,8 @@ pub struct Memory {
     /// The kind its kill sign counts, as it wrote it (`count_up` counts that kind, not
     /// whatever is killed most now).
     pub kill_sign_kind: String,
+    /// The day something of another horror mod's was last near the target.
+    pub horror_seen_day: f32,
     /// The other mods the game runs with, by id and version, as the host told them: for the
     /// debug screen, and for a mind that would keep out of another mod's way.
     pub mods: Vec<(String, String)>,
@@ -1004,11 +1006,14 @@ impl Memory {
             }
         }
 
+        // Near in the last five seconds or so: an entity pass with nothing near says no more.
+        self.last.other_horror_near =
+            self.horror_seen_day > 0.0 && (day - self.horror_seen_day) < 0.004;
         if !observations.mods.is_empty() {
             self.mods = observations
                 .mods
                 .iter()
-                .take(64)
+                .take(512)
                 .map(|m| (m.id.clone(), m.version.clone()))
                 .collect();
         }
@@ -1165,12 +1170,17 @@ impl Memory {
                 .filter(|(id, _)| is_horror_mod(id))
                 .map(|(id, _)| id.as_str())
                 .collect();
-            self.last.other_horror_near = !horror.is_empty()
+            if !horror.is_empty()
                 && observations.entities.iter().any(|e| {
                     let space = e.kind.split(':').next().unwrap_or("");
                     (horror.contains(&space) || is_horror_mod(space))
                         && distance(block(e.pos), at) <= 64.0
-                });
+                })
+            {
+                self.horror_seen_day = day;
+            }
+            self.last.other_horror_near =
+                self.horror_seen_day > 0.0 && (day - self.horror_seen_day) < 0.004;
             self.last.hostiles_near = observations
                 .entities
                 .iter()

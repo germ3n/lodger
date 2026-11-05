@@ -104,8 +104,8 @@ pub fn answer(
                     }
                     if stay.arc.ending.is_empty() {
                         stay.arc.ending = "keep".to_string();
+                        stay.arc.script_day = crate::ending::first_day(now);
                     }
-                    stay.arc.script_day = 0;
                     stay.memory.fight_now = true;
                     "the fight begins where they stand".to_string()
                 }
@@ -719,7 +719,12 @@ mod tests {
             )),
             "{commands:?}"
         );
-        assert!(stay.brain.plans.is_empty());
+        // The forced plan ran and is gone (the brain may plan another of its own beside it).
+        assert!(
+            stay.brain.plans.iter().all(|p| !p.forced),
+            "{:?}",
+            stay.brain.plans
+        );
         assert_eq!(stay.arc.spent_today, 0.0, "a forced event costs no budget");
 
         let nothing = answer(

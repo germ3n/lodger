@@ -22,11 +22,14 @@ pub struct Arc {
     /// The game day the ending's script begins (its first dawn), and its beats done.
     pub script_day: u64,
     pub beats_done: usize,
-    /// How it ended, once over: `left`, `took`, `stayed`.
+    /// How it ended, once over: `left`, `took`, `stayed`; by the fight, `beaten` (they won) or
+    /// `kept` (it won).
     pub ended: String,
     /// After it stayed: the next game day a door of theirs is found open.
     pub next_open_day: u64,
-    /// The confrontation is on, since this tick: the script waits while it is.
+    /// The confrontation is on, since this tick: the script waits while it is. Not saved: the
+    /// host keeps no fight across a restart, and its clock starts again.
+    #[serde(skip)]
     pub fighting_since: u64,
     /// Its beacon is built (stage five's first night), lit at night and capped by day.
     pub beacon_built: bool,
@@ -51,6 +54,8 @@ impl Arc {
         self.landed_this_stage = 0;
         if stage <= 5 {
             self.fighting_since = 0;
+            self.beacon_built = false;
+            self.beacon_capped = false;
             self.ending.clear();
             self.script_day = 0;
             self.beats_done = 0;

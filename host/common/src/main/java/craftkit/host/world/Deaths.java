@@ -29,6 +29,13 @@ public final class Deaths {
 
 	private final List<Held> held = new ArrayList<>();
 	private long tick;
+	/** The player this death is being dealt to, while it is: their own death goes ahead. */
+	private UUID killing;
+
+	/** Whether this death is the one this class deals (`Fights.allowDeath` lets it through). */
+	public boolean killing(ServerPlayer player) {
+		return player.getUUID().equals(killing);
+	}
 
 	/** Answers why not, or null when they died. */
 	public String kill(ServerPlayer player, WorldData data) {
@@ -63,7 +70,12 @@ public final class Deaths {
 		player.experienceProgress = 0;
 		player.totalExperience = 0;
 		ServerLevel level = (ServerLevel) player.level();
-		player.hurtServer(level, level.damageSources().fellOutOfWorld(), Float.MAX_VALUE);
+		killing = player.getUUID();
+		try {
+			player.hurtServer(level, level.damageSources().fellOutOfWorld(), Float.MAX_VALUE);
+		} finally {
+			killing = null;
+		}
 
 		return null;
 	}

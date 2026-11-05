@@ -231,9 +231,17 @@ public final class Senses {
 		event(player, "respawned", player.blockPosition(), "", null);
 	}
 
-	/** A confrontation ended: `fight_won`, `fight_lost` or `fight_fled` (ABI 43). */
-	public void noticedFight(ServerPlayer player, String kind) {
-		event(player, kind, null, "", null);
+	/**
+	 * A confrontation ended: `fight_won`, `fight_lost` or `fight_fled` (ABI 43), told to the
+	 * level it began in by the player's index, whether they are still there or not (a logout,
+	 * a portal).
+	 */
+	public void noticedFight(ServerLevel level, int index, String kind) {
+		JsonObject event = new JsonObject();
+		event.addProperty("player", index);
+		event.addProperty("kind", kind);
+		event.addProperty("detail", "");
+		events.computeIfAbsent(level, l -> new ArrayList<>()).add(event);
 	}
 
 	public void noticedChangedDimension(ServerPlayer player, String from, String to) {

@@ -114,7 +114,7 @@ fn settings(config: &Config) -> Vec<craftkit::Setting> {
             "model.pause_ms",
             "Pause while thinking (ms)",
             "Model",
-            (0.0, 50.0, 5.0),
+            (0.0, 100.0, 5.0),
             config.model.pause_ms as f64,
         ),
         choice(

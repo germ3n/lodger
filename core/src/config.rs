@@ -71,7 +71,7 @@ impl Preset {
         match self {
             Self::Balanced => {}
             Self::Calm => {
-                config.stages.events_per_day = [0.5, 1.0, 1.5, 2.0, 0.0];
+                config.stages.events_per_day = [0.5, 1.0, 1.5, 2.0, 1.0];
                 config.stages.least_days = [2, 3, 3, 4, 1];
                 config.stages.most_days = [5, 7, 7, 9, 3];
                 config.events.cooldown_scale = 2.0;
@@ -101,7 +101,7 @@ impl Preset {
                 config.stages.ending = "leave".to_string();
             }
             Self::Intense => {
-                config.stages.events_per_day = [2.0, 3.0, 5.0, 8.0, 0.0];
+                config.stages.events_per_day = [2.0, 3.0, 5.0, 8.0, 4.0];
                 config.stages.least_days = [1, 1, 2, 2, 1];
                 config.stages.most_days = [2, 4, 4, 6, 3];
                 config.events.cooldown_scale = 0.75;
@@ -111,7 +111,7 @@ impl Preset {
                 config.stages.ending = "take".to_string();
             }
             Self::Relentless => {
-                config.stages.events_per_day = [4.0, 6.0, 8.0, 12.0, 0.0];
+                config.stages.events_per_day = [4.0, 6.0, 8.0, 12.0, 6.0];
                 config.stages.least_days = [1, 1, 1, 1, 1];
                 config.stages.most_days = [1, 2, 2, 3, 3];
                 config.stages.start_after_days = 0;
@@ -461,7 +461,7 @@ impl Default for Stages {
         Self {
             least_days: [1, 2, 2, 3, 1],
             most_days: [3, 5, 5, 7, 3],
-            events_per_day: [1.0, 2.0, 4.0, 6.0, 0.0],
+            events_per_day: [1.0, 2.0, 4.0, 6.0, 3.0],
             start_after_days: 3,
             ending: "difficulty".to_string(),
         }
@@ -907,7 +907,7 @@ mod tests {
     fn a_preset_alone_is_a_whole_config_and_a_named_key_wins_over_it() {
         let calm = Config::parse(r#"{ "preset": "calm" }"#).unwrap();
         assert_eq!(calm.preset, "calm");
-        assert_eq!(calm.stages.events_per_day, [0.5, 1.0, 1.5, 2.0, 0.0]);
+        assert_eq!(calm.stages.events_per_day, [0.5, 1.0, 1.5, 2.0, 1.0]);
         assert!(!calm.events.chat);
         assert!(calm.events.disabled.contains(&"in_your_bed".to_string()));
 

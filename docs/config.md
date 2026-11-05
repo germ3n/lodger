@@ -86,7 +86,7 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 | --- | --- | --- |
 | `stages.least_days` | `[1, 2, 2, 3, 1]` | The least in-game days each stage lasts, in order. See [The five stages](entity.md#the-five-stages). |
 | `stages.most_days` | `[3, 5, 5, 7, 3]` | The most. A stage that has not ended on its own ends here. |
-| `stages.events_per_day` | `[1, 2, 4, 6, 0]` | The budget of events per in-game day in each stage. Sounds count half. Stage five's is its own script. See [How often](entity.md#how-often). |
+| `stages.events_per_day` | `[1, 2, 4, 6, 3]` | The budget of events per in-game day in each stage. Sounds count half. Stage five has its ending's script besides (until 2026-11-10 its budget was 0, and its own rows, `arrow_hits` among them, could never run). See [How often](entity.md#how-often). |
 | `stages.start_after_days` | `3` | In-game days a world is played before the lodger moves in. A fresh world is a fresh world first. |
 | `stages.ending` | `"difficulty"` | `"difficulty"`, `"leave"`, `"take"` or `"keep"`. Which ending the last stage works toward; `"difficulty"` reads the world's. See [How it ends](entity.md#how-it-ends). |
 

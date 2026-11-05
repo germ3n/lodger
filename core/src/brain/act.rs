@@ -78,7 +78,7 @@ fn block_of(p: Pos) -> BlockPos {
 
 /// The lodger's spot: its chosen place, or a point eight to twelve blocks from the home's
 /// center, away from the door, picked once from the seed so it stays the same spot.
-fn spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
+pub(crate) fn spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     if let Some(place) = memory.place {
         return Some(place);
     }
@@ -595,19 +595,22 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         // half of two.
         // Another mod's furniture first (owner, 2026-11-10: "use their decorations"), then the
         // game's work blocks.
-        Action::ShiftFurniture => memory
-            .fixtures("furniture")
-            .next()
-            .or_else(|| memory.fixtures("crafting_table").next())
-            .map(|f| f.pos)
-            .or_else(|| memory.furnace().map(|f| f.pos))
-            .or_else(|| {
-                memory
-                    .containers
-                    .iter()
-                    .find(|c| c.theirs() && c.kind.ends_with("barrel"))
-                    .map(|c| c.pos)
-            }),
+        Action::ShiftFurniture => pick_ref(
+            &memory
+                .fixtures("furniture")
+                .chain(memory.fixtures("crafting_table"))
+                .map(|f| f.pos)
+                .collect::<Vec<_>>(),
+            rng,
+        )
+        .or_else(|| memory.furnace().map(|f| f.pos))
+        .or_else(|| {
+            memory
+                .containers
+                .iter()
+                .find(|c| c.theirs() && c.kind.ends_with("barrel"))
+                .map(|c| c.pos)
+        }),
         Action::RoomDark => home.and_then(|h| pick(&h.lights, rng)),
         Action::BedTurned => home.and_then(|h| h.bed),
         Action::FlowersPotted => memory.fixtures("flower_pot").next().map(|f| f.pos),

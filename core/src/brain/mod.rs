@@ -399,6 +399,11 @@ impl Brain {
         if !arc.moved_in() {
             return commands;
         }
+        // Its place, chosen once it has moved in and knows their home (until 2026-11-10 it was
+        // never chosen, and each event that wanted it picked a spot of its own).
+        if memory.place.is_none() && memory.home.is_some() {
+            memory.place = act::spot(memory, &mut self.rng);
+        }
         // Stage five: the ending's beats, as their hour comes.
         if arc.stage == 5 {
             let mut ids = || self.id();
@@ -422,7 +427,7 @@ impl Brain {
                 }
             }
             if arc.over() {
-                log.note(&format!("the stay is over: it {}", arc.ended));
+                log.note(&format!("the stay is over: {}", arc.ended));
                 return commands;
             }
         }

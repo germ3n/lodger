@@ -1098,6 +1098,29 @@ The `[x]` lines above, each dated. Summary by day:
   ABI 43): a 26.3 mannequin in their skin and a copy of their gear, its own health kept apart
   from the mannequin's so it never dies as an entity, the construct's limbs block displays posed
   each tick. Tests: two in `ending`. Not yet seen in the game: the first launch checks it.
+- [x] **The fight, from the owner's first try** (2026-11-10): the wave's animals gave up after
+  forty seconds (a wait in the water and they were let be); they are driven at the player every
+  half second now, for as long as they live. The figure could be hit while the animals came; it
+  cannot, until it fights (the rising, the waves and the bends are out of reach). Four waves of six
+  to ten, with a zombie, a skeleton and a creeper (two in the later waves; the creeper's blast
+  hurts and breaks nothing, the hostiles wear helmets against the sun and drop none), of every
+  size from small to twice their own, some upside down with no name over them (a team that shows
+  none), each with one to three limbs of the wrong stuff and length and some with a face that is
+  not theirs, the player's own among them. Run past 112 blocks and it sinks where it stands to
+  wait for another night, told as they near 80. From the second review: the construct's shield
+  could stay up for good; it rose on the house, not before the door; the lethal check ignored a
+  shield, a totem, Protection and Resistance; any harm (a cactus, a fall) came off its health,
+  now their blows alone; the trophy weapon was a whole copy of theirs, now a new one with one
+  enchantment; a death to anything else during the fight lost their things, now it is the one
+  death that keeps everything (both loaders' death hooks); a logout told the mind nothing; the
+  arrow's aim was a second stale and it vanished after a reload; a brew could carry levitation
+  for ten minutes (brews keep to a short list now); a potion could be "changed" into itself. In
+  the mind: its place was never chosen (it is, at move-in); stage five's budget was 0 in every
+  preset, so its rows never ran (1, 3, 4, 6 now); the fight's clock was saved across restarts;
+  the beacon stayed lit for good after a fight; a knock on stage five's first night was not
+  heard; the mods list cut at 64; another horror mod's thing near stayed "near" for good; the
+  debug screen's fight and stage left an old script and beacon behind. Tests: the ending's,
+  memory's and config's updated. Was: all of that.
 - [x] **No split** (owner, 2026-11-10: "nevermind on the splitting the repo"): one repository;
   `gen_notices.py` comes here instead.
 

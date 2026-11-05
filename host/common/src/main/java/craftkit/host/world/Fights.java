@@ -82,13 +82,15 @@ import java.util.UUID;
 public final class Fights {
 	public static final String TAG = "craftkit_fight";
 	/** How far from where it began they may go before it is a flight. */
-	private static final double ARENA = 80;
+	private static final double ARENA = 112;
+	/** Past this, they are told it waits for them. */
+	private static final double WARN = 80;
 	/** The longest a fight lasts. */
 	private static final long MOST_TICKS = 20 * 60 * 12;
 	/** The mannequin's own health, never spent: the fight keeps its own. */
 	private static final float HIDDEN_HEALTH = 1000;
 
-	private enum Phase { RISING, WAVES, BEND1, DUEL, BEND2, COPIES, BEND3, CONSTRUCT, END }
+	private enum Phase { RISING, WAVES, BEND1, DUEL, BEND2, COPIES, BEND3, CONSTRUCT, END, FLEEING }
 
 	/** One block of the construct: a limb or the torso or the head, hung from its pivot. */
 	private static final class Part {
@@ -126,6 +128,11 @@ public final class Fights {
 		Mannequin real;
 		final List<Mannequin> copies = new ArrayList<>();
 		final List<Mob> animals = new ArrayList<>();
+		/** Each warped animal's extra limbs and face, and when it may hit again. */
+		final List<Warped> warped = new ArrayList<>();
+		/** They fell to something else while it was on: the one death that keeps everything, next tick. */
+		boolean saving;
+		final int index;
 		final List<Part> parts = new ArrayList<>();
 		int wave;
 		long nextAttack;
@@ -133,15 +140,15 @@ public final class Fights {
 		long nextTwitch;
 		long flippedUntil;
 		long slamAt;
-		int strafe = 1;
 		int deformed;
 		int dropped;
 		/** They died to it (the one death, keeping everything). */
 		boolean lost;
 		ItemStack weapon = ItemStack.EMPTY;
 
-		Fight(UUID player, ServerLevel level, WorldData data, Vec3 at, Vec3 roof, List<String> blocks, String name, float max, float hit) {
+		Fight(UUID player, int index, ServerLevel level, WorldData data, Vec3 at, Vec3 roof, List<String> blocks, String name, float max, float hit) {
 			this.player = player;
+			this.index = index;
 			this.level = level;
 			this.data = data;
 			this.at = at;
@@ -151,6 +158,18 @@ public final class Fights {
 			this.pool = max;
 			this.hit = hit;
 			this.bar = new ServerBossEvent(UUID.randomUUID(), Component.literal(name), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.NOTCHED_10);
+		}
+	}
+
+	/** A warped animal of a wave: its extra limbs and face, block and item displays that follow it. */
+	private static final class Warped {
+		final Mob mob;
+		final List<Display> extras = new ArrayList<>();
+		final List<float[]> poses = new ArrayList<>();
+		long nextHit;
+
+		Warped(Mob mob) {
+			this.mob = mob;
 		}
 	}
 
@@ -183,13 +202,15 @@ public final class Fights {
 		};
 		float max = (float) (150 * (0.6 + gear.armor / 20.0 + gear.damage / 20.0) * diff);
 		float hit = (float) (3 + gear.armor * 0.35);
-		Vec3 door = Vec3.atBottomCenterOf(at);
+		Vec3 door = standing(level, Vec3.atBottomCenterOf(at));
 		Vec3 top = roof.y <= -1000 ? ground(level, roof) : roof;
-		Fight fight = new Fight(player.getUUID(), level, data, door, top, blocks, player.getGameProfile().name(), max, hit);
+		Fight fight = new Fight(player.getUUID(), senses.indexOf(player), level, data, door, top, blocks, player.getGameProfile().name(), max, hit);
 		fight.weapon = gear.weapon;
+		fight.real = mannequin(level, player, door.add(0, -2.2, 0), gear);
 		fight.bar.addPlayer(player);
 		fight.bar.setProgress(0);
-		fight.real = mannequin(level, player, ground(level, door).add(0, -2.2, 0), gear);
+		// Out of reach until it fights: the rising, the waves, the bends.
+		fight.real.setPermanentlyInvulnerable(true);
 		fight.real.setPose(Pose.SWIMMING);
 		fight.real.noPhysics = true;
 		fight.real.setNoGravity(true);
@@ -207,10 +228,22 @@ public final class Fights {
 			fight.tick++;
 			ServerPlayer player = server.getPlayerList().getPlayer(fight.player);
 			String over = null;
-			if (player == null || player.level() != fight.level || player.position().distanceTo(fight.at) > ARENA || fight.tick > MOST_TICKS) {
+			if (player == null || player.level() != fight.level || fight.tick > MOST_TICKS) {
 				over = "fight_fled";
+			} else if (fight.phase != Phase.FLEEING && fight.phase != Phase.END && player.position().distanceTo(fight.at) > ARENA) {
+				// Run from: it stops, and sinks into the ground where it stood, to wait for another night.
+				fight.warped.forEach(Fights::gone);
+				fight.warped.clear();
+				fight.animals.clear();
+				fight.copies.forEach(Entity::discard);
+				fight.copies.clear();
+				next(fight, Phase.FLEEING);
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(Component.literal("It will wait.")));
 			} else if (player.isDeadOrDying()) {
 				over = "fight_lost";
+			} else if (fight.saving) {
+				fight.saving = false;
+				over = deaths.kill(player, fight.data) == null ? "fight_lost" : null;
 			} else {
 				try {
 					over = step(fight, player);
@@ -222,10 +255,8 @@ public final class Fights {
 			if (over != null) {
 				clear(fight);
 				it.remove();
-				ServerPlayer told = player != null ? player : null;
-				if (told != null) {
-					senses.noticedFight(told, over);
-				}
+				// Told to the world it began in, whether they are still there or not.
+				senses.noticedFight(fight.level, fight.index, over);
 			}
 		}
 		if (tick % 100 == 0) {
@@ -244,10 +275,27 @@ public final class Fights {
 		fights.removeIf(f -> {
 			if (f.level == level) {
 				clear(f);
+				senses.noticedFight(f.level, f.index, "fight_fled");
 				return true;
 			}
 			return false;
 		});
+	}
+
+	/**
+	 * A player about to die during their fight, from anything but its blow (a fall, lava, the
+	 * void): not this way. They stay at half a heart and die its one death next tick, keeping
+	 * everything. Answers whether the game's own death may go ahead.
+	 */
+	public boolean allowDeath(ServerPlayer player) {
+		for (Fight f : fights) {
+			if (f.player.equals(player.getUUID()) && !deaths.killing(player)) {
+				player.setHealth(1);
+				f.saving = true;
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/** Every fight ended: the world is closing. */
@@ -287,10 +335,11 @@ public final class Fights {
 			}
 			case WAVES -> {
 				face(m, player.position());
-				f.animals.removeIf(a -> a.isRemoved() || a.isDeadOrDying());
-				if (f.animals.isEmpty() || in > 20 * 40) {
-					if (f.wave >= 3) {
-						f.animals.forEach(Entity::discard);
+				drive(f, player);
+				if (f.animals.isEmpty() || in > 20 * 50) {
+					if (f.wave >= 4) {
+						f.warped.forEach(Fights::gone);
+						f.warped.clear();
 						f.animals.clear();
 						m.noPhysics = false;
 						m.setNoGravity(false);
@@ -304,7 +353,7 @@ public final class Fights {
 			case BEND1 -> {
 				// On all fours, flat and fast at them; then up, too tall, its head backwards.
 				if (in == 0) {
-					m.snapTo(f.at.x, ground(f.level, f.at).y, f.at.z, 0, 0);
+					m.snapTo(f.at.x, f.at.y, f.at.z, 0, 0);
 					m.setPose(Pose.SWIMMING);
 					f.level.playSound(null, m.getX(), m.getY(), m.getZ(), SoundEvents.PLAYER_BIG_FALL, SoundSource.HOSTILE, 1f, 0.5f);
 				}
@@ -373,7 +422,11 @@ public final class Fights {
 				List<Mannequin> all = new ArrayList<>(f.copies);
 				all.add(m);
 				if (in == 0) {
-					all.forEach(c -> c.setPose(Pose.SWIMMING));
+					all.forEach(c -> {
+						c.stopUsingItem();
+						c.setPose(Pose.SWIMMING);
+					});
+					m.setPermanentlyInvulnerable(true);
 				}
 				if (in < 30) {
 					for (Mannequin c : all) {
@@ -394,6 +447,10 @@ public final class Fights {
 					f.copies.forEach(Entity::discard);
 					f.copies.clear();
 					m.setInvisible(true);
+					// Its blocks are its body: no armour or shield floating on the invisible one.
+					for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.OFFHAND}) {
+						m.setItemSlot(slot, ItemStack.EMPTY);
+					}
 					m.setPose(Pose.STANDING);
 					scale(m, 2.4);
 					m.snapTo(m.getX(), ground(f.level, m.position()).y, m.getZ(), m.getYRot(), 0);
@@ -408,8 +465,10 @@ public final class Fights {
 			}
 			case CONSTRUCT -> {
 				damageTaken(f, player);
+				// At each quarter of what is left of it: an arm torn off and grown back as two; the
+				// torso stretched; the head twisted round.
 				float left = f.pool / (f.max * 0.35f);
-				int should = left < 0.33f ? 3 : left < 0.66f ? 2 : left < 0.99f ? 1 : 0;
+				int should = left < 0.25f ? 3 : left < 0.5f ? 2 : left < 0.75f ? 1 : 0;
 				while (f.deformed < should) {
 					deform(f);
 				}
@@ -440,6 +499,19 @@ public final class Fights {
 					next(f, Phase.END);
 				}
 			}
+			case FLEEING -> {
+				if (in < 50) {
+					m.setDeltaMovement(Vec3.ZERO);
+					m.noPhysics = true;
+					m.setNoGravity(true);
+					m.snapTo(m.getX(), m.getY() - 0.05, m.getZ(), m.getYRot(), 0);
+					if (in % 8 == 0) {
+						dust(f.level, m.position(), Blocks.DIRT.defaultBlockState(), 10);
+					}
+					return null;
+				}
+				return "fight_fled";
+			}
 			case END -> {
 				// It falls apart; the figure stands where it was, looks at them, and sinks.
 				if (in == 0) {
@@ -469,8 +541,13 @@ public final class Fights {
 				}
 			}
 		}
-		if (f.phase.ordinal() >= Phase.DUEL.ordinal() && f.phase != Phase.END) {
+		if (f.phase.ordinal() >= Phase.DUEL.ordinal() && f.phase != Phase.END && f.phase != Phase.FLEEING) {
 			f.bar.setProgress(Math.max(0, f.pool / f.max));
+		}
+		// Near the arena's edge: told it waits, now and then.
+		double away = player.position().distanceTo(f.at);
+		if (away > WARN && away <= ARENA && f.tick % 40 == 0) {
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(Component.literal("It is behind you. It will wait if you go.")));
 		}
 		return f.lost ? "fight_lost" : null;
 	}
@@ -478,6 +555,11 @@ public final class Fights {
 	private static void next(Fight f, Phase phase) {
 		f.phase = phase;
 		f.phaseTick = f.tick;
+		boolean fighting = phase == Phase.DUEL || phase == Phase.COPIES || phase == Phase.CONSTRUCT;
+		if (f.real != null) {
+			f.real.setPermanentlyInvulnerable(!fighting);
+			f.real.setHealth(HIDDEN_HEALTH);
+		}
 	}
 
 	/** What a fighter took since the last tick, out of the fight's own health. */
@@ -488,8 +570,13 @@ public final class Fights {
 			return;
 		}
 		m.setHealth(HIDDEN_HEALTH);
+		// Their hits alone: not a cactus, a fall, the fire, the wall it walked into.
+		DamageSource source = m.getLastDamageSource();
+		if (source == null || source.getEntity() != player) {
+			return;
+		}
 		// Blocking with their own shield: the hit is caught.
-		if (m.isBlocking()) {
+		if (m.isBlocking() && f.phase != Phase.CONSTRUCT) {
 			f.level.playSound(null, m.getX(), m.getY(), m.getZ(), SoundEvents.SHIELD_BLOCK.value(), SoundSource.HOSTILE, 1f, 1f);
 			return;
 		}
@@ -508,10 +595,8 @@ public final class Fights {
 		Vec3 to = player.position().subtract(m.position());
 		double dist = to.horizontalDistance();
 		Vec3 dir = new Vec3(to.x, 0, to.z).normalize();
-		Vec3 side = new Vec3(-dir.z, 0, dir.x).scale(f.strafe);
-		if (f.tick % 50 == 0) {
-			f.strafe = -f.strafe;
-		}
+		int strafe = ((f.tick / 50) + m.getId()) % 2 == 0 ? 1 : -1;
+		Vec3 side = new Vec3(-dir.z, 0, dir.x).scale(strafe);
 		Vec3 want;
 		boolean ready = f.tick >= f.nextAttack;
 		if (ready && dist > 2.4) {
@@ -557,6 +642,7 @@ public final class Fights {
 		if (f.flippedUntil == 0 && f.level.getRandom().nextInt(180) == 0) {
 			m.setCustomName(Component.literal("Dinnerbone"));
 			m.setCustomNameVisible(false);
+			hideName(m);
 			f.flippedUntil = f.tick + 20;
 		} else if (f.flippedUntil != 0 && f.tick >= f.flippedUntil) {
 			m.setCustomName(null);
@@ -579,8 +665,15 @@ public final class Fights {
 			case HARD -> raw * 1.5f;
 			default -> raw;
 		};
+		// A raised shield or a totem in hand: the game's own way, which they may survive.
+		boolean saved = player.isBlocking() || player.getMainHandItem().is(Items.TOTEM_OF_UNDYING) || player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
 		float after = CombatRules.getDamageAfterAbsorb(player, scaled, source, (float) player.getArmorValue(), (float) player.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
-		if (after >= player.getHealth() + player.getAbsorptionAmount()) {
+		after = CombatRules.getDamageAfterMagicAbsorb(after, net.minecraft.world.item.enchantment.EnchantmentHelper.getDamageProtection(f.level, player, source));
+		var resistance = player.getEffect(net.minecraft.world.effect.MobEffects.RESISTANCE);
+		if (resistance != null) {
+			after *= Math.max(0, 1 - 0.2f * (resistance.getAmplifier() + 1));
+		}
+		if (!saved && after >= player.getHealth() + player.getAbsorptionAmount()) {
 			if (deaths.kill(player, f.data) == null) {
 				f.lost = true;
 			}
@@ -603,39 +696,196 @@ public final class Fights {
 		f.nextAttack = f.tick + 70;
 	}
 
-	/** A wave of warped animals at them from the edge of the arena. */
+	/** The animals of a wave, by kind. */
+	private static final List<net.minecraft.world.entity.EntityType<? extends Mob>> KINDS = List.of(
+			EntityTypes.COW, EntityTypes.PIG, EntityTypes.SHEEP, EntityTypes.CHICKEN, EntityTypes.GOAT, EntityTypes.HORSE);
+	/** The wrong materials their extra limbs are made of. */
+	private static final List<String> FLESH = List.of("minecraft:bone_block", "minecraft:mushroom_stem", "minecraft:pink_wool",
+			"minecraft:white_wool", "minecraft:brown_mushroom_block", "minecraft:packed_mud", "minecraft:red_mushroom_block", "minecraft:pale_oak_log");
+
+	private static BlockState block(String id) {
+		return net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(net.minecraft.resources.Identifier.parse(id))
+				.map(b -> b.value().defaultBlockState()).orElse(Blocks.BONE_BLOCK.defaultBlockState());
+	}
+
+	/**
+	 * A wave of warped animals at them from the edge of the arena (owner, 2026-11-10: "more
+	 * mobs ... more warped, different limbs different sizes, upside down, different textures"):
+	 * of every size from small to twice their own, some upside down, each with extra limbs of
+	 * the wrong stuff and length, some with a face that is not theirs (the player's own, now
+	 * and then).
+	 */
 	private void wave(Fight f, ServerPlayer player) {
 		f.wave++;
-		int n = 2 + switch (f.level.getDifficulty()) {
+		int n = 4 + 2 * switch (f.level.getDifficulty()) {
 			case HARD -> 3;
 			case NORMAL -> 2;
 			default -> 1;
 		};
-		var kinds = List.of(EntityTypes.COW, EntityTypes.PIG, EntityTypes.SHEEP);
-		for (int i = 0; i < n; i++) {
-			double angle = Math.PI * 2 * i / n + f.wave;
-			Vec3 at = ground(f.level, player.position().add(Math.cos(angle) * 14, 0, Math.sin(angle) * 14));
-			Mob animal = (Mob) kinds.get((i + f.wave) % kinds.size()).create(f.level, EntitySpawnReason.EVENT);
+		var random = f.level.getRandom();
+		// With the animals, a zombie, a skeleton and a creeper, two in the later waves (owner).
+		List<net.minecraft.world.entity.EntityType<? extends Mob>> hostiles = new ArrayList<>(List.of(EntityTypes.ZOMBIE, EntityTypes.SKELETON, EntityTypes.CREEPER));
+		if (f.wave >= 3) {
+			hostiles.add(EntityTypes.CREEPER);
+		}
+		int total = n + hostiles.size();
+		for (int i = 0; i < total; i++) {
+			double angle = Math.PI * 2 * i / total + f.wave;
+			Vec3 at = standing(f.level, player.position().add(Math.cos(angle) * 16, 0, Math.sin(angle) * 16));
+			var type = i < n ? KINDS.get(random.nextInt(KINDS.size())) : hostiles.get(i - n);
+			Mob animal = type.create(f.level, EntitySpawnReason.EVENT);
 			if (animal == null) {
 				continue;
 			}
-			animal.snapTo(at.x, at.y, at.z, 0, 0);
+			animal.snapTo(at.x, at.y, at.z, random.nextFloat() * 360, 0);
 			animal.addTag(TAG);
-			if (i % 2 == 0) {
+			animal.setPersistenceRequired();
+			if (random.nextInt(5) < 2) {
 				animal.setCustomName(Component.literal("Dinnerbone"));
 				animal.setCustomNameVisible(false);
-			} else {
-				var size = animal.getAttribute(Attributes.SCALE);
-				if (size != null) {
-					size.setBaseValue(1.7);
+			}
+			var size = animal.getAttribute(Attributes.SCALE);
+			if (size != null) {
+				size.setBaseValue(0.6 + random.nextDouble() * 1.4);
+			}
+			if (animal instanceof net.minecraft.world.entity.monster.Monster) {
+				// Not burnt by a morning, and dropping nothing it wears.
+				animal.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+				animal.setDropChance(EquipmentSlot.HEAD, 0);
+				if (animal instanceof net.minecraft.world.entity.monster.Creeper creeper) {
+					// Its blast hurts them and breaks nothing: no radius of its own, the harm the fight's.
+					Reflect.field(creeper, net.minecraft.world.entity.monster.Creeper.class, "explosionRadius", 0);
 				}
 			}
 			f.level.addFreshEntity(animal);
+			hideName(animal);
 			f.animals.add(animal);
-			charges.add(animal, player, 3, 4, 40, true);
+			Warped warped = new Warped(animal);
+			int limbs = 1 + random.nextInt(3);
+			for (int l = 0; l < limbs; l++) {
+				Display.BlockDisplay limb = EntityTypes.BLOCK_DISPLAY.create(f.level, EntitySpawnReason.EVENT);
+				if (limb == null) {
+					continue;
+				}
+				Reflect.blockState(limb, block(FLESH.get(random.nextInt(FLESH.size()))));
+				// x, y, z on the body; its tilt; its thickness and length.
+				warped.poses.add(new float[] {
+						(random.nextFloat() - 0.5f) * 0.9f, 0.2f + random.nextFloat() * 0.8f, (random.nextFloat() - 0.5f) * 1.0f,
+						(random.nextFloat() - 0.5f) * 2.4f, (random.nextFloat() - 0.5f) * 2.4f,
+						0.12f + random.nextFloat() * 0.25f, 0.5f + random.nextFloat() * 1.1f});
+				extra(f, warped, limb);
+			}
+			if (random.nextInt(2) == 0) {
+				Display.ItemDisplay face = EntityTypes.ITEM_DISPLAY.create(f.level, EntitySpawnReason.EVENT);
+				if (face != null) {
+					ItemStack head;
+					switch (random.nextInt(4)) {
+						case 0, 1 -> {
+							head = new ItemStack(Items.PLAYER_HEAD);
+							head.set(DataComponents.PROFILE, ResolvableProfile.createResolved(player.getGameProfile()));
+						}
+						case 2 -> head = new ItemStack(Items.SKELETON_SKULL);
+						default -> head = new ItemStack(Items.ZOMBIE_HEAD);
+					}
+					Reflect.itemStack(face, head);
+					warped.poses.add(new float[] {0, 0.9f, 0.7f, 0, 0, 0.7f + random.nextFloat() * 0.6f, -1});
+					extra(f, warped, face);
+				}
+			}
+			f.warped.add(warped);
 		}
 		f.level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 0.7f, 0.5f);
 	}
+
+	private static void extra(Fight f, Warped warped, Display display) {
+		display.snapTo(warped.mob.getX(), warped.mob.getY(), warped.mob.getZ(), 0, 0);
+		display.addTag(TAG);
+		f.level.addFreshEntity(display);
+		warped.extras.add(display);
+	}
+
+	/**
+	 * The wave's animals, driven at them tick by tick, never giving up (until 2026-11-10 they
+	 * charged for forty seconds and stopped, and a player who waited in the water was let be):
+	 * each paths to them again every half second, hits when it reaches them, never below half a
+	 * heart, and carries its limbs and face with it, twitching.
+	 */
+	private void drive(Fight f, ServerPlayer player) {
+		for (Iterator<Warped> it = f.warped.iterator(); it.hasNext(); ) {
+			Warped w = it.next();
+			Mob a = w.mob;
+			if (a.isRemoved() || a.isDeadOrDying()) {
+				// A creeper gone without dying went off: the harm is the fight's.
+				if (a instanceof net.minecraft.world.entity.monster.Creeper && !a.isDeadOrDying() && a.distanceTo(player) < 4) {
+					hurt(f, player, 7);
+				}
+				gone(w);
+				it.remove();
+				f.animals.remove(a);
+				continue;
+			}
+			boolean hostile = a instanceof net.minecraft.world.entity.monster.Monster;
+			if (hostile) {
+				// Its own way of fighting, kept on them.
+				if (a.getTarget() != player) {
+					a.setTarget(player);
+				}
+			} else if (f.tick % 10 == 0 || a.getNavigation().isDone()) {
+				a.getNavigation().moveTo(player, 1.5);
+			}
+			a.getLookControl().setLookAt(player);
+			if (!hostile && a.distanceTo(player) <= 1.2 + a.getBbWidth() && f.tick >= w.nextHit) {
+				float scale = f.level.getDifficulty() == Difficulty.HARD ? 1.5f : 1f;
+				float harm = Spare.harm(2, player.getHealth(), scale);
+				if (harm > 0) {
+					player.hurtServer(f.level, f.level.damageSources().mobAttack(a), harm);
+				}
+				w.nextHit = f.tick + 20;
+			}
+			float yaw = a.yBodyRot;
+			float size = (float) a.getScale();
+			for (int i = 0; i < w.extras.size(); i++) {
+				Display d = w.extras.get(i);
+				float[] p = w.poses.get(i);
+				Vector3f at = new Vector3f(p[0], p[1], p[2]).mul(size).rotateY((float) Math.toRadians(-yaw));
+				d.snapTo(a.getX() + at.x, a.getY() + at.y, a.getZ() + at.z, yaw, 0);
+				if ((f.tick + i) % 4 == 0) {
+					float twitch = (f.level.getRandom().nextFloat() - 0.5f) * 0.4f;
+					Matrix4f m = p[6] < 0
+							? new Matrix4f().rotateY((float) Math.PI).scale(p[5] * size)
+							: new Matrix4f().rotateX(p[3] + twitch).rotateZ(p[4] - twitch).scale(p[5] * size, p[6] * size, p[5] * size).translate(-0.5f, -1f, -0.5f);
+					Reflect.transformation(d, new Transformation(m));
+				}
+			}
+		}
+	}
+
+	private static void gone(Warped w) {
+		w.extras.forEach(Entity::discard);
+		showName(w.mob);
+		w.mob.discard();
+	}
+
+	/** The name kept off their screen: an upside-down one's `Dinnerbone`, on a team that shows no names. */
+	private static void hideName(Entity e) {
+		var board = e.level().getScoreboard();
+		var team = board.getPlayerTeam(HIDDEN);
+		if (team == null) {
+			team = board.addPlayerTeam(HIDDEN);
+			team.setNameTagVisibility(net.minecraft.world.scores.Team.Visibility.NEVER);
+		}
+		board.addPlayerToTeam(e.getScoreboardName(), team);
+	}
+
+	private static void showName(Entity e) {
+		var board = e.level().getScoreboard();
+		var team = board.getPlayersTeam(e.getScoreboardName());
+		if (team != null && team.getName().equals(HIDDEN)) {
+			board.removePlayerFromTeam(e.getScoreboardName(), team);
+		}
+	}
+
+	private static final String HIDDEN = "craftkit_hidden";
 
 	// ---- the construct
 
@@ -789,12 +1039,14 @@ public final class Fights {
 		ItemStack head = new ItemStack(Items.PLAYER_HEAD);
 		head.set(DataComponents.PROFILE, ResolvableProfile.createResolved(player.getGameProfile()));
 		head.set(DataComponents.CUSTOM_NAME, Component.literal("the lodger"));
-		ItemStack weapon = f.weapon.isEmpty() ? new ItemStack(Items.IRON_SWORD) : f.weapon.copy();
+		// A weapon of the kind theirs is, new, with the one thing it learned from watching them:
+		// never a copy of theirs with all it carries.
+		ItemStack weapon = new ItemStack(f.weapon.isEmpty() ? Items.IRON_SWORD : f.weapon.getItem());
 		weapon.set(DataComponents.CUSTOM_NAME, Component.literal("what it learned"));
 		var enchantments = f.level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
 		var key = weapon.is(Items.BOW) || weapon.is(Items.CROSSBOW) ? Enchantments.POWER : Enchantments.SHARPNESS;
 		var holder = enchantments.getOrThrow(key);
-		int had = weapon.getEnchantments().getLevel(holder);
+		int had = f.weapon.getEnchantments().getLevel(holder);
 		weapon.enchant(holder, Math.min(5, had + 1));
 		List<ItemStack> given = new ArrayList<>(List.of(lantern, head, weapon));
 		ItemStack held = f.data == null ? null : f.data.giveBack("held");
@@ -813,8 +1065,12 @@ public final class Fights {
 
 	private static void clear(Fight f) {
 		f.bar.removeAllPlayers();
+		f.warped.forEach(Fights::gone);
 		f.animals.forEach(Entity::discard);
 		f.copies.forEach(Entity::discard);
+		if (f.real != null) {
+			showName(f.real);
+		}
 		f.parts.forEach(p -> p.display.discard());
 		if (f.real != null) {
 			f.real.discard();
@@ -822,7 +1078,8 @@ public final class Fights {
 	}
 
 	private static boolean owns(Fight f, Entity entity) {
-		return entity == f.real || f.copies.contains(entity) || f.animals.contains(entity) || f.parts.stream().anyMatch(p -> p.display == entity);
+		return entity == f.real || f.copies.contains(entity) || f.animals.contains(entity) || f.parts.stream().anyMatch(p -> p.display == entity)
+				|| f.warped.stream().anyMatch(w -> w.extras.contains(entity));
 	}
 
 	// ---- helpers
@@ -930,6 +1187,20 @@ public final class Fights {
 		return new Vec3(at.x, top.getY(), at.z);
 	}
 
+	/** Where one stands at a place: the first solid top with room above, a few blocks up or down from it (not the heightmap, which can be a roof or a tree). */
+	private static Vec3 standing(ServerLevel level, Vec3 at) {
+		BlockPos start = BlockPos.containing(at.x, at.y + 3, at.z);
+		for (int down = 0; down < 12; down++) {
+			BlockPos feet = start.below(down);
+			if (level.getBlockState(feet.below()).isFaceSturdy(level, feet.below(), net.minecraft.core.Direction.UP)
+					&& level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
+					&& level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()) {
+				return new Vec3(at.x, feet.getY(), at.z);
+			}
+		}
+		return ground(level, at);
+	}
+
 	private static void dust(ServerLevel level, Vec3 at, BlockState state, int count) {
 		level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state), at.x, at.y + 0.2, at.z, count, 0.6, 0.2, 0.6, 0.1);
 	}
@@ -939,6 +1210,29 @@ public final class Fights {
 		private static Method blockState;
 		private static Method transformation;
 		private static Method duration;
+		private static Method itemStack;
+
+		static void field(Object on, Class<?> of, String name, int value) {
+			try {
+				java.lang.reflect.Field field = of.getDeclaredField(name);
+				field.setAccessible(true);
+				field.setInt(on, value);
+			} catch (ReflectiveOperationException e) {
+				throw new IllegalStateException("no field " + name + ": " + e);
+			}
+		}
+
+		static void itemStack(Display.ItemDisplay display, ItemStack stack) {
+			try {
+				if (itemStack == null) {
+					itemStack = Display.ItemDisplay.class.getDeclaredMethod("setItemStack", ItemStack.class);
+					itemStack.setAccessible(true);
+				}
+				itemStack.invoke(display, stack);
+			} catch (ReflectiveOperationException e) {
+				throw new IllegalStateException("the item display's item cannot be set: " + e);
+			}
+		}
 
 		static void blockState(Display.BlockDisplay display, BlockState state) {
 			try {

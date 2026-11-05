@@ -41,7 +41,7 @@ public final class CraftkitFabric implements ModInitializer {
 		net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.registerGlobalReceiver(craftkit.host.net.DebugAskPayload.TYPE,
 				(payload, context) -> context.server().execute(() -> host.debugAsked(context.player(), payload)));
 		host.worlds().senses().mods(new FabricPlatform().loadedMods());
-		hookSenses(host.worlds().senses());
+		hookSenses(host.worlds().senses(), host.worlds());
 		ServerConfigurationConnectionEvents.CONFIGURE.register((handler, server) -> {
 			if (!ServerConfigurationNetworking.canSend(handler, Hello.TYPE)) {
 				handler.disconnect(Component.literal("This server runs craftkit, which your client needs too."));
@@ -59,7 +59,7 @@ public final class CraftkitFabric implements ModInitializer {
 	}
 
 	/** The game's events into the senses. Fabric's side of the Minecraft-facing edge. */
-	private static void hookSenses(Senses senses) {
+	private static void hookSenses(Senses senses, craftkit.host.world.Worlds worlds) {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> senses.noticedJoined(handler.player));
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> senses.noticedLeft(handler.player));
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
@@ -86,6 +86,9 @@ public final class CraftkitFabric implements ModInitializer {
 			}
 			return null;
 		});
+		// A death during the fight with the lodger is its one death, keeping everything.
+		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) ->
+				!(entity instanceof ServerPlayer player) || worlds.allowDeath(player));
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof ServerPlayer serverPlayer) {
 				senses.noticedDied(serverPlayer);
