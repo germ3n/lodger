@@ -38,9 +38,11 @@ pub const HOME_KINDS: &[&str] = &[
     "*_door",
     "*torch",
     "*lantern",
-    "minecraft:chest",
-    "minecraft:trapped_chest",
-    "minecraft:barrel",
+    "*lamp",
+    // Every mod's chests and barrels, not the game's alone (owner, 2026-11-10: "use their
+    // storage"); an ender chest is never theirs to the memory (`read_home`).
+    "*chest",
+    "*barrel",
     "minecraft:furnace",
     "minecraft:smoker",
     "*_bed",
@@ -357,6 +359,9 @@ pub struct Snapshot {
     pub creatures_near: Vec<Creature>,
     /// Hostile mobs within 48 blocks, from the last entity pass: zombies, skeletons, spiders.
     pub hostiles_near: Vec<Creature>,
+    /// Something of another horror mod's within 64 blocks of the target: the lodger holds off
+    /// while it is (owner, 2026-11-10: "never at the same moment").
+    pub other_horror_near: bool,
     /// The ids of the animals near that are tied by a lead to a post (`horse_moved`).
     pub leashed: Vec<u32>,
     pub look_backs: u32,
@@ -620,6 +625,9 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "brewing_stand",
         "grindstone",
     ];
+    if is_mod_furniture(id) {
+        return Some("furniture");
+    }
     let name = id.rsplit(':').next().unwrap_or(id);
 
     KINDS
@@ -843,7 +851,66 @@ pub fn is_coloured(id: &str) -> bool {
 }
 
 fn is_light(id: &str) -> bool {
-    id.ends_with("torch") || id.ends_with("lantern") || id.contains("candle")
+    id.ends_with("torch") || id.ends_with("lantern") || id.contains("candle") || is_mod_lamp(id)
+}
+
+/// A lamp of another mod's (their light, as a torch is), never the game's redstone lamp.
+pub fn is_mod_lamp(id: &str) -> bool {
+    let (space, name) = id.split_once(':').unwrap_or(("minecraft", id));
+    space != "minecraft" && name.ends_with("lamp")
+}
+
+/// A piece of another mod's furniture, which it moves as it moves a work block.
+pub fn is_mod_furniture(id: &str) -> bool {
+    let (space, name) = id.split_once(':').unwrap_or(("minecraft", id));
+    space != "minecraft"
+        && [
+            "_chair",
+            "_table",
+            "_desk",
+            "_shelf",
+            "_sofa",
+            "_couch",
+            "_stool",
+            "_bench",
+            "_cabinet",
+            "_drawer",
+            "_wardrobe",
+        ]
+        .iter()
+        .any(|s| name.ends_with(s))
+}
+
+/// Words in the ids of mods that are horror mods of their own: with one loaded, the lodger
+/// makes room (owner, 2026-11-10).
+const HORROR_WORDS: &[&str] = &[
+    "horror",
+    "dweller",
+    "stalker",
+    "mimic",
+    "herobrine",
+    "skinwalker",
+    "nextbot",
+    "scp",
+    "backrooms",
+    "obsessed",
+    "creepypasta",
+    "jumpscare",
+    "haunt",
+    "weeping",
+    "from_the_fog",
+    "fromthefog",
+    "goatman",
+    "siren_head",
+    "sirenhead",
+    "paranormal",
+    "dread",
+];
+
+/// Whether a mod's id reads as a horror mod's.
+pub fn is_horror_mod(id: &str) -> bool {
+    let id = id.to_lowercase();
+    HORROR_WORDS.iter().any(|w| id.contains(w))
 }
 
 fn is_door(id: &str) -> bool {
@@ -1085,6 +1152,18 @@ impl Memory {
                 .map(|e| e.id)
                 .take(MOST_CREATURES)
                 .collect();
+            let horror: Vec<&str> = self
+                .mods
+                .iter()
+                .filter(|(id, _)| is_horror_mod(id))
+                .map(|(id, _)| id.as_str())
+                .collect();
+            self.last.other_horror_near = !horror.is_empty()
+                && observations.entities.iter().any(|e| {
+                    let space = e.kind.split(':').next().unwrap_or("");
+                    (horror.contains(&space) || is_horror_mod(space))
+                        && distance(block(e.pos), at) <= 64.0
+                });
             self.last.hostiles_near = observations
                 .entities
                 .iter()
@@ -2128,6 +2207,11 @@ impl Memory {
         }
     }
 
+    /// Another horror mod loaded: the lodger acts half as often.
+    pub fn sharing_with_horror(&self) -> bool {
+        self.mods.iter().any(|(id, _)| is_horror_mod(id))
+    }
+
     /// A light it placed, for the endings.
     pub fn its_light(&mut self, pos: BlockPos) {
         if !self.its_lights.contains(&pos) {
@@ -2831,6 +2915,51 @@ mod tests {
                 "{at:?} centred at {center:?}"
             );
         }
+    }
+
+    #[test]
+    fn with_another_horror_mod_it_makes_room_and_holds_off_near_its_things() {
+        use craftkit::world::{Entity, LoadedModInfo, Observations, Player};
+        assert!(is_horror_mod("cave_dweller") && is_horror_mod("the_man_from_the_fog"));
+        assert!(!is_horror_mod("sodium") && !is_horror_mod("create"));
+        let mut memory = Memory {
+            target: Some(0),
+            ..Memory::default()
+        };
+        let mods = vec![LoadedModInfo {
+            id: "cave_dweller".to_string(),
+            version: "1".to_string(),
+        }];
+        let seen = |kind: &str, x: f64| Observations {
+            players: vec![Player::default()],
+            entities: vec![Entity {
+                id: 5,
+                kind: kind.to_string(),
+                pos: [x, 0.0, 0.0],
+                ..Entity::default()
+            }],
+            mods: mods.clone(),
+            ..Observations::default()
+        };
+        memory.observe(&seen("cave_dweller:cave_dweller", 30.0), 0.1);
+        assert!(memory.sharing_with_horror());
+        assert!(memory.last.other_horror_near);
+        memory.observe(&seen("cave_dweller:cave_dweller", 200.0), 0.2);
+        assert!(!memory.last.other_horror_near, "far off");
+        memory.observe(&seen("minecraft:zombie", 10.0), 0.3);
+        assert!(!memory.last.other_horror_near, "a zombie is the game's");
+    }
+
+    #[test]
+    fn another_mod_s_lamps_are_lights_and_its_chairs_furniture() {
+        assert!(is_light("supplementaries:wall_lamp"));
+        assert!(!is_light("minecraft:redstone_lamp"));
+        assert_eq!(fixture_kind("mcwfurnitures:oak_chair"), Some("furniture"));
+        assert_eq!(
+            fixture_kind("minecraft:crafting_table"),
+            Some("crafting_table")
+        );
+        assert!(HOME_KINDS.contains(&"*chest") && HOME_KINDS.contains(&"*barrel"));
     }
 
     #[test]

@@ -222,6 +222,7 @@ impl Stay {
 
         let day = self.day(now);
         self.memory.clock(now, day);
+        self.arc.sharing = self.memory.sharing_with_horror();
         if let Some(stage) = self.arc.tick(day, &self.memory, config) {
             log.note(&format!("stage {stage} begins on day {day:.1}"));
         }

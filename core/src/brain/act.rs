@@ -593,9 +593,12 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         ),
         // A crafting table, a furnace or a barrel of theirs: never a chest, which may be one
         // half of two.
+        // Another mod's furniture first (owner, 2026-11-10: "use their decorations"), then the
+        // game's work blocks.
         Action::ShiftFurniture => memory
-            .fixtures("crafting_table")
+            .fixtures("furniture")
             .next()
+            .or_else(|| memory.fixtures("crafting_table").next())
             .map(|f| f.pos)
             .or_else(|| memory.furnace().map(|f| f.pos))
             .or_else(|| {

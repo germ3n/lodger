@@ -26,6 +26,10 @@ pub struct Arc {
     pub ended: String,
     /// After it stayed: the next game day a door of theirs is found open.
     pub next_open_day: u64,
+    /// Another horror mod is loaded: half the day's budget, so the two do not drown each other
+    /// out (owner, 2026-11-10). Read off the memory each tick; not saved.
+    #[serde(skip)]
+    pub sharing: bool,
 }
 
 impl Arc {
@@ -108,7 +112,12 @@ impl Arc {
             return 0.0;
         }
 
-        config.stages.events_per_day[(self.stage - 1) as usize] as f32
+        let budget = config.stages.events_per_day[(self.stage - 1) as usize] as f32;
+        if self.sharing {
+            budget * 0.5
+        } else {
+            budget
+        }
     }
 
     /// Whether the day has room for an event of this cost; resets when the day turns.
@@ -204,6 +213,10 @@ mod tests {
         arc.spend(1.0);
         assert!(!arc.affords(0.5, 5, &config));
         assert!(arc.affords(0.5, 6, &config), "a new day");
+
+        arc.sharing = true;
+        assert_eq!(arc.budget(&config), 1.0, "half, beside another horror mod");
+        arc.sharing = false;
 
         let mut before = Arc::default();
         assert_eq!(before.budget(&config), 0.0);

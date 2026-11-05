@@ -1055,9 +1055,16 @@ The `[x]` lines above, each dated. Summary by day:
   Done: seven rows (`arrow_near`, `arrow_grazes`, `arrow_hits`, `splash_dark`, `brew_left`,
   `potion_changed`, `door_cloud`), five commands (ABI 42), the host keeping to what does not
   harm whatever it is asked. Tests: one in `act`. Was: the arrow a sound alone, no potions.
-- [ ] **Other mods** (owner: all three): with another horror mod loaded it acts less often and
+- [x] **Other mods** (2026-11-10, owner: all three): with another horror mod loaded it acts less often and
   never at the same moment; it takes from other mods' storage too; it moves other mods'
   decorations as it does vanilla ones.
+  Done: a mod whose id reads as a horror mod's (`cave_dweller`, `the_man_from_the_fog`, a
+  stalker, a mimic, ...: `memory::HORROR_WORDS`) halves the day's budget, and while one of its
+  things is within 64 blocks of the target no plan runs and nothing starts; the house read finds
+  every mod's chests and barrels and lamps; another mod's lamp is a light, its chairs, tables,
+  shelves and cabinets furniture, moved first by `shift_furniture`. A mod's chest the target
+  opens was already theirs to the memory. Tests: three in `memory`, one in `arc`. Was: no other
+  mod known.
 - [ ] **The confrontation, a fourth ending** (owner: "a fourth ending: you confront it"): in
   stage 5, at night, at its house (or its place), strike its door or the figure; without that,
   one of the three scripted endings plays. Three phases, one health bar named after them: its

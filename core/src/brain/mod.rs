@@ -977,6 +977,10 @@ impl Brain {
         if now.tick < plan.from_tick {
             return Step::Wait(String::new());
         }
+        // Another horror mod's thing near them: never at the same moment as it.
+        if !plan.forced && memory.last.other_horror_near {
+            return Step::Wait("another mod's thing is near them".to_string());
+        }
         if !plan.forced {
             if !act::ready(event, memory, now) {
                 let why = offer::unmet(event, memory, now).unwrap_or_default();
@@ -1326,6 +1330,9 @@ impl Brain {
         let Some(event) = events::find(event) else {
             return;
         };
+        if memory.last.other_horror_near {
+            return;
+        }
         if !offer::switched_on(event, config)
             || rules::check(event, None, memory, arc.stage, day, config).is_err()
             || !event
