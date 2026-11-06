@@ -89,8 +89,9 @@ tasks.register('processResources', Sync) {
 		from(layout.buildDirectory.dir('resources'))
 		from(layout.buildDirectory.dir("manifest-${loader}"))
 		// The one built here, unless every native comes from natives-extra/ (`-PnativesOnly`,
-		// scripts/build_jars.py): two of one platform would be a duplicate entry.
-		if (!project.hasProperty('nativesOnly')) {
+		// scripts/build_jars.py), or natives-extra/ has this platform's: two of one platform would
+		// be a duplicate entry.
+		if (!project.hasProperty('nativesOnly') && !file("natives-extra/${hostOs}-${hostArch}").exists()) {
 			from(new File(repo, "target/release/${library}")) {
 				into "natives/${hostOs}-${hostArch}"
 			}

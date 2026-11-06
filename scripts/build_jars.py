@@ -156,9 +156,13 @@ def main():
     shutil.copytree(staging, extra)
 
     gradlew = "gradlew.bat" if os.name == "nt" else "./gradlew"
-    run([gradlew, "build", "--no-daemon"] + gradle_props, cwd=os.path.join(ROOT, "host"))
-    env = dict(os.environ, CARGO=os.devnull)
-    run([gradlew, "jar", "--no-daemon", "-PnativesOnly=true"] + gradle_props, cwd=os.path.join(ROOT, "mod"), env=env)
+    try:
+        run([gradlew, "build", "--no-daemon"] + gradle_props, cwd=os.path.join(ROOT, "host"))
+        env = dict(os.environ, CARGO=os.devnull)
+        run([gradlew, "jar", "--no-daemon", "-PnativesOnly=true"] + gradle_props, cwd=os.path.join(ROOT, "mod"), env=env)
+    finally:
+        # Gone again, so a developer's build afterward packs this computer's own and no stale ones.
+        shutil.rmtree(extra, ignore_errors=True)
 
     out = os.path.join(ROOT, "dist", args.minecraft)
     os.makedirs(out, exist_ok=True)
