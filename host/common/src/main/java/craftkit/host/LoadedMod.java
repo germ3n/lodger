@@ -71,7 +71,20 @@ public final class LoadedMod {
 			return failed(jar.id(), Optional.of(manifest), "could not read " + resource + ": " + e.getMessage());
 		}
 		if (inJar.isEmpty()) {
-			return failed(jar.id(), Optional.of(manifest), "no native for " + Natives.platform(osName, osArch) + " in the jar (" + resource + ")");
+			// Which platforms it does carry, so the player knows what to look for.
+			List<String> carried = new ArrayList<>();
+			for (String platform : Natives.PLATFORMS) {
+				String[] p = platform.split("-", 2);
+				try {
+					if (jar.read("natives/" + platform + "/" + Natives.fileName(p[0], manifest.library())).isPresent()) {
+						carried.add(platform);
+					}
+				} catch (IOException ignored) {
+					// Not readable: not counted.
+				}
+			}
+			return failed(jar.id(), Optional.of(manifest), "this jar has no native library for this computer (" + Natives.platform(osName, osArch) + ", " + resource + "); it carries "
+					+ (carried.isEmpty() ? "none" : String.join(", ", carried)));
 		}
 
 		Path extracted;

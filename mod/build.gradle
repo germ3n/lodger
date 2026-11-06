@@ -88,8 +88,12 @@ tasks.register('processResources', Sync) {
 		destinationDirectory = layout.buildDirectory.dir('libs')
 		from(layout.buildDirectory.dir('resources'))
 		from(layout.buildDirectory.dir("manifest-${loader}"))
-		from(new File(repo, "target/release/${library}")) {
-			into "natives/${hostOs}-${hostArch}"
+		// The one built here, unless every native comes from natives-extra/ (`-PnativesOnly`,
+		// scripts/build_jars.py): two of one platform would be a duplicate entry.
+		if (!project.hasProperty('nativesOnly')) {
+			from(new File(repo, "target/release/${library}")) {
+				into "natives/${hostOs}-${hostArch}"
+			}
 		}
 		// The CI drops the other platforms' natives in natives-extra/<os>-<arch>/ before building.
 		from(file('natives-extra')) {

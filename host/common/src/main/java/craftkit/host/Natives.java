@@ -44,9 +44,18 @@ public final class Natives {
 		if (arch.equals("aarch64") || arch.equals("arm64")) {
 			return "aarch64";
 		}
+		if (arch.equals("amd64") || arch.equals("x86_64") || arch.equals("x64")) {
+			return "x86_64";
+		}
 
-		return "x86_64";
+		// Anything else by its own name (x86, riscv64, ppc64le): no jar carries it, and the
+		// player is told so, where it once passed for x86_64 and failed to load obscurely.
+		return arch;
 	}
+
+	/** The six platforms a content jar carries a native for (the CI's matrix). */
+	public static final java.util.List<String> PLATFORMS = java.util.List.of(
+			"windows-x86_64", "windows-aarch64", "linux-x86_64", "linux-aarch64", "macos-x86_64", "macos-aarch64");
 
 	/** {@code <os>-<arch>}, the folder name under {@code natives/}. */
 	public static String platform(String osName, String osArch) {

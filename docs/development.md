@@ -90,6 +90,27 @@ art on a 32 by 32 grid written as PNG by hand: `python3 mod/art/icon.py` writes 
 upload, `mod/art/icon-512.png`, and the jars' `assets/lodger/icon.png` (128), which
 `fabric.mod.json` (`icon`) and `neoforge.mods.toml` (`logoFile`) name.
 
+## Building the jars for a release
+
+`python3 scripts/build_jars.py <minecraft>` builds both lodger jars, Fabric and NeoForge, for one
+Minecraft version, with the mind's native library for all six platforms inside (windows, linux
+and macos, each on x86_64 and aarch64; owner, 2026-11-10), and puts them in `dist/<minecraft>/`.
+At startup the host loads the one for the computer it runs on; a jar without it says so on a
+screen at boot (`FailedScreen`), naming the platforms it carries, and the server's log says it
+as an error.
+
+- **The natives.** By default they come from the CI's run of the commit checked out
+  (`.github/workflows/ci.yml` builds each platform on its own runner; push first, `gh` signed
+  in). `--natives local` builds what this computer can (a Mac both macOS ones, cross-compiling
+  the other chip); `--natives DIR` takes `DIR/<os>-<arch>/<library>`. A jar missing any of the
+  six is an error unless `--allow-missing`. Windows and Linux natives are not cross-compiled from
+  a Mac: llama.cpp needs each platform's own C++ toolchain, which the CI's runners have.
+- **The version.** `versions/<minecraft>.properties` holds every pin that changes with it
+  (Minecraft, NeoForm, Fabric API and loader, Loom, NeoForge, ModDevGradle, Java), laid over the
+  gradle.properties files for that build only. A version with no file is refused: the host is
+  written against one version's code, and another needs its file and usually a port (see
+  [Upgrading](upgrading.md)). Today: 26.3.
+
 ## Running a stay quickly
 
 A stay takes weeks of play by design. For development:

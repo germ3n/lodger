@@ -73,7 +73,7 @@ class LoadedModTest {
 		LoadedMod mod = LoadedMod.load(new FakeJar("demo", Map.of()), manifest, config.getParent(), config, "Linux", "amd64");
 
 		assertFalse(mod.loaded());
-		assertTrue(mod.failure().contains("no native for linux-x86_64"), mod.failure());
+		assertTrue(mod.failure().contains("no native library for this computer (linux-x86_64") && mod.failure().contains("it carries none"), mod.failure());
 		assertTrue(mod.failure().contains("natives/linux-x86_64/libdemo_core.so"), mod.failure());
 		assertEquals("demo", mod.id());
 	}

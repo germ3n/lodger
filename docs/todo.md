@@ -1133,6 +1133,14 @@ The `[x]` lines above, each dated. Summary by day:
   breath, a wave of a minute and a half has its last sink away (until now one came every fifty
   seconds on top of the last). Tests: one in JUnit (`Warp`). Was: block limbs, bowless
   skeletons, piled waves.
+- [x] **A script for release jars, every platform's native in each** (owner, 2026-11-10):
+  `scripts/build_jars.py <minecraft>`, with `versions/<minecraft>.properties` holding the pins
+  (`26.3` today), the natives from the CI run of the commit, from this computer (`--natives
+  local`, both macOS chips on a Mac) or a directory, each jar checked to carry them all; at boot
+  a screen names a mod that could not load and why (`FailedScreen`), the server's log an error;
+  a CPU the host does not know is named as it is (`riscv64`), where it passed for x86_64 and
+  failed to load obscurely. Tests: `Natives`, `LoadedMod` in JUnit. Was: the CI alone made the
+  six-native jars, and a missing native was silent but for `/craftkit status`.
 - [x] **The creepers' blast** (owner, 2026-11-10: "creepers aren't dealing any damage"): 26.3 marks
   an exploding creeper dead before it goes, so the fight took its blast for a kill and dealt
   nothing; a creeper gone with its health left went off, and the blast is dealt by how near they

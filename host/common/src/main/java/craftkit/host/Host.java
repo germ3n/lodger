@@ -75,7 +75,7 @@ public final class Host {
 					LOGGER.info("{}: wrote {} with every default", mod.id(), mod.manifest().map(Manifest::config).orElse("its config"));
 				}
 			} else {
-				LOGGER.warn("{}: not loaded: {}", mod.id(), mod.failure());
+				LOGGER.error("{}: not loaded: {}", mod.id(), mod.failure());
 			}
 		}
 

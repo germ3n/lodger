@@ -19,6 +19,11 @@ class NativesTest {
 		assertEquals("linux-x86_64", Natives.platform("Linux", "amd64"));
 		assertEquals("linux-aarch64", Natives.platform("Linux", "aarch64"));
 		assertEquals("windows-x86_64", Natives.platform("Windows 11", "amd64"));
+		assertEquals("windows-aarch64", Natives.platform("Windows 11", "aarch64"));
+		// Not one a jar carries: named as it is, so the player is told, never mistaken for x86_64.
+		assertEquals("linux-riscv64", Natives.platform("Linux", "riscv64"));
+		assertEquals("windows-x86", Natives.platform("Windows 10", "x86"));
+		assertEquals(6, Natives.PLATFORMS.size());
 	}
 
 	@Test

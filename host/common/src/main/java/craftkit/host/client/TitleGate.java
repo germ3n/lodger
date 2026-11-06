@@ -41,9 +41,25 @@ public final class TitleGate {
 		return buttons;
 	}
 
+	/** The mods that failed to load were shown once this launch. */
+	private static boolean failuresShown;
+
 	public static void onScreen(Minecraft minecraft, Screen screen) {
 		if (!(screen instanceof TitleScreen)) {
 			return;
+		}
+
+		// A mod that could not load says why, once, before anything else (owner, 2026-11-10:
+		// "else it should show an error message on boot").
+		if (!failuresShown) {
+			java.util.List<craftkit.host.LoadedMod> failed = Preparation.current()
+					.map(p -> p.mods().stream().filter(m -> !m.loaded()).toList())
+					.orElse(java.util.List.of());
+			if (!failed.isEmpty()) {
+				failuresShown = true;
+				minecraft.gui.setScreen(new FailedScreen(screen, failed));
+				return;
+			}
 		}
 
 		Preparation.current().ifPresent(preparation -> {
