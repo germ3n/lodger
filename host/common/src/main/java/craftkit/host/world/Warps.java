@@ -41,6 +41,11 @@ public final class Warps {
 		final boolean flip;
 		final boolean creep;
 		final float bodyYaw;
+		/** Never still (owner, 2026-11-10): its head snapped aside till this tick, and when next. */
+		long snapUntil;
+		float snapYaw;
+		long nextTwitch;
+		long nextSound;
 
 		Warp(Mob mob, UUID player, long untilTick, boolean flip, boolean creep) {
 			this.mob = mob;
@@ -84,6 +89,22 @@ public final class Warps {
 		return true;
 	}
 
+	/** A mob's own ambient sound (the game keeps the getter to itself), or null. */
+	private static net.minecraft.sounds.SoundEvent ambient(Mob mob) {
+		for (Class<?> c = mob.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+			try {
+				java.lang.reflect.Method m = c.getDeclaredMethod("getAmbientSound");
+				m.setAccessible(true);
+				return (net.minecraft.sounds.SoundEvent) m.invoke(mob);
+			} catch (NoSuchMethodException ignored) {
+				// Up a class.
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				return null;
+			}
+		}
+		return null;
+	}
+
 	public void tick(MinecraftServer server) {
 		tick++;
 		Iterator<Warp> it = active.iterator();
@@ -104,11 +125,33 @@ public final class Warps {
 			if (!here) {
 				continue;
 			}
-			// The head on them; the body as it stood.
+			// The head on them, but for a snap aside now and then; the body as it stood, but for a
+			// shudder.
 			Vec3 to = player.getEyePosition().subtract(mob.getEyePosition());
-			mob.setYHeadRot(Facing.yaw(to.x, to.z));
-			mob.setXRot(Facing.pitch(to.x, to.y, to.z));
+			var random = mob.getRandom();
+			if (tick >= warp.nextTwitch) {
+				warp.snapYaw = Facing.yaw(to.x, to.z) + (random.nextBoolean() ? 1 : -1) * (60 + random.nextFloat() * 110);
+				warp.snapUntil = tick + 3 + random.nextInt(4);
+				warp.nextTwitch = tick + 25 + random.nextInt(60);
+				mob.teleportTo(mob.getX() + (random.nextDouble() - 0.5) * 0.12, mob.getY(), mob.getZ() + (random.nextDouble() - 0.5) * 0.12);
+			}
+			if (tick < warp.snapUntil) {
+				mob.setYHeadRot(warp.snapYaw);
+				mob.setXRot((random.nextFloat() - 0.5f) * 80);
+			} else {
+				mob.setYHeadRot(Facing.yaw(to.x, to.z));
+				mob.setXRot(Facing.pitch(to.x, to.y, to.z));
+			}
 			mob.setYBodyRot(warp.bodyYaw);
+			// Its own voice, slowed, to them alone.
+			if (tick >= warp.nextSound) {
+				warp.nextSound = tick + 100 + random.nextInt(120);
+				net.minecraft.sounds.SoundEvent voice = ambient(mob);
+				if (voice != null) {
+					player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.core.Holder.direct(voice),
+							net.minecraft.sounds.SoundSource.HOSTILE, mob.getX(), mob.getY(), mob.getZ(), 1.0f, 0.45f + random.nextFloat() * 0.1f, random.nextLong()));
+				}
+			}
 			if (warp.creep && tick % CREEP_EVERY == 0 && player.distanceTo(mob) > CREEPS_TO) {
 				Vec3 view = player.getViewVector(1f);
 				Vec3 at = mob.position().subtract(player.getEyePosition());

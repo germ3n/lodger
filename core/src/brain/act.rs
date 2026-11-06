@@ -255,6 +255,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::HandOnShoulder
         | Action::Footsteps
         | Action::Pack
+        | Action::MobComes(_)
         | Action::HostilesClose
         | Action::Shove
         | Action::FramesShow
@@ -4497,23 +4498,37 @@ pub fn commands(
         Action::WarpAnimal => match memory.warp_animal() {
             Some(animal) => {
                 let w = crate::warped::warp(memory.times(event.id), seed, animal.named);
-                vec![(
-                    Command::WarpMob {
-                        id: ids(),
-                        entity: animal.id,
-                        player: target,
-                        seconds: 60.0,
-                        scale: w.scale,
-                        flip: w.flip,
-                        creep: w.creep,
-                        to: if w.doorway {
-                            memory.doorway_spot()
-                        } else {
-                            None
+                vec![
+                    (
+                        Command::WarpMob {
+                            id: ids(),
+                            entity: animal.id,
+                            player: target,
+                            seconds: 60.0,
+                            scale: w.scale,
+                            flip: w.flip,
+                            creep: w.creep,
+                            to: if w.doorway {
+                                memory.doorway_spot()
+                            } else {
+                                None
+                            },
                         },
-                    },
-                    0,
-                )]
+                        0,
+                    ),
+                    // Its own model bent on their screen while it lasts, as the fight's are.
+                    (
+                        Command::Hint {
+                            id: ids(),
+                            player: target,
+                            hint: "warp_models".to_string(),
+                            pos: None,
+                            seconds: 60.0,
+                            detail: animal.id.to_string(),
+                        },
+                        0,
+                    ),
+                ]
             }
             None => vec![],
         },
@@ -4919,6 +4934,49 @@ pub fn commands(
             },
             0,
         )],
+        // One animal near them, now and then bent, comes at them very slowly or at a run; once
+        // there it stares and goes, turns and walks off, or strikes once (never below half a heart).
+        Action::MobComes(pace) => {
+            let at = block_of(memory.last.pos);
+            let near: Vec<&crate::memory::Creature> = memory
+                .last
+                .creatures_near
+                .iter()
+                .filter(|c| !c.pet && c.kind != "villager" && c.kind != "iron_golem")
+                .filter(|c| (8.0..=28.0).contains(&distance(block_of(c.pos), at)))
+                .collect();
+            let Some(animal) = near.get(seed % near.len().max(1)).copied() else {
+                return vec![];
+            };
+            let then = ["stare", "leave", "hit"][(seed / 3) % 3];
+            let mut made = vec![(
+                Command::Approach {
+                    id: ids(),
+                    entities: vec![animal.id],
+                    player: target,
+                    stop: 1.6,
+                    seconds: 90.0,
+                    pace: Some(pace),
+                    then: then.to_string(),
+                    damage: if then == "hit" { 2.0 } else { 0.0 },
+                },
+                0,
+            )];
+            if seed.is_multiple_of(2) {
+                made.push((
+                    Command::Hint {
+                        id: ids(),
+                        player: target,
+                        hint: "warp_models".to_string(),
+                        pos: None,
+                        seconds: 90.0,
+                        detail: animal.id.to_string(),
+                    },
+                    0,
+                ));
+            }
+            made
+        }
         // Their animals, together, walk up to them and stop four blocks off, facing them.
         Action::Pack => {
             let herd: Vec<u32> = memory
@@ -4937,6 +4995,9 @@ pub fn commands(
                     player: target,
                     stop: 4.0,
                     seconds: 40.0,
+                    pace: None,
+                    then: String::new(),
+                    damage: 0.0,
                 },
                 0,
             )]
@@ -7700,6 +7761,42 @@ mod tests {
         // The cloud on the step outside the door they use, a block out from the house.
         assert!(matches!(&made("door_cloud", &mut rng)[0].0,
             Command::EffectCloud { pos, .. } if pos[0] == 4.5));
+    }
+
+    #[test]
+    fn one_animal_comes_at_them_slowly_or_at_a_run_and_then_stares_leaves_or_strikes() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.online = true;
+        let now = Now::default();
+        let mut thens = std::collections::BTreeSet::new();
+        for seed in 0..12u64 {
+            let mut rng = Rng::new(seed);
+            for (id, want) in [("slow_approach", 0.35), ("quick_approach", 1.5)] {
+                let event = find(id).unwrap();
+                let pos = place(event, &memory, &mut rng);
+                memory.done.push(crate::memory::Done::default());
+                let made = commands(event, pos, &memory, &mut ids(), &now, None);
+                match &made[0].0 {
+                    Command::Approach {
+                        entities,
+                        pace,
+                        then,
+                        damage,
+                        stop,
+                        ..
+                    } => {
+                        assert_eq!(entities.len(), 1);
+                        assert_eq!(*pace, Some(want));
+                        assert!(*stop < 2.0, "right in front of them");
+                        assert_eq!(*damage > 0.0, then == "hit");
+                        thens.insert(then.clone());
+                    }
+                    other => panic!("{other:?}"),
+                }
+            }
+        }
+        assert_eq!(thens.len(), 3, "it stares, leaves and strikes: {thens:?}");
     }
 
     #[test]

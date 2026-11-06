@@ -739,6 +739,9 @@ pub enum Action {
     Footsteps,
     /// The farm animals near them walk toward them together and stop a few blocks off.
     Pack,
+    /// One animal near them, sometimes bent, comes at them at this pace against its own walk
+    /// (0.35 very slowly, 1.5 at a run), then stares, leaves or strikes once.
+    MobComes(f32),
     /// The hostile mobs near hold and stare, a step closer each time they look away, back where
     /// they stood when looked at.
     HostilesClose,
@@ -1759,6 +1762,28 @@ pub const CATALOGUE: &[Event] = &[
         2,
         Full,
         Action::Pack,
+        false,
+    ),
+    row(
+        "slow_approach",
+        3,
+        5,
+        &[Animals, TargetOutdoors],
+        1.5,
+        4,
+        Full,
+        Action::MobComes(0.35),
+        false,
+    ),
+    row(
+        "quick_approach",
+        3,
+        5,
+        &[Animals, TargetOutdoors],
+        1.5,
+        4,
+        Full,
+        Action::MobComes(1.5),
         false,
     ),
     row(
@@ -4385,6 +4410,7 @@ impl Event {
             | Action::UnderWater
             | Action::VillageAbandoned
             | Action::Pack
+            | Action::MobComes(_)
             | Action::HostilesClose
             | Action::Shove
             | Action::BobberUnder
@@ -4529,6 +4555,8 @@ impl Event {
             "ore_marked" => "put a torch on an ore they have not found",
             "hand_on_shoulder" => "turn them a little, a step right behind them",
             "pack" => "walk their animals toward them together",
+            "slow_approach" => "walk one animal at them very slowly",
+            "quick_approach" => "run one animal at them",
             "answer_knock" => "knock back on the door they knocked on",
             "ghast_name" => "make the ghasts cry their name",
             "arrow_near" => "shoot an arrow from the dark, just past their head",

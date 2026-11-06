@@ -1133,6 +1133,15 @@ The `[x]` lines above, each dated. Summary by day:
   breath, a wave of a minute and a half has its last sink away (until now one came every fifty
   seconds on top of the last). Tests: one in JUnit (`Warp`). Was: block limbs, bowless
   skeletons, piled waves.
+- [x] **Warped animals that are never still, and animals that come at them** (owner, 2026-11-10:
+  "seems too stiff ... should be spookier"; "a mob comes towards you very slow ... the opposite
+  too, quick"): every `warp_animal` now takes two of its three ways at once (tall, upside down,
+  creeping), its height its own, its model bent on their screen as the fight's are, its head
+  snapping aside and back, a shudder now and then, its own voice slowed. `slow_approach` and
+  `quick_approach`: one animal near them, half the time bent, comes at them very slowly or at a
+  run, stops a block and a half off, and stares, turns away, or strikes once never below half a
+  heart (`approach`'s `pace`, `then`, `damage`, ABI 44). Tests: `warped`'s, one in `act`. Was:
+  one way or two, frozen; no such event.
 - [x] **The third bug pass** (2026-11-10, twelve found): on Fabric a totem never saved them in
   the fight (its death hook runs before the totem), now a totem in hand is the game's own way;
   the fight's own estimate of a lethal hit ignored the hurt cooldown and more, now the game deals

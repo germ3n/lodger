@@ -942,6 +942,16 @@ pub enum Command {
         player: u32,
         stop: f32,
         seconds: f32,
+        /// How fast, against its own walk (1 when absent; 0.35 a slow, slow walk). ABI 44.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pace: Option<f32>,
+        /// Once there: `stare` a few seconds and go its way, `leave` (turn and walk off), `hit`
+        /// (strike once for `damage`, never below half a heart, and walk off), or stand facing
+        /// them till `seconds` when empty. ABI 44.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        then: String,
+        #[serde(default, skip_serializing_if = "is_zero_f32")]
+        damage: f32,
     },
     /// For `seconds`, the first moment `player` stands at an edge (a drop of two to `most_drop`
     /// blocks to solid ground just past it) or on a ladder with ground that near below, not

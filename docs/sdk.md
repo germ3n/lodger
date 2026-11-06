@@ -193,7 +193,8 @@ spared, never picked up, staying where it lands), `splash_potion` (one of five e
 player's feet), `put_potion` (a named potion of its brewing, nothing that harms), `change_potion`
 (a potion another, safe kind, its name kept), `effect_cloud` (slowness or weakness, gone at its
 first touch). ABI 43 (2026-11-10): `confront` (the fight, the host's to run) and the
-`fight_won`, `fight_lost`, `fight_fled` events.
+`fight_won`, `fight_lost`, `fight_fled` events. ABI 44 (2026-11-10): `approach`'s `pace`, `then` (`stare`,
+`leave`, `hit`) and `damage`.
 
 ## Resources
 

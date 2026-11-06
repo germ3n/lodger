@@ -162,7 +162,10 @@ public final class Executors {
 						Entity entity = level.getEntity(each.getAsInt());
 						Mob mob = entity == null ? null : Senses.mob(entity);
 						if (mob != null && !mob.entityTags().contains(Holds.TAG) && !mob.entityTags().contains(Warps.TAG)) {
-							context.approaches().add(mob, player, command.get("stop").getAsFloat(), command.get("seconds").getAsFloat());
+							context.approaches().add(mob, player, command.get("stop").getAsFloat(), command.get("seconds").getAsFloat(),
+									command.has("pace") && !command.get("pace").isJsonNull() ? command.get("pace").getAsFloat() : 1f,
+									command.has("then") ? command.get("then").getAsString() : "",
+									command.has("damage") ? command.get("damage").getAsFloat() : 0f);
 							walking++;
 						}
 					}

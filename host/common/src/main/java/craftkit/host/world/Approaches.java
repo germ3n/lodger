@@ -25,12 +25,23 @@ public final class Approaches {
 		final UUID player;
 		final double stop;
 		final long untilTick;
+		/** How fast against its own walk (ABI 44): 1 a walk, 0.35 a slow, slow one. */
+		final double pace;
+		/** Once there: `stare`, `leave`, `hit`, or "" to stand facing them (ABI 44). */
+		final String then;
+		final float damage;
+		/** When it got there, 0 before; and once going, where to. */
+		long arrived;
+		net.minecraft.world.phys.Vec3 away;
 
-		Approach(Mob mob, UUID player, double stop, long untilTick) {
+		Approach(Mob mob, UUID player, double stop, long untilTick, double pace, String then, float damage) {
 			this.mob = mob;
 			this.player = player;
 			this.stop = stop;
 			this.untilTick = untilTick;
+			this.pace = pace;
+			this.then = then;
+			this.damage = damage;
 		}
 	}
 
@@ -38,8 +49,14 @@ public final class Approaches {
 	private long tick;
 
 	public void add(Mob mob, ServerPlayer player, float stop, float seconds) {
+		add(mob, player, stop, seconds, 1, "", 0);
+	}
+
+	/** One walking at them at `pace`, and then what it does once there (ABI 44). */
+	public void add(Mob mob, ServerPlayer player, float stop, float seconds, float pace, String then, float damage) {
 		active.removeIf(a -> a.mob == mob);
-		active.add(new Approach(mob, player.getUUID(), Math.max(2, Math.min(stop, 16)), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20)));
+		active.add(new Approach(mob, player.getUUID(), Math.max(1.2, Math.min(stop, 16)), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20),
+				Math.max(0.2, Math.min(pace, 1.5)), then, Math.max(0, Math.min(damage, 6))));
 	}
 
 	public void tick(MinecraftServer server) {
@@ -55,15 +72,64 @@ public final class Approaches {
 				it.remove();
 				continue;
 			}
-			if (mob.distanceTo(player) > approach.stop) {
+			// Going its way: to where it turned, then free.
+			if (approach.away != null) {
 				if (tick % 10 == 0 || mob.getNavigation().isDone()) {
-					mob.getNavigation().moveTo(player, PACE);
+					mob.getNavigation().moveTo(approach.away.x, approach.away.y, approach.away.z, 1.0);
+				}
+				if (mob.position().distanceTo(approach.away) < 2 || tick - approach.arrived > 20 * 20) {
+					mob.getNavigation().stop();
+					it.remove();
+				}
+				continue;
+			}
+			if (approach.arrived == 0 && mob.distanceTo(player) > approach.stop) {
+				if (tick % 10 == 0 || mob.getNavigation().isDone()) {
+					mob.getNavigation().moveTo(player, approach.pace * PACE);
 				}
 			} else {
 				mob.getNavigation().stop();
+				if (approach.arrived == 0) {
+					approach.arrived = tick;
+				}
+				long there = tick - approach.arrived;
+				switch (approach.then) {
+					case "hit" -> {
+						if (there == 10) {
+							mob.swing(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+							float scale = player.level().getDifficulty() == net.minecraft.world.Difficulty.HARD ? 1.5f : 1f;
+							float harm = Spare.harm(approach.damage, player.getHealth(), scale);
+							if (harm > 0) {
+								player.hurtServer((net.minecraft.server.level.ServerLevel) mob.level(), mob.level().damageSources().mobAttack(mob), harm);
+							}
+						}
+						if (there >= 30) {
+							approach.away = awayFrom(mob, player);
+						}
+					}
+					case "leave" -> {
+						if (there >= 30) {
+							approach.away = awayFrom(mob, player);
+						}
+					}
+					case "stare" -> {
+						if (there >= 100) {
+							it.remove();
+							continue;
+						}
+					}
+					default -> {
+					}
+				}
 			}
 			mob.getLookControl().setLookAt(player);
 		}
+	}
+
+	/** Sixteen blocks on, straight away from them. */
+	private static net.minecraft.world.phys.Vec3 awayFrom(Mob mob, ServerPlayer player) {
+		net.minecraft.world.phys.Vec3 way = mob.position().subtract(player.position()).multiply(1, 0, 1).normalize();
+		return mob.position().add(way.scale(16));
 	}
 
 	/** Everything for every player, forgotten: the world is closing, and none of it is the next one's. */

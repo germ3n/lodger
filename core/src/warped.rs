@@ -39,15 +39,17 @@ pub struct Warp {
 /// down, or creeping, one of them, and a second one of them every other time; the doorway one
 /// time in three. A named animal is never flipped (its name would be lost).
 pub fn warp(times: usize, seed: usize, named: bool) -> Warp {
+    // Two of the three always, together (owner, 2026-11-10: "too stiff ... should be
+    // spookier"; it was one, or two every other time).
     let first = (times + seed) % 3;
-    let second = (times % 2 == 1).then_some((first + 1 + seed % 2) % 3);
+    let second = Some((first + 1 + seed % 2) % 3);
     let has = |n: usize| first == n || second == Some(n);
     let flip = has(1) && !named;
 
     Warp {
-        // A named one that would have flipped grows instead.
+        // A named one that would have flipped grows instead; the height its own each time.
         scale: if has(0) || (has(1) && named) {
-            1.8
+            1.5 + (seed % 8) as f32 * 0.1
         } else {
             1.0
         },
@@ -150,12 +152,13 @@ mod tests {
     }
 
     #[test]
-    fn every_warp_has_one_or_two_of_the_three_and_a_named_one_is_never_flipped() {
+    fn every_warp_has_two_of_the_three_and_a_named_one_is_never_flipped() {
         for times in 0..12 {
             for seed in 0..12 {
                 let w = warp(times, seed, false);
                 let count = usize::from(w.scale > 1.0) + usize::from(w.flip) + usize::from(w.creep);
-                assert!((1..=2).contains(&count), "{times} {seed}: {w:?}");
+                assert_eq!(count, 2, "{times} {seed}: {w:?}");
+                assert!(w.scale <= 2.2);
                 let named = warp(times, seed, true);
                 assert!(!named.flip);
                 assert!(named.scale > 1.0 || named.creep);
