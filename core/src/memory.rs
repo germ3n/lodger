@@ -429,9 +429,13 @@ pub struct Memory {
     /// The other mods the game runs with, by id and version, as the host told them: for the
     /// debug screen, and for a mind that would keep out of another mod's way.
     pub mods: Vec<(String, String)>,
-    /// How many blocks they had placed when its place was chosen: what they build there after
-    /// meets its want, what stood there before does not.
-    pub placed_before_place: usize,
+    /// What of theirs stood within five blocks of its place when it chose it: what they build
+    /// there after meets its want, this does not (a snapshot, where a count into a list that
+    /// drops its oldest and its broken would drift).
+    pub placed_at_place: Vec<BlockPos>,
+    /// The confrontation's command, so a refusal from the host ends it at once. Not saved.
+    #[serde(skip)]
+    pub confront_id: u64,
     /// The lights it placed itself, for the endings (its torches out one by one, or lit at
     /// once).
     pub its_lights: Vec<BlockPos>,

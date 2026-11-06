@@ -1133,6 +1133,16 @@ The `[x]` lines above, each dated. Summary by day:
   breath, a wave of a minute and a half has its last sink away (until now one came every fifty
   seconds on top of the last). Tests: one in JUnit (`Warp`). Was: block limbs, bowless
   skeletons, piled waves.
+- [x] **The fourth bug pass** (2026-11-10, seven found): the release script failed on Windows
+  (gradlew.bat by its full path now), packed the CI's natives of the commit beside uncommitted
+  mind changes (refused unless `--allow-dirty`), and picked up an old version's jars (cleared
+  first). The place's want counted blocks by an index into a list that drops its oldest and its
+  broken (a snapshot of what stood there now). A fight the host refused froze every plan for a
+  day (a refusal ends it at once). A totem in hand let a void death through on Fabric, and on
+  NeoForge a totem already failed counted (the source and the loader's order are asked now). The
+  ground search no longer looked three blocks up, and wave mobs could be set in a cave under a
+  hill (the surface now). Dead code of the old lethal estimate gone. Tests: one in the brain.
+  Was: all of that.
 - [x] **Warped animals that are never still, and animals that come at them** (owner, 2026-11-10:
   "seems too stiff ... should be spookier"; "a mob comes towards you very slow ... the opposite
   too, quick"): every `warp_animal` now takes two of its three ways at once (tall, upside down,

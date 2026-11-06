@@ -127,7 +127,16 @@ def main():
     parser.add_argument("minecraft", help="the Minecraft version, as in versions/<it>.properties (26.3)")
     parser.add_argument("--natives", default="ci", help="ci (the CI run of this commit, the default), local, or a directory of <os>-<arch>/<library>")
     parser.add_argument("--allow-missing", action="store_true", help="build even when a platform's native is missing")
+    parser.add_argument("--allow-dirty", action="store_true", help="build from the CI's natives though the mind or the SDK has uncommitted changes")
     args = parser.parse_args()
+
+    # The CI built the commit, not what is changed since: the jars would carry natives of other code.
+    if args.natives == "ci" and not args.allow_dirty:
+        dirty = subprocess.run(["git", "status", "--porcelain", "--", "core", "sdk", "Cargo.toml", "Cargo.lock"],
+                               cwd=ROOT, check=True, stdout=subprocess.PIPE, text=True).stdout.strip()
+        if dirty:
+            sys.exit("the mind or the SDK has uncommitted changes, and the CI's natives are of the commit; commit and push "
+                     "them, or --natives local, or --allow-dirty:\n" + dirty)
 
     props = versions(args.minecraft)
     gradle_props = ["-P%s=%s" % (k, v) for k, v in props.items()]
@@ -155,16 +164,29 @@ def main():
     shutil.rmtree(extra, ignore_errors=True)
     shutil.copytree(staging, extra)
 
-    gradlew = "gradlew.bat" if os.name == "nt" else "./gradlew"
+    # Old jars out of the way: another version's host jar would make two where one is looked
+    # for, and another's lodger jar would be checked and copied with these.
+    for loader in ("fabric", "neoforge"):
+        libs_dir = os.path.join(ROOT, "host", loader, "build", "libs")
+        if os.path.isdir(libs_dir):
+            for name in os.listdir(libs_dir):
+                if name.startswith("craftkit-") and name.endswith(".jar"):
+                    os.remove(os.path.join(libs_dir, name))
+    shutil.rmtree(os.path.join(ROOT, "mod", "build", "libs"), ignore_errors=True)
+
+    # The full path: Windows does not look in the working directory for a program.
+    def gradlew(project):
+        return os.path.join(ROOT, project, "gradlew.bat" if os.name == "nt" else "gradlew")
     try:
-        run([gradlew, "build", "--no-daemon"] + gradle_props, cwd=os.path.join(ROOT, "host"))
+        run([gradlew("host"), "build", "--no-daemon"] + gradle_props, cwd=os.path.join(ROOT, "host"))
         env = dict(os.environ, CARGO=os.devnull)
-        run([gradlew, "jar", "--no-daemon", "-PnativesOnly=true"] + gradle_props, cwd=os.path.join(ROOT, "mod"), env=env)
+        run([gradlew("mod"), "jar", "--no-daemon", "-PnativesOnly=true"] + gradle_props, cwd=os.path.join(ROOT, "mod"), env=env)
     finally:
         # Gone again, so a developer's build afterward packs this computer's own and no stale ones.
         shutil.rmtree(extra, ignore_errors=True)
 
     out = os.path.join(ROOT, "dist", args.minecraft)
+    shutil.rmtree(out, ignore_errors=True)
     os.makedirs(out, exist_ok=True)
     libs = os.path.join(ROOT, "mod", "build", "libs")
     for name in sorted(os.listdir(libs)):

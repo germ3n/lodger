@@ -88,7 +88,7 @@ public final class CraftkitFabric implements ModInitializer {
 		});
 		// A death during the fight with the lodger is its one death, keeping everything.
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) ->
-				!(entity instanceof ServerPlayer player) || worlds.allowDeath(player));
+				!(entity instanceof ServerPlayer player) || worlds.allowDeath(player, source, false));
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof ServerPlayer serverPlayer) {
 				senses.noticedDied(serverPlayer);

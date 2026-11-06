@@ -146,7 +146,7 @@ public final class CraftkitNeoForge {
 		});
 		NeoForge.EVENT_BUS.addListener((LivingDeathEvent event) -> {
 			// A death during the fight with the lodger is its one death, keeping everything.
-			if (event.getEntity() instanceof ServerPlayer player && !worlds.allowDeath(player)) {
+			if (event.getEntity() instanceof ServerPlayer player && !worlds.allowDeath(player, event.getSource(), true)) {
 				event.setCanceled(true);
 				return;
 			}

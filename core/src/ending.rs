@@ -82,7 +82,7 @@ pub fn want_met(memory: &Memory) -> bool {
             memory
                 .placed
                 .iter()
-                .skip(memory.placed_before_place)
+                .filter(|p| !memory.placed_at_place.contains(p))
                 .filter(|p| distance(**p, place) <= 5.0)
                 .count()
                 >= 3
@@ -449,10 +449,12 @@ fn confrontation(
         })
         .unwrap_or([at[0] as f64 + 0.5, -10_000.0, at[2] as f64 + 0.5]);
     arc.fighting_since = now.tick.max(1);
+    let id = ids();
+    memory.confront_id = id;
 
     vec![(
         Command::Confront {
-            id: ids(),
+            id,
             player: memory.target.unwrap_or(0),
             at,
             roof,
@@ -1845,7 +1847,7 @@ mod tests {
         memory.want = "a place of its own".to_string();
         memory.place = Some([30, 64, 30]);
         memory.placed = vec![[30, 64, 31], [31, 64, 30], [29, 65, 30]];
-        memory.placed_before_place = 3;
+        memory.placed_at_place = memory.placed.clone();
         assert!(!want_met(&memory), "built there before it chose it");
         memory
             .placed

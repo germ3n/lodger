@@ -17,7 +17,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
@@ -148,8 +147,6 @@ public final class Fights {
 		long slamAt;
 		int deformed;
 		int dropped;
-		/** They died to it (the one death, keeping everything). */
-		boolean lost;
 		ItemStack weapon = ItemStack.EMPTY;
 
 		Fight(UUID player, int index, ServerLevel level, WorldData data, Vec3 at, Vec3 roof, List<String> blocks, String name, float max, float hit) {
@@ -305,14 +302,16 @@ public final class Fights {
 	 * void): not this way. They stay at half a heart and die its one death next tick, keeping
 	 * everything. Answers whether the game's own death may go ahead.
 	 */
-	public boolean allowDeath(ServerPlayer player) {
+	public boolean allowDeath(ServerPlayer player, DamageSource source, boolean totemTried) {
 		for (Fight f : fights) {
 			if (!f.player.equals(player.getUUID()) || deaths.killing(player)) {
 				continue;
 			}
-			// A totem in hand: the game's own way; it saves them (Fabric asks this before the
-			// totem is tried, where NeoForge asks after).
-			boolean totem = player.getMainHandItem().is(Items.TOTEM_OF_UNDYING) || player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
+			// A totem in hand that will save them: the game's own way. Fabric asks before the
+			// totem is tried, NeoForge after (a totem it sees has failed); the void and /kill pass
+			// any totem by.
+			boolean totem = !totemTried && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
+					&& (player.getMainHandItem().is(Items.TOTEM_OF_UNDYING) || player.getOffhandItem().is(Items.TOTEM_OF_UNDYING));
 			// Their kept death refused (creative now, no world data): the game's own, never 1 HP for ever.
 			if (totem || f.letDie) {
 				return true;
@@ -591,7 +590,7 @@ public final class Fights {
 		if (away > WARN && away <= ARENA && f.tick % 40 == 0) {
 			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(Component.literal("It is behind you. It will wait if you go.")));
 		}
-		return f.lost ? "fight_lost" : null;
+		return null;
 	}
 
 	private static void next(Fight f, Phase phase) {
@@ -764,7 +763,8 @@ public final class Fights {
 		int total = n + hostiles.size();
 		for (int i = 0; i < total; i++) {
 			double angle = Math.PI * 2 * i / total + f.wave;
-			Vec3 at = standing(f.level, player.position().add(Math.cos(angle) * 16, 0, Math.sin(angle) * 16));
+			// On the surface there: never in a cave under a hill, where it could not reach them.
+			Vec3 at = ground(f.level, player.position().add(Math.cos(angle) * 16, 0, Math.sin(angle) * 16));
 			var type = i < n ? KINDS.get(random.nextInt(KINDS.size())) : hostiles.get(i - n);
 			Mob animal = type.create(f.level, EntitySpawnReason.EVENT);
 			if (animal == null) {
@@ -1242,7 +1242,7 @@ public final class Fights {
 		// Nearest first, from its own height: a porch's roof or leaves overhead are never taken
 		// for the ground (until 2026-11-10 the highest standable spot three up was).
 		BlockPos start = BlockPos.containing(at.x, at.y, at.z);
-		for (int dy : new int[] {0, 1, -1, 2, -2, -3, -4, -5, -6, -7, -8, -9}) {
+		for (int dy : new int[] {0, 1, -1, 2, -2, 3, -3, -4, -5, -6, -7, -8, -9}) {
 			BlockPos feet = start.above(dy);
 			if (level.getBlockState(feet.below()).isFaceSturdy(level, feet.below(), net.minecraft.core.Direction.UP)
 					&& level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()

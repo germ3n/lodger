@@ -403,7 +403,15 @@ impl Brain {
         // never chosen, and each event that wanted it picked a spot of its own).
         if memory.place.is_none() && memory.home.is_some() {
             memory.place = act::spot(memory, &mut self.rng);
-            memory.placed_before_place = memory.placed.len();
+            if let Some(place) = memory.place {
+                memory.placed_at_place = memory
+                    .placed
+                    .iter()
+                    .filter(|p| crate::memory::distance(**p, place) <= 5.0)
+                    .copied()
+                    .take(64)
+                    .collect();
+            }
         }
         // Stage five: the ending's beats, as their hour comes.
         if arc.stage == 5 {
@@ -2268,6 +2276,17 @@ impl Brain {
 
     /// How the last tick's commands went.
     pub fn report(&mut self, reports: &[Report], memory: &mut Memory, log: &mut log::Log) {
+        // The fight refused by the host (creative, a fight on already): over at once, not left
+        // to freeze every plan till its timeout.
+        for report in reports {
+            if memory.confront_id != 0 && report.id == memory.confront_id {
+                memory.confront_id = 0;
+                if !report.done {
+                    log.note(&format!("the fight did not begin: {}", report.reason));
+                    memory.fight_ended = Some("refused".to_string());
+                }
+            }
+        }
         for report in reports {
             if let Some(index) = self.pending.iter().position(|p| p.id == report.id) {
                 let pending = self.pending.remove(index);
@@ -4231,6 +4250,25 @@ mod tests {
         let reply = brain.reply.as_ref().unwrap();
         assert_eq!((reply.due_tick, reply.until_tick), (100, 2_000));
         assert_eq!(brain.next_here_scan, 600);
+    }
+
+    #[test]
+    fn a_fight_the_host_refuses_is_over_at_once() {
+        let mut memory = home_memory();
+        memory.confront_id = 9;
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(11);
+        brain.report(
+            &[Report {
+                id: 9,
+                done: false,
+                reason: "never in creative or spectator".to_string(),
+            }],
+            &mut memory,
+            &mut log,
+        );
+        assert_eq!(memory.fight_ended.as_deref(), Some("refused"));
+        assert_eq!(memory.confront_id, 0);
     }
 
     #[test]

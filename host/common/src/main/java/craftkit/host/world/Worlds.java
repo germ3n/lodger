@@ -113,8 +113,8 @@ public final class Worlds {
 	}
 
 	/** Whether a player's death may go ahead: during a fight, only the one that keeps everything. */
-	public boolean allowDeath(net.minecraft.server.level.ServerPlayer player) {
-		return fights.allowDeath(player);
+	public boolean allowDeath(net.minecraft.server.level.ServerPlayer player, net.minecraft.world.damagesource.DamageSource source, boolean totemTried) {
+		return fights.allowDeath(player, source, totemTried);
 	}
 
 	/** Worlds open, for the shutdown hook on another thread. */

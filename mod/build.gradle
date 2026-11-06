@@ -27,7 +27,7 @@ def hostOs = {
 }()
 def hostArch = {
 	def arch = System.getProperty('os.arch')
-	(arch == 'aarch64' || arch == 'arm64') ? 'aarch64' : 'x86_64'
+	(arch == 'aarch64' || arch == 'arm64') ? 'aarch64' : (arch == 'amd64' || arch == 'x86_64') ? 'x86_64' : arch
 }()
 def library = hostOs == 'macos' ? 'liblodger_core.dylib' : hostOs == 'windows' ? 'lodger_core.dll' : 'liblodger_core.so'
 
@@ -91,7 +91,7 @@ tasks.register('processResources', Sync) {
 		// The one built here, unless every native comes from natives-extra/ (`-PnativesOnly`,
 		// scripts/build_jars.py), or natives-extra/ has this platform's: two of one platform would
 		// be a duplicate entry.
-		if (!project.hasProperty('nativesOnly') && !file("natives-extra/${hostOs}-${hostArch}").exists()) {
+		if (project.findProperty('nativesOnly') != 'true' && !file("natives-extra/${hostOs}-${hostArch}").exists()) {
 			from(new File(repo, "target/release/${library}")) {
 				into "natives/${hostOs}-${hostArch}"
 			}
