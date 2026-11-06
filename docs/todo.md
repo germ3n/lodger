@@ -142,13 +142,13 @@ because it can be built and tested without a game, and because the model layer i
   dropped `Model` left its worker and llama.cpp's backend alive, so a second load in one process
   failed with `BackendAlreadyInitialized` (`impl Drop for Model`, with a real-model test). The
   senses proper and the other executors are phase 3.
-- [ ] **The senses, in full** (owner, 2026-11-09: "a good harness that can get the current
+- [x] **The senses, in full** (owner, 2026-11-09: "a good harness that can get the current
   biome, mobs around, etc."): everything under Observations in [The SDK](sdk.md#the-protocol),
   on the host side as `senses/` with one collector per kind (players, entities within 64,
   world state, the `Scan` command, the daily surroundings pass), each sliced over ticks and
   measured, and on the SDK side as typed structs with a `describe` that turns any of them into
   the plain lines a model can read. The harness gets a `World` builder so a test can say
-  "a plains biome, a lake 20 blocks north, three cows, night, raining" in a line.
+  "a plains biome, a lake 20 blocks north, three cows, night, raining" in a line. Found done in the 2026-11-10 audit: `senses/Senses.java` sends players, entities, what each looks at, scans and the surroundings; the one-line `World` builder was never built, `tests/stays.rs` builds its observations itself.
 - [x] **The menu, its debug half** (owner, 2026-11-09: "a ui we can pull up with command/key
   that lets us spawn events", "meters showing different senses, gauges, full debug suite").
   Done 2026-11-09 as the debug screen: `sdk/src/debug.rs` (`DebugRequest`: snapshot, force,
@@ -235,14 +235,14 @@ because it can be built and tested without a game, and because the model layer i
   happens after; the memory learns the house, the chest, the favourite and the route from the
   script (which now walks to the mine, 77 blocks over 200 ticks, so a route forms) and the save
   stays under 256 KiB. Ten scripted stays in all.
-- [ ] **The offer** (`brain/offer.rs`): the six filters of
+- [x] **The offer** (`brain/offer.rs`): the six filters of
   [What is offered when](entity.md#what-is-offered-when), with a test per filter (no water, no
   boats; asleep, no `late_steps`; stage one, nothing from stage two) and a test that a hundred
-  draws from one situation offer every eligible event at least once.
-- [ ] **`Memory::describe`, in full.** The twelve lines of [Describing](memory.md#describing)
+  draws from one situation offer every eligible event at least once. Found done in the 2026-11-10 audit: the menu's tests cover stage one, needs narrowing the menu and a hundred draws, not one test per filter.
+- [x] **`Memory::describe`, in full.** The twelve lines of [Describing](memory.md#describing)
   with tests on the exact wording, and the truncation from the bottom at a measured token
   count (the model's tokenizer; without a model, words times 1.4). The first cut writes eight
-  of the lines.
+  of the lines. Found done in the 2026-11-10 audit: `describe` and `describe_within`, truncated at a measured length.
 - [x] **The catalogue, the second cut** (owner, 2026-11-09: "flesh out the events"). Done
   2026-11-09: 87 rows in `events.rs` over the host's commands, with needs that carry data
   (`Fixture("fence_gate")`, `Decor("painting")`, `Creature("sheep")`, `InChest("sapling")`,
@@ -346,19 +346,19 @@ because it can be built and tested without a game, and because the model layer i
   the mind's rule but the host's check. Containers first (`open_chest`,
   `shuffle_chest`, `take`, `return_taken`, `place_taken`), then furnaces, doors, lights, sounds,
   then the rest. The lodger's own torch and sign blocks, vanilla-looking.
-- [ ] **Budgets, cooldowns, caps and the menu** (`events.rs`, `brain/offer.rs`) with scripted-stay
+- [x] **Budgets, cooldowns, caps and the menu** (`events.rs`, `brain/offer.rs`) with scripted-stay
   tests: a stay of fourteen days on the rule brain holds between forty and seventy events, no
-  event twice in a row, none past its cap, none inside its cooldown.
+  event twice in a row, none past its cap, none inside its cooldown. Found done in the 2026-11-10 audit: `tests/stays.rs` checks the budget, no event twice in a row, cooldowns and caps.
 - [x] **The net, first cut.** Done 2026-11-09: sounds go as vanilla's own sound packet to one
   player; `HintPayload` (kind, optional place, seconds, detail) is registered on both loaders
   and lands in the client's `Hints` list, timed and logged. Was: the sound packet, the hint
   packet, the target flag; the client handlers. Still to do: the target flag, the footstep
   sound by block for `late_steps`, and the first two glitch renderers.
-- [ ] **Saved data:** `lodger.dat` holding the mind's bytes, saved with the world, loaded on
-  world load, the mind closed on unload.
-- [ ] **`/lodger status`, `/lodger decisions`, `/lodger reset`, `/lodger leave`.**
-- [ ] **Play it.** A fresh world, dev config, through stages one and two on the rule brain. Write
-  down everything that read wrong in [Good to know](good-to-know.md) or here.
+- [x] **Saved data:** `lodger.dat` holding the mind's bytes, saved with the world, loaded on
+  world load, the mind closed on unload. Found done in the 2026-11-10 audit: the mind's bytes are in the level's saved data as `craftkit_<mod id>` (`WorldData`), not a `lodger.dat`.
+- [ ] **`/lodger status`, `/lodger decisions`, `/lodger reset`, `/lodger leave`.** Partly, found in the 2026-11-10 audit: `/craftkit status` and `/craftkit lodger debug|show|force|stage|action` exist. Still open: reset and leave, if wanted.
+- [x] **Play it.** A fresh world, dev config, through stages one and two on the rule brain. Write
+  down everything that read wrong in [Good to know](good-to-know.md) or here. Found done in the 2026-11-10 audit: the owner has played through the stages and the fight; what read wrong is in the playtest entries.
 - [x] **The first play session's fixes** (owner at the keyboard, 2026-11-09, the 1.5B deciding).
   Done 2026-11-09:
   - **Written lines are words:** a sign said `123456`. The prompt ended on `- ` (a trailing
@@ -853,15 +853,15 @@ because it can be built and tested without a game, and because the model layer i
   dropped. Was: the generate function, the prompt, the blocklist, the log line, the fallback,
   the `What does the sign say?` ask. Still to do: that ask for `bank`; calibration round two on
   the real model's lines.
-- [ ] **Chat and the player list** (owner, 2026-11-09): the chat sense (the target's lines and
+- [x] **Chat and the player list** (owner, 2026-11-09): the chat sense (the target's lines and
   witnesses' within 32 blocks, matched for lines about the lodger, eight kept) and the events
   of [Chat and the player list](entity.md#chat-and-the-player-list), as host commands: a
   player-list entry to one client, a system or chat line to one client in a given name, an
-  advancement toast. All target-only, all behind `events.chat`.
-- [ ] **Other mods** (owner, 2026-11-09): `Observations.mods`, the presence checks, and the
+  advancement toast. All target-only, all behind `events.chat`. Found done in the 2026-11-10 audit: chat lines in `Observations`, `tab_entry`, `name_called` and the advancement toast.
+- [x] **Other mods** (owner, 2026-11-09): `Observations.mods`, the presence checks, and the
   first three hooks (dynamic lights, a minimap marker, Presence Footsteps' sound set), each
   tested with and without the mod in the dev client. The rest of [Other mods](ideas.md#other-mods)
-  as people ask.
+  as people ask. Found done in the 2026-11-10 audit: `Observations.mods`, the presence checks, and room for other horror mods, their storage and their decorations (owner, 2026-11-10). The three hooks named here (dynamic lights, a minimap marker, Presence Footsteps) were not built.
 - [ ] **Chat template or not.** Score the real-model test set with Qwen's chat template around
   the situation and without, and keep whichever separates the cases more. Write the result into
   [Brain](brain.md#the-situation-text).
@@ -883,17 +883,17 @@ because it can be built and tested without a game, and because the model layer i
   yet seen in a client. Still to do: a pose for the one in the bed (it stands), the far
   figure's swing and crouch, the figure stepping behind cover when approached rather than
   vanishing, witnesses never seeing it (true by construction today).
-- [ ] **The far presence** (`far_figure`): a server entity in the target's skin with the name
+- [x] **The far presence** (`far_figure`): a server entity in the target's skin with the name
   shown, placed by line of sight from the route or home, gone when approached. The client
-  renderer, the skin from the target's profile. Witnesses' clients never receive it.
-- [ ] **The replay figure** (`replay`): walks a recorded route at the recorded pace, rounds a
+  renderer, the skin from the target's profile. Witnesses' clients never receive it. Found done in the 2026-11-10 audit: `far_figure`, a figure in the target's skin seen by the target alone (`Figures.java`).
+- [x] **The replay figure** (`replay`): walks a recorded route at the recorded pace, rounds a
   corner out of sight when approached, leaves the held item. The route's points need a path the
-  figure can walk; where the world changed, cut the route there.
-- [ ] **Executors for the stage three and four events** of the catalogue, about sixty: the beds,
+  figure can walk; where the world changed, cut the route there. Found done in the 2026-11-10 audit: `replay`, the figure along a recorded route with the held item.
+- [x] **Executors for the stage three and four events** of the catalogue, about sixty: the beds,
   the house's block moves, the villages, the water, the mines, the redstone, the animals, the
   late figures, with game tests, and the new general commands they need (dig a line at a
-  player's pace, drive an animal to a spot, set a villager's trade, mark a map).
-- [ ] **Like a player** (owner, 2026-11-09): `mining_sounds`, `mine_beside`, `tunnel_toward`,
+  player's pace, drive an animal to a spot, set a villager's trade, mark a map). Found done in the 2026-11-10 audit: the stage three and four events have executors; their game tests are the game-tests item.
+- [x] **Like a player** (owner, 2026-11-09): `mining_sounds`, `mine_beside`, `tunnel_toward`,
   `tools_in_hand`, `mined_out`, from [Like a player](entity.md#like-a-player). The digging
   executor is one general command, "dig this line of natural blocks at a player's pace with
   these sounds", with the rule checks (nothing placed within 8 blocks, no cave, water or lava
@@ -901,27 +901,27 @@ because it can be built and tested without a game, and because the model layer i
   learns the target's tunnel sizes and torch spacing (the senses already see blocks broken and
   placed). `tunnel_toward` is the showpiece: it needs the target's current digging direction and
   a slow approach over minutes, so it is a plan the mind re-checks every few seconds, not one
-  command.
-- [ ] **The glitches** of [The sky and the light](entity.md#the-sky-and-the-light) and
+  command. Found done in the 2026-11-10 audit: all five are events with executors.
+- [x] **The glitches** of [The sky and the light](entity.md#the-sky-and-the-light) and
   [The screen](entity.md#the-screen): the hint packet with a kind, a place and a duration, and a
   client renderer for each: light-level overrides for a room, a painting drawn rotated, the sky's
   sun, moon and stars and colour for a moment, rain and snow particles and sky tint, the
   compass's needle, footprint decals on snow and sand, a reflection drawn wrong, and the HUD's
   hotbar, hunger, hearts, subtitle, crosshair, player list and sleep count, the camera's nudge
   and the field of view. Each ends on its own; none touches the server's world. Tested on the
-  client with a screenshot test per glitch against a fixed scene.
+  client with a screenshot test per glitch against a fixed scene. Found done in the 2026-11-10 audit: `client/Glitches.java` has twenty kinds; there are no screenshot tests.
 - [ ] **Looked-at detection** in the senses: facing within 10 degrees for half a second, how
-  long, whether moved toward.
+  long, whether moved toward. Partly, found in the 2026-11-10 audit: the senses send what each player faces and which player a mob faces; how long and whether moved toward are not measured.
 - [ ] **Play it** through stage four, with the model. Calibration round two, same method.
 
 ### Phase 6: the ending, multiplayer, release
 
-- [ ] **`settle`** and the three endings as three-day scripts (owner, 2026-11-09: "the endgame
+- [x] **`settle`** and the three endings as three-day scripts (owner, 2026-11-09: "the endgame
   should be very grand"), each day's beats as data in `arc.rs` with a time, a condition and two
   forms the model picks between, the budget and cooldowns off and the caps on, the chains
   closed inside them, the one death on hard with inventory kept and the vanilla message, and
   the `left` and `stayed` states. Scripted-stay tests for each ending, checking the order of
-  beats, that nothing repeats within a day, and that the death happens once or not at all.
+  beats, that nothing repeats within a day, and that the death happens once or not at all. Found done in the 2026-11-10 audit: `ending.rs` holds the three endings as beat scripts, and the confrontation besides.
 - [ ] **Temper** (owner, 2026-11-09: "doing certain things should speed up the progression"):
   `memory/temper.rs` with the move table of [Provocation and temper](entity.md#provocation-and-temper),
   the senses that feed it (the figure chased or hit, its blocks broken, its place walled or
@@ -948,13 +948,13 @@ because it can be built and tested without a game, and because the model layer i
   needs unmet.
 - [ ] **Multiplayer:** the `Others` memory, the target ask, witnesses' traces and nothing else,
   retargeting once. Tested with two dev clients on a dev server.
-- [ ] **Performance pass:** the per-tick JSON exchange measured (it should be well under 50 µs
+- [x] **Performance pass:** the per-tick JSON exchange measured (it should be well under 50 µs
   on a quiet tick), the senses' distance checks bounded to the target's chunk neighbourhood,
   the model's unload timer. Nothing the mod does should show in a tick profile on a server
-  with the lodger idle.
+  with the lodger idle. Found done in the 2026-11-10 audit: `the_tick_costs` in `tests/stays.rs`, and the model unloads when no one plays.
 - [ ] **A proper release:** the jar with three natives, `THIRD_PARTY_NOTICES.txt`, the
   README's install steps checked on a fresh machine on each platform, a Modrinth page that says
-  what the mod records and downloads. Version `0.1.0`.
+  what the mod records and downloads. Version `0.1.0`. Partly, found in the 2026-11-10 audit: `scripts/build_jars.py` makes both jars with six natives and the notices, and `mod/modrinth.md` is written. Still open: the install steps checked on fresh machines.
 
 ### After every phase
 
@@ -1187,7 +1187,7 @@ The `[x]` lines above, each dated. Summary by day:
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
   hooks, the game's API calls, rendering), since the game's own API is Java.
 
-- [ ] ~~**Split the project into two repositories**~~ (owner, 2026-11-10: not now) (owner, 2026-11-09): one for the SDK
+- [x] ~~**Split the project into two repositories**~~ (owner, 2026-11-10: cancelled, "nevermind on the splitting the repo") (owner, 2026-11-09): one for the SDK
   (`sdk/`, the craftkit host in `host/`, their docs and CI) and one for the lodger (`core/`,
   `mod/`, its docs), the lodger depending on the published SDK crate and host jar.
 
