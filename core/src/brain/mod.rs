@@ -700,7 +700,10 @@ impl Brain {
         if let Some((heard, about)) = memory.heard.take() {
             self.consider_reply(&heard, about, now, day, memory, arc, config, log, model);
         }
-        if let Some(command) = self.reply_due(now, day, memory, log) {
+        // Nothing of its own while the fight is on or another mod's horror is near: the
+        // reactions below used to go on through both.
+        let held_back = arc.fighting_since > 0 || memory.last.other_horror_near;
+        if let Some(command) = self.reply_due(now, day, memory, log).filter(|_| !held_back) {
             commands.push(command);
         }
         // An offering for their next fresh loot, armed when none is.
@@ -711,7 +714,7 @@ impl Brain {
         }
 
         // A door they open: now and then it shuts again a moment later.
-        if let Some(door) = memory.door_used_now.take() {
+        if let Some(door) = memory.door_used_now.take().filter(|_| !held_back) {
             commands.extend(self.consider_held(door, now, day, memory, arc, config, log));
         }
 
@@ -722,13 +725,13 @@ impl Brain {
             let counted = memory.sign_tally().is_some_and(|t| t.kind == kind);
             let seen = act::kill_sign_spot(memory)
                 .is_none_or(|s| memory.in_view(s, config.events.min_distance as f64));
-            if counted && !seen {
+            if counted && !seen && !held_back {
                 self.consider_started("count_up", 1.0, now, day, memory, arc, config, log);
             }
         }
 
         // They rang a bell: perhaps it rings again, once.
-        if memory.rang_bell_now.is_some() {
+        if memory.rang_bell_now.is_some() && !held_back {
             self.consider_started(
                 "bell_twice",
                 BELL_CHANCE,
@@ -744,13 +747,13 @@ impl Brain {
 
         // Back from another dimension a while: something happened at home meanwhile.
         if let Some(gone) = memory.back_after.take() {
-            if gone >= AWAY_LEAST {
+            if gone >= AWAY_LEAST && !held_back {
                 self.consider_back(now, day, memory, arc, config, log);
             }
         }
 
         // They knocked on a door: perhaps it knocks back.
-        if memory.knocked_now.is_some() {
+        if memory.knocked_now.is_some() && !held_back {
             self.consider_started(
                 "answer_knock",
                 KNOCK_CHANCE,
@@ -765,12 +768,12 @@ impl Brain {
         }
 
         // They crouch still: perhaps breathing at their ear, until they move.
-        if std::mem::take(&mut memory.crouched_now) {
+        if std::mem::take(&mut memory.crouched_now) && !held_back {
             self.consider_started("breath", BREATH_CHANCE, now, day, memory, arc, config, log);
         }
 
         // They woke: perhaps the figure at the foot of the bed, for half a second.
-        if std::mem::take(&mut memory.woke_now) {
+        if std::mem::take(&mut memory.woke_now) && !held_back {
             self.consider_started(
                 "foot_of_bed",
                 WOKE_CHANCE,
@@ -784,10 +787,14 @@ impl Brain {
         }
 
         // A chest of theirs opened: perhaps another closes in the house at the same moment.
-        if memory.opened_now.is_some() {
+        if memory.opened_now.is_some() && !held_back {
             commands.extend(self.consider_echo(now, day, memory, arc, config, log));
             memory.opened_now = None;
         }
+        // Held back, a trigger is spent all the same, not saved for after.
+        memory.rang_bell_now = None;
+        memory.knocked_now = None;
+        memory.opened_now = None;
 
         // A reaction, on a trigger, ten seconds apart at most, when nothing else is asked.
         let may_react = self.asking.is_none()
@@ -1073,8 +1080,10 @@ impl Brain {
         }
 
         self.written.retain(|(e, _)| *e != plan.event);
-        if !plan.forced {
-            arc.spend(event.cost());
+        // Only what was sent spends: an event that made nothing (a tidy chest, no slot free)
+        // used the day's budget and counted toward the next stage until 2026-11-10.
+        if !plan.forced && (!made.is_empty() || plan.event == "wait") {
+            arc.spend(event.cost(), now.day);
         }
         if plan.forced && made.is_empty() {
             memory.record(&plan.event, plan.pos, day, false, "nothing to do it with");
@@ -1843,10 +1852,8 @@ impl Brain {
                         log.note(&format!(
                             "the model did not answer the {kind} question ({err})"
                         ));
-                        if kind == "want" {
-                            memory.want =
-                                WANT_CHOICES[(self.rng.next_u64() % 3) as usize].to_string();
-                        }
+                        let kind = kind.to_string();
+                        self.unasked(&kind, memory, log);
                     }
                     (_, Ok(_)) => {}
                 }
@@ -1893,6 +1900,9 @@ impl Brain {
             if now.tick.saturating_sub(ask.asked_tick) > ASK_PATIENCE_TICKS {
                 let ask = self.asking.take().unwrap();
                 log.note("the model took too long; the rules answer");
+                // The want and the target have no menu for the rules: until this was here, a
+                // model slower than the patience asked them again forever.
+                self.unasked(&ask.kind, memory, log);
                 self.rules_for(ask, now, memory, arc, config, log);
             }
         }
@@ -2047,6 +2057,24 @@ impl Brain {
             Some("now".to_string()),
             None,
         );
+    }
+
+    /// The rules' answer to a `want` or `witness` question the model did not answer: a want at
+    /// random, and the first player in the memory as the target.
+    fn unasked(&mut self, kind: &str, memory: &mut Memory, log: &mut log::Log) {
+        match kind {
+            "want" => {
+                memory.want = WANT_CHOICES[(self.rng.next_u64() % 3) as usize].to_string();
+                log.note(&format!("it wants {} (the rules' pick)", memory.want));
+            }
+            "witness" => {
+                if let Some((i, name, uuid)) = memory.others.first().cloned() {
+                    log.note(&format!("the target is {name} (the rules' pick)"));
+                    memory.set_target(i, &name, &uuid);
+                }
+            }
+            _ => {}
+        }
     }
 
     fn rules_for(
@@ -2341,7 +2369,7 @@ impl Brain {
                 if let Some(was) = report
                     .reason
                     .strip_prefix("replaced ")
-                    .filter(|_| report.done && pending.event != "one_room_dark")
+                    .filter(|_| report.done && !NOT_DUG.contains(&pending.event.as_str()))
                 {
                     // What a pick would give: stone is cobblestone, an ore its drop.
                     let held = crate::tunnels::dug_as(was);
@@ -2430,6 +2458,18 @@ fn cancel_reason(
     None
 }
 
+/// Events whose "replaced" block is not dug into the lodger's store: a light put out, a light
+/// swapped for one it brought, a flower potted, a crop harvested into their chest. Only
+/// `one_room_dark` was here before, and the rest each made a torch, a lantern or a flower from
+/// nothing.
+const NOT_DUG: &[&str] = &[
+    "one_room_dark",
+    "light_taken",
+    "village_lantern",
+    "flowers_potted",
+    "harvest_one",
+];
+
 /// Whether a planned moment can ever hold together with the event's needs: "as they come home"
 /// never meets "away or asleep", "while they sleep" never meets "walking" or "outdoors", and
 /// "while they are away" never meets "in bed" or "indoors" (the home's rooms).
@@ -2437,8 +2477,22 @@ pub fn when_fits(event: &Event, when: &str) -> bool {
     use events::Need::*;
     let rules_out: &[events::Need] = match when {
         "home" => &[TargetAwayOrAsleep, TargetInBed],
-        "sleep" => &[TargetWalking, TargetOutdoors],
-        "away" => &[TargetInBed, TargetIndoors],
+        // Awake, eating, walking to a door or the chest never happen asleep, nor near the
+        // home while away; until 2026-11-10 such a plan waited out its whole window.
+        "sleep" => &[
+            TargetWalking,
+            TargetOutdoors,
+            TargetAwake,
+            TargetAte,
+            TargetApproachingDoor,
+            TargetApproachingChest,
+        ],
+        "away" => &[
+            TargetInBed,
+            TargetIndoors,
+            TargetApproachingDoor,
+            TargetApproachingChest,
+        ],
         _ => &[],
     };
 
@@ -3243,6 +3297,8 @@ mod tests {
         assert!(when_fits(swap, ""));
         assert!(!when_fits(events::find("open_chest").unwrap(), "away"));
         assert!(!when_fits(events::find("late_steps").unwrap(), "sleep"));
+        // Awake is never asleep.
+        assert!(!when_fits(events::find("name_called").unwrap(), "sleep"));
         for event in events::CATALOGUE {
             assert!(
                 when_fits(event, "") && when_fits(event, "now"),

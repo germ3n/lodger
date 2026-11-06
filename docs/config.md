@@ -6,9 +6,8 @@ the wrong type does not stop the mod: a whole number written with a point (`2.0`
 whole; text that reads as what the key wants (`"2"`, `"0.25"`, `"true"`, `"off"`) is taken as
 that; anything else leaves that key at its preset's value; each is logged as a warning naming
 the key. Only a file that is not JSON at all, or a value out of its bounds, refuses to load,
-with the reason in the log. Keys under
-`brain` and `stages` are read at each decision, so a change applies to the next one; the rest are
-read at world load.
+with the reason in the log. The file is read when the game starts and again when the settings
+screen's Done saves it; a change made by hand applies at the next start.
 
 The hard rules in [What it never does](good-to-know.md#what-it-never-does) are not here. There
 is no key that turns one off.
@@ -25,7 +24,7 @@ again; a new model size is fetched at once.
 | Key | Default | What it changes |
 | --- | --- | --- |
 | `enabled` | `true` | Whether a lodger moves into new worlds and existing ones keep theirs. `false` ends the stay in every world as `/lodger leave` would. |
-| `preset` | `"balanced"` | `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below (see [Presets](#presets)). A key the file names wins over the preset; the file written back shows the preset's values filled in. |
+| `preset` | `"balanced"` | `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below (see [Presets](#presets)). A key the file names wins over the preset; the file written back shows the preset's values filled in. Picking another preset on the settings screen takes the old preset's values out of the file, the ones you never changed, so the new preset's apply, and writes the file again with them. |
 | `log.decisions` | `true` | Writes every decision to `config/lodger/decisions.log`. Keep it on while developing; see [The decision log](brain.md#the-decision-log). |
 | `log.keep_mb` | `16` | The log rotates past this size, keeping one older file. |
 
@@ -42,14 +41,14 @@ hold under every preset; a preset turns events off, never rules.
 | Stage lengths, least to most days | 2 to 5, up to 4 to 9 | 1 to 3, up to 3 to 7 | 1 to 2, up to 2 to 6 | 1 to 1, up to 1 to 3 |
 | Move-in after | 3 days | 3 days | 3 days | the first night |
 | Cooldowns | doubled | as written | three quarters | halved |
-| Keeps its distance | 32 blocks | 24 | 16 | 12 |
+| Keeps its distance (`events.min_distance`) | 80 blocks | 64 | 48 | 32 |
 | Menu offered | 8 | 8 | 8 | 12 |
 | Acts at confidence | 0.5 | 0.4 | 0.3 | 0.25 |
 | Chat and player list | off | on | on | on |
 | Left out | the sleep events, the near figures, `lights_fail`, `red_rain`, `your_voice`, `knock`, `stare`, `sign_word`, `tunnel_toward` | nothing | nothing | nothing |
 | Ending | `leave`, always | by difficulty | `take` on every difficulty | `take` on every difficulty |
 
-So `calm` is a presence that never touches your sleep, your screen or your chat, keeps 32 blocks
+So `calm` is a presence that never touches your sleep, your screen or your chat, keeps 80 blocks
 off, and leaves at the end; `relentless` is a week of something every evening and the death at
 the end whatever the difficulty. The menu's config page shows the preset and what it set.
 
@@ -63,14 +62,14 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 | `model.threads` | `2` | Threads llama.cpp uses while scoring. More is faster and takes more from the game. |
 | `model.context` | `1536` | The context window, in tokens; llama.cpp wants a multiple of 32. The situation text plus one question and its longest choice must fit: the memory's detail lines (habits, places, people) are taken only while they fit, at 3.5 characters a token with 200 tokens kept for the frame and the question (`memory::describe_chars`). Larger costs memory (about 30 KB a token for the 1.5B), not speed. Was 512 until 2026-11-10 (owner: "can we increase context window ... to 1500?"). |
 | `model.idle_minutes` | `10` | Unloads the model after this long with no target online. Loading again takes a second or two. |
-| `model.gpu_share` | `0.5` | The share of the model's layers run on the GPU (Metal, Vulkan), the rest on the CPU: `0` the CPU alone, `1` all of it. Half by default, so the game keeps half the GPU for its frames (owner, 2026-11-09: "limit it to like 50% gpu cuz it makes my game stutter"); the prompt is also decoded in chunks of 64 tokens with a millisecond's rest between, so no frame waits on one long burst. Until 2026-11-09 the old `model.gpu_layers` was never passed on and llama.cpp put every layer on the GPU. |
+| `model.gpu_share` | `0.5` | The share of the model's layers run on the GPU (Metal), the rest on the CPU: `0` the CPU alone, `1` all of it. The released natives have a GPU on macOS alone (Metal comes with llama.cpp there); Windows and Linux are built without Vulkan, so the key does nothing there and the model runs on the CPU. Half by default, so the game keeps half the GPU for its frames (owner, 2026-11-09: "limit it to like 50% gpu cuz it makes my game stutter"); the prompt is also decoded in chunks of 64 tokens with a millisecond's rest between, so no frame waits on one long burst. Until 2026-11-09 the old `model.gpu_layers` was never passed on and llama.cpp put every layer on the GPU. |
 | `model.pause_ms` | `1` | Milliseconds the model rests between each piece of its work while it thinks (every 64 tokens of a question, and before each piece when above 1): higher leaves more of the GPU and the CPU to the game at any moment, and its answers come slower; the game never waits on them either way. 0 to 100; the settings page steps it by 5 up to 50. Owner, 2026-11-10: "is there a way to limit the amount of compute it uses". |
 
 ## Brain
 
 | Key | Default | What it changes |
 | --- | --- | --- |
-| `brain.plan_every` | `90` | Seconds of the target's play between planning asks, on top of the trigger asks. |
+| `brain.plan_every` | `90` | Seconds of the target's play between planning asks, on top of the trigger asks; 15 at least. |
 | `brain.text_temperature` | `0.8` | How freely the model writes a sign or a line: 0 is the likeliest word every time (the same moment, the same line), higher draws among the likely ones (top 90 per cent). Since 2026-11-09, after lines repeated. |
 | `brain.most_plans` | `3` | How many plans it holds at once; it asks again every `plan_every` while below it (`calm` 2, `intense` 4, `relentless` 5; one until 2026-11-09, owner: "one event at a time kinda gets slow"). |
 | `brain.event_threshold` | `0.4` | The confidence of the model's `Should it do something soon?` answer below which the decision is `wait`. Higher is a more patient lodger. Live since 2026-11-09. |

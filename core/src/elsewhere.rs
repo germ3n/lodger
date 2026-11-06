@@ -24,6 +24,9 @@ pub const CHANCE_A_SECOND: f64 = 1.0 / 300.0;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Elsewhere {
     pub target: Option<u32>,
+    /// The target's uuid: the other stay matches players by it, so the index alone left it
+    /// on whoever it saw first there.
+    pub target_uuid: String,
     pub name: String,
     /// The block they build with most at home, for `ender_holds`.
     pub block: Option<String>,
@@ -41,7 +44,7 @@ impl Stay {
         for (id, world) in shared.done.drain(..) {
             if let Some(event) = events::find(id) {
                 self.memory.record(id, None, day, true, &world);
-                self.arc.spend(event.cost());
+                self.arc.spend(event.cost(), now.day);
                 // The enderman's block came out of what it holds, never from nothing.
                 if id == "ender_holds" {
                     if let Some(block) = &shared.block {
@@ -51,6 +54,7 @@ impl Stay {
             }
         }
         shared.target = self.memory.target;
+        shared.target_uuid = self.memory.target_uuid.clone();
         shared.name = self.memory.target_name.clone();
         // The block they build with most, when it has one of its own (from its digging) to
         // give: until 2026-11-10 it was made from nothing.
@@ -85,8 +89,11 @@ impl Stay {
         if !now.tick.is_multiple_of(20) || shared.target.is_none() {
             return Vec::new();
         }
-        if self.memory.target != shared.target {
-            self.memory.target = shared.target;
+        if self.memory.target != shared.target || self.memory.target_uuid != shared.target_uuid {
+            if let Some(index) = shared.target {
+                self.memory
+                    .set_target(index, &shared.name.clone(), &shared.target_uuid.clone());
+            }
             self.memory.last = Default::default();
             return Vec::new();
         }
@@ -284,6 +291,28 @@ mod tests {
         assert_eq!(home.memory.stored("minecraft:cobblestone"), 0);
         // Never the ghasts' in the End, nor the enderman's in the Nether.
         assert!(sent.iter().all(|c| !matches!(c, Command::Hint { .. })));
+    }
+
+    #[test]
+    fn the_other_stay_follows_the_overworld_s_target_not_whoever_it_saw_first() {
+        let mut nether = stay("minecraft:the_nether");
+        nether.memory.set_target(1, "someone", "uuid-b");
+        let mut shared = Elsewhere {
+            target: Some(1),
+            target_uuid: "uuid-a".to_string(),
+            name: "Player612".to_string(),
+            ..Elsewhere::default()
+        };
+        nether.tick_elsewhere(
+            &Now {
+                tick: 20,
+                ..Now::default()
+            },
+            &mut shared,
+        );
+
+        assert_eq!(nether.memory.target_uuid, "uuid-a");
+        assert_eq!(nether.memory.target_name, "Player612");
     }
 
     #[test]

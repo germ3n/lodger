@@ -63,6 +63,12 @@ public final class ConfigFile {
 		}
 	}
 
+	/** Writes the effective config over the file: the mod asked, its preset changed (ABI 45). */
+	public void write(String effectiveJson) throws IOException {
+		Files.createDirectories(path.getParent());
+		Files.writeString(path, effectiveJson + System.lineSeparator(), StandardCharsets.UTF_8);
+	}
+
 	/** Writes the effective config, only when no file is there. */
 	public boolean writeIfMissing(String effectiveJson) throws IOException {
 		if (Files.exists(path)) {

@@ -69,7 +69,10 @@ public final class Gatherings {
 		if (spots.isEmpty()) {
 			return 0;
 		}
-		List<Villager> villagers = level.getEntitiesOfClass(Villager.class, new AABB(center).inflate(48));
+		// Not one gathered already: gathered twice, the second "from" was the house, and it
+		// stayed there at dawn.
+		List<Villager> villagers = level.getEntitiesOfClass(Villager.class, new AABB(center).inflate(48),
+				v -> gathered.stream().noneMatch(g -> g.villager() == v));
 		long until = tick + (long) (Math.min(seconds, MOST_SECONDS) * 20);
 		Vec3 wall = Vec3.atCenterOf(door.relative(in, 8));
 		for (int i = 0; i < villagers.size(); i++) {

@@ -55,6 +55,17 @@ public final class WorldData extends SavedData {
 		setDirty();
 	}
 
+	/** Whether something is kept under a key. */
+	public boolean has(String key) {
+		return kept.containsKey(key);
+	}
+
+	/** Whether what is kept under a key is the same item as {@code stack}, so the two stack. */
+	public boolean holdsLike(String key, ItemStack stack) {
+		ItemStack had = kept.get(key);
+		return had != null && ItemStack.isSameItemSameComponents(had, stack);
+	}
+
 	/** The stack kept under a key, taken out, or null. */
 	public ItemStack giveBack(String key) {
 		ItemStack stack = kept.remove(key);

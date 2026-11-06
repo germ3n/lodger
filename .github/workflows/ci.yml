@@ -17,10 +17,12 @@ jobs:
           - os: macos-15-intel
             platform: macos-x86_64
             library: liblodger_core.dylib
-          - os: ubuntu-24.04
+          # 22.04, not 24.04: a library built on 24.04's glibc 2.39 does not load on Debian 12 or
+          # Ubuntu 22.04, which many servers run.
+          - os: ubuntu-22.04
             platform: linux-x86_64
             library: liblodger_core.so
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-22.04-arm
             platform: linux-aarch64
             library: liblodger_core.so
           - os: windows-latest
@@ -29,9 +31,22 @@ jobs:
           - os: windows-11-arm
             platform: windows-aarch64
             library: lodger_core.dll
+            # llama.cpp refuses MSVC's own compiler on ARM without GGML_NATIVE, which the
+            # crate turns off: built with clang-cl through Ninja in the developer prompt.
+            clang: true
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
+      - if: matrix.clang
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+      - if: matrix.clang
+        shell: bash
+        run: |
+          echo "CC=clang-cl" >> "$GITHUB_ENV"
+          echo "CXX=clang-cl" >> "$GITHUB_ENV"
+          echo "CMAKE_GENERATOR=Ninja" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.98.1

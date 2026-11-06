@@ -56,7 +56,7 @@ import java.util.UUID;
  * <ol>
  *   <li><b>The rising.</b> The ground before its door cracks and it rises out of it, lying flat,
  *       then upright; the bar fills as it rises.</li>
- *   <li><b>Waves.</b> It watches from its roof while warped animals come at them, three waves
+ *   <li><b>Waves.</b> It watches from its roof while warped animals come at them, four waves
  *       (none on peaceful).</li>
  *   <li><b>Bend 1.</b> It drops onto all fours, crawls at them flat and fast, stands too tall,
  *       its head backwards a beat.</li>
@@ -237,6 +237,11 @@ public final class Fights {
 			String over = null;
 			if (player == null || player.level() != fight.level || fight.tick > MOST_TICKS) {
 				over = "fight_fled";
+			} else if (fight.real != null && fight.real.isRemoved()) {
+				// Its chunk unloaded under it (a short view distance while they fought far off):
+				// the figure is gone from the world, and a fight against what is no longer there
+				// could not be won. It ends as a flight, to wait for another night.
+				over = "fight_fled";
 			} else if (fight.phase != Phase.FLEEING && fight.phase != Phase.END && player.position().distanceTo(fight.at) > ARENA) {
 				// Run from: it stops, and sinks into the ground where it stood, to wait for another night.
 				fight.warped.forEach(Fights::gone);
@@ -276,11 +281,14 @@ public final class Fights {
 		}
 		if (tick % 100 == 0) {
 			for (ServerLevel level : server.getAllLevels()) {
+				// Gathered first, then discarded: the level's entity list is live.
+				List<Entity> left = new ArrayList<>();
 				for (Entity entity : level.getAllEntities()) {
 					if (entity.entityTags().contains(TAG) && fights.stream().noneMatch(f -> owns(f, entity))) {
-						entity.discard();
+						left.add(entity);
 					}
 				}
+				left.forEach(Entity::discard);
 			}
 		}
 	}

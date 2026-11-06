@@ -113,10 +113,18 @@ pub fn answer(
                     let target = stay.memory.target;
                     let name = stay.memory.target_name.clone();
                     let uuid = stay.memory.target_uuid.clone();
+                    // Kept too: the mods loaded (sent once, at the first tick), the pick of
+                    // target from the config, and what it holds of theirs, so nothing is lost.
+                    let mods = std::mem::take(&mut stay.memory.mods);
+                    let defer = stay.memory.defer_target;
+                    let held = stay.memory.held.take();
                     stay.memory = Default::default();
                     stay.memory.target = target;
                     stay.memory.target_name = name;
                     stay.memory.target_uuid = uuid;
+                    stay.memory.mods = mods;
+                    stay.memory.defer_target = defer;
+                    stay.memory.held = held;
                     stay.brain.plans.clear();
                     stay.brain.later.clear();
                     stay.brain.pending.clear();

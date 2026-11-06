@@ -73,7 +73,9 @@ public final class Beds {
 		level.setBlock(bed[0], Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 		level.setBlock(bed[0].relative(side), foot, QUIET);
 		level.setBlock(bed[1].relative(side), head, Block.UPDATE_ALL);
-		for (ServerPlayer player : level.players()) {
+		// Everyone online, wherever they are: one in the Nether whose bed this is woke at the
+		// world's spawn when only this level's players were asked.
+		for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
 			ServerPlayer.RespawnConfig respawn = player.getRespawnConfig();
 			if (respawn == null || !respawn.respawnData().dimension().equals(level.dimension())) {
 				continue;

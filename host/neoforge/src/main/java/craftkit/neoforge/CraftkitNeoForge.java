@@ -127,9 +127,12 @@ public final class CraftkitNeoForge {
 		// farmland a hoe makes, a stripped log, a path or a fire (until 2026-11-10 NeoForge
 		// counted those as their building).
 		NeoForge.EVENT_BUS.addListener((BlockEvent.EntityPlaceEvent event) -> {
+			// The block placed is the item of a hand: torches in the off hand and a hoe in the
+			// main used to count the tilled ground as building. A wall torch's item is the torch.
+			net.minecraft.world.item.Item placed = event.getPlacedBlock().getBlock().asItem();
 			if (event.getEntity() instanceof ServerPlayer player
-					&& (player.getMainHandItem().getItem() instanceof net.minecraft.world.item.BlockItem
-							|| player.getOffhandItem().getItem() instanceof net.minecraft.world.item.BlockItem)) {
+					&& placed != net.minecraft.world.item.Items.AIR
+					&& (player.getMainHandItem().is(placed) || player.getOffhandItem().is(placed))) {
 				senses.noticedPlacedBlock(player, event.getPos(), event.getPlacedBlock());
 			}
 		});

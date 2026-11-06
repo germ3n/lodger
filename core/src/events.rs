@@ -3335,7 +3335,8 @@ pub const CATALOGUE: &[Event] = &[
         5,
         &[
             Around("crops"),
-            InChestAny(&["carrot", "potato", "beetroot_seeds"]),
+            // The very items: `golden_carrot` and `baked_potato` are no seed (2026-11-10).
+            InChestAny(&[":carrot", ":potato", ":beetroot_seeds"]),
             TargetAwayOrAsleep,
         ],
         3.0,

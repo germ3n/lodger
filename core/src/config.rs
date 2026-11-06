@@ -309,6 +309,9 @@ pub struct Config {
     /// the host to log. Never written back.
     #[serde(skip)]
     pub warnings: Vec<String>,
+    /// Keys inside a known section that the schema does not know (`model.sise`), as paths.
+    #[serde(skip)]
+    pub unknown_inside: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -412,6 +415,7 @@ impl Default for Config {
             multiplayer: Multiplayer::default(),
             unknown: BTreeMap::new(),
             warnings: Vec::new(),
+            unknown_inside: Vec::new(),
         }
     }
 }
@@ -497,6 +501,49 @@ impl Default for Multiplayer {
 /// Numbers written whole with a point (`2.0`) read as whole numbers, so a count written by a
 /// settings screen or by hand that way still loads: `2.0` for `brain.most_plans` refused the
 /// whole config, and the mod with it (the dev client, 2026-11-09). A fraction keeps its point.
+/// A config file whose preset was just changed, with the old preset's values taken out: every
+/// value the file holds that is the old preset's own, so the new preset's apply. A file holds
+/// every key, written at the first start, and picking `calm` on the settings screen used to
+/// change the name alone, every value staying `balanced`'s. None when the preset is the same,
+/// or either text is not a config.
+pub fn rebased(before: &str, now: &str) -> Option<String> {
+    let preset_of = |v: &serde_json::Value| {
+        v.get("preset")
+            .and_then(|p| p.as_str())
+            .unwrap_or("balanced")
+            .to_string()
+    };
+    let before: serde_json::Value = serde_json::from_str(before).ok()?;
+    let mut now: serde_json::Value = serde_json::from_str(now).ok()?;
+    let (old, new) = (preset_of(&before), preset_of(&now));
+    if old == new {
+        return None;
+    }
+    let mut base = serde_json::to_value(Preset::named(&old)?.config()).ok()?;
+    whole_numbers(&mut base);
+    whole_numbers(&mut now);
+    strip_same(&mut now, &base);
+    now.as_object_mut()?
+        .insert("preset".to_string(), serde_json::Value::from(new));
+
+    serde_json::to_string(&now).ok()
+}
+
+/// Takes out of `file` every value equal to `base`'s at the same keys; objects left empty go.
+fn strip_same(file: &mut serde_json::Value, base: &serde_json::Value) {
+    let (Some(file), Some(base)) = (file.as_object_mut(), base.as_object()) else {
+        return;
+    };
+    file.retain(|key, value| match base.get(key) {
+        Some(b) if value.is_object() && b.is_object() => {
+            strip_same(value, b);
+            value.as_object().is_some_and(|o| !o.is_empty())
+        }
+        Some(b) => value != b,
+        None => true,
+    });
+}
+
 fn whole_numbers(value: &mut serde_json::Value) {
     match value {
         serde_json::Value::Number(number) => {
@@ -510,6 +557,40 @@ fn whole_numbers(value: &mut serde_json::Value) {
         serde_json::Value::Object(map) => map.values_mut().for_each(whole_numbers),
         _ => {}
     }
+}
+
+/// The paths in `file` under a known section that the schema has no place for.
+fn unknown_inside(file: &serde_json::Value) -> Vec<String> {
+    let Ok(schema) = serde_json::to_value(Config::default()) else {
+        return Vec::new();
+    };
+    let mut leaves = Vec::new();
+    collect_leaves(file, &mut Vec::new(), &mut leaves);
+    let mut out: Vec<String> = Vec::new();
+    for (path, _) in leaves {
+        // A top-level key unknown is the flattened map's; only a known section's are here.
+        if path.len() < 2 || schema.get(&path[0]).is_none() {
+            continue;
+        }
+        let mut at = &schema;
+        for (depth, key) in path.iter().enumerate() {
+            match at.get(key) {
+                Some(next) => at = next,
+                None => {
+                    let joined = path[..=depth].join(".");
+                    if !out.contains(&joined) {
+                        out.push(joined);
+                    }
+                    break;
+                }
+            }
+            if !at.is_object() {
+                break;
+            }
+        }
+    }
+
+    out
 }
 
 /// Every value in a config file with its path of keys; a list is one value.
@@ -624,6 +705,7 @@ impl Config {
         };
         config.check()?;
         config.warnings.sort();
+        config.unknown_inside = unknown_inside(&file);
 
         Ok(config)
     }
@@ -703,6 +785,10 @@ impl Config {
         if self.brain.queue == 0 {
             return Err("brain.queue must be at least 1".to_string());
         }
+        // 0 asked the model again the moment each answer came back, nearly without pause.
+        if self.brain.plan_every < 15 {
+            return Err("brain.plan_every must be at least 15".to_string());
+        }
 
         for stage in 0..5 {
             if self.stages.least_days[stage] > self.stages.most_days[stage] {
@@ -736,12 +822,12 @@ impl Config {
         Ok(())
     }
 
-    /// The keys the file had that the schema does not know, as `a.b` paths, one level deep: an
-    /// unknown key inside a known section is found by that section's `unknown` map in a later
-    /// phase; today the sections ignore theirs silently, which the test below pins so it is not
-    /// forgotten.
+    /// The keys the file had that the schema does not know: at the top (`colour`) and inside
+    /// a known section as a path (`model.sise`). Those inside used to pass silently.
     pub fn unknown_keys(&self) -> Vec<String> {
-        self.unknown.keys().cloned().collect()
+        let mut keys: Vec<String> = self.unknown.keys().cloned().collect();
+        keys.extend(self.unknown_inside.iter().cloned());
+        keys
     }
 
     /// The effective config, every key present, as the body writes it back to a missing file.
@@ -778,11 +864,22 @@ mod tests {
     }
 
     #[test]
-    fn an_unknown_key_inside_a_section_is_ignored_today() {
-        // Pinned so the behaviour is known: reporting these is a later phase's item.
-        let config = Config::parse(r#"{ "brain": { "colour": "red" } }"#).unwrap();
+    fn an_unknown_key_inside_a_section_is_reported_too() {
+        let config =
+            Config::parse(r#"{ "brain": { "colour": "red" }, "model": { "sise": "3b" } }"#)
+                .unwrap();
 
-        assert!(config.unknown_keys().is_empty());
+        assert_eq!(
+            config.unknown_keys(),
+            vec!["brain.colour".to_string(), "model.sise".to_string()]
+        );
+        assert!(
+            Config::parse(&Config::default().to_json())
+                .unwrap()
+                .unknown_keys()
+                .is_empty(),
+            "the file as written has none"
+        );
     }
 
     #[test]
@@ -877,6 +974,7 @@ mod tests {
                 "brain.event_threshold",
             ),
             (r#"{ "brain": { "queue": 0 } }"#, "brain.queue"),
+            (r#"{ "brain": { "plan_every": 0 } }"#, "brain.plan_every"),
             (
                 r#"{ "stages": { "least_days": [9, 2, 2, 3, 1] } }"#,
                 "stages.least_days[0]",
@@ -1027,5 +1125,28 @@ mod tests {
         schema.sort();
 
         assert_eq!(documented, schema);
+    }
+
+    #[test]
+    fn a_preset_picked_over_a_file_of_every_key_takes_effect_and_the_player_s_own_stay() {
+        // The file as the first start writes it: every key, balanced's values, and one the
+        // player set themselves.
+        let mut written = serde_json::to_value(Config::default()).unwrap();
+        written["model"]["threads"] = serde_json::json!(6);
+        let before = written.to_string();
+        written["preset"] = serde_json::json!("calm");
+        let now = written.to_string();
+
+        let text = rebased(&before, &now).expect("the preset changed");
+        let config = Config::parse(&text).unwrap();
+
+        assert_eq!(config.preset, "calm");
+        assert!(!config.events.chat, "calm's own value, not balanced's");
+        assert_eq!(config.events.min_distance, 80);
+        assert_eq!(config.model.threads, 6, "what the player set is kept");
+        assert!(
+            rebased(&now, &now).is_none(),
+            "the same preset: nothing to do"
+        );
     }
 }

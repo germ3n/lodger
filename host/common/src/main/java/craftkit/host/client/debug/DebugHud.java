@@ -56,6 +56,14 @@ public final class DebugHud {
 		}
 	}
 
+	/** Out of a world: the overlay off and the last world's picture gone, so the next server (where they may not be an operator) never shows it nor is asked every second. */
+	public static void leave() {
+		enabled = false;
+		mod = "";
+		model = new DebugModel();
+		ticks = 0;
+	}
+
 	/** Every snapshot the client gets, from the screen's asks or the overlay's. */
 	static void latest(String modId, DebugModel parsed) {
 		if (!parsed.gauges.isEmpty() || !parsed.senses.isEmpty()) {

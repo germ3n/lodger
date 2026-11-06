@@ -12,4 +12,13 @@ public final class Spare {
 	public static float harm(float damage, float health, float scale) {
 		return Math.min(damage, Math.max(0, (health - 1) / scale));
 	}
+
+	/**
+	 * An arrow's harm, spared: the game rounds its hit up from its speed at impact times its
+	 * base, and an arrow falling from above can come in at a quarter over the 1.6 it was shot at,
+	 * so a quarter more and a whole point of rounding are kept off (a spared arrow could kill).
+	 */
+	public static float arrowHarm(float damage, float health) {
+		return harm(damage, health - 1, 1.25f);
+	}
 }

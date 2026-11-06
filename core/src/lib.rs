@@ -56,6 +56,39 @@ pub struct Lodger {
     pub log: Mutex<brain::log::Log>,
     /// What the overworld's stay and the other dimensions' tell each other (`elsewhere`).
     pub elsewhere: Mutex<elsewhere::Elsewhere>,
+    /// When the target was last online, for `model.idle_minutes`.
+    pub idle: Mutex<Idle>,
+}
+
+/// The model's idle clock: loaded with no target online for `model.idle_minutes`, it is
+/// unloaded, and the next question loads it again. The key was read by nothing before, and the
+/// model stayed loaded for as long as the game ran.
+#[derive(Default)]
+pub struct Idle {
+    since: Option<std::time::Instant>,
+}
+
+impl Idle {
+    /// Whether to unload now: `online` is the target's state at `at`.
+    pub fn due(
+        &mut self,
+        online: bool,
+        loaded: bool,
+        at: std::time::Instant,
+        minutes: u32,
+    ) -> bool {
+        if online || !loaded {
+            self.since = None;
+            return false;
+        }
+        let since = *self.since.get_or_insert(at);
+        if at.duration_since(since).as_secs() >= minutes as u64 * 60 {
+            self.since = None;
+            return true;
+        }
+
+        false
+    }
 }
 
 /// Which size the config asks for; `parse` already refused any other name.
@@ -234,7 +267,10 @@ impl Mod for Lodger {
     }
 
     fn init(init: &Init) -> Result<(Self, InitReply), String> {
-        let config = Config::parse(&init.config)?;
+        // A preset picked on the settings screen: the old preset's values out of the file, so
+        // the new one's apply, and the file written again to say so.
+        let rebased = crate::config::rebased(&init.config_before, &init.config);
+        let config = Config::parse(rebased.as_deref().unwrap_or(&init.config))?;
         let size = model_size(&config);
         let path = model_path(&config, init);
         let reply = InitReply {
@@ -242,6 +278,7 @@ impl Mod for Lodger {
             unknown: config.unknown_keys(),
             warnings: config.warnings.clone(),
             settings: settings(&config),
+            rewrite: rebased.is_some(),
             resources: vec![Resource {
                 id: "model".to_string(),
                 title: format!(
@@ -306,6 +343,7 @@ impl Mod for Lodger {
                 model,
                 log,
                 elsewhere: Mutex::new(elsewhere::Elsewhere::default()),
+                idle: Mutex::new(Idle::default()),
             },
             reply,
         ))
@@ -366,6 +404,16 @@ impl Mod for Lodger {
 
         let commands = world.tick_with(now, &self.config, &mut log, Some(&self.model));
         world.share(now, &self.config, &mut shared);
+        let idle = self.idle.lock().unwrap_or_else(|err| err.into_inner()).due(
+            world.memory.last.online,
+            self.model.loaded(),
+            std::time::Instant::now(),
+            self.config.model.idle_minutes,
+        );
+        if idle {
+            log.note("no one online for a while: the model is unloaded");
+            self.model.unload();
+        }
         commands
     }
 
@@ -376,6 +424,14 @@ impl Mod for Lodger {
 
     fn save(&self, world: &Stay) -> Vec<u8> {
         world.save()
+    }
+
+    /// The overworld closed (the game back at its title, the server stopping): no one is
+    /// playing it, so the model is unloaded; the next world's first question loads it again.
+    fn close(&self, world: Stay) {
+        if world.world == "minecraft:overworld" {
+            self.model.unload();
+        }
     }
 
     fn debug(&self, world: &mut Stay, request: &DebugRequest) -> DebugReply {
@@ -438,6 +494,7 @@ mod tests {
             game_dir: "/game".to_string(),
             config_dir: "/game/config".to_string(),
             id: "lodger".to_string(),
+            ..Init::default()
         });
         let settings = reply["settings"].as_array().unwrap();
         let find = |key: &str| settings.iter().find(|s| s["key"] == key).unwrap().clone();
@@ -467,6 +524,7 @@ mod tests {
             game_dir: "/game".to_string(),
             config_dir: "/game/config".to_string(),
             id: "lodger".to_string(),
+            ..Init::default()
         };
         let reply = harness().init_with(&init(""));
         let choices = reply["resources"][0]["choices"].as_array().unwrap().clone();
@@ -496,6 +554,7 @@ mod tests {
             game_dir: "/game".to_string(),
             config_dir: "/game/config".to_string(),
             id: "lodger".to_string(),
+            ..Init::default()
         };
         let reply = harness().init_with(&init);
         let resource = &reply["resources"][0];
@@ -620,6 +679,7 @@ mod tests {
             game_dir: "/game".to_string(),
             config_dir: "/game/config".to_string(),
             id: "lodger".to_string(),
+            ..Init::default()
         };
         let by_size = Config::parse("").unwrap();
         assert_eq!(
@@ -656,5 +716,26 @@ mod tests {
         let reply = harness().init("{ nope");
 
         assert!(reply["error"].as_str().unwrap().starts_with("config: "));
+    }
+
+    #[test]
+    fn the_model_unloads_after_its_idle_minutes_with_no_one_online() {
+        let start = std::time::Instant::now();
+        let at = |s: u64| start + std::time::Duration::from_secs(s);
+        let mut idle = Idle::default();
+
+        assert!(!idle.due(true, true, at(0), 10), "someone is online");
+        assert!(!idle.due(false, true, at(1), 10), "the clock starts");
+        assert!(!idle.due(false, true, at(500), 10));
+        assert!(idle.due(false, true, at(601), 10), "ten minutes and more");
+        assert!(
+            !idle.due(false, false, at(2000), 10),
+            "nothing loaded: nothing to do"
+        );
+        assert!(!idle.due(true, true, at(2001), 10));
+        assert!(
+            !idle.due(false, true, at(2002), 10),
+            "back online reset the clock"
+        );
     }
 }

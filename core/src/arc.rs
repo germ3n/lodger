@@ -133,17 +133,24 @@ impl Arc {
 
     /// Whether the day has room for an event of this cost; resets when the day turns.
     pub fn affords(&mut self, cost: f32, day: u64, config: &Config) -> bool {
-        if day != self.budget_day {
-            self.budget_day = day;
-            self.spent_today = 0.0;
-        }
+        self.roll(day);
 
         self.spent_today + cost <= self.budget(config) + 1e-6
     }
 
-    pub fn spend(&mut self, cost: f32) {
+    /// Spends on `day`: until 2026-11-10 a plan run on a new day before anything asked
+    /// `affords` was charged to the day before, and so cost nothing.
+    pub fn spend(&mut self, cost: f32, day: u64) {
+        self.roll(day);
         self.spent_today += cost;
         self.landed_this_stage += 1;
+    }
+
+    fn roll(&mut self, day: u64) {
+        if day != self.budget_day {
+            self.budget_day = day;
+            self.spent_today = 0.0;
+        }
     }
 }
 
@@ -219,11 +226,19 @@ mod tests {
 
         assert_eq!(arc.budget(&config), 2.0);
         assert!(arc.affords(1.0, 5, &config));
-        arc.spend(1.0);
+        arc.spend(1.0, 5);
         assert!(arc.affords(1.0, 5, &config));
-        arc.spend(1.0);
+        arc.spend(1.0, 5);
         assert!(!arc.affords(0.5, 5, &config));
         assert!(arc.affords(0.5, 6, &config), "a new day");
+
+        // Spent on a new day before anything asked: charged to that day.
+        arc.spend(1.0, 7);
+        arc.spend(1.0, 7);
+        assert!(
+            !arc.affords(0.5, 7, &config),
+            "the new day's own spending counts"
+        );
 
         arc.sharing = true;
         assert_eq!(arc.budget(&config), 1.0, "half, beside another horror mod");

@@ -34,15 +34,25 @@ public final class Temporaries {
 		tick++;
 		for (Entity entity : due.due(tick)) {
 			active.remove(entity);
-			gone(entity);
+			// Removed already (killed, or unloaded with its chunk and seen again as another
+			// entity, which the sweep takes): what it carried was dropped or saved with it, and
+			// dropping it again here made two of everything.
+			if (!entity.isRemoved()) {
+				gone(entity);
+			}
 		}
 		if (tick % SWEEP_EVERY == 0) {
+			active.removeIf(Entity::isRemoved);
 			for (ServerLevel level : server.getAllLevels()) {
+				// Gathered first, then taken: the level's entity list is live, and an entity
+				// discarded or an item dropped while walking it could skip or repeat entries.
+				java.util.List<Entity> left = new java.util.ArrayList<>();
 				for (Entity entity : level.getAllEntities()) {
 					if (entity.entityTags().contains(TAG) && !active.contains(entity)) {
-						gone(entity);
+						left.add(entity);
 					}
 				}
+				left.forEach(Temporaries::gone);
 			}
 		}
 	}
@@ -51,7 +61,9 @@ public final class Temporaries {
 	public void goneIn(ServerLevel level) {
 		for (Entity entity : due.all(e -> e.level() == level)) {
 			active.remove(entity);
-			gone(entity);
+			if (!entity.isRemoved()) {
+				gone(entity);
+			}
 		}
 	}
 

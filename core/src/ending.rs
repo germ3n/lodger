@@ -780,7 +780,13 @@ pub fn commands(
         Beat::ReturnHeld => match (&memory.held, crate::events::find("return_taken")) {
             (Some(_), Some(event)) => {
                 let pos = memory.held.as_ref().map(|h| h.from);
-                crate::brain::act::commands(event, pos, memory, ids, now, None)
+                let made = crate::brain::act::commands(event, pos, memory, ids, now, None);
+                // Given back is no longer held: a beat has no report to clear it by, and it
+                // used to stay "held" for the rest of the stay.
+                if !made.is_empty() {
+                    memory.held = None;
+                }
+                made
             }
             _ => Vec::new(),
         },
@@ -1225,7 +1231,12 @@ pub fn commands(
             .collect(),
         Beat::SecondRoom => match crate::events::find("house_grows") {
             Some(event) if memory.next_build("house_grows").is_some() => {
-                crate::brain::act::commands(event, None, memory, ids, now, None)
+                let made = crate::brain::act::commands(event, None, memory, ids, now, None);
+                // Laid as a plan's share is, so the room counts as built and is not sent again.
+                for (command, _) in &made {
+                    crate::building::account(memory, "house_grows", command, now.day as f32);
+                }
+                made
             }
             _ => Vec::new(),
         },

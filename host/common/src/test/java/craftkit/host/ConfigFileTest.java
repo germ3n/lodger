@@ -30,4 +30,14 @@ class ConfigFileTest {
 		assertFalse(file.writeIfMissing("{\"enabled\": false}"), "a player's file is never rewritten");
 		assertEquals("{\"enabled\": true}" + System.lineSeparator(), Files.readString(file.path()));
 	}
+
+	@Test
+	void a_mod_that_asks_has_its_file_written_over(@TempDir Path dir) throws IOException {
+		ConfigFile file = new ConfigFile(dir.resolve("config").resolve("lodger.json"));
+		file.writeIfMissing("{\"preset\": \"balanced\"}");
+
+		file.write("{\"preset\": \"calm\"}");
+
+		assertEquals("{\"preset\": \"calm\"}" + System.lineSeparator(), Files.readString(file.path()));
+	}
 }

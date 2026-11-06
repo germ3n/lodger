@@ -72,7 +72,13 @@ public final class LootOffers {
 		}
 		if (swap) {
 			slot = full.get(random.nextInt(full.size()));
-			data.keep("loot_taken", chest.getItem(slot));
+			// Each under its own key: under one, a second swap of another item replaced the first.
+			String key = "loot_taken";
+			ItemStack out = chest.getItem(slot);
+			for (int n = 1; data.has(key) && !data.holdsLike(key, out); n++) {
+				key = "loot_taken_" + n;
+			}
+			data.keep(key, out);
 		} else if (!empty.isEmpty()) {
 			slot = empty.get(random.nextInt(empty.size()));
 		} else {

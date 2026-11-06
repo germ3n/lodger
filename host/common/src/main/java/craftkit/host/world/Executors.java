@@ -1902,7 +1902,7 @@ public final class Executors {
 		}
 		var arrow = new net.minecraft.world.entity.projectile.arrow.Arrow(level, from.x, from.y, from.z, new ItemStack(net.minecraft.world.item.Items.ARROW), null);
 		arrow.pickup = net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.CREATIVE_ONLY;
-		float damage = Spare.harm(Math.max(0, command.get("damage").getAsFloat()), player.getHealth(), 1);
+		float damage = Spare.arrowHarm(Math.max(0, command.get("damage").getAsFloat()), player.getHealth());
 		// An arrow's harm is its speed times its base: at 1.6, the base is the harm over 1.6.
 		arrow.setBaseDamage(damage / 1.6);
 		double dx = at.x - from.x;

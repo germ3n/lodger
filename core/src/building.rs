@@ -129,6 +129,10 @@ pub fn house(way: [i32; 2], grown: bool) -> Vec<Part> {
                 parts.push(part(x, 4, z, "minecraft:oak_log"));
             }
         }
+        // The doorway between the rooms: the comment said so, and nothing made it, so the
+        // second room was sealed.
+        parts.push(part(0, 1, -2, "minecraft:air"));
+        parts.push(part(0, 2, -2, "minecraft:air"));
     }
 
     turned(parts, way)
@@ -333,6 +337,11 @@ pub fn replaceable(event: &str) -> Vec<String> {
     if matches!(event, "dock" | "bridge" | "bridge_done") {
         over.push("minecraft:water");
     }
+    // The grown room opens a doorway in its own back wall, where the pane was.
+    if event == "house_grows" {
+        over.push("minecraft:cobblestone");
+        over.push("minecraft:glass_pane");
+    }
 
     over.into_iter().map(String::from).collect()
 }
@@ -498,6 +507,16 @@ mod tests {
         assert!(
             grown.iter().any(|p| p.at[2] == -6),
             "the second room behind"
+        );
+        let doorway: Vec<&str> = grown
+            .iter()
+            .filter(|p| p.at == [0, 1, -2] || p.at == [0, 2, -2])
+            .map(|p| p.block)
+            .collect();
+        assert_eq!(
+            doorway.last().copied(),
+            Some("minecraft:air"),
+            "a doorway into it, laid after the wall"
         );
     }
 

@@ -51,6 +51,7 @@ impl Mod for Tiny {
                 unknown: vec![],
                 warnings: Vec::new(),
                 resources: vec![],
+                rewrite: false,
             },
         ))
     }
@@ -192,6 +193,7 @@ fn init_carries_the_directories_and_the_mod_knows_its_own_folder() {
         game_dir: "/game".to_string(),
         config_dir: "/game/config".to_string(),
         id: "tiny".to_string(),
+        ..Init::default()
     };
 
     assert_eq!(

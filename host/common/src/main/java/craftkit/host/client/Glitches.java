@@ -62,6 +62,7 @@ public final class Glitches {
 			saturationBefore = null;
 			Hints.clear();
 			DONE_ONCE.clear();
+			craftkit.host.client.debug.DebugHud.leave();
 			return;
 		}
 

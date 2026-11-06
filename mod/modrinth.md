@@ -61,18 +61,20 @@ machine** (the server's, in multiplayer). It is downloaded once from Hugging Fac
 model's publisher, after you accept its license on the title screen. It never connects
 anywhere else.
 
-Pick the size in the settings (`model.size`). By default half of the model runs on the GPU and
-half on the CPU (`model.gpu_share`, 0 to 1); set it to `0` to keep the GPU free for the game.
+Pick the size in the settings (`model.size`). On a Mac, by default half of the model runs on
+the GPU and half on the CPU (`model.gpu_share`, 0 to 1); set it to `0` to keep the GPU free for
+the game. On Windows and Linux the model runs on the CPU alone for now, all of it in RAM, and
+`model.gpu_share` does nothing there.
 
-| Size | Model | Download | Memory in all | VRAM at the default (half on the GPU) | License |
+| Size | Model | Download | Memory in all | VRAM at the default, on a Mac (half on the GPU) | License |
 | --- | --- | --- | --- | --- | --- |
 | `0.5b` | Qwen2.5 0.5B Instruct | 491 MB | about 0.7 GB | about 0.3 GB | Apache 2.0 |
 | `1.5b` (default) | Qwen2.5 1.5B Instruct | 1.1 GB | about 1.6 GB | about 0.6 GB | Apache 2.0 |
 | `3b` | Qwen2.5 3B Instruct | 2.1 GB | about 2.6 GB | about 1.1 GB | Qwen Research License (non-commercial) |
 | `4b` | Qwen3 4B Instruct 2507 | 2.5 GB | about 3.2 GB | about 1.4 GB | Apache 2.0 |
 
-"Memory in all" is RAM and VRAM together. With `model.gpu_share` at `0`, all of it is RAM;
-at `1`, most of it is VRAM. The figures are estimates and vary with your system. The model
+"Memory in all" is RAM and VRAM together. With `model.gpu_share` at `0`, and on Windows and
+Linux, all of it is RAM; at `1`, most of it is VRAM. The figures are estimates and vary with your system. The model
 uses two CPU threads while it thinks and runs on its own thread, so the game never waits for
 it. It loads when someone is playing and unloads when no one is.
 
@@ -93,8 +95,8 @@ On a server, the model runs on the server and clients pay nothing for it.
 
 ### Operators
 
-`/lodger status`, `/craftkit status`, and a debug screen (F8, operators only) that shows what
-it knows, what it plans and why. Every decision is logged in `config/lodger/decisions.log`.
+`/craftkit status`, `/craftkit lodger show`, and a debug screen (F8, with an overlay on F9,
+operators only) that shows what it knows, what it plans and why. Every decision is logged in `config/lodger/decisions.log`.
 
 <details>
 <summary>What it can do (spoilers)</summary>

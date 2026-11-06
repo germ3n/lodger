@@ -39,6 +39,9 @@ pub struct Init {
     pub config_dir: String,
     /// The mod's id, as the manifest names it, so a mod need not hardcode its own folder name.
     pub id: String,
+    /// The config file's text before a change from the host's settings screen, empty at a
+    /// start: a mod can tell what the player changed from what was only written. ABI 45.
+    pub config_before: String,
 }
 
 impl Init {
@@ -79,6 +82,10 @@ pub struct InitReply {
     /// change; the rest stay in the file. ABI 21.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub settings: Vec<Setting>,
+    /// Write `config` over the file, not only when it is missing: the mod changed what the file
+    /// should say (a preset picked, its values in). ABI 45.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub rewrite: bool,
 }
 
 /// One setting on the host's settings screen: a config key, how to change it, its value now.

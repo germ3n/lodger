@@ -1151,15 +1151,17 @@ pub fn tidy_moves(contents: &[ItemStack], size: u32) -> Vec<(u32, u32, u32)> {
         if target >= slots.len() {
             break;
         }
-        let target = target as u32;
-        let from = slots
+        // Only from the slots not yet sorted: the slots before `target` are done, and two equal
+        // stacks found there sent a sorted chest's stack out of place (2026-11-10).
+        let from = slots[target..]
             .iter()
             .position(|s| {
                 s.as_ref()
                     .map(|s| s.id == stack.id && s.count == stack.count)
                     .unwrap_or(false)
             })
-            .map(|i| i as u32);
+            .map(|i| (i + target) as u32);
+        let target = target as u32;
         let Some(from) = from else { continue };
         if from == target {
             continue;
@@ -1192,10 +1194,10 @@ pub fn commands(
 ) -> Vec<(Command, u64)> {
     let target = memory.target.unwrap_or(0);
     let at = block_center;
-    let seed = pos
+    let place_seed = pos
         .map(|p| (p[0] + p[2]).unsigned_abs() as usize)
-        .unwrap_or(0)
-        + memory.done.len();
+        .unwrap_or(0);
+    let seed = place_seed + memory.done.len();
     // A sound event plays one of its ways to sound, the next after the last: from the house's
     // door or chest, from far off, or around the target as it moves.
     if let Some(ways) = super::sounds::variants(event.id) {
@@ -1214,7 +1216,9 @@ pub fn commands(
             }
             _ => pos.map(block_center),
         };
-        let way = super::sounds::pick(ways, seed, memory.times(event.id));
+        // The next after the last from one place: the seed of the place alone, since the
+        // count of all things done moved between two plays and could land on the same way.
+        let way = super::sounds::pick(ways, place_seed, memory.times(event.id));
         return super::sounds::commands(way, spot, memory, target, seed, ids);
     }
     // The words: what the model wrote for this event, checked, or the bank's.
@@ -2604,7 +2608,10 @@ pub fn commands(
             pos,
             memory.in_used_container(|id| id == "minecraft:water_bucket"),
         ) {
+            // The water set first, then the full bucket taken and an empty one put back: water
+            // that cannot go down drops the rest, so their bucket stays full.
             (Some(p), Some((container, stack))) => vec![
+                (set(ids, p, "minecraft:water", GROUND), 0),
                 (
                     Command::TakeItem {
                         id: ids(),
@@ -2613,7 +2620,7 @@ pub fn commands(
                         count: 1,
                         keep: String::new(),
                     },
-                    0,
+                    2,
                 ),
                 (
                     Command::PutItem {
@@ -2629,9 +2636,8 @@ pub fn commands(
                         wear: 0,
                         name: String::new(),
                     },
-                    1,
+                    3,
                 ),
-                (set(ids, p, "minecraft:water", GROUND), 2),
             ],
             _ => vec![],
         },
@@ -2687,16 +2693,13 @@ pub fn commands(
                 let dz = ((seed / 5) % 5) as i32 - 2;
                 vec![
                     (
+                        // Wheat alone, since wheat is what goes in the chest: a carrot cleared
+                        // used to turn into wheat.
                         set(
                             ids,
                             [field[0] + dx, field[1], field[2] + dz],
                             "minecraft:air",
-                            &[
-                                "minecraft:wheat",
-                                "minecraft:carrots",
-                                "minecraft:potatoes",
-                                "minecraft:beetroots",
-                            ],
+                            &["minecraft:wheat"],
                         ),
                         0,
                     ),
@@ -2747,7 +2750,17 @@ pub fn commands(
                     .map(|h| step_toward(chest, h.center))
                     .filter(|s| *s != [0, 0])
                     .unwrap_or([1, 0]);
+                // Laid first, taken after: a plate that cannot go down drops the take.
                 vec![
+                    (
+                        set(
+                            ids,
+                            [chest[0] + step[0], chest[1], chest[2] + step[1]],
+                            &stack.id,
+                            &[],
+                        ),
+                        0,
+                    ),
                     (
                         Command::TakeItem {
                             id: ids(),
@@ -2756,16 +2769,7 @@ pub fn commands(
                             count: 1,
                             keep: String::new(),
                         },
-                        0,
-                    ),
-                    (
-                        set(
-                            ids,
-                            [chest[0] + step[0], chest[1], chest[2] + step[1]],
-                            &stack.id,
-                            &[],
-                        ),
-                        1,
+                        2,
                     ),
                 ]
             }
@@ -3024,7 +3028,10 @@ pub fn commands(
                         door[1],
                         door[2] + step[1] * 2 + step[0],
                     ];
+                    // Planted first, taken after: a flower that cannot grow there (gravel, a
+                    // path) drops the take, so none of theirs is lost.
                     vec![
+                        (set(ids, p, &stack.id, &["minecraft:short_grass"]), 0),
                         (
                             Command::TakeItem {
                                 id: ids(),
@@ -3033,9 +3040,8 @@ pub fn commands(
                                 count: 1,
                                 keep: String::new(),
                             },
-                            0,
+                            2,
                         ),
-                        (set(ids, p, &stack.id, &["minecraft:short_grass"]), 1),
                     ]
                 }
                 _ => vec![],
@@ -3043,20 +3049,23 @@ pub fn commands(
         }
         Action::ReplantOther => {
             let seeds = |id: &str| {
-                ["carrot", "potato", "beetroot_seeds"]
+                [":carrot", ":potato", ":beetroot_seeds"]
                     .iter()
                     .any(|s| id.ends_with(s))
             };
             match (pos, memory.in_used_container(seeds)) {
                 (Some(field), Some((chest, stack))) => {
-                    let crop = if stack.id.ends_with("carrot") {
+                    let crop = if stack.id.ends_with(":carrot") {
                         "minecraft:carrots"
-                    } else if stack.id.ends_with("potato") {
+                    } else if stack.id.ends_with(":potato") {
                         "minecraft:potatoes"
                     } else {
                         "minecraft:beetroots"
                     };
+                    // Planted first, taken after: a planting that fails drops the take, so no
+                    // seed of theirs is lost (until 2026-11-10 it was taken first).
                     vec![
+                        (set(ids, field, crop, &["minecraft:wheat"]), 0),
                         (
                             Command::TakeItem {
                                 id: ids(),
@@ -3065,9 +3074,8 @@ pub fn commands(
                                 count: 1,
                                 keep: String::new(),
                             },
-                            0,
+                            2,
                         ),
-                        (set(ids, field, crop, &["minecraft:wheat"]), 1),
                     ]
                 }
                 _ => vec![],
@@ -3563,8 +3571,10 @@ pub fn commands(
         // twelve), the ladders up its side, then taken from their chest.
         Action::LadderDown => {
             match (pos, memory.in_used_container(|id| id == "minecraft:ladder")) {
-                (Some(top), Some((chest, ladders))) => {
-                    let deep = ladders.count.clamp(4, 12) as i32;
+                // As deep as the ladders they have, four at least: one ladder in the chest used
+                // to make four.
+                (Some(top), Some((chest, ladders))) if ladders.count >= 4 => {
+                    let deep = ladders.count.min(12) as i32;
                     let mut made = Vec::new();
                     for y in 1..=deep {
                         let p = [top[0], top[1] - y, top[2]];
@@ -5927,6 +5937,17 @@ mod tests {
 
         let full: Vec<ItemStack> = (0..27).map(|i| stack("minecraft:dirt", 1, i)).collect();
         assert!(tidy_moves(&full, 27).is_empty(), "no hand, no tidying");
+
+        // Two equal stacks, already sorted: nothing to do, with a hand to spare.
+        let sorted = vec![
+            stack("minecraft:cobblestone", 64, 0),
+            stack("minecraft:cobblestone", 64, 1),
+            stack("minecraft:torch", 5, 2),
+        ];
+        assert!(
+            tidy_moves(&sorted, 27).is_empty(),
+            "a sorted chest is left alone"
+        );
     }
 
     #[test]

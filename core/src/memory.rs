@@ -1368,7 +1368,13 @@ impl Memory {
                                 }
                             }
                         }
-                        if is_light(&event.detail) || is_door(&event.detail) {
+                        // Only by the home: a mine lit three hundred blocks off used to fill
+                        // the home's lights, and a far base's door became its usual door.
+                        let near_home = self
+                            .home
+                            .as_ref()
+                            .is_none_or(|h| distance(h.center, pos) <= (HOME_RADIUS * 2) as f64);
+                        if near_home && (is_light(&event.detail) || is_door(&event.detail)) {
                             let home = self.home.get_or_insert_with(|| Home {
                                 center: pos,
                                 floor_y: pos[1],
@@ -1645,7 +1651,8 @@ impl Memory {
                 .collect()
         };
         let doors = lower_halves(&of(&|k| k.ends_with("_door")));
-        let lights = of(&|k| k.ends_with("torch") || k.ends_with("lantern"));
+        // Every light placing counts, lamps and candles too: the read used to drop them.
+        let lights = of(&|k| is_light(k));
         let beds = of(&|k| k.ends_with("_bed"));
         let Some(home) = self.home.as_mut() else {
             return;
@@ -1826,7 +1833,15 @@ impl Memory {
                 .find(|(id, _)| *id == player.main_hand.id)
             {
                 Some((_, count)) => *count += 1,
-                None => self.favourites.push((player.main_hand.id.clone(), 1)),
+                None => {
+                    // The least held makes room: pushed past a full list and cut, a newcomer
+                    // was cut at once, and the first eight things ever held stayed the
+                    // favourites for good.
+                    if self.favourites.len() >= MOST_FAVOURITES {
+                        self.favourites.pop();
+                    }
+                    self.favourites.push((player.main_hand.id.clone(), 1));
+                }
             }
             self.favourites
                 .sort_by_key(|(_, count)| std::cmp::Reverse(*count));
@@ -2610,7 +2625,8 @@ impl Memory {
             ));
         }
 
-        // The oldest landmark not among the recent lines: what it did that they would remember.
+        // The latest landmark not among the recent lines: what it did before those, that they
+        // would remember.
         if let Some(landmark) = self
             .landmarks
             .iter()
@@ -3096,6 +3112,27 @@ mod tests {
         assert_eq!(memory.target, Some(3));
         assert_eq!(memory.target_name, "razor");
         assert_eq!(memory.favourites[0].0, "minecraft:iron_pickaxe");
+    }
+
+    #[test]
+    fn a_thing_held_long_after_eight_others_becomes_a_favourite() {
+        let mut memory = Memory::default();
+        let holding = |id: &str| {
+            let mut p = player(0, [0.0, 64.0, 0.0], 0.0);
+            p.main_hand.id = id.to_string();
+            obs(vec![p], vec![])
+        };
+        for i in 0..8 {
+            for _ in 0..3 {
+                memory.observe(&holding(&format!("minecraft:thing_{i}")), 0.0);
+            }
+        }
+        for _ in 0..20 {
+            memory.observe(&holding("minecraft:diamond_sword"), 0.0);
+        }
+
+        assert_eq!(memory.favourites.len(), 8);
+        assert_eq!(memory.favourites[0].0, "minecraft:diamond_sword");
     }
 
     #[test]

@@ -1133,6 +1133,42 @@ The `[x]` lines above, each dated. Summary by day:
   breath, a wave of a minute and a half has its last sink away (until now one came every fifty
   seconds on top of the last). Tests: one in JUnit (`Warp`). Was: block limbs, bowless
   skeletons, piled waves.
+- [x] **The fifth bug pass** (forty found, four reviewers): **picking a preset on the settings
+  screen changed nothing** (the file holds every key, written at the first start, so balanced's
+  values stayed; now the old preset's values the player never changed are taken out and the file
+  written again, `Init.config_before` and `InitReply.rewrite`, ABI 45). The mind: a sorted chest
+  with two equal stacks was tidied out of order; an event that made nothing spent the day's
+  budget and counted toward the next stage, and a plan run early on a new day was charged to the
+  day before; "while they sleep" was planned for events that need them awake (and "away" for
+  ones by the door), waiting out the whole window; `replant_other` took golden carrots and baked
+  potatoes for seed; `harvest_one` cleared carrots into wheat; one ladder in the chest made four;
+  a `want` or `witness` question the model was too slow for was asked again forever; the
+  reactions (a door held, a knock answered, a breath) went on through the fight and beside
+  another mod's horror; a light moved, a lantern swapped, a flower potted or a crop harvested
+  added the block to its store from nothing; flowers, plates, seeds and water were taken before
+  they were placed, so a failed placing lost theirs; a sound's next way could be its last again.
+  Its memory: the first eight things ever held stayed the favourites for good; the Nether and
+  the End stuck to whoever they saw first in multiplayer; a mine lit far off filled the home's
+  lights and a far base's door became its usual door; the home read dropped lamps and candles;
+  the ending's returned thing stayed "held" and its grown room could be sent again, and the room
+  had no doorway; `brain.plan_every` took 0; Forget everything lost the mods list, the target
+  pick and what it held. The host: a temporary animal saved with its chunk dropped its saddle
+  twice; a fight whose figure's chunk unloaded could not be won (it ends as a flight now); a
+  village gathered twice stayed in the house; entities discarded while the level's live list was
+  walked; a moved bed's respawn was updated only for players in its dimension; a spared arrow
+  falling in fast could still kill; a second swapped loot item replaced the first kept one. The
+  client and the rest: a download whose server never answered hung with no Try again, and Quit
+  threw away a part file (it is kept now); `model.idle_minutes` was read by nothing (the model
+  unloads after it, and when the overworld closes); a key misspelt inside a section was ignored
+  silently (reported now); NeoForge counted tilling with torches in the off hand as building;
+  the debug overlay kept the last world's picture on the next server. The CI builds the Linux
+  natives on Ubuntu 22.04 (24.04's glibc did not load on Debian 12) and Windows on ARM with
+  clang-cl (llama.cpp refuses MSVC there). The docs: `/lodger status` named on the Modrinth
+  page (it is `/craftkit status`), when the config is read, the presets' distances, and that the
+  GPU is used on Macs alone. Tests: 7 in the mind, 2 in JUnit, one pinned test turned to report
+  what it pinned. Was: all of that. Left for their items: the docs' other `/lodger` commands
+  (item 9), the `multiplayer.*` keys read by nothing (item 16), and two for the owner (a client
+  that only joins servers still downloads the model; Windows and Linux have no GPU build).
 - [x] **The fourth bug pass** (2026-11-10, seven found): the release script failed on Windows
   (gradlew.bat by its full path now), packed the CI's natives of the commit beside uncommitted
   mind changes (refused unless `--allow-dirty`), and picked up an old version's jars (cleared

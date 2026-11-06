@@ -202,7 +202,13 @@ public final class LoadedMod {
 			init.addProperty("game_dir", gameDir.toAbsolutePath().toString());
 			init.addProperty("config_dir", configDir.toAbsolutePath().toString());
 			init.addProperty("id", manifest.get().id());
+			// What the file said before the change: a preset picked over a file of every key
+			// takes the old preset's values out (ABI 45).
+			init.addProperty("config_before", before == null ? "" : before);
 			reply = JsonParser.parseString(library.get().init(init.toString())).getAsJsonObject();
+			if (reply.has("rewrite") && reply.get("rewrite").getAsBoolean() && reply.has("config")) {
+				config.write(GSON.toJson(reply.get("config")));
+			}
 		} catch (IOException | RuntimeException e) {
 			restore(config, before);
 			return e.getMessage();

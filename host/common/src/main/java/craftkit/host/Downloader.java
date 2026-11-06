@@ -105,7 +105,7 @@ public final class Downloader {
 		return t <= 0 ? 0 : Math.min(1.0, (double) bytes.get() / t);
 	}
 
-	/** Asks the download to stop at the next chunk; the part file is removed. */
+	/** Asks the download to stop at the next chunk; the part file is kept, for the next start to go on from (Quit used to throw away a download nearly done). */
 	public void cancel() {
 		cancelled = true;
 	}
@@ -147,7 +147,7 @@ public final class Downloader {
 			Files.move(part, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 			state.set(State.DONE);
 		} catch (IOException | InterruptedException | RuntimeException e) {
-			if (!keepPart || cancelled) {
+			if (!keepPart && !cancelled) {
 				try {
 					Files.deleteIfExists(part);
 				} catch (IOException ignored) {
@@ -174,7 +174,9 @@ public final class Downloader {
 	}
 
 	private void fetchWith(HttpClient client, Path part, long have) throws IOException, InterruptedException {
-		HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(resource.url())).GET();
+		// The answer's head within the stall time: a server that takes the connection and says
+		// nothing used to hold the download, with no Try again, for good.
+		HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(resource.url())).timeout(stall).GET();
 		if (have > 0) {
 			request.header("Range", "bytes=" + have + "-");
 		}

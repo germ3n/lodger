@@ -65,7 +65,7 @@ so the Java side is a handful of method handles and no struct layouts. Errors ar
 | --- | --- | --- |
 | `craftkit_abi_version() -> u32` | phase 0 | The ABI the library speaks. The host refuses any other, by name, before calling anything else. |
 | `craftkit_info() -> json` | phase 0 | `ModInfo`: id, name, version, the SDK version built with. |
-| `craftkit_init(init, len) -> json` | phase 0 | `Init` JSON in: the config file's text, the game and config directories and the mod's id; `InitReply` out: the effective config and the unknown keys. Makes the one `Mod` of the process. A mod keeps what is not its config under `<config_dir>/<id>/` (`Init::own_dir`). |
+| `craftkit_init(init, len) -> json` | phase 0 | `Init` JSON in: the config file's text, the game and config directories and the mod's id; `InitReply` out: the effective config and the unknown keys, and `rewrite` when the host should write that config over the file (ABI 45; `config_before` comes in after a settings change). Makes the one `Mod` of the process. A mod keeps what is not its config under `<config_dir>/<id>/` (`Init::own_dir`). |
 | `craftkit_warm() -> json` | ABI 3 | Loads what the mod loads before play (the lodger: its model), blocking. The host calls it on a thread of its own once the resources are there. `true`, or an error. |
 | `craftkit_status() -> json` | ABI 3 | `Status`: ready or not, one line why, whether `warm` is working, the last error. Safe from any thread; the title screen polls it. |
 | `craftkit_shutdown()` | phase 0 | The process is ending. Drops the `Mod`. |
@@ -194,7 +194,9 @@ player's feet), `put_potion` (a named potion of its brewing, nothing that harms)
 (a potion another, safe kind, its name kept), `effect_cloud` (slowness or weakness, gone at its
 first touch). ABI 43 (2026-11-10): `confront` (the fight, the host's to run) and the
 `fight_won`, `fight_lost`, `fight_fled` events. ABI 44 (2026-11-10): `approach`'s `pace`, `then` (`stare`,
-`leave`, `hit`) and `damage`.
+`leave`, `hit`) and `damage`. ABI 45: `Init.config_before`, the file before a settings change,
+and `InitReply.rewrite`, which asks the host to write the effective config over the file (a
+preset picked, its values in).
 
 ## Resources
 
