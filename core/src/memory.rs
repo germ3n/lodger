@@ -374,6 +374,8 @@ pub struct Snapshot {
     pub ate_day: f32,
     /// Crouched and still ten seconds or more (`breath`).
     pub crouched_still: bool,
+    /// Crouching now.
+    pub sneaking: bool,
     /// The lodger's reading of how they feel, from the model's `How does the player feel?`:
     /// `calm`, `curious`, `uneasy`, `afraid`, `angry`, or empty before the first reading.
     pub mood: String,
@@ -427,6 +429,9 @@ pub struct Memory {
     /// The other mods the game runs with, by id and version, as the host told them: for the
     /// debug screen, and for a mind that would keep out of another mod's way.
     pub mods: Vec<(String, String)>,
+    /// How many blocks they had placed when its place was chosen: what they build there after
+    /// meets its want, what stood there before does not.
+    pub placed_before_place: usize,
     /// The lights it placed itself, for the endings (its torches out one by one, or lit at
     /// once).
     pub its_lights: Vec<BlockPos>,
@@ -1738,6 +1743,7 @@ impl Memory {
             self.crouched_now = true;
         }
         self.last.crouched_still = crouched;
+        self.last.sneaking = player.sneaking;
         self.last.underground = player.sky_light == 0 && player.pos[1] < 56.0;
         // Under a roof, not under the ground: a cave is no house (the dev client played a
         // house's door sound 55 blocks down, 2026-11-10).

@@ -134,6 +134,10 @@ public final class Fights {
 		boolean saving;
 		/** The breath before the next wave, till this tick; 0 for none. */
 		long breathUntil;
+		/** Its kept death was refused: the game's own death may go ahead. */
+		boolean letDie;
+		/** Its lantern, head and weapon given. */
+		boolean rewarded;
 		final int index;
 		final List<Part> parts = new ArrayList<>();
 		int wave;
@@ -169,6 +173,8 @@ public final class Fights {
 		final List<Display> extras = new ArrayList<>();
 		final List<float[]> poses = new ArrayList<>();
 		long nextHit;
+		/** A creeper of the wave about to go off. */
+		boolean swelled;
 
 		Warped(Mob mob) {
 			this.mob = mob;
@@ -247,7 +253,15 @@ public final class Fights {
 				over = "fight_lost";
 			} else if (fight.saving) {
 				fight.saving = false;
-				over = deaths.kill(player, fight.data) == null ? "fight_lost" : null;
+				// Won and dying in its last seconds: the reward first. Run from: it was still a flight.
+				if (fight.phase == Phase.END && !fight.rewarded) {
+					reward(fight, player);
+				}
+				if (deaths.kill(player, fight.data) == null) {
+					over = fight.phase == Phase.END ? "fight_won" : fight.phase == Phase.FLEEING ? "fight_fled" : "fight_lost";
+				} else {
+					fight.letDie = true;
+				}
 			} else {
 				try {
 					over = step(fight, player);
@@ -293,11 +307,19 @@ public final class Fights {
 	 */
 	public boolean allowDeath(ServerPlayer player) {
 		for (Fight f : fights) {
-			if (f.player.equals(player.getUUID()) && !deaths.killing(player)) {
-				player.setHealth(1);
-				f.saving = true;
-				return false;
+			if (!f.player.equals(player.getUUID()) || deaths.killing(player)) {
+				continue;
 			}
+			// A totem in hand: the game's own way; it saves them (Fabric asks this before the
+			// totem is tried, where NeoForge asks after).
+			boolean totem = player.getMainHandItem().is(Items.TOTEM_OF_UNDYING) || player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
+			// Their kept death refused (creative now, no world data): the game's own, never 1 HP for ever.
+			if (totem || f.letDie) {
+				return true;
+			}
+			player.setHealth(1);
+			f.saving = true;
+			return false;
 		}
 		return true;
 	}
@@ -685,21 +707,12 @@ public final class Fights {
 			case HARD -> raw * 1.5f;
 			default -> raw;
 		};
-		// A raised shield or a totem in hand: the game's own way, which they may survive.
-		boolean saved = player.isBlocking() || player.getMainHandItem().is(Items.TOTEM_OF_UNDYING) || player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
-		float after = CombatRules.getDamageAfterAbsorb(player, scaled, source, (float) player.getArmorValue(), (float) player.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
-		after = CombatRules.getDamageAfterMagicAbsorb(after, net.minecraft.world.item.enchantment.EnchantmentHelper.getDamageProtection(f.level, player, source));
-		var resistance = player.getEffect(net.minecraft.world.effect.MobEffects.RESISTANCE);
-		if (resistance != null) {
-			after *= Math.max(0, 1 - 0.2f * (resistance.getAmplifier() + 1));
+		// The game's own hit, its shield, armour, enchantments, cooldown and totem all as they
+		// are; a death from it is caught by `allowDeath` and made the one that keeps everything
+		// (until 2026-11-10 an estimate ahead of the game's own decided, and was wrong).
+		if (scaled > 0) {
+			player.hurtServer(f.level, source, raw);
 		}
-		if (!saved && after >= player.getHealth() + player.getAbsorptionAmount()) {
-			if (deaths.kill(player, f.data) == null) {
-				f.lost = true;
-			}
-			return;
-		}
-		player.hurtServer(f.level, source, raw);
 	}
 
 	private void slamDown(Fight f, ServerPlayer player) {
@@ -767,6 +780,11 @@ public final class Fights {
 			var size = animal.getAttribute(Attributes.SCALE);
 			if (size != null) {
 				size.setBaseValue(0.6 + random.nextDouble() * 1.4);
+			}
+			// Nothing of the world in its hands, and no young: it goes with the fight.
+			animal.setCanPickUpLoot(false);
+			if (animal instanceof net.minecraft.world.entity.animal.Animal young) {
+				young.setAge(Integer.MAX_VALUE / 2);
 			}
 			if (animal instanceof net.minecraft.world.entity.monster.Monster) {
 				// Not burnt by a morning, and dropping nothing it wears.
@@ -837,7 +855,7 @@ public final class Fights {
 				// A creeper gone with its health left went off (the game marks it dead as it does,
 				// so dying alone cannot tell; until 2026-11-10 its blast was never felt): the harm
 				// is the fight's, by how near they stood.
-				if (a instanceof net.minecraft.world.entity.monster.Creeper && a.isRemoved() && a.getHealth() > 0 && a.distanceTo(player) < 5) {
+				if (a instanceof net.minecraft.world.entity.monster.Creeper && a.isRemoved() && a.getHealth() > 0 && w.swelled && a.distanceTo(player) < 5) {
 					hurt(f, player, Math.max(2, 9 - 1.5f * a.distanceTo(player)));
 					Vec3 away = player.position().subtract(a.position()).normalize();
 					player.push(away.x * 0.9, 0.45, away.z * 0.9);
@@ -847,6 +865,10 @@ public final class Fights {
 				it.remove();
 				f.animals.remove(a);
 				continue;
+			}
+			// A creeper about to go: remembered, so one gone otherwise (a portal, peace) is not a blast.
+			if (a instanceof net.minecraft.world.entity.monster.Creeper creeper && creeper.getSwelling(1) > 0.7f) {
+				w.swelled = true;
 			}
 			boolean hostile = a instanceof net.minecraft.world.entity.monster.Monster;
 			if (hostile) {
@@ -1057,6 +1079,10 @@ public final class Fights {
 
 	/** Its lantern, its head, its weapon, and what it held, theirs. */
 	private static void reward(Fight f, ServerPlayer player) {
+		if (f.rewarded) {
+			return;
+		}
+		f.rewarded = true;
 		String name = player.getGameProfile().name();
 		ItemStack lantern = new ItemStack(Items.SOUL_LANTERN);
 		lantern.set(DataComponents.CUSTOM_NAME, Component.literal(name + "'s light"));
@@ -1213,9 +1239,11 @@ public final class Fights {
 
 	/** Where one stands at a place: the first solid top with room above, a few blocks up or down from it (not the heightmap, which can be a roof or a tree). */
 	private static Vec3 standing(ServerLevel level, Vec3 at) {
-		BlockPos start = BlockPos.containing(at.x, at.y + 3, at.z);
-		for (int down = 0; down < 12; down++) {
-			BlockPos feet = start.below(down);
+		// Nearest first, from its own height: a porch's roof or leaves overhead are never taken
+		// for the ground (until 2026-11-10 the highest standable spot three up was).
+		BlockPos start = BlockPos.containing(at.x, at.y, at.z);
+		for (int dy : new int[] {0, 1, -1, 2, -2, -3, -4, -5, -6, -7, -8, -9}) {
+			BlockPos feet = start.above(dy);
 			if (level.getBlockState(feet.below()).isFaceSturdy(level, feet.below(), net.minecraft.core.Direction.UP)
 					&& level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
 					&& level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()) {

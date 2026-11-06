@@ -26,8 +26,16 @@ public final class WarpedModels {
 		IDS.put(state, id);
 	}
 
-	/** The ids the active `warp_models` hints name. */
+	private static Set<Integer> cached = Set.of();
+	private static long cachedAt;
+
+	/** The ids the active `warp_models` hints name, read again a few times a second, not every model. */
 	private static Set<Integer> warped() {
+		long now = System.currentTimeMillis();
+		if (now - cachedAt < 250) {
+			return cached;
+		}
+		cachedAt = now;
 		Set<Integer> ids = new HashSet<>();
 		for (Hints.Active active : Hints.active()) {
 			if (active.hint().hint().equals("warp_models")) {
@@ -40,6 +48,7 @@ public final class WarpedModels {
 				}
 			}
 		}
+		cached = ids;
 		return ids;
 	}
 

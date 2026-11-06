@@ -403,6 +403,7 @@ impl Brain {
         // never chosen, and each event that wanted it picked a spot of its own).
         if memory.place.is_none() && memory.home.is_some() {
             memory.place = act::spot(memory, &mut self.rng);
+            memory.placed_before_place = memory.placed.len();
         }
         // Stage five: the ending's beats, as their hour comes.
         if arc.stage == 5 {
@@ -981,6 +982,10 @@ impl Brain {
         }
         if now.tick < plan.from_tick {
             return Step::Wait(String::new());
+        }
+        // The fight is on: nothing else of its own meanwhile (an arrow, a splash, a death not its).
+        if !plan.forced && arc.fighting_since > 0 {
+            return Step::Wait("the fight is on".to_string());
         }
         // Another horror mod's thing near them: never at the same moment as it.
         if !plan.forced && memory.last.other_horror_near {

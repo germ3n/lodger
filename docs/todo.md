@@ -1133,6 +1133,18 @@ The `[x]` lines above, each dated. Summary by day:
   breath, a wave of a minute and a half has its last sink away (until now one came every fifty
   seconds on top of the last). Tests: one in JUnit (`Warp`). Was: block limbs, bowless
   skeletons, piled waves.
+- [x] **The third bug pass** (2026-11-10, twelve found): on Fabric a totem never saved them in
+  the fight (its death hook runs before the totem), now a totem in hand is the game's own way;
+  the fight's own estimate of a lethal hit ignored the hurt cooldown and more, now the game deals
+  every hit and any death is caught and kept; a refused kept death left them at half a heart
+  for good, now the game's own goes ahead; a death in its last seconds counted as a loss, now
+  the reward comes first; the catalogue's own events (an arrow, a splash) ran in the middle of
+  the fight, now they wait; walking past its place (with no house) started the fight, now
+  crouching there calls it; what they had built near its place before it chose it met its want;
+  the rising took a porch roof for the ground; the render hook redirected a call another mod
+  may also hook (an inject after it now); the warped set was read every model every frame (a
+  quarter second's cache now); wave mobs picked up loot and bred; a creeper gone another way
+  counted as a blast. Tests: two in `ending`. Was: all of that.
 - [x] **A script for release jars, every platform's native in each** (owner, 2026-11-10):
   `scripts/build_jars.py <minecraft>`, with `versions/<minecraft>.properties` holding the pins
   (`26.3` today), the natives from the CI run of the commit, from this computer (`--natives

@@ -82,6 +82,7 @@ pub fn want_met(memory: &Memory) -> bool {
             memory
                 .placed
                 .iter()
+                .skip(memory.placed_before_place)
                 .filter(|p| distance(**p, place) <= 5.0)
                 .count()
                 >= 3
@@ -416,7 +417,9 @@ fn confrontation(
         return Vec::new();
     }
     let door = its_door(memory).map(|(d, _)| d);
+    // With no house, crouching at its place calls it: walking past is no knock.
     let at_place = door.is_none()
+        && memory.last.sneaking
         && memory
             .place
             .is_some_and(|p| distance(p, crate::memory::block_of(memory.last.pos)) <= 3.0);
@@ -1809,6 +1812,45 @@ mod tests {
         memory.fight_ended = Some("lost".to_string());
         tick(&mut lost, &mut memory, &config, &at(11, 20_300), &mut ids);
         assert_eq!((lost.stage, lost.ended.as_str()), (6, "kept"));
+    }
+
+    #[test]
+    fn with_no_house_crouching_at_its_place_calls_it_and_walking_past_does_not() {
+        let config = Config::default();
+        let mut memory = lived_in();
+        memory.builds.clear();
+        memory.place = Some([20, 64, 20]);
+        memory.last.pos = [20.5, 64.0, 20.5];
+        let mut arc = Arc {
+            stage: 5,
+            ending: "keep".to_string(),
+            script_day: 10,
+            ..Arc::default()
+        };
+        let mut ids = || 1;
+        let walked = tick(&mut arc, &mut memory, &config, &at(10, 15_000), &mut ids);
+        assert!(!walked
+            .iter()
+            .any(|(c, _)| matches!(c, Command::Confront { .. })));
+        memory.last.sneaking = true;
+        let called = tick(&mut arc, &mut memory, &config, &at(10, 15_100), &mut ids);
+        assert!(called
+            .iter()
+            .any(|(c, _)| matches!(c, Command::Confront { at, .. } if *at == [20, 64, 20])));
+    }
+
+    #[test]
+    fn its_place_is_met_by_what_they_build_there_after_it_chose_it() {
+        let mut memory = lived_in();
+        memory.want = "a place of its own".to_string();
+        memory.place = Some([30, 64, 30]);
+        memory.placed = vec![[30, 64, 31], [31, 64, 30], [29, 65, 30]];
+        memory.placed_before_place = 3;
+        assert!(!want_met(&memory), "built there before it chose it");
+        memory
+            .placed
+            .extend([[30, 65, 31], [31, 65, 30], [29, 66, 30]]);
+        assert!(want_met(&memory));
     }
 
     #[test]
