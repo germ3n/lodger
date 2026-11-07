@@ -62,6 +62,8 @@ public final class Figures {
 		boolean crouched;
 		/** Swings now and then, as at the rock (ABI 35). */
 		boolean swinging;
+		/** How it is looked at, told to the mind as it goes (ABI 47). */
+		final Gaze gaze = new Gaze();
 
 		Figure(ServerPlayer player, int number, int entityId, UUID uuid, GameProfile profile, ItemStack held, Vec3 at, List<Vec3> path, long untilTick, double vanishWithin) {
 			this.player = player;
@@ -77,7 +79,19 @@ public final class Figures {
 		}
 	}
 
+	/** A figure gone, and how it was looked at: the senses tell the mind (`figure_seen`). */
+	public record Sighting(ServerPlayer player, net.minecraft.core.BlockPos at, String detail) {
+	}
+
 	private final List<Figure> active = new ArrayList<>();
+	private final List<Sighting> sightings = new ArrayList<>();
+
+	/** The figures gone since the last ask, each with how it was looked at. */
+	public List<Sighting> takeSightings() {
+		List<Sighting> taken = List.copyOf(sightings);
+		sightings.clear();
+		return taken;
+	}
 	private int nextId = FIRST_ID;
 	private long tick;
 
@@ -139,15 +153,21 @@ public final class Figures {
 			if (looked) {
 				figure.seen = true;
 			}
+			if (figure.player.level() == figure.level) {
+				figure.gaze.tick(Gaze.facing(viewDot(figure)), figure.player.position().distanceTo(figure.at));
+			}
 			// Dead and respawned, or gone to another dimension: the client may keep its world
 			// (a respawn in the same one does), so the figure is taken back through the
 			// connection, which the new player shares (until now it stayed there).
-			boolean gone = figure.player.isRemoved() || figure.player.level() != figure.level || tick > figure.untilTick
-					|| (figure.vanishWithin > 0 && figure.player.position().distanceTo(figure.at) < figure.vanishWithin)
-					|| (figure.onceSeen && figure.seen && !looked);
-			if (gone) {
+			boolean left = figure.player.isRemoved() || figure.player.level() != figure.level;
+			boolean approached = figure.vanishWithin > 0 && figure.player.position().distanceTo(figure.at) < figure.vanishWithin;
+			boolean lookedAway = figure.onceSeen && figure.seen && !looked;
+			boolean timed = tick > figure.untilTick;
+			if (left || timed || approached || lookedAway) {
 				unsend(figure);
 				it.remove();
+				String end = left ? "gone" : approached ? "approached" : lookedAway ? "looked_away" : "timed";
+				sightings.add(new Sighting(figure.player, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail(end)));
 				continue;
 			}
 
@@ -331,6 +351,14 @@ public final class Figures {
 			dig.player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(dig.level, p));
 			dig.opened.remove(p);
 		}
+	}
+
+	/** The player's view dotted with the way to the figure's chest: 1 is straight at it. */
+	private static double viewDot(Figure figure) {
+		Vec3 to = figure.at.add(0, 1.4, 0).subtract(figure.player.getEyePosition());
+		double length = to.length();
+
+		return length < 1e-3 ? 1 : figure.player.getViewVector(1f).dot(to.scale(1 / length));
 	}
 
 	/** Whether the player looks at a figure: within about 25 degrees of their view. */

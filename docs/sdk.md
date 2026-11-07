@@ -198,7 +198,9 @@ first touch). ABI 43: `confront` (the fight, the host's to run) and the
 `leave`, `hit`) and `damage`. ABI 45: `Init.config_before`, the file before a settings change,
 and `InitReply.rewrite`, which asks the host to write the effective config over the file (a
 preset picked, its values in). ABI 46: `Choice.note`, a line under a resource's choice, and
-`Resource.without`, the config change that plays without it.
+`Resource.without`, the config change that plays without it. ABI 47: the `figure_seen` event,
+a figure gone with how it was looked at (facing it within ten degrees for half a second, for how
+long, how far they came toward it, how it ended; `world/Gaze.java`).
 
 ## Resources
 

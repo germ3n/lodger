@@ -917,8 +917,13 @@ because it can be built and tested without a game, and because the model layer i
   hotbar, hunger, hearts, subtitle, crosshair, player list and sleep count, the camera's nudge
   and the field of view. Each ends on its own; none touches the server's world. Tested on the
   client with a screenshot test per glitch against a fixed scene. Found done in the audit: `client/Glitches.java` has twenty kinds; there are no screenshot tests.
-- [ ] **Looked-at detection** in the senses: facing within 10 degrees for half a second, how
-  long, whether moved toward. Partly, found in the audit: the senses send what each player faces and which player a mob faces; how long and whether moved toward are not measured.
+- [x] **Looked-at detection** (`world/Gaze.java`, ABI 47): each figure shown, while it stands,
+  counts the time they face it within ten degrees in looks of half a second or more, how many
+  looks, and how far they walk toward it; as it goes the host reports `figure_seen` with that and
+  how it ended (approached, looked away from, its time up, they left). The mind keeps the last
+  sixteen (`Memory::figure_looks`), with looked at long (two seconds) and chased (eight blocks
+  toward it, or near enough that it went) for temper and the chains, and the situation says the
+  last. Tests: three in JUnit, one in `memory`. Was: **Looked-at detection** in the senses: facing within 10 degrees for half a second, how   long, whether moved toward. Partly, found in the audit: the senses send what each player faces and which player a mob faces; how long and whether moved toward are not measured.
 - [ ] **Play it** through stage four, with the model. Calibration round two, same method.
 
 ### Phase 6: the ending, multiplayer, release

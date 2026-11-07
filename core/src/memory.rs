@@ -333,6 +333,55 @@ pub struct Held {
     pub taken_day: f32,
 }
 
+/// A figure gone, and how they looked at it.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct FigureLook {
+    pub day: f32,
+    pub pos: Option<BlockPos>,
+    /// Ticks facing it within ten degrees, in looks of half a second or more.
+    pub looked_ticks: u32,
+    pub looks: u32,
+    /// Blocks they came toward it from where they first stood.
+    pub toward: f32,
+    /// `approached`, `looked_away`, `timed` or `gone`.
+    pub end: String,
+}
+
+impl FigureLook {
+    /// From the host's detail: `looked=40 looks=1 longest=40 toward=6.5 end=approached`.
+    pub fn parse(detail: &str, day: f32, pos: Option<BlockPos>) -> Self {
+        let mut look = Self {
+            day,
+            pos,
+            ..Self::default()
+        };
+        for part in detail.split_whitespace() {
+            match part.split_once('=') {
+                Some(("looked", v)) => look.looked_ticks = v.parse().unwrap_or(0),
+                Some(("looks", v)) => look.looks = v.parse().unwrap_or(0),
+                Some(("toward", v)) => look.toward = v.parse().unwrap_or(0.0),
+                Some(("end", v)) => look.end = v.to_string(),
+                _ => {}
+            }
+        }
+        look
+    }
+
+    /// Looked at for a while: two seconds or more in all.
+    pub fn looked_long(&self) -> bool {
+        self.looked_ticks >= 40
+    }
+
+    /// Went at it: walked eight blocks or more toward it, or came close enough that it went.
+    pub fn chased(&self) -> bool {
+        self.toward >= 8.0 || self.end == "approached"
+    }
+}
+
+/// The most figure looks kept.
+const MOST_FIGURE_LOOKS: usize = 16;
+
 /// An event that landed, or did not.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -421,6 +470,9 @@ pub struct Memory {
     /// (`answer_knock`). Not saved.
     #[serde(skip)]
     pub knocked_now: Option<BlockPos>,
+    /// How each figure shown them was looked at as it went, the last sixteen (the host's
+    /// `figure_seen`): for the situation, temper and the chains.
+    pub figure_looks: Vec<FigureLook>,
     /// The kind its kill sign counts, as it wrote it (`count_up` counts that kind, not
     /// whatever is killed most now).
     pub kill_sign_kind: String,
@@ -1518,6 +1570,13 @@ impl Memory {
                 }
                 EventKind::RangBell => self.rang_bell_now = event.pos,
                 EventKind::Knocked => self.knocked_now = event.pos,
+                EventKind::FigureSeen => {
+                    push_capped(
+                        &mut self.figure_looks,
+                        FigureLook::parse(&event.detail, day, event.pos),
+                        MOST_FIGURE_LOOKS,
+                    );
+                }
                 EventKind::FightWon => self.fight_ended = Some("won".to_string()),
                 EventKind::FightLost => self.fight_ended = Some("lost".to_string()),
                 EventKind::FightFled => self.fight_ended = Some("fled".to_string()),
@@ -2647,6 +2706,26 @@ impl Memory {
             ));
         }
 
+        // The last figure they saw, within three days: how they looked at it.
+        if let Some(look) = self
+            .figure_looks
+            .last()
+            .filter(|l| day - l.day <= 3.0 && l.looks > 0)
+        {
+            let seconds = (look.looked_ticks as f32 / 20.0).round().max(1.0) as u32;
+            lines.push(format!(
+                "{} they looked at the figure for {} second{}{}.",
+                ago_words(day - look.day, "Today"),
+                seconds,
+                if seconds == 1 { "" } else { "s" },
+                if look.chased() {
+                    format!(" and went {} blocks toward it", look.toward.round() as u32)
+                } else {
+                    " and kept their distance".to_string()
+                }
+            ));
+        }
+
         if let Some(milestone) = self.milestones.last() {
             let when = ago_words(day - milestone.day, "Today");
             let what = match milestone.kind.as_str() {
@@ -3112,6 +3191,35 @@ mod tests {
         assert_eq!(memory.target, Some(3));
         assert_eq!(memory.target_name, "razor");
         assert_eq!(memory.favourites[0].0, "minecraft:iron_pickaxe");
+    }
+
+    #[test]
+    fn a_figure_looked_at_is_kept_and_said_in_the_situation() {
+        let mut memory = Memory::default();
+        memory.observe(
+            &obs(
+                vec![player(0, [0.0, 64.0, 0.0], 0.0)],
+                vec![Event {
+                    player: 0,
+                    kind: EventKind::FigureSeen,
+                    pos: Some([20, 64, 0]),
+                    detail: "looked=60 looks=2 longest=40 toward=11.5 end=approached".to_string(),
+                    ..Event::default()
+                }],
+            ),
+            2.0,
+        );
+
+        let look = memory.figure_looks.last().unwrap();
+        assert_eq!(look.looked_ticks, 60);
+        assert!(look.looked_long() && look.chased());
+        assert!(
+            memory.describe(2.5).iter().any(|l| l
+                == "Today they looked at the figure for 3 seconds and went 12 blocks toward it."),
+            "{:?}",
+            memory.describe(2.5)
+        );
+        assert!(!FigureLook::parse("looked=0 looks=0 toward=0.0 end=timed", 1.0, None).chased());
     }
 
     #[test]

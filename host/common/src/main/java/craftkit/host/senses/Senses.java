@@ -244,6 +244,11 @@ public final class Senses {
 		events.computeIfAbsent(level, l -> new ArrayList<>()).add(event);
 	}
 
+	/** A figure gone, and how it was looked at (`Gaze.detail`); ABI 47. */
+	public void noticedFigureSeen(ServerPlayer player, BlockPos at, String detail) {
+		event(player, "figure_seen", at, detail, null);
+	}
+
 	public void noticedChangedDimension(ServerPlayer player, String from, String to) {
 		// Once per crossing: the observation reports one the loaders did not (leaving the End,
 		// a respawn in another dimension), and this one need not be reported again there.
