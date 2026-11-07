@@ -200,7 +200,8 @@ and `InitReply.rewrite`, which asks the host to write the effective config over 
 preset picked, its values in). ABI 46: `Choice.note`, a line under a resource's choice, and
 `Resource.without`, the config change that plays without it. ABI 47: the `figure_seen` event,
 a figure gone with how it was looked at (facing it within ten degrees for half a second, for how
-long, how far they came toward it, how it ended; `world/Gaze.java`).
+long, how far they came toward it, how it ended; `world/Gaze.java`). ABI 48: `confront`'s
+`fierce`, 0 to 1, the fight's health up to a quarter more and a fifth wave from half on.
 
 ## Resources
 

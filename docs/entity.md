@@ -699,6 +699,23 @@ The rules still hold at every temper: a furious lodger does everything it does m
 sooner, never anything it would not do. How much temper moves per act is a table in
 `memory/temper.rs` with a scripted-stay test per row.
 
+**As coded (`core/src/temper.rs`, `events.temper`).** It rests at 0.2 on `calm`, 0.3 on
+`balanced`, 0.4 on `intense`, 0.5 on `relentless`, and one cause moves it three times a day at
+most. Up: chasing the figure (eight blocks toward it, or near enough that it goes; +0.15),
+lighting its place (+0.12), TNT, lava, water or fire by it (+0.15), breaking its lights (+0.08),
+its house (+0.1) or a thing it made (+0.08), opening its house's chest (+0.05), cursing it in
+chat (+0.1). Down: building at its place (-0.03), leaving a chest there (-0.1), watching the
+figure two seconds or more from afar (-0.05), kind words in chat (-0.03). Each day it drifts a
+tenth of the way back. The pace: the day's events times `(0.5 + temper) / (0.5 + resting)`,
+between half and half again, so a stay at rest runs as its preset says; the stages, the menu and
+the distance as above; the ending, when `stages.ending` is `difficulty`, takes on any difficulty
+above 0.9 and keeps rather than leaves above 0.7 though the want was met; and the fight (owner:
+"harder fight when angry"): its health up to a quarter more and a fifth wave from halfway between
+resting and furious (`confront`'s `fierce`, ABI 48). The situation says it far from rest: `It is
+angry: the player broke its lights and chased the figure.` Not yet: the kills of an animal it
+moved, a name given back, being ignored night after night, the thing left where it put it,
+standing at its sign, and the `How does it take this?` ask.
+
 ### How often
 
 Events are rare, and get less rare. Each stage has a budget of events per in-game day

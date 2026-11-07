@@ -44,7 +44,7 @@ pub fn check(
         return Ok(());
     }
 
-    if !event.offered_in(stage) {
+    if !crate::temper::offered_in(event, stage, &memory.temper) {
         return Err(Refused::NotOffered);
     }
 
@@ -87,7 +87,7 @@ pub fn check(
     let exempt = !hidden_from_view(event.action);
 
     if let Some(pos) = pos {
-        if !exempt && memory.in_view(pos, config.events.min_distance as f64) {
+        if !exempt && memory.in_view(pos, crate::temper::min_distance(config, memory)) {
             return Err(Refused::InView);
         }
     }

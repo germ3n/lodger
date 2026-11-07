@@ -535,7 +535,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
                 .iter()
                 .filter(|d| d.event == event.id && d.ok)
                 .count() as u32;
-            let why = if !event.offered_in(arc.stage) {
+            let why = if !crate::temper::offered_in(event, arc.stage, &memory.temper) {
                 format!("stage {}", event.stages_words())
             } else if let Some(unmet) = offer::unmet(event, memory, now) {
                 unmet

@@ -293,7 +293,7 @@ pub fn offer<'a>(
     let mut eligible: Vec<(&Event, f64)> = Vec::new();
 
     for event in catalogue {
-        if event.id == "wait" || !event.offered_in(stage) {
+        if event.id == "wait" || !crate::temper::offered_in(event, stage, &memory.temper) {
             continue;
         }
 

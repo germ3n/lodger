@@ -184,7 +184,8 @@ public final class Executors {
 						blocks.add("minecraft:cobblestone");
 					}
 					String why = context.fights().start(level, player, blockPos(command.getAsJsonArray("at")),
-							new Vec3(roof.get(0).getAsDouble(), roof.get(1).getAsDouble(), roof.get(2).getAsDouble()), blocks, data);
+							new Vec3(roof.get(0).getAsDouble(), roof.get(1).getAsDouble(), roof.get(2).getAsDouble()), blocks, data,
+							command.has("fierce") ? command.get("fierce").getAsFloat() : 0);
 					yield report(id, why == null, why == null ? "the fight is on" : why);
 				}
 				case "splash_potion" -> splashPotion(level, command, id, context);

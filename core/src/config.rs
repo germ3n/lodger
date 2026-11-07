@@ -395,6 +395,8 @@ pub struct Stages {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Events {
+    /// Whether how they treat it moves its temper, and its temper the pace (`temper.rs`).
+    pub temper: bool,
     pub min_distance: u32,
     pub disabled: Vec<String>,
     pub offered: u32,
@@ -490,6 +492,7 @@ impl Default for Stages {
 impl Default for Events {
     fn default() -> Self {
         Self {
+            temper: true,
             min_distance: 64,
             disabled: Vec::new(),
             offered: 8,

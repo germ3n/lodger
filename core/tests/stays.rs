@@ -621,3 +621,71 @@ fn the_tick_costs() {
     // A game tick is 50 ms; the mind should take a small part of it, every tick.
     assert!(at(0.99) < 2_000, "p99 {} us", at(0.99));
 }
+
+/// The first day the stay reaches stage four, with the target chasing the figure three times a
+/// day or never; or the last day run.
+fn day_of_stage_four(provoke: bool, config: &str) -> (u64, f32) {
+    let _turn = TURN.lock().unwrap_or_else(|err| err.into_inner());
+    let harness = craftkit::harness!().unwrap();
+    harness.init(config);
+    let info = WorldInfo {
+        id: "minecraft:overworld".to_string(),
+        seed: 5,
+        name: "scripted".to_string(),
+    };
+    let world = harness.open_world(&info, &[]).unwrap();
+    let mut script = Script::new();
+    let days = 20;
+    let mut reached = days;
+    let mut temper: f32 = 0.0;
+    while script.tick < days * 24_000 {
+        let mut observations = script.observations();
+        if provoke && script.tick.is_multiple_of(8_000) {
+            observations.events.push(craftkit::world::Event {
+                player: 0,
+                kind: craftkit::world::EventKind::FigureSeen,
+                pos: Some([30, 64, 0]),
+                detail: "looked=60 looks=1 longest=60 toward=14.0 end=approached".to_string(),
+                ..Default::default()
+            });
+        }
+        world.observe(&observations);
+        let commands = world.tick(&script.now());
+        let reports: Vec<Report> = commands
+            .iter()
+            .map(|command| Report {
+                id: command.id(),
+                done: true,
+                reason: String::new(),
+            })
+            .collect();
+        if !reports.is_empty() {
+            world.report(&reports);
+        }
+        if script.tick.is_multiple_of(24_000) {
+            let stay = lodger_core::stay::Stay::open(&info, &world.save()).unwrap();
+            temper = temper.max(stay.memory.temper.value);
+            if stay.arc.stage >= 4 {
+                reached = script.tick / 24_000;
+                break;
+            }
+        }
+        script.tick += 5;
+    }
+    world.close();
+
+    (reached, temper)
+}
+
+#[test]
+fn a_provoking_player_brings_stage_four_days_sooner_than_a_quiet_one() {
+    let config = r#"{ "stages": { "start_after_days": 1 } }"#;
+    let (quiet, _) = day_of_stage_four(false, config);
+    let (provoked, temper) = day_of_stage_four(true, config);
+
+    assert!(temper > 0.9, "chased every day, it is furious: {temper}");
+    assert!(
+        provoked + 2 <= quiet,
+        "provoked on day {provoked}, quiet on day {quiet}"
+    );
+}

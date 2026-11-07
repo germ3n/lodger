@@ -934,14 +934,15 @@ because it can be built and tested without a game, and because the model layer i
   closed inside them, the one death on hard with inventory kept and the vanilla message, and
   the `left` and `stayed` states. Scripted-stay tests for each ending, checking the order of
   beats, that nothing repeats within a day, and that the death happens once or not at all. Found done in the audit: `ending.rs` holds the three endings as beat scripts, and the confrontation besides.
-- [ ] **Temper** (owner: "doing certain things should speed up the progression"):
-  `memory/temper.rs` with the move table of [Provocation and temper](entity.md#provocation-and-temper),
-  the senses that feed it (the figure chased or hit, its blocks broken, its place walled or
-  lit, the thing taken back, chat lines at it, nights slept through), the scaling of the
-  budget, the stage lengths, the menu's stage gates, the distance and the ending, each bounded
-  by the preset, and the `How does it take this?` ask. Scripted-stay tests: a provoking player
-  reaches stage four days sooner than a quiet one; a `calm` preset provoked stays under the
-  `balanced` resting pace; temper drifts back.
+- [x] **Temper** (owner: "doing certain things should speed up the progression"; "harder fight
+  when angry"): `core/src/temper.rs`, kept in the memory, settled each tick toward the preset's
+  resting value, moved by the target's acts as the table in [Provocation and
+  temper](entity.md#provocation-and-temper) says (what is coded and what is not is there), and read
+  by the budget, the stages' lengths, the bold events' stages, the distance, the ending and the
+  fight (`fierce`, ABI 48); the situation says it; `events.temper` turns it off. Tests: six in
+  `temper` (resting and drift, the daily cap, the pace each way, the words, chat, a provoked
+  `calm` under a resting `balanced`) and one scripted stay (a provoking player reaches stage four
+  two days sooner or more). Was: **Temper** (owner: "doing certain things should speed up the progression"):   `memory/temper.rs` with the move table of [Provocation and temper](entity.md#provocation-and-temper),   the senses that feed it (the figure chased or hit, its blocks broken, its place walled or   lit, the thing taken back, chat lines at it, nights slept through), the scaling of the   budget, the stage lengths, the menu's stage gates, the distance and the ending, each bounded   by the preset, and the `How does it take this?` ask. Scripted-stay tests: a provoking player   reaches stage four days sooner than a quiet one; a `calm` preset provoked stays under the   `balanced` resting pace; temper drifts back.
 - [ ] **The other house, a dimension of its own** (owner: "custom dimensions you
   can get teleported to by sleeping, walking through portals"): a void dimension in the
   content jar's data pack (`data/lodger/dimension/other.json`, a flat dark sky, no mobs, no

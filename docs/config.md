@@ -94,6 +94,7 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 
 | Key | Default | What it changes |
 | --- | --- | --- |
+| `events.temper` | `true` | Whether how they treat it moves its temper (chasing the figure, breaking its lights or house, lighting or flooding its place, cursing it in chat up; building or leaving a chest at its place, watching the figure from afar, kind words down; a tenth of the way back each day), and its temper the pace: the day's events half again at the top and half at the bottom, a stage's least days halved above 0.7 and most stretched by half below 0.2, the bolder events a stage early above 0.6 and late below 0.2, three quarters of `events.min_distance` above 0.8, a fiercer fight, and the ending. It rests at 0.2 on `calm`, 0.3 on `balanced`, 0.4 on `intense`, 0.5 on `relentless`. `false` keeps it at rest. See [Provocation and temper](entity.md#provocation-and-temper). |
 | `events.min_distance` | `64` | Blocks from the target within which nothing that changes a block happens while it is in view (`calm` 80, `intense` 48, `relentless` 32; 24 until now, when the owner watched torches go up from farther off). Lowering it is the one way to make the lodger bolder, and it is still bounded by the rules. |
 | `events.disabled` | `[]` | Event ids the brain never offers as choices. For servers that want, say, no `take` or no `sign_word`. See [Events](entity.md#events). |
 | `events.offered` | `8` | How many eligible events the brain is offered per plan. Fewer is a more predictable lodger; more is a longer prompt. |

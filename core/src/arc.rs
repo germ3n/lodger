@@ -38,6 +38,28 @@ pub struct Arc {
     /// out (owner). Read off the memory each tick; not saved.
     #[serde(skip)]
     pub sharing: bool,
+    /// Temper's pace, set from the memory each tick (`temper.rs`): the day's events and the
+    /// stages' least and most days, each times this. Not saved: read again each tick.
+    #[serde(skip)]
+    pub pace: Pace,
+}
+
+/// Temper's factors on the day's budget and the stages' lengths; 1 at rest.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Pace {
+    pub budget: f32,
+    pub least: f32,
+    pub most: f32,
+}
+
+impl Default for Pace {
+    fn default() -> Self {
+        Self {
+            budget: 1.0,
+            least: 1.0,
+            most: 1.0,
+        }
+    }
 }
 
 impl Arc {
@@ -91,8 +113,9 @@ impl Arc {
 
         let index = (self.stage - 1) as usize;
         let in_stage = day - self.stage_began_day;
-        let least = config.stages.least_days[index] as f32;
-        let most = config.stages.most_days[index] as f32;
+        // Provoked, a stage's least days halve; appeased, its most stretch (temper).
+        let least = config.stages.least_days[index] as f32 * self.pace.least;
+        let most = (config.stages.most_days[index] as f32 * self.pace.most).max(least);
 
         let condition_met = match self.stage {
             1 => {
@@ -123,7 +146,8 @@ impl Arc {
             return 0.0;
         }
 
-        let budget = config.stages.events_per_day[(self.stage - 1) as usize] as f32;
+        let budget =
+            config.stages.events_per_day[(self.stage - 1) as usize] as f32 * self.pace.budget;
         if self.sharing {
             budget * 0.5
         } else {

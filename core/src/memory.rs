@@ -473,6 +473,8 @@ pub struct Memory {
     /// How each figure shown them was looked at as it went, the last sixteen (the host's
     /// `figure_seen`): for the situation, temper and the chains.
     pub figure_looks: Vec<FigureLook>,
+    /// Its temper, moved by how they treat it (`temper.rs`).
+    pub temper: crate::temper::Temper,
     /// The kind its kill sign counts, as it wrote it (`count_up` counts that kind, not
     /// whatever is killed most now).
     pub kill_sign_kind: String,
@@ -1303,6 +1305,8 @@ impl Memory {
             if event.player != index {
                 continue;
             }
+            // How it takes this, before the rest of the memory moves (`temper.rs`).
+            self.temper_event(event, day);
 
             match event.kind {
                 EventKind::OpenedContainer => {
@@ -1622,6 +1626,7 @@ impl Memory {
             let about = about_the_lodger(&line.text) || self.about_its_want(&line.text);
             if about {
                 push_capped(&mut self.chat, line.text.clone(), MOST_CHAT);
+                self.temper_chat(&line.text, day);
             }
             if let Some(words) = crate::brain::text::heard(&line.text) {
                 self.heard = Some((words, about));
@@ -2704,6 +2709,11 @@ impl Memory {
                     .map(|(p, _)| format!(", {}", self.where_words(p)))
                     .unwrap_or_default()
             ));
+        }
+
+        // Its temper, when far from resting, and why (`temper.rs`).
+        if let Some(words) = self.temper.words(self.temper.resting) {
+            lines.push(words);
         }
 
         // The last figure they saw, within three days: how they looked at it.

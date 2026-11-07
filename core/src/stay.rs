@@ -223,6 +223,20 @@ impl Stay {
         let day = self.day(now);
         self.memory.clock(now, day);
         self.arc.sharing = self.memory.sharing_with_horror();
+        // Its temper: drifted back toward the preset's resting value, and the pace it sets.
+        let resting = crate::temper::resting(config);
+        if config.events.temper {
+            self.memory.temper.settle(resting, day);
+        } else {
+            self.memory.temper.value = resting;
+            self.memory.temper.resting = resting;
+        }
+        let temper = &self.memory.temper;
+        self.arc.pace = crate::arc::Pace {
+            budget: temper.budget_factor(resting),
+            least: temper.least_factor(),
+            most: temper.most_factor(),
+        };
         if let Some(stage) = self.arc.tick(day, &self.memory, config) {
             log.note(&format!("stage {stage} begins on day {day:.1}"));
         }

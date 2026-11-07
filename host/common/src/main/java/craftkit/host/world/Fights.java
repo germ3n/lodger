@@ -56,7 +56,7 @@ import java.util.UUID;
  * <ol>
  *   <li><b>The rising.</b> The ground before its door cracks and it rises out of it, lying flat,
  *       then upright; the bar fills as it rises.</li>
- *   <li><b>Waves.</b> It watches from its roof while warped animals come at them, four waves
+ *   <li><b>Waves.</b> It watches from its roof while warped animals come at them, four waves (five when it is angry)
  *       (none on peaceful).</li>
  *   <li><b>Bend 1.</b> It drops onto all fours, crawls at them flat and fast, stands too tall,
  *       its head backwards a beat.</li>
@@ -148,6 +148,8 @@ public final class Fights {
 		int deformed;
 		int dropped;
 		ItemStack weapon = ItemStack.EMPTY;
+		/** How many waves of animals: four, five when it is angry. */
+		int waves = 4;
 
 		Fight(UUID player, int index, ServerLevel level, WorldData data, Vec3 at, Vec3 roof, List<String> blocks, String name, float max, float hit) {
 			this.player = player;
@@ -194,6 +196,15 @@ public final class Fights {
 
 	/** Begins a fight; answers why not, or null. */
 	public String start(ServerLevel level, ServerPlayer player, BlockPos at, Vec3 roof, List<String> blocks, WorldData data) {
+		return start(level, player, at, roof, blocks, data, 0);
+	}
+
+	/**
+	 * The fight, angrier with {@code fierce} (0 to 1, the lodger's temper over its resting value;
+	 * owner: "harder fight when angry"): its health up to a quarter more, and a fifth wave from
+	 * half on (ABI 48).
+	 */
+	public String start(ServerLevel level, ServerPlayer player, BlockPos at, Vec3 roof, List<String> blocks, WorldData data, float fierce) {
 		if (fights.stream().anyMatch(f -> f.player.equals(player.getUUID()))) {
 			return "a fight is on already";
 		}
@@ -207,12 +218,14 @@ public final class Fights {
 			case HARD -> 1.3f;
 			default -> 1f;
 		};
-		float max = (float) (150 * (0.6 + gear.armor / 20.0 + gear.damage / 20.0) * diff);
+		fierce = Math.max(0, Math.min(1, fierce));
+		float max = (float) (150 * (0.6 + gear.armor / 20.0 + gear.damage / 20.0) * diff * (1 + 0.25 * fierce));
 		float hit = (float) (3 + gear.armor * 0.35);
 		Vec3 door = standing(level, Vec3.atBottomCenterOf(at));
 		Vec3 top = roof.y <= -1000 ? ground(level, roof) : roof;
 		Fight fight = new Fight(player.getUUID(), senses.indexOf(player), level, data, door, top, blocks, player.getGameProfile().name(), max, hit);
 		fight.weapon = gear.weapon;
+		fight.waves = fierce >= 0.5f ? 5 : 4;
 		fight.real = mannequin(level, player, door.add(0, -2.2, 0), gear);
 		fight.bar.addPlayer(player);
 		fight.bar.setProgress(0);
@@ -385,7 +398,7 @@ public final class Fights {
 						f.breathUntil = f.tick + (f.wave == 0 ? 1 : 100);
 					} else if (f.tick >= f.breathUntil) {
 						f.breathUntil = 0;
-						if (f.wave >= 4) {
+						if (f.wave >= f.waves) {
 							f.warped.forEach(Fights::gone);
 							f.warped.clear();
 							f.animals.clear();

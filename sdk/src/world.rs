@@ -579,6 +579,10 @@ pub enum Command {
         at: BlockPos,
         roof: Pos,
         blocks: Vec<String>,
+        /// How much fiercer, 0 to 1: its temper over its resting value. Its health up to a
+        /// quarter more, a fifth wave from half on. ABI 48.
+        #[serde(default, skip_serializing_if = "is_zero_f32")]
+        fierce: f32,
     },
     /// A real arrow from `from` (on the ground there when its y is below -1000) at `at`, aimed
     /// as a skeleton aims; it harms `damage` if it hits `player` (0 for none, and never below half

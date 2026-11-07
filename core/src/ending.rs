@@ -62,7 +62,15 @@ pub fn choose(config: &Config, memory: &Memory) -> Ending {
     if let Some(named) = Ending::named(&config.stages.ending) {
         return named;
     }
+    // Temper (`temper.rs`): furious, it takes on any difficulty; angry, a met want does not
+    // make it leave, it keeps instead.
+    if config.events.temper && memory.temper.value > 0.9 {
+        return Ending::Take;
+    }
     if want_met(memory) {
+        if config.events.temper && memory.temper.value > 0.7 {
+            return Ending::Keep;
+        }
         return Ending::Leave;
     }
     match memory.difficulty.as_str() {
@@ -459,6 +467,8 @@ fn confrontation(
             at,
             roof,
             blocks: construct_blocks(memory),
+            // Angrier, fiercer (owner: "harder fight when angry").
+            fierce: memory.temper.fierce(memory.temper.resting),
         },
         0,
     )]

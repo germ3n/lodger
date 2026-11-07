@@ -724,7 +724,7 @@ impl Brain {
             // at it (`consider_started` asks the rules without a place).
             let counted = memory.sign_tally().is_some_and(|t| t.kind == kind);
             let seen = act::kill_sign_spot(memory)
-                .is_none_or(|s| memory.in_view(s, config.events.min_distance as f64));
+                .is_none_or(|s| memory.in_view(s, crate::temper::min_distance(config, memory)));
             if counted && !seen && !held_back {
                 self.consider_started("count_up", 1.0, now, day, memory, arc, config, log);
             }
@@ -1057,9 +1057,9 @@ impl Brain {
                 || (checked.is_ok()
                     && rules::hidden_from_view(event.action)
                     && made.iter().any(|(command, _)| {
-                        act::spots(command)
-                            .iter()
-                            .any(|spot| memory.in_view(*spot, config.events.min_distance as f64))
+                        act::spots(command).iter().any(|spot| {
+                            memory.in_view(*spot, crate::temper::min_distance(config, memory))
+                        })
                     })));
         if seen {
             return Step::Wait("in view".to_string());
