@@ -50,6 +50,7 @@ public final class Worlds {
 	private final FrameShows frameShows = new FrameShows();
 	private final Deaths deaths = new Deaths();
 	private final Fights fights;
+	private final OtherHouse otherHouse = new OtherHouse();
 	private final Gatherings gatherings = new Gatherings();
 	private final LootOffers loot = new LootOffers();
 	private final Later later = new Later();
@@ -146,6 +147,10 @@ public final class Worlds {
 		temporaries.goneIn(level);
 		gatherings.putBackIn(level);
 		fights.endIn(level);
+		// The overworld closing: no one is left in the other house.
+		if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+			otherHouse.allHome(level.getServer());
+		}
 		senses.forget(level);
 		Map<LoadedMod, Open> perMod = open.remove(level);
 		openCount = open.size();
@@ -203,6 +208,7 @@ public final class Worlds {
 		frameShows.tick(server);
 		deaths.tick(server);
 		fights.tick(server);
+		otherHouse.tick(server);
 		gatherings.tick(server);
 		later.tick();
 		poses.tick();
@@ -211,7 +217,7 @@ public final class Worlds {
 			senses.noticedFigureSeen(sighting.player(), sighting.at(), sighting.detail());
 		}
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves, bobbers, frameShows, deaths, fights);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves, bobbers, frameShows, deaths, fights, otherHouse);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();

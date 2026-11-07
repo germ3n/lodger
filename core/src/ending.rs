@@ -168,6 +168,9 @@ pub enum Beat {
     /// Every torch it ever placed lit, theirs dark on their screen, red rain.
     LightsTurn,
     /// The figure at its place, holding what it took, walks up to one block from them.
+    /// The other house: taken into the copy of theirs in the dark, the figure walking at them
+    /// from its doorway, then home for the rest of the night (owner: the second visit).
+    OtherHouse,
     FigureComes,
     /// On hard, they die, once, keeping everything.
     Death,
@@ -203,6 +206,7 @@ impl Beat {
                 | Beat::FigureBehind(_)
                 | Beat::BellRings
                 | Beat::FigureComes
+                | Beat::OtherHouse
                 | Beat::Death
                 | Beat::FigureInItsWindow
                 | Beat::PetsToItsDoor
@@ -267,6 +271,7 @@ pub const TAKES: &[Step] = &[
     s(1, 10_000, Beat::BellRings),
     s(1, 11_000, Beat::BellRings),
     s(2, 13_000, Beat::LightsTurn),
+    s(2, 16_000, Beat::OtherHouse),
     s(2, 18_000, Beat::FigureComes),
     s(2, 18_600, Beat::Death),
     s(2, 23_000, Beat::DoorsShut),
@@ -1179,6 +1184,19 @@ pub fn commands(
             ));
             made
         }
+        Beat::OtherHouse => match (
+            memory
+                .home
+                .as_ref()
+                .and_then(|h| h.bed.map(|b| (h.center, b))),
+            memory.usual_door(),
+        ) {
+            (Some((center, bed)), Some(door)) => vec![(
+                crate::brain::act::other_house(ids(), target, center, bed, door, 90.0, true),
+                0,
+            )],
+            _ => Vec::new(),
+        },
         Beat::FigureComes => {
             let from = memory
                 .place

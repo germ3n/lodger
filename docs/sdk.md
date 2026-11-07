@@ -201,7 +201,9 @@ preset picked, its values in). ABI 46: `Choice.note`, a line under a resource's 
 `Resource.without`, the config change that plays without it. ABI 47: the `figure_seen` event,
 a figure gone with how it was looked at (facing it within ten degrees for half a second, for how
 long, how far they came toward it, how it ended; `world/Gaze.java`). ABI 48: `confront`'s
-`fierce`, 0 to 1, the fight's health up to a quarter more and a fifth wave from half on.
+`fierce`, 0 to 1, the fight's health up to a quarter more and a fifth wave from half on. ABI 49:
+`other_house`, the target woken in a copy of their house in the content jar's void dimension
+`lodger:other` for a while (`world/OtherHouse.java`).
 
 ## Resources
 

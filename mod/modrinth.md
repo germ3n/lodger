@@ -50,6 +50,9 @@ lines), or turn off single events by name in `config/lodger.json`.
 - **Fabric** (with Fabric API) or **NeoForge**. One jar for your loader; nothing else to
   install.
 - Needed on **both the client and the server**.
+- **It adds a dimension of its own** to your world (an empty, dark one it uses twice in a stay
+  at most). If you remove the mod later, Minecraft warns about that missing dimension when you
+  open the world; the world is fine.
 - Windows or Linux on x86_64 or arm64, or macOS on Apple silicon. On Linux, Vulkan's loader
   (`libvulkan1`), which any desktop with a GPU driver has; a headless server may need
   `apt install libvulkan1`. No GPU is needed.

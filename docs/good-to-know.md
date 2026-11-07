@@ -76,6 +76,12 @@ pages explain each part in full; this one is the short list to keep in mind.
   player's. Others in the world are witnesses: they see the traces, never the figure, and they
   hear nothing. Who is the target is the lodger's choice and it can change once, at a stage
   boundary. See [Multiplayer](entity.md#multiplayer).
+- **It adds a dimension.** The content jar's data pack registers `lodger:other`, a void with a
+  black sky, no mobs and no sleep, where the target wakes in a copy of their house twice in a stay
+  at most (`other_house`). The world keeps it: opened again without the mod, Minecraft warns of a
+  missing dimension, and the world is otherwise fine. An unseen barrier floor runs out from the
+  copy so no one falls into the void, and a player left there by a quit is sent home when next
+  seen.
 - **State is in the world save.** `data/craftkit/lodger.dat` beside the level's other saved data holds
   the mind's bytes: the stage, the target, the memory and the open plan. Copying a world copies
   its lodger. Deleting it is `/craftkit lodger reset` by hand. The body keeps nothing of its own.

@@ -83,6 +83,7 @@ impl Preset {
                     "bed_occupied",
                     "wake",
                     "woke_elsewhere",
+                    "other_house",
                     "in_doorway",
                     "at_the_chest",
                     "in_your_bed",

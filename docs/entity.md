@@ -285,6 +285,7 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | `bed_occupied` | 3 | `This bed is occupied`, vanilla's message, with nobody in it. The next try works. | The target trying to sleep. |
 | `wake` | 3 | The target is woken in the middle of the night, sleep cancelled, and the door is open. | The target asleep. |
 | `woke_elsewhere` | 4 | The target wakes one block from where they lay down. | The target asleep and room beside the bed. |
+| `other_house` | 4 | Once a stay, asleep in stage four, they wake in a copy of their house in a void dimension of its own (`lodger:other`): block for block, its lights left out, a black sky, the doors opening onto nothing (an unseen floor runs on, so no one falls), the figure in the doorway. After a minute they wake in their own bed, their door open. The second and last visit is the take ending's last night, the figure walking at them from the copy's doorway; the death that night stays at its place, in their own world. Owner's design. The world keeps the dimension: a world opened again without the mod warns of it. | The target asleep, a bed, a door and a home. |
 | `egg_on_bed` | 2 | An egg from the pen is on the bed. | Chickens and a bed. |
 
 ### Decoration and signs

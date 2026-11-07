@@ -800,6 +800,9 @@ pub enum Action {
     BedOccupied,
     /// The target wakes one block from where they lay down.
     WokeElsewhere,
+    /// They wake in a copy of their house in the void dimension, the figure in its doorway,
+    /// for a minute; then in their own bed, the door open (owner).
+    OtherHouse,
     /// The figure in the target's skin, somewhere, for some seconds, gone when approached.
     Figure(FigureWhere, f32, f32),
     /// One building block of the house becomes its cousin: planks another wood, cobblestone
@@ -3379,6 +3382,17 @@ pub const CATALOGUE: &[Event] = &[
         false,
     ),
     row(
+        "other_house",
+        4,
+        4,
+        &[TargetInBed, Bed, Door, Home],
+        30.0,
+        1,
+        Full,
+        Action::OtherHouse,
+        false,
+    ),
+    row(
         "pet_outside",
         3,
         5,
@@ -4423,7 +4437,9 @@ impl Event {
             Action::EnderHolds => "seen",
             Action::WhileAway => "house",
             Action::HandOnShoulder => "seen",
-            Action::RefuseRest | Action::Wake | Action::WokeElsewhere => "night",
+            Action::RefuseRest | Action::Wake | Action::WokeElsewhere | Action::OtherHouse => {
+                "night"
+            }
         }
     }
 
@@ -4544,6 +4560,7 @@ impl Event {
             "ice_path" => "freeze a path across the water toward the house",
             "bed_occupied" => "tell them the bed is occupied",
             "woke_elsewhere" => "wake them a block from the bed",
+            "other_house" => "wake them in a copy of their house, somewhere else",
             "pet_outside" => "put the pet outside the door",
             "tab_entry_stays" => "show their name twice all session",
             "note_tune" => "play three notes on the note block",

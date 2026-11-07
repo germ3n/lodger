@@ -518,7 +518,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::OpenOnEnter => memory.used_container().map(|c| c.pos),
         Action::PlantFlower => home.and_then(|h| pick(&h.doors, rng)),
         Action::ReplantOther => memory.feature("crops").map(|f| f.pos),
-        Action::WokeElsewhere => home.and_then(|h| h.bed),
+        Action::WokeElsewhere | Action::OtherHouse => home.and_then(|h| h.bed),
         Action::BucketFloor => home.map(|h| [h.center[0] + 2, h.floor_y, h.center[2] + 2]),
         Action::SnowCleared | Action::Trample | Action::DoorAhead => {
             home.and_then(|h| pick(&h.doors, rng))
@@ -1128,6 +1128,28 @@ fn step_toward(from: BlockPos, to: BlockPos) -> [i32; 2] {
         [dx.signum(), 0]
     } else {
         [0, dz.signum()]
+    }
+}
+
+/// The other house, a copy of theirs in the void dimension, a minute or so (`other_house`).
+pub fn other_house(
+    id: u64,
+    player: u32,
+    center: BlockPos,
+    bed: BlockPos,
+    door: BlockPos,
+    seconds: f32,
+    comes: bool,
+) -> Command {
+    Command::OtherHouse {
+        id,
+        player,
+        center,
+        radius: 12,
+        bed,
+        door,
+        seconds,
+        comes,
     }
 }
 
@@ -3129,6 +3151,13 @@ pub fn commands(
                 1,
             ),
         ],
+        Action::OtherHouse => match (pos, memory.home.as_ref(), memory.usual_door()) {
+            (Some(bed), Some(home), Some(door)) => vec![(
+                other_house(ids(), target, home.center, bed, door, 60.0, false),
+                0,
+            )],
+            _ => vec![],
+        },
         Action::WokeElsewhere => pos
             .map(|bed| {
                 vec![
@@ -6648,6 +6677,50 @@ mod tests {
             None,
         );
         assert!(matches!(&held[0], (Command::ToggleBlock { pos, .. }, 3) if *pos == [3, 64, 0]));
+    }
+
+    #[test]
+    fn the_other_house_copies_the_house_around_its_bed_and_door_for_a_minute() {
+        let memory = rich_memory();
+        let now = Now::default();
+        let bed = memory.home.as_ref().unwrap().bed;
+        let made = commands(
+            find("other_house").unwrap(),
+            bed,
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert_eq!(made.len(), 1, "{made:?}");
+        match &made[0].0 {
+            Command::OtherHouse {
+                center,
+                bed: at,
+                door,
+                seconds,
+                comes,
+                ..
+            } => {
+                assert_eq!(*center, memory.home.as_ref().unwrap().center);
+                assert_eq!(Some(*at), bed);
+                assert_eq!(Some(*door), memory.usual_door());
+                assert_eq!(*seconds, 60.0);
+                assert!(
+                    !comes,
+                    "the figure only stands in the doorway the first time"
+                );
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(
+            crate::config::Preset::Calm
+                .config()
+                .events
+                .disabled
+                .contains(&"other_house".to_string()),
+            "calm keeps it out, a sleep event"
+        );
     }
 
     #[test]

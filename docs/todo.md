@@ -943,17 +943,15 @@ because it can be built and tested without a game, and because the model layer i
   `temper` (resting and drift, the daily cap, the pace each way, the words, chat, a provoked
   `calm` under a resting `balanced`) and one scripted stay (a provoking player reaches stage four
   two days sooner or more). Was: **Temper** (owner: "doing certain things should speed up the progression"):   `memory/temper.rs` with the move table of [Provocation and temper](entity.md#provocation-and-temper),   the senses that feed it (the figure chased or hit, its blocks broken, its place walled or   lit, the thing taken back, chat lines at it, nights slept through), the scaling of the   budget, the stage lengths, the menu's stage gates, the distance and the ending, each bounded   by the preset, and the `How does it take this?` ask. Scripted-stay tests: a provoking player   reaches stage four days sooner than a quiet one; a `calm` preset provoked stays under the   `balanced` resting pace; temper drifts back.
-- [ ] **The other house, a dimension of its own** (owner: "custom dimensions you
-  can get teleported to by sleeping, walking through portals"): a void dimension in the
-  content jar's data pack (`data/lodger/dimension/other.json`, a flat dark sky, no mobs, no
-  day), into which the host copies the target's house block for block at stage four, and one
-  visit: the target falls asleep and wakes in the copy, in the dark, the doors leading to
-  nothing, the figure in the doorway, for one minute, then wakes in their own bed with the door
-  open. A second visit only in the `take` ending's last night, where the walk from its place
-  goes through its portal frame into the other house and the death, if any, is there. Not a
-  place to explore: a set piece, twice at most, so the world stays the player's. Needs the
-  host's teleport and block-copy commands and a dimension registered from the content jar;
-  judged in the dev client before the design goes further.
+- [x] **The other house, a dimension of its own** (owner: "Dimension, as designed"):
+  `data/lodger/dimension/other.json` and its type in the content jar (a void, a black sky, no
+  mobs, no day, no sleep), `world/OtherHouse.java` copying the house around the bed block for
+  block with its lights left out, an unseen barrier floor running on outward, the figure in the
+  copy's doorway, and home to their own bed, the door open, after the time (ABI 49,
+  `other_house`). Once in stage four while they sleep (`other_house`, out of `calm` with the
+  other sleep events), and again on the take ending's last night, the figure walking at them; the
+  death stays at its place in their own world. A player left there by a quit or a stop is sent
+  home. Seen loading on the Fabric dev server. Tests: one in `act`. Was: **The other house, a dimension of its own** (owner: "custom dimensions you   can get teleported to by sleeping, walking through portals"): a void dimension in the   content jar's data pack (`data/lodger/dimension/other.json`, a flat dark sky, no mobs, no   day), into which the host copies the target's house block for block at stage four, and one   visit: the target falls asleep and wakes in the copy, in the dark, the doors leading to   nothing, the figure in the doorway, for one minute, then wakes in their own bed with the door   open. A second visit only in the `take` ending's last night, where the walk from its place   goes through its portal frame into the other house and the death, if any, is there. Not a   place to explore: a set piece, twice at most, so the world stays the player's. Needs the   host's teleport and block-copy commands and a dimension registered from the content jar;   judged in the dev client before the design goes further.
 - [ ] **Chains** (owner: "one that influences the next"): follow-ups in `events.rs`
   (weighted or exclusive, with a carried place or item), `Memory::chains`, the situation line,
   and the weights in `offer.rs`. The eight chains of [Chains](entity.md#chains) as data, with a

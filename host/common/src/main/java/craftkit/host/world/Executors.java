@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves, Bobbers bobbers, FrameShows frameShows, Deaths deaths, Fights fights) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves, Bobbers bobbers, FrameShows frameShows, Deaths deaths, Fights fights, OtherHouse otherHouse) {
 	}
 
 	private Executors() {
@@ -172,6 +172,16 @@ public final class Executors {
 					yield report(id, walking > 0, walking > 0 ? "walking " + walking : "none of them here");
 				}
 				case "shoot" -> shoot(level, command, id, context);
+				case "other_house" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					String why = context.otherHouse().visit(level, player, blockPos(command.getAsJsonArray("center")), command.get("radius").getAsInt(),
+							blockPos(command.getAsJsonArray("bed")), blockPos(command.getAsJsonArray("door")), command.get("seconds").getAsFloat(),
+							command.has("comes") && command.get("comes").getAsBoolean(), context.figures());
+					yield report(id, why.isEmpty(), why);
+				}
 				case "confront" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

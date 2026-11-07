@@ -584,6 +584,22 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_zero_f32")]
         fierce: f32,
     },
+    /// `player` wakes in a copy of their house (around `center`, `radius` blocks out, its lights
+    /// left out) in the content jar's void dimension `lodger:other`, in the copy's `bed`, the
+    /// figure at the copy's `door` (walking to a block from them with `comes`); after `seconds`
+    /// (three minutes at most) back in their own bed, `door` open. A barrier floor runs on
+    /// outward, so no one falls. ABI 49.
+    OtherHouse {
+        id: u64,
+        player: u32,
+        center: BlockPos,
+        radius: u32,
+        bed: BlockPos,
+        door: BlockPos,
+        seconds: f32,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        comes: bool,
+    },
     /// A real arrow from `from` (on the ground there when its y is below -1000) at `at`, aimed
     /// as a skeleton aims; it harms `damage` if it hits `player` (0 for none, and never below half
     /// a heart), cannot be picked up, and stays where it lands. ABI 42.
@@ -1077,6 +1093,7 @@ impl Command {
             | Command::SpillContainer { id, .. }
             | Command::Shoot { id, .. }
             | Command::Confront { id, .. }
+            | Command::OtherHouse { id, .. }
             | Command::SplashPotion { id, .. }
             | Command::PutPotion { id, .. }
             | Command::ChangePotion { id, .. }
