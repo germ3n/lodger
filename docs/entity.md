@@ -841,7 +841,7 @@ late. Where it differs from the table, for now:
   they use is found open. It has no fence, so no gate; the music is not brought back.
 - The model does not yet choose between two forms of a beat; temper is not kept, so it has no
   say in the ending. The stay's status line (the debug screen) says `the stay is over: it left`,
-  `took` or `stayed`; the host's `/lodger status` lists the mods and not yet the stay.
+  `took` or `stayed`; `/craftkit lodger status` says so.
 
 **The fourth ending: you confront it** (owner). In stage five, at night, knock on its
 door (strike it twice), or with no house stand at its place, and it rises out of the ground
@@ -860,6 +860,6 @@ the next night. Its health and its hits are scaled to your armour, your weapon a
 difficulty. A beacon on its roof, lit only at night from stage five's first dusk, shows the way.
 
 After any ending the stay is closed in `lodger.dat` and no lodger moves into that world again
-unless `/lodger reset`. The one death the hard ending deals is the only harm the lodger ever does,
+unless `/craftkit lodger reset`. The one death the hard ending deals is the only harm the lodger ever does,
 it is at the end of a stay of two weeks, and it keeps the inventory: the point is that it happened,
 not that it cost anything. `stages.ending` is there for servers that want none of it.

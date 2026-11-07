@@ -216,6 +216,22 @@ public final class Host {
 						return Command.SINGLE_SUCCESS;
 					}))
 					.then(Commands.literal("show").executes(context -> debugCommand(context.getSource(), id, "{\"kind\":\"snapshot\"}")))
+					// The stay, from anywhere, the console too: what it is at, forget it, or let it
+					// go (owner). Reset asks twice.
+					.then(Commands.literal("status").executes(context -> stayCommand(context.getSource(), id, "status")))
+					.then(Commands.literal("leave").executes(context -> stayCommand(context.getSource(), id, "leave")))
+					.then(Commands.literal("reset").executes(context -> {
+						String who = context.getSource().getTextName();
+						Long asked = resetAsked.get(who);
+						long now = System.currentTimeMillis();
+						if (asked == null || now - asked > RESET_WITHIN_MS) {
+							resetAsked.put(who, now);
+							context.getSource().sendSuccess(() -> Component.translatable("craftkit.stay.reset_again", id), false);
+							return Command.SINGLE_SUCCESS;
+						}
+						resetAsked.remove(who);
+						return stayCommand(context.getSource(), id, "reset");
+					}))
 					.then(Commands.literal("force").then(Commands.argument("event", com.mojang.brigadier.arguments.StringArgumentType.word())
 							.executes(context -> debugCommand(context.getSource(), id, "{\"kind\":\"force\",\"event\":\"" + com.mojang.brigadier.arguments.StringArgumentType.getString(context, "event") + "\",\"player\":0}"))))
 					.then(Commands.literal("stage").then(Commands.argument("stage", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 6))
@@ -246,6 +262,33 @@ public final class Host {
 	}
 
 	/** A debug request from chat: the mod's message, or its gauges for {@code show}, as chat lines. */
+	/** Who asked to reset, and when: the second ask within half a minute does it. */
+	private final java.util.Map<String, Long> resetAsked = new java.util.HashMap<>();
+	private static final long RESET_WITHIN_MS = 30_000;
+
+	/** One of the mod's stay actions, in the overworld's stay, its message back to the source. */
+	private int stayCommand(CommandSourceStack source, String modId, String action) {
+		net.minecraft.server.level.ServerLevel overworld = source.getServer().overworld();
+		com.google.gson.JsonObject request = new com.google.gson.JsonObject();
+		request.addProperty("kind", "action");
+		request.addProperty("id", action);
+		com.google.gson.JsonObject answer = worlds.debugIn(overworld, source.getPlayer(), modId, request);
+		if (answer.has("error") && !answer.get("error").getAsString().isEmpty()) {
+			source.sendFailure(Component.literal(answer.get("error").getAsString()));
+			return 0;
+		}
+		com.google.gson.JsonObject mod = answer.getAsJsonObject("mod");
+		if (mod == null || !mod.has("message")) {
+			source.sendFailure(Component.literal("no answer from " + modId));
+			return 0;
+		}
+		for (String line : mod.get("message").getAsString().split("\n")) {
+			source.sendSuccess(() -> Component.literal(line), action.equals("reset") || action.equals("leave"));
+		}
+
+		return Command.SINGLE_SUCCESS;
+	}
+
 	private int debugCommand(CommandSourceStack source, String modId, String requestJson) {
 		net.minecraft.server.level.ServerPlayer player = source.getPlayer();
 		if (player == null) {

@@ -23,7 +23,7 @@ pages explain each part in full; this one is the short list to keep in mind.
   left behind. `model.url` in the config says where from. The host does the fetching, for any
   Rust mod's declared resources. See [Model](model.md#downloading).
 - **Without the model the mod still runs.** The rule brain picks from the same choices with fixed
-  weights. The lodger is duller, not absent. `/lodger status` says which brain is in charge.
+  weights. The lodger is duller, not absent. `/craftkit lodger status` says which brain is in charge.
 - **Thinking takes tens to hundreds of milliseconds and never stalls the server.** The model runs
   on a thread of its own; an answer comes back on a later tick. By then the situation may have
   changed, so every event re-checks its preconditions as it starts and quietly does nothing if they
@@ -76,11 +76,11 @@ pages explain each part in full; this one is the short list to keep in mind.
   player's. Others in the world are witnesses: they see the traces, never the figure, and they
   hear nothing. Who is the target is the lodger's choice and it can change once, at a stage
   boundary. See [Multiplayer](entity.md#multiplayer).
-- **State is in the world save.** `data/lodger.dat` next to the level's other saved data holds
+- **State is in the world save.** `data/craftkit/lodger.dat` beside the level's other saved data holds
   the mind's bytes: the stage, the target, the memory and the open plan. Copying a world copies
-  its lodger. Deleting the file is `/lodger reset` by hand. The body keeps nothing of its own.
+  its lodger. Deleting it is `/craftkit lodger reset` by hand. The body keeps nothing of its own.
 - **Peaceful does not remove it.** The lodger is not a hostile mob and does not despawn with
-  them. `enabled: false` in the config, or `/lodger leave`, does. Difficulty changes how far it
+  them. `enabled: false` in the config, or `/craftkit lodger leave`, does. Difficulty changes how far it
   goes at the end (see [How it ends](entity.md#how-it-ends)).
 - **Nothing leaves the machine but the model download.** The situation text names the player and
   what they did; it is written to the log and read by the model in the same process, and goes
@@ -180,7 +180,7 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   A screenshot shows them; a witness standing beside the target sees nothing. F3 shows the true
   time and light. That is the design; a player who reads F3 to check is playing the game.
 - **A model file in a wrong place is a silent fallback.** If `qwen.gguf` is missing or unreadable
-  the rule brain takes over and the only sign is `/lodger status` and one line in the log at
+  the rule brain takes over and the only sign is `/craftkit lodger status` and one line in the log at
   load. Check both when the lodger seems dumb.
 - **Changing `brain.*` thresholds mid-stay changes behaviour at once.** Nothing is recomputed,
   but the next decision uses the new numbers. The stage and the memory stay as they were.

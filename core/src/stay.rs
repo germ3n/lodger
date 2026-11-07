@@ -25,7 +25,7 @@ pub struct Stay {
     pub seed: i64,
     /// Ticks this stay has been open, over all its sessions.
     pub ticks: u64,
-    /// The last tick's player count, for `/lodger status`.
+    /// The last tick's player count, for the logs.
     pub players: u32,
     /// Commands reported done and not done, for the log.
     pub done: u64,
@@ -250,7 +250,7 @@ impl Stay {
         self.brain.report(reports, &mut self.memory, log);
     }
 
-    /// One line for `/lodger status`.
+    /// One line for the end of a stay in `/craftkit lodger status`, and the logs.
     pub fn status_line(&self) -> String {
         if !self.arc.moved_in() {
             if self.arc.over() {

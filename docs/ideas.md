@@ -832,7 +832,7 @@ yours it passes through is yours again before you arrive.
 - `shared_chest_untouched` the shared chest is never touched; the target's own always [rule]
 - `figure_seen_by_witness_once` at the very end, a witness sees the figure once [5]
 - `witness_hears_bell` the bell is for everyone [2]
-- `op_status_hidden` `/lodger status` says nothing to a non-op [rule]
+- `op_status_hidden` `/craftkit lodger status` says nothing to a non-op [rule]
 
 ## Travel and routes
 
@@ -978,7 +978,7 @@ in it, in the one minute you are there:
 - `keeps_door` one door open every few weeks [after]
 - `keeps_figure` the figure once a month at dawn [after]
 - `keeps_house` its house gets one block a month [after]
-- `reset_new_want` on `/lodger reset`, a new want, a new place [after]
+- `reset_new_want` on `/craftkit lodger reset`, a new want, a new place [after]
 - `second_stay` a second lodger never; the world is marked [rule]
 - `your_copy_stays` the copy of your house stays [5]
 - `book_left` a book with the memory's lines, on your bed, the last morning [5]

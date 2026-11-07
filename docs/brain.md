@@ -313,7 +313,7 @@ Where? -> by the door (0.48) [...]
 event=move_light at=(12,64,-7) when=sleep rule=ok
 ```
 
-`/lodger decisions [n]` prints the last n to the operator. The log is how the prompts and
+The debug screen (F8) shows the last ones to an operator. The log is how the prompts and
 thresholds get tuned: the todo's calibration item is to play ten stays, read the log, and move
 what reads wrong. It is also how a player's report of a strange event is traced to what the lodger
 believed.

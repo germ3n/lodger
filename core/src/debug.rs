@@ -109,6 +109,78 @@ pub fn answer(
                     stay.memory.fight_now = true;
                     "the fight begins where they stand".to_string()
                 }
+                // `/craftkit lodger status`: where the stay is, in a few lines.
+                "status" => status_lines(stay, day, config),
+                // `/craftkit lodger leave`: the leaves ending, begun at the next dawn.
+                "leave" => {
+                    if stay.arc.over() {
+                        format!("it is gone already ({})", stay.arc.ended)
+                    } else if !stay.arc.moved_in() {
+                        stay.arc.stage = 6;
+                        stay.arc.ended = "left".to_string();
+                        "it will not move in now".to_string()
+                    } else {
+                        if stay.arc.stage != 5 {
+                            stay.arc.set_stage(5, day);
+                        }
+                        stay.arc.ending = "leave".to_string();
+                        stay.arc.script_day = crate::ending::first_day(now);
+                        stay.arc.beats_done = 0;
+                        "it is leaving: its last three days begin at the next dawn, and \
+                         everything it holds goes back"
+                            .to_string()
+                    }
+                }
+                // `/craftkit lodger reset`: the stay forgotten and begun again, what it holds
+                // given back first.
+                "reset" => {
+                    let give_back = {
+                        let brain = &mut stay.brain;
+                        let mut ids = || {
+                            let id = brain.next_command_id;
+                            brain.next_command_id += 1;
+                            id
+                        };
+                        crate::ending::commands(
+                            crate::ending::Beat::ReturnHeld,
+                            &mut stay.memory,
+                            now,
+                            &mut ids,
+                        )
+                    };
+                    let next_id = stay.brain.next_command_id;
+                    let (target, name, uuid) = (
+                        stay.memory.target,
+                        stay.memory.target_name.clone(),
+                        stay.memory.target_uuid.clone(),
+                    );
+                    let mods = std::mem::take(&mut stay.memory.mods);
+                    let defer = stay.memory.defer_target;
+                    *stay = Stay::new(&craftkit::world::WorldInfo {
+                        id: stay.world.clone(),
+                        seed: stay.seed,
+                        ..Default::default()
+                    });
+                    stay.brain.next_command_id = next_id;
+                    stay.memory.target = target;
+                    stay.memory.target_name = name;
+                    stay.memory.target_uuid = uuid;
+                    stay.memory.mods = mods;
+                    stay.memory.defer_target = defer;
+                    let gave = !give_back.is_empty();
+                    for (command, wait) in give_back {
+                        stay.brain.later.push(crate::brain::Later {
+                            at_tick: now.tick + wait,
+                            command,
+                            while_still: false,
+                        });
+                    }
+                    if gave {
+                        "forgotten: the stay begins again, and what it held goes back".to_string()
+                    } else {
+                        "forgotten: the stay begins again".to_string()
+                    }
+                }
                 "forget_all" => {
                     let target = stay.memory.target;
                     let name = stay.memory.target_name.clone();
@@ -574,6 +646,66 @@ fn kills_words(tally: &[crate::memory::Tally]) -> String {
     format!("{}; {hits} hits", words.join(", "))
 }
 
+/// The stay in a few lines, for `/craftkit lodger status`.
+fn status_lines(stay: &Stay, day: f32, config: &Config) -> String {
+    let arc = &stay.arc;
+    let mut lines = Vec::new();
+    lines.push(if arc.over() {
+        stay.status_line()
+    } else if !arc.moved_in() {
+        format!("not moved in yet (day {:.1} of the stay)", day)
+    } else if arc.stage == 5 {
+        format!(
+            "stage 5 of 5, the end: {} (day {:.1} of the stay)",
+            if arc.ending.is_empty() {
+                "not chosen yet"
+            } else {
+                &arc.ending
+            },
+            day
+        )
+    } else {
+        format!(
+            "stage {} of 5, {:.1} days into it (day {:.1} of the stay)",
+            arc.stage,
+            (day - arc.stage_began_day).max(0.0),
+            day
+        )
+    });
+    lines.push(if stay.memory.target_name.is_empty() {
+        "no one it lives with yet".to_string()
+    } else {
+        format!("it lives with {}", stay.memory.target_name)
+    });
+    let landed = stay.memory.landmarks.len();
+    lines.push(format!(
+        "{} thing{} done that they would notice{}",
+        landed,
+        if landed == 1 { "" } else { "s" },
+        stay.memory
+            .held
+            .as_ref()
+            .map(|h| format!(
+                "; it holds their {}",
+                h.item
+                    .id
+                    .rsplit(':')
+                    .next()
+                    .unwrap_or(&h.item.id)
+                    .replace('_', " ")
+            ))
+            .unwrap_or_default()
+    ));
+
+    lines.push(if config.model.enabled {
+        format!("the model decides ({})", config.model.size)
+    } else {
+        "the rules decide: it plays without the model".to_string()
+    });
+
+    lines.join("\n")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -612,6 +744,82 @@ mod tests {
         stay.memory.last.indoors = false;
         stay.memory.last.pos = [1.0, 64.0, 1.0];
         stay
+    }
+
+    #[test]
+    fn status_says_where_the_stay_is_and_leave_begins_the_leaves_ending() {
+        let mut stay = stay();
+        let config = Config::default();
+        let mut log = Log::new(None, 16, true);
+        let now = Now {
+            day: 4,
+            day_time: 6_000,
+            ..Now::default()
+        };
+        let act = |stay: &mut Stay, log: &mut Log, id: &str| {
+            answer(
+                stay,
+                &DebugRequest::Action { id: id.to_string() },
+                &config,
+                log,
+                &now,
+            )
+            .message
+        };
+
+        assert!(act(&mut stay, &mut log, "status").starts_with("not moved in yet"));
+        stay.arc.stage = 3;
+        stay.memory.target_name = "razor".to_string();
+        let status = act(&mut stay, &mut log, "status");
+        assert!(status.contains("stage 3 of 5"), "{status}");
+        assert!(status.contains("it lives with razor"), "{status}");
+
+        assert!(act(&mut stay, &mut log, "leave").starts_with("it is leaving"));
+        assert_eq!(stay.arc.stage, 5);
+        assert_eq!(stay.arc.ending, "leave");
+        assert_eq!(stay.arc.script_day, 5, "at the next dawn");
+    }
+
+    #[test]
+    fn reset_forgets_the_stay_keeps_the_target_and_gives_back_what_it_holds() {
+        let mut stay = stay();
+        let config = Config::default();
+        let mut log = Log::new(None, 16, true);
+        let now = Now::default();
+        stay.arc.stage = 4;
+        stay.memory.set_target(2, "razor", "uuid-r");
+        stay.memory.mods = vec![("sodium".to_string(), "1".to_string())];
+        stay.memory.held = Some(crate::memory::Held {
+            item: craftkit::world::ItemStack {
+                id: "minecraft:clock".to_string(),
+                count: 1,
+                slot: 0,
+            },
+            from: [1, 64, 1],
+            ..Default::default()
+        });
+        stay.memory.home = Some(crate::memory::Home {
+            center: [0, 64, 0],
+            floor_y: 64,
+            ..Default::default()
+        });
+
+        let message = answer(
+            &mut stay,
+            &DebugRequest::Action {
+                id: "reset".to_string(),
+            },
+            &config,
+            &mut log,
+            &now,
+        )
+        .message;
+
+        assert!(message.starts_with("forgotten"), "{message}");
+        assert_eq!(stay.arc.stage, 0, "begun again");
+        assert!(stay.memory.home.is_none() && stay.memory.held.is_none());
+        assert_eq!(stay.memory.target_uuid, "uuid-r");
+        assert_eq!(stay.memory.mods.len(), 1);
     }
 
     #[test]

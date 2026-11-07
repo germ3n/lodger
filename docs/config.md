@@ -23,7 +23,7 @@ again; a new model size is fetched at once.
 
 | Key | Default | What it changes |
 | --- | --- | --- |
-| `enabled` | `true` | Whether a lodger moves into new worlds and existing ones keep theirs. `false` ends the stay in every world as `/lodger leave` would. |
+| `enabled` | `true` | Whether a lodger moves into new worlds and existing ones keep theirs. `false` ends the stay in every world, where `/craftkit lodger leave` ends one gently. |
 | `preset` | `"balanced"` | `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below (see [Presets](#presets)). A key the file names wins over the preset; the file written back shows the preset's values filled in. Picking another preset on the settings screen takes the old preset's values out of the file, the ones you never changed, so the new preset's apply, and writes the file again with them. |
 | `log.decisions` | `true` | Writes every decision to `config/lodger/decisions.log`. Keep it on while developing; see [The decision log](brain.md#the-decision-log). |
 | `log.keep_mb` | `16` | The log rotates past this size, keeping one older file. |

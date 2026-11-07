@@ -279,16 +279,28 @@ public final class Worlds {
 	 * as one JSON object. On the server thread. An unknown mod or a closed world is an error.
 	 */
 	public JsonObject debug(ServerPlayer player, String modId, JsonObject request) {
-		JsonObject answer = new JsonObject();
 		if (!(player.level() instanceof ServerLevel level)) {
+			JsonObject answer = new JsonObject();
 			answer.addProperty("error", "the player is in no level");
 			return answer;
 		}
 
+		return debugIn(level, player, modId, request);
+	}
+
+	/**
+	 * A debug request to a mod's stay in {@code level}, from {@code player} or, when null, the
+	 * server's console (`/craftkit <mod> status`, `reset` and `leave` go to the overworld's,
+	 * wherever they are asked from).
+	 */
+	public JsonObject debugIn(ServerLevel level, ServerPlayer player, String modId, JsonObject request) {
+		JsonObject answer = new JsonObject();
 		JsonArray ids = new JsonArray();
 		openModIds(level).forEach(ids::add);
 		answer.add("mods", ids);
-		answer.add("host", hostPanel(level, player));
+		if (player != null) {
+			answer.add("host", hostPanel(level, player));
+		}
 
 		Map<LoadedMod, Open> perMod = open.get(level);
 		LoadedMod mod = perMod == null ? null : perMod.keySet().stream().filter(m -> m.id().equals(modId)).findFirst().orElse(null);
@@ -298,7 +310,7 @@ public final class Worlds {
 		}
 
 		// A force names the player by the index the senses gave them, which the client does not know.
-		if ("force".equals(request.has("kind") ? request.get("kind").getAsString() : "")) {
+		if (player != null && "force".equals(request.has("kind") ? request.get("kind").getAsString() : "")) {
 			request.addProperty("player", senses.indexOf(player));
 		}
 

@@ -356,7 +356,14 @@ because it can be built and tested without a game, and because the model layer i
   sound by block for `late_steps`, and the first two glitch renderers.
 - [x] **Saved data:** `lodger.dat` holding the mind's bytes, saved with the world, loaded on
   world load, the mind closed on unload. Found done in the audit: the mind's bytes are in the level's saved data as `craftkit_<mod id>` (`WorldData`), not a `lodger.dat`.
-- [ ] **`/lodger status`, `/lodger decisions`, `/lodger reset`, `/lodger leave`.** Partly, found in the audit: `/craftkit status` and `/craftkit lodger debug|show|force|stage|action` exist. Still open: reset and leave, if wanted.
+- [x] **`status`, `reset` and `leave`** (owner: "reset wipes, leave ends gently"): under
+  `/craftkit lodger`, operators only, from anywhere and the console, always the overworld's
+  stay. `status` says the stage and how far into it, whom it lives with, the things done that
+  they would notice and what it holds, and whether the model or the rules decide; `leave` begins
+  the leaves ending at the next dawn (before move-in, it never moves in); `reset`, typed twice
+  within 30 seconds, gives back what it holds and begins the stay again, keeping the target and
+  the mods it saw. `decisions` is the log file and the debug screen, not a command. The docs'
+  `/lodger ...` commands, which never existed, now name these. Tests: two in `debug`. Was: **`/lodger status`, `/lodger decisions`, `/lodger reset`, `/lodger leave`.** Partly, found in the audit: `/craftkit status` and `/craftkit lodger debug|show|force|stage|action` exist. Still open: reset and leave, if wanted.
 - [x] **Play it.** A fresh world, dev config, through stages one and two on the rule brain. Write
   down everything that read wrong in [Good to know](good-to-know.md) or here. Found done in the audit: the owner has played through the stages and the fight; what read wrong is in the playtest entries.
 - [x] **The first play session's fixes** (owner at the keyboard, the 1.5B deciding).

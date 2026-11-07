@@ -126,7 +126,8 @@ every event, read the log, fix what the world shows.
 ## Open questions for the owner
 
 - The crate's final name (`craftkit` was free on crates.io).
-- Whether `/lodger ...` commands stay or everything lives under `/craftkit lodger ...`.
+- Commands: everything lives under `/craftkit lodger ...` (`status`, `leave`, `reset`, and the
+  debug ones).
 - The tone of the lines in the target's own name (lower case, no punctuation today).
 - Whether the figure wears the target's skin on servers (it is seen by the target alone, so
   the question is only whether that is wanted) and how it should pose in the bed.

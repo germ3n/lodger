@@ -107,9 +107,8 @@ jar at the end of the session and left at the title screen.
 ## Open questions for the owner
 
 - The crate's final name (`craftkit` is a working name; it was free on crates.io).
-- Whether the lodger's `/lodger ...` commands stay as the README has them or become
-  `/craftkit lodger ...` alone, where the debug commands already are (`show`, `force`, `stage`,
-  `action`).
+- The lodger's commands: decided, all under `/craftkit lodger ...` (`status`, `leave`, `reset`
+  beside the debug ones, `show`, `force`, `stage`, `action`).
 - The tone of the lines in the target's own name (`brain/text.rs`, `ChatLine`): lower case, no
   punctuation, as a player types, is the current choice.
 - Whether the figure (phase 5) wears the target's skin by default on a server, where other

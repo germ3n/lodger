@@ -79,7 +79,8 @@ model is downloaded and loaded"):
   again). When every try fails the `.part` file stays, and the next start goes on from it; a
   cancel, the wrong magic or a wrong SHA-256 removes it. The 4B's download hung at 2059 of
   2381 MB on a connection gone quiet until now, when reading had no limit at all.
-- **`/lodger model status`** says whether the file is there and the model loaded. Deleting the
+- **`/craftkit lodger status`** says whether the model or the rules decide, and the debug
+  screen's model line whether the file is there and the model loaded. Deleting the
   file makes the next start fetch it again, from `model.url`.
 
 The mind never touches the network: `Downloader.java` in the host does, with the JDK's

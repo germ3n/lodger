@@ -52,11 +52,13 @@ All of them are for operators, since the point of the mod is not knowing.
 | --- | --- |
 | `/craftkit status` | The host's: every Rust mod loaded, its version and native, or why it did not load. |
 | `/craftkit lodger debug` | Opens the debug screen (also F8 in a world): the host's senses of you as meters, the lodger's gauges, memory and plan, every event with whether it could happen now and a Fire button, and what landed. `/craftkit lodger show`, `force <event>`, `stage <n>` and `action <id>` do the same from chat or a console. The config pages are still to come. |
-| `/lodger status` | Which stage the lodger is in, whom it is attached to, when it last acted, whether the model is loaded. |
-| `/lodger model status` | Whether the file is there, its size, and whether it is loaded. A missing file is fetched again by the next start; `model.url` in the config says where from. |
-| `/lodger decisions [n]` | The last n decisions: the situation text, each question, the choice and its confidence. |
-| `/lodger leave` | Ends the lodger's stay in this world as if the arc had ended. |
-| `/lodger reset` | Forgets everything and starts over, as a fresh world would. |
+| `/craftkit lodger status` | Which stage the stay is in and how far, whom it lives with, how many things it has done that they would notice and what it holds, and whether the model or the rules decide. From anywhere, the console too. |
+| `/craftkit lodger leave` | Ends the stay gently: its leaves ending (everything it holds goes back, its last three days) begins at the next dawn. Before it has moved in, it never will. |
+| `/craftkit lodger reset` | Forgets everything it knows of this world and starts the stay over, as a fresh world would; what it holds goes back first. Typed twice within 30 seconds. |
+
+All of them are for operators. Every decision is also written to `config/lodger/decisions.log`
+(the situation text, each question, the choice and its confidence), and the debug screen shows
+the last ones.
 
 ## Docs
 

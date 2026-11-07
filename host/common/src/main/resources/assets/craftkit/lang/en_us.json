@@ -15,6 +15,7 @@
 	"craftkit.preparing.accept": "I accept",
 	"craftkit.preparing.read": "Read the full terms in a browser",
 	"craftkit.preparing.choice": "%s (click for another)",
+	"craftkit.stay.reset_again": "This forgets everything %s knows of this world and starts the stay over; what it holds goes back. Type it again within 30 seconds to do it.",
 	"craftkit.preparing.without": "Play without it",
 	"craftkit.preparing.without.tip": "Nothing is downloaded and simpler built-in rules decide. On a server, the server's own model decides, so nothing changes there. Turn it back on in the settings (Use the model).",
 	"craftkit.settings.title": "%s: settings",
