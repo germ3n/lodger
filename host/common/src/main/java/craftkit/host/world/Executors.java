@@ -927,7 +927,7 @@ public final class Executors {
 		}
 		net.minecraft.world.entity.EquipmentSlot slot = living.getEquipmentSlotForItem(stack);
 		if (!living.getItemBySlot(slot).isEmpty()) {
-			// A kept stack goes back where it was kept (until 2026-11-10 it was lost here).
+			// A kept stack goes back where it was kept (until now it was lost here).
 			if (command.has("kept") && !command.get("kept").getAsString().isEmpty()) {
 				data.keep(command.get("kept").getAsString(), stack);
 			}
@@ -993,7 +993,7 @@ public final class Executors {
 		packet = withEntries(packet, List.of(entry));
 		player.connection.send(packet);
 		// Taken out through the connection even after a respawn, which shares it (until
-		// 2026-11-10 a death left the ghost in the list until they rejoined).
+		// now a death left the ghost in the list until they rejoined).
 		context.later().at(command.get("seconds").getAsFloat(), () -> {
 			if (player.connection != null) {
 				player.connection.send(new net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket(List.of(ghost)));
@@ -1117,7 +1117,7 @@ public final class Executors {
 		for (int[] offset : Moves.offsets(around)) {
 			BlockPos candidate = to.offset(offset[0], offset[1], offset[2]);
 			// Inside the world: past its top or bottom every block reads as air and nothing
-			// can be set there (until 2026-11-10 the block and its contents were lost).
+			// can be set there (until now the block and its contents were lost).
 			if (level.isOutsideBuildHeight(candidate)) {
 				continue;
 			}
@@ -1667,7 +1667,7 @@ public final class Executors {
 			return report(id, false, "no mob with that id here");
 		}
 		// A warped mob is the warp's to put back: held too, the two would leave it frozen for
-		// good (until 2026-11-10).
+		// good (until now).
 		if (mob.entityTags().contains(Warps.TAG)) {
 			return report(id, false, "the mob is warped");
 		}
@@ -1872,7 +1872,7 @@ public final class Executors {
 	/** The effects a splash, a cloud or its brew may carry: none that harms (ABI 42). */
 	private static final java.util.Set<String> SPLASHES = java.util.Set.of("darkness", "slowness", "blindness", "nausea", "levitation");
 	private static final java.util.Set<String> CLOUDS = java.util.Set.of("slowness", "weakness");
-	/** The effects its brew may hold: none that harms or carries them anywhere (until 2026-11-10 a list of the harmful let levitation and the rest through). */
+	/** The effects its brew may hold: none that harms or carries them anywhere (until now a list of the harmful let levitation and the rest through). */
 	private static final java.util.Set<String> BREWS = java.util.Set.of("night_vision", "darkness", "invisibility", "slowness", "weakness", "nausea", "glowing", "luck", "unluck", "water_breathing", "fire_resistance");
 	/** The kinds a potion of theirs may become: none that harms. */
 	private static final java.util.Set<String> SAFE_POTIONS = java.util.Set.of("night_vision", "invisibility", "water_breathing", "fire_resistance", "leaping", "swiftness", "slow_falling");

@@ -1,4 +1,4 @@
-//! The target's lights, for the lights events of batch 4 (owner, 2026-11-10): the ones behind
+//! The target's lights, for the lights events of batch 4 (owner): the ones behind
 //! them that go out one by one as they pass at night and come back a minute later
 //! (`lights_out`), and the one that turns to soul fire while they are away (`soul_swap`).
 //! Their lights are the ones they placed, by id: the building blocks the memory keeps

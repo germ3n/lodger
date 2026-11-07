@@ -124,7 +124,7 @@ public final class CraftkitNeoForge {
 			}
 		});
 		// A block placed from a block item, as Fabric's hook on `BlockItem` sees it: not the
-		// farmland a hoe makes, a stripped log, a path or a fire (until 2026-11-10 NeoForge
+		// farmland a hoe makes, a stripped log, a path or a fire (until now NeoForge
 		// counted those as their building).
 		NeoForge.EVENT_BUS.addListener((BlockEvent.EntityPlaceEvent event) -> {
 			// The block placed is the item of a hand: torches in the off hand and a hoe in the

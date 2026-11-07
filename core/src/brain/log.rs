@@ -124,7 +124,7 @@ impl Log {
 
 /// A spot as the log and the debug screen print it: `(440,64,-32)`, or `(440,ground,-32)` for a
 /// spot whose height the host finds (a y below -1000 is the protocol's "on the ground in this
-/// column"; the dev client's log printed `-10000`, 2026-11-09).
+/// column"; the dev client's log printed `-10000`).
 pub fn spot_words(p: BlockPos) -> String {
     if p[1] <= -1_000 {
         format!("({},ground,{})", p[0], p[2])

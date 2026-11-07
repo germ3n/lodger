@@ -39,7 +39,7 @@ pub const HOME_KINDS: &[&str] = &[
     "*torch",
     "*lantern",
     "*lamp",
-    // Every mod's chests and barrels, not the game's alone (owner, 2026-11-10: "use their
+    // Every mod's chests and barrels, not the game's alone (owner: "use their
     // storage"); an ender chest is never theirs to the memory (`read_home`).
     "*chest",
     "*barrel",
@@ -136,7 +136,7 @@ pub struct Container {
     /// On how many different days the target opened it.
     pub days: u32,
     /// It stands in the house they sleep in (the surroundings pass's house read): the home's,
-    /// whoever placed it (owner, 2026-11-09).
+    /// whoever placed it (owner).
     pub in_home: bool,
 }
 
@@ -360,7 +360,7 @@ pub struct Snapshot {
     /// Hostile mobs within 48 blocks, from the last entity pass: zombies, skeletons, spiders.
     pub hostiles_near: Vec<Creature>,
     /// Something of another horror mod's within 64 blocks of the target in the last seconds:
-    /// the lodger holds off while it is (owner, 2026-11-10: "never at the same moment").
+    /// the lodger holds off while it is (owner: "never at the same moment").
     pub other_horror_near: bool,
     /// The ids of the animals near that are tied by a lead to a post (`horse_moved`).
     pub leashed: Vec<u32>,
@@ -516,7 +516,7 @@ pub struct Memory {
     /// Natural blocks the target dug out near the home, where and what, for `backfill`.
     pub holes: Vec<(BlockPos, String)>,
     /// Ore a scan found in the rock around the target (`scan_ore`), kept apart from the
-    /// village's: one scan answering used to wipe the other (2026-11-09).
+    /// village's: one scan answering used to wipe the other.
     pub ores: Vec<(String, BlockPos)>,
     /// Which event sent each scan still to be answered, by its id. Not saved.
     #[serde(skip)]
@@ -546,7 +546,7 @@ pub struct Memory {
     /// `slept`, `opened_chest`, `died`, `lit`, `walled`, `watched`, `left`.
     pub triggers: Vec<String>,
     /// The building blocks the target placed, with their ids, for the events that change one
-    /// into its cousin (owner, 2026-11-09: "replace certain blocks of the house").
+    /// into its cousin (owner: "replace certain blocks of the house").
     pub walls: Vec<(BlockPos, String)>,
     /// Their habits: the door, the day, sleep, what they carry, lights, looking back
     /// (`crate::habits`).
@@ -900,7 +900,7 @@ pub fn is_mod_furniture(id: &str) -> bool {
 }
 
 /// Words in the ids of mods that are horror mods of their own: with one loaded, the lodger
-/// makes room (owner, 2026-11-10).
+/// makes room (owner).
 const HORROR_WORDS: &[&str] = &[
     "horror",
     "dweller",
@@ -982,7 +982,7 @@ impl Memory {
         self.today = day;
         for player in &observations.players {
             // An index is the host's join order for the server's life: after a restart another
-            // player may hold it. A uuid already known takes its new index (2026-11-10).
+            // player may hold it. A uuid already known takes its new index.
             if let Some(known) = self
                 .others
                 .iter_mut()
@@ -1572,7 +1572,7 @@ impl Memory {
 
     /// The house the target sleeps in, as the host read it: its doors, lights, chests and bed
     /// become the home's, whoever placed them, so a village house or torches it did not place
-    /// count (owner, 2026-11-09: "the home's, placed or not"). What the target placed stays as
+    /// count (owner: "the home's, placed or not"). What the target placed stays as
     /// it was; nothing read here is ever broken.
     fn read_house(&mut self, features: &[craftkit::world::Feature]) {
         let Some(home) = self.home.as_mut() else {
@@ -1640,7 +1640,7 @@ impl Memory {
     /// The home read: inside its box, what it found is the home's (whoever placed it) and what
     /// it did not find is gone. Doors, lights, containers, the bed, and the fixtures it covers.
     /// Read when they come home, after they build near it, and every ten minutes there
-    /// (owner, 2026-11-09: "why only read the house once a day?").
+    /// (owner: "why only read the house once a day?").
     pub fn read_home(&mut self, found: &[(String, BlockPos)], min: BlockPos, max: BlockPos) {
         let inside = |p: &BlockPos| (0..3).all(|i| p[i] >= min[i] && p[i] <= max[i]);
         let of = |test: &dyn Fn(&str) -> bool| -> Vec<BlockPos> {
@@ -1757,7 +1757,7 @@ impl Memory {
         self.last.sneaking = player.sneaking;
         self.last.underground = player.sky_light == 0 && player.pos[1] < 56.0;
         // Under a roof, not under the ground: a cave is no house (the dev client played a
-        // house's door sound 55 blocks down, 2026-11-10).
+        // house's door sound 55 blocks down).
         self.last.indoors = player.sky_light < 8 && !self.last.underground;
         self.last.main_hand = player.main_hand.id.clone();
         self.last.look_backs = player.movement.look_backs;
@@ -1782,7 +1782,7 @@ impl Memory {
         self.watch_reactions(player);
 
         if player.movement.still_seconds >= 1.0 {
-            // Cells by floor division, so -1 is in cell -1, not 0 (until 2026-11-10 a home west
+            // Cells by floor division, so -1 is in cell -1, not 0 (until now a home west
             // or north of the origin was centred up to five blocks off).
             let cell = [
                 (player.pos[0].floor() as i32).div_euclid(CELL),
@@ -2075,7 +2075,7 @@ impl Memory {
     /// house, words, their things, something seen): a light within 16 blocks lit the spot; a
     /// block that closes the spot in on its last open side walled it ([`encloses`]). Building
     /// near it is not walling it: the dev client's house went up around a sign and read as
-    /// walled (2026-11-09). A sound's or the sky's spot is no place to light.
+    /// walled. A sound's or the sky's spot is no place to light.
     fn react_to_placing(&mut self, pos: BlockPos, block_id: &str) {
         let light = is_light(block_id);
         let mut answered: Vec<(usize, &'static str)> = Vec::new();
@@ -2120,7 +2120,7 @@ impl Memory {
 
     /// The route walked most, if any was walked twice; before that, the longest single walk of
     /// [`FIRST_ROUTE`] blocks or more, so a player's first day has one (the dev client's
-    /// `behind_you` and `animal_gone` waited on "no route", 2026-11-09).
+    /// `behind_you` and `animal_gone` waited on "no route").
     pub fn route(&self) -> Option<&Route> {
         self.routes.iter().find(|r| r.walked >= 2).or_else(|| {
             self.routes
@@ -3200,7 +3200,7 @@ mod tests {
 
     #[test]
     fn a_chest_opened_on_the_way_past_is_not_theirs_until_used_on_three_days() {
-        // The dev client, 2026-11-09: a village chest opened once became "the chest opened most".
+        // The dev client: a village chest opened once became "the chest opened most".
         let mut memory = Memory::default();
         let here = vec![player(0, [0.0, 64.0, 0.0], 0.0)];
         let open = |memory: &mut Memory, day: f32| {
@@ -3286,7 +3286,7 @@ mod tests {
 
     #[test]
     fn a_door_put_back_is_one_door_and_a_door_whose_floor_was_dug_is_forgotten() {
-        // The dev client, 2026-11-09: two doors, dug under and put back, were four.
+        // The dev client: two doors, dug under and put back, were four.
         let mut memory = Memory::default();
         let here = vec![player(0, [0.0, 64.0, 0.0], 0.0)];
         let place = |pos| at(EventKind::PlacedBlock, pos, "minecraft:oak_door", vec![]);
@@ -3314,7 +3314,7 @@ mod tests {
 
     #[test]
     fn a_house_built_around_a_sign_is_not_walling_it_but_closing_it_in_is() {
-        // The dev client, 2026-11-09: a sign by the bed, the house built on, read as walled.
+        // The dev client: a sign by the bed, the house built on, read as walled.
         let spot = [0, 65, 0];
         let building: Vec<BlockPos> = vec![
             [0, 64, 0],
@@ -3381,7 +3381,7 @@ mod tests {
 
     #[test]
     fn the_house_they_sleep_in_is_the_home_s_whoever_built_it() {
-        // The dev client, 2026-11-09: a village house read as "0 doors and 0 lights", its
+        // The dev client: a village house read as "0 doors and 0 lights", its
         // torches and chest untouchable.
         let mut memory = Memory::default();
         let here = vec![player(0, [0.0, 64.0, 0.0], 0.0)];
@@ -3707,7 +3707,7 @@ mod tests {
         assert_eq!(memory.done.len(), MOST_DONE);
         assert_eq!(plain("minecraft:iron_pickaxe"), "an iron pickaxe");
         assert_eq!(plain("minecraft:torch"), "a torch");
-        // The dev client, 2026-11-09: "a dirt", "a leaf litter", "6 sheeps".
+        // The dev client: "a dirt", "a leaf litter", "6 sheeps".
         assert_eq!(plain("minecraft:dirt"), "dirt");
         assert_eq!(plain("minecraft:leaf_litter"), "leaf litter");
         assert_eq!(plain("minecraft:oak_planks"), "oak planks");

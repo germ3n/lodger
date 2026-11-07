@@ -19,8 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * The village emptied into one house till dawn ({@code gather_villagers}, ABI 31; owner,
- * 2026-11-09): each villager walked in and held still facing the back wall, turning to the
+ * The village emptied into one house till dawn ({@code gather_villagers}, ABI 31; owner): each villager walked in and held still facing the back wall, turning to the
  * player who comes near, and put back where it stood at its time or at once when the level
  * closes. Beside it, the trades of what the lodger took ({@code offer_trade}): one sale each,
  * then the trade is taken away, so a restock never sells it twice.
@@ -162,7 +161,7 @@ public final class Gatherings {
 
 	/**
 	 * Villagers saved while gathered (their chunk unloaded as the player went away): back where
-	 * they stood when next seen (until 2026-11-10 they stayed in the house).
+	 * they stood when next seen (until now they stayed in the house).
 	 */
 	private void sweep(MinecraftServer server) {
 		for (ServerLevel level : server.getAllLevels()) {
@@ -172,7 +171,7 @@ public final class Gatherings {
 				}
 				// A sale saved with it (its chunk unloaded, the game quit): watched again, so it
 				// sells once; sold, taken away, so a restock never sells it twice (until
-				// 2026-11-10 a restock sold the very thing again and again).
+				// now a restock sold the very thing again and again).
 				if (villager.entityTags().contains(SELLING) && sales.stream().noneMatch(s -> s.villager() == villager)) {
 					for (MerchantOffer offer : List.copyOf(villager.getOffers())) {
 						if (ours(offer)) {

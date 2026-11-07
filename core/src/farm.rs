@@ -1,4 +1,4 @@
-//! The farm (batch 6, owner 2026-11-10): the field as the brain's field read finds it (every
+//! The farm (batch 6, owner): the field as the brain's field read finds it (every
 //! crop block around the crops the surroundings pass saw), its rows, the word a field of 7 by 5
 //! or more can be harvested into, and the target's animals: the pens by the home, the coop,
 //! the kind they keep most.

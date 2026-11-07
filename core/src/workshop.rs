@@ -1,4 +1,4 @@
-//! Furnaces, workstations and redstone (batch 9, owner 2026-11-10): what the jukebox, the
+//! Furnaces, workstations and redstone (batch 9, owner): what the jukebox, the
 //! furnace, the brewing stand and the crafting table events need to know from the memory: a
 //! disc in their chest, a fair swap of fuel by burn time, an ingredient to brew, a recipe they
 //! have the makings of, and the lamps' blink.

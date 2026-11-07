@@ -1,4 +1,4 @@
-//! Places (the review's N3, owner 2026-11-09): the house in rooms, named by what stands in
+//! Places (the review's N3, owner): the house in rooms, named by what stands in
 //! them ("the room with the bed"), upstairs and below; the target's sites away from home (a
 //! mine, a second base, a spot they keep going back to); and the lodger's own landmarks
 //! referred back to when it acts near one again. Rooms are read from what the memory already
@@ -59,7 +59,7 @@ impl Memory {
         {
             Some(index) => index,
             None => {
-                // The least of the others makes room, never the new one (until 2026-11-10 the
+                // The least of the others makes room, never the new one (until now the
                 // new one went at once and its sample landed on another site).
                 if self.sites.len() >= MOST_SITES {
                     let least = self

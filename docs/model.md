@@ -6,22 +6,21 @@ scoring, the same queue, the same download, behind the mind's C ABI instead of a
 
 ## Which model
 
-**Qwen2.5-Instruct, Qwen's own `q4_k_m` GGUF, in the size `model.size` picks** (owner,
-2026-11-09: "players can choose between the 0.5b, 1.5b or 3b model"):
+**Qwen2.5-Instruct, Qwen's own `q4_k_m` GGUF, in the size `model.size` picks** (owner: "players can choose between the 0.5b, 1.5b or 3b model"):
 
 | `model.size` | File | RAM while loaded | A question of four choices on two threads | For |
 | --- | --- | --- | --- | --- |
 | `0.5b` | `qwen2.5-0.5b-instruct-q4_k_m.gguf`, 491 MB | about 700 MB | tens to a few hundred milliseconds | a small machine; the file `~/engine` runs, byte for byte; the dev client's choice |
-| `1.5b`, the default | `qwen2.5-1.5b-instruct-q4_k_m.gguf`, 1.1 GB | about 1.6 GB | a few times slower | most machines; the owner's default (2026-11-09) for sharper judgment and for writing its own few words (`brain.text`) |
+| `1.5b`, the default | `qwen2.5-1.5b-instruct-q4_k_m.gguf`, 1.1 GB | about 1.6 GB | a few times slower | most machines; the owner's default for sharper judgment and for writing its own few words (`brain.text`) |
 | `3b` | `qwen2.5-3b-instruct-q4_k_m.gguf`, 2.1 GB | about 3 GB | slower again, a second or more | a dedicated server with the headroom; under the **Qwen Research License** (non-commercial use only, which it defines as research or evaluation; commercial use needs a license from Alibaba Cloud), not Apache |
-| `4b` | `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` from unsloth's repository, 2.5 GB | about 3.5 GB | about the 3B's | the newest and best reader (owner, 2026-11-10: "how about we offer this too?"); Apache-2.0; non-thinking only, so no `<think>` block gets in the way of scoring; the vendored llama.cpp (llama-cpp-sys-2 0.1.161) knows its `qwen3` architecture |
+| `4b` | `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` from unsloth's repository, 2.5 GB | about 3.5 GB | about the 3B's | the newest and best reader (owner: "how about we offer this too?"); Apache-2.0; non-thinking only, so no `<think>` block gets in the way of scoring; the vendored llama.cpp (llama-cpp-sys-2 0.1.161) knows its `qwen3` architecture |
 
 The 0.5B, 1.5B and 4B are Apache-2.0; the 3B is under Qwen's research license, which the
 preparing screen names and links before the download (it said Apache for every size until
-2026-11-10). Qwen's own GGUF repository for the 4B answers 401 to a plain download, so its file
+now). Qwen's own GGUF repository for the 4B answers 401 to a plain download, so its file
 comes from unsloth's, which repackages Qwen's model under the same license. Each file's exact
-length and SHA-256 are in `ModelSize` (from Hugging Face's `x-linked-size` and `x-linked-etag`,
-2026-11-10), and the host checks the sum after the download; a file from `model.url` of one's
+length and SHA-256 are in `ModelSize` (from Hugging Face's `x-linked-size` and `x-linked-etag`),
+and the host checks the sum after the download; a file from `model.url` of one's
 own is not checked. The scoring code is the same for each; only the file, its size and the
 download's length differ. Changing the size downloads the
 new file at the next start (the title screen gate again) and keeps the old one until deleted.
@@ -30,7 +29,7 @@ measure item in the todo replaces them with numbers.
 
 - **Why this size:** 0.5B scores a 300-token situation and four questions of four choices in
   tens to a few hundred milliseconds on two CPU threads, with about 700 MB resident, which any
-  server can spare, and was the first default. The owner moved the default to 1.5B (2026-11-09)
+  server can spare, and was the first default. The owner moved the default to 1.5B
   with the decision that the model writes its own sign and chat words: three times the memory
   and time, still well inside a tick budget on a worker thread, for judgment that holds up over
   a longer situation text and words that read as words. 0.5B stays a setting for a small
@@ -45,7 +44,7 @@ measure item in the todo replaces them with numbers.
 
 ## Downloading
 
-**Picking the size on the screen** (owner, 2026-11-09): the preparing screen shows a button
+**Picking the size on the screen** (owner): the preparing screen shows a button
 with the size it is about to fetch (`Qwen2.5 1.5B, 1117 MB (click for another)`); each press
 picks the next of the four, writes `model.size` into the config and starts that download
 instead. A model already there skips the screen; the settings page changes it then.
@@ -53,7 +52,7 @@ instead. A model already there skips the screen; the settings page changes it th
 The model is not in the jar. 491 MB is too much to ship with a mod and Hugging Face serves it
 well. The mind declares it as a *resource* in its `init` reply (the SDK's `Resource`: the URL
 from `model.url`, the path from `model.path` under the game directory, the `GGUF` magic, the
-size), and the host fetches it (owner, 2026-11-09: "lock them out of the main menu until the
+size), and the host fetches it (owner: "lock them out of the main menu until the
 model is downloaded and loaded"):
 
 - **On a client,** the first time the title screen opens with the file missing, a screen comes
@@ -74,13 +73,13 @@ model is downloaded and loaded"):
   to five tries with a pause between (a server that ignores the range sends the whole file
   again). When every try fails the `.part` file stays, and the next start goes on from it; a
   cancel, the wrong magic or a wrong SHA-256 removes it. The 4B's download hung at 2059 of
-  2381 MB on a connection gone quiet until 2026-11-10, when reading had no limit at all.
+  2381 MB on a connection gone quiet until now, when reading had no limit at all.
 - **`/lodger model status`** says whether the file is there and the model loaded. Deleting the
   file makes the next start fetch it again, from `model.url`.
 
 The mind never touches the network: `Downloader.java` in the host does, with the JDK's
 `HttpClient`, for any Rust mod's resources. The engine's own `download.rs` was ported first and
-then removed (2026-11-09) in favour of this, so that one downloader serves every mod and the
+then removed in favour of this, so that one downloader serves every mod and the
 progress bar has one source.
 
 ## Loading

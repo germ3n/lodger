@@ -1,6 +1,6 @@
 # Calibration, round one
 
-2026-11-09, the first run of the lodger's brain against the real model: Qwen2.5-1.5B-Instruct
+The first run of the lodger's brain against the real model: Qwen2.5-1.5B-Instruct
 (q4_k_m), three scripted in-game days (`core/tests/calibration.rs`: a house with a bed, a
 chest opened each morning, a door and two torches, a daily walk to a mine, three cows killed),
 `plan_every` 30, `cooldown_scale` 0.2, eight events a day, temperature 0.7, seed 7. Run with

@@ -1,5 +1,5 @@
 //! The sound events' variants: each plays one of a few fitting sounds, at its own pitch, rhythm
-//! and movement, never the same variant twice running (owner, 2026-11-09: "3 to 5 each", "so it
+//! and movement, never the same variant twice running (owner: "3 to 5 each", "so it
 //! never sounds the same twice"). A sound of `@step`, `@place` or `@break` is the sound of a
 //! real block, the one under the target's feet or in their hand (`block_sound`), so footsteps
 //! on grass sound like grass.
@@ -865,7 +865,7 @@ pub fn commands(
                 Away => 2.0 + 6.0 * along,
                 Ear => 0.5,
             };
-            // Their right: facing +z (yaw 0) it is -x, west (until 2026-11-10 it was their left).
+            // Their right: facing +z (yaw 0) it is -x, west (until now it was their left).
             let right = [back[1], -back[0]];
             let pos = match (variant.moves, spot) {
                 (Still, Some(spot)) => spot,
@@ -932,8 +932,8 @@ pub const HOUSE_SOUNDS: &[&str] = &[
 /// The block of a house the sound comes from: a door for a door's sound or a knock, a chest
 /// for a chest's; the house they are in first when it is not their home, else their home when
 /// they are near it. None away from home and from any house: a door sound 55 blocks down in a
-/// cave, with no door anywhere near, played at the target's own feet (the dev client,
-/// 2026-11-10).
+/// cave, with no door anywhere near, played at the target's own feet (the dev
+/// client).
 pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos> {
     let want_chest = event == "chest_sound";
     let want_pane = event == "window_tap";

@@ -78,7 +78,7 @@ What the body watches and reports, and the mind keeps (see [Memory](memory.md)).
 is more than the server knows anyway; the lodger reads no client state.
 
 - **Where the target is and faces,** once a second, downsampled into routes.
-- **How the target moves** (owner, 2026-11-09): pace and stops, how often they turn around,
+- **How the target moves** (owner): pace and stops, how often they turn around,
   how often they look behind them, whether they back away from a spot or sprint from it, how
   long they stand still facing one thing, whether they sneak indoors, whether they walk the
   middle of a room or its walls, how fast they leave a room an event happened in. Kept as the
@@ -94,8 +94,7 @@ is more than the server knows anyway; the lodger reads no client state.
 - **The target's hours:** when they log in and out, in real time and in game time, and how long
   they idle.
 - **Dimension changes, deaths, respawns.**
-- **What the target types in chat,** and what witnesses say within 32 blocks of them (owner,
-  2026-11-09). The memory keeps the last few lines about the lodger (lines that mention a
+- **What the target types in chat,** and what witnesses say within 32 blocks of them (owner). The memory keeps the last few lines about the lodger (lines that mention a
   door, a chest, a torch, the house, the figure, a question) and the situation text quotes one:
   `Yesterday the player said: "something keeps opening my chest"`. It is the server's own chat;
   a server operator should know the mod reads it, and the memory keeps at most eight lines.
@@ -159,7 +158,7 @@ never a witness's container.
 | `chest_full_of_one` | 3 | Every empty slot of the chest they use holds a single dirt, as many as it has dug (its holes), never one more. | A chest of theirs, three dirt or more dug. |
 | `renamed_item` | 3 | One of their things in the chest they use has a name on it, as an anvil writes one: `mine`, `borrowed`, `not yours`; the model writes it. Their favourite, if it is there. | A used container with something in it. |
 | `returned_used` | 3 | What it took comes back to its chest the very same item, but a tool worn a little more (never broken by it), anything else with a name on it. | Something held. |
-| `loot_gift` | 2 | Opening a chest of fresh loot for the first time (a dungeon's, a village's, a temple's), one in five holds something of the lodger's among the loot, or in place of one loot item (that one kept, not lost): the thing it took from them, something it dug, now and then from stage four their own head, else a redstone lamp or a candle. Loot is the world's, so this is the one exception to "it never spawns anything" (owner, 2026-11-09). Armed by the brain, given by the host as the loot is made. | Fresh loot, the target opening it. |
+| `loot_gift` | 2 | Opening a chest of fresh loot for the first time (a dungeon's, a village's, a temple's), one in five holds something of the lodger's among the loot, or in place of one loot item (that one kept, not lost): the thing it took from them, something it dug, now and then from stage four their own head, else a redstone lamp or a candle. Loot is the world's, so this is the one exception to "it never spawns anything" (owner). Armed by the brain, given by the host as the loot is made. | Fresh loot, the target opening it. |
 | `chest_answers` | 2 | As the target opens a chest of theirs, another chest of the house closes, or opens and closes, at the same moment. Three times in ten, never from the menu. | Two chests of theirs. |
 | `take` | 2 | One item of the kind the memory says the target uses most is taken from the container they open most. The lodger holds it. | A used container with a favourite in it, out of view. |
 | `return_taken` | 2 | The held item is back where it was taken from, in its slot, or one slot over. | A held item. |
@@ -177,17 +176,17 @@ never a witness's container.
 | --- | --- | --- | --- |
 | `cook_one` | 1 | One raw item from the target's chest is in a furnace with one fuel, and comes out cooked. | A furnace, a chest with something smeltable and a fuel. |
 | `take_output` | 2 | The finished output of a furnace is gone from the furnace and in the chest the target uses. | A furnace with output. |
-| `swap_fuel` | 2 | The fuel in a furnace is a different fuel kind from the target's chests, the counts kept fair in burn time (three coal for sixteen planks). Coded 2026-11-10. | A furnace with fuel, a chest with another fuel. |
+| `swap_fuel` | 2 | The fuel in a furnace is a different fuel kind from the target's chests, the counts kept fair in burn time (three coal for sixteen planks). | A furnace with fuel, a chest with another fuel. |
 | `cold_furnace` | 3 | A furnace mid-smelt has lost its fuel, which is in the chest. The smelting stops. | A lit furnace. |
 | `item_on_table` | 2 | An item is laid on the crafting table as a dropped item that does not despawn: the held item, or one of the favourites from a chest. | A crafting table, a held item or a chest. |
-| `lectern_page` | 2 | The book on a lectern is open to another page (`turn_page`, ABI 29). Coded 2026-11-10. | A lectern with a book. |
+| `lectern_page` | 2 | The book on a lectern is open to another page (`turn_page`, ABI 29). | A lectern with a book. |
 | `anvil_sound` | 2 | An anvil's sound from the workshop, at night, while the target is in bed. | An anvil and the target asleep. |
-| `brewing_done` | 3 | A brewing stand that had potions brews one of their ingredients into them, the game's own brewing: one ingredient from their chest into the stand, and a blaze powder too when the stand has no fuel (`brew`, ABI 29: refused unless the stand holds potions and its ingredient slot is empty). Coded 2026-11-10. | A brewing stand and an ingredient in the chest they use. |
+| `brewing_done` | 3 | A brewing stand that had potions brews one of their ingredients into them, the game's own brewing: one ingredient from their chest into the stand, and a blaze powder too when the stand has no fuel (`brew`, ABI 29: refused unless the stand holds potions and its ingredient slot is empty). | A brewing stand and an ingredient in the chest they use. |
 | `armor_stand_turn` | 3 | An armour stand's head is turned toward the door, or toward where the target sleeps. | An armour stand in the home. |
 | `armor_stand_dress` | 3 | One piece of armour from a chest is on the stand. | An armour stand and a chest with armour. |
 | `stand_watch` | 3 | The armour stands in the room turn their heads to follow the target while the target is in it, and hold the pose once the target looks straight at one. Back to normal when the target leaves. | An armour stand in the home. |
-| `grindstone_strip` | 4 | An enchanted tool in a chest has lost one enchantment, as a grindstone would take it (`strip`, ABI 29: the host picks the item and the enchantment, never a curse). Coded 2026-11-10. | A grindstone and an enchanted item in a chest. |
-| `crafted_for_you` | 3 | Something they make lies finished on their crafting table, the makings gone from their chest: four torches from a stick and a coal, bread from three wheat, planks from a log, sticks from planks. Owner's pick, 2026-11-10. | A crafting table, the makings in their chest. |
+| `grindstone_strip` | 4 | An enchanted tool in a chest has lost one enchantment, as a grindstone would take it (`strip`, ABI 29: the host picks the item and the enchantment, never a curse). | A grindstone and an enchanted item in a chest. |
+| `crafted_for_you` | 3 | Something they make lies finished on their crafting table, the makings gone from their chest: four torches from a stick and a coal, bread from three wheat, planks from a log, sticks from planks. Owner's pick. | A crafting table, the makings in their chest. |
 
 ### The house
 
@@ -210,7 +209,7 @@ Blocks the target placed, moved within reach, never broken for good.
 | `path_worn` | 3 | A line of dirt path from the door toward the lodger's place, as if walked a hundred times. | Grass between the door and the spot. |
 | `cairn` | 3 | A small stack of cobblestone at the end of the target's route, from the lodger's own digging. | A route and held stone. |
 | `hole` | 3 | A one-block hole three deep at the lodger's place, with a torch at the bottom. | A spot on natural ground. |
-| `alcove` | 4 | One block of natural stone behind a wall of the house, away from it, is hollow: a torch in it, and the thing it took from them if it holds one. Only natural stone; the one dig beside what they built (owner, 2026-11-09). | A wall of the house. |
+| `alcove` | 4 | One block of natural stone behind a wall of the house, away from it, is hollow: a torch in it, and the thing it took from them if it holds one. Only natural stone; the one dig beside what they built (owner). | A wall of the house. |
 | `backfill` | 3 | Up to five of the holes they dug by the house (natural ground within 16 blocks, newest first) are filled in again with dirt or stone it dug itself, never more than it holds. | A hole of theirs near the home, something dug to fill it. |
 | `sapling` | 2 | A sapling from a chest is planted at the spot. | A sapling in a chest and a spot on grass. |
 | `tree_grown` | 3 | The sapling by the house is a tree in the morning: bone meal from their chest (three at most), spent only if it grew. | A sapling around the home, bone meal in a chest of theirs. |
@@ -219,8 +218,8 @@ Blocks the target placed, moved within reach, never broken for good.
 ### What they kill
 
 The senses report every mob the target hits and kills, and the memory keeps a tally by kind
-(see [Memory](memory.md#what-is-kept)). The lodger has opinions about it (owner's idea,
-2026-11-09: "signs saying you like to kill, you killed y of z").
+(see [Memory](memory.md#what-is-kept)). The lodger has opinions about it (owner's idea:
+"signs saying you like to kill, you killed y of z").
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
@@ -230,13 +229,13 @@ The senses report every mob the target hits and kills, and the memory keeps a ta
 
 ### The house, changed
 
-Owner's idea, 2026-11-09: "trying to sleep breaks the bed", "replace certain blocks of the
+Owner's idea: "trying to sleep breaks the bed", "replace certain blocks of the
 house". The one place the lodger changes what the target built, and only into the same thing
 slightly wrong, never gone: a block becomes another member of its family (`memory::family`:
 every wood for planks, logs, fences, slabs, stairs and trapdoors; every colour for wool,
 concrete, terracotta, carpets and stained glass; the stones; the bricks; the torches; the
 lanterns; panes and iron bars), picked by the stay's seed, and the bed comes back as its item.
-Nothing with contents, no door, nothing of the ground. (The owner, 2026-11-09: "shouldn't be
+Nothing with contents, no door, nothing of the ground. (The owner: "shouldn't be
 hardcoded, why only spruce"; it was a table at first.)
 
 | Event | Stages | What happens | Needs |
@@ -257,13 +256,13 @@ hardcoded, why only spruce"; it was a table at first.)
 | `light_campfire` | 2 | A campfire is lit. | An unlit campfire. |
 | `candles_lit` | 3 | Every candle in the house is lit at night, or every lit one out. | Candles in the home. |
 | `cauldron` | 2 | A cauldron is full that was empty, or empty that was full. | A cauldron. |
-| `lantern_ahead` | 3 | Far down a cave the target has not entered, one of their lanterns, lit: set down at the cave's dark place farthest from them, then taken from their chest (a lantern that finds no floor stays in the chest). Coded 2026-11-10. | A cave they have not entered (`Need::Cave`) and a lantern in the chest they use. |
-| `warped_animal` | 3 | One of the target's animals (tamed, or by the home), or one outside when they keep none near, 12 to 32 blocks from them, goes wrong for a minute: it freezes with its head always on them, and is one or two of too tall (1.8 times), upside down (the game's Dinnerbone flip, never on an animal with a name of its own) and a step closer along the ground each time they look away; one time in three it stands just outside the door they use first. Walked up to within six blocks, it is at once as it was, where it was (`warp_mob`, ABI 25: a mob saved while warped is put back when next seen). Owner's idea, 2026-11-10. | An animal 12 to 32 blocks from them, they outdoors. |
-| `lights_out` | 4 | At night, the target's own lights behind them as they go (within 20 blocks, out of view, nearest first, up to five) go out one by one, three quarters of a second apart, and each is back a minute after it went, as it was (`hide_block`, ABI 24: put back at the time, or at once when the level saves or closes). Owner's idea, 2026-11-10. | Night, and lights they placed behind them. |
-| `soul_swap` | 3 | One of the target's torches or lanterns, the farthest out of view, burns with soul fire from then on, the same shape where it hangs (`swap_block`, ABI 24, keeps a wall torch's facing). Owner's idea, 2026-11-10. | A torch, lantern or campfire of theirs out of view. |
-| `death_light` | 2 | A candle, lit, on the ground where the target last died, once for each death. Owner's idea, 2026-11-10. | A death of theirs no candle of its own marks. |
-| `light_taken` | 3 | The torch or lantern the target placed last is gone, and the same light stands six to ten blocks on along the way they went (their trail, or the route away from the house), against a wall if nothing else holds it. Owner's idea, 2026-11-10. | A light they placed and have not broken, a way on from it out of view. |
-| `cave_lit` | 3 | A cave near the home the target has not entered has torches in it, up to six, from its near end inward, at the spacing the target uses in their own tunnels (the middle of their underground lights' gaps, 4 to 14 blocks; 8 before they have lit one). Its own torches. Coded 2026-11-10. | A cave they have not entered. |
+| `lantern_ahead` | 3 | Far down a cave the target has not entered, one of their lanterns, lit: set down at the cave's dark place farthest from them, then taken from their chest (a lantern that finds no floor stays in the chest). | A cave they have not entered (`Need::Cave`) and a lantern in the chest they use. |
+| `warped_animal` | 3 | One of the target's animals (tamed, or by the home), or one outside when they keep none near, 12 to 32 blocks from them, goes wrong for a minute: it freezes with its head always on them, and is one or two of too tall (1.8 times), upside down (the game's Dinnerbone flip, never on an animal with a name of its own) and a step closer along the ground each time they look away; one time in three it stands just outside the door they use first. Walked up to within six blocks, it is at once as it was, where it was (`warp_mob`, ABI 25: a mob saved while warped is put back when next seen). Owner's idea. | An animal 12 to 32 blocks from them, they outdoors. |
+| `lights_out` | 4 | At night, the target's own lights behind them as they go (within 20 blocks, out of view, nearest first, up to five) go out one by one, three quarters of a second apart, and each is back a minute after it went, as it was (`hide_block`, ABI 24: put back at the time, or at once when the level saves or closes). Owner's idea. | Night, and lights they placed behind them. |
+| `soul_swap` | 3 | One of the target's torches or lanterns, the farthest out of view, burns with soul fire from then on, the same shape where it hangs (`swap_block`, ABI 24, keeps a wall torch's facing). Owner's idea. | A torch, lantern or campfire of theirs out of view. |
+| `death_light` | 2 | A candle, lit, on the ground where the target last died, once for each death. Owner's idea. | A death of theirs no candle of its own marks. |
+| `light_taken` | 3 | The torch or lantern the target placed last is gone, and the same light stands six to ten blocks on along the way they went (their trail, or the route away from the house), against a wall if nothing else holds it. Owner's idea. | A light they placed and have not broken, a way on from it out of view. |
+| `cave_lit` | 3 | A cave near the home the target has not entered has torches in it, up to six, from its near end inward, at the spacing the target uses in their own tunnels (the middle of their underground lights' gaps, 4 to 14 blocks; 8 before they have lit one). Its own torches. | A cave they have not entered. |
 
 The caves come from the brain's cave read (`core/src/caves.rs`): every ten minutes while the
 target is above ground within 48 blocks of home, a scan around them of 97 by 41 by 97 blocks
@@ -276,12 +275,12 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `shift_bed` | 3 | The bed is one block over, to its side, both halves, colour and facing kept, while the target is away (`shift_bed`, ABI 26: never a bed someone lies in, only onto solid floor). Coded 2026-11-10. | A bed and room to move it. |
+| `shift_bed` | 3 | The bed is one block over, to its side, both halves, colour and facing kept, while the target is away (`shift_bed`, ABI 26: never a bed someone lies in, only onto solid floor). | A bed and room to move it. |
 | `turn_bed` | 3 | The bed faces another wall. Coded as batch 3's `bed_turned`. | A bed and room to turn it. |
-| `sheets_changed` | 3 | Their bed is another colour when they come home, both halves, same place and facing (`swap_block` turns a bed's two halves together). Owner's pick, 2026-11-10. | A bed, the target away or asleep. |
-| `under_the_bed` | 3 | As they lie down, a slow scratching right under their bed, three or four beats, then nothing: silverfish steps, knocks on wood, or wool and claws, one of three. Owner's pick, 2026-11-10. | A bed, the target in it. |
-| `foot_of_bed` | 4 | As they wake, the figure stands at the foot of their bed, across it from them, for half a second. One waking in three, its rules allowing; never offered, the waking starts it. Owner's pick, 2026-11-10. | A bed, the target waking. |
-| `second_bed` | 4 | A second bed stands beside theirs when they come home, the same facing, another colour (`bed_beside`, ABI 26). Once a stay. Owner's pick, 2026-11-10. | A bed and room beside it, the target away or asleep. |
+| `sheets_changed` | 3 | Their bed is another colour when they come home, both halves, same place and facing (`swap_block` turns a bed's two halves together). Owner's pick. | A bed, the target away or asleep. |
+| `under_the_bed` | 3 | As they lie down, a slow scratching right under their bed, three or four beats, then nothing: silverfish steps, knocks on wood, or wool and claws, one of three. Owner's pick. | A bed, the target in it. |
+| `foot_of_bed` | 4 | As they wake, the figure stands at the foot of their bed, across it from them, for half a second. One waking in three, its rules allowing; never offered, the waking starts it. Owner's pick. | A bed, the target waking. |
+| `second_bed` | 4 | A second bed stands beside theirs when they come home, the same facing, another colour (`bed_beside`, ABI 26). Once a stay. Owner's pick. | A bed and room beside it, the target away or asleep. |
 | `refuse_rest` | 3 | The next attempt to sleep is refused with vanilla's own `You may not rest now` message. Once per night. | The target trying to sleep. |
 | `bed_occupied` | 3 | `This bed is occupied`, vanilla's message, with nobody in it. The next try works. | The target trying to sleep. |
 | `wake` | 3 | The target is woken in the middle of the night, sleep cancelled, and the door is open. | The target asleep. |
@@ -294,16 +293,16 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | --- | --- | --- | --- |
 | `frame_rotate` | 1 | An item frame's item is rotated one notch. | An item frame with an item. |
 | `frames_turn` | 3 | Every item frame in the room is turned to the same orientation, while the target is away. | Three or more item frames in a room. |
-| `frame_swap` | 3 | The item in a frame is traded with a thing of one from their chest: the very stacks, the frame's into that slot (`set_frame_item`'s `swap`, ABI 40; until 2026-11-10 the frame's was lost). | An item frame and a chest. |
-| `item_frames_face` | 3 | While they are indoors, every item frame of the house shows the same thing, to them alone, for three minutes: what it took, or else what they hold most; then what each really holds again (`frames_show`, ABI 38: the frame's item as their client sees it; nothing in a frame changes). Coded 2026-11-10. | An item frame, indoors. |
-| `frame_emptied` | 3 | An item frame is empty; its own item is on the bed, the very stack (`set_frame_item`'s `drop_at`, ABI 40; until 2026-11-10 it was deleted and a stand-in laid there). | An item frame with an item and a bed. |
+| `frame_swap` | 3 | The item in a frame is traded with a thing of one from their chest: the very stacks, the frame's into that slot (`set_frame_item`'s `swap`, ABI 40; until now the frame's was lost). | An item frame and a chest. |
+| `item_frames_face` | 3 | While they are indoors, every item frame of the house shows the same thing, to them alone, for three minutes: what it took, or else what they hold most; then what each really holds again (`frames_show`, ABI 38: the frame's item as their client sees it; nothing in a frame changes). | An item frame, indoors. |
+| `frame_emptied` | 3 | An item frame is empty; its own item is on the bed, the very stack (`set_frame_item`'s `drop_at`, ABI 40; until now it was deleted and a stand-in laid there). | An item frame with an item and a bed. |
 | `painting_change` | 2 | A painting is another painting of the same size. | A painting. |
 | `sign` | 2 | A sign with one word from the want's list, at the spot or by the door. | A spot. |
-| `sign_word` | 3 | One line of a sign the target wrote reads one word of its own instead: the last line with text (`set_sign`'s `one_line`, ABI 28: a blank sign is refused). The other lines are kept. Coded 2026-11-10. | A sign they placed. |
-| `count_up` | 3 | Its kill sign's count rises by itself: each time they kill another of the kind it counts, the sign reads the new number (`15 cows`). Never offered; the kill starts it. Owner's pick, 2026-11-10. | Its kill sign, and a kill of that kind. |
-| `weapon_on_wall` | 3 | The weapon they use most hangs in an item frame of theirs, moved straight from its chest slot (`set_frame_item`'s `from`, ABI 28: only into an empty frame, so nothing is lost). Owner's pick, 2026-11-10. | Their weapon in a chest and a frame of theirs. |
-| `head_on_post` | 4 | A fence post two blocks out from the door they use, and on it the head of the kind they kill most (a zombie's, a skeleton's, a creeper's, a piglin's), facing the door. Owner's pick, 2026-11-10. | A kill of a kind with a head, a door. |
-| `grave_each` | 4 | A row of graves at its place, two blocks apart: for each kind they killed, most first and five at most, a stone and a sign with the count and the kind. Once a stay. Owner's pick, 2026-11-10. | Two kinds killed, a home. |
+| `sign_word` | 3 | One line of a sign the target wrote reads one word of its own instead: the last line with text (`set_sign`'s `one_line`, ABI 28: a blank sign is refused). The other lines are kept. | A sign they placed. |
+| `count_up` | 3 | Its kill sign's count rises by itself: each time they kill another of the kind it counts, the sign reads the new number (`15 cows`). Never offered; the kill starts it. Owner's pick. | Its kill sign, and a kill of that kind. |
+| `weapon_on_wall` | 3 | The weapon they use most hangs in an item frame of theirs, moved straight from its chest slot (`set_frame_item`'s `from`, ABI 28: only into an empty frame, so nothing is lost). Owner's pick. | Their weapon in a chest and a frame of theirs. |
+| `head_on_post` | 4 | A fence post two blocks out from the door they use, and on it the head of the kind they kill most (a zombie's, a skeleton's, a creeper's, a piglin's), facing the door. Owner's pick. | A kill of a kind with a head, a door. |
+| `grave_each` | 4 | A row of graves at its place, two blocks apart: for each kind they killed, most first and five at most, a stone and a sign with the count and the kind. Once a stay. Owner's pick. | Two kinds killed, a home. |
 | `banner_turned` | 2 | A banner faces another way. | A placed banner. |
 | `named_animal` | 3 | One of the target's animals has a name, one word from the want's list. | A penned animal without a name. |
 | `plant_flower` | 2 | A flower from a chest is planted by the door or on the route. | A chest with a flower. |
@@ -315,29 +314,29 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | `harvest_one` | 2 | One ripe crop is harvested and its yield is in the chest. The soil is left as it was. | A field and a chest. |
 | `replant_other` | 3 | One crop is a different crop, from seeds in a chest. | A field and a chest with other seeds. |
 | `trample` | 3 | Farmland from the field toward the door, one line, while the target is away. | A field within 32 blocks of the home. |
-| `field_word` | 4 | Crops cut back to seedlings so that from above, north at the top, the field reads one word of the want's list in letters three by five: the longest that fits (`MINE`, `LOOK`, `GIVE`; `ME` in a field of 7). Coded 2026-11-10 from the brain's field read. | A field of 7 by 5 or more, four in five planted. |
-| `scarecrow` | 3 | An armour stand in the field, wearing one piece of the target's armour (the very piece, from their chest), facing the house: their own stand moved there, or one from the chest set down. Coded 2026-11-10. | A piece of armour and an armour stand (or one in a chest), and a field. |
+| `field_word` | 4 | Crops cut back to seedlings so that from above, north at the top, the field reads one word of the want's list in letters three by five: the longest that fits (`MINE`, `LOOK`, `GIVE`; `ME` in a field of 7). Coded from the brain's field read. | A field of 7 by 5 or more, four in five planted. |
+| `scarecrow` | 3 | An armour stand in the field, wearing one piece of the target's armour (the very piece, from their chest), facing the house: their own stand moved there, or one from the chest set down. | A piece of armour and an armour stand (or one in a chest), and a field. |
 | `open_gate` | 2 | A pen's gate is open in the morning. The animals wandered. | A fence gate with animals behind it. |
 | `animal_indoors` | 3 | One of the target's animals is inside the house in the morning. Moved, not spawned; the gate is closed behind it. | A penned animal and a home with a door. |
 | `animal_gone` | 3 | One animal is missing from the pen, and is at the end of the target's route, grazing. | A pen and a route. |
 | `sheep_dyed` | 2 | A sheep is another colour, from dye in a chest. | A sheep and dye. |
-| `horse_moved` | 2 | The horse is tied to a different post, within eight blocks of the first (`move_leash`, ABI 27). Coded 2026-11-10. | A horse (or donkey, mule, llama, camel) on a lead. |
-| `face_the_house` | 4 | At dawn every animal in their pens (up to twelve) stands still facing the house for two minutes (`hold` with `at`, ABI 27). Owner's pick, 2026-11-10. | Three animals in the pens, dawn. |
-| `one_more` | 3 | In the morning one more of the kind they keep most stands with the others, and is gone by noon (`place_entity` for a while, ABI 27: gone at once when the level closes). Owner's pick, 2026-11-10. | Two animals in the pens, dawn. |
-| `row_withered` | 3 | One row of their crops is back to seedlings; the rest untouched. Owner's pick, 2026-11-10. | A field, the target away or asleep. |
-| `eggs_to_door` | 2 | Eggs in a line from the coop to the door they use, two blocks apart, up to six. Owner's pick, 2026-11-10. | Two chickens by the home and a door. |
-| `animals_nip` | 3 | The nearest farm animal turns on them: it runs at them and nips, half a heart, twice at most, and never below half a heart (`charge`, ABI 27). The owner's harm stages: a nip at 3. Owner's idea, 2026-11-09. | A farm animal within 16 blocks, the target outdoors. |
-| `animals_turn` | 4 | Up to three of the nearest farm animals turn on them for half a minute, a heart and a half a hit, three hits each at most, never below half a heart: real harm from stage 4, never a kill. Owner's idea, 2026-11-09. | Farm animals within 16 blocks, the target outdoors. |
-| `hostiles_stare` | 3 | At night every hostile mob within 48 blocks (up to sixteen) stops where it stands and turns to the target, and stays so, facing them as they move, attacking no one, until dawn burns or frees them. Hit once, a held mob takes it unmoved, still staring; hit twice, that one wakes alone and acts as it would (owner, 2026-11-09). None is spawned: a night with few has few. Owner's idea, 2026-11-09. | Three or more hostile mobs near, night. |
-| `hostiles_close` | 4 | At night in the open the hostile mobs near (up to sixteen) hold and stare as in `hostiles_stare`, and each moment the target looks away, one comes a step nearer along the ground, to six blocks; the moment they look at it, it is back where it stood (`hold`'s `creep`, ABI 37), so what they glimpse turning is never there when they face it. Three minutes, then every one back where it stood and as it was; one saved mid-creep goes back when next seen. Coded 2026-11-10. | Three or more hostile mobs near, night, outdoors. |
-| `pack` | 3 | Their farm animals near them (three or more, up to twelve) turn and walk toward them together, at a walk, and stop four blocks off, facing them, for most of a minute; then they graze as before (`approach`, ABI 37: only their path and look are steered, nothing changed). Coded 2026-11-10. | Three of their farm animals within sixteen blocks, outdoors. |
-| `slow_approach` | 3 | One animal near them (8 to 28 blocks), half the time with its model bent on their screen, walks at them very slowly, its eyes on them, and stops a block and a half off; then it stares five seconds and goes its way, or turns and walks off, or strikes once (a heart, never below half a heart) and walks off (`approach`'s `pace`, `then`, `damage`, ABI 44). Owner's idea, coded 2026-11-10. | Three animals near, outdoors. |
-| `quick_approach` | 3 | The same, at a run: one animal near them comes at them fast, its eyes on them, and stops a block and a half off; then it stares, turns away or strikes once (owner, 2026-11-10: "the opposite event too"). Coded 2026-11-10. | Three animals near, outdoors. |
+| `horse_moved` | 2 | The horse is tied to a different post, within eight blocks of the first (`move_leash`, ABI 27). | A horse (or donkey, mule, llama, camel) on a lead. |
+| `face_the_house` | 4 | At dawn every animal in their pens (up to twelve) stands still facing the house for two minutes (`hold` with `at`, ABI 27). Owner's pick. | Three animals in the pens, dawn. |
+| `one_more` | 3 | In the morning one more of the kind they keep most stands with the others, and is gone by noon (`place_entity` for a while, ABI 27: gone at once when the level closes). Owner's pick. | Two animals in the pens, dawn. |
+| `row_withered` | 3 | One row of their crops is back to seedlings; the rest untouched. Owner's pick. | A field, the target away or asleep. |
+| `eggs_to_door` | 2 | Eggs in a line from the coop to the door they use, two blocks apart, up to six. Owner's pick. | Two chickens by the home and a door. |
+| `animals_nip` | 3 | The nearest farm animal turns on them: it runs at them and nips, half a heart, twice at most, and never below half a heart (`charge`, ABI 27). The owner's harm stages: a nip at 3. Owner's idea. | A farm animal within 16 blocks, the target outdoors. |
+| `animals_turn` | 4 | Up to three of the nearest farm animals turn on them for half a minute, a heart and a half a hit, three hits each at most, never below half a heart: real harm from stage 4, never a kill. Owner's idea. | Farm animals within 16 blocks, the target outdoors. |
+| `hostiles_stare` | 3 | At night every hostile mob within 48 blocks (up to sixteen) stops where it stands and turns to the target, and stays so, facing them as they move, attacking no one, until dawn burns or frees them. Hit once, a held mob takes it unmoved, still staring; hit twice, that one wakes alone and acts as it would (owner). None is spawned: a night with few has few. Owner's idea. | Three or more hostile mobs near, night. |
+| `hostiles_close` | 4 | At night in the open the hostile mobs near (up to sixteen) hold and stare as in `hostiles_stare`, and each moment the target looks away, one comes a step nearer along the ground, to six blocks; the moment they look at it, it is back where it stood (`hold`'s `creep`, ABI 37), so what they glimpse turning is never there when they face it. Three minutes, then every one back where it stood and as it was; one saved mid-creep goes back when next seen. | Three or more hostile mobs near, night, outdoors. |
+| `pack` | 3 | Their farm animals near them (three or more, up to twelve) turn and walk toward them together, at a walk, and stop four blocks off, facing them, for most of a minute; then they graze as before (`approach`, ABI 37: only their path and look are steered, nothing changed). | Three of their farm animals within sixteen blocks, outdoors. |
+| `slow_approach` | 3 | One animal near them (8 to 28 blocks), half the time with its model bent on their screen, walks at them very slowly, its eyes on them, and stops a block and a half off; then it stares five seconds and goes its way, or turns and walks off, or strikes once (a heart, never below half a heart) and walks off (`approach`'s `pace`, `then`, `damage`, ABI 44). Owner's idea. | Three animals near, outdoors. |
+| `quick_approach` | 3 | The same, at a run: one animal near them comes at them fast, its eyes on them, and stops a block and a half off; then it stares, turns away or strikes once (owner: "the opposite event too"). | Three animals near, outdoors. |
 | `stare` | 3 | Every animal and villager within 32 blocks stops, turns to the target and holds still looking at them for ten to thirty seconds (`hold`: they stand still rather than look and walk at once, which jittered). Never a hostile mob: that would be a fight. | Three or more animals or villagers nearby. |
 | `pet_growl` | 2 | A tamed wolf growls, or a cat hisses, facing an empty spot in the house, for a few seconds. | A tamed pet in the home. |
 | `pet_moved` | 2 | A sitting pet is sitting somewhere else, facing a corner. | A sitting pet in the home. |
 | `pet_outside` | 3 | The pet is outside the closed door in the morning. | A pet indoors and a door. |
-| `bees_out` | 3 | At night the bees of their hive are out, hanging still around the door they use for two minutes, then home (`release_bees`, ABI 27). Coded 2026-11-10. | A beehive of theirs and a door, night. |
+| `bees_out` | 3 | At night the bees of their hive are out, hanging still around the door they use for two minutes, then home (`release_bees`, ABI 27). | A beehive of theirs and a door, night. |
 
 ### Chat and the player list
 
@@ -351,17 +350,17 @@ speaks nor shows in the list, and still reads.
 | `tab_entry_stays` | 4 | The entry stays all session. | Any. |
 | `joined` | 3 | `<your name> joined the game`, in the target's chat, while they are already in. Nobody joined. | Any. |
 | `left` | 4 | `<your name> left the game`, in the target's chat, while they are still in. Then nothing for an hour. | Any. |
-| `answers_you` | 2 | What the target types is sometimes answered, 5 to 60 seconds later, in their own name, to them alone: often a line about it (the house, a door, `who`, a question, its want's words), rarely anything else (60 and 15 in a hundred), at most three a day and five minutes of play apart. The model writes it with their words in its prompt, cleaned to letters (it may echo one: `house?`), from the reply bank's examples (`i heard you`, `inside`, `not yet`); the bank stands in. Started by the chat line, never from the menu; the one event that may follow itself. Owner, 2026-11-09. | The target typed, `events.chat`. |
+| `answers_you` | 2 | What the target types is sometimes answered, 5 to 60 seconds later, in their own name, to them alone: often a line about it (the house, a door, `who`, a question, its want's words), rarely anything else (60 and 15 in a hundred), at most three a day and five minutes of play apart. The model writes it with their words in its prompt, cleaned to letters (it may echo one: `house?`), from the reply bank's examples (`i heard you`, `inside`, `not yet`); the bank stands in. Started by the chat line, never from the menu; the one event that may follow itself. Owner. | The target typed, `events.chat`. |
 | `says_back` | 3 | When the target types something about the lodger (the senses' chat line matches the want's words, `house`, `door`, `chest`, a question), a chat line in the target's own name, to the target alone, from the bank: `i know`, `it was me`, `look behind the door`. Once a day at most. | The target typed. |
 | `says_first` | 4 | A chat line in the target's name, unprompted, at night: one word from the want's list, or a bank line. | Night. |
 | `whisper_from_you` | 4 | A whisper to the target from the target: `<you> whispers to you: here`. | Any. |
 | `repeats_you` | 4 | The target's last chat line, said again, in their name, a minute later. The words are the target's own; nothing is added. | The target typed. |
-| `sleep_message` | 3 | `1/2 players sleeping` on the action bar, the game's own words, at night with the target awake and alone. (`sleepers_wrong` says it as they lie down.) Coded 2026-11-10. | Night, the target awake. |
-| `advancement` | 4 | The chat line and the toast for one the target has, as if just earned, in their name (`game_message` `advancement`: the host picks one they have that announces itself; the toast is the client's own). Coded 2026-11-10. | The target awake, with an advancement. |
-| `death_message` | 4 | One of the game's own death lines about them while they live: `<you> fell from a high place`, `drowned`, `suffocated in a wall`, `fell out of the world`, `died`, `starved to death`, `froze to death`. Owner's pick, 2026-11-10. | The target awake. |
-| `words_on_sign` | 3 | What they last typed, in their own words, lower case, on a sign beside the door they use, up to four lines of fifteen. Owner's pick, 2026-11-10. | They typed, a door, the target away or asleep. |
-| `ping_fades` | 3 | Their own entry in the player list shows no connection for a minute, then their own again. Owner's pick, 2026-11-10. | The target awake. |
-| `empty_message` | 3 | `<you>` in their chat with nothing after it. Owner's pick, 2026-11-10. | The target awake. |
+| `sleep_message` | 3 | `1/2 players sleeping` on the action bar, the game's own words, at night with the target awake and alone. (`sleepers_wrong` says it as they lie down.) | Night, the target awake. |
+| `advancement` | 4 | The chat line and the toast for one the target has, as if just earned, in their name (`game_message` `advancement`: the host picks one they have that announces itself; the toast is the client's own). | The target awake, with an advancement. |
+| `death_message` | 4 | One of the game's own death lines about them while they live: `<you> fell from a high place`, `drowned`, `suffocated in a wall`, `fell out of the world`, `died`, `starved to death`, `froze to death`. Owner's pick. | The target awake. |
+| `words_on_sign` | 3 | What they last typed, in their own words, lower case, on a sign beside the door they use, up to four lines of fifteen. Owner's pick. | They typed, a door, the target away or asleep. |
+| `ping_fades` | 3 | Their own entry in the player list shows no connection for a minute, then their own again. Owner's pick. | The target awake. |
+| `empty_message` | 3 | `<you>` in their chat with nothing after it. Owner's pick. | The target awake. |
 
 ### Villages
 
@@ -374,10 +373,10 @@ Offered only with a village within 128 blocks of the home.
 | `villager_at_door` | 3 | A villager stands outside the target's door at night, facing it, and is back home by morning. | A villager and night. |
 | `golem_turned` | 3 | The iron golem faces the target's house all night and all the next day, wherever it stands. | An iron golem. |
 | `village_doors` | 3 | Every door in the village is open in the morning. | A village with 4 or more doors. |
-| `village_lantern` | 2 | A village lantern is gone, and stands on the target's route where it passes the village (set down there first, so one that finds no ground stays where it hung). Coded 2026-11-10. | A village lantern and a route. |
-| `villager_word` | 4 | The villager nearest them sells what the lodger took (the very item, `offer_trade`, ABI 31) for one emerald, once; bought, the trade is gone, and so is the lodger's hold on it. Coded 2026-11-10. | Something it holds, a villager near. |
-| `village_abandoned` | 4 | While the target is 64 blocks or more away at night, the village empties: every villager within 48 blocks of its middle walked into the house whose door is nearest the middle, packed inside, facing its back wall, silent, turning to the target as they come within five blocks (`gather_villagers`, ABI 31); every other door open, the lanterns out (`hide_block`). By dawn, everyone is back where they stood, the doors shut, the lights lit. Once a stay. Owner's idea, 2026-11-09; coded 2026-11-10. | The village's doors read, night, the target far from the village. |
-| `bell_twice` | 2 | They ring a bell; a second and a half later it rings again, once, swinging, half the times they ring it (`rang_bell`, ABI 31; never offered, the ringing starts it). Owner's idea, 2026-11-09 (G1). | The target ringing a bell. |
+| `village_lantern` | 2 | A village lantern is gone, and stands on the target's route where it passes the village (set down there first, so one that finds no ground stays where it hung). | A village lantern and a route. |
+| `villager_word` | 4 | The villager nearest them sells what the lodger took (the very item, `offer_trade`, ABI 31) for one emerald, once; bought, the trade is gone, and so is the lodger's hold on it. | Something it holds, a villager near. |
+| `village_abandoned` | 4 | While the target is 64 blocks or more away at night, the village empties: every villager within 48 blocks of its middle walked into the house whose door is nearest the middle, packed inside, facing its back wall, silent, turning to the target as they come within five blocks (`gather_villagers`, ABI 31); every other door open, the lanterns out (`hide_block`). By dawn, everyone is back where they stood, the doors shut, the lights lit. Once a stay. Owner's idea. | The village's doors read, night, the target far from the village. |
+| `bell_twice` | 2 | They ring a bell; a second and a half later it rings again, once, swinging, half the times they ring it (`rang_bell`, ABI 31; never offered, the ringing starts it). Owner's idea (G1). | The target ringing a bell. |
 
 ### Water and boats
 
@@ -387,34 +386,34 @@ Offered with water within 32 blocks of the home or the route.
 | --- | --- | --- | --- |
 | `boat_moved` | 2 | The target's boat is on the other bank, or their minecart at the other end of its track. | A boat or minecart the target used. |
 | `boat_adrift` | 3 | The boat is in the middle of the water, still, going nowhere. | A boat and open water. |
-| `boat_drifts` | 2 | While the target watches from the shore, the boat drifts off on its own, slowly, away from them. (Owner's idea, 2026-11-09: "boats and minecarts move on their own".) | A boat on the water and the target outdoors. |
-| `boat_waiting` | 3 | The boat is at the shore the target is walking toward, before they get there: on their side of the water, a block in from its edge. Coded 2026-11-10. | Their boat, water within 48 blocks, the target walking. |
+| `boat_drifts` | 2 | While the target watches from the shore, the boat drifts off on its own, slowly, away from them. (Owner's idea: "boats and minecarts move on their own".) | A boat on the water and the target outdoors. |
+| `boat_waiting` | 3 | The boat is at the shore the target is walking toward, before they get there: on their side of the water, a block in from its edge. | Their boat, water within 48 blocks, the target walking. |
 | `bucket_floor` | 3 | One block of water in the house's floor, in a corner. | A bucket in a chest and a floor block out of the way. |
 | `ice_path` | 3 | A line of ice across the water from the far shore toward the house, in summer. | Still water of 8 or more blocks across. |
-| `ripples` | 3 | Ripples and small splashes cross the water toward the shore on their side, in a line, as under footsteps, for the target alone (the client's `ripples` hint). Coded 2026-11-10. | Water within 32 blocks, the target outdoors. |
-| `fishing_line` | 4 | Fishing with no one there, faked (a real bobber needs a player holding the rod; owner, 2026-11-10): a cast, the bobber's splashes and a catch over a minute at one spot on their water, the fishing ripples there for the target alone (the client's `bobber` hint). Coded 2026-11-10. | Water within 32 blocks and a fishing rod in a chest. |
-| `fish_on_line` | 2 | They fish: the next time their bobber sits in the water, within two minutes, it splashes and goes under and stays under for ten seconds, on their screen; the server's own hook is kept from any real bite meanwhile, so reeled in it brings nothing (`bobber`, ABI 38). Coded 2026-11-10. | A fishing rod in hand, water within sixteen blocks. |
-| `ghast_name` | 3 | In the Nether, for five minutes, every ghast's cry reads in the subtitles as their own name, and one cries now, far off, so it is heard (the subtitle hook). Done by the Nether's stay on the overworld's word, counted at home (`elsewhere`). Coded 2026-11-10. | The target in the Nether. |
-| `ender_holds` | 3 | In the End, the enderman nearest them holds the block they build with most at home (`carry_block`, ABI 39); it may set it down as endermen do. Done by the End's stay on the overworld's word. Coded 2026-11-10. | The target in the End, an enderman near, a block they build with. |
-| `busy_away` | 3 | Coming back from another dimension after three minutes or more, one of its bold things happened at home while they were gone: the first of its house's share, its pillar, the hut on their route, the dock, the bridge, a cairn, a light path, a worn path, a grave, a sapling whose rules and lasting needs hold, run at once, so it was there before they could see it. Coded 2026-11-10. | They just came back from another dimension. |
-| `boat_in_house` | 4 | Their boat sits in the middle of the house in the morning. Owner's pick, 2026-11-10. | Their boat and a home, the target away or asleep. |
-| `under_the_water` | 3 | A dark shape, a squid, hangs still under the water on their side, facing them, for twenty seconds, then is gone (`place_entity` with `face`, ABI 30). Owner's pick, 2026-11-10. | Water within 24 blocks, the target outdoors. |
-| `wet_steps` | 3 | Wet steps and a drip with each walk from the door they use to their bed while they are inside. Owner's pick, 2026-11-10. | A bed and a door, the target indoors. |
+| `ripples` | 3 | Ripples and small splashes cross the water toward the shore on their side, in a line, as under footsteps, for the target alone (the client's `ripples` hint). | Water within 32 blocks, the target outdoors. |
+| `fishing_line` | 4 | Fishing with no one there, faked (a real bobber needs a player holding the rod; owner): a cast, the bobber's splashes and a catch over a minute at one spot on their water, the fishing ripples there for the target alone (the client's `bobber` hint). | Water within 32 blocks and a fishing rod in a chest. |
+| `fish_on_line` | 2 | They fish: the next time their bobber sits in the water, within two minutes, it splashes and goes under and stays under for ten seconds, on their screen; the server's own hook is kept from any real bite meanwhile, so reeled in it brings nothing (`bobber`, ABI 38). | A fishing rod in hand, water within sixteen blocks. |
+| `ghast_name` | 3 | In the Nether, for five minutes, every ghast's cry reads in the subtitles as their own name, and one cries now, far off, so it is heard (the subtitle hook). Done by the Nether's stay on the overworld's word, counted at home (`elsewhere`). | The target in the Nether. |
+| `ender_holds` | 3 | In the End, the enderman nearest them holds the block they build with most at home (`carry_block`, ABI 39); it may set it down as endermen do. Done by the End's stay on the overworld's word. | The target in the End, an enderman near, a block they build with. |
+| `busy_away` | 3 | Coming back from another dimension after three minutes or more, one of its bold things happened at home while they were gone: the first of its house's share, its pillar, the hut on their route, the dock, the bridge, a cairn, a light path, a worn path, a grave, a sapling whose rules and lasting needs hold, run at once, so it was there before they could see it. | They just came back from another dimension. |
+| `boat_in_house` | 4 | Their boat sits in the middle of the house in the morning. Owner's pick. | Their boat and a home, the target away or asleep. |
+| `under_the_water` | 3 | A dark shape, a squid, hangs still under the water on their side, facing them, for twenty seconds, then is gone (`place_entity` with `face`, ABI 30). Owner's pick. | Water within 24 blocks, the target outdoors. |
+| `wet_steps` | 3 | Wet steps and a drip with each walk from the door they use to their bed while they are inside. Owner's pick. | A bed and a door, the target indoors. |
 | `drip` | 2 | Dripping water, indoors, with no water near. | The target indoors. |
 
 ### Snow, sand and weather
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `trail` | 3 | Footprints in the snow by the home, from the door toward the lodger's place, that the target did not make: a snow layer taken off at each step, left and right (`prints`, ABI 30; snow only, sand cannot show them). Gone with the next snowfall. Coded 2026-11-10. | Snow around the home and a door. |
-| `trail_in` | 4 | Footprints leading *to* the door, from twenty blocks out in the dark, and none leading away. Coded 2026-11-10. | Snow around the home and a door. |
-| `snowman` | 3 | Two snow blocks and a carved pumpkin stacked beside the door, facing it, not a golem. Owner's pick, 2026-11-10. | Snow around the home and a door. |
+| `trail` | 3 | Footprints in the snow by the home, from the door toward the lodger's place, that the target did not make: a snow layer taken off at each step, left and right (`prints`, ABI 30; snow only, sand cannot show them). Gone with the next snowfall. | Snow around the home and a door. |
+| `trail_in` | 4 | Footprints leading *to* the door, from twenty blocks out in the dark, and none leading away. | Snow around the home and a door. |
+| `snowman` | 3 | Two snow blocks and a carved pumpkin stacked beside the door, facing it, not a golem. Owner's pick. | Snow around the home and a door. |
 | `snow_cleared` | 2 | The snow is gone from the path between the door and the route, one block wide. | Snow layers on the path. |
 | `snow_indoors` | 3 | Snow falls inside the house for a few seconds, for the target alone. | The target indoors, snow outside. |
 | `rain_indoors` | 3 | The same with rain. | The target indoors, rain outside. |
 | `lightning_silent` | 3 | A flash of lightning with no thunder, in clear weather, for the target alone. | The target outdoors at night. |
 | `thunder_clear` | 2 | Thunder, for the target alone, under a clear sky. | The target outdoors. |
-| `fog_close` | 3 | The mist rolls in for a minute, then lifts: the real fog of `mist`, since 2026-11-10 (it was a dark ring on the screen). | The target outdoors. |
+| `fog_close` | 3 | The mist rolls in for a minute, then lifts: the real fog of `mist`, (it was a dark ring on the screen). | The target outdoors. |
 
 ### Mines and caves
 
@@ -428,18 +427,18 @@ they use. Digging is what a player digs, at a player's pace, with a player's sou
 | `echo_steps` | 2 | Footsteps that answer the target's from a side tunnel, in the mine. | The target in a tunnel with a branch. |
 | `scan_ore` | 2 | Nothing the target sees: while they mine, the lodger looks at the rock around them (the host's scan, 24 blocks across) for ore they have not found, so `ore_marked` has a vein to mark. | The target underground. |
 | `ore_marked` | 2 | A torch on an ore vein the target has not found, within sight of their tunnel. | An unfound vein within 12 blocks of a tunnel. |
-| `mine_beside` | 3 | While the target is away, a copy of their newest tunnel is dug three blocks beside it, two high, lit at their torch spacing; the ore it meets goes to the chest they use as it is dug, the stone to the lodger's store. Coded 2026-11-10. | A tunnel of theirs of ten blocks, a chest they use. |
-| `mined_out` | 3 | The ore vein ahead of their newest tunnel (within 16 blocks past its end, from the ore read) is dug out while they are away, a torch where it was. Coded 2026-11-10. | Ore ahead of a tunnel of theirs. |
-| `tunnel_sealed` | 3 | The mouth of their oldest tunnel is walled, floor and head, with cobblestone from the lodger's store (digging stone gives it cobblestone, as a pick does). Coded 2026-11-10. | A tunnel of theirs and two cobblestone dug. |
-| `ladder_down` | 3 | A one-block shaft dug down from its place, as deep as their ladders (four to twelve), the ladders up its side, then taken from their chest. Coded 2026-11-10. | Ladders in the chest they use, a home. |
+| `mine_beside` | 3 | While the target is away, a copy of their newest tunnel is dug three blocks beside it, two high, lit at their torch spacing; the ore it meets goes to the chest they use as it is dug, the stone to the lodger's store. | A tunnel of theirs of ten blocks, a chest they use. |
+| `mined_out` | 3 | The ore vein ahead of their newest tunnel (within 16 blocks past its end, from the ore read) is dug out while they are away, a torch where it was. | Ore ahead of a tunnel of theirs. |
+| `tunnel_sealed` | 3 | The mouth of their oldest tunnel is walled, floor and head, with cobblestone from the lodger's store (digging stone gives it cobblestone, as a pick does). | A tunnel of theirs and two cobblestone dug. |
+| `ladder_down` | 3 | A one-block shaft dug down from its place, as deep as their ladders (four to twelve), the ladders up its side, then taken from their chest. | Ladders in the chest they use, a home. |
 | `minecart_rolls` | 3 | The target's minecart rolls out of the tunnel on its own and stops at the mouth. | A minecart on a track. |
-| `tunnel_toward` | 4 | While the target is in their tunnel, digging comes toward them from 25 blocks past its end, a column every four seconds, each heard as it breaks, and it breaks through just ahead or stops one block short. Built to be heard and found: out of the view rule. Coded 2026-11-10. | The target in a tunnel of theirs. |
-| `tunnel_goes_on` | 3 | Their newest tunnel is five blocks longer when they come back to it, their size, unlit. Owner's pick, 2026-11-10. | A tunnel of theirs, the target away or asleep. |
-| `torches_far_end` | 3 | While they stand in their tunnel, its lights go out one by one from the far end toward them, a second apart, back in five minutes. Owner's pick, 2026-11-10. | The target in a tunnel of theirs with two of their lights. |
-| `sign_deep` | 3 | A sign at the far end of their newest tunnel, one word of its own. Owner's pick, 2026-11-10. | A tunnel of theirs, the target away or asleep. |
-| `way_back_closes` | 4 | Gravel falls into their tunnel five blocks behind them, floor and head, closing the way they came (they can dig it). Owner's pick, 2026-11-10. | The target in a tunnel of theirs with room behind them. |
+| `tunnel_toward` | 4 | While the target is in their tunnel, digging comes toward them from 25 blocks past its end, a column every four seconds, each heard as it breaks, and it breaks through just ahead or stops one block short. Built to be heard and found: out of the view rule. | The target in a tunnel of theirs. |
+| `tunnel_goes_on` | 3 | Their newest tunnel is five blocks longer when they come back to it, their size, unlit. Owner's pick. | A tunnel of theirs, the target away or asleep. |
+| `torches_far_end` | 3 | While they stand in their tunnel, its lights go out one by one from the far end toward them, a second apart, back in five minutes. Owner's pick. | The target in a tunnel of theirs with two of their lights. |
+| `sign_deep` | 3 | A sign at the far end of their newest tunnel, one word of its own. Owner's pick. | A tunnel of theirs, the target away or asleep. |
+| `way_back_closes` | 4 | Gravel falls into their tunnel five blocks behind them, floor and head, closing the way they came (they can dig it). Owner's pick. | The target in a tunnel of theirs with room behind them. |
 | `portal_sound` | 3 | The sound of a Nether portal in the house, with none near. | The target indoors. |
-| `portal_lit` | 3 | A portal frame they built (ten obsidian or more placed) is lit while they are away (`light_portal`, ABI 32), and their flint and steel is a use the worse. The lodger does not go through. Coded 2026-11-10. | A frame and flint and steel in the chest they use. |
+| `portal_lit` | 3 | A portal frame they built (ten obsidian or more placed) is lit while they are away (`light_portal`, ABI 32), and their flint and steel is a use the worse. The lodger does not go through. | A frame and flint and steel in the chest they use. |
 
 ### Redstone
 
@@ -448,14 +447,14 @@ they use. Digging is what a player digs, at a player's pace, with a player's sou
 | `lever` | 2 | A lever in the home is flipped, and whatever it powers happens: a lamp, a door. Never a lever with TNT within 16 blocks of anything it powers; the host checks. | A lever. |
 | `note` | 2 | One note from a note block, at night, while the target is awake. | A note block within 32 blocks of the home. |
 | `note_tune` | 3 | Three notes from the note block, the first three of a disc the target owns. | A note block and a disc in a chest. |
-| `jukebox` | 3 | A disc from the target's chest is playing in their jukebox as they come to the door, or the one playing stops, its disc back in the chest (`jukebox`, ABI 29). Coded 2026-11-10. | A jukebox and a disc in the chest they use, the target coming to the door. |
+| `jukebox` | 3 | A disc from the target's chest is playing in their jukebox as they come to the door, or the one playing stops, its disc back in the chest (`jukebox`, ABI 29). | A jukebox and a disc in the chest they use, the target coming to the door. |
 | `door_opens_itself` | 3 | A door opens as the target approaches, with no plate and no one there. | A door in view. |
 | `plate_laid` | 3 | A wooden pressure plate from a chest, in front of the chest the target uses. | A plate in a chest. |
 | `piston_once` | 3 | A piston in the base extends and retracts once, at night, with its sound. Nothing is hooked to TNT. | A piston. |
 | `lamps_noon` | 3 | The redstone lamps are on at noon and off at night, for a day. | Redstone lamps. |
-| `lamps_blink` | 3 | At night their redstone lamps, up to six, blink together: three short, three long, three short, once, each ending as it was. Owner's pick, 2026-11-10. | Redstone lamps, night. |
-| `composter_fills` | 2 | Their composter is one level fuller in the morning, nothing put in (`set_state`'s `@up`, ABI 29, never past full). Owner's pick, 2026-11-10. | A composter, dawn. |
-| `bell_rings` | 3 | A bell of theirs rings once at night, swinging, with no one near it (`toggle_block` rings a bell). Owner's pick, 2026-11-10. | A bell, night. |
+| `lamps_blink` | 3 | At night their redstone lamps, up to six, blink together: three short, three long, three short, once, each ending as it was. Owner's pick. | Redstone lamps, night. |
+| `composter_fills` | 2 | Their composter is one level fuller in the morning, nothing put in (`set_state`'s `@up`, ABI 29, never past full). Owner's pick. | A composter, dawn. |
+| `bell_rings` | 3 | A bell of theirs rings once at night, swinging, with no one near it (`toggle_block` rings a bell). Owner's pick. | A bell, night. |
 
 ### Sounds
 
@@ -463,7 +462,7 @@ Every sound event has three to five ways to sound (`brain/sounds.rs`: the sounds
 rhythm, and whether it stays put, comes from behind, comes closer or goes away), never the same
 way twice running; footsteps and placing are the sound of the real block underfoot or in hand
 (`block_sound`); the house's sounds come from a real door or chest of the house the target is
-in, theirs first (owner, 2026-11-09).
+in, theirs first (owner).
 
 Heard by the target alone. Nothing in the world changes.
 
@@ -475,8 +474,8 @@ Heard by the target alone. Nothing in the world changes.
 | `pickup_pop` | 2 | Behind them, the pop of an item picked up, once or twice, or an experience orb taken; nothing on the ground. | The target online. |
 | `cold_crackle` | 2 | Their furnace crackles as if lit, once or a few times, and a candle goes out after. It is cold. | A furnace of theirs, the target indoors. |
 | `breath_close` | 3 | Breathing at their ear, half a block behind them at head height, once or slowly a few times; in its last way a heartbeat. | The target online. |
-| `breath` | 3 | When they crouch still for ten seconds, now and then, slow breathing at their ear, a little longer each way, one way with a heartbeat in it; it stops the moment they move (the brain drops what is left). Started by the crouch, never planned. Coded 2026-11-10. | Crouched still ten seconds. |
-| `footsteps_follow` | 3 | Walking in the open at night, a second set of steps a moment behind theirs, three blocks back along their way, in the sound of the ground there, stopping when they stop, for most of a minute (`footsteps`, ABI 36). Coded 2026-11-10. | Night, outdoors, walking. |
+| `breath` | 3 | When they crouch still for ten seconds, now and then, slow breathing at their ear, a little longer each way, one way with a heartbeat in it; it stops the moment they move (the brain drops what is left). Started by the crouch, never planned. | Crouched still ten seconds. |
+| `footsteps_follow` | 3 | Walking in the open at night, a second set of steps a moment behind theirs, three blocks back along their way, in the sound of the ground there, stopping when they stop, for most of a minute (`footsteps`, ABI 36). | Night, outdoors, walking. |
 | `cave_air` | 2 | The sound of a cave out in the open at night, behind them, going away, or coming closer. | The target outdoors, night. |
 | `door_scratch` | 3 | Scratching at a door of the house they are in, at night: quick, or in two bursts, or something small. | A door, the target indoors, night. |
 | `door_sound` | 1 | A door's sound from another room. No door moved. | A home with two rooms. |
@@ -485,19 +484,19 @@ Heard by the target alone. Nothing in the world changes.
 | `late_steps` | 2 | The target's own footstep sounds play once more, half a second after they stop, from their own position. | The target walking. |
 | `late_eating` | 2 | The same with eating: one more bite after the target's. | The target eating. |
 | `place_sound` | 2 | A block-placed sound behind the target. Nothing placed. | The target indoors. |
-| `knock` | 2 | Soft knocks on a door of the house the target is in, at night: three evenly, or two, a pause and one, or four quick, or one; the door shut, no one there. A door-close sound pitched up and quiet (owner, 2026-11-09: soft knocks early, the heavy one later). | A door, the target indoors, night. |
-| `answer_knock` | 2 | They knock on a door (strike it twice within a second and a half, the `knocked` sense, ABI 38); half the time it knocks back from that door a second later: two knocks, or three, or one slow one. Started by the knock, never planned. Coded 2026-11-10. | They just knocked. |
+| `knock` | 2 | Soft knocks on a door of the house the target is in, at night: three evenly, or two, a pause and one, or four quick, or one; the door shut, no one there. A door-close sound pitched up and quiet (owner: soft knocks early, the heavy one later). | A door, the target indoors, night. |
+| `answer_knock` | 2 | They knock on a door (strike it twice within a second and a half, the `knocked` sense, ABI 38); half the time it knocks back from that door a second later: two knocks, or three, or one slow one. Started by the knock, never planned. | They just knocked. |
 | `knock_heavy` | 4 | Something heavy at the door at night: slow pounding, two, three or five, the sound of a zombie at a wooden door pitched low; nothing there when it is opened. | A door, the target indoors, night. |
 | `lever_click` | 2 | A lever's click, in a house with no lever. | The target indoors. |
 | `page_turn` | 2 | Pages turning by the lectern. | A lectern. |
 | `arrow_hit` | 3 | An arrow hits the wall behind the target. Nothing is there. | The target indoors. |
-| `arrow_near` | 3 | At night in the open, the figure stands a moment in the dark behind them and to one side, a bow in its hand; then a real arrow flies past their head and sticks where it lands, harmless (`shoot`, ABI 42: no harm, never picked up, never gone). Coded 2026-11-10. | Night, outdoors. |
-| `arrow_grazes` | 4 | The same, at them: a heart, never below half a heart. Coded 2026-11-10. | Night, outdoors. |
-| `arrow_hits` | 5 | The same: two hearts, never below half a heart. Coded 2026-11-10. | Night, outdoors. |
-| `splash_dark` | 3 | A splash potion from the dark lands at their feet: darkness, slowness, blindness, nausea, or levitation for a moment and a half (a fall of no harm). Never damage, poison or wither: the host throws those five alone (`splash_potion`, ABI 42). Coded 2026-11-10. | Night, outdoors. |
-| `brew_left` | 3 | A potion of its brewing in the chest they use, named `for the night`: night vision and darkness at once (`put_potion`, ABI 42: nothing that harms). Coded 2026-11-10. | A chest they use, the target away or asleep. |
-| `potion_changed` | 3 | One of their potions is another kind, its name as it was: night vision, invisibility, water breathing, fire resistance, leaping, swiftness or slow falling, never one that harms (`change_potion`, ABI 42). Coded 2026-11-10. | A potion in the chest they use, the target away or asleep. |
-| `door_cloud` | 3 | At dawn a lingering cloud of slowness or weakness on the step outside the door they use, gone the moment it touches them (`effect_cloud`, ABI 42). Coded 2026-11-10. | Dawn, a door. |
+| `arrow_near` | 3 | At night in the open, the figure stands a moment in the dark behind them and to one side, a bow in its hand; then a real arrow flies past their head and sticks where it lands, harmless (`shoot`, ABI 42: no harm, never picked up, never gone). | Night, outdoors. |
+| `arrow_grazes` | 4 | The same, at them: a heart, never below half a heart. | Night, outdoors. |
+| `arrow_hits` | 5 | The same: two hearts, never below half a heart. | Night, outdoors. |
+| `splash_dark` | 3 | A splash potion from the dark lands at their feet: darkness, slowness, blindness, nausea, or levitation for a moment and a half (a fall of no harm). Never damage, poison or wither: the host throws those five alone (`splash_potion`, ABI 42). | Night, outdoors. |
+| `brew_left` | 3 | A potion of its brewing in the chest they use, named `for the night`: night vision and darkness at once (`put_potion`, ABI 42: nothing that harms). | A chest they use, the target away or asleep. |
+| `potion_changed` | 3 | One of their potions is another kind, its name as it was: night vision, invisibility, water breathing, fire resistance, leaping, swiftness or slow falling, never one that harms (`change_potion`, ABI 42). | A potion in the chest they use, the target away or asleep. |
+| `door_cloud` | 3 | At dawn a lingering cloud of slowness or weakness on the step outside the door they use, gone the moment it touches them (`effect_cloud`, ABI 42). | Dawn, a door. |
 | `wolf_far` | 2 | A wolf whines far off, long and low, in a biome with none (26.3 has no howl). | Night. |
 | `disc_phantom` | 3 | A disc the target does not own plays from the jukebox, which is empty. | A jukebox. |
 | `silence` | 3 | Cave sounds and ambient sounds are silenced for an evening. | The target online at night. |
@@ -514,18 +513,18 @@ seconds and then stops; `events.glitches` turns the group off, with [The screen]
 | --- | --- | --- | --- |
 | `flicker` | 2 | One light near the target flickers for a few seconds, then is steady. | A light within 8 blocks of the target, indoors. |
 | `lights_fail` | 3 | Every light in the room gives no light, for five to twenty seconds, and the room is as dark as night. Then they are back. | The target indoors at night. |
-| `painting_flip` | 2 | The painting nearest them hangs upside down until they have looked straight at it for two seconds (a render hook turns it half round on the wall). Coded 2026-11-10. | A painting, the target indoors. |
+| `painting_flip` | 2 | The painting nearest them hangs upside down until they have looked straight at it for two seconds (a render hook turns it half round on the wall). | A painting, the target indoors. |
 | `sun_blink` | 3 | The sun is gone, and the sky night-dark, for one to three seconds in the middle of the day. Then it is back and the time is right. | The target outdoors by day. |
-| `moon_wrong` | 3 | The moon is full when it is not, for a few seconds (the sky's hook; twice its size is beyond the hook). Coded 2026-11-10. | The target outdoors at night. |
-| `stars_out` | 3 | The stars fade out for a minute and back. Coded 2026-11-10. | A clear night, the target outdoors. |
-| `night_early` | 4 | The sun, moon and stars stand two hours later than they are, the sky dimmed, for a minute, eased in and out, then right. Coded 2026-11-10. | The target outdoors by day. |
-| `red_rain` | 4 | While it rains, the drops themselves are red (the rain's colour hook), for two to five minutes; no screen cast since 2026-11-10. The brain may pair it with `red_mist`. | Rain, the target outdoors or at a window. |
-| `compass_points` | 3 | A compass the target holds points at the lodger's place for two minutes (a hook on the compass's target). Coded 2026-11-10. | The target holding a compass. |
-| `reflection` | 4 | Water reflects nothing in the game, so a face under it instead (owner, 2026-11-10): the figure just under the surface of still water near them, its head below the top, for one second. Coded 2026-11-10. | Water within 24 blocks, the target outdoors. |
+| `moon_wrong` | 3 | The moon is full when it is not, for a few seconds (the sky's hook; twice its size is beyond the hook). | The target outdoors at night. |
+| `stars_out` | 3 | The stars fade out for a minute and back. | A clear night, the target outdoors. |
+| `night_early` | 4 | The sun, moon and stars stand two hours later than they are, the sky dimmed, for a minute, eased in and out, then right. | The target outdoors by day. |
+| `red_rain` | 4 | While it rains, the drops themselves are red (the rain's colour hook), for two to five minutes; no screen cast. The brain may pair it with `red_mist`. | Rain, the target outdoors or at a window. |
+| `compass_points` | 3 | A compass the target holds points at the lodger's place for two minutes (a hook on the compass's target). | The target holding a compass. |
+| `reflection` | 4 | Water reflects nothing in the game, so a face under it instead (owner): the figure just under the surface of still water near them, its head below the top, for one second. | Water within 24 blocks, the target outdoors. |
 
 #### The atmospheres
 
-Real fog on the target's client (the review's D, owner 2026-11-09: "not abrupt like other mods,
+Real fog on the target's client (the review's D, owner: "not abrupt like other mods,
 make it good and spooky"): each eases in over most of a minute, holds with its edge breathing a
 tenth over nine seconds, and eases out over half a minute; they stack, each pulling the fog as
 it stands. A render hook at the end of the game's fog setup closes and tints it
@@ -533,10 +532,10 @@ it stands. A render hook at the end of the game's fog setup closes and tints it
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `mist` | 2 | Pale grey mist to thirteen blocks, motes drifting near the ground, four minutes. `fog_close` is this mist now, a minute long. Coded 2026-11-10. | The target awake. |
-| `dusk_noon` | 3 | At noon the light drains: the fog grey-violet to forty blocks, the sky dimmed, a grey veil, five minutes. Coded 2026-11-10. | Day, the target awake. |
-| `red_mist` | 4 | Deep red mist to twenty blocks, a rust sky, red motes, four and a half minutes. Coded 2026-11-10. | Night, the target awake. |
-| `darkness` | 4 | The dark closes to seven blocks, black, their own light still showing what is near, three minutes. Coded 2026-11-10. | Night, the target awake. |
+| `mist` | 2 | Pale grey mist to thirteen blocks, motes drifting near the ground, four minutes. `fog_close` is this mist now, a minute long. | The target awake. |
+| `dusk_noon` | 3 | At noon the light drains: the fog grey-violet to forty blocks, the sky dimmed, a grey veil, five minutes. | Day, the target awake. |
+| `red_mist` | 4 | Deep red mist to twenty blocks, a rust sky, red motes, four and a half minutes. | Night, the target awake. |
+| `darkness` | 4 | The dark closes to seven blocks, black, their own light still showing what is near, three minutes. | Night, the target awake. |
 
 ### The screen
 
@@ -545,15 +544,15 @@ The target's own HUD and camera, for a moment. Off with `events.glitches`.
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
 | `hotbar_slip` | 2 | The selected hotbar slot moves to the favourite tool for one tick. | The favourite in the hotbar. |
-| `hunger_shake` | 2 | The hunger bar shakes as if starving, for three seconds, their saturation put back after. Coded 2026-11-10. | The target awake. |
-| `heart_skip` | 3 | The hearts blink as if hurt, once, with no damage. Coded 2026-11-10. | The target awake. |
-| `subtitle` | 2 | With subtitles on, `Footsteps` appears behind them, with no sound. Coded 2026-11-10. | The target awake. |
-| `wrong_sky` | 3 | At noon in the open, for a minute, the moon is where the sun should be and the sun is under the world, on their screen alone (the sky hook). Coded 2026-11-10. | Noon, outdoors. |
-| `name_called` | 3 | With subtitles on, their own name appears in the subtitles, four blocks behind them, with no sound. Coded 2026-11-10. | The target awake. |
-| `hand_on_shoulder` | 3 | At noon in the open, their view turns two degrees, as if a hand were on their shoulder, and a step sounds on the ground right behind them. Coded 2026-11-10. | Noon, outdoors. |
+| `hunger_shake` | 2 | The hunger bar shakes as if starving, for three seconds, their saturation put back after. | The target awake. |
+| `heart_skip` | 3 | The hearts blink as if hurt, once, with no damage. | The target awake. |
+| `subtitle` | 2 | With subtitles on, `Footsteps` appears behind them, with no sound. | The target awake. |
+| `wrong_sky` | 3 | At noon in the open, for a minute, the moon is where the sun should be and the sun is under the world, on their screen alone (the sky hook). | Noon, outdoors. |
+| `name_called` | 3 | With subtitles on, their own name appears in the subtitles, four blocks behind them, with no sound. | The target awake. |
+| `hand_on_shoulder` | 3 | At noon in the open, their view turns two degrees, as if a hand were on their shoulder, and a step sounds on the ground right behind them. | Noon, outdoors. |
 | `camera_nudge` | 3 | The camera turns two degrees toward the figure, or the place, once. | A figure or a place. |
 | `fov_pull` | 4 | The field of view narrows over ten seconds and snaps back. | The target indoors. |
-| `tab_twice` | 3 | The target's own name appears twice in the player list for six seconds. Coded 2026-11-10. | The target awake. |
+| `tab_twice` | 3 | The target's own name appears twice in the player list for six seconds. | The target awake. |
 | `sleepers_wrong` | 3 | `1/2 players sleeping` on a server with one player, or one too many. | The target trying to sleep. |
 | `crosshair_gone` | 3 | The crosshair is gone for a few seconds. | Any. |
 
@@ -567,35 +566,34 @@ mining events are in [Mines and caves](#mines-and-caves); these are the rest.
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `tools_in_hand` | 3 | The far figure holds what the target holds most and swings it at the rock now and then (`figure`'s `swinging`, ABI 35). Coded 2026-11-10. | The target outdoors. |
-| `your_spacing` | 3 | The torches it places in caves and tunnels (`cave_lit`, `mine_beside`) are at the spacing the target uses in their own; its tunnels their height and width. Coded 2026-11-10. | A tunnel the target dug. |
-| `copy_crouch` | 4 | The far figure crouches when the target crouches, and stands when they stand (`figure`'s `copy_crouch`, ABI 35). Coded 2026-11-10. | The target outdoors. |
-| `copy_build` | 4 | A one-block-high outline of the target's house, in cobblestone, at its place, the size of their walls' footprint. Coded 2026-11-10. | Twenty building blocks of theirs, the target away or asleep. |
+| `tools_in_hand` | 3 | The far figure holds what the target holds most and swings it at the rock now and then (`figure`'s `swinging`, ABI 35). | The target outdoors. |
+| `your_spacing` | 3 | The torches it places in caves and tunnels (`cave_lit`, `mine_beside`) are at the spacing the target uses in their own; its tunnels their height and width. | A tunnel the target dug. |
+| `copy_crouch` | 4 | The far figure crouches when the target crouches, and stands when they stand (`figure`'s `copy_crouch`, ABI 35). | The target outdoors. |
+| `copy_build` | 4 | A one-block-high outline of the target's house, in cobblestone, at its place, the size of their walls' footprint. | Twenty building blocks of theirs, the target away or asleep. |
 | `wave` | 4 | Built as `figure_waves` (batch 14). | A far figure showing. |
-| `through_the_hill` | 4 | Thirty blocks ahead of them, the figure walks to the first rock face, digs in a step at a time with the stone closing behind it, and a minute later steps out of the hill's far side. All of it block updates to their client (`dig_in`, ABI 35): approached, both faces are natural rock, nothing in the world changed. Coded 2026-11-10. | The target outdoors. |
-| `into_the_dark` | 3 | At night by a light of theirs, the figure stands at the edge of its reach, steps back one block out of it, the light flickers, and it is gone. Coded 2026-11-10. | A light of theirs within ten blocks, night, the target outdoors. |
-| `into_the_mountain` | 4 | Thirty blocks ahead of them, the figure walks to the rock face and digs into it, a one-by-two tunnel, the stone closing behind it block by block until the face is smooth and it is gone; on their client alone (`dig_in`, ABI 35). Owner's idea, 2026-11-09; coded 2026-11-10. | The target outdoors. |
+| `through_the_hill` | 4 | Thirty blocks ahead of them, the figure walks to the first rock face, digs in a step at a time with the stone closing behind it, and a minute later steps out of the hill's far side. All of it block updates to their client (`dig_in`, ABI 35): approached, both faces are natural rock, nothing in the world changed. | The target outdoors. |
+| `into_the_dark` | 3 | At night by a light of theirs, the figure stands at the edge of its reach, steps back one block out of it, the light flickers, and it is gone. | A light of theirs within ten blocks, night, the target outdoors. |
+| `into_the_mountain` | 4 | Thirty blocks ahead of them, the figure walks to the rock face and digs into it, a one-by-two tunnel, the stone closing behind it block by block until the face is smooth and it is gone; on their client alone (`dig_in`, ABI 35). Owner's idea. | The target outdoors. |
 
 ### Building
 
 What it builds, it builds from what it gathered: stone it dug (as cobblestone, as a pick gives
-it) and whatever else its store holds; what it lacks it makes up so a build never stalls (owner,
-2026-11-10: "gathered, topped up when short"). A night's share at a time, at a player's pace,
+it) and whatever else its store holds; what it lacks it makes up so a build never stalls (owner: "gathered, topped up when short"). A night's share at a time, at a player's pace,
 out of sight, only into air or over grass, flowers, snow and the ground's own top (and water for
 a dock or bridge), never over anything a player built (see the
 [rule](good-to-know.md#what-it-never-does)). More in [Ideas](ideas.md#building).
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `pillar` | 3 | A cobblestone pillar at its place, one block higher each night, up to the height of the target's roof (five above their floor). Coded 2026-11-10. | A home, the target away or asleep. |
-| `cave_room` | 3 | A 3x3x3 room dug in the cave near the home they have not been in, lit, an oak door at its way in, and a chest with what it took. Coded 2026-11-10. | A cave they have not entered. |
-| `dock` | 3 | A plank dock out over the water from where they stood fishing, one block longer each night, eight at most. Coded 2026-11-10. | A place they fished, the target away or asleep. |
-| `hut_on_route` | 3 | A 3x3 shelter of logs, two high, a log roof, an opening along the way, halfway along their route, a torch inside. Coded 2026-11-10. | A route, the target away or asleep. |
-| `house_near` | 4 | A house of its own, 56 blocks from theirs on the side away from their route's far end, 5 by 5: a plank floor, cobblestone walls three high, a log roof, its door facing theirs, a pane in the wall across, a torch and a chest inside, built a third a night over three nights (`place_blueprint`, ABI 34: the ground found on the first night and kept). The chest takes what it holds once the ground is known. Coded 2026-11-10. | A home, the target away or asleep. |
-| `house_grows` | 5 | Its house grows a second room, five by four, behind it, through the back wall. Coded 2026-11-10. | Its house standing, the target away or asleep. |
-| `bridge` | 4 | A plank bridge from the far shore of the water toward the target's, three blocks a night, stopping two short of their shore. Coded 2026-11-10. | Water by the home, the target away or asleep. |
-| `bridge_done` | 5 | The bridge finished, to their shore. Coded 2026-11-10. | Its bridge, the target away or asleep. |
-| `copy_house` | 5 | A copy of the target's house at its place from their building blocks: stone as cobblestone, wood as logs, glass as glass, forty blocks a night. Coded 2026-11-10. | Twenty building blocks of theirs, the target away or asleep. |
+| `pillar` | 3 | A cobblestone pillar at its place, one block higher each night, up to the height of the target's roof (five above their floor). | A home, the target away or asleep. |
+| `cave_room` | 3 | A 3x3x3 room dug in the cave near the home they have not been in, lit, an oak door at its way in, and a chest with what it took. | A cave they have not entered. |
+| `dock` | 3 | A plank dock out over the water from where they stood fishing, one block longer each night, eight at most. | A place they fished, the target away or asleep. |
+| `hut_on_route` | 3 | A 3x3 shelter of logs, two high, a log roof, an opening along the way, halfway along their route, a torch inside. | A route, the target away or asleep. |
+| `house_near` | 4 | A house of its own, 56 blocks from theirs on the side away from their route's far end, 5 by 5: a plank floor, cobblestone walls three high, a log roof, its door facing theirs, a pane in the wall across, a torch and a chest inside, built a third a night over three nights (`place_blueprint`, ABI 34: the ground found on the first night and kept). The chest takes what it holds once the ground is known. | A home, the target away or asleep. |
+| `house_grows` | 5 | Its house grows a second room, five by four, behind it, through the back wall. | Its house standing, the target away or asleep. |
+| `bridge` | 4 | A plank bridge from the far shore of the water toward the target's, three blocks a night, stopping two short of their shore. | Water by the home, the target away or asleep. |
+| `bridge_done` | 5 | The bridge finished, to their shore. | Its bridge, the target away or asleep. |
+| `copy_house` | 5 | A copy of the target's house at its place from their building blocks: stone as cobblestone, wood as logs, glass as glass, forty blocks a night. | Twenty building blocks of theirs, the target away or asleep. |
 
 ### The figures
 
@@ -609,13 +607,13 @@ a dock or bridge), never over anything a player built (see the
 | `at_the_chest` | 4 | Coming into the room, the target sees the figure at their chest, back to them. It closes the lid and is around the corner before they reach it. | A used container in a room with two ways out. |
 | `in_your_bed` | 4 | Coming home late at night, the target sees the figure lying in their bed through the door, and the bed is empty when the door opens. | A bed in view of the door, night. |
 | `replay` | 4 | The replay figure walks a recorded route, at the recorded pace, starting out of view. Looked at, it keeps walking. Approached within 24 blocks it rounds a corner and is gone, leaving the held item where it stood if it held one. | A recorded route of 20 or more points. |
-| `figure_nip` | 3 | The figure right behind them for a second, two blocks back: it swings once, a hit, half a heart, the hurt's jolt, never below half a heart (`figure_swing`, ABI 33). The owner's harm stages: a nip at 3. Coded 2026-11-10. | The target awake. |
-| `figure_swing` | 4 | The same, hard: two hearts, still never below half a heart, never a kill. Coded 2026-11-10. | The target awake. |
-| `shove` | 4 | Armed for two minutes: the first moment they stand at the edge of a drop of two or three blocks onto solid ground (or on a ladder with ground that near below), not crouching, in no water, with more than two hearts, they are pushed off it, and a step sounds right behind them (`shove`, ABI 37). Never a fall of more than three blocks, so never any harm. Coded 2026-11-10. | The target awake. |
-| `figure_mirror` | 3 | The figure forty blocks to their side moves as they move, step for step, stopping when they stop, forty seconds, gone if they come within twenty (`figure`'s `mirror`, ABI 33). Owner's pick, 2026-11-10. | The target outdoors. |
-| `figure_window` | 4 | At night, while they are inside, the figure stands outside a window of theirs, its head at the glass, looking in, half a minute, gone when they come within six. Owner's pick, 2026-11-10. | A pane, night, the target indoors. |
-| `figure_crowd` | 3 | In the village, the figure stands still among the villagers, facing them, and is not there once they look away from it (`figure`'s `once_seen`, ABI 33). Owner's pick, 2026-11-10. | A villager near, the target outdoors. |
-| `figure_waves` | 3 | The far figure, its name shown, raises its arm once and is gone. Owner's pick, 2026-11-10. | The target outdoors. |
+| `figure_nip` | 3 | The figure right behind them for a second, two blocks back: it swings once, a hit, half a heart, the hurt's jolt, never below half a heart (`figure_swing`, ABI 33). The owner's harm stages: a nip at 3. | The target awake. |
+| `figure_swing` | 4 | The same, hard: two hearts, still never below half a heart, never a kill. | The target awake. |
+| `shove` | 4 | Armed for two minutes: the first moment they stand at the edge of a drop of two or three blocks onto solid ground (or on a ladder with ground that near below), not crouching, in no water, with more than two hearts, they are pushed off it, and a step sounds right behind them (`shove`, ABI 37). Never a fall of more than three blocks, so never any harm. | The target awake. |
+| `figure_mirror` | 3 | The figure forty blocks to their side moves as they move, step for step, stopping when they stop, forty seconds, gone if they come within twenty (`figure`'s `mirror`, ABI 33). Owner's pick. | The target outdoors. |
+| `figure_window` | 4 | At night, while they are inside, the figure stands outside a window of theirs, its head at the glass, looking in, half a minute, gone when they come within six. Owner's pick. | A pane, night, the target indoors. |
+| `figure_crowd` | 3 | In the village, the figure stands still among the villagers, facing them, and is not there once they look away from it (`figure`'s `once_seen`, ABI 33). Owner's pick. | A villager near, the target outdoors. |
+| `figure_waves` | 3 | The far figure, its name shown, raises its arm once and is gone. Owner's pick. | The target outdoors. |
 
 ### The ending
 
@@ -663,7 +661,7 @@ follow-up is ever offered with its needs unmet.
 
 ### Provocation and temper
 
-The lodger answers how it is treated (owner, 2026-11-09). The memory keeps a **temper**, 0 to
+The lodger answers how it is treated (owner). The memory keeps a **temper**, 0 to
 1, starting at the preset's resting value (0.3 for `balanced`), moved by what the target does
 and read by everything that paces the stay:
 
@@ -710,7 +708,7 @@ Sounds and the screen's glitches count half. A day with budget left at its end d
 over; a quiet day is a quiet day. So a whole stay of about two in-game weeks holds some forty to
 sixty events, one most evenings from the start and several a day in the last days before the
 end. That is the denser of the two paces considered (the other was half of it over three weeks;
-the owner picked this one, 2026-11-08), and `events.cooldown_scale` and `stages.events_per_day`
+the owner picked this one), and `events.cooldown_scale` and `stages.events_per_day`
 move it either way.
 
 Repetition is held off three ways, all in `events.rs` and `brain/offer.rs`:
@@ -745,10 +743,10 @@ over minutes, such as `tunnel_toward`, re-checks every few seconds and stops whe
 
 A **used container**, in the rows below, is one of the target's own: a chest, a barrel or a
 furnace they placed, one in the house they sleep in whoever placed it (the surroundings pass
-reads the house; owner, 2026-11-09: "the home's, placed or not"), or one they opened on three
+reads the house; owner: "the home's, placed or not"), or one they opened on three
 different days.
 A chest opened once on the way past, a village's or a dungeon's, is never touched and never
-described to the model (owner, 2026-11-09, after a village chest became "the chest opened
+described to the model (owner, after a village chest became "the chest opened
 most"). What it holds is read when it is opened and again when it is closed, so what the
 target took out is known.
 
@@ -757,7 +755,7 @@ target took out is known.
 No event but the sounds, the glitches, the screen, `refuse_rest`, `bed_occupied`, `wake`,
 `stand_watch`, `stare`, `door_opens_itself`, `open_on_enter` and the figures happens within
 `events.min_distance` blocks, 64 by default (24 until the owner watched a path of torches go
-up from farther off, 2026-11-09), of the target while the target faces the spot. Every block
+up from farther off), of the target while the target faces the spot. Every block
 the event changes is checked, not only its own spot, and an event whose blocks are in view
 waits for the target to look away, within its day. The lodger works behind you, in the rooms you left, and while you sleep. The
 exceptions are the events that are *about* being near: a sound in the next room, a light
@@ -808,7 +806,7 @@ agree in shape. Nothing in stage five repeats a thing from the same day, and not
 small: the budget is off, the cooldowns are off, and the caps alone hold, so a stay's last night
 can spend everything it has left.
 
-**As coded (2026-11-10, `core/src/ending.rs`).** The ending is chosen on stage five's first
+**As coded (`core/src/ending.rs`).** The ending is chosen on stage five's first
 tick (`stages.ending`, or with `difficulty` the want met leaves, refused takes on normal and hard
 and keeps on easy and peaceful; the want read as: three blocks of theirs within five of its
 place, or a chest of theirs there with something in it; three things it showed them looked at
@@ -819,7 +817,7 @@ late. Where it differs from the table, for now:
 
 - **Leaves.** What it holds goes back (it holds one thing at a time, so one, not one an hour);
   its torches go out one by one, the farthest from the house first (the lights it placed itself
-  are kept from 2026-11-10 on); the chest of its house is spilled on their doorstep
+  are kept from now on); the chest of its house is spilled on their doorstep
   (`spill_container`, ABI 41); the figure at its door a full minute, then in; their pets held
   facing its house ten minutes (held, not sitting); its torch out at dusk; the music (the
   game's music as a sound); the flicker; the figure at the edge of the light, gone once looked
@@ -845,7 +843,7 @@ late. Where it differs from the table, for now:
   say in the ending. The stay's status line (the debug screen) says `the stay is over: it left`,
   `took` or `stayed`; the host's `/lodger status` lists the mods and not yet the stay.
 
-**The fourth ending: you confront it** (owner, 2026-11-10). In stage five, at night, knock on its
+**The fourth ending: you confront it** (owner). In stage five, at night, knock on its
 door (strike it twice), or with no house stand at its place, and it rises out of the ground
 before you. One boss bar in your name over three stages, with a bend between each: warped animals
 in waves while it watches from its roof (none on peaceful); it drops onto all fours and crawls at

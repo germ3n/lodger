@@ -28,7 +28,7 @@ layout:
 | llama.cpp | the commit `llama-cpp-2`'s pinned `llama-cpp-sys-2` builds, so the crate's version pins it | `core/Cargo.toml`, from phase 1 |
 | cmake and a C++ compiler | whatever the machine has; the CI's runners' own | for `llama-cpp-sys-2`, from phase 1 |
 
-Confirmed 2026-11-08 against meta.fabricmc.net (game, loader), Mojang's version manifest (26.3
+Confirmed against meta.fabricmc.net (game, loader), Mojang's version manifest (26.3
 and 26.2 both run Java 25), Modrinth (the Fabric API build for 26.3), maven.neoforged.net
 (NeoForge, ModDevGradle) and the 26.3 branches of Fabric's example mod and the MultiLoader
 template. `VersionsTest` in `host/common` checks that this table, the README, both
@@ -94,7 +94,7 @@ upload, `mod/art/icon-512.png`, and the jars' `assets/lodger/icon.png` (128), wh
 
 `python3 scripts/build_jars.py <minecraft>` builds both lodger jars, Fabric and NeoForge, for one
 Minecraft version, with the mind's native library for all six platforms inside (windows, linux
-and macos, each on x86_64 and aarch64; owner, 2026-11-10), and puts them in `dist/<minecraft>/`.
+and macos, each on x86_64 and aarch64; owner), and puts them in `dist/<minecraft>/`.
 At startup the host loads the one for the computer it runs on; a jar without it says so on a
 screen at boot (`FailedScreen`), naming the platforms it carries, and the server's log says it
 as an error.
@@ -124,7 +124,7 @@ A stay takes weeks of play by design. For development:
   rebindable under Controls, Miscellaneous), or
   `/craftkit lodger debug`: a strip down the right third of the screen at three quarters of the
   GUI's text size, see-through, that neither pauses the game nor blurs it, so the world stays
-  in view beside it (owner, 2026-11-09: the full screen hid the events it was there to watch);
+  in view beside it (owner: the full screen hid the events it was there to watch);
   it opens on the Mind tab. Hovering an event shows what it does and needs (the catalogue's
   own row, built into the mind from `docs/entity.md`), its cooldown and cap, and how it went
   last; any line or plan with a spot in it, `(x,y,z)` or `(x,ground,z)`, is a link that
@@ -209,7 +209,7 @@ cargo test -p lodger-core -- --ignored model::     # needs the real model at cor
 - **What a tick costs** (`the_tick_costs` in `core/tests/stays.rs`, ignored, run in release:
   `cargo test --release -p lodger-core --test stays -- --ignored the_tick_costs --nocapture`):
   twelve scripted days through the harness, every game tick observed and ticked as the host
-  does it, JSON in and out, timed. On 2026-11-10 (an M-series Mac): 288,000 ticks, a mean of
+  does it, JSON in and out, timed. On an M-series Mac: 288,000 ticks, a mean of
   2 µs, p99 5 µs, p99.9 11 µs, the worst 296 µs (the first tick of a day: the day's surveys and
   reads); the save 44 KB. A game tick is 50 ms, so the mind's own part is not where the time
   goes; the model's questions run on their own thread. It fails when p99 passes 2 ms.
@@ -271,7 +271,7 @@ skipped in silence.
 ## Third-party notices
 
 `python3 gen_notices.py` writes `THIRD_PARTY_NOTICES.txt` at the root from `Cargo.lock`, the
-crates' own license files and llama.cpp's (adapted from `~/chainv4`'s, 2026-11-10). Run it after
+crates' own license files and llama.cpp's (adapted from `~/chainv4`'s). Run it after
 any dependency changes; it stops with a message when a crate no longer carries what it expects. Both
 jars carry it at their root, beside `LICENSE_lodger`.
 

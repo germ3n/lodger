@@ -337,7 +337,7 @@ in [Set aside](#set-aside) with why.
 - `villagers_face_house` every villager faces your house at noon [3]
 - `villagers_in_beds` every villager in bed at noon [3]
 - `villagers_in_one_house` all the villagers are in one house [4]
-- `village_abandoned` the village empty, every villager packed in one house facing the wall, back by dawn (owner, 2026-11-09; in the catalogue) [4]
+- `village_abandoned` the village empty, every villager packed in one house facing the wall, back by dawn (owner; in the catalogue) [4]
 - `golem_turned` the golem faces your house [3]
 - `golem_at_spot` the golem stands at its place [4]
 - `golem_flower` the golem offers a poppy to the air at your door [3]
@@ -747,7 +747,7 @@ felled (replanted), stone it mined. At a player's pace, out of sight, over night
 
 ## Where it goes and comes from
 
-The owner's mountain (2026-11-09) made a family: the world opens for it and closes behind it,
+The owner's mountain made a family: the world opens for it and closes behind it,
 always seen from a distance, always leaving a natural face or a thing of yours back in place,
 so walking up finds nothing to prove. The host does these as the figure plus a block script:
 each block removed is put back a second later, so nothing is ever destroyed, and a block of
@@ -907,7 +907,7 @@ What moves the temper, beyond the table in the catalogue, and what the lodger do
 
 ## The other house
 
-A dimension of the lodger's own (owner, 2026-11-09), used twice at most, as the todo has it:
+A dimension of the lodger's own (owner), used twice at most, as the todo has it:
 a void with a dark sky where your house stands copied block for block. Things that could happen
 in it, in the one minute you are there:
 
@@ -924,7 +924,7 @@ in it, in the one minute you are there:
 - `other_return` you wake in your own bed, the door open, one thing moved [4]
 - `other_witness` in multiplayer, a witness sees you asleep the whole minute [4]
 - `other_memory` the copy is your house as it was on the first day of the stay, not as it is now [5]
-- `follow_in_the_dark` (owner, 2026-11-09): a pitch-black dimension with no sky and no light but the figure's, which stands forty blocks off holding a torch; walk toward it and at a fixed distance it is gone and lit again forty blocks further on, the same way each time, six or eight times, until the last light is a chest on the ground with one thing in it (the held item, or a sign with the word), and when you take it the dark is your bedroom at dawn. Run back and the way you came is gone. Stage 4 or the last night; one visit, like the other house [4]
+- `follow_in_the_dark` (owner): a pitch-black dimension with no sky and no light but the figure's, which stands forty blocks off holding a torch; walk toward it and at a fixed distance it is gone and lit again forty blocks further on, the same way each time, six or eight times, until the last light is a chest on the ground with one thing in it (the held item, or a sign with the word), and when you take it the dark is your bedroom at dawn. Run back and the way you came is gone. Stage 4 or the last night; one visit, like the other house [4]
 - `follow_in_the_dark_variants` the figure is only a sound of footsteps ahead; the figure's torch goes out each time you stop walking; the distances shorten; the chest is empty and the figure stands behind you when you close it; two lights, one yours and one not, and the wrong one leads to a drop [4]
 
 ## Time, habits and rituals
@@ -986,7 +986,7 @@ in it, in the one minute you are there:
 ## Other mods
 
 The host can see which mods are loaded, and for a few well-known ones offer hooks the lodger
-uses when the mod is there and does nothing otherwise (owner, 2026-11-09). Each is a hint kind
+uses when the mod is there and does nothing otherwise (owner). Each is a hint kind
 the host implements against that mod's API, behind a check that the mod is present, so the
 lodger's jar never depends on any of them.
 
@@ -1039,8 +1039,8 @@ Ideas that break a rule, or the design, kept so they are not reconsidered from s
 
 - **Free prose** beyond the phrase bank and, as an experiment, three constrained words from
   the model: signs with another player's name, books in free prose, chat to witnesses. Chat and
-  the player list in the target's own name, to the target, moved into the catalogue on
-  2026-11-09 (the owner's call); the model writing words is `brain.text: generate`, judged in
+  the player list in the target's own name, to the target, moved into the catalogue
+  (the owner's call); the model writing words is `brain.text: generate`, judged in
   the calibration pass.
 - **Anything that makes an item from nothing:** a compass, a bell, a lodestone, rotten flesh in
   place of food, a message in a bottle. It digs, cuts, picks, cooks, crafts from what it has, and
@@ -1051,8 +1051,8 @@ Ideas that break a rule, or the design, kept so they are not reconsidered from s
   as a sound only, since nothing follows it.
 - **Input control** beyond a nudge: moving the player, opening their inventory, dropping their
   items. The screen glitches render; they never act for the player.
-- **Reading the client or other mods.** The senses read the server's own facts, which since
-  2026-11-09 include the server's chat (the owner's call); the client's state and other mods'
+- **Reading the client or other mods.** The senses read the server's own facts, which now
+  include the server's chat (the owner's call); the client's state and other mods'
   stay off limits.
 - **Real-world data** beyond the clock: no birthdays, no weekends, no names.
 - **Destroying what a player built,** even to rebuild it elsewhere. Moved within reach, same

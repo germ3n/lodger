@@ -1,4 +1,4 @@
-//! Warped animals (owner, 2026-11-10: "warped versions of the entity ... a cow or pig"): one
+//! Warped animals (owner: "warped versions of the entity ... a cow or pig"): one
 //! of the target's own animals, or one outside when they keep too few, warped for a minute and
 //! put back as it was (`warp_mob`): frozen with its head always on them, and one or two of too
 //! tall, upside down, and a step closer each time they look away; now and then it stands in
@@ -39,7 +39,7 @@ pub struct Warp {
 /// down, or creeping, one of them, and a second one of them every other time; the doorway one
 /// time in three. A named animal is never flipped (its name would be lost).
 pub fn warp(times: usize, seed: usize, named: bool) -> Warp {
-    // Two of the three always, together (owner, 2026-11-10: "too stiff ... should be
+    // Two of the three always, together (owner: "too stiff ... should be
     // spookier"; it was one, or two every other time).
     let first = (times + seed) % 3;
     let second = Some((first + 1 + seed % 2) % 3);

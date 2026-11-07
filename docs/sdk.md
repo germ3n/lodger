@@ -1,6 +1,6 @@
 # The SDK
 
-craftkit (a working name; the crate name is free on crates.io as of 2026-11-08 and the owner picks
+craftkit (a working name; the crate name is free on crates.io and the owner picks
 the final one later) is how a Minecraft mod gets written in Rust: a crate the mod is written
 against (`sdk/`), and a host (`host/`), a Java mod for Fabric and NeoForge, that loads Rust mods
 and carries out what they decide. The lodger is its first mod. This page is the SDK's design;
@@ -17,7 +17,7 @@ and carries out what they decide. The lodger is its first mod. This page is the 
   loader's manifest (`fabric.mod.json`, or a `META-INF/neoforge.mods.toml` with no language
   loader), and the host itself nested inside (`META-INF/jars/` on Fabric, `META-INF/jarjar/` on
   NeoForge), so a player installs one file and never meets craftkit by name. Two Rust mods on
-  one server each nest a host; the loader keeps the newest once (the owner's call, 2026-11-09;
+  one server each nest a host; the loader keeps the newest once (the owner's call;
   before it the host was a jar of its own and one content jar served both loaders).
 - **A config file,** `config/<id>.json`, whose schema the mod owns. The host reads the text,
   hands it over, and writes back the effective config the mod answers when the file was missing.
@@ -80,120 +80,120 @@ so the Java side is a handful of method handles and no struct layouts. Errors ar
 
 A change to any signature or JSON shape bumps `ABI_VERSION` in `sdk/src/lib.rs` and
 `Native.ABI_VERSION` in the host together (`VersionsTest` checks they agree), and this table.
-ABI 2 (2026-11-09) gave `init` the directories and the id; ABI 1 took the config text alone.
-ABI 3 (2026-11-09) added `warm`, `status` and `InitReply.resources`. ABI 4 (2026-11-09) added
-the six world functions and `sdk/src/world.rs`, the per-world shapes. ABI 5 (2026-11-09) added
+ABI 2 gave `init` the directories and the id; ABI 1 took the config text alone.
+ABI 3 added `warm`, `status` and `InitReply.resources`. ABI 4 added
+the six world functions and `sdk/src/world.rs`, the per-world shapes. ABI 5 added
 `craftkit_world_debug` and `sdk/src/debug.rs`, nine commands (`open_lid`, `rotate_frame`,
 `swap_painting`, `pose_stand`, `name_entity`, `dye_sheep`, `move_entity`, `player_list`,
 `game_message`, and `push_entity`, `rotate_block`, `set_frame_item`, `equip_entity` and
 `damage_item` the same night, and `figure.seconds` and `figure.vanish_within`),
-`set_block.replace` and the `killed` event. ABI 6 (2026-11-09) gave `set_block` `settle` and
+`set_block.replace` and the `killed` event. ABI 6 gave `set_block` `settle` and
 `wall` (a block stands where a player could place it, never over air) and `closed_container`
-its position and the contents as the player left them. ABI 7 (2026-11-09) gave a debug
+its position and the contents as the player left them. ABI 7 gave a debug
 `Section` its `items`: rows with buttons of their own (a plan with Drop and Now). ABI 8
-(2026-11-09) added `hold`: a mob held where it stands, facing a player, attacking no one (the second hit it takes wakes it), its
+added `hold`: a mob held where it stands, facing a player, attacking no one (the second hit it takes wakes it), its
 AI given back as it was, and never saved frozen (a tag, a sweep, a release on unload). ABI 9
-(2026-11-09) added `move_player`, a player moved at most 32 blocks to a spot with room to stand,
+added `move_player`, a player moved at most 32 blocks to a spot with room to stand,
 where `woke_elsewhere` had sent the player as a made-up entity id no host knew. ABI 10
-(2026-11-09) gave `set_block` `rest` (on something solid, never in the air) and `only` (over
+gave `set_block` `rest` (on something solid, never in the air) and `only` (over
 one of `replace`, never into air), and `set_sign` `settle` (the sign looked for down and up
-its column, where a settled sign landed). ABI 11 (2026-11-09) gave a debug `EventRow` its
+its column, where a settled sign landed). ABI 11 gave a debug `EventRow` its
 `about`, the screen's tooltip; and the host answers a `teleport` request from the screen itself
 (an operator clicking a spot), with no mod involved. The surroundings pass also reads the house around its middle
 block by block, each door, light, chest and bed head as a `house_*` feature at its own
-position (2026-11-09, no change of shape). ABI 12 (2026-11-09) added `block_sound`: the step, place, break
+position (no change of shape). ABI 12 added `block_sound`: the step, place, break
 or hit sound of a real block (`under` the player, `held` in their hand, or by id), so a mod's
-footsteps sound like what is underfoot. ABI 13 (2026-11-09): `take_item`'s `keep` keeps the very stack
+footsteps sound like what is underfoot. ABI 13: `take_item`'s `keep` keeps the very stack
 taken, saved with the world, and `put_item` and `drop_item`'s `kept` give it back, components
 and all (`put_item` with `wear` and a `name` as it goes back), where before a taken enchanted
 pickaxe came back plain; `rename_item`; and `move_item` moves what is there, up to its count,
-into the slot asked or the first that fits. ABI 14 (2026-11-09): `sign_book` (a book and quill signed as a
-written book with no author) and `mark_map` (a target mark on a filled map). ABI 15 (2026-11-09): `move_block`'s `around`, a search for room on
+into the slot asked or the first that fits. ABI 14: `sign_book` (a book and quill signed as a
+written book with no author) and `mark_map` (a target mark on a filled map). ABI 15: `move_block`'s `around`, a search for room on
 solid ground, and a single-block container moved with what it holds; `move_item` takes the
 first slot with something in it when the one asked is empty. A `scan` kind starting with `*` is a suffix (`*_stairs`), no
-change of shape (2026-11-09). ABI 16 (2026-11-09): `arm_loot`, an offering for a player's next
+change of shape. ABI 16: `arm_loot`, an offering for a player's next
 fresh loot that the host applies as the loot is made (the game's own unpacking, then one item
-added or swapped, the swapped one kept), answered by the `loot_touched` event. ABI 17 (2026-11-09): `set_state` (one property of a block, a
+added or swapped, the swapped one kept), answered by the `loot_touched` event. ABI 17: `set_state` (one property of a block, a
 door's other half with it; `@next` for the next value), and `set_block`'s `state` applied at
-last (`facing=north`), which the host had ignored. ABI 18 (2026-11-09): `grow`, bone meal as a player uses it, until
-the block is something else. ABI 19 (2026-11-09): the `used_door` event, and `set_state`'s
-`@turn` turning a bed round where it stands. ABI 20 (2026-11-09): a `Resource`'s `choices`, other forms of it
+last (`facing=north`), which the host had ignored. ABI 18: `grow`, bone meal as a player uses it, until
+the block is something else. ABI 19: the `used_door` event, and `set_state`'s
+`@turn` turning a bed round where it stands. ABI 20: a `Resource`'s `choices`, other forms of it
 the player may pick on the preparing screen, each a label and the change to the mod's config
 that picks it; the host merges the change into the mod's config file and initialises the mod
-again for its new resources. ABI 21 (2026-11-09): `InitReply.settings`, the keys a mod offers on
+again for its new resources. ABI 21: `InitReply.settings`, the keys a mod offers on
 the host's settings screen (a button for each such mod on the title screen): each a key, a
 label, a group and a kind (`choice`, `toggle`, `number` with its range); Done writes the changes
 into the config file and initialises the mod again, and anything that leaves to fetch (a new
-model size) brings the preparing screen up. ABI 22 (2026-11-10): `InitReply.warnings`, config
+model size) brings the preparing screen up. ABI 22: `InitReply.warnings`, config
 values of the wrong type the mod mended or left at their defaults, in words, which the host logs
 once (`lodger: config: brain.most_plans: invalid type ...; the default kept`); the settings
 screen writes a number with a whole step as a whole number (`2`, never `2.0`). ABI 23
-(2026-11-10): `scan` reads every `step`th block (the limit counts the blocks read, not the box),
+: `scan` reads every `step`th block (the limit counts the blocks read, not the box),
 keeps only `dark` blocks (no sky light, no block light) when asked, and answers at most `most`
-positions. ABI 24 (2026-11-10): `swap_block`, another block in a block's place with every
+positions. ABI 24: `swap_block`, another block in a block's place with every
 property they share kept (a wall torch's facing), only over one of `only`; `hide_block`, a block
 taken away for `seconds` and put back as it was, at the time or at once when its level saves or
-closes. ABI 25 (2026-11-10): `warp_mob`, an animal frozen with its head on a player, perhaps
+closes. ABI 25: `warp_mob`, an animal frozen with its head on a player, perhaps
 `scale`d, `flip`ped (the Dinnerbone name, hidden, never over a name of its own), `creep`ing a
 step closer while not looked at, perhaps moved `to` a place first; put back as it was, where it
 was, after `seconds` (two minutes at most) or when the player comes within six blocks; a mob saved
-while warped carries a tag of how it was and is put back when next seen. ABI 26 (2026-11-10):
+while warped carries a tag of how it was and is put back when next seen. ABI 26:
 `shift_bed`, a bed one block to its side, both halves, never one someone lies in, a respawn point
 at it moved with it; `bed_beside`, a bed of another block beside one, the same facing; and
-`swap_block` over a bed turns both its halves together. ABI 27 (2026-11-10): `place_entity`
+`swap_block` over a bed turns both its halves together. ABI 27: `place_entity`
 (an armour stand or a farm animal, for a while when `seconds` are given and then gone, gone at
 once when the level closes; wearing a `kept` stack), `release_bees` (a hive's bees held still
 around a place, then home), `move_leash` (a lead to the nearest other fence post within eight
 blocks), `charge` (an animal runs at a player and hits, `spare` keeping them above half a heart);
 `equip_entity`'s `kept`, `hold`'s `at` (face a point, not the player), and an entity's `leashed`.
-ABI 28 (2026-11-10): `set_sign`'s `one_line` (the last line with text takes the first of
+ABI 28: `set_sign`'s `one_line` (the last line with text takes the first of
 `lines`, the rest kept, a blank sign refused) and `set_frame_item`'s `from` and `slot` (the very
 stack from a container's slot, only into an empty frame), and three `game_message` kinds:
 `advancement` (one the player has, its line, and the toast through the `advancement_toast` hint),
 `death` (one of the game's one-name death lines, by key) and `no_ping` (their own entry without a
-connection for a minute). ABI 29 (2026-11-10): `jukebox` (an empty one plays a disc from a slot,
+connection for a minute). ABI 29: `jukebox` (an empty one plays a disc from a slot,
 one playing stops, its disc back), `turn_page` (a lectern's book to another page), `brew` (an
 ingredient into a stand that holds potions, a blaze powder when it has no fuel; the game brews),
 `strip` (one enchantment, never a curse, off an item in a container); `set_state`'s `@up` (one
-value higher, refused at the top) and `toggle_block` ringing a bell. ABI 30 (2026-11-10):
+value higher, refused at the top) and `toggle_block` ringing a bell. ABI 30:
 `prints` (footprints in the snow, a layer off at each step, left and right of a line) and
 `place_entity`'s `face` (held still facing a player for its time); the client's `ripples` and
-`bobber` hints. Without an ABI change (2026-11-10), the client's hints grew the atmospheres
+`bobber` hints. Without an ABI change, the client's hints grew the atmospheres
 (`mist`, `red_mist`, `darkness`, `dusk_noon`, and `fog_close` as mist) as real fog through render
 hooks, the sky's (`stars_out`, `moon_wrong`, `night_early`), `red_rain` as red drops,
 `compass_points` and `painting_flip` with a `pos`, and `hunger_shake`, `heart_skip`,
-`subtitle`. ABI 31 (2026-11-10): the `rang_bell` event; `gather_villagers` (every villager near a
+`subtitle`. ABI 31: the `rang_bell` event; `gather_villagers` (every villager near a
 village's middle packed into the house behind a door, facing its back wall, turning to the
 player within five blocks, each back where it stood after its time or when the level closes) and
 `offer_trade` (a kept stack for sale at a villager for an emerald, the trade taken away once
-used, so a restock never sells it again). ABI 32 (2026-11-10): `light_portal` (a Nether portal
-lit in an empty obsidian frame near a place, as flint and steel would). ABI 33 (2026-11-10):
+used, so a restock never sells it again). ABI 32: `light_portal` (a Nether portal
+lit in an empty obsidian frame near a place, as flint and steel would). ABI 33:
 `figure`'s `mirror` (it moves as the player moves, from where both stood) and `once_seen` (gone
 once it leaves their view after they saw it), and `figure_swing` (the figure swings once, perhaps
-a hit, `spare` keeping the player above half a heart). ABI 34 (2026-11-10): `place_blueprint`
+a hit, `spare` keeping the player above half a heart). ABI 34: `place_blueprint`
 (blocks laid relative to a place, the ground found and reported as `base <y> placed <n>` when its
 y is below -1000; each only into air or over `replace`, never over contents; a door's halves
-together). ABI 35 (2026-11-10): `figure`'s `copy_crouch` and `swinging`, and `dig_in` (the figure
+together). ABI 35: `figure`'s `copy_crouch` and `swinging`, and `dig_in` (the figure
 walks to the first rock face ahead and digs in, the stone closing behind, out of a hill's far
 side with `through`; block updates to that player alone, nothing in the world changed). ABI 36
-(2026-11-10): `footsteps` (a second set of steps behind a player, each of theirs heard again a
-moment later a few blocks back, stopping when they stop). ABI 37 (2026-11-10): `hold`'s `creep` (a step nearer each
+: `footsteps` (a second set of steps behind a player, each of theirs heard again a
+moment later a few blocks back, stopping when they stop). ABI 37: `hold`'s `creep` (a step nearer each
 moment the player looks away, back where it was held when looked at and when let go), `approach`
 (mobs walk up to a player together and stop a few blocks off), `shove` (a push off the next safe
-edge, a fall of three blocks at most). ABI 38 (2026-11-10): the `knocked` event (a door struck twice
+edge, a fall of three blocks at most). ABI 38: the `knocked` event (a door struck twice
 within a second and a half), `frames_show` (item frames show one item to one player for a while),
 `bobber` (a player's bobber pulled under on their screen with no bite on the server). ABI 39
-(2026-11-10): `carry_block` (an enderman holds a block). ABI 40 (2026-11-10): `set_frame_item`'s
+: `carry_block` (an enderman holds a block). ABI 40: `set_frame_item`'s
 `swap` (the frame's own stack and a container slot's traded) and `drop_at` (what the frame held
-lands there, or at the frame: never deleted, as it was before). ABI 41 (2026-11-10): the world's
+lands there, or at the frame: never deleted, as it was before). ABI 41: the world's
 `difficulty`, `spill_container` (a container's stacks dropped at a place, the container taken
 away with `remove`), `kill_player` (one death as if fallen out of the world, keeping everything:
-held in the world's data and given back on respawn). ABI 42 (2026-11-10): `shoot` (a real arrow,
+held in the world's data and given back on respawn). ABI 42: `shoot` (a real arrow,
 spared, never picked up, staying where it lands), `splash_potion` (one of five effects at a
 player's feet), `put_potion` (a named potion of its brewing, nothing that harms), `change_potion`
 (a potion another, safe kind, its name kept), `effect_cloud` (slowness or weakness, gone at its
-first touch). ABI 43 (2026-11-10): `confront` (the fight, the host's to run) and the
-`fight_won`, `fight_lost`, `fight_fled` events. ABI 44 (2026-11-10): `approach`'s `pace`, `then` (`stare`,
+first touch). ABI 43: `confront` (the fight, the host's to run) and the
+`fight_won`, `fight_lost`, `fight_fled` events. ABI 44: `approach`'s `pace`, `then` (`stare`,
 `leave`, `hit`) and `damage`. ABI 45: `Init.config_before`, the file before a settings change,
 and `InitReply.rewrite`, which asks the host to write the effective config over the file (a
 preset picked, its values in).
@@ -210,7 +210,7 @@ mod goes without until they land. A resource with a `license` (a name, a URL, a 
 shown first, once: on a client a screen with the text, a button to read the full terms in a
 browser, Accept and Quit, the acceptance kept in `config/craftkit/accepted.json`; on a
 dedicated server the terms go to the log with the line to add to that file, and the resource
-waits for the operator (the owner's call, 2026-11-09: no one accepts terms on another's behalf). One downloader (`Downloader.java`) serves every mod, writes
+waits for the operator (the owner's call: no one accepts terms on another's behalf). One downloader (`Downloader.java`) serves every mod, writes
 through a `.part` file, checks the magic on the first bytes and the hash over the whole file at
 the end, and never replaces a good file with a failed download; a connection quiet for thirty
 seconds is dropped and the download goes on from where it stopped (an HTTP range, five tries),
@@ -245,7 +245,7 @@ answers back inside `tick`, as the lodger's [Architecture](architecture.md#threa
 `sdk/src/protocol.rs` and `sdk/src/world.rs`: the JSON shapes, as `serde` structs, so the host's
 Gson and the mod's `serde_json` read the same bytes. Every field has a default, so an older host
 and a newer mod, or the reverse, read each other within an ABI version. The per-world shapes,
-written 2026-11-09 from the lodger's needs and generalized as a second mod needs them:
+written from the lodger's needs and generalized as a second mod needs them:
 
 - **Observations,** the mod's senses, rich enough that a mod can know the world the way a
   player does without ever asking Java for it:
@@ -307,7 +307,7 @@ written 2026-11-09 from the lodger's needs and generalized as a second mod needs
   check, so a Rust mod can ask for "dynamic lights off for a minute" and get it where the mod
   exists and nothing where it does not. The list is [Other mods](ideas.md#other-mods); each one
   built is a line in this page.
-- **The debug screen** (`sdk/src/debug.rs`, 2026-11-09): the host owns a screen any Rust mod
+- **The debug screen** (`sdk/src/debug.rs`): the host owns a screen any Rust mod
   gets (the debug key, F8 unless rebound, or `/craftkit <id> debug`), a panel down the right
   third of the screen at three quarters text size that leaves the world in view, with its own Senses and
   Log tabs filled from the host's side (the asking player's movement and state as meters, the

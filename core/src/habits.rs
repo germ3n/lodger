@@ -1,4 +1,4 @@
-//! The target's habits (the review's N1, owner 2026-11-09: "we should make better memory"):
+//! The target's habits (the review's N1, owner: "we should make better memory"):
 //! the door they come and go by, where each part of the day goes (home, underground, the
 //! field, the village, away), when they leave home and come back, whether they sleep, what they
 //! carry every day, how much they light and how often they look behind them. Sampled every

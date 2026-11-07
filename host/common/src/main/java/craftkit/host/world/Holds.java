@@ -120,7 +120,7 @@ public final class Holds {
 				continue;
 			}
 			// Hit once it stands unmoved, still staring; hit again and that one wakes, alone
-			// (owner, 2026-11-09: "a mix of" breaking the spell and staying frozen).
+			// (owner: "a mix of" breaking the spell and staying frozen).
 			if (mob.getHealth() < hold.health) {
 				hold.hits++;
 			}

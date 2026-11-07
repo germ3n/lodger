@@ -388,7 +388,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             .collect(),
     ));
     // The story: each decision, newest first, with what it saw, what it was offered, what it
-    // chose and what came of it (owner, 2026-11-09: "show events that happened, what is about
+    // chose and what came of it (owner: "show events that happened, what is about
     // to happen, why it happened").
     let mut story = Vec::new();
     if let Some(plan) = soonest(brain) {
@@ -548,7 +548,7 @@ fn plan_when(plan: &crate::brain::Plan, now: &Now) -> String {
 
 /// Every kind killed, most first, with the hits: `11 sheep, 3 pigs, 1 creeper; 18 hits`. Six
 /// kinds at most, then how many more. The dev client's line named the first kind alone, so a
-/// pig killed seemed not counted (2026-11-09).
+/// pig killed seemed not counted.
 fn kills_words(tally: &[crate::memory::Tally]) -> String {
     let mut killed: Vec<&crate::memory::Tally> = tally.iter().filter(|t| t.kills > 0).collect();
     killed.sort_by_key(|t| std::cmp::Reverse(t.kills));

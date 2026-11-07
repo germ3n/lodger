@@ -17,7 +17,7 @@ public final class TitleGate {
 
 	/**
 	 * The title screen's settings buttons, one for each mod that offers settings, top left
-	 * (owner, 2026-11-09: a title screen button). The loader adds them to the screen.
+	 * (owner: a title screen button). The loader adds them to the screen.
 	 */
 	public static java.util.List<net.minecraft.client.gui.components.Button> settingsButtons(Screen screen) {
 		java.util.List<net.minecraft.client.gui.components.Button> buttons = new java.util.ArrayList<>();
@@ -49,7 +49,7 @@ public final class TitleGate {
 			return;
 		}
 
-		// A mod that could not load says why, once, before anything else (owner, 2026-11-10:
+		// A mod that could not load says why, once, before anything else (owner:
 		// "else it should show an error message on boot").
 		if (!failuresShown) {
 			java.util.List<craftkit.host.LoadedMod> failed = Preparation.current()

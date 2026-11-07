@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
- * The fight's warped animals, their own models bent (owner, 2026-11-10: "stretching the actual
+ * The fight's warped animals, their own models bent (owner: "stretching the actual
  * model"): the server names them in a `warp_models` hint, and as each of their models is posed
  * for drawing every part is stretched or squashed and turned wrong, by its own fixed draw so it
  * never flickers, the whole body taller or lower. Nothing else is touched.

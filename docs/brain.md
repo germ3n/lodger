@@ -38,7 +38,7 @@ long chains. Positions become `near the door`; counts become `many`; the questio
 ## Picking
 
 The engine always took the best-scoring choice, and the owner noticed what that does: the same
-situation on every start gets the same answer (2026-11-09). So the pick is a draw: the scores
+situation on every start gets the same answer. So the pick is a draw: the scores
 are divided by `brain.temperature` (0.7 by default), softmaxed, and a seeded random number
 lands on one. At 0 the best wins every time, as the engine; at 1 the model's own odds; below 1
 the best most of the time; above 1 flatter. The confidence logged is always the chosen choice's
@@ -98,7 +98,7 @@ questions). Which set depends on why the brain is asking.
 ### Planning (`plan`)
 
 On the timer, `brain.plan_every` seconds of the target's play, and when the target leaves or
-sleeps (the lodger's working hours). **As built (2026-11-09):** the first two questions are
+sleeps (the lodger's working hours). **As built:** the first two questions are
 asked, `Should it do something soon?` and `What should it do?`, as one ask with the key `plan`
 (`brain/mod.rs`, `decide`); the answer comes back on a later tick (`take_replies`): `nothing
 yet`, a first-question confidence under `brain.event_threshold`, or `nothing` on the menu is
@@ -108,7 +108,7 @@ yet`, a first-question confidence under `brain.event_threshold`, or `nothing` on
 needs rule out is dropped for "whenever its needs hold" and the log says so (`when_fits`: "as
 they come home" never meets "away or asleep", "while they sleep" never meets walking or
 outdoors, "while they are away" never meets in bed or indoors; `wall_swap` planned "as they
-come home" waited out its day in the dev client, 2026-11-09). A menu with nothing but `wait`
+come home" waited out its day in the dev client). A menu with nothing but `wait`
 on it is no decision at all: nothing is asked and nothing logged; `Where?` is asked when the memory can name two or more places (by the
 door, on the bed, by the chest they use, at the end of their path, at its place), and the
 answer is the place for the events that leave or make something at a spot (`act::flexible`).
@@ -126,7 +126,7 @@ A question unanswered for a minute, a refused ask (the queue full, the model shu
 ### Reacting (`react`)
 
 On a trigger: the target opened a container, saw a figure, came home to a landed event, lit or
-walled a spot, went to sleep. **As built (2026-11-09):** the memory raises a trigger (`slept`,
+walled a spot, went to sleep. **As built:** the memory raises a trigger (`slept`,
 `opened_chest`, `died`, `lit`, `walled`, `watched`, `left`); the brain asks `How does the
 player feel?` and `Should it answer this?` with the key `react`, ten seconds apart at most, when
 no other question is out and nothing is planned. The feeling is kept as the memory's mood and
@@ -143,7 +143,7 @@ does it take this?` waits for the temper.
 
 ### The want (`want`)
 
-Once, at move-in. **As built (2026-11-09):** asked the moment the target is known, with the
+Once, at move-in. **As built:** asked the moment the target is known, with the
 memory's lines as the situation; the answer is the memory's `want`, read in every situation
 text (`It wants to be looked at.`) and leaning the rule brain's weights. Without a model the
 rules pick one by the stay's seed.
@@ -154,7 +154,7 @@ rules pick one by the stay's seed.
 
 ### The target (`witness`)
 
-Once, at move-in, in multiplayer with `multiplayer.pick` at `model`. **As built (2026-11-09):**
+Once, at move-in, in multiplayer with `multiplayer.pick` at `model`. **As built:**
 the memory defers the target when `pick` is `model` and more than one player is there at the
 first sight; a player alone is the target at once, so nothing they do is missed. With two or
 more seen the brain asks and the answer's ordinal names the one; with no model, or after five
@@ -182,11 +182,11 @@ read as one story rather than a list.
 ## Text
 
 Signs, books, named animals and, with `events.chat`, chat lines in the target's name need words.
-Two ways, by `brain.text`, and the owner's call (2026-11-09: "yes it should generate, maybe with
+Two ways, by `brain.text`, and the owner's call ("yes it should generate, maybe with
 examples and those examples correlating to specific actions") made `generate` the default:
 
-- **`generate`, the default.** The model writes the line itself (`infer.rs`'s `generate`,
-  2026-11-09), shown the bank for that kind of line as its examples first: a sign after a kill is shown kill signs, a whisper is shown
+- **`generate`, the default.** The model writes the line itself (`infer.rs`'s `generate`),
+  shown the bank for that kind of line as its examples first: a sign after a kill is shown kill signs, a whisper is shown
   whispers, a name for an animal is shown names (`brain/text.rs`, `Kind`: `SignWord`,
   `ChatLine`, `KillLine`, `KillSign`, `Whisper`, `AnimalName`, `GraveSign`, each with its bank
   and its most words). The line is decoded a token at a time under the kind's leash
@@ -201,13 +201,13 @@ examples and those examples correlating to specific actions") made `generate` th
   runs minutes later; with no line by then, the bank's stands. **The blocked words** are the
   `BLOCKED` list at the top of `core/src/brain/text.rs`: slurs, sexual words and self-harm, and
   nothing else, since the line appears in the player's own name in chat. **Variety**
-  (2026-11-09, after the owner saw `kill_line` go round its bank): each token is drawn among
+  (after the owner saw `kill_line` go round its bank): each token is drawn among
   the likely allowed ones at `brain.text_temperature` (0.8, the top 90 per cent), not always
   the likeliest; every line written is kept (`Memory::lines_written`, 128) and a line that
   repeats one (the same, or the same first three words) is dropped, the bank's fallback
   skipping used lines too (`text::pick_fresh`); and an event fired from the debug screen asks
   the model like a planned one, waiting three seconds for the line. **Answers to chat**
-  (`answers_you`, `Brain::consider_reply`, owner 2026-11-09): a line the target types may be
+  (`answers_you`, `Brain::consider_reply`, owner): a line the target types may be
   answered, decided on the tick it arrives (the row's rules, three a day, a 60 in 100 chance for
   a line about the lodger and 15 otherwise), written by the model with `They just typed: <their
   words>` added to the situation (`text::heard`: lower case, letters, eight words, through the
@@ -215,10 +215,10 @@ examples and those examples correlating to specific actions") made `generate` th
   slot. **The prompt ends on
   `-` with no space after it** (`situation::writing_prompt`): Qwen's tokens carry a word's space
   at their front (` here`), and a prompt ending in a space left the model only the tokens with
-  none, digits the likeliest; the dev client's first sign said `123456` (2026-11-09), and the
+  none, digits the likeliest; the dev client's first sign said `123456`, and the
   real-model test `every_kind_of_line_the_model_writes_passes_its_own_check` now writes one
   line of each kind from that situation (`now`, `i was here`, `the sheep rest`). Horror words (kill,
-  blood, dead) are the mod's subject and are not blocked (owner, 2026-11-09). Editing the list
+  blood, dead) are the mod's subject and are not blocked (owner). Editing the list
   is editing that constant; its test pins that a blocked word drops the line and a horror word
   does not.
 - **`bank`.** The model is asked `What does the sign say?` (with the kind's purpose in front)
@@ -251,8 +251,8 @@ player's name.
    would change** (`act::spots`: blocks set, moved, broken, turned or signed, items dropped,
    creatures moved), not just its own spot, and a plan in view **waits** (`waiting: "in view"`)
    until the target looks away, within its day, rather than being dropped: a path of torches
-   has no spot of its own and went up in plain sight in the dev client (2026-11-09).
-5. **Plans.** Up to `brain.most_plans` at once (3; one until 2026-11-09, owner: "one event at
+   has no spot of its own and went up in plain sight in the dev client.
+5. **Plans.** Up to `brain.most_plans` at once (3; one until now, owner: "one event at
    a time kinda gets slow"), each with a number, run on its own every tick (`Brain::run_plan`):
    it asks again every `plan_every` while below the cap, and the menu leaves out what clashes
    with a plan held (`Brain::clashes`: never the same event, never two of one group by
@@ -301,7 +301,7 @@ the rule brain is a competent haunted house; the model's job is to be *that play
 `config/lodger/decisions.log`, one entry per ask, when `log.decisions` is on:
 
 ```
-2026-11-08T21:40:12Z world=New World stage=2 day=4 key=plan brain=model took=140ms
+world=New World stage=2 day=4 key=plan brain=model took=140ms
 --- situation
 <the whole text>
 --- answers

@@ -225,7 +225,7 @@ fn a_stay_of_twelve_days_on_the_rule_brain_acts_within_its_budget_and_never_in_v
 
     assert!(!run.commands.is_empty(), "nothing happened in twelve days");
     // The budget is 1, 2, 4, 6 events a day: eleven days after moving in land 66 at most.
-    // Events, not commands: since the sound events got their variants (2026-11-09) a footstep
+    // Events, not commands: since the sound events got their variants a footstep
     // is up to five commands, and the command count stopped measuring the budget. The day's
     // own bound is held by the brain's `plans_held_count_against_the_day_s_budget_before_they_run`.
     assert!(run.landed > 0, "the page counted nothing");
@@ -502,7 +502,7 @@ fn a_calm_preset_acts_less_than_a_relentless_one() {
 #[test]
 fn the_stay_is_over_after_stage_five_s_ending_and_nothing_happens_after() {
     // Stages one to four a day each; stage five is the ending's three days from its first
-    // dawn (since 2026-11-10; it was a day of nothing), so the stay is over by day eight.
+    // dawn (it was a day of nothing), so the stay is over by day eight.
     let config = r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [1, 1, 1, 1, 1], "ending": "leave" } }"#;
     let stay = stay_after(10, config, 9);
     assert!(stay.arc.over(), "{}", stay.status_line());
@@ -525,7 +525,7 @@ fn the_stay_is_over_after_stage_five_s_ending_and_nothing_happens_after() {
 
 #[test]
 fn the_memory_learns_the_house_the_chest_the_favourite_and_the_route_from_the_script() {
-    // The days are the stay's own as it observes (until 2026-11-10 every observation was day
+    // The days are the stay's own as it observes (until now every observation was day
     // zero, and nothing that counts days ever moved).
     {
         let stay = stay_after(4, r#"{ "stages": { "start_after_days": 0 } }"#, 2);
@@ -556,7 +556,7 @@ fn the_memory_learns_the_house_the_chest_the_favourite_and_the_route_from_the_sc
     assert!(saved.len() < 256 * 1024, "{} bytes saved", saved.len());
 }
 
-/// What a tick costs (the optimization run, 2026-11-10): twelve scripted days through the
+/// What a tick costs (the optimization run): twelve scripted days through the
 /// harness, the host's own path (JSON in and out), every game tick observed and ticked as the
 /// host does it, timed. Run in release: `cargo test --release -p lodger-core --test stays --
 /// --ignored the_tick_costs --nocapture`.

@@ -14,7 +14,7 @@ public abstract class WeatherEffectRendererMixin {
 	private int craftkit$redRain(float alpha, com.mojang.blaze3d.vertex.VertexConsumer builder, java.util.List<?> columns,
 			net.minecraft.world.phys.Vec3 cameraPos, float maxAlpha, int radius, float intensity) {
 		// The rain's call is made with a full alpha, the snow's with 0.8: the snow stays white
-		// (until 2026-11-10 it turned red too).
+		// (until now it turned red too).
 		return maxAlpha >= 0.9f ? Atmospheres.rain(alpha) : net.minecraft.util.ARGB.white(alpha);
 	}
 }

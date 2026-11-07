@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Animals turned on a player ({@code charge}, ABI 27; owner, 2026-11-09: "passive mobs aggro"):
+ * Animals turned on a player ({@code charge}, ABI 27; owner: "passive mobs aggro"):
  * each runs at the player and hits while it touches them, once a second, so many times at most,
  * and with {@code spare} never below one half heart: a nip at stage 3, real harm from 4, never
  * a kill. Nothing about the animal is changed, so nothing needs putting back.
@@ -67,7 +67,7 @@ public final class Charges {
 			if (mob.distanceTo(player) <= REACH && tick >= charge.nextHit) {
 				// Spared, as the blow lands: the game scales a mob's hit by the difficulty after
 				// this (half again on hard), so the room left is divided by that first (until
-				// 2026-11-10 a spared hit could kill on hard). Never spared is never asked for.
+				// now a spared hit could kill on hard). Never spared is never asked for.
 				float scale = switch (player.level().getDifficulty()) {
 					case HARD -> 1.5f;
 					default -> 1.0f;

@@ -65,7 +65,7 @@ public final class LootOffers {
 		}
 		boolean swap = !full.isEmpty() && (empty.isEmpty() || random.nextFloat() < (o.has("replace") ? o.get("replace").getAsFloat() : 0));
 		int slot;
-		// A swap only where what it swaps out can be kept (until 2026-11-10 a loot item could
+		// A swap only where what it swaps out can be kept (until now a loot item could
 		// be overwritten with nowhere to keep it).
 		if (swap && data == null) {
 			swap = false;

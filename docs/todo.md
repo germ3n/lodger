@@ -1,12 +1,12 @@
 # Notes and todo
 
-What lodger still lacks, which as of 2026-11-08 is everything, in the order to build it, and what
+What lodger still lacks, which is everything, in the order to build it, and what
 got done. The things to keep in mind while running or changing it are in
 [Good to know](good-to-know.md), and how each part works is in the [docs](README.md).
 
 ## Where it stands
 
-**2026-11-09, paused.** The Rust side (`sdk/`, `core/`) builds and passes: `cargo test
+**Paused.** The Rust side (`sdk/`, `core/`) builds and passes: `cargo test
 --workspace` 22 tests, clippy and rustfmt clean, `target/release/liblodger_core.dylib` built.
 The host (`host/`), the content jar build (`mod/`) and the CI are written but have not compiled
 once: the machine's network was too slow to fetch Gradle's 151 MB distribution or a JDK 25, so
@@ -28,26 +28,26 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Phase 0: the toolchain, and making the docs true
 
-- [x] **Confirm the versions.** Done 2026-11-08: Minecraft 26.3 (the current stable; the docs
+- [x] **Confirm the versions.** Done: Minecraft 26.3 (the current stable; the docs
   had guessed 26.2), Fabric Loader 0.20.1, Java 25 (Mojang's manifest), Fabric API 0.165.2+26.3,
   Loom 1.19, Gradle 9.8.2 and Mojang's mappings, from Fabric's metadata and example mod and
   Mojang's manifest. `VersionsTest` keeps the places agreeing. Was: Minecraft 26.3, Fabric Loader
   0.20.1, Java 25, and the Fabric API and Loom releases for them, from fabricmc.net and the Loom
   template, not the secondary sources the docs were written from.
-- [x] **The SDK's shape, and the decision to build it now** (owner, 2026-11-08): craftkit
+- [x] **The SDK's shape, and the decision to build it now** (owner): craftkit
   (working name), a crate with the `Mod` trait, the C ABI, the protocol and a harness, and a host
   for Fabric and NeoForge; Rust mods as content jars with no Java. See [The SDK](sdk.md). Was:
   the lodger as a Fabric mod with its own Java body.
-- [x] **The host nested in each mod's jar, natives for six platforms** (owner, 2026-11-09): one
+- [x] **The host nested in each mod's jar, natives for six platforms** (owner): one
   lodger jar per loader with the craftkit host inside (Fabric `jars`, NeoForge jar-in-jar), the
   CI building the mind on Linux, macOS and Windows runners for x86_64 and arm64 each. Was: the
   host a jar of its own, one content jar for both loaders, three natives.
-- [x] **The SDK crate and the mind build and pass** (2026-11-08): `sdk/` with `abi`, `protocol`,
+- [x] **The SDK crate and the mind build and pass**: `sdk/` with `abi`, `protocol`,
   `harness` and `export_mod!`, `core/` as a `craftkit::Mod` with its config schema, 22 tests
   across both (`cargo test --workspace`), clippy and rustfmt clean, `liblodger_core.dylib` built
   in release. The docs-and-schema test caught a rename that had turned `react_threshold` into
   `reevent_threshold` in [Config](config.md).
-- [x] **The host builds for both loaders and passes its tests** (`host/`). Done 2026-11-09:
+- [x] **The host builds for both loaders and passes its tests** (`host/`). Done:
   `craftkit-fabric-26.3-0.1.0.jar` and `craftkit-neoforge-26.3-0.1.0.jar`, 18 JUnit tests in
   `common` (manifest, natives, config file, loading failures, versions agreeing). Three things
   the real APIs corrected: 26.3 gates commands with `Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)`,
@@ -57,12 +57,12 @@ because it can be built and tested without a game, and because the model layer i
   layout, `Native.java` binding the five phase-0 functions through FFM, `LoadedMod` doing the
   manifest, native, ABI, info and config steps, `/craftkit status`, the handshake on each loader,
   and the JUnit tests in `common`.
-- [x] **The lodger's content jar builds** (`mod/`). Done 2026-11-09: `./gradlew jar` runs cargo,
+- [x] **The lodger's content jar builds** (`mod/`). Done: `./gradlew jar` runs cargo,
   and `lodger-0.1.0.jar` holds `natives/macos-aarch64/liblodger_core.dylib`, `fabric.mod.json`
   and the `neoforge.mods.toml` with no language loader with the versions filled in, `META-INF/craftkit.json`,
   `pack.mcmeta` and the lang file. Was: cargo run by Gradle, the native under
   `natives/<os>-<arch>/`, the three manifests and `pack.mcmeta` filled in.
-- [x] **A dev server starts with both jars on each loader.** Done 2026-11-09: `:fabric:runServer`
+- [x] **A dev server starts with both jars on each loader.** Done: `:fabric:runServer`
   and `:neoforge:runServer` in `host/` with `lodger-0.1.0.jar` in their `mods/` both log `loaded
   lodger 0.1.0 (sdk 0.1.0) from macos-aarch64` and `wrote lodger.json with every default`, and
   `config/craftkit/natives/lodger/macos-aarch64/liblodger_core.dylib` appears. The whole FFI
@@ -80,7 +80,7 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Phase 1: the model layer
 
-- [x] **Port `~/engine/game/base/src/ai/` into `core/src/model/`.** Done 2026-11-09: `mod.rs`
+- [x] **Port `~/engine/game/base/src/ai/` into `core/src/model/`.** Done: `mod.rs`
   (the `Model` the `Lodger` owns, in place of the engine's static slot; validation; the scoring
   math), `queue.rs` (the worker and keys, verbatim), `download.rs` (paths and `.part` in place of
   the engine's `Fs`), `infer.rs` (the engine's `infer` module; one change, the context's model
@@ -89,13 +89,13 @@ because it can be built and tested without a game, and because the model layer i
   experiment. The first build compiled llama.cpp in about six minutes; the library went from
   0.5 MB to 6 MB. Was: the port, with `crate::fs` replaced by a plain path and the Lua library
   left behind.
-- [x] **The `Scorer` trait, the fake scorers and the queue tests.** Done 2026-11-09, the
+- [x] **The `Scorer` trait, the fake scorers and the queue tests.** Done, the
   engine's seven queue tests and the model's own: answers without blocking, a loading failure
   returned from `start`, superseding by key, order kept, the queue bounded at 64, stop finishing
   the running one and refusing the rest, the scorer dropped on its own thread. 32 tests in
   `core`. The ABI side (`ask` as a command the host sends) is phase 2's, with the world calls.
-- [x] **The download, as the host's, with the title screen gated** (owner, 2026-11-09: "lock
-  them out of the main menu until the model is downloaded and loaded"). Done 2026-11-09: the
+- [x] **The download, as the host's, with the title screen gated** (owner: "lock
+  them out of the main menu until the model is downloaded and loaded"). Done: the
   SDK's `Resource` in `InitReply`, `warm` and `status` in the ABI (version 3), the lodger
   declaring its model; the host's `Downloader` (JDK `HttpClient`, `.part`, magic, SHA-256,
   progress), `Preparation` (fetch the missing required resources one at a time, then `warm`
@@ -104,9 +104,9 @@ because it can be built and tested without a game, and because the model layer i
   `Host.prepareBlocking` on both loaders' server-starting events. Six JUnit tests for the
   downloader and three for resources. Was: the engine's `download.rs` ported into the mind,
   which was then removed, so one downloader serves every mod.
-- [x] **The real-model tests,** written 2026-11-09 and `#[ignore]`d with the reason: the
+- [x] **The real-model tests,** written and `#[ignore]`d with the reason: the
   want question on a player who walked toward the figure, and two questions on one situation
-  agreeing with each asked alone, and `warm` then `status` through the ABI. Run 2026-11-09 with
+  agreeing with each asked alone, and `warm` then `status` through the ABI. Run with
   the downloaded model copied to `core/models/qwen.gguf`: all three pass. A player who walked
   toward the figure makes the model answer `to be looked at`. The tests take turns on one lock,
   since llama.cpp's backend is one per process and three loading at once raced.
@@ -116,7 +116,7 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Phase 2: the mind without a model
 
-- [x] **The SDK's world calls.** Done 2026-11-09 (ABI 4): `Mod::World`, `open`, `observe`,
+- [x] **The SDK's world calls.** Done (ABI 4): `Mod::World`, `open`, `observe`,
   `tick`, `report`, `save`, `close` in the trait and `export_mod!` (worlds by handle in a map the
   macro keeps, closed at shutdown); `sdk/src/world.rs` with `WorldInfo`, `Now`, `Observations`
   (players with their state and movement, entities, the world's weather, events, chat, scans,
@@ -125,7 +125,7 @@ because it can be built and tested without a game, and because the model layer i
   base64 in JSON; the harness opens a world and drives it; a two-line mod's world is opened,
   observed, ticked, reported, saved and reopened from its bytes in the SDK's tests. The host's
   side (the world loop, saved data, the first executors) is the next item.
-- [x] **The host's world loop.** Done 2026-11-09: `host/common/.../world/Worlds.java` opens a
+- [x] **The host's world loop.** Done: `host/common/.../world/Worlds.java` opens a
   world for each mod when a level loads (`ServerLevelEvents.LOAD` on Fabric, `LevelEvent.Load`
   on NeoForge), with its bytes from saved data (`WorldData`, a `SavedDataType` per mod holding
   the ABI's base64, which the game writes to
@@ -142,16 +142,16 @@ because it can be built and tested without a game, and because the model layer i
   dropped `Model` left its worker and llama.cpp's backend alive, so a second load in one process
   failed with `BackendAlreadyInitialized` (`impl Drop for Model`, with a real-model test). The
   senses proper and the other executors are phase 3.
-- [x] **The senses, in full** (owner, 2026-11-09: "a good harness that can get the current
+- [x] **The senses, in full** (owner: "a good harness that can get the current
   biome, mobs around, etc."): everything under Observations in [The SDK](sdk.md#the-protocol),
   on the host side as `senses/` with one collector per kind (players, entities within 64,
   world state, the `Scan` command, the daily surroundings pass), each sliced over ticks and
   measured, and on the SDK side as typed structs with a `describe` that turns any of them into
   the plain lines a model can read. The harness gets a `World` builder so a test can say
-  "a plains biome, a lake 20 blocks north, three cows, night, raining" in a line. Found done in the 2026-11-10 audit: `senses/Senses.java` sends players, entities, what each looks at, scans and the surroundings; the one-line `World` builder was never built, `tests/stays.rs` builds its observations itself.
-- [x] **The menu, its debug half** (owner, 2026-11-09: "a ui we can pull up with command/key
+  "a plains biome, a lake 20 blocks north, three cows, night, raining" in a line. Found done in the audit: `senses/Senses.java` sends players, entities, what each looks at, scans and the surroundings; the one-line `World` builder was never built, `tests/stays.rs` builds its observations itself.
+- [x] **The menu, its debug half** (owner: "a ui we can pull up with command/key
   that lets us spawn events", "meters showing different senses, gauges, full debug suite").
-  Done 2026-11-09 as the debug screen: `sdk/src/debug.rs` (`DebugRequest`: snapshot, force,
+  Done as the debug screen: `sdk/src/debug.rs` (`DebugRequest`: snapshot, force,
   set_stage, action; `DebugReply`: message, gauges, sections, events with offered/why/times,
   actions), `Mod::debug` with a default, `craftkit_world_debug` (ABI 5), the harness's
   `World::debug`; the host's `DebugAskPayload`/`DebugTellPayload`, `Worlds.debug` (the host's
@@ -170,36 +170,36 @@ because it can be built and tested without a game, and because the model layer i
   `MenuAction` commands back to the mod. The lodger's three pages (status, config, debug).
   Still to do: the config page (every key of the mod's config file, written back on change) on
   the same screen.
-- [x] **Presets** (owner, 2026-11-09: "3-4 presets, like a calm one, then aggressive; start off
-  balanced"). Done 2026-11-09: `preset` in the config, `calm`, `balanced`, `intense`,
+- [x] **Presets** (owner: "3-4 presets, like a calm one, then aggressive; start off
+  balanced"). Done: `preset` in the config, `calm`, `balanced`, `intense`,
   `relentless` as `Preset` in `config.rs` with the table in [Config](config.md#presets), the
   preset laid under the file's own keys, every preset passing its own checks, `balanced` equal
   to the defaults.
-- [x] **The license before the download** (owner, 2026-11-09). Done 2026-11-09: `Resource.license`
+- [x] **The license before the download** (owner). Done: `Resource.license`
   in the SDK (name, URL, text), the lodger's model carrying Qwen's Apache-2.0 notice, the host's
   `LicenseScreen` before the first download of each resource with Accept and Quit, acceptance
   remembered in `config/craftkit/accepted.json`; a dedicated server logs the terms and waits for
   `accepted` in `config/craftkit.json` before it downloads.
-- [x] **Three model sizes** (owner, 2026-11-09). Done 2026-11-09: `model.size` of `0.5b`,
+- [x] **Three model sizes** (owner). Done: `model.size` of `0.5b`,
   `1.5b` or `3b`, each Qwen's own `q4_k_m` file with its URL, file name and size for the bar,
   `model.url` and `model.path` empty by default and derived from the size; the table in
   [Which model](model.md#which-model). The default moved to `1.5b` the same evening (owner:
   "make the 1.5b model the default"); the dev client's config keeps `0.5b` so no download
   starts there.
-- [x] **Seeded picking** (owner, 2026-11-09: "on startup the model would give the same answers
-  to the same questions"). Done 2026-11-09: the pick is a draw weighted by
+- [x] **Seeded picking** (owner: "on startup the model would give the same answers
+  to the same questions"). Done: the pick is a draw weighted by
   `softmax(scores / brain.temperature)` from a SplitMix64 seeded per start (the clock and the
   game directory), `0` restoring the engine's always-the-best; the confidence stays the plain
   probability; `Model::reseed` for the world's seed in phase 2; the seed logged with decisions
   (phase 2's log). Tests: temperature zero picks the best, a warm draw follows the scores to
   within a few percent over two thousand draws, the same seed repeats and another differs.
-- [x] **`Stay`, the lodger's `World`.** Done 2026-11-09: `core/src/stay.rs`, `bincode` behind a
+- [x] **`Stay`, the lodger's `World`.** Done: `core/src/stay.rs`, `bincode` behind a
   format byte, refusing a newer format or another world's save by name, counting ticks,
   players and reports; the model reseeded with the world's seed on open; tests through the
   ABI and direct. Format 3 (the same evening) is JSON with `#[serde(default)]` on every
   struct, so a field added to the memory reads an older save without a migration; formats 1
   and 2 open with their counts and a fresh mind.
-- [x] **Memory, first cut.** Done 2026-11-09: `core/src/memory.rs` with the target (the first
+- [x] **Memory, first cut.** Done: `core/src/memory.rs` with the target (the first
   player seen), the home (the bed slept in, or the densest cell they stand still in; doors and
   lights from blocks placed; the floor), the containers opened with their contents and slots,
   the favourites (what is in their hand), the held item, what was done and how it went, the
@@ -209,7 +209,7 @@ because it can be built and tested without a game, and because the model layer i
   of [What is kept](memory.md#what-is-kept) with its bound and the size test. Still to do: the
   routes, the hours, the reactions, the figures seen, the surroundings and activity pieces, the
   temper and the chains, and the 256 KiB test.
-- [x] **Routes, hours and reactions** (the memory's next pieces). Done 2026-11-09: `Route`
+- [x] **Routes, hours and reactions** (the memory's next pieces). Done: `Route`
   (a trail of a point every two blocks, cut at a minute's stop, sleep or leaving; kept when
   ten points or more; counted into the route it repeats), `Session` (joined and left in real
   time, the game time at joining; the usual minutes and whether they join after dark),
@@ -218,7 +218,7 @@ because it can be built and tested without a game, and because the model layer i
   for each; `Need::Route`, `Where::RouteEnd`, `animal_gone`, and `light_path` toward the
   route's end. Tests: a walk repeated becomes a route with its far end known; sessions give
   the usual length; a torch placed after a take reads as `lit`, a day of nothing as `ignored`.
-- [x] **The catalogue, third cut, and the group switches.** Done 2026-11-09: twenty-four more
+- [x] **The catalogue, third cut, and the group switches.** Done: twenty-four more
   rows (stairs and banners turned, frames emptied and swapped, the stand dressed, the tool worn
   down, the cold furnace, the chest opening as the target walks up, sorting by colour, a flower
   planted, a crop replanted, an ice path, the occupied bed, waking a block over, the pet
@@ -228,7 +228,7 @@ because it can be built and tested without a game, and because the model layer i
   moved two blocks at most; `events.sounds`, `events.glitches` and `events.chat` now gate their
   groups in the offer and in forcing (they were read and unused); `Need::InChestAny`,
   `TargetApproachingChest`, `ColouredStacks`, `ToolInContainer`. 126 rows coded.
-- [x] **Scripted stays, the other six.** Done 2026-11-09: no event inside its cooldown or past
+- [x] **Scripted stays, the other six.** Done: no event inside its cooldown or past
   its cap over fourteen days; a disabled event never happens and a group switched off stays
   quiet; sleep is only refused with the player in bed and house sounds never play for a player
   at the mine; calm acts less than relentless; the stay is over after stage five and nothing
@@ -238,13 +238,13 @@ because it can be built and tested without a game, and because the model layer i
 - [x] **The offer** (`brain/offer.rs`): the six filters of
   [What is offered when](entity.md#what-is-offered-when), with a test per filter (no water, no
   boats; asleep, no `late_steps`; stage one, nothing from stage two) and a test that a hundred
-  draws from one situation offer every eligible event at least once. Found done in the 2026-11-10 audit: the menu's tests cover stage one, needs narrowing the menu and a hundred draws, not one test per filter.
+  draws from one situation offer every eligible event at least once. Found done in the audit: the menu's tests cover stage one, needs narrowing the menu and a hundred draws, not one test per filter.
 - [x] **`Memory::describe`, in full.** The twelve lines of [Describing](memory.md#describing)
   with tests on the exact wording, and the truncation from the bottom at a measured token
   count (the model's tokenizer; without a model, words times 1.4). The first cut writes eight
-  of the lines. Found done in the 2026-11-10 audit: `describe` and `describe_within`, truncated at a measured length.
-- [x] **The catalogue, the second cut** (owner, 2026-11-09: "flesh out the events"). Done
-  2026-11-09: 87 rows in `events.rs` over the host's commands, with needs that carry data
+  of the lines. Found done in the audit: `describe` and `describe_within`, truncated at a measured length.
+- [x] **The catalogue, the second cut** (owner: "flesh out the events"). Done:
+  87 rows in `events.rs` over the host's commands, with needs that carry data
   (`Fixture("fence_gate")`, `Decor("painting")`, `Creature("sheep")`, `InChest("sapling")`,
   `Fixtures(kind, n)`) and the first unmet one named for the debug screen: furnaces (`cook_one`,
   `take_output`, `item_on_table`, `anvil_sound`, `page_turn`), the tidy and the two-chest
@@ -261,23 +261,23 @@ because it can be built and tested without a game, and because the model layer i
   cooking, the kill sign and grave, the worn path and the hole replacing natural ground only,
   frames, stands and the pet. Still to do: the rows that need the figure (phase 5), the
   surroundings (water, fields, villages, mines), routes, redstone, and the endings.
-- [x] **What they kill** (owner, 2026-11-09: "keep track of mobs hit/killed and do something with
-  that"). Done 2026-11-09: the `killed` event from both loaders (the damage source's attacker),
+- [x] **What they kill** (owner: "keep track of mobs hit/killed and do something with
+  that"). Done: the `killed` event from both loaders (the damage source's attacker),
   `Memory.tally` by mob kind (hits, kills), `most_killed` at three kills, a line of the
   situation text, and `kill_sign`, `grave` and `kill_line` over `brain/text.rs`'s `KillSign`,
   `GraveSign` and `KillLine` banks.
-- [x] **Never forgotten** (owner, 2026-11-09: "certain actions are always remembered, where it
-  makes sense"). Done 2026-11-09: `Memory.landmarks` (every bold event that landed, kept for
+- [x] **Never forgotten** (owner: "certain actions are always remembered, where it
+  makes sense"). Done: `Memory.landmarks` (every bold event that landed, kept for
   the stay; the caps per stay count from it when `done` has trimmed) and `Memory.milestones`
   (where they died, the first sleep, the first kill of each kind, a dimension crossed), each
   with a line in `describe` and a section on the debug screen.
-- [x] **Text by kind** (owner, 2026-11-09: "it should generate, with examples correlating to
-  specific actions"). Done 2026-11-09, the bank half: `brain/text.rs` with a `Kind` per place
+- [x] **Text by kind** (owner: "it should generate, with examples correlating to
+  specific actions"). Done, the bank half: `brain/text.rs` with a `Kind` per place
   words go (sign word, chat line, kill line, kill sign, whisper, animal name, grave sign), each
   with its examples and its most words, `fill` for `{kind}` and `{n}`; `brain.text` defaults to
   `generate`, which until phase 4 picks from the bank like `bank` does. Phase 4's item below
   wires the model in with these banks as its examples.
-- [x] **Events as data, the rules, the arc, the rule brain, the log.** Done 2026-11-09:
+- [x] **Events as data, the rules, the arc, the rule brain, the log.** Done:
   `events.rs` with 22 rows the host's commands can carry out today (containers, the door, the
   lights, rest, animals, the sounds, three glitches), each with its stages, needs, cooldown,
   cap, weight, action and menu words, and a test that every id is a row in the docs' catalogue;
@@ -291,21 +291,21 @@ because it can be built and tested without a game, and because the model layer i
   format 1 by carrying its counts over. Was: `events.rs`, `rules.rs`, `arc.rs` as the docs have
   them, the rule brain, the decision log. Still to do: the rest of the catalogue as commands
   arrive, the offer's time-and-weather filter beyond night, the model asking (phase 4).
-- [x] **Scripted stays, first four.** Done 2026-11-09: `core/tests/stays.rs` drives a scripted
+- [x] **Scripted stays, first four.** Done: `core/tests/stays.rs` drives a scripted
   player (a house, a bed, a chest opened each morning, a door and torches, a day at the mine)
   through the ABI for days on the rule brain: a twelve-day stay acts within its budget and never
   touches the house while the player is home and awake; nothing happens before move-in and
   stage one never takes or refuses sleep; a saved stay reopens where it was; no event lands
   twice in a row. Twelve days run in about five seconds, with the clock moving five ticks at a
   time. Was: the `Player` script and the first ten tests. Still to do: the other six.
-- [x] **Design decisions taken with the owner (2026-11-08):** Rust mind and Java body through
+- [x] **Design decisions taken with the owner:** Rust mind and Java body through
   FFM; `lodger` as the name; the one death on hard kept as the only harm; the denser pace
   (budgets 1, 2, 4, 6 a day, a stay of about two in-game weeks with forty to sixty events) over
   the rarer one (half that over three weeks).
 
 ### Phase 3: the body, stages one and two
 
-- [x] **Senses, the host's side.** Done 2026-11-09: `senses/Senses.java` sends every player's
+- [x] **Senses, the host's side.** Done: `senses/Senses.java` sends every player's
   state each tick (position, facing, velocity, sneaking, sprinting, swimming, sleeping, riding,
   health, hunger, air, level, hands, armour, effects, dimension, biome, light and sky light, what
   they look at within 8 blocks, and the movement reading from `MovementTracker`: pace, stops,
@@ -321,14 +321,14 @@ because it can be built and tested without a game, and because the model layer i
   on the mind's side: the activity read from these (mining, farming, building, fishing); the
   moon phase and time of day from 26.3's world clocks (the senses send 0 and game time's
   remainder for now).
-- [x] **The surroundings pass, first cut.** Done 2026-11-09: the `surroundings` command starts
+- [x] **The surroundings pass, first cut.** Done: the `surroundings` command starts
   a pass around a point within a radius (at most 160), 64 columns a tick, a column every four
   blocks read at the surface: water, lava, sand, snow, trees, crops, lights, beds, containers,
   doors, each as a feature with a center and a size. Answered as an observation when done.
   Was: once an in-game day within 128 blocks of the home, in slices. Still to do: villages
   (the bell's point of interest), the target's tunnels and unentered caves, pens with their
   animals, and the mind asking for it once a day.
-- [x] **The general commands' executors, first cut.** Done 2026-11-09, in `world/Executors.java`:
+- [x] **The general commands' executors, first cut.** Done, in `world/Executors.java`:
   `log`, `system_message`, `play_sound` (a sound packet to one player), `hint` (a payload to one
   client, kept in the client's `Hints` list and logged; the renderers are phase 5), `scan` (a
   box of at most 40,000 blocks, counts and positions), `surroundings`, `toggle_block` (doors by
@@ -348,19 +348,19 @@ because it can be built and tested without a game, and because the model layer i
   then the rest. The lodger's own torch and sign blocks, vanilla-looking.
 - [x] **Budgets, cooldowns, caps and the menu** (`events.rs`, `brain/offer.rs`) with scripted-stay
   tests: a stay of fourteen days on the rule brain holds between forty and seventy events, no
-  event twice in a row, none past its cap, none inside its cooldown. Found done in the 2026-11-10 audit: `tests/stays.rs` checks the budget, no event twice in a row, cooldowns and caps.
-- [x] **The net, first cut.** Done 2026-11-09: sounds go as vanilla's own sound packet to one
+  event twice in a row, none past its cap, none inside its cooldown. Found done in the audit: `tests/stays.rs` checks the budget, no event twice in a row, cooldowns and caps.
+- [x] **The net, first cut.** Done: sounds go as vanilla's own sound packet to one
   player; `HintPayload` (kind, optional place, seconds, detail) is registered on both loaders
   and lands in the client's `Hints` list, timed and logged. Was: the sound packet, the hint
   packet, the target flag; the client handlers. Still to do: the target flag, the footstep
   sound by block for `late_steps`, and the first two glitch renderers.
 - [x] **Saved data:** `lodger.dat` holding the mind's bytes, saved with the world, loaded on
-  world load, the mind closed on unload. Found done in the 2026-11-10 audit: the mind's bytes are in the level's saved data as `craftkit_<mod id>` (`WorldData`), not a `lodger.dat`.
-- [ ] **`/lodger status`, `/lodger decisions`, `/lodger reset`, `/lodger leave`.** Partly, found in the 2026-11-10 audit: `/craftkit status` and `/craftkit lodger debug|show|force|stage|action` exist. Still open: reset and leave, if wanted.
+  world load, the mind closed on unload. Found done in the audit: the mind's bytes are in the level's saved data as `craftkit_<mod id>` (`WorldData`), not a `lodger.dat`.
+- [ ] **`/lodger status`, `/lodger decisions`, `/lodger reset`, `/lodger leave`.** Partly, found in the audit: `/craftkit status` and `/craftkit lodger debug|show|force|stage|action` exist. Still open: reset and leave, if wanted.
 - [x] **Play it.** A fresh world, dev config, through stages one and two on the rule brain. Write
-  down everything that read wrong in [Good to know](good-to-know.md) or here. Found done in the 2026-11-10 audit: the owner has played through the stages and the fight; what read wrong is in the playtest entries.
-- [x] **The first play session's fixes** (owner at the keyboard, 2026-11-09, the 1.5B deciding).
-  Done 2026-11-09:
+  down everything that read wrong in [Good to know](good-to-know.md) or here. Found done in the audit: the owner has played through the stages and the fight; what read wrong is in the playtest entries.
+- [x] **The first play session's fixes** (owner at the keyboard, the 1.5B deciding).
+  Done:
   - **Written lines are words:** a sign said `123456`. The prompt ended on `- ` (a trailing
     space leaves Qwen only the tokens without one, digits the likeliest) and the mask kept
     lower case alone; now it ends on `-`, the mask takes either case, digits only for the two
@@ -734,7 +734,7 @@ because it can be built and tested without a game, and because the model layer i
     it differs from the table is written under it in `entity.md`. Tests: seven in `ending`, the
     stay test now plays the ending and checks nothing follows it. Was: stage five a day of
     nothing, then over.
-  - **The bug check, the mind's memory** (four reviewers read the code, 2026-11-10; each finding
+  - **The bug check, the mind's memory** (four reviewers read the code; each finding
     checked before it was fixed): every observation was taken in on day zero (the mod read a
     default clock), so the habits, the adopted chests, the reactions' ages, how long they were
     gone and `ate_day` never moved; it reads the last tick's clock now. A still-cell west or
@@ -748,7 +748,7 @@ because it can be built and tested without a game, and because the model layer i
     every difficulty. A new overworld clears what the last said to the Nether and the End.
     Tests: one each in `places`, `tunnels`, `arc`, two in `memory`, one in the stays, the
     death's presets in `ending`. Was: all of that.
-  - **The bug check, the brain** (2026-11-10): a second `take` while it held something lost the
+  - **The bug check, the brain**: a second `take` while it held something lost the
     first (the host keeps one "held"); it holds one thing at a time now (`HoldsNothing`), and
     what it records taking is the favourite `take` chose (it was the first favourite or the
     first stack, not always what was taken), never from a furnace or a chest not theirs. What
@@ -761,7 +761,7 @@ because it can be built and tested without a game, and because the model layer i
     nothing was recorded as landed; one within its cooldown at its moment was given up, now it
     waits. Sounds "beside" them played on their left. Tests: two in `act`, one in the brain,
     one in `sounds`. Was: all of that.
-  - **The bug check, the host's world** (2026-11-10): the hard ending's death kept the
+  - **The bug check, the host's world**: the hard ending's death kept the
     experience in memory alone (a quit on the death screen lost it) and gave a death held in one
     world back in the next opened; the experience is kept in the world's data now, and what the
     host keeps per player (deaths, pushes, footsteps, bobbers, frames shown, approaches,
@@ -778,7 +778,7 @@ because it can be built and tested without a game, and because the model layer i
     enderman's own block was overwritten; `stand_dress` re-made their armour from its id,
     losing enchantments and names. All fixed. A take without a keep spends the item by design
     (a sapling planted), now said so. Tests: one in JUnit (`Spare`). Was: all of that.
-  - **The bug check, the senses and the client** (2026-11-10): the JVM's shutdown hook unloaded
+  - **The bug check, the senses and the client**: the JVM's shutdown hook unloaded
     the mods while the server was still to save (a Ctrl-C on a dedicated server could lose the
     stay's last state and skip the world's own saves); it waits for the worlds to close now, and
     a close never throws out of the server's stopping. The senses kept a closed level alive and
@@ -814,14 +814,14 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Phase 4: the model in the loop
 
-- [x] **Wire the brain to the worker.** Done 2026-11-09: the two planning questions go to the
+- [x] **Wire the brain to the worker.** Done: the two planning questions go to the
   worker with the key `plan` and the answer is read on a later tick; `brain.event_threshold`
   and `nothing yet` make `wait`; a refusal, a minute's silence or `brain.force_rules` hands the
   menu to the rule brain; the story and the log say which brain decided. Tests with a fake
   scorer: the answer names the event, `nothing yet` waits, a shut-down model and
   `force_rules` fall back. Was: the asks with their keys, the callbacks in the tick, the
   thresholds, the fall-back. Still to do: the `react` asks on triggers, `When?` and `Where?`.
-- [x] **The want and the target asks,** once each at move-in. Done 2026-11-09: `want` asked
+- [x] **The want and the target asks,** once each at move-in. Done: `want` asked
   the moment the target is known (the seed's pick without a model), kept in the memory, read
   in the situation text and leaning the rule brain's weights; `witness` asked when
   `multiplayer.pick` is `model` and two players are seen, the first seen after five minutes
@@ -833,7 +833,7 @@ because it can be built and tested without a game, and because the model layer i
   Tests with the fake scorer for each. The house-changing events the owner asked for the same
   night (`wall_swap`, `torch_blue`, `window_bars`, `bed_breaks`; `break_block` and
   `memory::family`, every wood and colour as data, not a table).
-- [x] **Calibration, round one, first pass.** Done 2026-11-09: `core/tests/calibration.rs`
+- [x] **Calibration, round one, first pass.** Done: `core/tests/calibration.rs`
   (ignored; three scripted days against the real 1.5B with every decision printed) and
   [round one](calibration/round-1.md): seventeen decisions all by the model, thirteen landed,
   the want and the moods read; what to move in round two (the first planning question barely
@@ -841,7 +841,7 @@ because it can be built and tested without a game, and because the model layer i
   written line was exercised). Was: ten stays through stage two by different players, the log
   read end to end, the prompts and thresholds moved. Still to do: round two as the page says,
   on the owner's dev stays with the real model.
-- [x] **`brain.text = generate`, the model half** (owner, 2026-11-09). Done 2026-11-09:
+- [x] **`brain.text = generate`, the model half** (owner). Done:
   `Scorer::generate` and `Model::generate_async` beside scoring (a writing job on the same
   worker, key `text`), `infer.rs`'s greedy decode under a mask of lower-case letters, digits
   and spaces (built once from the vocabulary), stopping where the model's own best token is a
@@ -853,15 +853,15 @@ because it can be built and tested without a game, and because the model layer i
   dropped. Was: the generate function, the prompt, the blocklist, the log line, the fallback,
   the `What does the sign say?` ask. Still to do: that ask for `bank`; calibration round two on
   the real model's lines.
-- [x] **Chat and the player list** (owner, 2026-11-09): the chat sense (the target's lines and
+- [x] **Chat and the player list** (owner): the chat sense (the target's lines and
   witnesses' within 32 blocks, matched for lines about the lodger, eight kept) and the events
   of [Chat and the player list](entity.md#chat-and-the-player-list), as host commands: a
   player-list entry to one client, a system or chat line to one client in a given name, an
-  advancement toast. All target-only, all behind `events.chat`. Found done in the 2026-11-10 audit: chat lines in `Observations`, `tab_entry`, `name_called` and the advancement toast.
-- [x] **Other mods** (owner, 2026-11-09): `Observations.mods`, the presence checks, and the
+  advancement toast. All target-only, all behind `events.chat`. Found done in the audit: chat lines in `Observations`, `tab_entry`, `name_called` and the advancement toast.
+- [x] **Other mods** (owner): `Observations.mods`, the presence checks, and the
   first three hooks (dynamic lights, a minimap marker, Presence Footsteps' sound set), each
   tested with and without the mod in the dev client. The rest of [Other mods](ideas.md#other-mods)
-  as people ask. Found done in the 2026-11-10 audit: `Observations.mods`, the presence checks, and room for other horror mods, their storage and their decorations (owner, 2026-11-10). The three hooks named here (dynamic lights, a minimap marker, Presence Footsteps) were not built.
+  as people ask. Found done in the audit: `Observations.mods`, the presence checks, and room for other horror mods, their storage and their decorations (owner). The three hooks named here (dynamic lights, a minimap marker, Presence Footsteps) were not built.
 - [ ] **Chat template or not.** Score the real-model test set with Qwen's chat template around
   the situation and without, and keep whichever separates the cases more. Write the result into
   [Brain](brain.md#the-situation-text).
@@ -870,7 +870,7 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Phase 5: the figures, stages three and four
 
-- [x] **The figure, first cut** (2026-11-09). `Figures.java`: a figure is packets to the
+- [x] **The figure, first cut**. `Figures.java`: a figure is packets to the
   target's client alone, a player-list entry with the target's own profile (listed false, the
   name shown or not) and a player entity with an id above the server's, facing the target,
   holding the favourite, re-sent a point every half second along a path, taken back after its
@@ -885,15 +885,15 @@ because it can be built and tested without a game, and because the model layer i
   vanishing, witnesses never seeing it (true by construction today).
 - [x] **The far presence** (`far_figure`): a server entity in the target's skin with the name
   shown, placed by line of sight from the route or home, gone when approached. The client
-  renderer, the skin from the target's profile. Witnesses' clients never receive it. Found done in the 2026-11-10 audit: `far_figure`, a figure in the target's skin seen by the target alone (`Figures.java`).
+  renderer, the skin from the target's profile. Witnesses' clients never receive it. Found done in the audit: `far_figure`, a figure in the target's skin seen by the target alone (`Figures.java`).
 - [x] **The replay figure** (`replay`): walks a recorded route at the recorded pace, rounds a
   corner out of sight when approached, leaves the held item. The route's points need a path the
-  figure can walk; where the world changed, cut the route there. Found done in the 2026-11-10 audit: `replay`, the figure along a recorded route with the held item.
+  figure can walk; where the world changed, cut the route there. Found done in the audit: `replay`, the figure along a recorded route with the held item.
 - [x] **Executors for the stage three and four events** of the catalogue, about sixty: the beds,
   the house's block moves, the villages, the water, the mines, the redstone, the animals, the
   late figures, with game tests, and the new general commands they need (dig a line at a
-  player's pace, drive an animal to a spot, set a villager's trade, mark a map). Found done in the 2026-11-10 audit: the stage three and four events have executors; their game tests are the game-tests item.
-- [x] **Like a player** (owner, 2026-11-09): `mining_sounds`, `mine_beside`, `tunnel_toward`,
+  player's pace, drive an animal to a spot, set a villager's trade, mark a map). Found done in the audit: the stage three and four events have executors; their game tests are the game-tests item.
+- [x] **Like a player** (owner): `mining_sounds`, `mine_beside`, `tunnel_toward`,
   `tools_in_hand`, `mined_out`, from [Like a player](entity.md#like-a-player). The digging
   executor is one general command, "dig this line of natural blocks at a player's pace with
   these sounds", with the rule checks (nothing placed within 8 blocks, no cave, water or lava
@@ -901,7 +901,7 @@ because it can be built and tested without a game, and because the model layer i
   learns the target's tunnel sizes and torch spacing (the senses already see blocks broken and
   placed). `tunnel_toward` is the showpiece: it needs the target's current digging direction and
   a slow approach over minutes, so it is a plan the mind re-checks every few seconds, not one
-  command. Found done in the 2026-11-10 audit: all five are events with executors.
+  command. Found done in the audit: all five are events with executors.
 - [x] **The glitches** of [The sky and the light](entity.md#the-sky-and-the-light) and
   [The screen](entity.md#the-screen): the hint packet with a kind, a place and a duration, and a
   client renderer for each: light-level overrides for a room, a painting drawn rotated, the sky's
@@ -909,20 +909,20 @@ because it can be built and tested without a game, and because the model layer i
   compass's needle, footprint decals on snow and sand, a reflection drawn wrong, and the HUD's
   hotbar, hunger, hearts, subtitle, crosshair, player list and sleep count, the camera's nudge
   and the field of view. Each ends on its own; none touches the server's world. Tested on the
-  client with a screenshot test per glitch against a fixed scene. Found done in the 2026-11-10 audit: `client/Glitches.java` has twenty kinds; there are no screenshot tests.
+  client with a screenshot test per glitch against a fixed scene. Found done in the audit: `client/Glitches.java` has twenty kinds; there are no screenshot tests.
 - [ ] **Looked-at detection** in the senses: facing within 10 degrees for half a second, how
-  long, whether moved toward. Partly, found in the 2026-11-10 audit: the senses send what each player faces and which player a mob faces; how long and whether moved toward are not measured.
+  long, whether moved toward. Partly, found in the audit: the senses send what each player faces and which player a mob faces; how long and whether moved toward are not measured.
 - [ ] **Play it** through stage four, with the model. Calibration round two, same method.
 
 ### Phase 6: the ending, multiplayer, release
 
-- [x] **`settle`** and the three endings as three-day scripts (owner, 2026-11-09: "the endgame
+- [x] **`settle`** and the three endings as three-day scripts (owner: "the endgame
   should be very grand"), each day's beats as data in `arc.rs` with a time, a condition and two
   forms the model picks between, the budget and cooldowns off and the caps on, the chains
   closed inside them, the one death on hard with inventory kept and the vanilla message, and
   the `left` and `stayed` states. Scripted-stay tests for each ending, checking the order of
-  beats, that nothing repeats within a day, and that the death happens once or not at all. Found done in the 2026-11-10 audit: `ending.rs` holds the three endings as beat scripts, and the confrontation besides.
-- [ ] **Temper** (owner, 2026-11-09: "doing certain things should speed up the progression"):
+  beats, that nothing repeats within a day, and that the death happens once or not at all. Found done in the audit: `ending.rs` holds the three endings as beat scripts, and the confrontation besides.
+- [ ] **Temper** (owner: "doing certain things should speed up the progression"):
   `memory/temper.rs` with the move table of [Provocation and temper](entity.md#provocation-and-temper),
   the senses that feed it (the figure chased or hit, its blocks broken, its place walled or
   lit, the thing taken back, chat lines at it, nights slept through), the scaling of the
@@ -930,7 +930,7 @@ because it can be built and tested without a game, and because the model layer i
   by the preset, and the `How does it take this?` ask. Scripted-stay tests: a provoking player
   reaches stage four days sooner than a quiet one; a `calm` preset provoked stays under the
   `balanced` resting pace; temper drifts back.
-- [ ] **The other house, a dimension of its own** (owner, 2026-11-09: "custom dimensions you
+- [ ] **The other house, a dimension of its own** (owner: "custom dimensions you
   can get teleported to by sleeping, walking through portals"): a void dimension in the
   content jar's data pack (`data/lodger/dimension/other.json`, a flat dark sky, no mobs, no
   day), into which the host copies the target's house block for block at stage four, and one
@@ -941,7 +941,7 @@ because it can be built and tested without a game, and because the model layer i
   place to explore: a set piece, twice at most, so the world stays the player's. Needs the
   host's teleport and block-copy commands and a dimension registered from the content jar;
   judged in the dev client before the design goes further.
-- [ ] **Chains** (owner, 2026-11-09: "one that influences the next"): follow-ups in `events.rs`
+- [ ] **Chains** (owner: "one that influences the next"): follow-ups in `events.rs`
   (weighted or exclusive, with a carried place or item), `Memory::chains`, the situation line,
   and the weights in `offer.rs`. The eight chains of [Chains](entity.md#chains) as data, with a
   scripted-stay test that walks at least two end to end and one that no step is offered with its
@@ -951,14 +951,14 @@ because it can be built and tested without a game, and because the model layer i
 - [x] **Performance pass:** the per-tick JSON exchange measured (it should be well under 50 µs
   on a quiet tick), the senses' distance checks bounded to the target's chunk neighbourhood,
   the model's unload timer. Nothing the mod does should show in a tick profile on a server
-  with the lodger idle. Found done in the 2026-11-10 audit: `the_tick_costs` in `tests/stays.rs`, and the model unloads when no one plays.
+  with the lodger idle. Found done in the audit: `the_tick_costs` in `tests/stays.rs`, and the model unloads when no one plays.
 - [ ] **A proper release:** the jar with three natives, `THIRD_PARTY_NOTICES.txt`, the
   README's install steps checked on a fresh machine on each platform, a Modrinth page that says
-  what the mod records and downloads. Version `0.1.0`. Partly, found in the 2026-11-10 audit: `scripts/build_jars.py` makes both jars with six natives and the notices, and `mod/modrinth.md` is written. Still open: the install steps checked on fresh machines.
+  what the mod records and downloads. Version `0.1.0`. Partly, found in the audit: `scripts/build_jars.py` makes both jars with six natives and the notices, and `mod/modrinth.md` is written. Still open: the install steps checked on fresh machines.
 
 ### After every phase
 
-- [x] **A debug UI for events, senses and the brain** (owner, 2026-11-09). Done 2026-11-09,
+- [x] **A debug UI for events, senses and the brain** (owner). Done,
   earlier than planned, as the debug screen above (phase 2's menu item): the senses as meters,
   the memory's lines, the plan and the last decisions, every event with a Fire button, the
   world's reaction in the Log tab. Was: once the phases are in, a proper in-game screen over the
@@ -966,10 +966,10 @@ because it can be built and tested without a game, and because the model layer i
   mind grows: the model's menus and confidences per decision (phase 4), the chains and the
   temper, the want.
 - [ ] **A Minecraft version bump, rehearsed:** take the host to the next snapshot once, by the
-  process in [Upgrading](upgrading.md) (written 2026-11-09 at the owner's ask), and fix
+  process in [Upgrading](upgrading.md) (written at the owner's ask), and fix
   whatever it missed; add the bump to its history table.
-- [x] **The surroundings in the mind** (owner, 2026-11-09: "you're also detecting structures
-  nearby and have code to determine where their house is?"). Done 2026-11-09: the brain asks
+- [x] **The surroundings in the mind** (owner: "you're also detecting structures
+  nearby and have code to determine where their house is?"). Done: the brain asks
   the host's pass once a day 96 blocks around the home, and again when the home moves 16
   blocks; the host's pass gained the bell and the generated structures by tag (village,
   mineshaft, ruined portal, shipwreck, ocean ruin) at their middles; the memory keeps the
@@ -1000,7 +1000,7 @@ because it can be built and tested without a game, and because the model layer i
 - [ ] **Publishing the SDK.** The crate to crates.io under its final name and the host jars to
   Modrinth, once a second mod has been written against it and the protocol has stopped moving
   for it. Until then both live here. The crate name is the owner's to pick; `craftkit` was free
-  on 2026-11-08.
+ .
 - [ ] **The host checks that content jars match across sides.** Today a client without the
   lodger's jar joins a server with it, and sees missing textures where the figure would be. The
   host should compare the content jars' ids and versions in the handshake and say which is
@@ -1012,7 +1012,7 @@ Things considered and set aside, kept so they are not reconsidered from scratch.
 
 - **Letting the model write the signs.** Set aside at first: three words from a 0.5B model
   about a player's chest are three words of nonsense a third of the time, and once it writes one
-  thing a player finds cruel the mod is over. Reopened by the owner (2026-11-09): the model
+  thing a player finds cruel the mod is over. Reopened by the owner: the model
   writes, with the bank for that kind of line as its examples, under a token mask, a word count,
   a blocklist and a log, with the bank as the fallback, and the default model is the 1.5B. The
   caution stands as the checks; the calibration round reads every generated line.
@@ -1034,28 +1034,28 @@ Things considered and set aside, kept so they are not reconsidered from scratch.
 
 ## Done
 
-The `[x]` lines above, each dated. Summary by day:
+The `[x]` lines above, summed up by day:
 
-- **2026-11-08:** the docs, from `~/chainv4`'s style and `~/engine`'s AI layer.
-- **2026-11-09:** phases 0 to 2 (the SDK, the ABI, the host for both loaders, the content jars,
+- **Day one:** the docs, from `~/chainv4`'s style and `~/engine`'s AI layer.
+- **Day two:** phases 0 to 2 (the SDK, the ABI, the host for both loaders, the content jars,
   the download with the license screen, the model layer), phase 3's host side (the senses, the
   executors), the mind's first and second cuts (the memory, 87 events, the rules, the arc, the
   rule brain, the log, scripted stays), the debug screen, the glitch renderers, the kill tally,
   the landmarks, the text banks, the upgrade guide. First seen in a dev client the same day.
 
-## Next (owner's answers, 2026-11-10)
+## Next (owner's answers)
 
-- [x] **Arrows** (2026-11-10, owner: "near misses, then hits"): stage 3 a real arrow from the dark into the
+- [x] **Arrows** (owner: "near misses, then hits"): stage 3 a real arrow from the dark into the
   block beside their head, from where the figure stands with a bow; stage 4 it hits by the harm
   stages (a heart at 4, two at 5), never a kill; the arrows stay stuck where they land.
-- [x] **Potions** (2026-11-10, owner: all four): a splash from the dark at their feet (darkness, slowness,
+- [x] **Potions** (owner: all four): a splash from the dark at their feet (darkness, slowness,
   blindness, a moment's levitation; never damage, poison or wither); its brew in their chest,
   named `for the night`; one of their potions turned another kind (never a harmful one), its old
   name kept; a lingering cloud at their door at dawn that fades as they step out.
   Done: seven rows (`arrow_near`, `arrow_grazes`, `arrow_hits`, `splash_dark`, `brew_left`,
   `potion_changed`, `door_cloud`), five commands (ABI 42), the host keeping to what does not
   harm whatever it is asked. Tests: one in `act`. Was: the arrow a sound alone, no potions.
-- [x] **Other mods** (2026-11-10, owner: all three): with another horror mod loaded it acts less often and
+- [x] **Other mods** (owner: all three): with another horror mod loaded it acts less often and
   never at the same moment; it takes from other mods' storage too; it moves other mods'
   decorations as it does vanilla ones.
   Done: a mod whose id reads as a horror mod's (`cave_dweller`, `the_man_from_the_fog`, a
@@ -1065,7 +1065,7 @@ The `[x]` lines above, each dated. Summary by day:
   shelves and cabinets furniture, moved first by `shift_furniture`. A mod's chest the target
   opens was already theirs to the memory. Tests: three in `memory`, one in `arc`. Was: no other
   mod known.
-- [x] **The confrontation, a fourth ending** (2026-11-10; owner: "a fourth ending: you confront it"): in
+- [x] **The confrontation, a fourth ending** (owner: "a fourth ending: you confront it"): in
   stage 5, at night, at its house (or its place), strike its door or the figure; without that,
   one of the three scripted endings plays. Three phases, one health bar named after them: its
   warped animals in waves while it watches from its roof; the duel in their skin with a copy of
@@ -1077,7 +1077,7 @@ The `[x]` lines above, each dated. Summary by day:
   death on any difficulty, everything kept, it keeps what it took and leaves (no animal waves on
   peaceful). A real beacon in its house from stage 5's first night, lit only at night, to lead
   them there.
-  The fight's shape (owner, 2026-11-10: "rise out of the ground ... deforming and bending its
+  The fight's shape (owner: "rise out of the ground ... deforming and bending its
   limbs, turning grotesque, in between stages"; the sequence below confirmed as is): the rising
   (the ground before its door cracks, it rises lying face up over three seconds and bends
   upright at the waist, the bar filling); stage 1 waves, it watching from its roof; bend 1 (it
@@ -1098,7 +1098,7 @@ The `[x]` lines above, each dated. Summary by day:
   ABI 43): a 26.3 mannequin in their skin and a copy of their gear, its own health kept apart
   from the mannequin's so it never dies as an entity, the construct's limbs block displays posed
   each tick. Tests: two in `ending`. Not yet seen in the game: the first launch checks it.
-- [x] **The fight, from the owner's first try** (2026-11-10): the wave's animals gave up after
+- [x] **The fight, from the owner's first try**: the wave's animals gave up after
   forty seconds (a wait in the water and they were let be); they are driven at the player every
   half second now, for as long as they live. The figure could be hit while the animals came; it
   cannot, until it fights (the rising, the waves and the bends are out of reach). Four waves of six
@@ -1121,7 +1121,7 @@ The `[x]` lines above, each dated. Summary by day:
   heard; the mods list cut at 64; another horror mod's thing near stayed "near" for good; the
   debug screen's fight and stage left an old script and beacon behind. Tests: the ending's,
   memory's and config's updated. Was: all of that.
-- [x] **The warped animals, their own models** (owner, 2026-11-10: "the blocks look kinda silly
+- [x] **The warped animals, their own models** (owner: "the blocks look kinda silly
   ... stretching the actual model"): the block limbs are gone; the server names each wave's
   animals in a `warp_models` hint and the client bends their own models as they are posed for
   drawing (two render hooks, `LivingEntityRenderer.extractRenderState` for the entity's id and
@@ -1169,7 +1169,7 @@ The `[x]` lines above, each dated. Summary by day:
   what it pinned. Was: all of that. Left for their items: the docs' other `/lodger` commands
   (item 9), the `multiplayer.*` keys read by nothing (item 16), and two for the owner (a client
   that only joins servers still downloads the model; Windows and Linux have no GPU build).
-- [x] **The fourth bug pass** (2026-11-10, seven found): the release script failed on Windows
+- [x] **The fourth bug pass** (seven found): the release script failed on Windows
   (gradlew.bat by its full path now), packed the CI's natives of the commit beside uncommitted
   mind changes (refused unless `--allow-dirty`), and picked up an old version's jars (cleared
   first). The place's want counted blocks by an index into a list that drops its oldest and its
@@ -1179,7 +1179,7 @@ The `[x]` lines above, each dated. Summary by day:
   ground search no longer looked three blocks up, and wave mobs could be set in a cave under a
   hill (the surface now). Dead code of the old lethal estimate gone. Tests: one in the brain.
   Was: all of that.
-- [x] **Warped animals that are never still, and animals that come at them** (owner, 2026-11-10:
+- [x] **Warped animals that are never still, and animals that come at them** (owner:
   "seems too stiff ... should be spookier"; "a mob comes towards you very slow ... the opposite
   too, quick"): every `warp_animal` now takes two of its three ways at once (tall, upside down,
   creeping), its height its own, its model bent on their screen as the fight's are, its head
@@ -1188,7 +1188,7 @@ The `[x]` lines above, each dated. Summary by day:
   run, stops a block and a half off, and stares, turns away, or strikes once never below half a
   heart (`approach`'s `pace`, `then`, `damage`, ABI 44). Tests: `warped`'s, one in `act`. Was:
   one way or two, frozen; no such event.
-- [x] **The third bug pass** (2026-11-10, twelve found): on Fabric a totem never saved them in
+- [x] **The third bug pass** (twelve found): on Fabric a totem never saved them in
   the fight (its death hook runs before the totem), now a totem in hand is the game's own way;
   the fight's own estimate of a lethal hit ignored the hurt cooldown and more, now the game deals
   every hit and any death is caught and kept; a refused kept death left them at half a heart
@@ -1200,7 +1200,7 @@ The `[x]` lines above, each dated. Summary by day:
   may also hook (an inject after it now); the warped set was read every model every frame (a
   quarter second's cache now); wave mobs picked up loot and bred; a creeper gone another way
   counted as a blast. Tests: two in `ending`. Was: all of that.
-- [x] **A script for release jars, every platform's native in each** (owner, 2026-11-10):
+- [x] **A script for release jars, every platform's native in each** (owner):
   `scripts/build_jars.py <minecraft>`, with `versions/<minecraft>.properties` holding the pins
   (`26.3` today), the natives from the CI run of the commit, from this computer (`--natives
   local`, both macOS chips on a Mac) or a directory, each jar checked to carry them all; at boot
@@ -1208,27 +1208,27 @@ The `[x]` lines above, each dated. Summary by day:
   a CPU the host does not know is named as it is (`riscv64`), where it passed for x86_64 and
   failed to load obscurely. Tests: `Natives`, `LoadedMod` in JUnit. Was: the CI alone made the
   six-native jars, and a missing native was silent but for `/craftkit status`.
-- [x] **The creepers' blast** (owner, 2026-11-10: "creepers aren't dealing any damage"): 26.3 marks
+- [x] **The creepers' blast** (owner: "creepers aren't dealing any damage"): 26.3 marks
   an exploding creeper dead before it goes, so the fight took its blast for a kill and dealt
   nothing; a creeper gone with its health left went off, and the blast is dealt by how near they
   stood (nine at its heart to two at five blocks, scaled as a mob's hit), with a push away. Was:
   no harm at all.
-- [x] **No split** (owner, 2026-11-10: "nevermind on the splitting the repo"): one repository;
+- [x] **No split** (owner: "nevermind on the splitting the repo"): one repository;
   `gen_notices.py` comes here instead.
 
 ## At the very end
 
-- [ ] **The host in Rust, behind a thin Java wrapper** (owner, 2026-11-09): what decides or
+- [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
   hooks, the game's API calls, rendering), since the game's own API is Java.
 
-- [x] ~~**Split the project into two repositories**~~ (owner, 2026-11-10: cancelled, "nevermind on the splitting the repo") (owner, 2026-11-09): one for the SDK
+- [x] ~~**Split the project into two repositories**~~ (owner: cancelled, "nevermind on the splitting the repo") (owner): one for the SDK
   (`sdk/`, the craftkit host in `host/`, their docs and CI) and one for the lodger (`core/`,
   `mod/`, its docs), the lodger depending on the published SDK crate and host jar.
 
 
-- [x] **A license and notices** (owner, 2026-11-10; no split now): the MIT license was already
+- [x] **A license and notices** (owner; no split now): the MIT license was already
   here (`LICENSE`); `gen_notices.py`, adapted from `~/chainv4`'s, writes
   `THIRD_PARTY_NOTICES.txt` from `Cargo.lock` (every crate, the Apache text once, the other texts
   the lock requires), llama.cpp's license from the crate that bundles it, and the model's

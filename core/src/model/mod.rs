@@ -473,7 +473,7 @@ pub fn winning_index(probs: &[f32]) -> usize {
 /// With `temperature` 0 the best choice wins, every time. Above 0 the pick is a draw weighted
 /// by `softmax(scores / temperature)`: at 1 the model's own odds, below 1 sharper (the best
 /// choice most of the time), above 1 flatter. This is what keeps the same situation from
-/// getting the same answer on every start, which the engine did (owner, 2026-11-09).
+/// getting the same answer on every start, which the engine did (owner).
 pub fn answer_for(choices: &[String], scores: &[f32], temperature: f64, rng: &mut Rng) -> Answer {
     let probs = softmax(scores);
     let index = if temperature <= 0.0 || choices.len() < 2 {

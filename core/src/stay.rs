@@ -184,7 +184,7 @@ impl Stay {
 
     /// Moves the brain's waiting ticks back when the host's clock came back lower than it was:
     /// the game restarted and its tick count with it. Reopened in the dev client, a plan due in
-    /// a minute said 1956 seconds (2026-11-09). A save from before `last_tick` takes the
+    /// a minute said 1956 seconds. A save from before `last_tick` takes the
     /// moment from the brain's next planning time.
     fn rebase_if_the_clock_started_again(&mut self, tick: u64, config: &Config) {
         let interval = config.brain.plan_every as u64 * crate::brain::TPS;
@@ -322,7 +322,7 @@ mod tests {
 
     #[test]
     fn a_plan_due_in_a_minute_is_still_due_in_a_minute_after_the_game_restarts() {
-        // The dev client, 2026-11-09: reopened, `kill_line` said 1956 seconds.
+        // The dev client: reopened, `kill_line` said 1956 seconds.
         let config = Config {
             enabled: false, // the clock alone: no brain at work
             ..Config::default()

@@ -1,4 +1,4 @@
-//! Water, boats and snow (batch 10, owner 2026-11-10): their boat, the shore of the water near
+//! Water, boats and snow (batch 10, owner): their boat, the shore of the water near
 //! them on their side, the dark under it, and the way from the door to the bed for wet steps.
 
 use craftkit::world::{BlockPos, Pos};

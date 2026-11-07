@@ -8,7 +8,7 @@ pages explain each part in full; this one is the short list to keep in mind.
 - **The model decides by scoring, and writes only a few words.** Every event is a fixed choice
   the model scores; it cannot invent an event and cannot be talked to. The one place it writes
   is the words on a sign, a name tag or a chat line in your own name (`brain.text`, `generate`
-  by default since 2026-11-09): a few words, letters and spaces only (digits only on the lines
+  by default): a few words, letters and spaces only (digits only on the lines
   that count kills), shown handwritten examples
   of that kind of line first, through a blocklist, logged, and replaced by a handwritten line if
   any check fails. The blocklist (`BLOCKED` in `core/src/brain/text.rs`) holds slurs, sexual
@@ -96,10 +96,10 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   shifted one block. It never opens a wall, never touches anything in view, and never fires
   anything that explodes: a lever with TNT within 16 blocks of what it powers is not a lever to
   the lodger. What it does dig is what a player digs: natural stone, dirt and ore, one block at a
-  time at a player's pace, never within 8 blocks of anything placed (checked on every command, the debug screen's Fire too) but `alcove`, which may take one block of natural stone from behind a house wall (owner, 2026-11-09) and never into a cave, water
+  time at a player's pace, never within 8 blocks of anything placed (checked on every command, the debug screen's Fire too) but `alcove`, which may take one block of natural stone from behind a house wall (owner) and never into a cave, water
   or lava it can see coming (see [Like a player](entity.md#like-a-player)).
 - **What it takes is the very thing it gives back.** The host keeps the taken stack with the
-  world, enchantments, wear and name and all (until 2026-11-09 a taken enchanted tool came
+  world, enchantments, wear and name and all (until now a taken enchanted tool came
   back plain).
 - **It never takes more than one item at a time, and never anything from the inventory, a hand,
   an armour slot or the ender chest.** From a chest the player opens often, one item, one that
@@ -139,7 +139,7 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   same for everyone, and a witness looking up sees noon.
 - **It never follows the target into another dimension.** The Nether and the End are the one
   place it is not. Coming back, it has been busy.
-- **It never spawns anything** (what it gives without taking it first comes out of what it dug, counted in `Memory::stores`), with one exception: in a chest of fresh loot, which is the world's, a redstone lamp, a candle or the player's own head may turn up (`loot_gift`, owner 2026-11-09). No mobs, no items that did not exist. Everything it places it
+- **It never spawns anything** (what it gives without taking it first comes out of what it dug, counted in `Memory::stores`), with one exception: in a chest of fresh loot, which is the world's, a redstone lamp, a candle or the player's own head may turn up (`loot_gift`, owner). No mobs, no items that did not exist. Everything it places it
   dug, cut, picked, cooked, crafted from those or took first, as a player would have to: its
   cobblestone is from its tunnels, its logs from trees it felled and replanted, its torches from
   both. A mob it uses is one that was already there, redirected. The memory counts all of it.

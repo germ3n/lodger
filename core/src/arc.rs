@@ -35,7 +35,7 @@ pub struct Arc {
     pub beacon_built: bool,
     pub beacon_capped: bool,
     /// Another horror mod is loaded: half the day's budget, so the two do not drown each other
-    /// out (owner, 2026-11-10). Read off the memory each tick; not saved.
+    /// out (owner). Read off the memory each tick; not saved.
     #[serde(skip)]
     pub sharing: bool,
 }
@@ -46,7 +46,7 @@ impl Arc {
     }
 
     /// A stage set from outside (the debug screen): begun now, and an ending not yet begun,
-    /// so stage five chooses and runs its script afresh (until 2026-11-10 an old script's state
+    /// so stage five chooses and runs its script afresh (until now an old script's state
     /// stayed and ended the stay at once, or ran its beats back to back).
     pub fn set_stage(&mut self, stage: u8, day: f32) {
         self.stage = stage;
@@ -138,7 +138,7 @@ impl Arc {
         self.spent_today + cost <= self.budget(config) + 1e-6
     }
 
-    /// Spends on `day`: until 2026-11-10 a plan run on a new day before anything asked
+    /// Spends on `day`: until now a plan run on a new day before anything asked
     /// `affords` was charged to the day before, and so cost nothing.
     pub fn spend(&mut self, cost: f32, day: u64) {
         self.roll(day);

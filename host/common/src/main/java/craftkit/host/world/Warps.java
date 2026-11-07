@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Warped animals ({@code warp_mob}, ABI 25; owner, 2026-11-10): an animal frozen with its head
+ * Warped animals ({@code warp_mob}, ABI 25; owner): an animal frozen with its head
  * always on a player, perhaps too tall, perhaps upside down (named Dinnerbone, the name hidden),
  * perhaps a step closer each time the player looks away; then put back as it was, where it was.
  * A warped mob carries {@link #TAG} and a tag of how it was ({@link WarpMath#tag}), so one saved
@@ -41,7 +41,7 @@ public final class Warps {
 		final boolean flip;
 		final boolean creep;
 		final float bodyYaw;
-		/** Never still (owner, 2026-11-10): its head snapped aside till this tick, and when next. */
+		/** Never still (owner): its head snapped aside till this tick, and when next. */
 		long snapUntil;
 		float snapYaw;
 		long nextTwitch;

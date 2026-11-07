@@ -20,7 +20,7 @@ mods are written against and a host, a Java mod for Fabric and NeoForge, that lo
 carries out what they decide. The Java is there because the loaders load Java; everything that
 can be Rust is Rust (see [The SDK](docs/sdk.md) and [Architecture](docs/architecture.md)).
 
-**Status (2026-11-08):** design only. Nothing is built or run yet; the docs are the plan. See
+**Status:** design only. Nothing is built or run yet; the docs are the plan. See
 [Todo](docs/todo.md) for the order of work.
 
 `lodger` is a working name.
@@ -29,7 +29,7 @@ can be Rust is Rust (see [The SDK](docs/sdk.md) and [Architecture](docs/architec
 
 - Minecraft Java 26.3 on Java 25, with Fabric Loader 0.20.1 and the Fabric API, or NeoForge
   26.3, on both the client and the server, on Linux, macOS or Windows, x86_64 or arm64, which
-  the lodger's jar carries natives for. The versions were confirmed 2026-11-08 against
+  the lodger's jar carries natives for. The versions were confirmed against
   Fabric's, NeoForged's and Mojang's own metadata (see [Development](docs/development.md#toolchain)).
 - One jar for your loader, `lodger-fabric-26.3-<version>.jar` or
   `lodger-neoforge-26.3-<version>.jar`, with the craftkit host nested inside it. Nothing else.

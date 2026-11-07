@@ -188,7 +188,7 @@ public final class LoadedMod {
 		ConfigFile config = new ConfigFile(configDir.resolve(manifest.get().config()));
 		JsonObject reply;
 		// What the file said before: put back if the mod refuses the change, so the next launch
-		// is not refused too (until 2026-11-10 the refused change stayed in the file).
+		// is not refused too (until now the refused change stayed in the file).
 		String before;
 		try {
 			before = config.exists() ? config.read() : null;

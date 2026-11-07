@@ -1,7 +1,7 @@
 # Upgrading
 
 How to take the lodger and craftkit to a new Minecraft, Fabric, NeoForge or Java version, step
-by step, and why the work is as small as it is. Written 2026-11-09 at the owner's ask ("a doc
+by step, and why the work is as small as it is. Written at the owner's ask ("a doc
 that describes the process of upgrading the code to a new mc/fabric/neoforge version"), from
 what moving to 26.3 took.
 
@@ -116,7 +116,7 @@ moved.
   attack, chat, and a block struck (Fabric's `AttackBlockCallback`, NeoForge's
   `LeftClickBlock` at `START`) for the `knocked` sense.
 - **The render hooks** (`host/common/src/main/java/craftkit/host/mixin/`, the
-  `craftkit.common.mixins.json` both loaders name, since 2026-11-10): each is one line into
+  `craftkit.common.mixins.json` both loaders name,): each is one line into
   `craftkit.host.client.Atmospheres`, and with `defaultRequire` 1 a hook that no longer matches
   stops the client at the title screen, so a broken one is found at once.
   - `FogRenderer.setupFog` at its return: the `FogData` (start, end, colour) before the caller
@@ -144,7 +144,7 @@ moved.
 
 | Date | From | To | What moved |
 | --- | --- | --- | --- |
-| 2026-11-09 | the design, for 1.21.x | Minecraft 26.3, Java 25, Fabric Loader 0.20.1, Fabric API 0.165.2+26.3, NeoForge 26.3.0.101, NeoForm 26.3-1, Loom 1.19.4, ModDevGradle 2.0.148, Gradle 9.8.2 | First build. Found by reading 26.3's sources: `Commands.hasPermission`, `PayloadTypeRegistry.clientboundConfiguration`, `IModFile.getContents` (JarContents) in NeoForge, `GuiGraphicsExtractor`, `Blaze3D.openUri`, `getGameTime` for the clock, `SavedDataType` with a null extra, `ItemEntity.setUnlimitedLifetime`, `ClientboundSetActionBarTextPacket`, the four-argument `SignText`, `ServerLevelEvents`, `ServerEntityLevelChangeEvents`, NeoForge's `BreakBlockEvent` under `event/level/block/`, `KeyMapping.Category`, `InputConstants.Type.KEYBOARD`, `Minecraft.gui.screen()`. |
+| First | the design, for 1.21.x | Minecraft 26.3, Java 25, Fabric Loader 0.20.1, Fabric API 0.165.2+26.3, NeoForge 26.3.0.101, NeoForm 26.3-1, Loom 1.19.4, ModDevGradle 2.0.148, Gradle 9.8.2 | First build. Found by reading 26.3's sources: `Commands.hasPermission`, `PayloadTypeRegistry.clientboundConfiguration`, `IModFile.getContents` (JarContents) in NeoForge, `GuiGraphicsExtractor`, `Blaze3D.openUri`, `getGameTime` for the clock, `SavedDataType` with a null extra, `ItemEntity.setUnlimitedLifetime`, `ClientboundSetActionBarTextPacket`, the four-argument `SignText`, `ServerLevelEvents`, `ServerEntityLevelChangeEvents`, NeoForge's `BreakBlockEvent` under `event/level/block/`, `KeyMapping.Category`, `InputConstants.Type.KEYBOARD`, `Minecraft.gui.screen()`. |
 
 ## The sound list
 

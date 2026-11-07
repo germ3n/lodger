@@ -1,12 +1,12 @@
-# Review, 2026-11-09 evening
+# Review
 
 The owner's second play session (the side panel build), everything that read wrong, what it
 was, and what to do; then improvements and new events, the owner's and the model's; then the
 questions to go through together. Each item has a number for the conversation. When an item
-is done it moves to [Todo](todo.md) with a dated `[x]`, and this page keeps a line saying so.
+is done it moves to [Todo](todo.md) with an `[x]`, and this page keeps a line saying so.
 
 Sources: the owner's notes and screenshots, `decisions.log`, the client log's `not done`
-reports (`client4.log`, 2026-11-09 20:00 to 20:25).
+reports (`client4.log`, twenty-five minutes of play).
 
 ## A. What things mean (answers, no change needed unless a question says so)
 
@@ -37,43 +37,43 @@ reports (`client4.log`, 2026-11-09 20:00 to 20:25).
   uses `settle` (the host finds the ground within a few blocks), signs get `wall` (a wall
   sign) like torches, a spot is never inside a village's or anyone's building (the
   surroundings pass knows the village), and an event whose block failed does not send its
-  follow-ups (the sign text) but reports one reason. **Done 2026-11-09:** signs, cairns, graves, saplings settle to the ground (`rest`, wall signs), the text finds its sign, a failed block drops the rest of its event; spots inside a village's buildings remain for the house work (B6, B7).
+  follow-ups (the sign text) but reports one reason. **Done:** signs, cairns, graves, saplings settle to the ground (`rest`, wall signs), the text finds its sign, a failed block drops the rest of its event; spots inside a village's buildings remain for the house work (B6, B7).
 - **B2. `wolf_far`: "no such sound" for `minecraft:entity.wolf.howl`.** 26.3 renamed the wolf's
   sounds when wolves got sound variants. **Fix:** check every sound id the catalogue uses
   against 26.3's sound list in a test (read from the game's `sounds.json`), and correct the
-  ones that moved. **Done 2026-11-09:** `wolf_sad.whine`, and a test over every sound the mind names.
+  ones that moved. **Done:** `wolf_sad.whine`, and a test over every sound the mind names.
 - **B3. `move_entity` to entity 4294967295.** `u32::MAX` is "no entity" leaking into a command
   (an event that wanted an animal and had none). **Fix:** an event with no entity makes no
-  command; a test that no command carries `u32::MAX`. **Done 2026-11-09:** it was `woke_elsewhere` (B8); `move_player`, and the every-event test refuses placeholder ids.
+  command; a test that no command carries `u32::MAX`. **Done:** it was `woke_elsewhere` (B8); `move_player`, and the every-event test refuses placeholder ids.
 - **B4. `ice_path` aimed at stone and dirt.** The water feature's position is the lake's middle
   at sea level, not its surface, so the ice went into the bed and the shore. **Fix:** the host
   settles `replace: water` placements to the water's surface; the mind walks the path over the
-  water's own cells (the surroundings pass can keep the water's extent). **Done 2026-11-09:** ice with `only` and `settle` lands on the water's surface; the path over the water's own cells waits for the surroundings work.
+  water's own cells (the surroundings pass can keep the water's extent). **Done:** ice with `only` and `settle` lands on the water's surface; the path over the water's own cells waits for the surroundings work.
 - **B5. `stare`: the animals look, then walk and jitter, heads bobbing.** `look_at` sets the
   look each tick while the animal's own goals keep moving it, and the two fight. **Fix:** use
-  `hold` (AI off, turned toward you each tick, released after), the same as `hostiles_stare`. **Done 2026-11-09:** `stare` holds.
+  `hold` (AI off, turned toward you each tick, released after), the same as `hostiles_stare`. **Done:** `stare` holds.
 - **B6. "The player sleeps in a house with 0 doors and 0 lights."** The memory only learns
   doors and lights the target *places*. Sleeping in a village house it knows the bed and
   nothing else. **Fix:** the host's daily surroundings pass also reads the house around the
-  bed (doors, lights, chests, beds within the walls); see B7 and Q4. **Done 2026-11-09:** the surroundings pass reads the house around the bed (`house_*` features).
+  bed (doors, lights, chests, beds within the walls); see B7 and Q4. **Done:** the surroundings pass reads the house around the bed (`house_*` features).
 - **B7. Events only use what the target placed** (`torch_blue` works on your torches, not on
   generated ones; `knock` says "not in a house" in a village house). **Fix:** "the target's"
   becomes "the home's": what is in the house they sleep in, placed or not. Breaking stays
-  limited to natural ground and never touches what anyone built. See Q4. **Done 2026-11-09 for what the house holds** (doors, lights, chests and the bed count whoever placed them); each event's scope (home, any house, either) is set in the batch reviews.
+  limited to natural ground and never touches what anyone built. See Q4. **Done for what the house holds** (doors, lights, chests and the bed count whoever placed them); each event's scope (home, any house, either) is set in the batch reviews.
 - **B8. `woke_elsewhere` did nothing in a village bed.** It needs the bed the memory calls the
   home's (`Bed`) and the target in it; a bed slept in once is the home only if no home was
   known. Likely the home was elsewhere, or the event's moment (waking) was missed. **Fix:**
-  trace it with a scripted test in a village bed, and say on the panel which need failed. **Found and done 2026-11-09:** it sent the player as entity `u32::MAX - 0`, which no host knew; now `move_player`.
+  trace it with a scripted test in a village bed, and say on the panel which need failed. **Found and done:** it sent the player as entity `u32::MAX - 0`, which no host knew; now `move_player`.
 - **B9. A route takes two walks of the same way.** **Fix:** learn routes from the paths walked
-  most over a day too (home to wherever they spend time), so a first-day player has one. **Done 2026-11-09:** the longest single walk of 32 blocks or more stands as the route until one is walked twice.
+  most over a day too (home to wherever they spend time), so a first-day player has one. **Done:** the longest single walk of 32 blocks or more stands as the route until one is walked twice.
 - **B10. The situation's grammar:** "Today it could not a wolf howling far off", "Today it did
   a pickaxe in the rock near them". The menu's words are fragments meant for a list.
   **Fix:** every event gets a past-tense line of its own (`"it made a wolf howl far off"`,
-  `"it tried to make a wolf howl far off, and could not"`), checked by a test for every row. **Done 2026-11-09, more simply:** 122 of the 140 rows were already a deed ("open the door", read as "Today it did open the door"); the 18 noun phrases, all sounds, became deeds too ("make a wolf whine far off"), and a test keeps every row a deed.
+  `"it tried to make a wolf howl far off, and could not"`), checked by a test for every row. **Done, more simply:** 122 of the 140 rows were already a deed ("open the door", read as "Today it did open the door"); the 18 noun phrases, all sounds, became deeds too ("make a wolf whine far off"), and a test keeps every row a deed.
 - **B11. `kill_line` repeats the same six lines** (the screenshot: `17 salmon`, `the salmon
   remember`... twice over). The model's line failed its check or the model was not asked, so
   the bank's lines came round in order; and the dev config's cooldowns let it fire every few
-  minutes. **Fix:** see C (text), and never the same line twice in a stay. **Done 2026-11-09:** Fire asked no model (now it does), lines are drawn at a temperature, and none is used twice.
+  minutes. **Fix:** see C (text), and never the same line twice in a stay. **Done:** Fire asked no model (now it does), lines are drawn at a temperature, and none is used twice.
 - **B12. `fog_close` is a dark vignette with bars; `red_rain` a red tint.** Both were flat
   layers over the HUD. **Fix:** see D.
 
@@ -84,7 +84,7 @@ assisted by AI".
 
 - **C1. Sample, don't decode greedily.** The model picks the single likeliest token each
   time, so the same situation always gives the same line. A temperature of 0.7 to 0.9 with
-  top-p 0.9 gives varied lines; the checks stay as they are. **Done 2026-11-09** (`brain.text_temperature`, 0.8).
+  top-p 0.9 gives varied lines; the checks stay as they are. **Done** (`brain.text_temperature`, 0.8).
 - **C2. Show more, and different, examples each time.** The prompt shows the whole bank in
   order. Show six drawn at random from a bigger bank (twenty to forty per kind) and the
   lines it already used are left out, so the model is not copying the same pattern.
@@ -92,7 +92,7 @@ assisted by AI".
   and where, the time, the weather, what they typed, what it did last; a reply that reads
   their line and answers it.
 - **C4. Never repeat.** The memory keeps every line written; a new one equal or nearly equal
-  (same first three words) to an earlier one is dropped. **Done 2026-11-09.**
+  (same first three words) to an earlier one is dropped. **Done.**
 - **C5. A voice.** One short paragraph describing how it writes (lower case, short, wrong in
   small ways, never explains itself, sometimes your own words back), given before the
   examples, written with the owner.
@@ -106,7 +106,7 @@ assisted by AI".
 The owner: "red rain ... turning the rain sprites red, and the mist should be volumetric and
 a separate event that can stack ... fog_close ... why not the actual fog?"
 
-- **D1. Real fog on the target's client** (**done 2026-11-10**, with D2 to D4) (a client mixin into the fog renderer), easing as
+- **D1. Real fog on the target's client** (**done**, with D2 to D4) (a client mixin into the fog renderer), easing as
   the owner chose: in over 40 to 60 s, held 2 to 4 minutes with its edge breathing, out over
   30 to 40 s. Mist (pale grey, 10 to 15 blocks), red mist (deep red, 20 blocks, a rust sky),
   darkness (6 to 8 blocks to black, your own light still shows), dusk at noon (light drains,
@@ -122,9 +122,9 @@ a separate event that can stack ... fog_close ... why not the actual fog?"
 ## E. The debug panel
 
 - **E1. A tooltip on every event row:** the catalogue's description, its needs met or not,
-  its cooldown and cap, the last time it ran and how it went. **Done 2026-11-09.**
+  its cooldown and cap, the last time it ran and how it went. **Done.**
 - **E2. Coordinates are links:** hover underlines `(x,y,z)`, a click teleports you there
-  (an operator command the server runs, singleplayer owner or operator only). **Done 2026-11-09,** for whoever may open the panel (operators, a singleplayer owner); Q6 still asks about servers.
+  (an operator command the server runs, singleplayer owner or operator only). **Done,** for whoever may open the panel (operators, a singleplayer owner); Q6 still asks about servers.
 - **E3. Failed commands in red with their reason on the event's row** (`grave: the place holds
   oak_stairs`), so a broken event is visible without the Log tab.
 - **E4. A "fire at the spot I'm looking at" mode** for events with a place.
@@ -181,7 +181,7 @@ The rule today: it never harms a player before the last stage, and nothing chang
 
 ## H. Questions
 
-**Answered 2026-11-09 night:**
+**Answered:**
 
 - **Q1:** small harm from stage 3 (knockback, at most half a heart, never below two hearts,
   never a fall over three blocks) and real damage from stage 4, never killing before stage 5
@@ -200,7 +200,7 @@ The rule today: it never harms a player before the last stage, and nothing chang
   one they are in first), or `either` (home first, any house otherwise). The scope of every
   event is set in the batch reviews, with the owner.
 
-- **A held mob, hit** (asked 2026-11-09 night; the owner: "a mix of" releasing the one hit
+- **A held mob, hit** (asked; the owner: "a mix of" releasing the one hit
   and staying frozen): the first hit it takes unmoved, still staring; a second hit wakes that
   mob alone (a zombie fights back), the others stay.
 - **Q5:** replace both: `fog_close` becomes mist on the real fog, `red_rain` red raindrops,
@@ -232,77 +232,77 @@ along the way, and add the new ones.
 - **Q7. Nether and End:** keep "it never follows you there", or give it rows there (G11)?
 - **Q8. Which of F and G to build first,** and are any of them wrong for the lodger?
 
-- **J1. Every read more often** (owner, 2026-11-09: "there are prolly other reads/scans that
+- **J1. Every read more often** (owner: "there are prolly other reads/scans that
   should be done more frequently too"): after the home read (now on coming home, after
   building, every ten minutes), go through the surroundings pass (daily), the village scan
-  (once), the ore scan, the entity pass and the rest, and give each the cadence it needs. **Done 2026-11-09:** the entity pass is every second already and the surroundings
+  (once), the ore scan, the entity pass and the rest, and give each the cadence it needs. **Done:** the entity pass is every second already and the surroundings
   pass daily (water, villages and structures barely change; the house has its own read now);
   the village is read every five minutes while they are within 64 blocks of it; and the
   village's and the ore's scans are kept apart (one answering wiped the other).
 
-- **K1. Loot** (owner, 2026-11-09: "hook into loot generation to occasionally place
+- **K1. Loot** (owner: "hook into loot generation to occasionally place
   something ... spooky"): its own things and a short list, mostly added, sometimes swapped,
-  one chest in five from stage two. **Done 2026-11-09** (`loot_gift`, `arm_loot`).
+  one chest in five from stage two. **Done** (`loot_gift`, `arm_loot`).
 
-- **L1. The door they use, for the model** (asked 2026-11-09): the memory could count which
+- **L1. The door they use, for the model** (asked): the memory could count which
   door they come and go by and say so ("They come and go by the north door"), so door events
   are planned on knowledge. A proposal.
-- **M1. A bug check pass and an optimization run** (owner, 2026-11-09) once the event review is
+- **M1. A bug check pass and an optimization run** (owner) once the event review is
   done: every module read for bugs, every per-tick path timed.
 - **M2. Inference and the game's frame rate** (owner: "limit it to like 50% gpu cuz it makes
-  my game stutter"): **done 2026-11-09**, `model.gpu_share` 0.5 and chunked decoding (the old `gpu_layers` had never been passed on).
+  my game stutter"): **done**, `model.gpu_share` 0.5 and chunked decoding (the old `gpu_layers` had never been passed on).
 
-- **N. Better memory** (owner, 2026-11-09: "we should make better memory ... find stuff that
+- **N. Better memory** (owner: "we should make better memory ... find stuff that
   can be done better"; every proposal taken):
   - **N1. Habits:** the door they come and go by and their routine (when they leave, return,
     sleep and wake, how long they play); where the day goes (home, mine, farm, away); what
-    they always carry; how much they light and how often they look behind them. **Done 2026-11-10:**
+    they always carry; how much they light and how often they look behind them. **Done:**
     `core/src/habits.rs`, its lines last in `describe` while they fit; the usual door takes the
     knock and the worn path.
   - **N2. How they took each event:** whether they noticed it (came to look within a day),
     fixed it (and how fast), ran or fought; fed back into the rule brain's weights as well as
-    the model's lines ("Signs get their attention; sounds do not"). **Done 2026-11-10:**
+    the model's lines ("Signs get their attention; sounds do not"). **Done:**
     every landed event watched for a day by its effect (startled, looked, fixed and how fast,
     ran, fought, lit, walled, watched, left); `Memory::attention` leans the rule brain and says
     what reaches them.
   - **N3. Places:** the house in rooms ("the room with the bed"), their sites away from home
-    (the mine, the farm, a second base), and its own landmarks referred back to. **Done 2026-11-10:**
+    (the mine, the farm, a second base), and its own landmarks referred back to. **Done:**
     `core/src/places.rs`: rooms by what stands in them, sites (mine, base, spot), landmarks
     referred back to. A farm away from home is not told apart (the crops feature is read
     around the home only).
-  - **N4. People:** who visits the home, and whether the target is alone or with someone now. **Done
-    2026-11-10:** `core/src/people.rs`, its lines first among the details.
-- **O1. Choosing the model** (owner, 2026-11-09, after seeing the download screen: "I want to
+  - **N4. People:** who visits the home, and whether the target is alone or with someone now. **Done:**
+    `core/src/people.rs`, its lines first among the details.
+- **O1. Choosing the model** (owner, after seeing the download screen: "I want to
   be able to change the model on that screen ... a dropdown ... also a way to change it in
   settings"): a resource may offer choices (the 0.5B, 1.5B, 3B, each with its size); the
   preparing screen shows them as a dropdown before downloading, and the pick is written to the
-  mod's config; and the settings page (queue item 5) carries the model's size among the rest. **Done 2026-11-09:** the screen's choice (ABI 20) and a settings page from a title screen button with the useful keys grouped (ABI 21).
+  mod's config; and the settings page (queue item 5) carries the model's size among the rest. **Done:** the screen's choice (ABI 20) and a settings page from a title screen button with the useful keys grouped (ABI 21).
 
 ## I. The event review, in batches
 
 The owner's standing ask: every event, section by section, checked in code and in the game,
 fixed, given its scope (home, any house, either; Q4), fleshed out, tested, with questions per
-batch. 139 of the catalogue's rows are coded (2026-11-09). The order, smallest risk first, the
+batch. 139 of the catalogue's rows are coded. The order, smallest risk first, the
 sections with the most coded rows early so the play sessions find the most:
 
 | Batch | Section | Coded | Not yet |
 | --- | --- | --- | --- |
-| 1 | Sounds | 22 (eight more on the owner's ask, 2026-11-09) | **Done 2026-11-09:** scope any house, theirs first; block sounds; `knock` soft (2, 3) and `knock_heavy` (4, 5); three to five ways each. |
-| 2 | Containers | 12 | **Answered 2026-11-09:** home only; all four missing; new `chest_full_of_one` (dug dirt), `renamed_item`, `returned_used`, `chest_answers`. **Done so far:** the taken item kept itself (it came back plain), forgiving moves, `renamed_item`, `returned_used`, `chest_answers`, `book_word`, `map_marked`, `hopper_emptied`, `shulker_moved`, the dug store and `chest_full_of_one`: the batch is done. |
-| 3 | The house; The house, changed | 13 | **Answered 2026-11-09:** doors and windows any house, changes home only; all seven; the house read often and wider; four new (furniture shifted, one room dark, door held, bed turned). **Done so far:** the home read, the door and window scope, `door_hinge`, `ladder_gap`, `flowers_potted`, `pumpkin_face`, `tree_grown`, `backfill`. `alcove` (one block of stone behind a wall, the owner's exception), and the four new: `furniture_shifted`, `one_room_dark`, `door_held`, `bed_turned`. The batch is done. | door_hinge ladder_gap flowers_potted alcove backfill tree_grown pumpkin_face |
-| 4 | Lights and fire | 7 | **Done 2026-11-10:** `lantern_ahead`, `cave_lit`, `lights_out`, `soul_swap`, `death_light`, `light_taken`, `warped_animal`. **Answered 2026-11-10:** `lantern_ahead` (a lantern from their chest) and `cave_lit` (its own torches) both, caves found by the cave air near them; four new: lights out as they pass (stage 4, night, back after a minute), soul fire swap (stage 3), a light where they died (stage 2+), their last light taken along their route (stage 3). And the owner's warped animals (2026-11-10: "warped versions of the entity ... a cow or pig model"): too tall, upside down, head always on them, closer each time they look away and gone when walked up to; one of their own animals warped for a minute and put back, or an animal outside when they have too few ("3 but also mobs outside if they dont own enough"). |
-| 5 | Beds and rest | 5 | **Done 2026-11-10:** `shift_bed`, `sheets_changed`, `under_the_bed`, `foot_of_bed`, `second_bed`; the panel's Shift+click. **Answered 2026-11-10:** `shift_bed` built (both halves, while away); `turn_bed` is batch 3's `bed_turned`; four new: sheets changed (stage 3, another colour), under the bed (stage 3, scratching as they lie down), at the foot of the bed (stage 4, the figure for half a second as they wake), a second bed beside theirs (stage 4). And the debug panel's teleport needs Shift+click (the owner was moved into a cave by a stray click). |
-| 6 | Farm and animals | 12 | **Done 2026-11-10:** `scarecrow`, `bees_out`, `horse_moved`, `field_word`, `face_the_house`, `one_more`, `row_withered`, `eggs_to_door`, `animals_nip`, `animals_turn`; the field read. **Answered 2026-11-10:** all four built (`scarecrow`, `bees_out`, `horse_moved`, `field_word`); four new: they face the house at dawn (stage 4), one more in the pen till noon (stage 3), a row withered back to seedlings (stage 3), eggs from the coop to the door (stage 2); and "animals turn on you" brought here from batch 16, by the harm stages (small harm from 3, real from 4). |
-| 7 | Decoration and signs; What they kill | 12 | **Done 2026-11-10:** `sign_word`, `count_up`, `weapon_on_wall`, `head_on_post`, `grave_each`. **Answered 2026-11-10:** `sign_word` built (the host changes one written line, never a blank sign); four new: the kill sign's count goes up as they kill (stage 3), their weapon in a frame of theirs (stage 3), a mob head on a fence post by the door (stage 4), a grave for each kind they killed, in a row (stage 4). |
-| 8 | Chat and the player list | 9 | **Done 2026-11-10:** `sleep_message`, `advancement`, `death_message`, `words_on_sign`, `ping_fades`, `empty_message`. **Answered 2026-11-10:** both built (`sleep_message` as "1/2 players sleeping" while they are awake and alone; `advancement` replaying one they have, toast and line); four new: a death message while alive (stage 4), their words on a sign by the door (stage 3), their ping gone for a minute (stage 3), an empty message in their name (stage 3). |
-| 9 | Furnaces and workstations; Redstone | 15 | **Done 2026-11-10** (owner: all five built, all four new): `jukebox`, `lectern_page`, `swap_fuel`, `brewing_done`, `grindstone_strip`, `lamps_blink`, `composter_fills`, `crafted_for_you`, `bell_rings`. |
-| 10 | Water and boats; Snow, sand and weather | 12 | **Done 2026-11-10** (owner: all five, `fishing_line` faked and the prints in snow only; all four new): `trail`, `trail_in`, `boat_waiting`, `ripples`, `fishing_line`, `snowman`, `boat_in_house`, `under_the_water`, `wet_steps`. |
-| 11 | The sky and the light; The screen (with the atmospheres, D) | 9 | **Done 2026-11-10:** the atmospheres (`mist`, `dusk_noon`, `red_mist`, `darkness`) as real fog, `fog_close` as mist, `red_rain` as red drops, `moon_wrong`, `stars_out`, `night_early`, `painting_flip`, `compass_points`, `hunger_shake`, `heart_skip`, `subtitle`, `tab_twice`, `reflection` as a face under the water; five render hooks, checked to load on both loaders. **Answered 2026-11-10:** every row built: the sky ones (`moon_wrong`, `stars_out`, `night_early`) by sky hooks, the HUD ones (`hunger_shake`, `heart_skip`, `subtitle`, `tab_twice`), `painting_flip`, `compass_points`; `reflection` becomes a face under the water (the figure just under still water, looking up, a second); the atmospheres of D with real fog through render hooks on both loaders (mist, red mist, darkness, dusk at noon, red rain drops), each hook written down for updates. |
-| 12 | Villages (with `village_abandoned`) | 5 | **Done 2026-11-10:** `village_lantern`, `villager_word` (what it took, for sale once), `village_abandoned` (as answered in Q8), and G1 `bell_twice`. |
-| 13 | Mines and caves | 6 | **Done 2026-11-10** (owner: all six, all four new): `mine_beside`, `mined_out`, `tunnel_sealed`, `ladder_down`, `tunnel_toward`, `portal_lit`, `tunnel_goes_on`, `torches_far_end`, `sign_deep`, `way_back_closes`; the tunnel memory. |
-| 14 | The figures (phase 5's rest) | 8 | **Done 2026-11-10** (owner: the swing by the harm stages, all four new): F4 as `figure_nip` (stage 3, half a heart) and `figure_swing` (4 and 5, two hearts, never a kill), `figure_mirror`, `figure_window`, `figure_crowd`, `figure_waves`. |
-| 15 | Like a player; Building | 0 | **Done 2026-11-10** (owner: every one, materials gathered first and topped up when short): `house_near`, `house_grows`, `pillar`, `hut_on_route`, `cave_room`, `dock`, `bridge`, `bridge_done`, `copy_build`, `copy_house`; `into_the_mountain`, `through_the_hill`, `into_the_dark`, `copy_crouch`, `tools_in_hand`; `wave` is `figure_waves`, `your_spacing` the torch spacing already used. |
-| 16 | The new ones (F, G) and the ending | | **Done 2026-11-10:** every row answered for (`hand_on_shoulder`, `breath`, `footsteps_follow`, `name_called`; `pack`, `hostiles_close`, `shove`; `answer_knock`, `item_frames_face`, `wrong_sky`, `fish_on_line`; `ghast_name`, `ender_holds`, `busy_away`), the three endings as scripts (`core/src/ending.rs`, what differs written under the table in `entity.md`), and on the way a frame's own item no longer lost. **Answered 2026-11-10:** every F and G left: `pack`, `hostiles_close`, `hand_on_shoulder`, `breath`, `footsteps_follow`, `name_called`, `answer_knock`, `item_frames_face`, `wrong_sky`, `fish_on_line`, `shove` (F8 `bed_pulled` is `woke_elsewhere`; F10 cannot be, a torch in the hand gives no light in the game); the three Nether and End rows (the ghasts say their name, an enderman holds their block, it was busy while they were gone); the three endings as written. |
+| 1 | Sounds | 22 (eight more on the owner's ask) | **Done:** scope any house, theirs first; block sounds; `knock` soft (2, 3) and `knock_heavy` (4, 5); three to five ways each. |
+| 2 | Containers | 12 | **Answered:** home only; all four missing; new `chest_full_of_one` (dug dirt), `renamed_item`, `returned_used`, `chest_answers`. **Done so far:** the taken item kept itself (it came back plain), forgiving moves, `renamed_item`, `returned_used`, `chest_answers`, `book_word`, `map_marked`, `hopper_emptied`, `shulker_moved`, the dug store and `chest_full_of_one`: the batch is done. |
+| 3 | The house; The house, changed | 13 | **Answered:** doors and windows any house, changes home only; all seven; the house read often and wider; four new (furniture shifted, one room dark, door held, bed turned). **Done so far:** the home read, the door and window scope, `door_hinge`, `ladder_gap`, `flowers_potted`, `pumpkin_face`, `tree_grown`, `backfill`. `alcove` (one block of stone behind a wall, the owner's exception), and the four new: `furniture_shifted`, `one_room_dark`, `door_held`, `bed_turned`. The batch is done. | door_hinge ladder_gap flowers_potted alcove backfill tree_grown pumpkin_face |
+| 4 | Lights and fire | 7 | **Done:** `lantern_ahead`, `cave_lit`, `lights_out`, `soul_swap`, `death_light`, `light_taken`, `warped_animal`. **Answered:** `lantern_ahead` (a lantern from their chest) and `cave_lit` (its own torches) both, caves found by the cave air near them; four new: lights out as they pass (stage 4, night, back after a minute), soul fire swap (stage 3), a light where they died (stage 2+), their last light taken along their route (stage 3). And the owner's warped animals ("warped versions of the entity ... a cow or pig model"): too tall, upside down, head always on them, closer each time they look away and gone when walked up to; one of their own animals warped for a minute and put back, or an animal outside when they have too few ("3 but also mobs outside if they dont own enough"). |
+| 5 | Beds and rest | 5 | **Done:** `shift_bed`, `sheets_changed`, `under_the_bed`, `foot_of_bed`, `second_bed`; the panel's Shift+click. **Answered:** `shift_bed` built (both halves, while away); `turn_bed` is batch 3's `bed_turned`; four new: sheets changed (stage 3, another colour), under the bed (stage 3, scratching as they lie down), at the foot of the bed (stage 4, the figure for half a second as they wake), a second bed beside theirs (stage 4). And the debug panel's teleport needs Shift+click (the owner was moved into a cave by a stray click). |
+| 6 | Farm and animals | 12 | **Done:** `scarecrow`, `bees_out`, `horse_moved`, `field_word`, `face_the_house`, `one_more`, `row_withered`, `eggs_to_door`, `animals_nip`, `animals_turn`; the field read. **Answered:** all four built (`scarecrow`, `bees_out`, `horse_moved`, `field_word`); four new: they face the house at dawn (stage 4), one more in the pen till noon (stage 3), a row withered back to seedlings (stage 3), eggs from the coop to the door (stage 2); and "animals turn on you" brought here from batch 16, by the harm stages (small harm from 3, real from 4). |
+| 7 | Decoration and signs; What they kill | 12 | **Done:** `sign_word`, `count_up`, `weapon_on_wall`, `head_on_post`, `grave_each`. **Answered:** `sign_word` built (the host changes one written line, never a blank sign); four new: the kill sign's count goes up as they kill (stage 3), their weapon in a frame of theirs (stage 3), a mob head on a fence post by the door (stage 4), a grave for each kind they killed, in a row (stage 4). |
+| 8 | Chat and the player list | 9 | **Done:** `sleep_message`, `advancement`, `death_message`, `words_on_sign`, `ping_fades`, `empty_message`. **Answered:** both built (`sleep_message` as "1/2 players sleeping" while they are awake and alone; `advancement` replaying one they have, toast and line); four new: a death message while alive (stage 4), their words on a sign by the door (stage 3), their ping gone for a minute (stage 3), an empty message in their name (stage 3). |
+| 9 | Furnaces and workstations; Redstone | 15 | **Done** (owner: all five built, all four new): `jukebox`, `lectern_page`, `swap_fuel`, `brewing_done`, `grindstone_strip`, `lamps_blink`, `composter_fills`, `crafted_for_you`, `bell_rings`. |
+| 10 | Water and boats; Snow, sand and weather | 12 | **Done** (owner: all five, `fishing_line` faked and the prints in snow only; all four new): `trail`, `trail_in`, `boat_waiting`, `ripples`, `fishing_line`, `snowman`, `boat_in_house`, `under_the_water`, `wet_steps`. |
+| 11 | The sky and the light; The screen (with the atmospheres, D) | 9 | **Done:** the atmospheres (`mist`, `dusk_noon`, `red_mist`, `darkness`) as real fog, `fog_close` as mist, `red_rain` as red drops, `moon_wrong`, `stars_out`, `night_early`, `painting_flip`, `compass_points`, `hunger_shake`, `heart_skip`, `subtitle`, `tab_twice`, `reflection` as a face under the water; five render hooks, checked to load on both loaders. **Answered:** every row built: the sky ones (`moon_wrong`, `stars_out`, `night_early`) by sky hooks, the HUD ones (`hunger_shake`, `heart_skip`, `subtitle`, `tab_twice`), `painting_flip`, `compass_points`; `reflection` becomes a face under the water (the figure just under still water, looking up, a second); the atmospheres of D with real fog through render hooks on both loaders (mist, red mist, darkness, dusk at noon, red rain drops), each hook written down for updates. |
+| 12 | Villages (with `village_abandoned`) | 5 | **Done:** `village_lantern`, `villager_word` (what it took, for sale once), `village_abandoned` (as answered in Q8), and G1 `bell_twice`. |
+| 13 | Mines and caves | 6 | **Done** (owner: all six, all four new): `mine_beside`, `mined_out`, `tunnel_sealed`, `ladder_down`, `tunnel_toward`, `portal_lit`, `tunnel_goes_on`, `torches_far_end`, `sign_deep`, `way_back_closes`; the tunnel memory. |
+| 14 | The figures (phase 5's rest) | 8 | **Done** (owner: the swing by the harm stages, all four new): F4 as `figure_nip` (stage 3, half a heart) and `figure_swing` (4 and 5, two hearts, never a kill), `figure_mirror`, `figure_window`, `figure_crowd`, `figure_waves`. |
+| 15 | Like a player; Building | 0 | **Done** (owner: every one, materials gathered first and topped up when short): `house_near`, `house_grows`, `pillar`, `hut_on_route`, `cave_room`, `dock`, `bridge`, `bridge_done`, `copy_build`, `copy_house`; `into_the_mountain`, `through_the_hill`, `into_the_dark`, `copy_crouch`, `tools_in_hand`; `wave` is `figure_waves`, `your_spacing` the torch spacing already used. |
+| 16 | The new ones (F, G) and the ending | | **Done:** every row answered for (`hand_on_shoulder`, `breath`, `footsteps_follow`, `name_called`; `pack`, `hostiles_close`, `shove`; `answer_knock`, `item_frames_face`, `wrong_sky`, `fish_on_line`; `ghast_name`, `ender_holds`, `busy_away`), the three endings as scripts (`core/src/ending.rs`, what differs written under the table in `entity.md`), and on the way a frame's own item no longer lost. **Answered:** every F and G left: `pack`, `hostiles_close`, `hand_on_shoulder`, `breath`, `footsteps_follow`, `name_called`, `answer_knock`, `item_frames_face`, `wrong_sky`, `fish_on_line`, `shove` (F8 `bed_pulled` is `woke_elsewhere`; F10 cannot be, a torch in the hand gives no light in the game); the three Nether and End rows (the ghasts say their name, an enderman holds their block, it was busy while they were gone); the three endings as written. |
 
 A test now keeps every protocol command carried out by the host
 (`core/tests/host_carries_out.rs`); every sound is checked against the game's list; every

@@ -2,7 +2,7 @@
 
 For whoever picks this up next, a person or a model that has never seen the repository: what
 this is, how it is built, where things are, how to work in it, and where to start. Written
-2026-11-09 at the end of the first two days, at the owner's ask ("a guide to help the next model
+at the end of the first two days, at the owner's ask ("a guide to help the next model
 continue"). [Queue](queue.md) is the short version that every session reads first; this page is
 the long one, read once.
 
@@ -27,7 +27,7 @@ page in `docs/` explains one part and is kept true as code lands.
    decisions, [Memory](memory.md) for what it keeps.
 5. [Development](development.md) for the toolchain, the dev client and the tests;
    [Upgrading](upgrading.md) for a new game version.
-6. [Todo](todo.md): every `[x]` is dated and says what it replaced (`Was:`); every `[ ]` is
+6. [Todo](todo.md): every `[x]` says what it replaced (`Was:`); every `[ ]` is
    something still to build.
 
 ## The shape of the code
@@ -65,9 +65,9 @@ into commands (`act.rs`). The debug screen asks `craftkit_world_debug` every hal
 ## How to work here
 
 - **Every change lands with its tests and its docs.** Tests read as sentences next to the code;
-  the docs page for the part is updated in the same change; the todo gets a dated `[x]` with
+  the docs page for the part is updated in the same change; the todo gets an `[x]` with
   the old text after `Was:`. The owner asked for this rule on day one and repeats it.
-- **Ask the owner** before committing (they approved per-batch commits on 2026-11-09 and want
+- **Ask the owner** before committing (they approved per-batch commits and want
   one commit per finished item), before accepting any terms on their behalf, before any large
   download, and when a design choice has more than one reasonable answer. They like being
   asked questions. They are not always at the laptop: say what you did and what to try.
@@ -105,7 +105,7 @@ overlay (`fn+F8` and `fn+F9` on a Mac keyboard, or rebind them under Controls, M
 the Events tab fires anything. `config/lodger/decisions.log` has every decision. Rebuilding
 the host while the client runs breaks the client; quit it first.
 
-## Where it stands (2026-11-09, night)
+## Where it stands (night)
 
 Phases 0 to 4 are done; phase 5 has the figure's first cut. The brain asks the model the four
 planning questions (what, how soon, when, where), the want once, the target in multiplayer,
@@ -125,12 +125,12 @@ every event, read the log, fix what the world shows.
 
 ## Open questions for the owner
 
-- The crate's final name (`craftkit` was free on crates.io on 2026-11-09).
+- The crate's final name (`craftkit` was free on crates.io).
 - Whether `/lodger ...` commands stay or everything lives under `/craftkit lodger ...`.
 - The tone of the lines in the target's own name (lower case, no punctuation today).
 - Whether the figure wears the target's skin on servers (it is seen by the target alone, so
   the question is only whether that is wanted) and how it should pose in the bed.
 - What "use this to piggyback and implement various events, as a guide" referred to (asked
-  2026-11-09 with nothing attached).
+  with nothing attached).
 - Calibration round two's choices (see round one): reword or drop `Should it do something
   soon?`, gate on the second question's confidence, bar the moods.

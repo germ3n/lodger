@@ -122,12 +122,12 @@ As little as possible, because the mod is about not knowing:
 
 - the figure: not an entity the server spawns but packets to the target's client alone (a
   player-list entry carrying the target's own profile, so the skin is theirs, and a player
-  entity with an id far above the server's; `world/Figures.java`, 2026-11-09), so no other
+  entity with an id far above the server's; `world/Figures.java`), so no other
   player and no other mod ever sees it, and the server's world never holds it;
 - a sound to play at a position, by id, once;
 - a hint, with a duration and a place, which the client renders and then stops; the world the
-  server holds never changed. The kinds the client renders today (`client/Glitches.java`,
-  2026-11-09): `cut_music` (the music stops and stays stopped), `silence` (ambient, weather and
+  server holds never changed. The kinds the client renders today (`client/Glitches.java`):
+  `cut_music` (the music stops and stays stopped), `silence` (ambient, weather and
   hostile sounds stopped as they start), `flicker` (the screen darkens in flickers),
   `lights_fail` (dark, then back), `sun_blink` (black for a blink, twice), `lightning_silent`
   (a white flash), `red_rain` (a red cast), `crosshair_gone`, `hotbar_slip` (the selected slot

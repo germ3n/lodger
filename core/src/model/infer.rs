@@ -570,7 +570,7 @@ mod real {
         model.shutdown();
     }
 
-    /// The situation of the first written line seen in the dev client (2026-11-09), where the
+    /// The situation of the first written line seen in the dev client, where the
     /// model put `123456` on a sign.
     const DEV_STAY: &[&str] = &[
         "The chest 60 blocks north of the house is opened most, 1 times so far. It holds a bread, an oak sapling, an apple.",

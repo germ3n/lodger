@@ -1,7 +1,7 @@
 # Queue
 
 Where the work stands and what the next session picks up, written for a session that starts
-knowing nothing of how it came about, as `~/chainv4/docs/queue.md` is. Written 2026-11-09 at the
+knowing nothing of how it came about, as `~/chainv4/docs/queue.md` is. Written at the
 end of the day the project started; check what has moved since with `git log`.
 
 ## Rules for every session
@@ -14,7 +14,7 @@ end of the day the project started; check what has moved since with `git log`.
   license, Mojang's EULA for a dev server), downloading anything large, and any real design
   choice, with the option you recommend first.
 - **Every change** lands with its tests and its docs: the page for the part,
-  [Good to know](good-to-know.md) for what would surprise someone, and a dated `[x]` in
+  [Good to know](good-to-know.md) for what would surprise someone, and an `[x]` in
   [Todo](todo.md) with the old text kept after `Was:`. Report exactly which checks ran and how
   they came out. Never weaken a test to make it pass.
 - **Commits:** author `cherrymaraschino@protonmail.com` (the repo's `git config` has it), a
@@ -39,7 +39,7 @@ end of the day the project started; check what has moved since with `git log`.
 
 ## Where it stands
 
-2026-11-09, late. Seven commits since the mind's first cut, one per finished item:
+Late on the second day. Seven commits since the mind's first cut, one per finished item:
 
 - **The debug screen and the HUD** (F8, F9; `/craftkit lodger debug|show|force|stage|action`):
   senses as meters, the mind's gauges, a Story section telling each decision with its menu,
@@ -65,7 +65,7 @@ jar at the end of the session and left at the title screen.
    tab and watch the world and the Log tab; read `config/lodger/decisions.log` for the model's
    answers (`brain=model`) and its written lines (`wrote (...)`); the figure (`far_figure`,
    `in_doorway`). Fix what shows. Then NeoForge (`:neoforge:runClient`) the same.
-   **Asked during the first session (2026-11-09), next after its fixes:** (done the same night:
+   **Asked during the first session, next after its fixes:** (done the same night:
    parallel plans, cancelling, the side panel; see the todo) plans in parallel
    (`brain.most_plans`, 3 by default, presets scale it; asking again every `plan_every` while
    below it; never two on one spot or container, never two of a group, never one event twice);
@@ -73,25 +73,24 @@ jar at the end of the session and left at the title screen.
    within the window, a stronger reaction at the cap) with the reason in the log and on the
    screen; the debug screen as a side panel that neither pauses nor covers the world, smaller
    text, every plan a row with Drop and Now, waiting reasons shown; an audit that every event's
-   commands match its row, and each event through a scripted stay. **Atmospheres** (owner,
-   2026-11-09: "red mist ... like blood, also just darkness, fog ... not abrupt like other mods,
+   commands match its row, and each event through a scripted stay. **Atmospheres** (owner: "red mist ... like blood, also just darkness, fog ... not abrupt like other mods,
    make it good and spooky"): the world's own fog driven on the target's client (distance and
    colour through the fog renderer, not a layer over the HUD), easing in over tens of seconds,
    breathing, easing out: a mist that swallows the terrain, a red mist, a darkness that pulls
    the world in; `fog_close` and `red_rain` rebuilt on it. Ask the owner which, how long, which
    stages, and whether they stack.
-   **Paused 2026-11-09 night, mid-item (owner: "pause, I'll come back and say continue"):**
+   **Paused, mid-item (owner: "pause, I'll come back and say continue"):**
    `hostiles_stare` is written and uncommitted: the mind, the SDK's `hold` (ABI 8) and the
    host's `Holds`, `Facing` and the `hold` executor. Rust passes (fmt, clippy, 129 unit, 10
    stays, 28 SDK); the host has not been compiled with it (the client was running). Next: quit
    the client, `cargo build --release -p lodger-core`, `./gradlew build` in `host/` and `mod/`
    (expect `FacingTest`), fix what the compile says, ask to commit, try it at night in the dev
-   client. Then the atmospheres, owner's answers 2026-11-09: all four (mist from stage 2, red
+   client. Then the atmospheres, owner's answers: all four (mist from stage 2, red
    mist and darkness stage 3+, dusk at noon stage 2+), the slow breath (in over 40 to 60 s, held
    2 to 4 minutes with the fog edge pulsing, out over 30 to 40 s, starting while they face away
    or are indoors), and they may stack; ask whether `fog_close` and `red_rain` move onto the
    real fog. Then `village_abandoned`, then the rest of the catalogue.
-   **After the event review** (owner, 2026-11-09): a bug check pass over every module and an
+   **After the event review** (owner): a bug check pass over every module and an
    optimization run over every per-tick path.
 2. **A dev stay with the real model:** the 1.5B is in the dev client's config folder and the
    default now; read `decisions.log` for `brain=model`, the reactions and the written lines.
@@ -107,7 +106,7 @@ jar at the end of the session and left at the title screen.
 
 ## Open questions for the owner
 
-- The crate's final name (`craftkit` is a working name; it was free on crates.io on 2026-11-09).
+- The crate's final name (`craftkit` is a working name; it was free on crates.io).
 - Whether the lodger's `/lodger ...` commands stay as the README has them or become
   `/craftkit lodger ...` alone, where the debug commands already are (`show`, `force`, `stage`,
   `action`).

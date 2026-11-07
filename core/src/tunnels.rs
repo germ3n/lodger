@@ -1,4 +1,4 @@
-//! The target's tunnels (batch 13, owner 2026-11-10): what they dig underground, grouped as it
+//! The target's tunnels (batch 13, owner): what they dig underground, grouped as it
 //! is dug, a dig within three blocks of a tunnel's last carrying it on; each tunnel's mouth,
 //! end, way and floor; the newest and the oldest; the ore ahead of one; the one they stand in.
 

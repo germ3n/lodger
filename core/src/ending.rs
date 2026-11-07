@@ -1,4 +1,4 @@
-//! The endings (batch 16, owner 2026-11-10: "all three as written"; `docs/entity.md`, How it
+//! The endings (batch 16, owner: "all three as written"; `docs/entity.md`, How it
 //! ends). Stage five is three in-game days of a script, from the first dawn after it begins:
 //! each ending a list of beats, each at a day and an hour, run in order as the clock reaches
 //! them. A beat that is a moment (a sound, a sight, the screen) is skipped when it comes late (the
@@ -359,7 +359,7 @@ fn night(now: &Now) -> bool {
 /// The longest a fight waits for its answer before it is taken for over (the host lost it).
 const FIGHT_MOST: u64 = 24_000;
 
-/// The confrontation (owner, 2026-11-10, "a fourth ending: you confront it"): in stage five,
+/// The confrontation (owner, "a fourth ending: you confront it"): in stage five,
 /// at night, they knock on its door (or, with no house, stand at its place) and the fight
 /// begins (`Command::Confront`, the host's to run); its answer ends the stay: `beaten` if they
 /// won (its house's chest spilled on their step, what it held given back by the host), `kept`
@@ -483,7 +483,7 @@ pub fn construct_blocks(memory: &Memory) -> Vec<String> {
     blocks
 }
 
-/// Its beacon (owner, 2026-11-10: "real, and dark until night"): from stage five's first dusk,
+/// Its beacon (owner: "real, and dark until night"): from stage five's first dusk,
 /// on its house's roof (the middle of the roof iron, the beacon on it), or at its place; lit
 /// at dusk, a block of cobblestone over it by day.
 fn beacon(

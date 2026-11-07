@@ -22,7 +22,7 @@ import java.util.Set;
  *   <li>{@code lights_fail}: the screen goes dark, then back.</li>
  *   <li>{@code sun_blink}: black for a blink, twice.</li>
  *   <li>{@code lightning_silent}: a white flash, no thunder.</li>
- *   <li>{@code red_rain}: the drops red ({@link Atmospheres#rain}), no screen cast since 2026-11-10.</li>
+ *   <li>{@code red_rain}: the drops red ({@link Atmospheres#rain}), no screen cast.</li>
  *   <li>{@code mist}, {@code red_mist}, {@code darkness}, {@code dusk_noon}: real fog ({@link Atmospheres#fog}),
  *       with drifting motes in the mists.</li>
  *   <li>{@code stars_out}, {@code moon_wrong}, {@code night_early}, {@code wrong_sky}: the sky ({@link Atmospheres#sky}).</li>
@@ -35,7 +35,7 @@ import java.util.Set;
  *   <li>{@code hotbar_slip}: the selected slot jumps to the item named in {@code detail}, once.</li>
  *   <li>{@code camera_nudge}: the view turns two degrees toward the hint's place, once.</li>
  *   <li>{@code fov_pull}: the field of view narrows over the hint's time and snaps back.</li>
- *   <li>{@code fog_close}: mist rolling in, the real fog, since 2026-11-10 (it was a dark ring).</li>
+ *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  * </ul>
  */
@@ -203,7 +203,7 @@ public final class Glitches {
 					}
 				}
 				// Not while a screen is open: the options save the field of view as it stands, and
-				// a narrowed one would be kept for good (until 2026-11-10 it could be).
+				// a narrowed one would be kept for good (until now it could be).
 				case "fov_pull" -> {
 					if (minecraft.gui.screen() != null) {
 						break;

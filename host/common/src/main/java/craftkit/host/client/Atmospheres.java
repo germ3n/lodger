@@ -16,7 +16,7 @@ import java.util.Optional;
 
 /**
  * What the hooks into the game's fog, sky, rain, compass and paintings ask while a hint is on
- * (the review's D and batch 11, owner 2026-11-10): the atmospheres as real fog, eased and
+ * (the review's D and batch 11, owner): the atmospheres as real fog, eased and
  * stacked ({@link Atmosphere}), the stars gone, the moon full, the sky two hours on, the rain
  * red, a compass turned to a place, a painting upside down. Each hook is one line into here, so
  * a Minecraft update that moves a hook moves one line (docs/upgrading.md, The render hooks).

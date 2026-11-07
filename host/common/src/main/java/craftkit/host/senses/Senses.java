@@ -63,7 +63,7 @@ public final class Senses {
 	private final Map<ServerLevel, List<JsonObject>> chat = new HashMap<>();
 	private final Map<ServerLevel, List<JsonObject>> scans = new HashMap<>();
 	private final Map<ServerLevel, JsonObject> surroundings = new HashMap<>();
-	/** The levels told which other mods are loaded: each once (until 2026-11-10 one level a run). */
+	/** The levels told which other mods are loaded: each once (until now one level a run). */
 	private final java.util.Set<ServerLevel> modsSentTo = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
 	private final List<JsonObject> mods = new ArrayList<>();
 	private long tick;
@@ -107,7 +107,7 @@ public final class Senses {
 
 	public void noticedLeft(ServerPlayer player) {
 		event(player, "left", null, "", null);
-		// What was kept of them is this session's: rejoining starts it again (until 2026-11-10
+		// What was kept of them is this session's: rejoining starts it again (until now
 		// a chest open as they left read as closed when they came back).
 		UUID uuid = player.getUUID();
 		movement.remove(uuid);
@@ -151,7 +151,7 @@ public final class Senses {
 	/** A block used: if it holds a container, that is a container opened, with its contents. */
 	public void noticedUsedBlock(ServerPlayer player, BlockPos pos) {
 		// A spectator opens nothing and never unpacks loot; one use is heard once, though the
-		// loaders ask for each hand (until 2026-11-10 both happened).
+		// loaders ask for each hand (until now both happened).
 		if (player.isSpectator()) {
 			return;
 		}
@@ -376,7 +376,7 @@ public final class Senses {
 		}
 		lastDimension.put(uuid, dimension);
 		// A jump of more than eight blocks in a tick is a teleport, a portal or a respawn, not
-		// a run: the movement is read afresh from here (until 2026-11-10 a portal read as
+		// a run: the movement is read afresh from here (until now a portal read as
 		// fleeing at a hundred blocks a second).
 		Vec3 last = lastPos.put(uuid, pos);
 		if (last == null || last.distanceToSqr(pos) > 64 || (was != null && !was.equals(dimension))) {
@@ -473,7 +473,7 @@ public final class Senses {
 		for (Entity entity : level.getEntities(player, player.getBoundingBox().inflate(LOOK_RANGE), e -> e != player && !(e instanceof net.minecraft.world.entity.item.ItemEntity))) {
 			Vec3 to = entity.position().add(0, entity.getBbHeight() / 2, 0).subtract(eye);
 			double distance = to.length();
-			// Seen, not through a wall (until 2026-11-10 one behind a wall counted).
+			// Seen, not through a wall (until now one behind a wall counted).
 			if (distance < nearestDistance && to.normalize().dot(view) > Math.cos(Math.toRadians(5)) && player.hasLineOfSight(entity)) {
 				nearest = entity;
 				nearestDistance = distance;

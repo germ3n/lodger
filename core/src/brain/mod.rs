@@ -200,7 +200,7 @@ pub struct ChatReply {
 
 /// How likely a line about the lodger is answered (`answers_you`), and any other line; at most
 /// [`REPLIES_A_DAY`] a day, and the row's cooldown (a quarter day, five minutes of play) apart.
-/// The owner's call (2026-11-09): "stage 2 and up, often if about it".
+/// The owner's call: "stage 2 and up, often if about it".
 pub const REPLY_CHANCE_ABOUT: f64 = 0.6;
 pub const REPLY_CHANCE_OTHER: f64 = 0.15;
 pub const REPLIES_A_DAY: usize = 3;
@@ -238,11 +238,11 @@ pub const KNOCK_CHANCE: f64 = 0.5;
 const STOPS_WHEN_THEY_MOVE: &[&str] = &["breath"];
 
 /// How likely a chest of fresh loot gets its offering, and how likely the offering takes a
-/// loot item's place rather than an empty slot's (owner, 2026-11-09: "1 in 5", "mostly add").
+/// loot item's place rather than an empty slot's (owner: "1 in 5", "mostly add").
 pub const LOOT_CHANCE: f32 = 0.2;
 pub const LOOT_SWAP: f32 = 0.25;
 
-/// What may turn up in loot from nowhere, loot being the world's (owner, 2026-11-09): the
+/// What may turn up in loot from nowhere, loot being the world's (owner): the
 /// one exception to "it never spawns anything", and only when it holds nothing of its own.
 pub const LOOT_FROM_NOWHERE: &[&str] = &["minecraft:redstone_lamp", "minecraft:candle"];
 
@@ -399,7 +399,7 @@ impl Brain {
         if !arc.moved_in() {
             return commands;
         }
-        // Its place, chosen once it has moved in and knows their home (until 2026-11-10 it was
+        // Its place, chosen once it has moved in and knows their home (until now it was
         // never chosen, and each event that wanted it picked a spot of its own).
         if memory.place.is_none() && memory.home.is_some() {
             memory.place = act::spot(memory, &mut self.rng);
@@ -851,7 +851,7 @@ impl Brain {
 
         // A plan that carries words and has not asked for them (one fired from the debug
         // screen) asks now and gives the model three seconds; Fire wrote from the bank alone
-        // and the same six lines came round (2026-11-09).
+        // and the same six lines came round.
         let unasked: Vec<u64> = self
             .plans
             .iter()
@@ -1035,8 +1035,7 @@ impl Brain {
         };
         // Digging near what they built is refused whoever asked, the debug screen's Fire too:
         // the host keeps a placed block itself from being replaced, but not the ground under it.
-        // `alcove` alone digs beside what they built: one block of natural stone (owner,
-        // 2026-11-09), the host refusing anything else.
+        // `alcove` alone digs beside what they built: one block of natural stone (owner), the host refusing anything else.
         let digs_near = event.id != "alcove";
         if let Some(dug) = made.iter().find_map(|(command, _)| {
             act::dug(command).filter(|p| digs_near && !act::clear_of_built(memory, *p))
@@ -1066,7 +1065,7 @@ impl Brain {
             return Step::Wait("in view".to_string());
         }
         // Within its cooldown, or the same as the last, is a reason to wait while its window
-        // lasts, as `cancel_reason` says; until 2026-11-10 it gave the plan up.
+        // lasts, as `cancel_reason` says; until now it gave the plan up.
         if matches!(
             checked,
             Err(rules::Refused::Cooldown) | Err(rules::Refused::SameAsLast)
@@ -1081,7 +1080,7 @@ impl Brain {
 
         self.written.retain(|(e, _)| *e != plan.event);
         // Only what was sent spends: an event that made nothing (a tidy chest, no slot free)
-        // used the day's budget and counted toward the next stage until 2026-11-10.
+        // used the day's budget and counted toward the next stage until now.
         if !plan.forced && (!made.is_empty() || plan.event == "wait") {
             arc.spend(event.cost(), now.day);
         }
@@ -1099,7 +1098,7 @@ impl Brain {
                 },
             );
         }
-        // Nothing made is nothing done: not a landmark, not toward its cap (until 2026-11-10
+        // Nothing made is nothing done: not a landmark, not toward its cap (until now
         // it was recorded as landed). Waiting is the one event that is meant to make nothing.
         if made.is_empty() && !plan.forced {
             memory.record(
@@ -1657,7 +1656,7 @@ impl Brain {
             .filter(|e| e.id == "wait" || !self.clashes(e, None))
             .collect();
         // Nothing but `wait` on offer is nothing to decide: no ask, no decision logged. The
-        // dev client asked the model every interval for a menu of one (2026-11-09).
+        // dev client asked the model every interval for a menu of one.
         if menu.iter().all(|e| e.id == "wait") {
             return;
         }
@@ -2211,7 +2210,7 @@ impl Brain {
         let when = when.unwrap_or_default();
         // The model answers `When?` before it knows the event, so a moment the event's needs
         // rule out is dropped: `wall_swap` (away or asleep) planned "as they come home" waited
-        // its whole day in the dev client (2026-11-09).
+        // its whole day in the dev client.
         let when = if when_fits(chosen, &when) {
             when
         } else {
@@ -2478,7 +2477,7 @@ pub fn when_fits(event: &Event, when: &str) -> bool {
     let rules_out: &[events::Need] = match when {
         "home" => &[TargetAwayOrAsleep, TargetInBed],
         // Awake, eating, walking to a door or the chest never happen asleep, nor near the
-        // home while away; until 2026-11-10 such a plan waited out its whole window.
+        // home while away; until now such a plan waited out its whole window.
         "sleep" => &[
             TargetWalking,
             TargetOutdoors,
@@ -3194,7 +3193,7 @@ mod tests {
 
     #[test]
     fn a_plan_whose_torches_they_would_see_waits_until_they_look_away() {
-        // The dev client, 2026-11-09: a path of torches went up 40 blocks off, in plain sight.
+        // The dev client: a path of torches went up 40 blocks off, in plain sight.
         let mut config = Config::default();
         config.stages.start_after_days = 0;
         let mut memory = home_memory();
@@ -3289,7 +3288,7 @@ mod tests {
 
     #[test]
     fn a_moment_the_event_s_needs_rule_out_is_dropped_for_whenever_they_hold() {
-        // The dev client, 2026-11-09: `wall_swap` planned "as they come home" never came.
+        // The dev client: `wall_swap` planned "as they come home" never came.
         let swap = events::find("wall_swap").unwrap();
         assert!(!when_fits(swap, "home"));
         assert!(when_fits(swap, "sleep"));
@@ -3354,7 +3353,7 @@ mod tests {
 
     #[test]
     fn a_hole_next_to_what_they_built_digs_nothing_even_when_forced() {
-        // The dev client, 2026-11-09: `hole` dug under a crafting table at the lodger's place.
+        // The dev client: `hole` dug under a crafting table at the lodger's place.
         let config = Config::default();
         let mut memory = home_memory();
         memory.placed.push([340, 64, 50]);
@@ -3615,7 +3614,7 @@ mod tests {
             ..Now::default()
         };
         // One plan held, waiting far ahead: the brain must choose another beside it. Left to
-        // chance, two rarely overlapped once most events send at once (2026-11-10).
+        // chance, two rarely overlapped once most events send at once.
         let held = brain.next_plan_id();
         brain.plans.push(Plan {
             id: held,
@@ -3749,7 +3748,7 @@ mod tests {
 
     #[test]
     fn a_fired_line_is_the_model_s_and_a_line_it_repeats_is_dropped_for_a_fresh_one() {
-        // The dev client, 2026-11-09: Fire never asked the model, and `kill_line` went round
+        // The dev client: Fire never asked the model, and `kill_line` went round
         // the bank's six lines.
         let _turn = crate::model::TEST_TURN
             .lock()
@@ -3882,7 +3881,7 @@ mod tests {
         assert_eq!(
             memory.stored("minecraft:cobblestone"),
             1,
-            "stone dug is cobblestone, as a pick gives (it was kept as stone until 2026-11-10)"
+            "stone dug is cobblestone, as a pick gives (it used to be kept as stone)"
         );
 
         memory.store("minecraft:dirt", 1);

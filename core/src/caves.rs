@@ -1,4 +1,4 @@
-//! Caves near the home the target has not entered (batch 4, owner 2026-11-10): read by the
+//! Caves near the home the target has not entered (batch 4, owner): read by the
 //! brain's cave read, a sparse scan for dark air (no sky light, no block light) around the
 //! target while they are near home, since 1.18's caves are mostly plain air and not the old
 //! `cave_air`. `lantern_ahead` puts one of their lanterns far down one; `cave_lit` lights one

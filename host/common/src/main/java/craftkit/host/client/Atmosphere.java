@@ -3,8 +3,8 @@ package craftkit.host.client;
 import java.util.List;
 
 /**
- * The atmospheres' arithmetic, apart from the renderer so JUnit checks it (the review's D, owner
- * 2026-11-09: "not abrupt like other mods, make it good and spooky"): how strongly one is on at a
+ * The atmospheres' arithmetic, apart from the renderer so JUnit checks it (the review's D, owner:
+ * "not abrupt like other mods, make it good and spooky"): how strongly one is on at a
  * moment (in over most of a minute, held with a slow breath, out over half a minute), and how the
  * game's own fog and its colour blend toward each one that is on, several at once.
  */

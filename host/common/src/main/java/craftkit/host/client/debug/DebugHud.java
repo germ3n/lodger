@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * The debug screen's essentials over the game while playing (owner, 2026-11-09: "make it so
+ * The debug screen's essentials over the game while playing (owner: "make it so
  * you can play with debug ui, like make it hud elements"): the mod's gauges as small bars, the
  * story's NEXT line, the last few things that happened, and a few of the senses' meters, in the
  * top right. Toggled with the HUD key (F9 unless rebound) or the screen's HUD button. While on,

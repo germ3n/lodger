@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 
 /**
  * The debug panel: a strip down the right of the screen, a third of it wide, over the world,
- * which stays in view and keeps running beside it (owner, 2026-11-09: the full screen hid the
+ * which stays in view and keeps running beside it (owner: the full screen hid the
  * events it was there to watch). Four tabs over one {@link DebugModel} the server refreshes
  * every half second while it is open. <b>Senses</b> is the host's reading of this player, as
  * meters. <b>Mind</b> is the mod's gauges, its buttons, and its sections, whose items (each plan)
@@ -480,7 +480,7 @@ public final class DebugScreen extends Screen {
 
 	/**
 	 * A line with a spot in it is a link: underlined under the mouse, Shift+click goes there. A
-	 * plain click does nothing (owner, 2026-11-10: a stray click put them deep in a cave).
+	 * plain click does nothing (owner: a stray click put them deep in a cave).
 	 */
 	private void goTo(GuiGraphicsExtractor graphics, String text, int x, int y, int w, int h) {
 		Coordinates.find(text).ifPresent(spot -> {

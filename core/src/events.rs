@@ -222,7 +222,7 @@ pub enum Need {
     InEnd,
     /// The target has just come back from another dimension, a while gone; never offered.
     CameBack,
-    /// It holds nothing it took: one thing at a time (until 2026-11-10 a second take lost the
+    /// It holds nothing it took: one thing at a time (until now a second take lost the
     /// first).
     HoldsNothing,
 }
@@ -1326,7 +1326,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::EggOnBed,
         false,
     ),
-    // Batch 5 (owner, 2026-11-10): the bed moved, recoloured, doubled; under it; at its foot.
+    // Batch 5 (owner): the bed moved, recoloured, doubled; under it; at its foot.
     row(
         "shift_bed",
         3,
@@ -1382,7 +1382,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::SecondBed,
         false,
     ),
-    // Batch 6 (owner, 2026-11-10): the four rows built, four new, and the animals turning on
+    // Batch 6 (owner): the four rows built, four new, and the animals turning on
     // them, by the harm stages: a nip from stage 3, real harm from 4, never a kill.
     row(
         "scarecrow",
@@ -1494,7 +1494,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::Charge(3, 3.0, 3),
         false,
     ),
-    // Batch 15, like a player (owner, 2026-11-10: all of them).
+    // Batch 15, like a player (owner: all of them).
     row(
         "into_the_mountain",
         4,
@@ -1550,7 +1550,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::Figure(FigureWhere::FarWorking, 30.0, 32.0),
         false,
     ),
-    // Batch 16, close and quiet (owner, 2026-11-10: "the close and quiet ones").
+    // Batch 16, close and quiet (owner: "the close and quiet ones").
     row(
         "hand_on_shoulder",
         3,
@@ -1595,7 +1595,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("name_called", 4.0),
         true,
     ),
-    // Arrows and potions (owner, 2026-11-10: "near misses, then hits"; every potion idea).
+    // Arrows and potions (owner: "near misses, then hits"; every potion idea).
     row(
         "arrow_near",
         3,
@@ -1673,7 +1673,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::DoorCloud,
         false,
     ),
-    // Batch 16, the Nether and the End (owner, 2026-11-10: all three).
+    // Batch 16, the Nether and the End (owner: all three).
     row(
         "ghast_name",
         3,
@@ -1707,7 +1707,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::WhileAway,
         false,
     ),
-    // Batch 16, more (owner, 2026-11-10: `answer_knock`, the frames, the sky, the line).
+    // Batch 16, more (owner: `answer_knock`, the frames, the sky, the line).
     row(
         "answer_knock",
         2,
@@ -1752,7 +1752,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::BobberUnder,
         true,
     ),
-    // Batch 16, the close ones (owner, 2026-11-10: `pack`, `hostiles_close`, `shove`).
+    // Batch 16, the close ones (owner: `pack`, `hostiles_close`, `shove`).
     row(
         "pack",
         3,
@@ -1808,7 +1808,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::Shove,
         false,
     ),
-    // Batch 15, building (owner, 2026-11-10: every one; materials gathered first, topped up
+    // Batch 15, building (owner: every one; materials gathered first, topped up
     // when short): a night's share at a time.
     row(
         "house_near",
@@ -1920,7 +1920,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::CaveRoom,
         false,
     ),
-    // Batch 14 (owner, 2026-11-10): the figure's swing by the harm stages (a nip at 3, real
+    // Batch 14 (owner): the figure's swing by the harm stages (a nip at 3, real
     // harm from 4, never a kill), and four new: it mirrors them, at the window, in the crowd,
     // it waves.
     row(
@@ -1989,7 +1989,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::FigureWave,
         false,
     ),
-    // Batch 13 (owner, 2026-11-10): every mine row, and four new: the tunnel goes on, its
+    // Batch 13 (owner): every mine row, and four new: the tunnel goes on, its
     // torches out from the far end, a sign deep down, the way back closed.
     row(
         "mine_beside",
@@ -2105,7 +2105,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::WayBackCloses,
         false,
     ),
-    // Batch 12 (owner, 2026-11-10): the village's lantern on their way, what it took for sale,
+    // Batch 12 (owner): the village's lantern on their way, what it took for sale,
     // the village emptied till dawn, and the bell that rings again (G1).
     row(
         "village_lantern",
@@ -2151,7 +2151,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::BellTwice,
         false,
     ),
-    // Batch 11 (owner, 2026-11-10): the atmospheres as real fog (the review's D), the sky's
+    // Batch 11 (owner): the atmospheres as real fog (the review's D), the sky's
     // hints by render hooks, the HUD's, a painting, a compass, a face under the water.
     row(
         "mist",
@@ -2307,7 +2307,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::Figure(FigureWhere::UnderWater, 1.0, 0.0),
         false,
     ),
-    // Batch 10 (owner, 2026-11-10): prints in the snow, the boat ahead, ripples, a bobber with
+    // Batch 10 (owner): prints in the snow, the boat ahead, ripples, a bobber with
     // no one there; a snowman, the boat in the house, a shape under the water, wet steps.
     row(
         "trail",
@@ -2408,7 +2408,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::WetSteps,
         true,
     ),
-    // Batch 9 (owner, 2026-11-10): every row built, four new.
+    // Batch 9 (owner): every row built, four new.
     row(
         "jukebox",
         3,
@@ -2508,7 +2508,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::BellRings,
         false,
     ),
-    // Batch 8 (owner, 2026-11-10): sleepers while they are awake, an advancement again, a death
+    // Batch 8 (owner): sleepers while they are awake, an advancement again, a death
     // message, their words on a sign, their ping gone, an empty message.
     row(
         "sleep_message",
@@ -2576,7 +2576,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::Message("says"),
         false,
     ),
-    // Batch 7 (owner, 2026-11-10): a word in their sign, the count that rises, their weapon on
+    // Batch 7 (owner): a word in their sign, the count that rises, their weapon on
     // the wall, a head on a post, a grave for each.
     row(
         "sign_word",
@@ -3335,7 +3335,7 @@ pub const CATALOGUE: &[Event] = &[
         5,
         &[
             Around("crops"),
-            // The very items: `golden_carrot` and `baked_potato` are no seed (2026-11-10).
+            // The very items: `golden_carrot` and `baked_potato` are no seed.
             InChestAny(&[":carrot", ":potato", ":beetroot_seeds"]),
             TargetAwayOrAsleep,
         ],
@@ -3481,7 +3481,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::ScanOre,
         true,
     ),
-    // Caves they have not entered (batch 4, owner 2026-11-10: a lantern from their chest, the
+    // Caves they have not entered (batch 4, owner: a lantern from their chest, the
     // torches its own).
     row(
         "lantern_ahead",
@@ -3505,7 +3505,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::CaveLit,
         false,
     ),
-    // A light where they died, and their last light taken along (batch 4, owner 2026-11-10).
+    // A light where they died, and their last light taken along (batch 4, owner).
     row(
         "death_light",
         2,
@@ -3550,7 +3550,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoulSwap,
         false,
     ),
-    // The owner's warped animals (2026-11-10).
+    // The owner's warped animals.
     row(
         "warped_animal",
         3,
@@ -3573,7 +3573,7 @@ pub const CATALOGUE: &[Event] = &[
         Action::OreMarked,
         true,
     ),
-    // The house, changed (owner, 2026-11-09: "replace certain blocks of house", "trying to
+    // The house, changed (owner: "replace certain blocks of house", "trying to
     // sleep breaks the bed")
     row(
         "wall_swap",
@@ -4788,7 +4788,7 @@ mod tests {
 
     /// Every event's words start with what it does, a verb: the situation says `Today it did
     /// <words>` and `Today it could not <words>`, and a noun phrase read as `Today it could not
-    /// a wolf howling far off` (2026-11-09).
+    /// a wolf howling far off`.
     #[test]
     fn every_event_s_words_start_with_a_verb() {
         let not_verbs = [
@@ -4820,7 +4820,7 @@ mod tests {
     }
 
     /// Every sound the mind names exists in the game: a renamed sound fails here, not in a
-    /// player's world (`entity.wolf.howl` was gone in 26.3, 2026-11-09). The list is the game's
+    /// player's world (`entity.wolf.howl` was gone in 26.3). The list is the game's
     /// own `sounds.json`, regenerated on a version bump (`docs/upgrading.md`).
     #[test]
     fn every_sound_the_mind_names_is_one_the_game_has() {

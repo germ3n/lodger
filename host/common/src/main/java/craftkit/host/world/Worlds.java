@@ -174,7 +174,7 @@ public final class Worlds {
 			levelUnloaded(level);
 		}
 		// The host lives as long as the game: what it keeps per player is this world's, not the
-		// next one opened (until 2026-11-10 a death held in one world was given back in another,
+		// next one opened (until now a death held in one world was given back in another,
 		// and a push or a loot offering armed in one waited in the next).
 		deaths.clear();
 		fights.clearAll();

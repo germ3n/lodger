@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The confrontation, the fourth ending ({@code confront}, ABI 43; owner, 2026-11-10: "a fourth
+ * The confrontation, the fourth ending ({@code confront}, ABI 43; owner: "a fourth
  * ending: you confront it ... rise out of the ground ... deforming and bending its limbs, turning
  * grotesque, in between stages"). One fight a player, under one boss bar in their name, run tick
  * by tick here:
@@ -370,7 +370,7 @@ public final class Fights {
 				face(m, player.position());
 				drive(f, player);
 				// A wave lasting a minute and a half: its last sink away, never left to pile up
-				// under the next (until 2026-11-10 a wave came every fifty seconds on top of the last).
+				// under the next (until now a wave came every fifty seconds on top of the last).
 				if (f.wave > 0 && in > 20 * 90) {
 					for (Warped w : f.warped) {
 						dust(f.level, w.mob.position(), Blocks.DIRT.defaultBlockState(), 8);
@@ -716,7 +716,7 @@ public final class Fights {
 		};
 		// The game's own hit, its shield, armour, enchantments, cooldown and totem all as they
 		// are; a death from it is caught by `allowDeath` and made the one that keeps everything
-		// (until 2026-11-10 an estimate ahead of the game's own decided, and was wrong).
+		// (until now an estimate ahead of the game's own decided, and was wrong).
 		if (scaled > 0) {
 			player.hurtServer(f.level, source, raw);
 		}
@@ -749,7 +749,7 @@ public final class Fights {
 	}
 
 	/**
-	 * A wave of warped animals at them from the edge of the arena (owner, 2026-11-10: "more
+	 * A wave of warped animals at them from the edge of the arena (owner: "more
 	 * mobs ... more warped, different limbs different sizes, upside down, different textures"):
 	 * of every size from small to twice their own, some upside down, each with extra limbs of
 	 * the wrong stuff and length, some with a face that is not theirs (the player's own, now
@@ -850,7 +850,7 @@ public final class Fights {
 	}
 
 	/**
-	 * The wave's animals, driven at them tick by tick, never giving up (until 2026-11-10 they
+	 * The wave's animals, driven at them tick by tick, never giving up (until now they
 	 * charged for forty seconds and stopped, and a player who waited in the water was let be):
 	 * each paths to them again every half second, hits when it reaches them, never below half a
 	 * heart, and carries its limbs and face with it, twitching.
@@ -861,7 +861,7 @@ public final class Fights {
 			Mob a = w.mob;
 			if (a.isRemoved() || a.isDeadOrDying()) {
 				// A creeper gone with its health left went off (the game marks it dead as it does,
-				// so dying alone cannot tell; until 2026-11-10 its blast was never felt): the harm
+				// so dying alone cannot tell; until now its blast was never felt): the harm
 				// is the fight's, by how near they stood.
 				if (a instanceof net.minecraft.world.entity.monster.Creeper && a.isRemoved() && a.getHealth() > 0 && w.swelled && a.distanceTo(player) < 5) {
 					hurt(f, player, Math.max(2, 9 - 1.5f * a.distanceTo(player)));
@@ -1248,7 +1248,7 @@ public final class Fights {
 	/** Where one stands at a place: the first solid top with room above, a few blocks up or down from it (not the heightmap, which can be a roof or a tree). */
 	private static Vec3 standing(ServerLevel level, Vec3 at) {
 		// Nearest first, from its own height: a porch's roof or leaves overhead are never taken
-		// for the ground (until 2026-11-10 the highest standable spot three up was).
+		// for the ground (until now the highest standable spot three up was).
 		BlockPos start = BlockPos.containing(at.x, at.y, at.z);
 		for (int dy : new int[] {0, 1, -1, 2, -2, 3, -3, -4, -5, -6, -7, -8, -9}) {
 			BlockPos feet = start.above(dy);

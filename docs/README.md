@@ -1,7 +1,7 @@
 # lodger docs
 
 How the lodger works, part by part, and what to keep in mind while running it or changing it.
-Nothing is built yet (2026-11-08): these pages are the design, written so that building can start
+Nothing is built yet: these pages are the design, written so that building can start
 from them and so that every page is kept true as code lands.
 
 - The [README](../README.md) covers installing, the commands and the licenses at a glance.

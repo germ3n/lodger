@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Builds the lodger's two jars, Fabric and NeoForge, for one Minecraft version, with the mind's
-native library for every platform inside (owner, 2026-11-10):
+native library for every platform inside (owner):
 
     python3 scripts/build_jars.py 26.3                 # natives from the CI run of this commit
     python3 scripts/build_jars.py 26.3 --natives local # the ones this computer can build

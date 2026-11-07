@@ -131,11 +131,11 @@ impl Preset {
 }
 
 /// The models the lodger can run: three sizes of Qwen2.5-Instruct, each Qwen's own `q4_k_m`
-/// GGUF, and Qwen3-4B-Instruct-2507 (owner, 2026-11-10: "how about we offer this too?"), whose
+/// GGUF, and Qwen3-4B-Instruct-2507 (owner: "how about we offer this too?"), whose
 /// `q4_k_m` GGUF comes from unsloth's repository, Qwen publishing none of its own that a
 /// download can reach. The 0.5B is the file `~/engine` runs. Sizes and SHA-256 sums are the
-/// files' own as Hugging Face's servers give them (`x-linked-size`, `x-linked-etag`,
-/// 2026-11-10), so the bar is right from the start and the host checks the file it fetched.
+/// files' own as Hugging Face's servers give them (`x-linked-size`, `x-linked-etag`),
+/// so the bar is right from the start and the host checks the file it fetched.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ModelSize {
     Small,
@@ -255,7 +255,7 @@ impl ModelSize {
     }
 
     /// Its license: Apache 2.0, but for the 3B, which is under Qwen's research license (the
-    /// screen said Apache for every size until 2026-11-10).
+    /// screen said Apache for every size until now).
     pub fn license(self) -> ModelLicense {
         match self {
             Self::Small => ModelLicense {
@@ -335,11 +335,11 @@ pub struct Model {
     pub context: u32,
     pub idle_minutes: u32,
     /// The share of the model's layers on the GPU: 0 is the CPU alone, 1 all of them. Half by
-    /// default, so the game's frames keep half the GPU (owner, 2026-11-09).
+    /// default, so the game's frames keep half the GPU (owner).
     pub gpu_share: f64,
     /// Milliseconds the model rests between each piece of its work while it thinks (a chunk
     /// of a question, a token): higher leaves more of the GPU and the CPU to the game at any
-    /// moment, and its answers come slower. 1 by default, at most 100 (owner, 2026-11-10).
+    /// moment, and its answers come slower. 1 by default, at most 100 (owner).
     pub pause_ms: u32,
 }
 
@@ -500,7 +500,7 @@ impl Default for Multiplayer {
 
 /// Numbers written whole with a point (`2.0`) read as whole numbers, so a count written by a
 /// settings screen or by hand that way still loads: `2.0` for `brain.most_plans` refused the
-/// whole config, and the mod with it (the dev client, 2026-11-09). A fraction keeps its point.
+/// whole config, and the mod with it (the dev client). A fraction keeps its point.
 /// A config file whose preset was just changed, with the old preset's values taken out: every
 /// value the file holds that is the old preset's own, so the new preset's apply. A file holds
 /// every key, written at the first start, and picking `calm` on the settings screen used to
@@ -713,8 +713,7 @@ impl Config {
     /// The file with each value of the wrong type mended or left out, one key at a time over
     /// the preset: text that reads as the number or the yes/no the key wants (`"2"`, `"true"`)
     /// is taken as that, anything else falls back to the preset's value, with a warning naming
-    /// the key. One bad key no longer refuses the whole config, and the mod with it (owner,
-    /// 2026-11-09: "make that more robust when it comes to parsing").
+    /// the key. One bad key no longer refuses the whole config, and the mod with it (owner: "make that more robust when it comes to parsing").
     fn mend(
         base: &serde_json::Value,
         file: &serde_json::Value,

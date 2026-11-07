@@ -32,7 +32,7 @@ public record Setting(String key, String label, String group, String kind, List<
 	/** The value after one press: the next option, the other state, or a step up (`up`) or down, kept in range. */
 	public JsonElement next(JsonElement now, boolean up) {
 		// A value of the wrong shape, or a choice with nothing to choose, stays as it is: a
-		// press never throws on the render thread (until 2026-11-10 it could).
+		// press never throws on the render thread (until now it could).
 		if (now == null || !now.isJsonPrimitive()
 				|| (kind.equals("toggle") && !now.getAsJsonPrimitive().isBoolean())
 				|| (kind.equals("number") && (!now.getAsJsonPrimitive().isNumber() || step <= 0))
@@ -45,7 +45,7 @@ public record Setting(String key, String label, String group, String kind, List<
 				double stepped = now.getAsDouble() + (up ? step : -step);
 				double kept = Math.max(min, Math.min(max, Math.round(stepped / step) * step));
 				// A whole step keeps the number whole: `2`, never `2.0`, which a mind reading a
-				// count refuses, and the mod would not load (the dev client, 2026-11-09).
+				// count refuses, and the mod would not load (the dev client).
 				yield step == Math.rint(step)
 						? new com.google.gson.JsonPrimitive(Math.round(kept))
 						: new com.google.gson.JsonPrimitive(Math.round(kept * 1000) / 1000.0);

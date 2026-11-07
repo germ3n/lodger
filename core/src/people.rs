@@ -1,4 +1,4 @@
-//! The people around the target (the review's N4, owner 2026-11-09): who comes to the home,
+//! The people around the target (the review's N4, owner): who comes to the home,
 //! counted once a day each, and who is with the target now. Read from the players every
 //! observation carries; said as detail lines of the situation text.
 

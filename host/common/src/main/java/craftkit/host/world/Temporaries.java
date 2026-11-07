@@ -70,7 +70,7 @@ public final class Temporaries {
 	/**
 	 * Gone, but what it carries stays: what it wears (a stack of the player's it was given, a
 	 * saddle, armour) and what it holds in an inventory (a donkey's chest), dropped where it
-	 * stood as items that do not despawn (until 2026-11-10 they went with it).
+	 * stood as items that do not despawn (until now they went with it).
 	 */
 	private static void gone(Entity entity) {
 		if (entity.level() instanceof ServerLevel level) {

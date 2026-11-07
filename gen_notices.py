@@ -1,6 +1,6 @@
 """Writes THIRD_PARTY_NOTICES.txt: the license notices for what the lodger's jars carry.
 
-Adapted from ~/chainv4's gen_notices.py (owner, 2026-11-10). The jars carry the mind, a native
+Adapted from ~/chainv4's gen_notices.py (owner). The jars carry the mind, a native
 library compiled from this repository's Cargo workspace, which links llama.cpp; the host's Java
 needs nothing beyond the game and its loader. The model is downloaded, not shipped, so its
 license is named, not reproduced. Run it after a dependency changes:

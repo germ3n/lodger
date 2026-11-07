@@ -1,4 +1,4 @@
-//! The village (batch 12, owner 2026-11-10): its middle, its doors one to a door, its lanterns,
+//! The village (batch 12, owner): its middle, its doors one to a door, its lanterns,
 //! the villager nearest the target, and the door of the house the villagers are packed into
 //! when the village empties.
 

@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * closed, and the download goes on from where it stopped (an HTTP range), up to five tries with
  * a pause between. A download cut off by the network keeps its part file, so the next start goes
  * on from it too; only a cancel, a file that is not what the magic says, or a wrong sum removes
- * it. The 4B model's download hung at 2059 of 2381 MB with no end until 2026-11-10.
+ * it. The 4B model's download hung at 2059 of 2381 MB with no end until now.
  */
 public final class Downloader {
 	private static final int CHUNK = 1 << 20;
@@ -164,7 +164,7 @@ public final class Downloader {
 	private void fetch(Path part) throws IOException, InterruptedException {
 		long have = Files.exists(part) ? Files.size(part) : 0;
 		bytes.set(have);
-		// Closed after the try, with its selector thread (until 2026-11-10 one was left per try).
+		// Closed after the try, with its selector thread (until now one was left per try).
 		try (HttpClient client = HttpClient.newBuilder()
 				.followRedirects(HttpClient.Redirect.NORMAL)
 				.connectTimeout(CONNECT)

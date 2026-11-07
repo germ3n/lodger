@@ -92,7 +92,7 @@ impl Idle {
 }
 
 /// Which size the config asks for; `parse` already refused any other name.
-/// The settings the title screen's settings page shows (owner, 2026-11-09: "the useful
+/// The settings the title screen's settings page shows (owner: "the useful
 /// ones, grouped"): the model, what it does, pacing, words. The rest stay in the file.
 fn settings(config: &Config) -> Vec<craftkit::Setting> {
     use serde_json::json;
@@ -303,7 +303,7 @@ impl Mod for Lodger {
                     text: size.license().text.to_string(),
                 },
                 // The other sizes, to pick on the preparing screen before the download
-                // (owner, 2026-11-09: "I want to be able to change the model on that screen").
+                // (owner: "I want to be able to change the model on that screen").
                 choices: ModelSize::ALL
                     .iter()
                     .map(|other| craftkit::Choice {
@@ -383,7 +383,7 @@ impl Mod for Lodger {
     fn observe(&self, world: &mut Stay, observations: &Observations) {
         // The day is the stay's own, by the clock of its last tick (observations come just
         // before each tick); before its first tick it has none, and day zero serves. Until
-        // 2026-11-10 it read a default clock, day zero always: habits, adopted chests, how long
+        // now it read a default clock, day zero always: habits, adopted chests, how long
         // they were gone and every reaction's age never moved.
         let day = world
             .first_day

@@ -11,7 +11,7 @@ use crate::model::Rng;
 use craftkit::world::{BlockPos, Command, ItemStack, Now, Pos};
 
 /// Whether the event's moment is here: its needs still hold.
-/// Whether every need of the event holds now, the hour's with them (until 2026-11-10 the hour
+/// Whether every need of the event holds now, the hour's with them (until now the hour
 /// was read from a default clock: noon never came, and the night and the day were not asked).
 pub fn ready(event: &Event, memory: &Memory, now: &Now) -> bool {
     event
@@ -100,7 +100,7 @@ pub const DIG_CLEAR: f64 = 8.0;
 /// A spot to dig, clear of everything the target placed by [`DIG_CLEAR`]: its place if that is
 /// clear, else the first clear one of eight around the home, 12 to 20 blocks out. None when the
 /// target has built all around: the event is not offered. The dev client's `hole` went in
-/// under a crafting table at the lodger's place, which the target had built up to (2026-11-09).
+/// under a crafting table at the lodger's place, which the target had built up to.
 fn dig_spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     if let Some(place) = memory.place.filter(|p| clear_of_built(memory, *p)) {
         return Some(place);
@@ -177,7 +177,7 @@ fn behind(memory: &Memory, blocks: f64) -> BlockPos {
 pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     let home = memory.home.as_ref();
     // The house's sounds come from a real door or chest of the house they are in, theirs
-    // first (owner, 2026-11-09: "any house, yours first").
+    // first (owner: "any house, yours first").
     if super::sounds::HOUSE_SOUNDS.contains(&event.id) {
         return super::sounds::house_spot(event.id, memory, rng.next_u64() as usize);
     }
@@ -594,7 +594,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         ),
         // A crafting table, a furnace or a barrel of theirs: never a chest, which may be one
         // half of two.
-        // Another mod's furniture first (owner, 2026-11-10: "use their decorations"), then the
+        // Another mod's furniture first (owner: "use their decorations"), then the
         // game's work blocks.
         Action::ShiftFurniture => pick_ref(
             &memory
@@ -1142,7 +1142,7 @@ pub fn tidy_moves(contents: &[ItemStack], size: u32) -> Vec<(u32, u32, u32)> {
     }
     // What the slots hold, not the list as given: two stacks said to share a slot, or a slot
     // past the container, counted twice ran the target past the last slot and panicked
-    // (2026-11-10), which would take the whole mind down.
+    //, which would take the whole mind down.
     let mut wanted: Vec<ItemStack> = slots.iter().flatten().cloned().collect();
     wanted.sort_by(|a, b| a.id.cmp(&b.id).then(b.count.cmp(&a.count)));
 
@@ -1152,7 +1152,7 @@ pub fn tidy_moves(contents: &[ItemStack], size: u32) -> Vec<(u32, u32, u32)> {
             break;
         }
         // Only from the slots not yet sorted: the slots before `target` are done, and two equal
-        // stacks found there sent a sorted chest's stack out of place (2026-11-10).
+        // stacks found there sent a sorted chest's stack out of place.
         let from = slots[target..]
             .iter()
             .position(|s| {
@@ -1679,8 +1679,7 @@ pub fn commands(
                 .collect()
         }
         // One block of natural stone behind the wall, away from the house: a torch in it, and
-        // what it holds of theirs if anything. The one dig beside what they built (owner,
-        // 2026-11-09), and only into stone.
+        // what it holds of theirs if anything. The one dig beside what they built (owner), and only into stone.
         Action::Alcove => match (pos, memory.home.as_ref()) {
             (Some(wall), Some(home)) => {
                 let (dx, dz) = (wall[0] - home.center[0], wall[2] - home.center[2]);
@@ -2136,7 +2135,7 @@ pub fn commands(
             made
         }
         // Held still while they look: a look alone fought the animals' own walking, and they
-        // jittered (the owner, 2026-11-09).
+        // jittered (the owner).
         Action::Stare => memory
             .creatures("")
             .take(8)
@@ -2841,7 +2840,7 @@ pub fn commands(
             })
             .unwrap_or_default(),
         // The frame's own item, out of it and onto the bed, the very stack (the host drops it
-        // there; until 2026-11-10 the frame's was deleted and a stand-in laid on the bed).
+        // there; until now the frame's was deleted and a stand-in laid on the bed).
         Action::FrameEmptied => match (
             memory.decor("item_frame").next(),
             memory.home.as_ref().and_then(|h| h.bed),
@@ -2865,7 +2864,7 @@ pub fn commands(
             _ => vec![],
         },
         // A thing of one from their chest into the frame, the frame's into that slot: the very
-        // stacks traded (until 2026-11-10 the frame's was lost and the chest's made anew).
+        // stacks traded (until now the frame's was lost and the chest's made anew).
         Action::FrameSwap => match (memory.decor("item_frame").next(), memory.used_container()) {
             (Some(frame), Some(chest)) => {
                 let Some(stack) = chest.contents.iter().find(|s| s.count == 1) else {
@@ -2897,7 +2896,7 @@ pub fn commands(
                 memory.in_used_container(armour),
             ) {
                 // The very piece, kept between the chest and the stand, its enchantments and
-                // name with it (until 2026-11-10 a new one of its id was made, and those lost).
+                // name with it (until now a new one of its id was made, and those lost).
                 (Some(stand), Some((chest, stack))) => vec![
                     (
                         Command::TakeItem {
@@ -3063,7 +3062,7 @@ pub fn commands(
                         "minecraft:beetroots"
                     };
                     // Planted first, taken after: a planting that fails drops the take, so no
-                    // seed of theirs is lost (until 2026-11-10 it was taken first).
+                    // seed of theirs is lost (until now it was taken first).
                     vec![
                         (set(ids, field, crop, &["minecraft:wheat"]), 0),
                         (
@@ -4438,7 +4437,7 @@ pub fn commands(
             })
             .collect(),
         // The nearest animals run at them and hit, never past one half heart left: a nip at
-        // stage 3, real harm from 4, no kill (owner, 2026-11-09).
+        // stage 3, real harm from 4, no kill (owner).
         Action::Charge(count, damage, hits) => memory
             .animals_near_target()
             .into_iter()
@@ -5163,7 +5162,7 @@ fn sign_at(
     lines: Vec<String>,
 ) -> Vec<(Command, u64)> {
     // On the ground within three blocks, else on a wall there; the text finds it where it
-    // landed. The dev client's signs went into the air on a slope (2026-11-09).
+    // landed. The dev client's signs went into the air on a slope.
     vec![
         (
             Command::SetBlock {
@@ -5196,7 +5195,7 @@ fn sign_at(
 pub fn took(memory: &mut Memory, pos: Option<BlockPos>) {
     let Some(pos) = pos else { return };
     // The favourite `take` chose (`Memory::favourite_in_container`): the first of their
-    // favourites in that chest. Until 2026-11-10 the first favourite or else the first stack,
+    // favourites in that chest. Until now the first favourite or else the first stack,
     // which was not always what the host took.
     let favourites: Vec<String> = memory.favourites.iter().map(|(id, _)| id.clone()).collect();
     let Some(container) = memory.containers.iter_mut().find(|c| c.pos == pos) else {
@@ -6131,7 +6130,7 @@ mod tests {
             for (command, _) in &made {
                 assert!(command.id() > 1, "{} gave a command no id", event.id);
                 // No made-up ids: `woke_elsewhere` sent the player as entity u32::MAX - 0,
-                // which no host knows (2026-11-09).
+                // which no host knows.
                 let text = serde_json::to_string(command).unwrap();
                 assert!(
                     !text.contains("4294967") && !text.contains(&format!("{}", i64::MAX)),
@@ -6240,7 +6239,7 @@ mod tests {
                     pos, settle, wall, ..
                 } => {
                     assert!(pos[0] > 0 && pos[2] == 0, "toward the route's end: {pos:?}");
-                    // The dev client, 2026-11-09: the path floated over a slope.
+                    // The dev client: the path floated over a slope.
                     assert!(*settle >= 3, "the host may find the ground: {settle}");
                     assert_eq!(wall, "minecraft:wall_torch");
                 }
@@ -6313,7 +6312,7 @@ mod tests {
 
     #[test]
     fn what_it_builds_lands_on_the_ground_and_ice_only_on_water() {
-        // The dev client, 2026-11-09: signs in the air, cairns in a village's stairs, ice in
+        // The dev client: signs in the air, cairns in a village's stairs, ice in
         // the lake bed.
         let memory = rich_memory();
         let mut rng = Rng::new(3);

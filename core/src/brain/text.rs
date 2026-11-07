@@ -190,8 +190,7 @@ pub fn check(kind: Kind, written: &str) -> Option<String> {
 
 /// What the target typed, as the writing prompt may quote it: lower case, letters and single
 /// spaces, the first eight words. None when nothing is left or a word is blocked, and then the
-/// line is not answered at all. Their own words reach the model only this way (owner,
-/// 2026-11-09: a reply "may echo a word").
+/// line is not answered at all. Their own words reach the model only this way (owner: a reply "may echo a word").
 pub fn heard(typed: &str) -> Option<String> {
     let cleaned: String = typed
         .to_lowercase()
@@ -339,7 +338,7 @@ mod tests {
 
     #[test]
     fn a_line_used_once_is_not_used_again_and_the_bank_moves_on() {
-        // The dev client, 2026-11-09: `17 salmon`, `the salmon remember`, round and round.
+        // The dev client: `17 salmon`, `the salmon remember`, round and round.
         let used = vec!["17 salmon".to_string(), "the salmon remember".to_string()];
         assert!(is_repeat("17 salmon", &used));
         assert!(

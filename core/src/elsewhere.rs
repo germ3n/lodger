@@ -1,4 +1,4 @@
-//! The Nether and the End (batch 16, owner 2026-11-10: "the ghasts say your name, an enderman
+//! The Nether and the End (batch 16, owner: "the ghasts say your name, an enderman
 //! holds your block"). The lodger lives in the overworld alone; its stay there is the one with
 //! a stage, a want and rules. A stay of another dimension acts only through this: each tick the
 //! overworld's stay says here which of the other dimensions' events its rules allow now, and
@@ -57,7 +57,7 @@ impl Stay {
         shared.target_uuid = self.memory.target_uuid.clone();
         shared.name = self.memory.target_name.clone();
         // The block they build with most, when it has one of its own (from its digging) to
-        // give: until 2026-11-10 it was made from nothing.
+        // give: until now it was made from nothing.
         shared.block = self
             .memory
             .block_built_most()

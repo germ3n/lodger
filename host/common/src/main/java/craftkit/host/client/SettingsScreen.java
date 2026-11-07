@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A mod's settings, from the title screen (owner, 2026-11-09): the few keys it offers, grouped,
+ * A mod's settings, from the title screen (owner): the few keys it offers, grouped,
  * in a list that scrolls between a fixed title and a fixed footer of Done and Cancel; each row a
  * label and a button that changes it (a press for the next value, or - and + for a number).
  * Done writes the changes into the mod's config file and initialises the mod again; when that

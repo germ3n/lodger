@@ -1,4 +1,4 @@
-//! What it builds (batch 15, owner 2026-11-10): its house near theirs, a pillar, a hut on
+//! What it builds (batch 15, owner): its house near theirs, a pillar, a hut on
 //! their route, a room in a cave, a dock, a bridge, an outline and a copy of their house. Each
 //! is a blueprint, blocks relative to a site (`dy` 0 the ground's own block, 1 the first above),
 //! laid a night's share at a time; the memory keeps how far each got and the ground's height
@@ -352,7 +352,7 @@ pub type Share = (BlockPos, [i32; 2], Vec<Part>);
 
 fn share(all: Vec<Part>, laid: usize, per_night: usize, stop: usize) -> Vec<Part> {
     // "All at once" is usize::MAX a night: added to what is laid it must not wrap (a stay's
-    // test found it overflowing, 2026-11-10).
+    // test found it overflowing).
     let end = laid
         .saturating_add(per_night.max(1))
         .min(stop.min(all.len()));

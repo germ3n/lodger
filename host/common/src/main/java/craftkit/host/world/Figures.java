@@ -141,7 +141,7 @@ public final class Figures {
 			}
 			// Dead and respawned, or gone to another dimension: the client may keep its world
 			// (a respawn in the same one does), so the figure is taken back through the
-			// connection, which the new player shares (until 2026-11-10 it stayed there).
+			// connection, which the new player shares (until now it stayed there).
 			boolean gone = figure.player.isRemoved() || figure.player.level() != figure.level || tick > figure.untilTick
 					|| (figure.vanishWithin > 0 && figure.player.position().distanceTo(figure.at) < figure.vanishWithin)
 					|| (figure.onceSeen && figure.seen && !looked);
