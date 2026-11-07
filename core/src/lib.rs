@@ -12,6 +12,7 @@ pub mod arc;
 pub mod brain;
 pub mod building;
 pub mod caves;
+pub mod chains;
 pub mod config;
 pub mod debug;
 pub mod elsewhere;

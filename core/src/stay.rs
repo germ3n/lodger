@@ -231,6 +231,7 @@ impl Stay {
             self.memory.temper.value = resting;
             self.memory.temper.resting = resting;
         }
+        self.memory.chains_tick(day, self.arc.stage);
         let temper = &self.memory.temper;
         self.arc.pace = crate::arc::Pace {
             budget: temper.budget_factor(resting),

@@ -107,9 +107,12 @@ A stay takes weeks of play by design. For development:
   last; any line or plan with a spot in it, `(x,y,z)` or `(x,ground,z)`, is a link that
   teleports you there. The Senses tab is the host's reading of you (pace, stops, turns,
   look-backs, backing away, a fear meter, light, health, the clock), the Mind tab the lodger's
-  gauges (stage, days in stage, the day's budget, the plans held of how many, decisions, what
+  gauges (stage, days in stage, the day's budget, the plans held of how many, decisions, its
+  temper with where it rests and what moved it last, whether the model or the rules decide, what
   the memory holds, kills), its situation lines, its plans as rows with Drop and Now buttons
-  and why each waits, what it did lately, what it never forgets, the last decision log
+  and why each waits, the chains (each open one's steps, the landed ones in brackets, and
+  whether its next is weighed up or waits on them; those walked and those that fell out), how
+  the figure was looked at lately, what it did lately, what it never forgets, the last decision log
   entries, and buttons (move in, next stage, decide now, drop the plans, forget cooldowns,
   forget everything); the Events tab every event with whether it is offered right now
   and the first reason it is not, a filter, and a Fire button that forces it on the next tick

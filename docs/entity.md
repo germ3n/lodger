@@ -660,6 +660,21 @@ menu's weights and, for an exclusive step, the menu itself for a day or two. The
 tests check that a stay with the rule brain walks at least two chains end to end and that no
 follow-up is ever offered with its needs unmet.
 
+**As coded (`core/src/chains.rs`).** The eight, with the catalogue's events: the thing (`take`,
+`place_taken` or `return_taken`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
+`mined_out`), the tunnel (`mining_sounds`, `mine_beside`, `tunnel_toward`, `cave_room`), the
+place (`light_path`, `hole`, `pillar`, `sign`, `house_near`; its house grows in the ending's
+script), the watcher (`far_figure`, then `behind_you` once they looked at a figure two seconds
+or more, `on_the_roof`, `in_doorway`, `in_your_bed`, `copy_crouch`, `figure_waves`; chased, it
+ends), the copy (`copy_build`, `copy_house`, `second_bed`), the house (`open_door`, then
+`door_hinge`, `door_held` and `window_bars`, each once they noticed the last), the pet
+(`pet_growl`, `pet_moved`, `pet_outside`). A chain opens when its first event lands; its steps
+count in any order; its next step is four times likelier on the menu and in the rule brain's
+pick for the days it waits (three to five), its days held while its stage has not come; once
+every step has landed it is walked; once a stay each. Not exclusive, and nothing carried from
+one step to the next yet. The scripted stay walks the place end to end: the scripted player
+notices nothing and keeps no pet, so the rest wait on what a player does.
+
 ### Provocation and temper
 
 The lodger answers how it is treated (owner). The memory keeps a **temper**, 0 to

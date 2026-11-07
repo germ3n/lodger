@@ -291,6 +291,7 @@ pub fn offer<'a>(
     rng: &mut Rng,
 ) -> Vec<&'a Event> {
     let mut eligible: Vec<(&Event, f64)> = Vec::new();
+    let chain_next = memory.chain_next();
 
     for event in catalogue {
         if event.id == "wait" || !crate::temper::offered_in(event, stage, &memory.temper) {
@@ -320,7 +321,11 @@ pub fn offer<'a>(
         }
 
         let times = memory.times(event.id);
-        let weight = 1.0 / (1.0 + times as f64);
+        let mut weight = 1.0 / (1.0 + times as f64);
+        // An open chain's next step (`chains.rs`): likelier, never forced.
+        if chain_next.contains(&event.id) {
+            weight *= crate::chains::WEIGHT;
+        }
         eligible.push((event, weight));
     }
 

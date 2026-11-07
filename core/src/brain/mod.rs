@@ -1719,6 +1719,7 @@ impl Brain {
             arc.stage,
             &memory.want,
             &|effect| memory.notice_rate(effect),
+            &memory.chain_next(),
             &mut self.rng,
         );
         let menu_ids: Vec<String> = menu.iter().map(|e| e.id.to_string()).collect();
@@ -2094,6 +2095,7 @@ impl Brain {
             arc.stage,
             &memory.want,
             &|effect| memory.notice_rate(effect),
+            &memory.chain_next(),
             &mut self.rng,
         );
         let Ask {

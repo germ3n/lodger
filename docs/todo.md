@@ -952,11 +952,13 @@ because it can be built and tested without a game, and because the model layer i
   other sleep events), and again on the take ending's last night, the figure walking at them; the
   death stays at its place in their own world. A player left there by a quit or a stop is sent
   home. Seen loading on the Fabric dev server. Tests: one in `act`. Was: **The other house, a dimension of its own** (owner: "custom dimensions you   can get teleported to by sleeping, walking through portals"): a void dimension in the   content jar's data pack (`data/lodger/dimension/other.json`, a flat dark sky, no mobs, no   day), into which the host copies the target's house block for block at stage four, and one   visit: the target falls asleep and wakes in the copy, in the dark, the doors leading to   nothing, the figure in the doorway, for one minute, then wakes in their own bed with the door   open. A second visit only in the `take` ending's last night, where the walk from its place   goes through its portal frame into the other house and the death, if any, is there. Not a   place to explore: a set piece, twice at most, so the world stays the player's. Needs the   host's teleport and block-copy commands and a dimension registered from the content jar;   judged in the dev client before the design goes further.
-- [ ] **Chains** (owner: "one that influences the next"): follow-ups in `events.rs`
-  (weighted or exclusive, with a carried place or item), `Memory::chains`, the situation line,
-  and the weights in `offer.rs`. The eight chains of [Chains](entity.md#chains) as data, with a
-  scripted-stay test that walks at least two end to end and one that no step is offered with its
-  needs unmet.
+- [x] **Chains** (owner: "one that influences the next"): `core/src/chains.rs`, the eight as
+  data with the catalogue's events (what is coded, and how it differs, is in
+  [Chains](entity.md#chains)), `Memory::chains`, the situation's line for each open one, the
+  next step weighed up four times on the menu and in the rule brain's pick, a step's days held
+  while its stage has not come, once a stay each; the debug screen's Chains section. Tests:
+  three in `chains` and a balanced scripted stay that walks the place end to end (the scripted
+  player notices nothing and keeps no pet, so one chain, not two, can run there). Was: **Chains** (owner: "one that influences the next"): follow-ups in `events.rs`   (weighted or exclusive, with a carried place or item), `Memory::chains`, the situation line,   and the weights in `offer.rs`. The eight chains of [Chains](entity.md#chains) as data, with a   scripted-stay test that walks at least two end to end and one that no step is offered with its   needs unmet.
 - [ ] **Multiplayer:** the `Others` memory, the target ask, witnesses' traces and nothing else,
   retargeting once. Tested with two dev clients on a dev server.
 - [x] **Performance pass:** the per-tick JSON exchange measured (it should be well under 50 µs

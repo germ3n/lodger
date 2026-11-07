@@ -1,0 +1,368 @@
+//! Chains (`docs/entity.md`, Chains): one thing leads to the next. A chain opens when its first
+//! event lands; its next step is then offered with more weight for a few days, and the situation
+//! says what is open. A chain is never forced: `wait` is always offered, every step still
+//! passes the rules, its cooldown, its cap and the day's budget, and a step whose moment passed
+//! falls out and closes the chain. Each chain runs once a stay.
+
+use serde::{Deserialize, Serialize};
+
+use crate::memory::Memory;
+
+/// When a step may come: always, once they noticed the last one, or once they looked long at
+/// the figure.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum When {
+    Always,
+    Noticed,
+    LookedLong,
+}
+
+/// One step: its event (or any of several), the days it waits for it, and when.
+#[derive(Clone, Copy, Debug)]
+pub struct Step {
+    pub events: &'static [&'static str],
+    pub within_days: f32,
+    pub when: When,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Chain {
+    pub id: &'static str,
+    pub steps: &'static [Step],
+}
+
+const fn step(events: &'static [&'static str], within_days: f32, when: When) -> Step {
+    Step {
+        events,
+        within_days,
+        when,
+    }
+}
+
+use When::*;
+
+/// The eight chains of the design, with the catalogue's events.
+pub const CHAINS: &[Chain] = &[
+    Chain {
+        id: "the_thing",
+        steps: &[
+            step(&["take"], 0.0, Always),
+            step(&["place_taken", "return_taken"], 3.0, Always),
+            step(&["at_the_chest"], 3.0, Always),
+            step(&["frame_emptied"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_vein",
+        steps: &[
+            step(&["ore_marked"], 0.0, Always),
+            step(&["mined_out"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_tunnel",
+        steps: &[
+            step(&["mining_sounds"], 0.0, Always),
+            step(&["mine_beside"], 3.0, Always),
+            step(&["tunnel_toward"], 4.0, Always),
+            step(&["cave_room"], 4.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_place",
+        steps: &[
+            step(&["light_path"], 0.0, Always),
+            step(&["hole"], 3.0, Always),
+            step(&["pillar"], 3.0, Always),
+            step(&["sign"], 3.0, Always),
+            // Its house grows in the ending's script, not as an event: the chain ends at the house.
+            step(&["house_near"], 4.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_watcher",
+        steps: &[
+            step(&["far_figure"], 0.0, Always),
+            step(&["behind_you"], 3.0, LookedLong),
+            step(&["on_the_roof"], 3.0, Always),
+            step(&["in_doorway"], 3.0, Always),
+            step(&["in_your_bed"], 3.0, Always),
+            step(&["copy_crouch"], 3.0, Always),
+            step(&["figure_waves"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_copy",
+        steps: &[
+            step(&["copy_build"], 0.0, Always),
+            step(&["copy_house"], 5.0, Always),
+            step(&["second_bed"], 4.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_house",
+        steps: &[
+            step(&["open_door"], 0.0, Always),
+            step(&["door_hinge"], 3.0, Noticed),
+            step(&["door_held"], 3.0, Noticed),
+            step(&["window_bars"], 4.0, Noticed),
+        ],
+    },
+    Chain {
+        id: "the_pet",
+        steps: &[
+            step(&["pet_growl"], 0.0, Always),
+            step(&["pet_moved"], 3.0, Always),
+            step(&["pet_outside"], 3.0, Always),
+        ],
+    },
+];
+
+/// How much likelier an open chain's next step is on the menu.
+pub const WEIGHT: f64 = 4.0;
+
+/// A chain under way: the steps landed, and the day the last one did.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Open {
+    pub id: String,
+    /// Which of its steps have landed, by index: any order counts, the first step always.
+    pub landed: Vec<usize>,
+    pub since: f32,
+}
+
+impl Open {
+    /// The first step not landed yet: the one the menu weighs up.
+    pub fn next(&self, chain: &Chain) -> Option<usize> {
+        (0..chain.steps.len()).find(|i| !self.landed.contains(i))
+    }
+}
+
+pub fn find(id: &str) -> Option<&'static Chain> {
+    CHAINS.iter().find(|c| c.id == id)
+}
+
+impl Memory {
+    /// An event landed: the chain it begins opens, a chain it is a step of counts it (in any
+    /// order: a pillar before the hole is still the place), and a chain whose every step has
+    /// landed is walked. Once a stay each.
+    pub fn chain_landed(&mut self, event: &str, day: f32) {
+        for open in &mut self.chains {
+            let Some(chain) = find(&open.id) else {
+                continue;
+            };
+            for (i, step) in chain.steps.iter().enumerate() {
+                if step.events.contains(&event) && !open.landed.contains(&i) {
+                    open.landed.push(i);
+                    open.since = day;
+                    break;
+                }
+            }
+        }
+        let walked: Vec<String> = self
+            .chains
+            .iter()
+            .filter(|o| find(&o.id).is_none_or(|c| o.next(c).is_none()))
+            .map(|o| o.id.clone())
+            .collect();
+        for id in walked {
+            self.chains.retain(|o| o.id != id);
+            if !self.chains_walked.contains(&id) {
+                self.chains_walked.push(id.clone());
+            }
+            if !self.chains_done.contains(&id) {
+                self.chains_done.push(id);
+            }
+        }
+        for chain in CHAINS {
+            let begun = self.chains.iter().any(|o| o.id == chain.id)
+                || self.chains_done.iter().any(|d| d == chain.id);
+            if !begun && chain.steps[0].events.contains(&event) {
+                self.chains.push(Open {
+                    id: chain.id.to_string(),
+                    landed: vec![0],
+                    since: day,
+                });
+            }
+        }
+    }
+
+    /// The chains whose next step's moment has passed fall out; the watcher ends when they
+    /// chased the figure instead.
+    pub fn chains_tick(&mut self, day: f32, stage: u8) {
+        // A next step not offered in this stage yet waits for its stage, its days not counted.
+        for open in &mut self.chains {
+            let Some(chain) = find(&open.id) else {
+                continue;
+            };
+            let waiting = open.next(chain).is_some_and(|i| {
+                chain.steps[i]
+                    .events
+                    .iter()
+                    .filter_map(|e| crate::events::find(e))
+                    .all(|e| e.from_stage > stage)
+            });
+            if waiting {
+                open.since = day;
+            }
+        }
+        let chased = self
+            .figure_looks
+            .last()
+            .is_some_and(|l| l.chased() && l.day >= day - 0.5);
+        let mut gone = Vec::new();
+        for open in &self.chains {
+            let Some(chain) = find(&open.id) else {
+                gone.push(open.id.clone());
+                continue;
+            };
+            let late = open
+                .next(chain)
+                .and_then(|i| chain.steps.get(i))
+                .is_none_or(|s| day - open.since > s.within_days);
+            if late || (chain.id == "the_watcher" && chased) {
+                gone.push(open.id.clone());
+            }
+        }
+        for id in gone {
+            self.chains.retain(|o| o.id != id);
+            if !self.chains_done.contains(&id) {
+                self.chains_done.push(id);
+            }
+        }
+    }
+
+    /// The events an open chain offers next, its condition met: the menu weighs them up.
+    pub fn chain_next(&self) -> Vec<&'static str> {
+        let mut next = Vec::new();
+        for open in &self.chains {
+            let Some(chain) = find(&open.id) else {
+                continue;
+            };
+            let Some(at) = open.next(chain) else { continue };
+            let step = &chain.steps[at];
+            let ready = match step.when {
+                When::Always => true,
+                When::LookedLong => self
+                    .figure_looks
+                    .iter()
+                    .any(|l| l.looked_long() && l.day >= open.since),
+                When::Noticed => {
+                    let last = chain.steps[at.saturating_sub(1)].events;
+                    self.reactions.iter().any(|r| {
+                        last.contains(&r.event.as_str())
+                            && r.day >= open.since - 0.01
+                            && r.noticed()
+                    })
+                }
+            };
+            if ready {
+                next.extend_from_slice(step.events);
+            }
+        }
+
+        next
+    }
+
+    /// The situation's line for each open chain: what it began, and what may come.
+    pub fn chain_words(&self, day: f32) -> Vec<String> {
+        fn words(id: &str) -> String {
+            crate::events::find(id)
+                .map(|e| e.menu_words().to_string())
+                .unwrap_or_else(|| id.to_string())
+        }
+        self.chains
+            .iter()
+            .filter_map(|open| {
+                let chain = find(&open.id)?;
+                let did = self.done.iter().rev().find(|d| {
+                    d.ok && open
+                        .landed
+                        .iter()
+                        .any(|i| chain.steps[*i].events.contains(&d.event.as_str()))
+                })?;
+                let next = chain.steps.get(open.next(chain)?)?;
+                Some(format!(
+                    "It has begun something: it chose to {} {}; next it may {}.",
+                    words(&did.event),
+                    crate::memory::ago_words(day - did.day, "today").to_lowercase(),
+                    words(next.events[0])
+                ))
+            })
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_step_is_an_event_of_the_catalogue() {
+        for chain in CHAINS {
+            for step in chain.steps {
+                for event in step.events {
+                    assert!(
+                        crate::events::find(event).is_some(),
+                        "{}: {event}",
+                        chain.id
+                    );
+                }
+            }
+        }
+        assert_eq!(CHAINS.len(), 8);
+    }
+
+    #[test]
+    fn a_chain_opens_goes_on_and_ends_once_a_stay() {
+        let mut memory = Memory::default();
+        memory.chain_landed("take", 1.0);
+        assert_eq!(memory.chains.len(), 1);
+        assert_eq!(memory.chain_next(), vec!["place_taken", "return_taken"]);
+
+        memory.chain_landed("return_taken", 2.0);
+        assert_eq!(memory.chain_next(), vec!["at_the_chest"]);
+        memory.chain_landed("at_the_chest", 3.0);
+        memory.chain_landed("frame_emptied", 4.0);
+        assert!(memory.chains.is_empty());
+        assert_eq!(memory.chains_done, vec!["the_thing".to_string()]);
+
+        memory.chain_landed("take", 6.0);
+        assert!(memory.chains.is_empty(), "once a stay");
+    }
+
+    #[test]
+    fn a_step_whose_moment_passed_falls_out_and_the_watcher_waits_for_a_long_look() {
+        let mut memory = Memory::default();
+        memory.chain_landed("ore_marked", 1.0);
+        memory.chains_tick(3.5, 3);
+        assert_eq!(memory.chains.len(), 1);
+        memory.chains_tick(4.5, 3);
+        assert!(
+            memory.chains.is_empty(),
+            "three days and no mined_out: it fell out"
+        );
+
+        memory.chain_landed("far_figure", 5.0);
+        assert!(
+            memory.chain_next().is_empty(),
+            "behind_you waits for a long look"
+        );
+        memory.figure_looks.push(crate::memory::FigureLook {
+            day: 5.2,
+            looked_ticks: 60,
+            looks: 1,
+            ..Default::default()
+        });
+        assert_eq!(memory.chain_next(), vec!["behind_you"]);
+
+        memory.figure_looks.push(crate::memory::FigureLook {
+            day: 5.4,
+            toward: 12.0,
+            end: "approached".to_string(),
+            ..Default::default()
+        });
+        memory.chains_tick(5.5, 3);
+        assert!(memory.chains.is_empty(), "chased: the watcher ends");
+    }
+}

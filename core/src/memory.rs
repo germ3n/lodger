@@ -475,6 +475,11 @@ pub struct Memory {
     pub figure_looks: Vec<FigureLook>,
     /// Its temper, moved by how they treat it (`temper.rs`).
     pub temper: crate::temper::Temper,
+    /// The chains under way, and those run this stay (`chains.rs`).
+    pub chains: Vec<crate::chains::Open>,
+    pub chains_done: Vec<String>,
+    /// Of those, the ones walked to their last step.
+    pub chains_walked: Vec<String>,
     /// The kind its kill sign counts, as it wrote it (`count_up` counts that kind, not
     /// whatever is killed most now).
     pub kill_sign_kind: String,
@@ -1985,6 +1990,9 @@ impl Memory {
             reason: reason.to_string(),
         };
         let found = crate::events::find(event);
+        if ok {
+            self.chain_landed(event, day);
+        }
         if ok && found.is_some_and(|e| !e.small) {
             push_capped(&mut self.landmarks, done.clone(), MOST_LANDMARKS);
         }
@@ -2711,6 +2719,9 @@ impl Memory {
             ));
         }
 
+        // The chains under way (`chains.rs`).
+        lines.extend(self.chain_words(day));
+
         // Its temper, when far from resting, and why (`temper.rs`).
         if let Some(words) = self.temper.words(self.temper.resting) {
             lines.push(words);
@@ -2995,7 +3006,7 @@ pub fn plain(id: &str) -> String {
 
 /// How long ago, in the situation's words: `today` (as given) under a day, `Yesterday`, then
 /// `3 days ago`.
-fn ago_words(ago: f32, today: &str) -> String {
+pub(crate) fn ago_words(ago: f32, today: &str) -> String {
     match ago.max(0.0).floor() as u32 {
         0 => today.to_string(),
         1 => "Yesterday".to_string(),

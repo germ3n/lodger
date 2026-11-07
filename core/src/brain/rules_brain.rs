@@ -14,7 +14,7 @@ pub fn choose<'a>(menu: &[&'a Event], stage: u8, rng: &mut Rng) -> &'a Event {
 /// what follows it, `to be looked at` the figures, `a place of its own` the building and the
 /// path, as `docs/entity.md`'s What it wants has it.
 pub fn choose_wanting<'a>(menu: &[&'a Event], stage: u8, want: &str, rng: &mut Rng) -> &'a Event {
-    choose_with(menu, stage, want, &|_| None, rng)
+    choose_with(menu, stage, want, &|_| None, &[], rng)
 }
 
 /// [`choose_wanting`] with how the target takes each kind of event leaning it too (the
@@ -26,6 +26,7 @@ pub fn choose_with<'a>(
     stage: u8,
     want: &str,
     notice: &dyn Fn(&str) -> Option<f64>,
+    chained: &[&str],
     rng: &mut Rng,
 ) -> &'a Event {
     let weights: Vec<f64> = menu
@@ -71,7 +72,13 @@ pub fn choose_with<'a>(
                 notice(effect)
             };
 
-            noticed.map_or(wanted, |rate| wanted * (0.6 + 0.8 * rate.clamp(0.0, 1.0)))
+            let weight = noticed.map_or(wanted, |rate| wanted * (0.6 + 0.8 * rate.clamp(0.0, 1.0)));
+            // An open chain's next step (`chains.rs`), as the menu weighs it.
+            if chained.contains(&event.id) {
+                weight * crate::chains::WEIGHT
+            } else {
+                weight
+            }
         })
         .collect();
     let total: f64 = weights.iter().sum();
@@ -127,7 +134,7 @@ mod tests {
         let count = |notice: &dyn Fn(&str) -> Option<f64>| {
             let mut rng = Rng::new(9);
             (0..4000)
-                .filter(|_| choose_with(&menu, 4, "", notice, &mut rng).id == "sign")
+                .filter(|_| choose_with(&menu, 4, "", notice, &[], &mut rng).id == "sign")
                 .count()
         };
 

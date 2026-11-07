@@ -329,6 +329,42 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             }
         ),
     ));
+    // Its temper (`temper.rs`): the value, where it rests, and what moved it last.
+    let temper = &memory.temper;
+    gauges.push(Gauge::new(
+        "temper",
+        temper.value,
+        1.0,
+        format!(
+            "{:.2}, resting {:.2}{}{}",
+            temper.value,
+            temper.resting,
+            if !config.events.temper {
+                ", off"
+            } else if temper.value >= temper.resting + 0.2 {
+                ", angry"
+            } else if temper.value <= temper.resting - 0.15 {
+                ", pleased"
+            } else {
+                ""
+            },
+            temper
+                .causes
+                .last()
+                .map(|c| format!("; last: {} ({:+.2})", c.what, c.by))
+                .unwrap_or_default()
+        ),
+    ));
+    gauges.push(Gauge::new(
+        "brain",
+        if config.model.enabled { 1.0 } else { 0.0 },
+        1.0,
+        if config.model.enabled {
+            format!("the model decides ({})", config.model.size)
+        } else {
+            "the rules decide: playing without the model".to_string()
+        },
+    ));
     gauges.push(Gauge::new(
         "memory",
         (memory.containers.len() + memory.fixtures.len() + memory.decor.len()) as f32,
@@ -395,6 +431,92 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
     }
     if !plan_lines.is_empty() {
         sections.push(Section::new("Under way", plan_lines));
+    }
+    // The chains (`chains.rs`): each open one with its steps landed and the next, then those
+    // walked to the end and those that fell out.
+    let mut chain_lines = Vec::new();
+    for open in &memory.chains {
+        if let Some(chain) = crate::chains::find(&open.id) {
+            let steps: Vec<String> = chain
+                .steps
+                .iter()
+                .enumerate()
+                .map(|(i, s)| {
+                    let name = s.events.join("/");
+                    if open.landed.contains(&i) {
+                        format!("[{name}]")
+                    } else {
+                        name
+                    }
+                })
+                .collect();
+            chain_lines.push(format!(
+                "{}: {} (last step day {:.1}{})",
+                open.id,
+                steps.join(" > "),
+                open.since,
+                if memory.chain_next().iter().any(|e| open
+                    .next(chain)
+                    .is_some_and(|i| chain.steps[i].events.contains(e)))
+                {
+                    ", next weighed up"
+                } else {
+                    ", next waiting on them"
+                }
+            ));
+        }
+    }
+    let walked = &memory.chains_walked;
+    let fell: Vec<&String> = memory
+        .chains_done
+        .iter()
+        .filter(|d| !walked.contains(d))
+        .collect();
+    if !walked.is_empty() {
+        chain_lines.push(format!("walked to the end: {}", walked.join(", ")));
+    }
+    if !fell.is_empty() {
+        chain_lines.push(format!(
+            "fell out: {}",
+            fell.iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
+    if chain_lines.is_empty() {
+        chain_lines.push("none begun".to_string());
+    }
+    sections.push(Section::new("Chains", chain_lines));
+    // How the figure was looked at, the last few (`figure_seen`).
+    if !memory.figure_looks.is_empty() {
+        sections.push(Section::new(
+            "Figure looks",
+            memory
+                .figure_looks
+                .iter()
+                .rev()
+                .take(6)
+                .map(|l| {
+                    format!(
+                        "day {:.2}: {:.1}s in {} look{}, {:.0} blocks toward it, {}{}",
+                        l.day,
+                        l.looked_ticks as f32 / 20.0,
+                        l.looks,
+                        if l.looks == 1 { "" } else { "s" },
+                        l.toward,
+                        l.end,
+                        if l.chased() {
+                            ", chased"
+                        } else if l.looked_long() {
+                            ", looked long"
+                        } else {
+                            ""
+                        }
+                    )
+                })
+                .collect(),
+        ));
     }
     sections.push(Section::new(
         "Done lately",
@@ -820,6 +942,50 @@ mod tests {
         assert!(stay.memory.home.is_none() && stay.memory.held.is_none());
         assert_eq!(stay.memory.target_uuid, "uuid-r");
         assert_eq!(stay.memory.mods.len(), 1);
+    }
+
+    #[test]
+    fn the_panel_shows_temper_the_brain_the_chains_and_the_figure_looks() {
+        let mut stay = stay();
+        let config = Config::default();
+        let mut log = Log::new(None, 16, true);
+        stay.memory.chain_landed("light_path", 1.0);
+        stay.memory.figure_looks.push(crate::memory::FigureLook {
+            day: 1.2,
+            looked_ticks: 50,
+            looks: 1,
+            end: "timed".to_string(),
+            ..Default::default()
+        });
+
+        let reply = answer(
+            &mut stay,
+            &DebugRequest::Snapshot,
+            &config,
+            &mut log,
+            &Now::default(),
+        );
+        assert!(reply.gauges.iter().any(|g| g.label == "temper"));
+        assert!(reply
+            .gauges
+            .iter()
+            .any(|g| g.label == "brain" && g.text.contains("model")));
+        let chains = reply.sections.iter().find(|s| s.title == "Chains").unwrap();
+        assert!(
+            chains.lines[0].starts_with("the_place: [light_path] > hole"),
+            "{:?}",
+            chains.lines
+        );
+        let looks = reply
+            .sections
+            .iter()
+            .find(|s| s.title == "Figure looks")
+            .unwrap();
+        assert!(
+            looks.lines[0].contains("2.5s in 1 look"),
+            "{:?}",
+            looks.lines
+        );
     }
 
     #[test]
