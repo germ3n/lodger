@@ -250,6 +250,42 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 --------------------------------------------------------------------------------
+Khronos's Vulkan headers
+--------------------------------------------------------------------------------
+
+Compiled into the Windows and Linux natives (llama.cpp's Vulkan backend is
+written against them, vulkan.hpp's inline code among them): Vulkan-Headers
+v1.4.309, under Apache-2.0 OR MIT, used under the MIT terms reproduced at the
+top. Copyright 2015-2025 The Khronos Group Inc. The SPIR-V headers
+(vulkan-sdk-1.4.309.0, MIT-style, Copyright (c) 2015-2024 The Khronos Group
+Inc.) are read at build time only.
+
+--------------------------------------------------------------------------------
+XZ for Java
+--------------------------------------------------------------------------------
+
+Bundled in the host jar to unpack the natives: org.tukaani:xz 1.10, by Lasse
+Collin and the XZ for Java contributors, under the BSD Zero Clause License:
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
+--------------------------------------------------------------------------------
+Microsoft's C and C++ runtime
+--------------------------------------------------------------------------------
+
+Linked statically into the Windows natives, so no Visual C++ Redistributable is
+needed, as the Visual Studio license permits for the runtime's static libraries.
+
+--------------------------------------------------------------------------------
 The model
 --------------------------------------------------------------------------------
 

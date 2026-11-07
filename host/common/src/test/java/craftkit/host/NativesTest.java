@@ -23,7 +23,8 @@ class NativesTest {
 		// Not one a jar carries: named as it is, so the player is told, never mistaken for x86_64.
 		assertEquals("linux-riscv64", Natives.platform("Linux", "riscv64"));
 		assertEquals("windows-x86", Natives.platform("Windows 10", "x86"));
-		assertEquals(6, Natives.PLATFORMS.size());
+		assertEquals(5, Natives.PLATFORMS.size());
+		assertFalse(Natives.PLATFORMS.contains("macos-x86_64"), "no Intel Mac");
 	}
 
 	@Test
@@ -31,6 +32,23 @@ class NativesTest {
 		assertEquals("natives/macos-aarch64/liblodger_core.dylib", Natives.resourcePath("Mac OS X", "aarch64", "lodger_core"));
 		assertEquals("natives/linux-x86_64/liblodger_core.so", Natives.resourcePath("Linux", "amd64", "lodger_core"));
 		assertEquals("natives/windows-x86_64/lodger_core.dll", Natives.resourcePath("Windows 10", "amd64", "lodger_core"));
+	}
+
+	@Test
+	void a_compressed_native_is_unpacked_and_a_plain_one_left_as_it_is(@TempDir Path dir) throws IOException {
+		byte[] plain = new byte[100_000];
+		for (int i = 0; i < plain.length; i++) {
+			plain[i] = (byte) (i % 7);
+		}
+		java.io.ByteArrayOutputStream packed = new java.io.ByteArrayOutputStream();
+		try (var out = new org.tukaani.xz.XZOutputStream(packed, new org.tukaani.xz.LZMA2Options())) {
+			out.write(plain);
+		}
+
+		assertArrayEquals(plain, Natives.unpacked(packed.toByteArray()));
+		assertArrayEquals(plain, Natives.unpacked(plain), "no xz magic: as it is");
+		Path target = Natives.extract(packed.toByteArray(), dir.resolve("natives"), "Linux", "amd64", "demo");
+		assertArrayEquals(plain, Files.readAllBytes(target), "written unpacked");
 	}
 
 	@Test

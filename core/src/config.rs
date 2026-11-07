@@ -196,6 +196,17 @@ impl ModelSize {
         }
     }
 
+    /// What the download screen says under the size: how it differs, and the VRAM it wants with
+    /// the whole model on the GPU (the default), which is RAM instead without a GPU.
+    pub fn note(self) -> &'static str {
+        match self {
+            Self::Small => "The smallest and quickest: plainer choices and plainer words. Wants about 0.6 GB of VRAM.",
+            Self::Medium => "The default: sharper judgment and better words. Wants about 1.3 GB of VRAM.",
+            Self::Large => "Better again, and slower; Qwen's research license, not for commercial use. Wants about 2.4 GB of VRAM.",
+            Self::Qwen3 => "The best reader of the four, the newest. Wants about 2.9 GB of VRAM.",
+        }
+    }
+
     /// The model's name for the screen: `Qwen2.5 1.5B`, `Qwen3 4B`.
     pub fn title(self) -> &'static str {
         match self {
@@ -324,6 +335,9 @@ pub struct Log {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Model {
+    /// Whether the model is used at all: off, nothing is downloaded and the rule brain decides
+    /// (the download screen's "Play without it", or the settings; owner).
+    pub enabled: bool,
     /// `0.5b`, `1.5b` or `3b`: which Qwen2.5-Instruct to run. See `docs/model.md`.
     pub size: String,
     /// Where to fetch from. Empty means Qwen's own file for `size`.
@@ -334,8 +348,8 @@ pub struct Model {
     pub threads: u32,
     pub context: u32,
     pub idle_minutes: u32,
-    /// The share of the model's layers on the GPU: 0 is the CPU alone, 1 all of them. Half by
-    /// default, so the game's frames keep half the GPU (owner).
+    /// The share of the model's layers on the GPU: 0 is the CPU alone, 1 all of them, the default
+    /// (owner: "by default the full model should run on the gpu"). It used to be half.
     pub gpu_share: f64,
     /// Milliseconds the model rests between each piece of its work while it thinks (a chunk
     /// of a question, a token): higher leaves more of the GPU and the CPU to the game at any
@@ -432,6 +446,7 @@ impl Default for Log {
 impl Default for Model {
     fn default() -> Self {
         Self {
+            enabled: true,
             size: "1.5b".to_string(),
             url: String::new(),
             path: String::new(),
@@ -439,7 +454,7 @@ impl Default for Model {
             context: 1536,
             idle_minutes: 10,
             pause_ms: 1,
-            gpu_share: 0.5,
+            gpu_share: 1.0,
         }
     }
 }

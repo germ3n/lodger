@@ -58,6 +58,21 @@ class NativeRealTest {
 		}
 	}
 
+	/** As a release jar carries it: xz-compressed, unpacked on extraction, and loaded from there. */
+	@Test
+	void the_real_library_compressed_is_unpacked_and_loads(@TempDir Path dir) throws Exception {
+		Assumptions.assumeTrue(Files.isRegularFile(library()), "no release library built");
+		java.io.ByteArrayOutputStream packed = new java.io.ByteArrayOutputStream();
+		try (var out = new org.tukaani.xz.XZOutputStream(packed, new org.tukaani.xz.LZMA2Options(1))) {
+			out.write(Files.readAllBytes(library()));
+		}
+
+		Path extracted = Natives.extract(packed.toByteArray(), dir, System.getProperty("os.name"), System.getProperty("os.arch"), "lodger_core");
+		try (Native lodger = Native.load(extracted)) {
+			assertEquals(Native.ABI_VERSION, lodger.abiVersion());
+		}
+	}
+
 	/**
 	 * The server's own layout: a config naming the small model, the model at that size's default
 	 * path under the game directory. (The default size is 1.5b; the test file is the 0.5b.)

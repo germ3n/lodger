@@ -140,6 +140,10 @@ pub struct Resource {
     /// the change and initialises the mod again. ABI 20.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub choices: Vec<Choice>,
+    /// The change to the mod's config that plays without it, for the screen's "Play without
+    /// it" (null: no such button). The mod must then not need it. ABI 46.
+    #[serde(default, skip_serializing_if = "serde_json::Value::is_null")]
+    pub without: serde_json::Value,
 }
 
 /// One form of a resource the player may pick.
@@ -152,6 +156,11 @@ pub struct Choice {
     pub config: serde_json::Value,
     /// Whether it is the one the config picks now.
     pub chosen: bool,
+    /// A line or two the screen shows under the choice: how it differs from the others and what
+    /// it needs (owner: "a small text thing explaining the difference between the models, and
+    /// the recommended vram"). ABI 46.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub note: String,
 }
 
 /// A resource's terms: a name, where to read them in full, and a short text the screen shows.

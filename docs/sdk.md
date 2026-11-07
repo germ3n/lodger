@@ -12,7 +12,8 @@ and carries out what they decide. The lodger is its first mod. This page is the 
   as a `cdylib`. It knows nothing of Minecraft's classes: it reads observations and answers
   commands, both plain `serde` structs (see [The protocol](#the-protocol)).
 - **A jar per loader,** with no Java of the mod's own: the crate's shared library for each of
-  six platforms (Linux, macOS, Windows; x86_64 and arm64) under `natives/<os>-<arch>/`, the
+  five platforms (Linux and Windows on x86_64 and arm64, macOS on Apple silicon), each with its
+  GPU on, xz-compressed under `natives/<os>-<arch>/` (see [Building](build.md)), the
   mod's assets (lang files, textures, sounds), `META-INF/craftkit.json` for the host, the
   loader's manifest (`fabric.mod.json`, or a `META-INF/neoforge.mods.toml` with no language
   loader), and the host itself nested inside (`META-INF/jars/` on Fabric, `META-INF/jarjar/` on
@@ -196,14 +197,17 @@ first touch). ABI 43: `confront` (the fight, the host's to run) and the
 `fight_won`, `fight_lost`, `fight_fled` events. ABI 44: `approach`'s `pace`, `then` (`stare`,
 `leave`, `hit`) and `damage`. ABI 45: `Init.config_before`, the file before a settings change,
 and `InitReply.rewrite`, which asks the host to write the effective config over the file (a
-preset picked, its values in).
+preset picked, its values in). ABI 46: `Choice.note`, a line under a resource's choice, and
+`Resource.without`, the config change that plays without it.
 
 ## Resources
 
 A mod's `init` reply lists the files it needs that are not in its jar (`Resource`: id, title,
 URL, path, a size hint, the first bytes the file must have, an optional SHA-256, required or
 not). The host fetches the missing required ones before the game is playable: on a client a
-screen over the title screen with a progress bar, Quit, and Try again on failure; on a
+screen over the title screen with a progress bar, Quit, and Try again on failure (a resource's
+`choices` each with a `note` under the button, and **Play without it** where the resource
+names the config change that does it, `without`; ABI 46); on a
 dedicated server at startup, blocking, with progress in the log. Then it calls `warm` and polls
 `status` until the mod says it is ready. Optional resources download in the background and the
 mod goes without until they land. A resource with a `license` (a name, a URL, a short text) is

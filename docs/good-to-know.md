@@ -41,7 +41,7 @@ pages explain each part in full; this one is the short list to keep in mind.
   could happen right now and why not, a Fire button on each, and what landed. Players without
   operator level on a server cannot open it; the owner of a singleplayer world can, cheats or
   not. See [Running a stay quickly](development.md#running-a-stay-quickly).
-- **It shares the GPU with the game.** Half the model's layers run on the GPU by default (`model.gpu_share`), and a question is fed in small chunks with rests between, so the frames do not wait; `0` keeps it off the GPU entirely.
+- **It shares the GPU with the game.** The whole model runs on the GPU by default (`model.gpu_share` 1), and a question is fed in small chunks with rests between, so the frames do not wait; lower it if the game stutters, and `0` keeps it off the GPU entirely.
 - **It costs CPU on the server.** Two threads while scoring, about 1.6 GB of RAM while the
   default model is loaded (700 MB for the small one).
   It loads when a target is online and unloads after `model.idle_minutes` with no one to think

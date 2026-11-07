@@ -1,5 +1,6 @@
 package craftkit.host;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
@@ -53,5 +54,20 @@ class ResourceTest {
 			IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> parse(bad[0]), bad[0]);
 			assertTrue(e.getMessage().contains(bad[1]), bad[0] + ": " + e.getMessage());
 		}
+	}
+
+	@Test
+	void a_resource_may_say_how_to_play_without_it_and_each_choice_its_note() {
+		JsonObject json = JsonParser.parseString("""
+				{"id": "model", "url": "https://x/m", "path": "m",
+				 "without": {"model": {"enabled": false}},
+				 "choices": [{"label": "small", "config": {}, "chosen": true, "note": "quick"}, {"label": "big", "config": {}}]}
+				""").getAsJsonObject();
+		Resource resource = Resource.parse(json, java.nio.file.Path.of("/game"));
+
+		assertEquals(false, resource.without().getAsJsonObject("model").get("enabled").getAsBoolean());
+		assertEquals("quick", resource.choices().get(0).note());
+		assertEquals("", resource.choices().get(1).note(), "no note: none shown");
+		assertEquals(null, Resource.parse(JsonParser.parseString("{\"id\": \"m\", \"url\": \"https://x/m\", \"path\": \"m\"}").getAsJsonObject(), java.nio.file.Path.of("/game")).without());
 	}
 }

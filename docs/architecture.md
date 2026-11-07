@@ -35,7 +35,8 @@ and generic: nothing in it is the lodger's, so a second Rust mod runs on the sam
 ### The content jar, `mod/`
 
 No Java. `mod/build.gradle` runs cargo, puts the mind's library under `natives/<os>-<arch>/`
-(and the other platforms' from `natives-extra/`, which the CI fills), and packs it with
+(and the other platforms' from `natives-extra/`, compressed, which `scripts/build_jars.py`
+fills; see [Building](build.md)), and packs it with
 `META-INF/craftkit.json`, `fabric.mod.json`, a `META-INF/neoforge.mods.toml` with no language loader,
 `pack.mcmeta` and `assets/lodger/` (lang files, and later the figure's and the glitches' assets).
 One jar for both loaders.

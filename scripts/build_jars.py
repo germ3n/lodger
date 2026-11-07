@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Builds the lodger's two jars, Fabric and NeoForge, for one Minecraft version, with the mind's
-native library for every platform inside (owner):
+"""Builds the lodger's two jars, Fabric and NeoForge, for one Minecraft version, each carrying the
+mind's native library for all five platforms, xz-compressed (owner). See docs/build.md.
 
-    python3 scripts/build_jars.py 26.3                 # natives from the CI run of this commit
-    python3 scripts/build_jars.py 26.3 --natives local # the ones this computer can build
-    python3 scripts/build_jars.py 26.3 --natives DIR   # DIR/<os>-<arch>/<library>
+    python3 scripts/build_jars.py 26.3 --natives cross    # build all five here (a Mac)
+    python3 scripts/build_jars.py 26.3 --natives DIR      # DIR/<os>-<arch>/<library>, built already
+    python3 scripts/build_jars.py 26.3 --natives ci       # the CI run of this commit (`gh`)
+    python3 scripts/build_jars.py 26.3 --natives local --allow-missing   # this computer's alone
 
-The six platforms are windows, linux and macos, each on x86_64 and aarch64. A Mac builds both
-macOS ones itself; Windows and Linux ones need their own machines, which is what the CI's matrix
-is (.github/workflows/ci.yml builds each on its own runner), so the default takes them from the
-CI's run of the commit checked out (push it first; `gh` must be signed in). A jar missing any of
-the six is an error unless --allow-missing, and a player on a platform it lacks is told so at
-boot (FailedScreen).
+The five are windows-x86_64, windows-aarch64, linux-x86_64, linux-aarch64 (Vulkan) and
+macos-aarch64 (Metal); scripts/build_natives.py builds and checks them. Each goes in the jar as
+natives/<os>-<arch>/<library>.xz, half the size of the jar's own deflate; the host unpacks the
+one it needs at boot. A jar missing any of the five is an error unless --allow-missing, and a
+player on a platform it lacks is told so at boot (FailedScreen).
 
 The Minecraft and loader versions come from versions/<minecraft>.properties, laid over the
 gradle.properties files for this build only (`-P`). A version with no file there is refused:
@@ -20,7 +20,9 @@ the host is written against one version's code, and another needs its file and, 
 """
 
 import argparse
+import hashlib
 import json
+import lzma
 import os
 import platform
 import shutil
@@ -29,15 +31,10 @@ import sys
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PLATFORMS = ["windows-x86_64", "windows-aarch64", "linux-x86_64", "linux-aarch64", "macos-x86_64", "macos-aarch64"]
-TARGETS = {
-    "windows-x86_64": "x86_64-pc-windows-msvc",
-    "windows-aarch64": "aarch64-pc-windows-msvc",
-    "linux-x86_64": "x86_64-unknown-linux-gnu",
-    "linux-aarch64": "aarch64-unknown-linux-gnu",
-    "macos-x86_64": "x86_64-apple-darwin",
-    "macos-aarch64": "aarch64-apple-darwin",
-}
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import build_natives  # noqa: E402
+
+PLATFORMS = build_natives.PLATFORMS
 
 
 def library(plat):
@@ -82,29 +79,18 @@ def natives_from_ci(staging):
         cwd=ROOT, check=True, stdout=subprocess.PIPE, text=True).stdout)
     if not runs:
         sys.exit("no successful CI run for %s: push it and wait for the ci workflow, or use --natives local or a directory" % commit[:10])
-    run(["gh", "run", "download", str(runs[0]["databaseId"]), "--pattern", "native-*", "--dir", staging])
-    for name in os.listdir(staging):
-        if name.startswith("native-"):
-            os.rename(os.path.join(staging, name), os.path.join(staging, name[len("native-"):]))
+    # Each artifact in a folder of its name, holding <os>-<arch>/<library>.
+    fetched = staging + "-fetched"
+    shutil.rmtree(fetched, ignore_errors=True)
+    run(["gh", "run", "download", str(runs[0]["databaseId"]), "--pattern", "natives-*", "--dir", fetched])
+    for artifact in os.listdir(fetched):
+        natives_from_dir(os.path.join(fetched, artifact), staging)
+    shutil.rmtree(fetched, ignore_errors=True)
 
 
-def natives_local(staging):
-    mine = here()
-    targets = [mine]
-    # A Mac builds for both its chips.
-    if mine.startswith("macos-"):
-        targets = ["macos-aarch64", "macos-x86_64"]
-    for plat in targets:
-        triple = TARGETS.get(plat)
-        if plat != mine:
-            run(["rustup", "target", "add", triple])
-            run(["cargo", "build", "--release", "-p", "lodger-core", "--target", triple])
-            built = os.path.join(ROOT, "target", triple, "release", library(plat))
-        else:
-            run(["cargo", "build", "--release", "-p", "lodger-core"])
-            built = os.path.join(ROOT, "target", "release", library(plat))
-        os.makedirs(os.path.join(staging, plat), exist_ok=True)
-        shutil.copy2(built, os.path.join(staging, plat, library(plat)))
+def natives_built(staging, which):
+    for plat in which:
+        build_natives.build(plat, staging)
 
 
 def natives_from_dir(source, staging):
@@ -119,13 +105,39 @@ def carried(jar):
     with zipfile.ZipFile(jar) as z:
         names = set(z.namelist())
 
-    return [p for p in PLATFORMS if "natives/%s/%s" % (p, library(p)) in names]
+    return [p for p in PLATFORMS if "natives/%s/%s.xz" % (p, library(p)) in names]
+
+
+def sha256(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def compress(staging, have, extra):
+    """Each native as <library>.xz: the strongest preset, one stream, which XZ for Java reads.
+    Answers the SHA256SUMS lines for each, as built and as packed."""
+    sums = []
+    for plat in have:
+        source = os.path.join(staging, plat, library(plat))
+        target = os.path.join(extra, plat, library(plat) + ".xz")
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        with open(source, "rb") as f:
+            data = f.read()
+        packed = lzma.compress(data, format=lzma.FORMAT_XZ, check=lzma.CHECK_CRC64,
+                               preset=9 | lzma.PRESET_EXTREME)
+        with open(target, "wb") as f:
+            f.write(packed)
+        print("%s: %.1f MB, %.1f MB packed" % (plat, len(data) / 1e6, len(packed) / 1e6), flush=True)
+        sums.append("%s  natives/%s/%s" % (sha256(data), plat, library(plat)))
+        sums.append("%s  natives/%s/%s.xz" % (sha256(packed), plat, library(plat)))
+
+    return sums
 
 
 def main():
     parser = argparse.ArgumentParser(description="Build the lodger's Fabric and NeoForge jars with every platform's native.")
     parser.add_argument("minecraft", help="the Minecraft version, as in versions/<it>.properties (26.3)")
-    parser.add_argument("--natives", default="ci", help="ci (the CI run of this commit, the default), local, or a directory of <os>-<arch>/<library>")
+    parser.add_argument("--natives", default="cross", help="cross (build the five here), local (this computer's), ci (the CI run of this commit), "
+                        "or a directory of <os>-<arch>/<library>")
     parser.add_argument("--allow-missing", action="store_true", help="build even when a platform's native is missing")
     parser.add_argument("--allow-dirty", action="store_true", help="build from the CI's natives though the mind or the SDK has uncommitted changes")
     args = parser.parse_args()
@@ -146,12 +158,14 @@ def main():
     os.makedirs(staging)
     if args.natives == "ci":
         natives_from_ci(staging)
+    elif args.natives == "cross":
+        natives_built(staging, PLATFORMS)
     elif args.natives == "local":
-        natives_local(staging)
+        natives_built(staging, [here()])
     elif os.path.isdir(args.natives):
         natives_from_dir(os.path.abspath(args.natives), staging)
     else:
-        sys.exit("--natives is ci, local or a directory; %s is none of them" % args.natives)
+        sys.exit("--natives is cross, local, ci or a directory; %s is none of them" % args.natives)
 
     have = [p for p in PLATFORMS if os.path.isfile(os.path.join(staging, p, library(p)))]
     missing = [p for p in PLATFORMS if p not in have]
@@ -159,10 +173,10 @@ def main():
     if missing and not args.allow_missing:
         sys.exit("missing natives for %s (--allow-missing builds without them; players on those are told at boot)" % ", ".join(missing))
 
-    # The natives the jars carry are these and nothing else.
+    # The natives the jars carry are these and nothing else, compressed.
     extra = os.path.join(ROOT, "mod", "natives-extra")
     shutil.rmtree(extra, ignore_errors=True)
-    shutil.copytree(staging, extra)
+    sums = compress(staging, have, extra)
 
     # Old jars out of the way: another version's host jar would make two where one is looked
     # for, and another's lodger jar would be checked and copied with these.
@@ -197,6 +211,18 @@ def main():
             if set(got) != set(have):
                 sys.exit("%s carries %s, not the %s staged" % (name, got, have))
             shutil.copy2(jar, os.path.join(out, name))
+            with open(jar, "rb") as f:
+                sums.append("%s  %s" % (sha256(f.read()), name))
+    # Both loaders, every time.
+    jars = [n for n in os.listdir(out) if n.endswith(".jar")]
+    for loader in ("fabric", "neoforge"):
+        if not any(n.startswith("lodger-%s-" % loader) for n in jars):
+            sys.exit("no %s jar was built" % loader)
+    # Each native as built and as packed in the jars, and the jars: SHA256SUMS beside them, in
+    # the format `sha256sum -c` reads for the jars.
+    with open(os.path.join(out, "SHA256SUMS"), "w", encoding="utf-8") as f:
+        f.write("\n".join(sums) + "\n")
+    print("\nSHA-256:\n" + "\n".join(sums))
     print("done:", os.path.relpath(out, ROOT))
 
 

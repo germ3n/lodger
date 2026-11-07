@@ -54,6 +54,21 @@ public final class LoadedMod {
 		this.resources = resources;
 	}
 
+	/**
+	 * What to do when the native would not load for want of Vulkan's loader: the Windows and
+	 * Linux natives run the model on the GPU through Vulkan and need it there, even with no GPU
+	 * (then the CPU does the work). Empty when that is not why.
+	 */
+	static String vulkanHint(Throwable e, String osName) {
+		String text = String.valueOf(e.getMessage()) + (e.getCause() == null ? "" : " " + e.getCause().getMessage());
+		if (!text.toLowerCase(java.util.Locale.ROOT).contains("vulkan")) {
+			return "";
+		}
+		return Natives.os(osName).equals("windows")
+				? ". Vulkan is missing: update the graphics driver, which installs vulkan-1.dll"
+				: ". Vulkan's loader is missing: install it (Debian and Ubuntu: apt install libvulkan1; Fedora: dnf install vulkan-loader; Arch: pacman -S vulkan-icd-loader). No GPU is needed";
+	}
+
 	/** Loads the Rust mod a jar carries. Never throws: a failure is a value. */
 	public static LoadedMod load(Platform.ContentJar jar, byte[] manifestBytes, Path gameDir, Path configDir, String osName, String osArch) {
 		Manifest manifest;
@@ -66,7 +81,11 @@ public final class LoadedMod {
 		String resource = Natives.resourcePath(osName, osArch, manifest.library());
 		Optional<byte[]> inJar;
 		try {
-			inJar = jar.read(resource);
+			// Compressed in a release jar, plain in a developer's.
+			inJar = jar.read(resource + Natives.XZ);
+			if (inJar.isEmpty()) {
+				inJar = jar.read(resource);
+			}
 		} catch (IOException e) {
 			return failed(jar.id(), Optional.of(manifest), "could not read " + resource + ": " + e.getMessage());
 		}
@@ -76,7 +95,8 @@ public final class LoadedMod {
 			for (String platform : Natives.PLATFORMS) {
 				String[] p = platform.split("-", 2);
 				try {
-					if (jar.read("natives/" + platform + "/" + Natives.fileName(p[0], manifest.library())).isPresent()) {
+					String path = "natives/" + platform + "/" + Natives.fileName(p[0], manifest.library());
+					if (jar.read(path + Natives.XZ).isPresent() || jar.read(path).isPresent()) {
 						carried.add(platform);
 					}
 				} catch (IOException ignored) {
@@ -98,7 +118,7 @@ public final class LoadedMod {
 		try {
 			library = Native.load(extracted);
 		} catch (RuntimeException e) {
-			return failed(jar.id(), Optional.of(manifest), "could not load " + extracted + ": " + e.getMessage());
+			return failed(jar.id(), Optional.of(manifest), "could not load " + extracted + ": " + e.getMessage() + vulkanHint(e, osName));
 		}
 
 		int abi = library.abiVersion();

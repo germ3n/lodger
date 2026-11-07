@@ -13,7 +13,9 @@ import java.util.Locale;
  * Where a mod's shared library is inside its jar and on disk, for this machine.
  *
  * <p>A content jar carries one native per platform under {@code natives/<os>-<arch>/}, named as
- * cargo names a cdylib. A shared library cannot be loaded from inside a jar, so the right one is
+ * cargo names a cdylib, xz-compressed with {@code .xz} after the name in a release build (half
+ * the size of the jar's own deflate) or plain in a developer's. A shared library cannot be
+ * loaded from inside a jar, so the right one is
  * extracted to {@code config/craftkit/natives/<mod>/<os>-<arch>/} and loaded from there; one
  * already there with the same SHA-256 is left alone, and a new one is written beside and moved
  * into place so a crash mid-write never leaves a half library to load next time.
@@ -53,9 +55,12 @@ public final class Natives {
 		return arch;
 	}
 
-	/** The six platforms a content jar carries a native for (the CI's matrix). */
+	/** The five platforms a content jar carries a native for (the CI's matrix): no Intel Mac. */
 	public static final java.util.List<String> PLATFORMS = java.util.List.of(
-			"windows-x86_64", "windows-aarch64", "linux-x86_64", "linux-aarch64", "macos-x86_64", "macos-aarch64");
+			"windows-x86_64", "windows-aarch64", "linux-x86_64", "linux-aarch64", "macos-aarch64");
+
+	/** After a native's name in the jar when it is xz-compressed. */
+	public static final String XZ = ".xz";
 
 	/** {@code <os>-<arch>}, the folder name under {@code natives/}. */
 	public static String platform(String osName, String osArch) {
@@ -85,6 +90,7 @@ public final class Natives {
 	 * unless the same bytes are already there, and answers the path to load.
 	 */
 	public static Path extract(byte[] bytes, Path targetDir, String osName, String osArch, String library) throws IOException {
+		bytes = unpacked(bytes);
 		Path target = targetDir.resolve(platform(osName, osArch)).resolve(fileName(os(osName), library));
 
 		if (Files.exists(target) && sha256(Files.readAllBytes(target)).equals(sha256(bytes))) {
@@ -97,6 +103,16 @@ public final class Natives {
 		Files.move(part, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 
 		return target;
+	}
+
+	/** The bytes as they are, or unpacked when they begin with xz's magic. */
+	public static byte[] unpacked(byte[] bytes) throws IOException {
+		if (bytes.length < 6 || (bytes[0] & 0xFF) != 0xFD || bytes[1] != '7' || bytes[2] != 'z' || bytes[3] != 'X' || bytes[4] != 'Z' || bytes[5] != 0) {
+			return bytes;
+		}
+		try (var in = new org.tukaani.xz.XZInputStream(new java.io.ByteArrayInputStream(bytes))) {
+			return in.readAllBytes();
+		}
 	}
 
 	public static String sha256(byte[] bytes) {

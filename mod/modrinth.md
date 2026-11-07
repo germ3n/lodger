@@ -50,9 +50,13 @@ lines), or turn off single events by name in `config/lodger.json`.
 - **Fabric** (with Fabric API) or **NeoForge**. One jar for your loader; nothing else to
   install.
 - Needed on **both the client and the server**.
-- Windows, macOS or Linux, on x86_64 or arm64.
+- Windows or Linux on x86_64 or arm64, or macOS on Apple silicon. On Linux, Vulkan's loader
+  (`libvulkan1`), which any desktop with a GPU driver has; a headless server may need
+  `apt install libvulkan1`. No GPU is needed.
 - **A one-time model download** on first start (see below), with a progress bar on the title
-  screen. Without the model it still runs on simpler built-in rules.
+  screen and a note on each size. **Play without it** skips it: simpler built-in rules decide
+  then, and a player who only joins servers needs nothing more. Turn it back on in the
+  settings (Use the model).
 
 ### The model, and what it needs
 
@@ -61,24 +65,25 @@ machine** (the server's, in multiplayer). It is downloaded once from Hugging Fac
 model's publisher, after you accept its license on the title screen. It never connects
 anywhere else.
 
-Pick the size in the settings (`model.size`). On a Mac, by default half of the model runs on
-the GPU and half on the CPU (`model.gpu_share`, 0 to 1); set it to `0` to keep the GPU free for
-the game. On Windows and Linux the model runs on the CPU alone for now, all of it in RAM, and
-`model.gpu_share` does nothing there.
+Pick the size in the settings (`model.size`). By default the whole model runs on the GPU
+(Vulkan on Windows and Linux, Metal on a Mac). If the game stutters, lower `model.gpu_share`
+(0 to 1) to put part of it on the CPU, or set it to `0` to keep the GPU free for the game. With
+no GPU it all runs on the CPU.
 
-| Size | Model | Download | Memory in all | VRAM at the default, on a Mac (half on the GPU) | License |
+| Size | Model | Download | Memory in all | VRAM at the default (all on the GPU) | License |
 | --- | --- | --- | --- | --- | --- |
-| `0.5b` | Qwen2.5 0.5B Instruct | 491 MB | about 0.7 GB | about 0.3 GB | Apache 2.0 |
-| `1.5b` (default) | Qwen2.5 1.5B Instruct | 1.1 GB | about 1.6 GB | about 0.6 GB | Apache 2.0 |
-| `3b` | Qwen2.5 3B Instruct | 2.1 GB | about 2.6 GB | about 1.1 GB | Qwen Research License (non-commercial) |
-| `4b` | Qwen3 4B Instruct 2507 | 2.5 GB | about 3.2 GB | about 1.4 GB | Apache 2.0 |
+| `0.5b` | Qwen2.5 0.5B Instruct | 491 MB | about 0.7 GB | about 0.6 GB | Apache 2.0 |
+| `1.5b` (default) | Qwen2.5 1.5B Instruct | 1.1 GB | about 1.6 GB | about 1.3 GB | Apache 2.0 |
+| `3b` | Qwen2.5 3B Instruct | 2.1 GB | about 2.6 GB | about 2.4 GB | Qwen Research License (non-commercial) |
+| `4b` | Qwen3 4B Instruct 2507 | 2.5 GB | about 3.2 GB | about 2.9 GB | Apache 2.0 |
 
-"Memory in all" is RAM and VRAM together. With `model.gpu_share` at `0`, and on Windows and
-Linux, all of it is RAM; at `1`, most of it is VRAM. The figures are estimates and vary with your system. The model
+"Memory in all" is RAM and VRAM together. At the default nearly all of it is VRAM; with
+`model.gpu_share` at `0`, or no GPU, all of it is RAM. The figures are estimates and vary with your system. The model
 uses two CPU threads while it thinks and runs on its own thread, so the game never waits for
 it. It loads when someone is playing and unloads when no one is.
 
-On a server, the model runs on the server and clients pay nothing for it.
+On a server, the model runs on the server; a client that only plays there can press **Play
+without it** and download nothing.
 
 ### Generative AI notice
 

@@ -1,10 +1,10 @@
 // The lodger's jars: one per loader, each carrying the craftkit host nested inside it (Fabric's
-// `jars`, NeoForge's jar-in-jar), the mind's natives for every platform the CI built, the
-// assets and the manifests. No Java of the lodger's own. Players install one file; two Rust
-// mods on one server share the newest nested host, which both loaders work out themselves.
+// `jars`, NeoForge's jar-in-jar), the mind's natives (this machine's, plain, for a developer;
+// all five, xz-compressed, from scripts/build_jars.py), the assets and the manifests. No Java
+// of the lodger's own. Players install one file; two Rust mods on one server share the newest
+// nested host, which both loaders work out themselves. See docs/build.md.
 //
-// The host jars come from host/: run `./gradlew build` there first, or let the CI's artifacts
-// land in natives-extra/ and host-jars/.
+// The host jars come from host/: run `./gradlew build` there first (build_jars.py does).
 plugins {
 	id 'base'
 }
@@ -96,7 +96,7 @@ tasks.register('processResources', Sync) {
 				into "natives/${hostOs}-${hostArch}"
 			}
 		}
-		// The CI drops the other platforms' natives in natives-extra/<os>-<arch>/ before building.
+		// scripts/build_jars.py drops the natives in natives-extra/<os>-<arch>/<library>.xz first.
 		from(file('natives-extra')) {
 			into 'natives'
 		}

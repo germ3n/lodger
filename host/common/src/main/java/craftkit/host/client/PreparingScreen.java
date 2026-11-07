@@ -9,8 +9,9 @@ import net.minecraft.network.chat.Component;
 
 /**
  * The screen over the title screen while the mods fetch and load what they need: a title, a
- * progress bar, one line of status, and no way past it but Quit until it is done. On failure,
- * Retry and Quit. Shown by the loaders' title-screen hooks whenever {@link Preparation#needed()}
+ * progress bar, one line of status, the model's sizes to pick with a note on each, and no way
+ * past it but Quit, or Play without it where the mod says how (owner). On failure, Retry and
+ * Quit. Shown by the loaders' title-screen hooks whenever {@link Preparation#needed()}
  * says so, so a player with the model already there never sees it.
  */
 public final class PreparingScreen extends Screen {
@@ -30,6 +31,8 @@ public final class PreparingScreen extends Screen {
 	private Button readTerms;
 	/** The resource's choices, when it has any: the next one on each press. */
 	private Button choice;
+	/** Past it without the resource, where the mod names the change that does it. */
+	private Button without;
 
 	public PreparingScreen(Screen parent, Preparation preparation) {
 		super(Component.translatable("craftkit.preparing.title"));
@@ -40,7 +43,7 @@ public final class PreparingScreen extends Screen {
 	@Override
 	protected void init() {
 		preparation.start();
-		int y = this.height / 2 + 40;
+		int y = top() + 116;
 		retry = addRenderableWidget(Button.builder(Component.translatable("craftkit.preparing.retry"), button -> preparation.start())
 				.bounds(this.width / 2 - 154, y, 150, 20).build());
 		quit = addRenderableWidget(Button.builder(Component.translatable("craftkit.preparing.quit"), button -> {
@@ -71,6 +74,22 @@ public final class PreparingScreen extends Screen {
 			preparation.choose(shown.mod(), choices.get((now + 1) % choices.size()));
 		})).bounds(this.width / 2 - 154, y - 24, 308, 20).build());
 		choice.visible = false;
+		without = addRenderableWidget(Button.builder(Component.translatable("craftkit.preparing.without"), button -> preparation.shown().ifPresent(shown -> {
+			com.google.gson.JsonObject change = shown.resource().without();
+			if (change != null) {
+				// The download stopped, its part file kept; the mod initialised again without it,
+				// so nothing is needed and the screen closes.
+				preparation.choose(shown.mod(), new craftkit.host.Resource.Choice("", change, false, ""));
+			}
+		}))
+				.tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("craftkit.preparing.without.tip")))
+				.bounds(this.width / 2 - 154, y + 48, 308, 20).build());
+		without.visible = false;
+	}
+
+	/** The top of the screen's middle block: the title, the bar, the lines, then the buttons. */
+	private int top() {
+		return this.height / 2 - 70;
 	}
 
 	@Override
@@ -91,6 +110,8 @@ public final class PreparingScreen extends Screen {
 				.flatMap(shown -> shown.resource().choices().stream().filter(craftkit.host.Resource.Choice::chosen).findFirst());
 		choice.visible = chosen.isPresent();
 		chosen.ifPresent(c -> choice.setMessage(Component.translatable("craftkit.preparing.choice", c.label())));
+		without.visible = progress.phase() != Preparation.Phase.LOADING
+				&& preparation.shown().map(shown -> shown.resource().without() != null).orElse(false);
 
 		if (progress.done()) {
 			Minecraft.getInstance().gui.setScreen(parent);
@@ -102,7 +123,7 @@ public final class PreparingScreen extends Screen {
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 		Preparation.Progress progress = preparation.progress();
 		int centerX = this.width / 2;
-		int top = this.height / 2 - 40;
+		int top = top();
 
 		if (progress.phase() == Preparation.Phase.LICENSE) {
 			preparation.pendingLicense().ifPresent(pending -> {
@@ -149,5 +170,17 @@ public final class PreparingScreen extends Screen {
 		}
 
 		graphics.centeredText(this.font, Component.literal(progress.line()), centerX, barTop + 16, GREY);
+
+		// The chosen size's note: how it differs, and the VRAM it wants.
+		preparation.shown()
+				.flatMap(shown -> shown.resource().choices().stream().filter(craftkit.host.Resource.Choice::chosen).findFirst())
+				.filter(c -> !c.note().isEmpty())
+				.ifPresent(c -> {
+					int noteY = barTop + 30;
+					for (net.minecraft.util.FormattedCharSequence line : this.font.split(Component.literal(c.note()), Math.min(this.width - 40, 308))) {
+						graphics.centeredText(this.font, line, centerX, noteY, GREY);
+						noteY += 10;
+					}
+				});
 	}
 }

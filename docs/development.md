@@ -8,7 +8,7 @@ layout:
 | `sdk/` | craftkit, the Rust SDK: the `Mod` trait, the C ABI, the protocol, the harness. See [The SDK](sdk.md). | cargo, in the root workspace |
 | `core/` | The lodger's mind, a craftkit mod, built as a shared library. | cargo, in the root workspace |
 | `host/` | The craftkit host, a Java mod for Fabric and NeoForge from one `common` tree (`host/common`, `host/fabric`, `host/neoforge`, the MultiLoader layout). | Gradle, Loom for Fabric, ModDevGradle for NeoForge and for `common` |
-| `mod/` | The lodger's two jars, one per loader: natives for six platforms, assets, manifests, the host nested, no Java of its own. | Gradle, which runs cargo and takes the host jars from `host/`'s build |
+| `mod/` | The lodger's two jars, one per loader: natives for five platforms (compressed), assets, manifests, the host nested, no Java of its own. | Gradle, which runs cargo and takes the host jars from `host/`'s build |
 
 ## Toolchain
 
@@ -48,26 +48,18 @@ version is most likely to break and the history of bumps are in [Upgrading](upgr
 cargo build --release -p lodger-core
 ```
 
-`./gradlew jar` in `mod/` runs this itself when `cargo` is on `PATH` (`cargoBuild` in
-`mod/build.gradle`; set `CARGO` to another binary, or to a path that does not exist to skip it,
-as the CI does so its jar holds only the three natives it built).
-
 That builds `liblodger_core.dylib`, `.so` or `.dll` in `target/release/`, with llama.cpp
-compiled in from phase 1 on. The first build then compiles llama.cpp, which takes a few minutes;
-later ones do not. `--features metal` on macOS and `--features vulkan` elsewhere build the
-GPU-capable native that `model.gpu_layers` needs; the default native is CPU only.
+compiled in. The first build compiles llama.cpp, which takes a few minutes; later ones do not.
+On a Mac it has Metal; on Windows and Linux this one is CPU only (`--features vulkan` needs the
+Vulkan SDK). The release natives, all five with the GPU on, cross-compiled from a Mac, are in
+[Building](build.md). `./gradlew jar` in `mod/` runs this itself when `cargo` is on `PATH`
+(`cargoBuild`; set `CARGO` to a path that does not exist to skip it).
 
-`mod/build.gradle` puts this machine's native into each jar as `natives/<os>-<arch>/`, and
-anything in `mod/natives-extra/<os>-<arch>/` beside it, which is how the CI puts all six
-together: `linux-x86_64`, `linux-aarch64`, `macos-x86_64`, `macos-aarch64`, `windows-x86_64`,
-`windows-aarch64`, each built on a runner of that platform (llama.cpp is not cross-compiled).
-At runtime the host's
-`Natives.java` extracts the one for the machine to `config/craftkit/natives/lodger/<os>-<arch>/`
-and `Native.java` loads it from there, because a shared library cannot be loaded from inside a
-jar. A native already there with the same SHA-256 is not rewritten; a new one is written beside
-and moved into place.
-
-Cross-compiling llama.cpp is not attempted: each native is built on its own platform's runner.
+At runtime the host's `Natives.java` extracts the native for the machine (unpacking it when it
+is xz-compressed, as in a release jar) to `config/craftkit/natives/lodger/<os>-<arch>/`, and
+`Native.java` loads it from there, because a shared library cannot be loaded from inside a jar.
+A native already there with the same bytes is not rewritten; a new one is written beside and
+moved into place.
 
 ## Building the host and the content jar
 
@@ -92,24 +84,9 @@ upload, `mod/art/icon-512.png`, and the jars' `assets/lodger/icon.png` (128), wh
 
 ## Building the jars for a release
 
-`python3 scripts/build_jars.py <minecraft>` builds both lodger jars, Fabric and NeoForge, for one
-Minecraft version, with the mind's native library for all six platforms inside (windows, linux
-and macos, each on x86_64 and aarch64; owner), and puts them in `dist/<minecraft>/`.
-At startup the host loads the one for the computer it runs on; a jar without it says so on a
-screen at boot (`FailedScreen`), naming the platforms it carries, and the server's log says it
-as an error.
-
-- **The natives.** By default they come from the CI's run of the commit checked out
-  (`.github/workflows/ci.yml` builds each platform on its own runner; push first, `gh` signed
-  in). `--natives local` builds what this computer can (a Mac both macOS ones, cross-compiling
-  the other chip); `--natives DIR` takes `DIR/<os>-<arch>/<library>`. A jar missing any of the
-  six is an error unless `--allow-missing`. Windows and Linux natives are not cross-compiled from
-  a Mac: llama.cpp needs each platform's own C++ toolchain, which the CI's runners have.
-- **The version.** `versions/<minecraft>.properties` holds every pin that changes with it
-  (Minecraft, NeoForm, Fabric API and loader, Loom, NeoForge, ModDevGradle, Java), laid over the
-  gradle.properties files for that build only. A version with no file is refused: the host is
-  written against one version's code, and another needs its file and usually a port (see
-  [Upgrading](upgrading.md)). Today: 26.3.
+`python3 scripts/build_jars.py <minecraft>` on a Mac builds both lodger jars with all five
+natives, compressed, in `dist/<minecraft>/`. Everything about it, the cross-builds and the CI, is
+in [Building](build.md).
 
 ## Running a stay quickly
 

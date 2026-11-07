@@ -90,4 +90,13 @@ class LoadedModTest {
 		assertTrue(mod.failure().startsWith("could not load"), mod.failure());
 		assertTrue(Files.exists(config.resolve("craftkit/natives/demo").resolve(Natives.platform())), "the native was extracted before loading failed");
 	}
+
+	@Test
+	void a_native_that_wants_vulkan_says_what_to_install() {
+		RuntimeException linux = new RuntimeException("libvulkan.so.1: cannot open shared object file");
+		org.junit.jupiter.api.Assertions.assertTrue(LoadedMod.vulkanHint(linux, "Linux").contains("apt install libvulkan1"));
+		RuntimeException windows = new RuntimeException("Can't find dependent libraries", new RuntimeException("vulkan-1.dll"));
+		org.junit.jupiter.api.Assertions.assertTrue(LoadedMod.vulkanHint(windows, "Windows 11").contains("graphics driver"));
+		org.junit.jupiter.api.Assertions.assertEquals("", LoadedMod.vulkanHint(new RuntimeException("no such file"), "Linux"));
+	}
 }

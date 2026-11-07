@@ -26,6 +26,11 @@ neoForge {
 	}
 }
 
+dependencies {
+	// Inside the jar, as Fabric's include does: XZ for Java unpacks the natives.
+	jarJar(implementation("org.tukaani:xz:${xz_version}"))
+}
+
 def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
 ['apiElements', 'runtimeElements', 'sourcesElements'].each { variant ->
 	configurations.named(variant) {

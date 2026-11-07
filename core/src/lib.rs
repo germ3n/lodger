@@ -129,6 +129,12 @@ fn settings(config: &Config) -> Vec<craftkit::Setting> {
             }
         };
     vec![
+        toggle(
+            "model.enabled",
+            "Use the model",
+            "Model",
+            config.model.enabled,
+        ),
         choice(
             "model.size",
             "Model size",
@@ -290,13 +296,15 @@ impl Mod for Lodger {
                 path: path.to_string_lossy().into_owned(),
                 size_hint: size.size_hint(),
                 magic: "GGUF".to_string(),
+                // Played without, it is not needed, and the rule brain decides.
+                required: config.model.enabled,
+                without: serde_json::json!({ "model": { "enabled": false } }),
                 // A file from `model.url` is the player's own, unchecked.
                 sha256: if config.model.url.is_empty() {
                     size.sha256().to_string()
                 } else {
                     String::new()
                 },
-                required: true,
                 license: License {
                     name: size.license().name.to_string(),
                     url: size.license().url.to_string(),
@@ -310,6 +318,7 @@ impl Mod for Lodger {
                         label: format!("{}, {} MB", other.title(), other.megabytes()),
                         config: serde_json::json!({ "model": { "size": other.name() } }),
                         chosen: *other == size,
+                        note: other.note().to_string(),
                     })
                     .collect(),
             }],
@@ -350,10 +359,21 @@ impl Mod for Lodger {
     }
 
     fn warm(&self) -> Result<(), String> {
+        if !self.config.model.enabled {
+            return Ok(());
+        }
         self.model.warm()
     }
 
     fn status(&self) -> Status {
+        if !self.config.model.enabled {
+            return Status {
+                ready: true,
+                line: "Playing without the model: the rules decide".to_string(),
+                loading: false,
+                error: String::new(),
+            };
+        }
         Status {
             ready: self.model.loaded(),
             line: self.model.status_line(),
@@ -402,7 +422,8 @@ impl Mod for Lodger {
             return world.tick_elsewhere(now, &mut shared);
         }
 
-        let commands = world.tick_with(now, &self.config, &mut log, Some(&self.model));
+        let model = self.config.model.enabled.then_some(&self.model);
+        let commands = world.tick_with(now, &self.config, &mut log, model);
         world.share(now, &self.config, &mut shared);
         let idle = self.idle.lock().unwrap_or_else(|err| err.into_inner()).due(
             world.memory.last.online,
@@ -534,6 +555,12 @@ mod tests {
         assert_eq!(chosen.len(), 1);
         assert_eq!(chosen[0]["config"]["model"]["size"], "1.5b", "the default");
         assert!(choices[2]["label"].as_str().unwrap().contains("3B"));
+        assert!(
+            choices
+                .iter()
+                .all(|c| c["note"].as_str().unwrap().contains("GB of VRAM")),
+            "each says what it wants"
+        );
 
         let reply = harness().init_with(&init(r#"{ "model": { "size": "0.5b" } }"#));
         assert_eq!(
@@ -606,7 +633,13 @@ mod tests {
             .as_str()
             .unwrap()
             .contains("Qwen3-4B-Instruct-2507"));
-        let options = reply["settings"][0]["options"].as_array().unwrap();
+        let size = reply["settings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["key"] == "model.size")
+            .unwrap();
+        let options = size["options"].as_array().unwrap();
         assert!(options.contains(&serde_json::json!("4b")));
 
         let own = harness().init(r#"{ "model": { "url": "https://example.org/mine.gguf" } }"#);
@@ -614,6 +647,23 @@ mod tests {
             own["resources"][0]["sha256"], "",
             "a file of one's own is not checked"
         );
+    }
+
+    #[test]
+    fn played_without_the_model_nothing_is_needed_and_it_is_ready() {
+        let _turn = turn();
+        let reply = harness().init(r#"{ "model": { "enabled": false } }"#);
+        assert_eq!(reply["resources"][0]["required"], false);
+        assert_eq!(reply["resources"][0]["without"]["model"]["enabled"], false);
+        let status = harness().status();
+        assert_eq!(status["ready"], true);
+        assert!(status["line"]
+            .as_str()
+            .unwrap()
+            .contains("without the model"));
+
+        let reply = harness().init("");
+        assert_eq!(reply["resources"][0]["required"], true, "on by default");
     }
 
     #[test]

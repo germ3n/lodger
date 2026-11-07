@@ -70,11 +70,11 @@ because it can be built and tested without a game, and because the model layer i
   back as `0.4000000059604645`, now f64; NeoForge calls `lowcodefml` deprecated, so the content
   jar's `neoforge.mods.toml` names no loader. Still to see by hand: `/craftkit status` in a
   client. Was: a dev client starts with both jars and `/craftkit status` shows the lodger.
-- [ ] **The CI runs green:** rustfmt, clippy and `cargo test` on six runners with the natives
-  uploaded, the host built for both loaders with its tests, the two lodger jars assembled with
-  all six natives and the host nested. Written (`.github/workflows/ci.yml`); the first push proves it. The Rust jobs
-  now compile llama.cpp (cmake and a C++ compiler on each runner; `Swatinem/rust-cache` keeps
-  the build between runs).
+- [ ] **The CI runs green** (run by hand, Actions, ci): the checks on macOS, Ubuntu and
+  Windows, the five natives built by `scripts/build_natives.py` (macOS and both Windows on a Mac
+  runner, each Linux in Docker on its own chip), then both jars by `scripts/build_jars.py`. Run it
+  once to prove it; see [Building](build.md#the-ci). Was: six runners each building its own
+  native, CPU only, on every push.
 - [ ] **`THIRD_PARTY_NOTICES.txt`** generated and checked in CI (see
   [Development](development.md#third-party-notices)).
 
@@ -990,8 +990,9 @@ because it can be built and tested without a game, and because the model layer i
 
 ### Later, or maybe never
 
-- [ ] **GPU natives** (`metal`, `vulkan`) as separate downloads rather than in the jar, if anyone
-  asks. 0.5B on a CPU is fine.
+- [x] **GPU natives** (owner: "one native per os per arch", GPU always): in the jar, not
+  separate, see the five natives below. Was: `metal` and `vulkan` as separate downloads, if
+  anyone asked.
 - [ ] **A second lodger kind** with a different want and events, once the first has been played by
   people other than the author. The data-first events and the staged arc are there to make this
   cheap.
@@ -1133,6 +1134,37 @@ The `[x]` lines above, summed up by day:
   breath, a wave of a minute and a half has its last sink away (until now one came every fifty
   seconds on top of the last). Tests: one in JUnit (`Warp`). Was: block limbs, bowless
   skeletons, piled waves.
+- [x] **The download screen: a note per size and Play without it** (owner: "a small text thing
+  explaining the difference between the models, and the recommended vram"; "play without it
+  should also be changeable via the ingame settings"): under the size button, how the size
+  chosen differs and the VRAM it wants (`Choice.note`); **Play without it**, where a resource
+  names the change that does it (`Resource.without`, ABI 46), writes `model.enabled: false`
+  (new): nothing downloaded, the part file kept, the rule brain deciding, the status ready. The
+  settings' **Use the model** turns it back on and the screen returns. The screen laid out
+  again so the progress line no longer sits under the size button. Tests: one in the mind, one
+  in JUnit. Was: every client had to download the model to reach the title screen, even one
+  that only joins servers, and the sizes said only their names and megabytes.
+- [x] **Five natives, the GPU always on, cross-compiled and compressed** (owner: "one native for
+  macos, then 2 natives for linux (amd64, arm) and 2 for windows"; "use compression when
+  bundling the natives"; "make the ci workflow manually triggered"; "write docs/build.md"):
+  `macos-aarch64` with Metal, `windows-x86_64`, `windows-aarch64`, `linux-x86_64` and
+  `linux-aarch64` with Vulkan; no Intel Mac. `scripts/build_natives.py` builds any of them from a
+  Mac (Windows with cargo-xwin and clang-cl against a Vulkan "SDK" it makes from Khronos's
+  headers and an import library from `llvm-dlltool`; Linux in `scripts/cross/linux.Dockerfile`,
+  Debian 12) and checks each: the ABI exported; Windows importing only system DLLs and
+  `vulkan-1.dll`, the C++ runtime linked in (`.cargo/config.toml`), so no Redistributable; Linux
+  asking for glibc 2.34 at most. `scripts/build_jars.py` builds them (`--natives cross`, the
+  default) and packs each as `natives/<os>-<arch>/<library>.xz`, about half the jar's own
+  deflate; the host unpacks it with XZ for Java (bundled: Fabric's `include`, NeoForge's
+  `jarJar`) and takes a plain one too. A native that will not load for want of Vulkan's loader
+  says what to install (`apt install libvulkan1` on a headless server). The CI runs by hand and
+  builds them by the same scripts, then the jars, then a GitHub release of the five natives
+  (named by platform), both jars and `SHA256SUMS`, its notes listing every SHA-256 (owner: "list
+  the sha256 of every individual native and bundled jar"; "create a github release"). `model.gpu_share` now defaults to 1, the whole
+  model on the GPU (owner). The notices name the Vulkan headers, XZ for Java and Microsoft's
+  runtime. Tests: JUnit for the xz unpacking and the Vulkan hint; each native checked as it is
+  built. Was: six CPU natives each built on its own CI runner on every push, packed as they
+  were, `gpu_share` 0.5, and no `docs/build.md`.
 - [x] **The fifth bug pass** (forty found, four reviewers): **picking a preset on the settings
   screen changed nothing** (the file holds every key, written at the first start, so balanced's
   values stayed; now the old preset's values the player never changed are taken out and the file
@@ -1217,6 +1249,11 @@ The `[x]` lines above, summed up by day:
   `gen_notices.py` comes here instead.
 
 ## At the very end
+
+- [ ] **A pass over the docs for anything stale** (owner): every page under `docs/`, the README,
+  `mod/modrinth.md` and the config's comments read against the code as it is: features, numbers,
+  commands and paths that changed, dates that crept back in, promises the mod no longer keeps.
+  After the last bug pass.
 
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved

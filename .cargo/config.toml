@@ -1,0 +1,11 @@
+# Windows natives carry Microsoft's C and C++ runtime inside them, so a player needs no Visual
+# C++ Redistributable installed: Rust's side with `crt-static`, llama.cpp's with the crate's own
+# switch. Elsewhere both are ignored.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[env]
+LLAMA_STATIC_CRT = "1"

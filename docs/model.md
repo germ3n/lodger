@@ -60,6 +60,11 @@ model is downloaded and loaded"):
   nothing. When the file is there the screen says `Loading the lodger's model` with a sweeping
   bar while the mind loads it (a second or two), and then the title screen is back. On failure,
   the error and a Try again button. A player with the file already there never sees any of it.
+  Under the size button, a note on the size chosen: how it differs from the others and the VRAM
+  it wants (owner). **Play without it** (owner) closes the screen and writes `model.enabled:
+  false`: nothing is downloaded, a part file already there is kept, and the rule brain decides;
+  a player who only joins servers needs nothing more, the server's model deciding there. The
+  settings' **Use the model** turns it back on, and the screen comes back to download.
 - **On a dedicated server,** at startup, before the world opens, blocking, with a log line at
   every ten percent and one when the model is loaded. On failure the server starts anyway and
   the lodger waits for the next start.

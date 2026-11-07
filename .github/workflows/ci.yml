@@ -1,52 +1,30 @@
-# The Rust side (the SDK and the lodger's mind) on the six platforms a lodger jar carries a native
-# for, the host for both loaders, then the two lodger jars with all six natives and the host
-# nested in each. docs/development.md describes the layout; VersionsTest checks the pins here
-# agree with rust-toolchain.toml and the gradle.properties files.
+# Run by hand (owner): Actions, ci, Run workflow. The checks on three systems, then each native
+# built by the same script as on a developer's Mac (scripts/build_natives.py), then the two
+# lodger jars with the five natives xz-compressed inside (scripts/build_jars.py). docs/build.md
+# describes it; VersionsTest checks the pins here agree with rust-toolchain.toml and the
+# gradle.properties files.
 name: ci
-on: [push, pull_request]
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The release's tag (empty: v<mod version>-<run number>)"
+        required: false
+        default: ""
+      prerelease:
+        description: "Mark the release as a pre-release"
+        type: boolean
+        default: false
 
 jobs:
-  rust:
+  checks:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-latest
-            platform: macos-aarch64
-            library: liblodger_core.dylib
-          - os: macos-15-intel
-            platform: macos-x86_64
-            library: liblodger_core.dylib
-          # 22.04, not 24.04: a library built on 24.04's glibc 2.39 does not load on Debian 12 or
-          # Ubuntu 22.04, which many servers run.
-          - os: ubuntu-22.04
-            platform: linux-x86_64
-            library: liblodger_core.so
-          - os: ubuntu-22.04-arm
-            platform: linux-aarch64
-            library: liblodger_core.so
-          - os: windows-latest
-            platform: windows-x86_64
-            library: lodger_core.dll
-          - os: windows-11-arm
-            platform: windows-aarch64
-            library: lodger_core.dll
-            # llama.cpp refuses MSVC's own compiler on ARM without GGML_NATIVE, which the
-            # crate turns off: built with clang-cl through Ninja in the developer prompt.
-            clang: true
+        os: [macos-latest, ubuntu-22.04, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - if: matrix.clang
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: arm64
-      - if: matrix.clang
-        shell: bash
-        run: |
-          echo "CC=clang-cl" >> "$GITHUB_ENV"
-          echo "CXX=clang-cl" >> "$GITHUB_ENV"
-          echo "CMAKE_GENERATOR=Ninja" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.98.1
@@ -55,18 +33,51 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
-      - run: cargo build --release -p lodger-core
+
+  # macOS (Metal) natively, and both Windows natives (Vulkan) cross-built with cargo-xwin, as on
+  # a developer's Mac.
+  natives-mac-windows:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.98.1
+      - run: brew install llvm lld shaderc
+      - run: cargo install cargo-xwin --locked
+      - run: python3 scripts/build_natives.py macos-aarch64 windows-x86_64 windows-aarch64 --out natives
+      - run: find natives -type f -exec shasum -a 256 {} \;
       - uses: actions/upload-artifact@v7
         with:
-          name: native-${{ matrix.platform }}
-          path: target/release/${{ matrix.library }}
+          name: natives-mac-windows
+          path: natives/
           if-no-files-found: error
 
-  host:
+  # Each Linux native (Vulkan) in scripts/cross/linux.Dockerfile, on a runner of its own chip.
+  natives-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux-x86_64
+          - os: ubuntu-22.04-arm
+            platform: linux-aarch64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - run: python3 scripts/build_natives.py ${{ matrix.platform }} --out natives
+      - run: find natives -type f -exec sha256sum {} \;
+      - uses: actions/upload-artifact@v7
+        with:
+          name: natives-${{ matrix.platform }}
+          path: natives/
+          if-no-files-found: error
+
+  # The host for both loaders with its tests, then the two lodger jars with the five natives.
+  jars:
+    needs: [checks, natives-mac-windows, natives-linux]
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: host
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v6
@@ -75,46 +86,83 @@ jobs:
           java-version: '25'
           distribution: 'temurin'
       - uses: gradle/actions/setup-gradle@v5
-      - run: ./gradlew build --no-daemon
-      - uses: actions/upload-artifact@v7
-        with:
-          name: craftkit-jars
-          path: |
-            host/fabric/build/libs/craftkit-fabric-*.jar
-            host/neoforge/build/libs/craftkit-neoforge-*.jar
-
-  lodger-jars:
-    needs: [rust, host]
-    runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: mod
-    steps:
-      - uses: actions/checkout@v6
-      - uses: gradle/actions/wrapper-validation@v6
-      - uses: actions/setup-java@v5
-        with:
-          java-version: '25'
-          distribution: 'temurin'
       - uses: actions/download-artifact@v6
         with:
-          pattern: native-*
-          path: mod/natives-extra
-      - uses: actions/download-artifact@v6
-        with:
-          name: craftkit-jars
-          path: mod/host-jars-tree
-      - name: lay the natives out as natives-extra/<os>-<arch>/ and the host jars in host-jars/
+          pattern: natives-*
+          path: natives
+          merge-multiple: true
+      - run: find natives -type f
+      - run: python3 scripts/build_jars.py 26.3 --natives natives
+      # Each native as built and as packed, and both jars, on the run's summary page too.
+      - name: SHA-256 of every native and jar
         run: |
-          for dir in natives-extra/native-*; do
-            mv "$dir" "natives-extra/${dir#natives-extra/native-}"
-          done
-          mkdir -p host-jars
-          find host-jars-tree -name 'craftkit-*.jar' ! -name '*-sources.jar' -exec mv {} host-jars/ \;
-          find natives-extra host-jars -type f
-      - name: build without cargo, so the jars' natives are the six above and nothing else
-        run: CARGO=/nonexistent ./gradlew jar --no-daemon
+          cat dist/26.3/SHA256SUMS
+          {
+            echo '## SHA-256'
+            echo
+            echo '| SHA-256 | File |'
+            echo '| --- | --- |'
+            awk '{ print "| `" $1 "` | `" $2 "` |" }' dist/26.3/SHA256SUMS
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
           name: lodger-jars
-          path: mod/build/libs/
+          path: dist/
+          if-no-files-found: error
+
+  # A GitHub release of the run: the five natives (each named by its platform), both jars and
+  # SHA256SUMS, with every file's SHA-256 in its notes.
+  release:
+    needs: [jars]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: natives-*
+          path: natives
+          merge-multiple: true
+      - uses: actions/download-artifact@v6
+        with:
+          name: lodger-jars
+          path: dist
+      - name: gather the files and their sums
+        id: files
+        run: |
+          mkdir release
+          for dir in natives/*/; do
+            platform=$(basename "$dir")
+            for lib in "$dir"*; do
+              name=$(basename "$lib")
+              stem=${name%.*}
+              stem=${stem#lib}
+              cp "$lib" "release/${stem}-${platform}.${name##*.}"
+            done
+          done
+          cp dist/26.3/*.jar release/
+          (cd release && sha256sum * > SHA256SUMS)
+          version=$(grep '^version=' mod/gradle.properties | cut -d= -f2)
+          tag="${{ inputs.tag }}"
+          [ -n "$tag" ] || tag="v${version}-${{ github.run_number }}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          {
+            echo "The lodger ${version} for Minecraft 26.3: one jar per loader, each carrying all five natives (Windows and Linux on x86_64 and arm64 with Vulkan, macOS on Apple silicon with Metal). Install the jar for your loader; the natives are here on their own as well."
+            echo
+            echo "Built from ${GITHUB_SHA}."
+            echo
+            echo "| SHA-256 | File |"
+            echo "| --- | --- |"
+            awk '{ print "| `" $1 "` | `" $2 "` |" }' release/SHA256SUMS
+          } > notes.md
+          cat notes.md
+      - name: create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.files.outputs.tag }}" release/* \
+            --target "$GITHUB_SHA" \
+            --title "${{ steps.files.outputs.tag }}" \
+            --notes-file notes.md \
+            ${{ inputs.prerelease && '--prerelease' || '' }}

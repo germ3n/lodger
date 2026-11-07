@@ -10,16 +10,17 @@ import java.util.HexFormat;
  * {@code Resource}): the lodger's model, for one. Required resources gate play (see
  * {@link Preparation}); optional ones download in the background.
  */
-public record Resource(String id, String title, String url, Path path, long sizeHint, byte[] magic, String sha256, boolean required, License license, java.util.List<Choice> choices) {
+public record Resource(String id, String title, String url, Path path, long sizeHint, byte[] magic, String sha256, boolean required, License license, java.util.List<Choice> choices,
+		JsonObject without) {
 	/**
 	 * Another form of the resource a player may pick on the preparing screen (the model's sizes):
 	 * a label, the change to the mod's config that picks it, and whether it is the one now.
 	 */
-	public record Choice(String label, com.google.gson.JsonObject config, boolean chosen) {
+	public record Choice(String label, com.google.gson.JsonObject config, boolean chosen, String note) {
 	}
 
 	public Resource(String id, String title, String url, Path path, long sizeHint, byte[] magic, String sha256, boolean required, License license) {
-		this(id, title, url, path, sizeHint, magic, sha256, required, license, java.util.List.of());
+		this(id, title, url, path, sizeHint, magic, sha256, required, license, java.util.List.of(), null);
 	}
 
 	/** The terms a resource comes under, shown before its first download. */
@@ -76,7 +77,9 @@ public record Resource(String id, String title, String url, Path path, long size
 				sha256.toLowerCase(java.util.Locale.ROOT),
 				!json.has("required") || json.get("required").getAsBoolean(),
 				License.parse(json.has("license") && json.get("license").isJsonObject() ? json.getAsJsonObject("license") : null),
-				choices(json));
+				choices(json),
+				// The config change that plays without it (ABI 46): the screen's Play without it.
+				json.has("without") && json.get("without").isJsonObject() ? json.getAsJsonObject("without") : null);
 	}
 
 	private static java.util.List<Choice> choices(JsonObject json) {
@@ -84,7 +87,8 @@ public record Resource(String id, String title, String url, Path path, long size
 		if (json.has("choices") && json.get("choices").isJsonArray()) {
 			for (com.google.gson.JsonElement element : json.getAsJsonArray("choices")) {
 				JsonObject c = element.getAsJsonObject();
-				out.add(new Choice(c.get("label").getAsString(), c.has("config") && c.get("config").isJsonObject() ? c.getAsJsonObject("config") : new JsonObject(), c.has("chosen") && c.get("chosen").getAsBoolean()));
+				out.add(new Choice(c.get("label").getAsString(), c.has("config") && c.get("config").isJsonObject() ? c.getAsJsonObject("config") : new JsonObject(), c.has("chosen") && c.get("chosen").getAsBoolean(),
+						c.has("note") ? c.get("note").getAsString() : ""));
 			}
 		}
 

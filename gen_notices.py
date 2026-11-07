@@ -18,6 +18,20 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(ROOT, "scripts"))
+import build_natives  # noqa: E402
+
+XZ_VERSION = re.search(r"(?m)^xz_version=(\S+)", open(os.path.join(ROOT, "host", "gradle.properties"), encoding="utf-8").read()).group(1)
+ZERO_BSD = """Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE."""
 NOTICES = os.path.join(ROOT, "THIRD_PARTY_NOTICES.txt")
 RULE = "-" * 80
 
@@ -255,6 +269,28 @@ out += wrap(
     % (label(llama), "Its common library is compiled in too." if common else "Its common library, server and tools are not compiled in.")
 )
 out += ["License: MIT", "", norm_text(read(llama_license))]
+
+out += section("Khronos's Vulkan headers")
+out += wrap(
+    "Compiled into the Windows and Linux natives (llama.cpp's Vulkan backend is written against "
+    "them, vulkan.hpp's inline code among them): Vulkan-Headers %s, under Apache-2.0 OR MIT, used "
+    "under the MIT terms reproduced at the top. Copyright 2015-2025 The Khronos Group Inc. The "
+    "SPIR-V headers (%s, MIT-style, Copyright (c) 2015-2024 The Khronos Group Inc.) are read at "
+    "build time only." % (build_natives.VULKAN_HEADERS, build_natives.SPIRV_HEADERS)
+)
+
+out += section("XZ for Java")
+out += wrap(
+    "Bundled in the host jar to unpack the natives: org.tukaani:xz %s, by Lasse Collin and "
+    "the XZ for Java contributors, under the BSD Zero Clause License:" % XZ_VERSION
+)
+out += ["", ZERO_BSD]
+
+out += section("Microsoft's C and C++ runtime")
+out += wrap(
+    "Linked statically into the Windows natives, so no Visual C++ Redistributable is needed, as "
+    "the Visual Studio license permits for the runtime's static libraries."
+)
 
 out += section("The model")
 out += wrap(
