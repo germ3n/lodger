@@ -19,7 +19,7 @@ from them and so that every page is kept true as code lands.
 | [Ideas](ideas.md) | The brainstorm the catalogue draws from: several hundred events by what is around and what the player is doing, what it could build, and what was set aside and why. |
 | [Config](config.md) | Every key in `config/lodger.json`, its default and what it changes. |
 | [Development](development.md) | Toolchain, building the mod and the natives, running, tests, and the conventions the code follows. |
-| [Building](build.md) | The release build: the five natives (GPU always on, cross-compiled from a Mac), compressed into both jars, and the CI that does the same. |
+| [Building](build.md) | The release build: the six natives (GPU always on, cross-compiled from a Mac), compressed into both jars, and the CI that does the same. |
 | [Hand-off](handoff.md) | For whoever picks this up next: what it is, how it is built, where things are, how to work in it, where it stands and where to start. Read once. |
 | [Upgrading](upgrading.md) | Taking the host to a new Minecraft, Fabric, NeoForge or Java version: where the game-facing edge is, the versions and where they are pinned, the step-by-step process, what usually breaks, and the history of bumps. |
 | [Todo](todo.md) | What is done, what is next, in order, and known gaps. |

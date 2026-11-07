@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NativesTest {
 	@Test
@@ -23,8 +24,8 @@ class NativesTest {
 		// Not one a jar carries: named as it is, so the player is told, never mistaken for x86_64.
 		assertEquals("linux-riscv64", Natives.platform("Linux", "riscv64"));
 		assertEquals("windows-x86", Natives.platform("Windows 10", "x86"));
-		assertEquals(5, Natives.PLATFORMS.size());
-		assertFalse(Natives.PLATFORMS.contains("macos-x86_64"), "no Intel Mac");
+		assertEquals(6, Natives.PLATFORMS.size());
+		assertTrue(Natives.PLATFORMS.contains("macos-x86_64"), "Intel Macs too");
 	}
 
 	@Test

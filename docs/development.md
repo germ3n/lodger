@@ -8,7 +8,7 @@ layout:
 | `sdk/` | craftkit, the Rust SDK: the `Mod` trait, the C ABI, the protocol, the harness. See [The SDK](sdk.md). | cargo, in the root workspace |
 | `core/` | The lodger's mind, a craftkit mod, built as a shared library. | cargo, in the root workspace |
 | `host/` | The craftkit host, a Java mod for Fabric and NeoForge from one `common` tree (`host/common`, `host/fabric`, `host/neoforge`, the MultiLoader layout). | Gradle, Loom for Fabric, ModDevGradle for NeoForge and for `common` |
-| `mod/` | The lodger's two jars, one per loader: natives for five platforms (compressed), assets, manifests, the host nested, no Java of its own. | Gradle, which runs cargo and takes the host jars from `host/`'s build |
+| `mod/` | The lodger's two jars, one per loader: natives for six platforms (compressed), assets, manifests, the host nested, no Java of its own. | Gradle, which runs cargo and takes the host jars from `host/`'s build |
 
 ## Toolchain
 
@@ -51,7 +51,7 @@ cargo build --release -p lodger-core
 That builds `liblodger_core.dylib`, `.so` or `.dll` in `target/release/`, with llama.cpp
 compiled in. The first build compiles llama.cpp, which takes a few minutes; later ones do not.
 On a Mac it has Metal; on Windows and Linux this one is CPU only (`--features vulkan` needs the
-Vulkan SDK). The release natives, all five with the GPU on, cross-compiled from a Mac, are in
+Vulkan SDK). The release natives, all six with the GPU on, cross-compiled from a Mac, are in
 [Building](build.md). `./gradlew jar` in `mod/` runs this itself when `cargo` is on `PATH`
 (`cargoBuild`; set `CARGO` to a path that does not exist to skip it).
 
@@ -84,7 +84,7 @@ upload, `mod/art/icon-512.png`, and the jars' `assets/lodger/icon.png` (128), wh
 
 ## Building the jars for a release
 
-`python3 scripts/build_jars.py <minecraft>` on a Mac builds both lodger jars with all five
+`python3 scripts/build_jars.py <minecraft>` on a Mac builds both lodger jars with all six
 natives, compressed, in `dist/<minecraft>/`. Everything about it, the cross-builds and the CI, is
 in [Building](build.md).
 

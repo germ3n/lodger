@@ -1,6 +1,6 @@
 # Run by hand (owner): Actions, ci, Run workflow. The checks on three systems, then each native
 # built by the same script as on a developer's Mac (scripts/build_natives.py), then the two
-# lodger jars with the five natives xz-compressed inside (scripts/build_jars.py). docs/build.md
+# lodger jars with the six natives xz-compressed inside (scripts/build_jars.py). docs/build.md
 # describes it; VersionsTest checks the pins here agree with rust-toolchain.toml and the
 # gradle.properties files.
 name: ci
@@ -34,8 +34,8 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
 
-  # macOS (Metal) natively, and both Windows natives (Vulkan) cross-built with cargo-xwin, as on
-  # a developer's Mac.
+  # Both macOS natives (Metal; Intel cross-built on the Apple chip), and both Windows natives
+  # (Vulkan) cross-built with cargo-xwin, as on a developer's Mac.
   natives-mac-windows:
     runs-on: macos-latest
     steps:
@@ -45,7 +45,7 @@ jobs:
           toolchain: 1.98.1
       - run: brew install llvm lld shaderc
       - run: cargo install cargo-xwin --locked
-      - run: python3 scripts/build_natives.py macos-aarch64 windows-x86_64 windows-aarch64 --out natives
+      - run: python3 scripts/build_natives.py macos-aarch64 macos-x86_64 windows-x86_64 windows-aarch64 --out natives
       - run: find natives -type f -exec shasum -a 256 {} \;
       - uses: actions/upload-artifact@v7
         with:
@@ -74,7 +74,7 @@ jobs:
           path: natives/
           if-no-files-found: error
 
-  # The host for both loaders with its tests, then the two lodger jars with the five natives.
+  # The host for both loaders with its tests, then the two lodger jars with the six natives.
   jars:
     needs: [checks, natives-mac-windows, natives-linux]
     runs-on: ubuntu-24.04
@@ -110,7 +110,7 @@ jobs:
           path: dist/
           if-no-files-found: error
 
-  # A GitHub release of the run: the five natives (each named by its platform), both jars and
+  # A GitHub release of the run: the six natives (each named by its platform), both jars and
   # SHA256SUMS, with every file's SHA-256 in its notes.
   release:
     needs: [jars]
@@ -148,7 +148,7 @@ jobs:
           [ -n "$tag" ] || tag="v${version}-${{ github.run_number }}"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           {
-            echo "The lodger ${version} for Minecraft 26.3: one jar per loader, each carrying all five natives (Windows and Linux on x86_64 and arm64 with Vulkan, macOS on Apple silicon with Metal). Install the jar for your loader; the natives are here on their own as well."
+            echo "The lodger ${version} for Minecraft 26.3: one jar per loader, each carrying all six natives (Windows and Linux on x86_64 and arm64 with Vulkan, macOS on Apple silicon and Intel with Metal). Install the jar for your loader; the natives are here on their own as well."
             echo
             echo "Built from ${GITHUB_SHA}."
             echo

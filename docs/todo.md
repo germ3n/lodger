@@ -1147,6 +1147,10 @@ The `[x]` lines above, summed up by day:
   breath, a wave of a minute and a half has its last sink away (until now one came every fifty
   seconds on top of the last). Tests: one in JUnit (`Warp`). Was: block limbs, bowless
   skeletons, piled waves.
+- [x] **Intel Macs too** (owner: "you can include intel macos in the build/ci, i kinda forgot those
+  even existed"): `macos-x86_64` back, cross-built on the Apple chip (`x86_64-apple-darwin`, Metal
+  linked), so six natives; checked to load and answer under Rosetta. The host's platforms, the
+  scripts, the CI and the docs say six. Tests: JUnit's platform count. Was: five, no Intel Mac.
 - [x] **The download screen: a note per size and Play without it** (owner: "a small text thing
   explaining the difference between the models, and the recommended vram"; "play without it
   should also be changeable via the ingame settings"): under the size button, how the size

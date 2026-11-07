@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Builds the lodger's two jars, Fabric and NeoForge, for one Minecraft version, each carrying the
-mind's native library for all five platforms, xz-compressed (owner). See docs/build.md.
+mind's native library for all six platforms, xz-compressed (owner). See docs/build.md.
 
-    python3 scripts/build_jars.py 26.3 --natives cross    # build all five here (a Mac)
+    python3 scripts/build_jars.py 26.3 --natives cross    # build all six here (a Mac)
     python3 scripts/build_jars.py 26.3 --natives DIR      # DIR/<os>-<arch>/<library>, built already
     python3 scripts/build_jars.py 26.3 --natives ci       # the CI run of this commit (`gh`)
     python3 scripts/build_jars.py 26.3 --natives local --allow-missing   # this computer's alone
 
-The five are windows-x86_64, windows-aarch64, linux-x86_64, linux-aarch64 (Vulkan) and
-macos-aarch64 (Metal); scripts/build_natives.py builds and checks them. Each goes in the jar as
+The six are windows-x86_64, windows-aarch64, linux-x86_64, linux-aarch64 (Vulkan), and
+macos-x86_64 and macos-aarch64 (Metal); scripts/build_natives.py builds and checks them. Each goes in the jar as
 natives/<os>-<arch>/<library>.xz, half the size of the jar's own deflate; the host unpacks the
-one it needs at boot. A jar missing any of the five is an error unless --allow-missing, and a
+one it needs at boot. A jar missing any of the six is an error unless --allow-missing, and a
 player on a platform it lacks is told so at boot (FailedScreen).
 
 The Minecraft and loader versions come from versions/<minecraft>.properties, laid over the
@@ -136,7 +136,7 @@ def compress(staging, have, extra):
 def main():
     parser = argparse.ArgumentParser(description="Build the lodger's Fabric and NeoForge jars with every platform's native.")
     parser.add_argument("minecraft", help="the Minecraft version, as in versions/<it>.properties (26.3)")
-    parser.add_argument("--natives", default="cross", help="cross (build the five here), local (this computer's), ci (the CI run of this commit), "
+    parser.add_argument("--natives", default="cross", help="cross (build the six here), local (this computer's), ci (the CI run of this commit), "
                         "or a directory of <os>-<arch>/<library>")
     parser.add_argument("--allow-missing", action="store_true", help="build even when a platform's native is missing")
     parser.add_argument("--allow-dirty", action="store_true", help="build from the CI's natives though the mind or the SDK has uncommitted changes")

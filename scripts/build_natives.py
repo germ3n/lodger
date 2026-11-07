@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Builds the mind's native library for any of the five platforms a lodger jar carries, each with
+"""Builds the mind's native library for any of the six platforms a lodger jar carries, each with
 the GPU always on: Metal on macOS, Vulkan on Windows and Linux (owner: "one native per os per
 arch"). See docs/build.md.
 
-    python3 scripts/build_natives.py all --out DIR          # the five
+    python3 scripts/build_natives.py all --out DIR          # the six
     python3 scripts/build_natives.py linux-x86_64 --out DIR # one or more by name
 
 Each lands in DIR/<platform>/<library>, checked: it exports the craftkit ABI, and asks for
@@ -14,7 +14,8 @@ a gigabyte or more.
 
 How each is built, from a Mac (Apple silicon):
 
-- macos-aarch64: cargo, natively. Metal comes with llama.cpp on Apple.
+- macos-aarch64, macos-x86_64: cargo, natively and for Intel. Metal comes with llama.cpp on
+  Apple.
 - windows-x86_64, windows-aarch64: cargo-xwin with clang-cl, against Microsoft's CRT and SDK
   (xwin fetches them once, accepting Microsoft's license) and a Vulkan "SDK" made here from
   Khronos's headers, the SPIR-V headers, an import library for vulkan-1.dll from the headers'
@@ -35,12 +36,13 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PLATFORMS = ["windows-x86_64", "windows-aarch64", "linux-x86_64", "linux-aarch64", "macos-aarch64"]
+PLATFORMS = ["windows-x86_64", "windows-aarch64", "linux-x86_64", "linux-aarch64", "macos-x86_64", "macos-aarch64"]
 TRIPLES = {
     "windows-x86_64": "x86_64-pc-windows-msvc",
     "windows-aarch64": "aarch64-pc-windows-msvc",
     "linux-x86_64": "x86_64-unknown-linux-gnu",
     "linux-aarch64": "aarch64-unknown-linux-gnu",
+    "macos-x86_64": "x86_64-apple-darwin",
     "macos-aarch64": "aarch64-apple-darwin",
 }
 DOCKER = {"linux-x86_64": "amd64", "linux-aarch64": "arm64"}
@@ -234,7 +236,7 @@ def main():
     wanted = PLATFORMS if args.platforms == ["all"] else args.platforms
     unknown = [p for p in wanted if p not in PLATFORMS]
     if unknown:
-        sys.exit("no such platform: %s (the five are %s)" % (", ".join(unknown), ", ".join(PLATFORMS)))
+        sys.exit("no such platform: %s (the six are %s)" % (", ".join(unknown), ", ".join(PLATFORMS)))
     for plat in wanted:
         build(plat, os.path.abspath(args.out), args.keep)
 

@@ -55,9 +55,9 @@ public final class Natives {
 		return arch;
 	}
 
-	/** The five platforms a content jar carries a native for (the CI's matrix): no Intel Mac. */
+	/** The six platforms a content jar carries a native for (the CI's natives). */
 	public static final java.util.List<String> PLATFORMS = java.util.List.of(
-			"windows-x86_64", "windows-aarch64", "linux-x86_64", "linux-aarch64", "macos-aarch64");
+			"windows-x86_64", "windows-aarch64", "linux-x86_64", "linux-aarch64", "macos-x86_64", "macos-aarch64");
 
 	/** After a native's name in the jar when it is xz-compressed. */
 	public static final String XZ = ".xz";

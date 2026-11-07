@@ -12,7 +12,7 @@ and carries out what they decide. The lodger is its first mod. This page is the 
   as a `cdylib`. It knows nothing of Minecraft's classes: it reads observations and answers
   commands, both plain `serde` structs (see [The protocol](#the-protocol)).
 - **A jar per loader,** with no Java of the mod's own: the crate's shared library for each of
-  five platforms (Linux and Windows on x86_64 and arm64, macOS on Apple silicon), each with its
+  six platforms (Linux, Windows and macOS, each on x86_64 and arm64), each with its
   GPU on, xz-compressed under `natives/<os>-<arch>/` (see [Building](build.md)), the
   mod's assets (lang files, textures, sounds), `META-INF/craftkit.json` for the host, the
   loader's manifest (`fabric.mod.json`, or a `META-INF/neoforge.mods.toml` with no language

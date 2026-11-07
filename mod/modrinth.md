@@ -53,7 +53,7 @@ lines), or turn off single events by name in `config/lodger.json`.
 - **It adds a dimension of its own** to your world (an empty, dark one it uses twice in a stay
   at most). If you remove the mod later, Minecraft warns about that missing dimension when you
   open the world; the world is fine.
-- Windows or Linux on x86_64 or arm64, or macOS on Apple silicon. On Linux, Vulkan's loader
+- Windows, Linux or macOS, on x86_64 or arm64 (Intel Macs too). On Linux, Vulkan's loader
   (`libvulkan1`), which any desktop with a GPU driver has; a headless server may need
   `apt install libvulkan1`. No GPU is needed.
 - **A one-time model download** on first start (see below), with a progress bar on the title

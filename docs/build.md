@@ -14,19 +14,20 @@ this page is the build itself.
 
 A player installs one content jar, the one for their loader. Everything else is inside it.
 
-## The five natives
+## The six natives
 
-One native per platform, with the GPU always on (owner: "one native per os per arch"):
+One native per platform, with the GPU always on (owner: "one native per os per arch"; Intel Macs too):
 
 | Platform | GPU | Built |
 | --- | --- | --- |
 | `macos-aarch64` | Metal | natively on a Mac with Apple silicon |
+| `macos-x86_64` | Metal | on the same Mac, for Intel (`x86_64-apple-darwin`; it runs under Rosetta there, so it can be tried) |
 | `windows-x86_64` | Vulkan | cross-compiled with cargo-xwin |
 | `windows-aarch64` | Vulkan | cross-compiled with cargo-xwin |
 | `linux-x86_64` | Vulkan | in Docker (`scripts/cross/linux.Dockerfile`) |
 | `linux-aarch64` | Vulkan | in Docker |
 
-There is no Intel Mac native. A player on a platform the jar lacks gets a screen at boot
+A player on a platform the jar lacks gets a screen at boot
 (`FailedScreen`) naming the platforms it carries.
 
 Each native is checked before it goes in a jar (`scripts/build_natives.py`'s `check`):
@@ -61,8 +62,8 @@ On a Mac with Apple silicon:
 python3 scripts/build_jars.py 26.3
 ```
 
-That builds the five natives here (`--natives cross`, the default), compresses them, builds the
-host with its tests and both content jars, checks each jar carries all five and that both
+That builds the six natives here (`--natives cross`, the default), compresses them, builds the
+host with its tests and both content jars, checks each jar carries all six and that both
 loaders' jars are there, and puts them in `dist/26.3/` with `SHA256SUMS`: the SHA-256 of each
 native as built (`natives/<os>-<arch>/<library>`), as packed in the jars (`.xz`), and of each jar,
 also printed at the end (`cd dist/26.3 && sha256sum -c --ignore-missing SHA256SUMS` checks the
@@ -92,7 +93,7 @@ file and usually a port ([Upgrading](upgrading.md)). Today: 26.3.
 ## Building natives alone
 
 ```sh
-python3 scripts/build_natives.py all --out natives            # the five
+python3 scripts/build_natives.py all --out natives            # the six
 python3 scripts/build_natives.py windows-x86_64 --out natives # one or more by name
 ```
 
@@ -140,14 +141,14 @@ and whether it is a pre-release as its two inputs. Its jobs:
    windows-aarch64`, as on a developer's Mac (Homebrew's LLVM, lld and shaderc; cargo-xwin).
 3. **natives-linux**, one runner per chip (`ubuntu-22.04`, `ubuntu-22.04-arm`): `build_natives.py
    linux-<arch>` in the same Docker image, natively.
-4. **jars**, once the rest pass: the five natives merged into one folder, then
+4. **jars**, once the rest pass: the six natives merged into one folder, then
    `build_jars.py 26.3 --natives natives`, which builds the host with its JUnit tests and both
    content jars. The jars and their `SHA256SUMS` are the run's `lodger-jars` artifact, and the
    sums are printed in the log and on the run's summary page; each native job prints its own
    native's too, as built.
 
 5. **release**: a GitHub release of the run, tagged as asked when it was started (empty:
-   `v<mod version>-<run number>`; a pre-release if ticked). It holds the five natives on their
+   `v<mod version>-<run number>`; a pre-release if ticked). It holds the six natives on their
    own, each named by its platform (`lodger_core-windows-x86_64.dll`, ...), both jars and
    `SHA256SUMS`, and its notes list every file's SHA-256.
 
