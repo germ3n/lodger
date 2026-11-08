@@ -1201,6 +1201,13 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **One x86_64 baseline** (owner: "AVX2 + clear refusal"): the three x86_64 natives are
+  built for x86-64-v3 (`.cargo/config.toml`'s `target-cpu`, which llama-cpp-sys-2 hands on to
+  llama.cpp), and the host refuses one on a CPU without AVX2 before loading it, naming why
+  (`Natives.cpuMissing`: `/proc/cpuinfo`, `hw.optional.avx2_0`, `IsProcessorFeaturePresent`).
+  Tests: JUnit for the cpuinfo reading. Was: Linux's native needed AVX2 by accident and ended the
+  game on an older CPU with no reason given, and Windows' and the Intel Mac's had plain SSE2, the
+  model's CPU path several times slower there.
 - [x] **The ninth bug pass** (five reviewers, the fifth on the events one by one; about forty
   found, two in the eighth's own fixes). A failed event no longer runs its own steps to give back
   what it kept (a failed scarecrow put down an armour stand from nothing, a failed alcove dropped

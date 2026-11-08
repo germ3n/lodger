@@ -40,6 +40,81 @@ public final class Natives {
 	}
 
 	/** {@code aarch64} or {@code x86_64}, from {@code os.arch}. */
+	/**
+	 * Why this CPU cannot run the native, or empty: every x86_64 native is built for x86-64-v3
+	 * (AVX2 and FMA, `.cargo/config.toml`), and an older CPU died on its first instruction with
+	 * the JVM, no reason given. Asked of the system itself: Linux's {@code /proc/cpuinfo}, the
+	 * Mac's {@code hw.optional.avx2_0}, Windows' {@code IsProcessorFeaturePresent}. Where it
+	 * cannot be asked, nothing is said and the load goes on.
+	 */
+	public static String cpuMissing(String osName, String osArch) {
+		if (!arch(osArch).equals("x86_64")) {
+			return "";
+		}
+		Boolean avx2 = switch (os(osName)) {
+			case "linux" -> {
+				try {
+					yield cpuinfoHasAvx2(java.nio.file.Files.readString(java.nio.file.Path.of("/proc/cpuinfo")));
+				} catch (java.io.IOException | RuntimeException e) {
+					yield null;
+				}
+			}
+			case "macos" -> sysctlFlag("hw.optional.avx2_0");
+			default -> windowsFeature(40); // PF_AVX2_INSTRUCTIONS_AVAILABLE
+		};
+		return Boolean.FALSE.equals(avx2) ? MISSING_AVX2 : "";
+	}
+
+	static final String MISSING_AVX2 = "this CPU has no AVX2, which the lodger's native needs (Intel processors since 2013, AMD since 2015)";
+
+	/** Whether {@code /proc/cpuinfo}'s first processor lists both avx2 and fma. */
+	static boolean cpuinfoHasAvx2(String cpuinfo) {
+		for (String line : cpuinfo.split("\n")) {
+			if (line.startsWith("flags")) {
+				java.util.Set<String> flags = new java.util.HashSet<>(java.util.Arrays.asList(line.substring(line.indexOf(':') + 1).trim().split("\\s+")));
+				return flags.contains("avx2") && flags.contains("fma");
+			}
+		}
+		// No flags line (an emulator, a container hiding it): not known to be missing.
+		return true;
+	}
+
+	private static Boolean sysctlFlag(String name) {
+		try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+			java.lang.foreign.Linker linker = java.lang.foreign.Linker.nativeLinker();
+			var found = linker.defaultLookup().find("sysctlbyname");
+			if (found.isEmpty()) {
+				return null;
+			}
+			var call = linker.downcallHandle(found.get(), java.lang.foreign.FunctionDescriptor.of(java.lang.foreign.ValueLayout.JAVA_INT,
+					java.lang.foreign.ValueLayout.ADDRESS, java.lang.foreign.ValueLayout.ADDRESS, java.lang.foreign.ValueLayout.ADDRESS,
+					java.lang.foreign.ValueLayout.ADDRESS, java.lang.foreign.ValueLayout.JAVA_LONG));
+			var value = arena.allocate(java.lang.foreign.ValueLayout.JAVA_INT);
+			var size = arena.allocate(java.lang.foreign.ValueLayout.JAVA_LONG);
+			size.set(java.lang.foreign.ValueLayout.JAVA_LONG, 0, 4);
+			int result = (int) call.invokeExact(arena.allocateFrom(name), value, size, java.lang.foreign.MemorySegment.NULL, 0L);
+			// No such name: not known, and the load goes on.
+			return result == 0 ? value.get(java.lang.foreign.ValueLayout.JAVA_INT, 0) != 0 : null;
+		} catch (Throwable e) {
+			return null;
+		}
+	}
+
+	private static Boolean windowsFeature(int feature) {
+		try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+			java.lang.foreign.Linker linker = java.lang.foreign.Linker.nativeLinker();
+			var kernel = java.lang.foreign.SymbolLookup.libraryLookup("kernel32", arena);
+			var found = kernel.find("IsProcessorFeaturePresent");
+			if (found.isEmpty()) {
+				return null;
+			}
+			var call = linker.downcallHandle(found.get(), java.lang.foreign.FunctionDescriptor.of(java.lang.foreign.ValueLayout.JAVA_INT, java.lang.foreign.ValueLayout.JAVA_INT));
+			return (int) call.invokeExact(feature) != 0;
+		} catch (Throwable e) {
+			return null;
+		}
+	}
+
 	public static String arch(String osArch) {
 		String arch = osArch.toLowerCase(Locale.ROOT);
 

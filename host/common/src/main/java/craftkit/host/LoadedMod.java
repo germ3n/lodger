@@ -186,6 +186,12 @@ public final class LoadedMod {
 			return failed(jar.id(), Optional.of(manifest), "could not extract the native: " + e.getMessage());
 		}
 
+		// A CPU the native was not built for is told so, before the load would kill the game.
+		String cpu = Natives.cpuMissing(osName, osArch);
+		if (!cpu.isEmpty()) {
+			return failed(jar.id(), Optional.of(manifest), cpu);
+		}
+
 		Native library;
 		try {
 			library = Native.load(extracted);

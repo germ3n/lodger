@@ -1,11 +1,23 @@
 # Windows natives carry Microsoft's C and C++ runtime inside them, so a player needs no Visual
 # C++ Redistributable installed: Rust's side with `crt-static`, llama.cpp's with the crate's own
 # switch. Elsewhere both are ignored.
+#
+# Every x86_64 native is built for one baseline, x86-64-v3 (AVX2, FMA, F16C, BMI2: Intel since
+# 2013, AMD since 2015), the owner's pick: llama-cpp-sys-2 hands the target CPU and its features
+# on to llama.cpp, so the model's CPU path is fast on all three systems alike. Before, Linux got
+# AVX2 by accident and Windows and the Intel Mac plain SSE2. A CPU older than that is refused by
+# the host before the library loads, with the reason (`Natives.cpuMissing`), never a crash.
 [target.x86_64-pc-windows-msvc]
-rustflags = ["-C", "target-feature=+crt-static"]
+rustflags = ["-C", "target-feature=+crt-static", "-C", "target-cpu=x86-64-v3"]
 
 [target.aarch64-pc-windows-msvc]
 rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=x86-64-v3"]
+
+[target.x86_64-apple-darwin]
+rustflags = ["-C", "target-cpu=x86-64-v3"]
 
 [env]
 LLAMA_STATIC_CRT = "1"

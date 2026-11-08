@@ -67,4 +67,13 @@ class NativesTest {
 		Natives.extract(new byte[] {9}, dir.resolve("natives"), "Linux", "amd64", "demo");
 		assertArrayEquals(new byte[] {9}, Files.readAllBytes(target));
 	}
+
+	@Test
+	void an_x86_cpu_without_avx2_is_named_before_the_native_loads() {
+		org.junit.jupiter.api.Assertions.assertTrue(Natives.cpuinfoHasAvx2("processor\t: 0\nflags\t\t: fpu sse4_2 avx avx2 fma f16c\n"));
+		org.junit.jupiter.api.Assertions.assertFalse(Natives.cpuinfoHasAvx2("processor\t: 0\nflags\t\t: fpu sse4_2 avx\n"), "an Ivy Bridge Xeon");
+		org.junit.jupiter.api.Assertions.assertTrue(Natives.cpuinfoHasAvx2("processor\t: 0\n"), "no flags line: not known to be missing");
+		org.junit.jupiter.api.Assertions.assertEquals("", Natives.cpuMissing("Linux", "aarch64"), "only x86_64 is asked");
+	}
 }
+

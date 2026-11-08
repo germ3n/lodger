@@ -40,6 +40,13 @@ Each native is checked before it goes in a jar (`scripts/build_natives.py`'s `ch
   Ubuntu 22.04 and newer, and links only glibc, libstdc++, libgcc and `libvulkan.so.1`.
 - **macOS:** it links only the system's libraries and frameworks (Metal among them).
 
+**One x86_64 baseline.** The three x86_64 natives are built for x86-64-v3 (AVX2, FMA, F16C,
+BMI2: Intel since 2013, AMD since 2015), `.cargo/config.toml`'s `target-cpu`, which
+llama-cpp-sys-2 hands on to llama.cpp, so the model's CPU path is as fast on Windows and an Intel
+Mac as on Linux. On an older CPU the host refuses the native before loading it, naming why
+(`Natives.cpuMissing`); loaded, it would end the game on its first such instruction. The arm64
+natives need nothing past their baseline.
+
 **Vulkan at run time.** The Windows and Linux natives link Vulkan's loader. Every GPU driver
 installs it (`vulkan-1.dll` on Windows; Mesa and the vendors' drivers on Linux), and with no
 GPU llama.cpp runs on the CPU. A headless Linux server often lacks it: `apt install libvulkan1`
