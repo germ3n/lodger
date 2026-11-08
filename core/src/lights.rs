@@ -25,7 +25,9 @@ pub fn soul_of(id: &str) -> Option<&'static str> {
 }
 
 fn is_light(id: &str) -> bool {
-    id.ends_with("torch") || id.ends_with("lantern") || crate::memory::is_mod_lamp(id)
+    // Never a redstone torch: moved or hidden, it changes a circuit.
+    !id.contains("redstone")
+        && (id.ends_with("torch") || id.ends_with("lantern") || crate::memory::is_mod_lamp(id))
 }
 
 impl Memory {

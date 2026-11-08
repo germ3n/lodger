@@ -157,6 +157,15 @@ impl Stay {
             ));
         }
         stay.brain.migrate();
+        // An entity's id lasts while the world is loaded: saved ones name others after a
+        // restart (a name tag put on whatever holds that id now), so they wait for the next
+        // entity pass.
+        let memory = &mut stay.memory;
+        memory.last.creatures_near.clear();
+        memory.last.hostiles_near.clear();
+        memory.last.leashed.clear();
+        memory.decor.clear();
+        memory.vehicles.clear();
 
         Ok(stay)
     }

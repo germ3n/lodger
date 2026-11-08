@@ -49,8 +49,9 @@ DOCKER = {"linux-x86_64": "amd64", "linux-aarch64": "arm64"}
 # Pinned: the headers llama.cpp's Vulkan code is written against (Debian 12's are older).
 VULKAN_HEADERS = "v1.4.309"
 SPIRV_HEADERS = "vulkan-sdk-1.4.309.0"
-# The newest glibc a Linux native may ask for: Ubuntu 22.04 has 2.35, Debian 12 2.36.
-NEWEST_GLIBC = (2, 35)
+# The newest glibc a Linux native may ask for: RHEL 9 has 2.34, Ubuntu 22.04 2.35, Debian 12
+# 2.36. The host names the same floor when a native will not load (`LoadedMod.GLIBC_NEEDED`).
+NEWEST_GLIBC = (2, 34)
 WINDOWS_DLLS = {"kernel32.dll", "advapi32.dll", "ntdll.dll", "bcryptprimitives.dll", "vulkan-1.dll",
                 "api-ms-win-core-synch-l1-2-0.dll", "ws2_32.dll", "userenv.dll", "ole32.dll", "shell32.dll"}
 LINUX_NEEDED = {"libvulkan.so.1", "libstdc++.so.6", "libgcc_s.so.1", "libm.so.6", "libc.so.6",
@@ -162,6 +163,7 @@ def build_windows(plat, tree):
 def build_linux(plat, tree):
     need("docker", "install Docker and start it")
     arch = DOCKER[plat]
+    triple = TRIPLES[plat]
     image = "lodger-linux:" + arch
     run(["docker", "build", "-q", "--platform", "linux/" + arch, "-t", image, "-f",
          os.path.join("scripts", "cross", "linux.Dockerfile"), os.path.join("scripts", "cross")], capture=True)
@@ -169,9 +171,11 @@ def build_linux(plat, tree):
     run(["docker", "run", "--rm", "--platform", "linux/" + arch, "-v", ROOT + ":/src",
          "-v", "lodger-cargo-" + arch + ":/usr/local/cargo/registry", "-w", "/src",
          "-e", "CARGO_TARGET_DIR=/src/" + rel, image,
-         "cargo", "build", "--release", "-p", "lodger-core", "--features", "vulkan"])
+         "cargo", "build", "--release", "-p", "lodger-core", "--features", "vulkan", "--target", triple])
 
-    return os.path.join(tree, "release", library(plat))
+    # With its target named: the x86-64-v3 flags (.cargo/config.toml) go to the native alone, not
+    # to the build scripts and macros, which an emulator without AVX2 would have run.
+    return os.path.join(tree, triple, "release", library(plat))
 
 
 def check(plat, path):

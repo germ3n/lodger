@@ -1247,6 +1247,17 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
+	/**
+	 * How a block it sets is placed: as a player would, but a carved pumpkin or a head never
+	 * wakes what it tops (a snowman's head made a snow golem, a skull on soul sand a wither:
+	 * their placing is what spawns them).
+	 */
+	static int placeFlags(BlockState state) {
+		boolean wakes = state.getBlock() instanceof net.minecraft.world.level.block.CarvedPumpkinBlock
+				|| state.getBlock() instanceof net.minecraft.world.level.block.AbstractSkullBlock;
+		return wakes ? Block.UPDATE_ALL | Block.UPDATE_SKIP_ON_PLACE : Block.UPDATE_ALL;
+	}
+
 	private static JsonObject setBlock(ServerLevel level, JsonObject command, long id) {
 		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
 		List<String> replace = replaceable(command);
@@ -1283,7 +1294,7 @@ public final class Executors {
 			if (standing.canSurvive(level, at)) {
 				// What was there is the mod's now, as a player's dig is: said, so it can count it.
 				String was = Senses.blockId(level.getBlockState(at));
-				level.setBlock(at, standing, Block.UPDATE_ALL);
+				level.setBlock(at, standing, placeFlags(standing));
 				return report(id, true, level.getBlockState(at).isAir() && !was.equals("minecraft:air") ? "replaced " + was : "");
 			}
 		}
@@ -1295,7 +1306,7 @@ public final class Executors {
 				}
 				BlockState onWall = againstWall(level, at, wall.get().value().defaultBlockState());
 				if (onWall != null) {
-					level.setBlock(at, onWall, Block.UPDATE_ALL);
+					level.setBlock(at, onWall, placeFlags(onWall));
 					return report(id, true, "");
 				}
 			}
@@ -1471,7 +1482,9 @@ public final class Executors {
 		// What it takes it holds: the very stack, kept with the world, when the mod names a key.
 		// With no key the mod spends it (a sapling planted, ladders laid, the makings of what it
 		// crafts): the docs of `take_item` say so.
-		ItemStack taken = source.split(count);
+		// Taken as the container takes it: a chiseled bookshelf's or a jukebox's split by hand
+		// left the shelf showing the book and the disc playing.
+		ItemStack taken = from.removeItem(slot, count);
 		if (command.has("keep") && !command.get("keep").getAsString().isEmpty()) {
 			data.keep(command.get("keep").getAsString(), taken);
 		}
@@ -1485,6 +1498,11 @@ public final class Executors {
 		int slot = command.get("slot").getAsInt();
 		if (in == null || slot < 0 || slot >= in.getContainerSize() || !in.getItem(slot).is(net.minecraft.world.item.Items.WRITABLE_BOOK)) {
 			return report(id, false, "no book and quill there");
+		}
+		// Never one they wrote in: signed with its word alone, their pages were gone.
+		var theirs = in.getItem(slot).get(net.minecraft.core.component.DataComponents.WRITABLE_BOOK_CONTENT);
+		if (theirs != null && theirs.pages().stream().anyMatch(page -> !page.raw().isBlank())) {
+			return report(id, false, "the book has their writing in it");
 		}
 		List<net.minecraft.server.network.Filterable<Component>> pages = new ArrayList<>();
 		for (JsonElement page : command.getAsJsonArray("pages")) {
@@ -1874,7 +1892,14 @@ public final class Executors {
 		}
 		for (int up = 0; up <= 2; up++) {
 			Vec3 at = target.add(0, up, 0);
-			if (level.noCollision(player, player.getDimensions(player.getPose()).makeBoundingBox(at))) {
+			// Ground under them and no water or lava where they stand: a bed by an edge or a
+			// shaft sent them off it, and that fall was no spared one.
+			BlockPos feet = BlockPos.containing(at);
+			BlockPos below = feet.below();
+			boolean ground = level.getBlockState(below).isFaceSturdy(level, below, Direction.UP)
+					|| !level.getBlockState(feet).getCollisionShape(level, feet).isEmpty();
+			if (ground && level.getFluidState(feet).isEmpty()
+					&& level.noCollision(player, player.getDimensions(player.getPose()).makeBoundingBox(at))) {
 				player.teleportTo(at.x, at.y, at.z);
 				return report(id, true, "");
 			}
@@ -2074,7 +2099,7 @@ public final class Executors {
 			BlockState state = withState(block.get().value().defaultBlockState(), part.has("state") ? part.get("state").getAsString() : "");
 			boolean lowerHalf = state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
 					&& state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER;
-			level.setBlock(pos, state, lowerHalf ? Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE : Block.UPDATE_ALL);
+			level.setBlock(pos, state, lowerHalf ? Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE : placeFlags(state));
 			placed++;
 		}
 

@@ -149,10 +149,24 @@ public final class Gatherings {
 				if (!unloaded) {
 					if (!sale.offer().isOutOfStock() && villager.level() instanceof ServerLevel level) {
 						drop(level, villager, sale.offer());
-						for (net.minecraft.world.entity.Entity became : level.getEntities((net.minecraft.world.entity.Entity) null, villager.getBoundingBox().inflate(2),
-								e -> e != villager && e.entityTags().contains(SELLING))) {
-							became.removeTag(SELLING);
-							became.addTag(SOLD);
+						// Turned (a zombie villager or a witch took its place): its kept offers lose
+						// ours at once, so a cure has nothing of ours to sell (stripped by the sweep,
+						// the cured villager sold it again for a few seconds). Only what it became,
+						// never a selling villager beside it.
+						if (reason == net.minecraft.world.entity.Entity.RemovalReason.DISCARDED) {
+							for (net.minecraft.world.entity.Entity became : level.getEntities((net.minecraft.world.entity.Entity) null, villager.getBoundingBox().inflate(2),
+									e -> e.entityTags().contains(SELLING) && (e instanceof net.minecraft.world.entity.monster.zombie.ZombieVillager || e instanceof net.minecraft.world.entity.monster.Witch))) {
+								if (became instanceof net.minecraft.world.entity.monster.zombie.ZombieVillager zombie) {
+									net.minecraft.world.item.trading.MerchantOffers kept = new net.minecraft.world.item.trading.MerchantOffers();
+									for (MerchantOffer offer : villager.getOffers()) {
+										if (!ours(offer)) {
+											kept.add(offer.copy());
+										}
+									}
+									zombie.setTradeOffers(kept);
+								}
+								became.removeTag(SELLING);
+							}
 						}
 					}
 					told.remove(sale.offer());
@@ -166,6 +180,9 @@ public final class Gatherings {
 				// Taken off once its trading screen is closed: taken off while open, the
 				// client's list and the server's no longer matched.
 				if (villager.getTradingPlayer() != null) {
+					// Held sold out while it waits: a restock at its workstation reset its uses,
+					// and it could be bought again with the screen still open.
+					sale.offer().setToOutOfStock();
 					return false;
 				}
 				villager.getOffers().remove(sale.offer());

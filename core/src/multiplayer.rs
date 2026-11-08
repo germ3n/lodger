@@ -84,6 +84,8 @@ impl Memory {
         self.plants.clear();
         self.field.clear();
         self.surroundings = None;
+        // An offering armed for the old target is theirs: the new one is offered their own.
+        self.loot_armed = false;
         self.elsewhere_since = None;
         self.back_after = None;
         self.people = Default::default();

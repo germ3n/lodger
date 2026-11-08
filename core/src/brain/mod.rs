@@ -96,6 +96,9 @@ pub struct Pending {
     /// A take's chest, slot and item, and the name it keeps it under.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub took: Option<Took>,
+    /// A put of something of theirs into a chest (`from`): dropped there if it cannot go in.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub back: Option<Took>,
 }
 
 /// What a take took: from where, which item, kept under what name.
@@ -389,6 +392,69 @@ impl Brain {
             rng: Rng::new(seed),
             next_command_id: 1,
             ..Self::default()
+        }
+    }
+
+    /// What an event under way took goes back into the chest it came from (a failure, or the
+    /// event given up): a put each, dropped by the chest if it cannot go in.
+    fn put_back(&mut self, event: &str, day: f32, pos: Option<BlockPos>) {
+        let mine = |t: &Taken| t.event == event && t.day == day;
+        let back: Vec<Taken> = self.taken.iter().filter(|t| mine(t)).cloned().collect();
+        self.taken.retain(|t| !mine(t));
+        for taken in back {
+            let id = self.id();
+            self.pending.push(Pending {
+                id,
+                event: event.to_string(),
+                pos,
+                day,
+                tail: true,
+                back: Some(taken.took.clone()),
+                ..Pending::default()
+            });
+            self.later.push(Later {
+                at_tick: 0,
+                command: Command::PutItem {
+                    id,
+                    into: taken.took.from,
+                    slot: Some(taken.took.slot),
+                    item: craftkit::world::ItemStack {
+                        id: taken.took.item.clone(),
+                        count: taken.took.count.max(1),
+                        slot: taken.took.slot,
+                    },
+                    kept: taken.took.keep.clone(),
+                    wear: 0,
+                    name: String::new(),
+                },
+                while_still: false,
+            });
+        }
+    }
+
+    /// An event under way given up (the debug screen's Clear or Forget): what it still had to
+    /// send is dropped, and what it took is put back, not left kept for good.
+    pub fn abandon(&mut self, event: &str, day: f32) {
+        let dropped: Vec<u64> = self
+            .pending
+            .iter()
+            .filter(|p| p.event == event && p.day == day)
+            .map(|p| p.id)
+            .collect();
+        self.later.retain(|l| !dropped.contains(&l.command.id()));
+        self.pending.retain(|p| !dropped.contains(&p.id));
+        self.put_back(event, day, None);
+    }
+
+    /// Every event under way given up.
+    pub fn abandon_all(&mut self) {
+        let under_way: Vec<(String, f32)> = self
+            .taken
+            .iter()
+            .map(|t| (t.event.clone(), t.day))
+            .collect();
+        for (event, day) in under_way {
+            self.abandon(&event, day);
         }
     }
 
@@ -1233,6 +1299,20 @@ impl Brain {
                 day,
                 puts_held,
                 tail: later_ticks >= TAIL_TICKS,
+                // The torches it took down off their walls, put in their chest: dropped by it
+                // if it is full (it was judged from the chest as last seen).
+                back: match &command {
+                    Command::PutItem {
+                        into, item, kept, ..
+                    } if plan.event == "one_room_dark" && kept.is_empty() => Some(Took {
+                        from: *into,
+                        slot: 0,
+                        item: item.id.clone(),
+                        keep: String::new(),
+                        count: item.count,
+                    }),
+                    _ => None,
+                },
                 took: match &command {
                     Command::TakeItem {
                         from,
@@ -2404,6 +2484,39 @@ impl Brain {
         for report in reports {
             if let Some(index) = self.pending.iter().position(|p| p.id == report.id) {
                 let pending = self.pending.remove(index);
+                // A put back that could not go in (the chest gone, or filled since): dropped by
+                // the chest, never kept for good.
+                if !report.done {
+                    if let Some(back) = &pending.back {
+                        let id = self.id();
+                        self.pending.push(Pending {
+                            id,
+                            event: pending.event.clone(),
+                            pos: pending.pos,
+                            day: pending.day,
+                            tail: true,
+                            ..Pending::default()
+                        });
+                        self.later.push(Later {
+                            at_tick: 0,
+                            command: Command::DropItem {
+                                id,
+                                pos: [
+                                    back.from[0] as f64 + 0.5,
+                                    back.from[1] as f64 + 1.0,
+                                    back.from[2] as f64 + 0.5,
+                                ],
+                                item: craftkit::world::ItemStack {
+                                    id: back.item.clone(),
+                                    count: back.count.max(1),
+                                    slot: 0,
+                                },
+                                kept: back.keep.clone(),
+                            },
+                            while_still: false,
+                        });
+                    }
+                }
                 if report.done {
                     if let Some(took) = pending
                         .took
@@ -2457,37 +2570,7 @@ impl Brain {
                         // What it took for it goes back into the chest it came from, or it was
                         // kept for good (the scarecrow's piece when the stand would not move),
                         // or spent for nothing (the stick of a craft whose coal was gone).
-                        let back: Vec<Taken> =
-                            self.taken.iter().filter(|t| mine(t)).cloned().collect();
-                        self.taken.retain(|t| !mine(t));
-                        for taken in back {
-                            let id = self.id();
-                            self.pending.push(Pending {
-                                id,
-                                event: pending.event.clone(),
-                                pos: pending.pos,
-                                day: pending.day,
-                                tail: true,
-                                ..Pending::default()
-                            });
-                            self.later.push(Later {
-                                at_tick: 0,
-                                command: Command::PutItem {
-                                    id,
-                                    into: taken.took.from,
-                                    slot: Some(taken.took.slot),
-                                    item: craftkit::world::ItemStack {
-                                        id: taken.took.item.clone(),
-                                        count: taken.took.count.max(1),
-                                        slot: taken.took.slot,
-                                    },
-                                    kept: taken.took.keep.clone(),
-                                    wear: 0,
-                                    name: String::new(),
-                                },
-                                while_still: false,
-                            });
-                        }
+                        self.put_back(&pending.event, pending.day, pending.pos);
                     }
                 }
 
@@ -4146,6 +4229,49 @@ mod tests {
             matches!(&brain.later[..], [Later { command: Command::PutItem { item, kept, into, .. }, .. }]
                 if item.id == "minecraft:stick" && kept.is_empty() && *into == [2, 64, 0]),
             "the stick back: {:?}",
+            brain.later
+        );
+    }
+
+    #[test]
+    fn a_put_back_that_cannot_go_in_is_dropped_by_the_chest_and_abandon_puts_back() {
+        let mut memory = home_memory();
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        brain.taken.push(Taken {
+            event: "scarecrow".to_string(),
+            day: 5.0,
+            took: Took {
+                from: [2, 64, 0],
+                slot: 7,
+                item: "minecraft:iron_helmet".to_string(),
+                keep: "scarecrow".to_string(),
+                count: 1,
+            },
+        });
+        brain.abandon("scarecrow", 5.0);
+        let back = match &brain.later[..] {
+            [Later {
+                command: Command::PutItem { id, kept, .. },
+                ..
+            }] if kept == "scarecrow" => *id,
+            other => panic!("put back: {other:?}"),
+        };
+        assert!(brain.taken.is_empty());
+        brain.later.clear();
+        brain.report(
+            &[Report {
+                id: back,
+                done: false,
+                reason: "the container is full".to_string(),
+            }],
+            &mut memory,
+            &mut log,
+        );
+        assert!(
+            matches!(&brain.later[..], [Later { command: Command::DropItem { kept, pos, .. }, .. }]
+                if kept == "scarecrow" && pos[0] == 2.5),
+            "dropped by the chest: {:?}",
             brain.later
         );
     }

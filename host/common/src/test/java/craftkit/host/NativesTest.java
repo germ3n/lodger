@@ -74,6 +74,8 @@ class NativesTest {
 		org.junit.jupiter.api.Assertions.assertFalse(Natives.cpuinfoHasAvx2("processor\t: 0\nflags\t\t: fpu sse4_2 avx\n"), "an Ivy Bridge Xeon");
 		org.junit.jupiter.api.Assertions.assertTrue(Natives.cpuinfoHasAvx2("processor\t: 0\n"), "no flags line: not known to be missing");
 		org.junit.jupiter.api.Assertions.assertEquals("", Natives.cpuMissing("Linux", "aarch64"), "only x86_64 is asked");
+		// Asked of this computer as if it were another: what cannot be asked is not a refusal.
+		org.junit.jupiter.api.Assertions.assertNotEquals(Natives.MISSING_AVX2, Natives.cpuMissing("Windows 11", "amd64"));
 	}
 }
 

@@ -128,14 +128,19 @@ pub fn clear_of_built(memory: &Memory, pos: BlockPos) -> bool {
             q == p && (id.ends_with("torch") || id.ends_with("lantern") || id.contains("candle"))
         })
     };
-    memory.placed.iter().filter(|p| !light(p)).all(|p| {
-        let (dx, dy, dz) = (
-            (p[0] - pos[0]) as f64,
-            (p[1] - pos[1]) as f64,
-            (p[2] - pos[2]) as f64,
-        );
-        (dx * dx + dy * dy + dz * dz).sqrt() > DIG_CLEAR
-    })
+    memory
+        .placed
+        .iter()
+        .chain(memory.placed_by_others.iter())
+        .filter(|p| !light(p))
+        .all(|p| {
+            let (dx, dy, dz) = (
+                (p[0] - pos[0]) as f64,
+                (p[1] - pos[1]) as f64,
+                (p[2] - pos[2]) as f64,
+            );
+            (dx * dx + dy * dy + dz * dz).sqrt() > DIG_CLEAR
+        })
 }
 
 /// The block a command digs out of natural ground, if it digs: air set where only ground may
@@ -837,7 +842,7 @@ pub fn head_of_their_kills(memory: &Memory) -> Option<(&str, &'static str)> {
             "skeleton" | "stray" | "bogged" => "minecraft:skeleton_skull",
             "creeper" => "minecraft:creeper_head",
             "piglin" | "zombified_piglin" | "piglin_brute" => "minecraft:piglin_head",
-            "wither_skeleton" => "minecraft:wither_skeleton_skull",
+            // Never a wither skeleton's skull: one is a wither's makings, worth far more than paper.
             _ => return None,
         };
         Some((t.kind.as_str(), head))
@@ -1976,18 +1981,21 @@ pub fn commands(
                 .enumerate()
                 .flat_map(|(i, ((flower, at), pot))| {
                     let name = flower.rsplit(':').next().unwrap_or(flower);
+                    // The pot filled first, the flower taken after: a pot filled since it was
+                    // seen fails first, and the flower stays (taken first, it was lost).
+                    let mut pot = set(
+                        ids,
+                        pot,
+                        &format!("minecraft:potted_{name}"),
+                        &["minecraft:flower_pot"],
+                    );
+                    if let Command::SetBlock { only, .. } = &mut pot {
+                        *only = true;
+                    }
                     [
+                        (pot, i as u64 * 10),
                         (
                             set(ids, *at, "minecraft:air", &[flower.as_str()]),
-                            i as u64 * 10,
-                        ),
-                        (
-                            set(
-                                ids,
-                                pot,
-                                &format!("minecraft:potted_{name}"),
-                                &["minecraft:flower_pot"],
-                            ),
                             i as u64 * 10 + 4,
                         ),
                     ]
@@ -2590,7 +2598,13 @@ pub fn commands(
         Action::MoveCreature(kind, _) => {
             let creature = if kind.is_empty() {
                 if event.id.starts_with("pet_") {
-                    memory.pets().next()
+                    // A pet at home, out of their view: one at their side vanished from it.
+                    let home = memory.home.as_ref().map(|h| h.center);
+                    memory.pets().find(|c| {
+                        home.is_some_and(|h| {
+                            distance(block_of(c.pos), h) <= (crate::memory::HOME_RADIUS * 2) as f64
+                        }) && !memory.in_view(block_of(c.pos), ANIMAL_VIEW)
+                    })
                 } else {
                     their_animal(memory, "", false)
                 }
@@ -3907,6 +3921,20 @@ pub fn commands(
                         let p = [top[0], top[1] - y, top[2]];
                         let t0 = y as u64 * 20;
                         made.push((dig(ids, p), t0));
+                        // A ladder of theirs taken for each one laid, before it is: a shaft that
+                        // stopped part way left ladders laid that were never taken (one that
+                        // will not go down is put back with the event's failure).
+                        made.push((
+                            Command::TakeItem {
+                                id: ids(),
+                                from: chest.pos,
+                                slot: ladders.slot,
+                                expect: ladders.id.clone(),
+                                count: 1,
+                                keep: String::new(),
+                            },
+                            t0 + 3,
+                        ));
                         made.push((
                             Command::SetBlock {
                                 id: ids(),
@@ -3922,17 +3950,6 @@ pub fn commands(
                             t0 + 5,
                         ));
                     }
-                    made.push((
-                        Command::TakeItem {
-                            id: ids(),
-                            from: chest.pos,
-                            slot: ladders.slot,
-                            expect: ladders.id.clone(),
-                            count: deep as u32,
-                            keep: String::new(),
-                        },
-                        deep as u64 * 20 + 10,
-                    ));
                     made
                 }
                 _ => vec![],
@@ -5339,7 +5356,8 @@ pub fn commands(
                     seconds: 90.0,
                     pace: Some(pace),
                     then: then.to_string(),
-                    damage: if then == "hit" { 2.0 } else { 0.0 },
+                    // A nip, half a heart: these run from stage three, the owner's nip stage.
+                    damage: if then == "hit" { 1.0 } else { 0.0 },
                     kept: String::new(),
                 },
                 0,
@@ -6990,10 +7008,11 @@ mod tests {
         );
         let potted = made_by("flowers_potted", &mut rng);
         assert!(
-            matches!(&potted[0].0, Command::SetBlock { block, pos, .. } if block == "minecraft:air" && *pos == [6, 64, 6])
+            matches!(&potted[0].0, Command::SetBlock { block, pos, only: true, .. } if block == "minecraft:potted_poppy" && *pos == [2, 65, 2]),
+            "the pot first"
         );
         assert!(
-            matches!(&potted[1].0, Command::SetBlock { block, pos, .. } if block == "minecraft:potted_poppy" && *pos == [2, 65, 2])
+            matches!(&potted[1].0, Command::SetBlock { block, pos, .. } if block == "minecraft:air" && *pos == [6, 64, 6])
         );
         let carved = made_by("pumpkin_face", &mut rng);
         assert!(
@@ -8124,10 +8143,14 @@ mod tests {
         assert!(matches!(&lights[0].0, Command::HideBlock { pos, .. } if *pos == [-4, 1, 0]));
         let shaft = made("ladder_down", &memory, &mut rng);
         assert_eq!(shaft.iter().filter(|(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:ladder")).count(), 8);
-        assert!(matches!(
-            &shaft.last().unwrap().0,
-            Command::TakeItem { count: 8, .. }
-        ));
+        assert_eq!(
+            shaft
+                .iter()
+                .filter(|(c, _)| matches!(c, Command::TakeItem { count: 1, .. }))
+                .count(),
+            8,
+            "a ladder taken for each one laid"
+        );
         assert!(matches!(
             &made("portal_lit", &memory, &mut rng)[0].0,
             Command::LightPortal { .. }

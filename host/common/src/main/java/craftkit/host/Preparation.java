@@ -187,10 +187,11 @@ public final class Preparation {
 	 * needs. Off the render thread.
 	 */
 	/** A size being switched: the cancelled download is no failure to show or try again. */
-	private volatile boolean switching;
+	private final java.util.concurrent.atomic.AtomicInteger switching = new java.util.concurrent.atomic.AtomicInteger();
 
+	/** Whether a switch is waiting or under way: a count, so the first one done does not clear a second still queued. */
 	public boolean switching() {
-		return switching;
+		return switching.get() > 0;
 	}
 
 	/**
@@ -205,7 +206,7 @@ public final class Preparation {
 	});
 
 	public void choose(LoadedMod mod, Resource.Choice choice) {
-		switching = true;
+		switching.incrementAndGet();
 		switches.execute(() -> {
 			try {
 				cancel();
@@ -230,14 +231,13 @@ public final class Preparation {
 					// A reply it could not read: said, never a switch stuck with its buttons hidden.
 					error = String.valueOf(e.getMessage());
 				}
-				switching = false;
 				if (!error.isEmpty()) {
 					progress.set(new Progress(Phase.FAILED, mod.name(), 0, "", mod.id() + ": " + error));
 					return;
 				}
 				start();
 			} finally {
-				switching = false;
+				switching.decrementAndGet();
 			}
 		});
 	}
@@ -308,7 +308,7 @@ public final class Preparation {
 				fetching.set(null);
 
 				if (downloader.state() != Downloader.State.DONE) {
-					if (switching) {
+					if (switching()) {
 						// Stopped for another size: the switch starts again, nothing failed.
 						return;
 					}

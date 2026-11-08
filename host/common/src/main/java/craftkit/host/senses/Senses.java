@@ -54,7 +54,7 @@ public final class Senses {
 	private final Map<UUID, MovementTracker> movement = new HashMap<>();
 	private final Map<UUID, Boolean> wasSleeping = new HashMap<>();
 	private final Map<UUID, String> wasRiding = new HashMap<>();
-	/** The fish they had caught, by the game's count, and what they were eating with how fed. */
+	/** The fish they had caught, by the game's count, and what they were eating with how many they had. */
 	private final Map<UUID, Integer> fishCaught = new HashMap<>();
 	private final Map<UUID, String> eating = new HashMap<>();
 	private final Map<UUID, Integer> fedBefore = new HashMap<>();
@@ -437,14 +437,16 @@ public final class Senses {
 		// sent, and the late meal never came).
 		net.minecraft.world.item.ItemStack using = player.isUsingItem() ? player.getUseItem() : net.minecraft.world.item.ItemStack.EMPTY;
 		String food = using.has(net.minecraft.core.component.DataComponents.FOOD) ? itemId(using) : "";
-		int fed = player.getFoodData().getFoodLevel() * 100 + Math.round(player.getFoodData().getSaturationLevel());
+		// Eaten is one fewer of it in their inventory as they stop: fed more alone was not
+		// eaten (on peaceful hunger fills by itself, and a bite begun and stopped read as a meal).
 		String wasEating = eating.put(uuid, food);
 		if (!food.isEmpty() && !food.equals(wasEating)) {
-			fedBefore.put(uuid, fed);
+			fedBefore.put(uuid, player.getInventory().countItem(using.getItem()));
 		}
 		if (wasEating != null && !wasEating.isEmpty() && !wasEating.equals(food)) {
 			Integer before = fedBefore.remove(uuid);
-			if (before != null && fed > before) {
+			var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse(wasEating));
+			if (before != null && player.getInventory().countItem(item) < before) {
 				event(player, "ate", player.blockPosition(), wasEating, null);
 			}
 		}

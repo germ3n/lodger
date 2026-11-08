@@ -165,7 +165,9 @@ public final class Downloader {
 			}
 			state.set(State.DONE);
 		} catch (IOException | InterruptedException | RuntimeException e) {
-			if (!keepPart && !cancelled) {
+			// An interrupt is a cancel too (a size switched): what came is kept, only a wrong
+			// file thrown away.
+			if (!keepPart && !cancelled && !(e instanceof InterruptedException)) {
 				try {
 					Files.deleteIfExists(part);
 				} catch (IOException ignored) {

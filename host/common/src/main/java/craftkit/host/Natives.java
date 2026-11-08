@@ -51,6 +51,12 @@ public final class Natives {
 		if (!arch(osArch).equals("x86_64")) {
 			return "";
 		}
+		// An x86_64 Java emulated on an arm64 computer (Rosetta on an Apple chip, which does not
+		// say it has AVX2; Windows' emulator): the jar's arm64 native is the one for it.
+		if (os(osName).equals("macos") && Boolean.TRUE.equals(sysctlFlag("sysctl.proc_translated"))
+				|| os(osName).equals("windows") && windowsOnArm()) {
+			return EMULATED;
+		}
 		Boolean avx2 = switch (os(osName)) {
 			case "linux" -> {
 				try {
@@ -60,12 +66,43 @@ public final class Natives {
 				}
 			}
 			case "macos" -> sysctlFlag("hw.optional.avx2_0");
-			default -> windowsFeature(40); // PF_AVX2_INSTRUCTIONS_AVAILABLE
+			default -> {
+				// PF_AVX2_INSTRUCTIONS_AVAILABLE. A kernel older than the feature numbers answers
+				// no for every one of them: a no is believed only when it knows SSSE3 (36), which
+				// every x86_64 CPU it would run on has.
+				Boolean answer = windowsFeature(40);
+				yield Boolean.FALSE.equals(answer) && !Boolean.TRUE.equals(windowsFeature(36)) ? null : answer;
+			}
 		};
 		return Boolean.FALSE.equals(avx2) ? MISSING_AVX2 : "";
 	}
 
 	static final String MISSING_AVX2 = "this CPU has no AVX2, which the lodger's native needs (Intel processors since 2013, AMD since 2015)";
+	static final String EMULATED = "Java here is an x86_64 Java emulated on an arm64 computer; start the game with an arm64 Java, whose native the jar carries";
+
+	/** Whether this Windows runs on an arm64 machine (`IsWow64Process2`'s native machine). */
+	private static boolean windowsOnArm() {
+		try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+			java.lang.foreign.Linker linker = java.lang.foreign.Linker.nativeLinker();
+			var kernel = java.lang.foreign.SymbolLookup.libraryLookup("kernel32", arena);
+			var current = kernel.find("GetCurrentProcess");
+			var wow = kernel.find("IsWow64Process2");
+			if (current.isEmpty() || wow.isEmpty()) {
+				return false;
+			}
+			var getCurrent = linker.downcallHandle(current.get(), java.lang.foreign.FunctionDescriptor.of(java.lang.foreign.ValueLayout.ADDRESS));
+			var isWow = linker.downcallHandle(wow.get(), java.lang.foreign.FunctionDescriptor.of(java.lang.foreign.ValueLayout.JAVA_INT,
+					java.lang.foreign.ValueLayout.ADDRESS, java.lang.foreign.ValueLayout.ADDRESS, java.lang.foreign.ValueLayout.ADDRESS));
+			java.lang.foreign.MemorySegment process = (java.lang.foreign.MemorySegment) getCurrent.invokeExact();
+			var processMachine = arena.allocate(java.lang.foreign.ValueLayout.JAVA_SHORT);
+			var nativeMachine = arena.allocate(java.lang.foreign.ValueLayout.JAVA_SHORT);
+			int ok = (int) isWow.invokeExact(process, processMachine, nativeMachine);
+			// IMAGE_FILE_MACHINE_ARM64.
+			return ok != 0 && (nativeMachine.get(java.lang.foreign.ValueLayout.JAVA_SHORT, 0) & 0xFFFF) == 0xAA64;
+		} catch (Throwable e) {
+			return false;
+		}
+	}
 
 	/** Whether {@code /proc/cpuinfo}'s first processor lists both avx2 and fma. */
 	static boolean cpuinfoHasAvx2(String cpuinfo) {

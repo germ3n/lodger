@@ -77,12 +77,9 @@ impl Memory {
                 }
                 Some(_) => {}
                 None => {
-                    self.people.visitors.push(Visitor {
-                        name: other.name.clone(),
-                        days: 1,
-                        last_day: today,
-                    });
-                    if self.people.visitors.len() > MOST_VISITORS {
+                    // Full: the least of those it knows makes room, never the newcomer (picked
+                    // after the push, the newcomer was always the least and never kept).
+                    if self.people.visitors.len() >= MOST_VISITORS {
                         let least = self
                             .people
                             .visitors
@@ -93,6 +90,11 @@ impl Memory {
                             .unwrap_or(0);
                         self.people.visitors.remove(least);
                     }
+                    self.people.visitors.push(Visitor {
+                        name: other.name.clone(),
+                        days: 1,
+                        last_day: today,
+                    });
                 }
             }
             self.people

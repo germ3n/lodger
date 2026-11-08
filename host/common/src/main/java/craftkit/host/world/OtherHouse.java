@@ -135,8 +135,10 @@ public final class OtherHouse {
 							|| state.getBlock() instanceof net.minecraft.world.level.block.SweetBerryBushBlock) {
 						state = Blocks.AIR.defaultBlockState();
 					}
+					// No pot at all: a plant out of one comes by hand, and one put into one was
+					// spent there (a pot keeps no contents to bring home).
 					if (state.getBlock() instanceof net.minecraft.world.level.block.FlowerPotBlock) {
-						state = Blocks.FLOWER_POT.defaultBlockState();
+						state = Blocks.AIR.defaultBlockState();
 					}
 					// Nothing that hands out an item by use, adventure mode or not: a full
 					// composter's bone meal, a hive's honey, a cauldron's water or snow, a pot's
@@ -270,15 +272,17 @@ public final class OtherHouse {
 		}
 	}
 
+	/** Where they wake: their respawn point in the overworld, or the world's. */
+	private static BlockPos respawnOf(ServerPlayer player, ServerLevel overworld) {
+		ServerPlayer.RespawnConfig respawn = player.getRespawnConfig();
+		return respawn != null && respawn.respawnData().dimension() == Level.OVERWORLD ? respawn.respawnData().pos() : overworld.getRespawnData().pos();
+	}
+
 	/** Back in their own bed with the door open; without a bed known, at their respawn or the world's. */
 	private static void home(MinecraftServer server, ServerPlayer player, BlockPos bed, BlockPos door) {
 		ServerLevel overworld = server.overworld();
 		List<ItemStack> left = leftBehind(server);
-		BlockPos to = bed;
-		if (to == null) {
-			ServerPlayer.RespawnConfig respawn = player.getRespawnConfig();
-			to = respawn != null && respawn.respawnData().dimension() == Level.OVERWORLD ? respawn.respawnData().pos() : overworld.getRespawnData().pos();
-		}
+		BlockPos to = bed != null ? bed : respawnOf(player, overworld);
 		player.teleportTo(overworld, to.getX() + 0.5, to.getY() + 0.6, to.getZ() + 0.5, java.util.Set.of(), player.getYRot(), player.getXRot(), false);
 		restoreMode(player);
 		// What they left there comes home with them: in their inventory, or at their feet.
@@ -351,9 +355,16 @@ public final class OtherHouse {
 		ServerLevel other = server.getLevel(KEY);
 		if (other != null) {
 			for (ServerPlayer player : List.copyOf(other.players())) {
-				// One dead there is left as they are: what they carried waits in the copy, and
-				// comes home with the next one sent home from it.
+				// One dead there is left as they are, and what they carried goes to where they
+				// will wake, kept there (left in the copy, it despawned or went to another).
 				if (player.isDeadOrDying()) {
+					ServerLevel overworld = server.overworld();
+					BlockPos to = respawnOf(player, overworld);
+					for (ItemStack stack : leftBehind(server)) {
+						net.minecraft.world.entity.item.ItemEntity dropped = new net.minecraft.world.entity.item.ItemEntity(overworld, to.getX() + 0.5, to.getY() + 0.6, to.getZ() + 0.5, stack);
+						dropped.setUnlimitedLifetime();
+						overworld.addFreshEntity(dropped);
+					}
 					continue;
 				}
 				Visit visit = visits.stream().filter(v -> v.player.equals(player.getUUID())).findFirst().orElse(null);

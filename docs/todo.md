@@ -1201,6 +1201,32 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **The tenth bug pass** (five reviewers, the fifth on the events one by one; about forty
+  found). A snowman's head made a real snow golem (a pumpkin or a head is set without waking
+  what it tops now); a wither skeleton's skull, iron bars and tinted glass came from nothing; a
+  pet beside them vanished to the house; their redstone torches were moved and hidden as lights;
+  the tool worn was any tool in any chest; a book they wrote in was signed with one word, their
+  pages gone; a flower was taken before its pot was known empty; the ladders were taken only at
+  the end, so a shaft stopped part way left ladders from nothing; waking elsewhere could stand
+  them over a drop or in water; an approach struck a full heart in the nip stage. The brain: the
+  new animal needs cancelled a plan the moment they turned; `named_animal` was offered with every
+  animal named; a put back that could not go in was kept for good (dropped by the chest now), and
+  the debug screen's Clear, Forget and reset left what events had taken kept (`Brain::abandon`).
+  The state: another player's far building pushed the target's house out of what it never digs
+  beside (kept apart now, near the home, let go when broken); a bed far off kept the old house's
+  doors and plants; a retarget left a loot offering armed and its touch unheard; saved entity ids
+  named other entities after a restart; the seventeenth visitor was never kept; an empty target
+  uuid was never filled. Sales: a cured zombie sold the item again for a few seconds, a restock
+  with the screen open sold it twice, and the mark hit a villager beside it. The copy: a dead
+  player's drops waited there after a quit (brought to their respawn now), a plant put in a pot
+  was spent. The host: a take from a shelf or a jukebox left it showing the item; `ate` read a
+  peaceful refill as a meal. The client: two quick switches could delete a download's part file;
+  an old Windows kernel, Rosetta or Windows' emulator could be refused for AVX2 wrongly (an
+  emulated Java is told to use an arm64 one); the Linux Docker build names its target, so its
+  build scripts never run the AVX2 code; the glibc floor is 2.34 on both sides. Tests: the put
+  back's drop, abandon, the bed far off, the friend's blocks, the shaft's takes, the pot's order.
+  Left: the temporary animals of `one_more` and `under_the_water` drop as any mob; frames and
+  stands turned or dressed are not checked for view. Was: all of that.
 - [x] **One x86_64 baseline** (owner: "AVX2 + clear refusal"): the three x86_64 natives are
   built for x86-64-v3 (`.cargo/config.toml`'s `target-cpu`, which llama-cpp-sys-2 hands on to
   llama.cpp), and the host refuses one on a CPU without AVX2 before loading it, naming why

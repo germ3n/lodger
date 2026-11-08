@@ -101,6 +101,8 @@ pub fn answer(
                         .retain(|l| !dropped.contains(&l.command.id()));
                     // What was sent already still reports and is recorded.
                     stay.brain.pending.retain(|p| !dropped.contains(&p.id));
+                    // What the events under way took goes back to its chest.
+                    stay.brain.abandon_all();
                     match ids.len() {
                         0 => "there were no plans".to_string(),
                         n => format!("dropped {n} plan(s)"),
@@ -159,6 +161,16 @@ pub fn answer(
                 // `/craftkit lodger reset`: the stay forgotten and begun again, what it holds
                 // given back first.
                 "reset" => {
+                    // What events under way took, put back where it came from, with the rest.
+                    let first = stay.brain.next_command_id;
+                    stay.brain.abandon_all();
+                    let put_back: Vec<crate::brain::Later> = stay
+                        .brain
+                        .later
+                        .iter()
+                        .filter(|l| l.command.id() >= first)
+                        .cloned()
+                        .collect();
                     let give_back = {
                         let brain = &mut stay.brain;
                         let mut ids = || {
@@ -192,6 +204,7 @@ pub fn answer(
                     stay.memory.target_uuid = uuid;
                     stay.memory.mods = mods;
                     stay.memory.defer_target = defer;
+                    stay.brain.later.extend(put_back);
                     let gave = !give_back.is_empty();
                     for (command, wait) in give_back {
                         stay.brain.later.push(crate::brain::Later {
@@ -225,6 +238,8 @@ pub fn answer(
                     stay.brain.plans.clear();
                     stay.brain.later.clear();
                     stay.brain.pending.clear();
+                    // What the events under way took goes back to its chest, after the clear.
+                    stay.brain.abandon_all();
                     "the memory is empty; it learns the house again from here".to_string()
                 }
                 other => format!("no action called {other}"),

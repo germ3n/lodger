@@ -21,7 +21,7 @@ One native per platform, with the GPU always on (owner: "one native per os per a
 | Platform | GPU | Built |
 | --- | --- | --- |
 | `macos-aarch64` | Metal | natively on a Mac with Apple silicon |
-| `macos-x86_64` | Metal | on the same Mac, for Intel (`x86_64-apple-darwin`; it runs under Rosetta there, so it can be tried) |
+| `macos-x86_64` | Metal | on the same Mac, for Intel (`x86_64-apple-darwin`; the host refuses it under Rosetta and asks for an arm64 Java) |
 | `windows-x86_64` | Vulkan | cross-compiled with cargo-xwin |
 | `windows-aarch64` | Vulkan | cross-compiled with cargo-xwin |
 | `linux-x86_64` | Vulkan | in Docker (`scripts/cross/linux.Dockerfile`) |
@@ -36,15 +36,16 @@ Each native is checked before it goes in a jar (`scripts/build_natives.py`'s `ch
 - **Windows:** it imports only Windows' own DLLs and `vulkan-1.dll`. Microsoft's C and C++
   runtime is linked in (`.cargo/config.toml`: `crt-static` for Rust, `LLAMA_STATIC_CRT` for
   llama.cpp), so no Visual C++ Redistributable is needed.
-- **Linux:** it asks for glibc 2.35 at most (in practice 2.34), so it loads on Debian 12 and
-  Ubuntu 22.04 and newer, and links only glibc, libstdc++, libgcc and `libvulkan.so.1`.
+- **Linux:** it asks for glibc 2.34 at most, so it loads on RHEL 9, Debian 12 and Ubuntu 22.04
+  and newer (an older one is named when the native will not load), and links only glibc, libstdc++, libgcc and `libvulkan.so.1`.
 - **macOS:** it links only the system's libraries and frameworks (Metal among them).
 
 **One x86_64 baseline.** The three x86_64 natives are built for x86-64-v3 (AVX2, FMA, F16C,
 BMI2: Intel since 2013, AMD since 2015), `.cargo/config.toml`'s `target-cpu`, which
 llama-cpp-sys-2 hands on to llama.cpp, so the model's CPU path is as fast on Windows and an Intel
 Mac as on Linux. On an older CPU the host refuses the native before loading it, naming why
-(`Natives.cpuMissing`); loaded, it would end the game on its first such instruction. The arm64
+(`Natives.cpuMissing`); loaded, it would end the game on its first such instruction. An x86_64
+Java emulated on an arm64 computer (Rosetta, Windows' emulator) is told to use an arm64 Java. The arm64
 natives need nothing past their baseline.
 
 **Vulkan at run time.** The Windows and Linux natives link Vulkan's loader. Every GPU driver

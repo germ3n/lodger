@@ -452,6 +452,10 @@ pub struct Memory {
     pub place: Option<BlockPos>,
     /// Blocks the target placed that the lodger must never break: everything they placed.
     pub placed: Vec<BlockPos>,
+    /// Blocks other players placed near its home or its place, kept apart: never dug beside
+    /// either, but not the target's (their want, their base, their walls are the target's own).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub placed_by_others: Vec<BlockPos>,
     /// Placed blocks an event can use, by plain kind.
     pub fixtures: Vec<Fixture>,
     /// Frames, paintings and stands near the home, from the last entity pass.
@@ -662,6 +666,9 @@ const MOST_DONE: usize = 256; // oldest dropped first
 const MOST_FAVOURITES: usize = 8;
 const MOST_CELLS: usize = 512; // the least-stood-in dropped first
 const MOST_CHAT: usize = 8;
+/// How near its home or its place another player's block is kept, and how many.
+const OTHERS_PLACED_BLOCKS: f64 = 64.0;
+const MOST_PLACED_BY_OTHERS: usize = 1024;
 const MOST_PLACED: usize = 2048; // a whole house; older ones fall off, which is the risk the docs name
 const MOST_LIGHTS: usize = 64;
 const MOST_DOORS: usize = 16;
@@ -841,8 +848,9 @@ const BRICKS: &[&str] = &["bricks", "mud_bricks", "nether_bricks", "red_nether_b
 const TORCHES: &[&str] = &["torch", "soul_torch"];
 const WALL_TORCHES: &[&str] = &["wall_torch", "soul_wall_torch"];
 const LANTERNS: &[&str] = &["lantern", "soul_lantern"];
-const PANES: &[&str] = &["glass_pane", "iron_bars"];
-const GLASSES: &[&str] = &["glass", "tinted_glass"];
+// Never into iron bars or tinted glass by a swap: each is worth more than what it replaced.
+const PANES: &[&str] = &["glass_pane"];
+const GLASSES: &[&str] = &["glass"];
 
 /// The family a building block belongs to, as the ids of every member, or none for a block
 /// the lodger never changes (a chest, a bed, a door, the ground). The families are the woods
@@ -942,7 +950,12 @@ pub fn is_coloured(id: &str) -> bool {
 }
 
 fn is_light(id: &str) -> bool {
-    id.ends_with("torch") || id.ends_with("lantern") || id.contains("candle") || is_mod_lamp(id)
+    // Never a redstone torch: moved or hidden, it changes a circuit (a door, a piston, TNT).
+    !id.contains("redstone")
+        && (id.ends_with("torch")
+            || id.ends_with("lantern")
+            || id.contains("candle")
+            || is_mod_lamp(id))
 }
 
 /// A lamp of another mod's (their light, as a torch is), never the game's redstone lamp.
@@ -1149,6 +1162,15 @@ impl Memory {
             }
             if !self.target_uuid.is_empty() && player.uuid == self.target_uuid {
                 self.target = Some(player.index);
+            }
+            // A target known by its index alone (an old save, the debug screen's force) takes
+            // the uuid and name of the player there, so a restart cannot hand it to another.
+            if self.target_uuid.is_empty()
+                && !player.uuid.is_empty()
+                && self.target == Some(player.index)
+            {
+                self.target_uuid = player.uuid.clone();
+                self.target_name = player.name.clone();
             }
         }
         // The first player seen is the target, unless the brain is to pick among several and
@@ -1420,11 +1442,45 @@ impl Memory {
                     self.chains_done.push("the_diary".to_string());
                 }
             }
-            // A block another player placed is as much a build it never digs beside as the
-            // target's (`act::clear_of_built`); the rest of their doings are not its business.
-            if event.player != index && event.kind == EventKind::PlacedBlock {
+            // A block another player placed near where it acts is as much a build it never digs
+            // beside as the target's (`act::clear_of_built`), kept apart from the target's (into
+            // `placed`, a friend's far build pushed the target's house out of it); a block
+            // anyone breaks is let go from both. The rest of their doings are not its business.
+            if event.player != index {
                 if let Some(pos) = event.pos {
-                    push_capped(&mut self.placed, pos, MOST_PLACED);
+                    let near = |at: Option<BlockPos>| {
+                        at.is_some_and(|a| distance(a, pos) <= OTHERS_PLACED_BLOCKS)
+                    };
+                    match event.kind {
+                        EventKind::PlacedBlock
+                            if near(self.home.as_ref().map(|h| h.center)) || near(self.place) =>
+                        {
+                            push_capped(&mut self.placed_by_others, pos, MOST_PLACED_BY_OTHERS);
+                        }
+                        EventKind::BrokeBlock => {
+                            self.placed_by_others.retain(|p| *p != pos);
+                            self.placed.retain(|p| *p != pos);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            // Its loot offering taken, by whoever opened the chest (an old target's after a
+            // retarget too): what it gave it holds no more (dropped as not the target's, `held`
+            // named a thing the host had given away, and every return was refused).
+            if event.kind == EventKind::LootTouched {
+                self.loot_armed = false;
+                if !event.detail.is_empty() {
+                    if self
+                        .held
+                        .as_ref()
+                        .is_some_and(|h| h.item.id == event.detail)
+                    {
+                        self.held = None;
+                    } else if self.stored(&event.detail) > 0 {
+                        self.store(&event.detail, -1);
+                    }
+                    self.record("loot_gift", event.pos, day, true, &event.detail);
                 }
             }
             if event.player != index {
@@ -1466,9 +1522,13 @@ impl Memory {
                             floor_y: pos[1],
                             ..Home::default()
                         });
+                        let moved = distance(home.center, pos) > (HOME_RADIUS * 2) as f64;
                         home.bed = Some(pos);
                         home.center = pos;
                         home.floor_y = pos[1];
+                        if moved {
+                            self.home_moved();
+                        }
                     }
                 }
                 EventKind::Joined => {
@@ -1522,9 +1582,13 @@ impl Memory {
                                 floor_y: pos[1],
                                 ..Home::default()
                             });
+                            let moved = distance(home.center, pos) > (HOME_RADIUS * 2) as f64;
                             home.bed = Some(pos);
                             home.center = pos;
                             home.floor_y = pos[1];
+                            if moved {
+                                self.home_moved();
+                            }
                         }
                         if is_storage(&event.detail) {
                             self.container_placed(pos, &event.detail);
@@ -1726,21 +1790,8 @@ impl Memory {
                     }
                 }
                 // Their fresh loot got its offering: what it gave it no longer holds.
-                EventKind::LootTouched => {
-                    self.loot_armed = false;
-                    if !event.detail.is_empty() {
-                        if self
-                            .held
-                            .as_ref()
-                            .is_some_and(|h| h.item.id == event.detail)
-                        {
-                            self.held = None;
-                        } else if self.stored(&event.detail) > 0 {
-                            self.store(&event.detail, -1);
-                        }
-                        self.record("loot_gift", event.pos, day, true, &event.detail);
-                    }
-                }
+                // Taken above, from anyone.
+                EventKind::LootTouched => {}
                 EventKind::ClosedContainer => {
                     if let Some(pos) = event.pos {
                         if let Some(container) = self.containers.iter_mut().find(|c| c.pos == pos) {
@@ -1914,6 +1965,27 @@ impl Memory {
                         MOST_FIXTURES,
                     );
                 }
+            }
+        }
+    }
+
+    /// The home moved by a bed (one slept in elsewhere, a house moved to): the old house's doors, lights
+    /// and plants are let go, and its chests are no longer the home's. Kept, a knock came at a
+    /// door three hundred blocks off, and the oldest plants crowded out the new house's.
+    fn home_moved(&mut self) {
+        let Some(center) = self.home.as_ref().map(|h| h.center) else {
+            return;
+        };
+        let reach = (HOME_RADIUS * 2) as f64;
+        let near = |p: &BlockPos| distance(center, *p) <= reach;
+        if let Some(home) = self.home.as_mut() {
+            home.doors.retain(near);
+            home.lights.retain(near);
+        }
+        self.plants.retain(|(_, p)| near(p));
+        for container in &mut self.containers {
+            if container.in_home && !near(&container.pos) {
+                container.in_home = false;
             }
         }
     }
@@ -2574,8 +2646,18 @@ impl Memory {
             .iter()
             .any(|t| id.ends_with(t))
         };
-        for container in self.containers.iter().filter(|c| !c.is_furnace()) {
-            if let Some(stack) = container.contents.iter().find(|s| is_tool(&s.id)) {
+        // Theirs, and a favourite of theirs: a village chest's tool, or any tool, was worn too.
+        let favourite = |id: &str| self.favourites.iter().any(|(f, _)| f == id);
+        for container in self
+            .containers
+            .iter()
+            .filter(|c| c.theirs() && !c.is_furnace())
+        {
+            if let Some(stack) = container
+                .contents
+                .iter()
+                .find(|s| is_tool(&s.id) && favourite(&s.id))
+            {
                 return Some((container, stack));
             }
         }
@@ -4544,5 +4626,74 @@ mod tests {
             "the target stays"
         );
         assert_eq!(memory.others.len(), 16);
+    }
+
+    #[test]
+    fn a_bed_far_off_lets_the_old_house_go_and_a_friend_s_blocks_are_kept_apart() {
+        let mut memory = Memory::default();
+        memory.set_target(0, "razor", "u0");
+        let event = |player, kind, pos: BlockPos, detail: &str| craftkit::world::Event {
+            player,
+            kind,
+            pos: Some(pos),
+            detail: detail.to_string(),
+            ..Default::default()
+        };
+        let observe = |memory: &mut Memory, events| {
+            memory.observe(
+                &Observations {
+                    players: vec![craftkit::world::Player {
+                        index: 0,
+                        uuid: "u0".to_string(),
+                        ..Default::default()
+                    }],
+                    events,
+                    ..Default::default()
+                },
+                1.0,
+            )
+        };
+        observe(
+            &mut memory,
+            vec![event(0, EventKind::SleptBegan, [0, 64, 0], "")],
+        );
+        memory.home.as_mut().unwrap().doors = vec![[3, 64, 0]];
+        memory.plants = vec![("minecraft:oak_sapling".to_string(), [5, 64, 5])];
+        observe(
+            &mut memory,
+            vec![event(0, EventKind::SleptBegan, [300, 64, 0], "")],
+        );
+        assert!(
+            memory.home.as_ref().unwrap().doors.is_empty(),
+            "the old door let go"
+        );
+        assert!(memory.plants.is_empty(), "and its sapling");
+
+        observe(
+            &mut memory,
+            vec![
+                event(1, EventKind::PlacedBlock, [310, 64, 0], "minecraft:stone"),
+                event(1, EventKind::PlacedBlock, [5_000, 64, 0], "minecraft:stone"),
+            ],
+        );
+        assert_eq!(
+            memory.placed_by_others,
+            vec![[310, 64, 0]],
+            "near the home only"
+        );
+        assert!(
+            memory.placed.iter().all(|p| *p != [310, 64, 0]),
+            "not the target's"
+        );
+        observe(
+            &mut memory,
+            vec![event(
+                1,
+                EventKind::BrokeBlock,
+                [310, 64, 0],
+                "minecraft:stone",
+            )],
+        );
+        assert!(memory.placed_by_others.is_empty(), "broken, let go");
     }
 }

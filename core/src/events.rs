@@ -185,6 +185,8 @@ pub enum Need {
     UnnamedVillager,
     /// One of their farm animals by the house, out of their view, of this kind (any, empty).
     TheirAnimal(&'static str),
+    /// One of them with no name (`named_animal`).
+    TheirUnnamedAnimal,
     /// Water within this many blocks of the target.
     WaterNear(u32),
     /// The target holds this item in their main hand.
@@ -258,6 +260,9 @@ impl Need {
                 | Need::Raining
                 | Need::NotRaining
                 | Need::Creature(_)
+                | Need::TheirAnimal(_)
+                | Need::TheirUnnamedAnimal
+                | Need::UnnamedVillager
                 | Need::Pet
                 | Need::Animals
                 | Need::Hostiles
@@ -374,6 +379,9 @@ impl Need {
             Need::DiaryUnbought => "its diary not on sale, or bought".to_string(),
             Need::UnnamedVillager => "no villager near them without a name".to_string(),
             Need::TheirAnimal("") => "none of their animals by the house".to_string(),
+            Need::TheirUnnamedAnimal => {
+                "none of their animals by the house without a name".to_string()
+            }
             Need::TheirAnimal(kind) => format!("no {kind} of theirs by the house"),
             Need::WaterNear(n) => format!("no water within {n} blocks of them"),
             Need::Holding(id) => format!("they do not hold a {}", crate::memory::bare(id)),
@@ -2696,7 +2704,7 @@ pub const CATALOGUE: &[Event] = &[
         "named_animal",
         3,
         5,
-        &[TheirAnimal(""), TargetAwayOrAsleep],
+        &[TheirUnnamedAnimal, TargetAwayOrAsleep],
         3.0,
         2,
         Full,
