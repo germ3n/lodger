@@ -475,6 +475,10 @@ pub struct Memory {
     pub figure_looks: Vec<FigureLook>,
     /// Its temper, moved by how they treat it (`temper.rs`).
     pub temper: crate::temper::Temper,
+    /// The day its diary of them went on sale (0: never), and whether they bought it
+    /// (`books.rs`).
+    pub diary_offered: f32,
+    pub diary_bought: bool,
     /// When the target was last seen, seconds since the Unix epoch by the real clock; and
     /// whether it has changed target this stay (`multiplayer.rs`).
     pub target_seen_unix: u64,
@@ -1620,6 +1624,12 @@ impl Memory {
                 }
                 EventKind::RangBell => self.rang_bell_now = event.pos,
                 EventKind::Knocked => self.knocked_now = event.pos,
+                // Its diary bought: never brought to them after.
+                EventKind::Bought => {
+                    if self.diary_offered > 0.0 && event.detail.ends_with("written_book") {
+                        self.diary_bought = true;
+                    }
+                }
                 EventKind::FigureSeen => {
                     push_capped(
                         &mut self.figure_looks,
@@ -2033,6 +2043,9 @@ impl Memory {
         let found = crate::events::find(event);
         if ok {
             self.chain_landed(event, day);
+            if event == "diary_sold" {
+                self.diary_offered = day.max(0.01);
+            }
         }
         if ok && found.is_some_and(|e| !e.small) {
             push_capped(&mut self.landmarks, done.clone(), MOST_LANDMARKS);

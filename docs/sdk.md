@@ -204,7 +204,10 @@ long, how far they came toward it, how it ended; `world/Gaze.java`). ABI 48: `co
 `fierce`, 0 to 1, the fight's health up to a quarter more and a fifth wave from half on. ABI 49:
 `other_house`, the target woken in a copy of their house in the content jar's void dimension
 `lodger:other` for a while (`world/OtherHouse.java`). ABI 50: `toggle_block`'s `to`, open or lit
-(`true`) or shut or out (`false`), left alone when so already; without it, the other way.
+(`true`) or shut or out (`false`), left alone when so already; without it, the other way. ABI 51:
+`write_book` (a written book made and kept under a name), `add_page` (a page more in a book and
+quill), `put_book` (a kept book onto a lectern), `approach`'s `give` with `kept` (brought and
+dropped at their feet, kept again if never), and the `bought` event (a sale of its bought).
 
 ## Resources
 

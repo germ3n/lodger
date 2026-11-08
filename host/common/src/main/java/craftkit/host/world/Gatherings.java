@@ -25,6 +25,19 @@ import java.util.List;
  * then the trade is taken away, so a restock never sells it twice.
  */
 public final class Gatherings {
+	/** A sale of its bought: where, by whom, what. */
+	public record Bought(ServerLevel level, net.minecraft.server.level.ServerPlayer player, net.minecraft.core.BlockPos at, String item) {
+	}
+
+	private final List<Bought> bought = new ArrayList<>();
+
+	/** The sales bought since the last ask. */
+	public List<Bought> takeBought() {
+		List<Bought> taken = List.copyOf(bought);
+		bought.clear();
+		return taken;
+	}
+
 	/** The longest a village stays empty, whatever a mod asks. */
 	public static final float MOST_SECONDS = 600;
 	/** Within this many blocks, the packed villagers turn to the player. */
@@ -129,6 +142,14 @@ public final class Gatherings {
 				return true;
 			}
 			if (sale.offer().isOutOfStock()) {
+				// Bought: by the player nearest it, as the mind is told (`bought`, ABI 51).
+				if (villager.level() instanceof ServerLevel level) {
+					net.minecraft.world.entity.player.Player buyer = level.getNearestPlayer(villager, 8);
+					if (buyer instanceof net.minecraft.server.level.ServerPlayer player) {
+						bought.add(new Bought(level, player, villager.blockPosition(),
+								net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(sale.offer().getResult().getItem()).toString()));
+					}
+				}
 				villager.getOffers().remove(sale.offer());
 				villager.removeTag(SELLING);
 				return true;

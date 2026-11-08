@@ -225,6 +225,9 @@ pub enum EventKind {
     /// within ten degrees for half a second; `toward` the distance they closed; `end` one of
     /// `approached`, `looked_away`, `timed`, `walked`, `gone`). ABI 47.
     FigureSeen,
+    /// One of its sales bought: `pos` the villager, `detail` the item, the buyer the nearest
+    /// player. ABI 51.
+    Bought,
     ChangedDimension,
     /// Hit an entity; `detail` is its kind, `pos` where it stood.
     Hit,
@@ -932,6 +935,29 @@ pub enum Command {
         title: String,
         pages: Vec<String>,
     },
+    /// Make a written book, `title` by `author` with these pages, and keep it under `kept` for a
+    /// sale (`offer_trade`), a chest (`put_item`), a lectern (`put_book`) or a villager's hands
+    /// (`approach` with `give`). ABI 51.
+    WriteBook {
+        id: u64,
+        kept: String,
+        title: String,
+        author: String,
+        pages: Vec<String>,
+    },
+    /// One page more in the book and quill in a container's slot, after its own. ABI 51.
+    AddPage {
+        id: u64,
+        pos: BlockPos,
+        slot: u32,
+        page: String,
+    },
+    /// The book kept under `kept` onto the lectern at `pos`, which holds none. ABI 51.
+    PutBook {
+        id: u64,
+        pos: BlockPos,
+        kept: String,
+    },
     /// Mark the filled map in a container's slot with a target at `at`. ABI 14.
     MarkMap {
         id: u64,
@@ -981,6 +1007,11 @@ pub enum Command {
         then: String,
         #[serde(default, skip_serializing_if = "is_zero_f32")]
         damage: f32,
+        /// With `then` `give`: what is kept under this name, brought and dropped at their feet as
+        /// it gets there, the first of `entities` alone; kept again if it never gets there.
+        /// ABI 51.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        kept: String,
     },
     /// For `seconds`, the first moment `player` stands at an edge (a drop of two to `most_drop`
     /// blocks to solid ground just past it) or on a ladder with ground that near below, not
@@ -1098,6 +1129,9 @@ impl Command {
             | Command::Shoot { id, .. }
             | Command::Confront { id, .. }
             | Command::OtherHouse { id, .. }
+            | Command::WriteBook { id, .. }
+            | Command::AddPage { id, .. }
+            | Command::PutBook { id, .. }
             | Command::SplashPotion { id, .. }
             | Command::PutPotion { id, .. }
             | Command::ChangePotion { id, .. }

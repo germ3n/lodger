@@ -79,6 +79,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Decors(kind, n) => memory.decor(kind).count() >= n,
         Need::Creature(kind) => memory.creatures(kind).next().is_some(),
         Need::Pet => memory.pets().next().is_some(),
+        Need::DiaryUnbought => memory.diary_offered > 0.0 && !memory.diary_bought,
         Need::TargetAwayOrAsleep => home_pos.map(away).unwrap_or(!last.online || last.sleeping),
         Need::TargetOnline => last.online,
         Need::TargetIndoors => last.online && last.indoors,

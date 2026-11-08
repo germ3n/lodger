@@ -551,6 +551,14 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::SnowCleared | Action::Trample => home.and_then(|h| pick(&h.doors, rng)),
         Action::HarvestOne => memory.feature("crops").map(|f| f.pos),
+        Action::DiarySold | Action::DiaryBrought | Action::VillagerNamed => {
+            memory.villager_near().map(|v| block_of(v.pos))
+        }
+        Action::LetterInChest => memory.used_container().map(|c| c.pos),
+        Action::LecternNotes => memory.fixtures("lectern").next().map(|f| f.pos),
+        Action::PageInBook => memory
+            .in_used_container(|id| id == "minecraft:writable_book")
+            .map(|(c, _)| c.pos),
         // Where the boat is: never moved while they look at it.
         Action::MoveVehicle => memory.their_boat().map(|c| block_of(c.pos)),
         Action::PlateLaid => memory.used_container().map(|c| c.pos),
@@ -2829,6 +2837,160 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // Its diary of them, signed with their name, on sale from the villager near them for an
+        // emerald, once.
+        Action::DiarySold => match memory.villager_near() {
+            Some(v) => {
+                let book = ids();
+                let kept = format!("book_{book}");
+                vec![
+                    (
+                        Command::WriteBook {
+                            id: book,
+                            kept: kept.clone(),
+                            title: crate::books::signed(memory),
+                            author: crate::books::signed(memory),
+                            pages: crate::books::diary(memory, &words(Kind::DiaryLine, "", 0)),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::OfferTrade {
+                            id: ids(),
+                            entity: v.id,
+                            kept,
+                        },
+                        1,
+                    ),
+                ]
+            }
+            None => vec![],
+        },
+        // Not bought: the villager walks up, slowly, and drops a newer one at their feet.
+        Action::DiaryBrought => match memory.villager_near() {
+            Some(v) => {
+                let book = ids();
+                let kept = format!("book_{book}");
+                vec![
+                    (
+                        Command::WriteBook {
+                            id: book,
+                            kept: kept.clone(),
+                            title: crate::books::signed(memory),
+                            author: crate::books::signed(memory),
+                            pages: crate::books::diary(memory, &words(Kind::DiaryLine, "", 0)),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::Approach {
+                            id: ids(),
+                            entities: vec![v.id],
+                            player: target,
+                            stop: 1.8,
+                            seconds: 60.0,
+                            pace: Some(0.6),
+                            then: "give".to_string(),
+                            damage: 0.0,
+                            kept,
+                        },
+                        1,
+                    ),
+                ]
+            }
+            None => vec![],
+        },
+        // A letter for them in their chest, in its words.
+        Action::LetterInChest => match memory.used_container() {
+            Some(chest) if !chest.empty_slots().is_empty() => {
+                let book = ids();
+                let kept = format!("book_{book}");
+                vec![
+                    (
+                        Command::WriteBook {
+                            id: book,
+                            kept: kept.clone(),
+                            title: format!("for {}", crate::books::signed(memory)),
+                            author: String::new(),
+                            pages: vec![words(Kind::DiaryLine, "", 0)],
+                        },
+                        0,
+                    ),
+                    (
+                        Command::PutItem {
+                            id: ids(),
+                            into: chest.pos,
+                            slot: chest.empty_slots().first().copied(),
+                            item: ItemStack {
+                                id: "minecraft:written_book".to_string(),
+                                count: 1,
+                                slot: 0,
+                            },
+                            kept,
+                            wear: 0,
+                            name: String::new(),
+                        },
+                        1,
+                    ),
+                ]
+            }
+            _ => vec![],
+        },
+        Action::VillagerNamed => memory
+            .villager_near()
+            .map(|v| {
+                vec![(
+                    Command::NameEntity {
+                        id: ids(),
+                        entity: v.id,
+                        name: words(Kind::ItemName, "", 0),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // Its notes on a lectern that holds no book, a page a day.
+        Action::LecternNotes => pos
+            .map(|lectern| {
+                let book = ids();
+                let kept = format!("book_{book}");
+                vec![
+                    (
+                        Command::WriteBook {
+                            id: book,
+                            kept: kept.clone(),
+                            title: "notes".to_string(),
+                            author: String::new(),
+                            pages: crate::books::notes(memory, &words(Kind::DiaryLine, "", 0)),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::PutBook {
+                            id: ids(),
+                            pos: lectern,
+                            kept,
+                        },
+                        1,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
+        // One page more in a book and quill of theirs, after their own.
+        Action::PageInBook => memory
+            .in_used_container(|id| id == "minecraft:writable_book")
+            .map(|(chest, book)| {
+                vec![(
+                    Command::AddPage {
+                        id: ids(),
+                        pos: chest.pos,
+                        slot: book.slot,
+                        page: words(Kind::DiaryLine, "", 0),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::MiningSounds => {
             let angle = (seed % 8) as f64 * std::f64::consts::FRAC_PI_4;
             let at = [
@@ -5127,6 +5289,7 @@ pub fn commands(
                     pace: Some(pace),
                     then: then.to_string(),
                     damage: if then == "hit" { 2.0 } else { 0.0 },
+                    kept: String::new(),
                 },
                 0,
             )];
@@ -5166,6 +5329,7 @@ pub fn commands(
                     pace: None,
                     then: String::new(),
                     damage: 0.0,
+                    kept: String::new(),
                 },
                 0,
             )]
@@ -5310,6 +5474,12 @@ pub fn text_kind(event: &Event) -> Option<Kind> {
         Action::Answers => Some(Kind::Reply),
         Action::RenameOne | Action::ReturnUsed => Some(Kind::ItemName),
         Action::BookWord | Action::SignWord | Action::SignDeep => Some(Kind::SignWord),
+        Action::DiarySold
+        | Action::DiaryBrought
+        | Action::LetterInChest
+        | Action::LecternNotes
+        | Action::PageInBook => Some(Kind::DiaryLine),
+        Action::VillagerNamed => Some(Kind::ItemName),
         _ => None,
     }
 }
@@ -6811,6 +6981,79 @@ mod tests {
             None,
         );
         assert!(matches!(&held[0], (Command::ToggleBlock { pos, .. }, 3) if *pos == [3, 64, 0]));
+    }
+
+    #[test]
+    fn its_diary_is_written_signed_with_their_name_and_sold_or_brought_to_them() {
+        let mut memory = rich_memory();
+        memory.target_name = "razor".to_string();
+        memory.last.creatures_near.push(crate::memory::Creature {
+            id: 77,
+            kind: "villager".to_string(),
+            pos: [4.0, 64.0, 4.0],
+            ..Default::default()
+        });
+        let now = Now::default();
+
+        let sold = commands(
+            find("diary_sold").unwrap(),
+            None,
+            &memory,
+            &mut ids(),
+            &now,
+            Some("i watched you"),
+        );
+        let kept = match &sold[0].0 {
+            Command::WriteBook {
+                kept,
+                title,
+                author,
+                pages,
+                ..
+            } => {
+                assert_eq!((title.as_str(), author.as_str()), ("razor", "razor"));
+                assert!(pages[0].starts_with("i watched you"), "{pages:?}");
+                kept.clone()
+            }
+            other => panic!("{other:?}"),
+        };
+        assert!(
+            matches!(&sold[1].0, Command::OfferTrade { entity: 77, kept: k, .. } if *k == kept)
+        );
+
+        let brought = commands(
+            find("diary_brought").unwrap(),
+            None,
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(
+            matches!(&brought[1].0, Command::Approach { then, entities, kept: k, .. }
+            if then == "give" && entities == &vec![77] && !k.is_empty())
+        );
+
+        memory.diary_offered = 4.0;
+        let target = memory.target.unwrap_or(0);
+        memory.observe(
+            &craftkit::world::Observations {
+                players: vec![craftkit::world::Player {
+                    index: target,
+                    uuid: memory.target_uuid.clone(),
+                    ..Default::default()
+                }],
+                events: vec![craftkit::world::Event {
+                    player: target,
+                    kind: craftkit::world::EventKind::Bought,
+                    detail: "minecraft:written_book".to_string(),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            5.0,
+        );
+        assert!(memory.diary_bought, "bought: never brought");
     }
 
     #[test]

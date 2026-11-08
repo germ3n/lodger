@@ -9,6 +9,7 @@
 //! effective one, and the ABI path is exercised once before anything rides on it.
 
 pub mod arc;
+pub mod books;
 pub mod brain;
 pub mod building;
 pub mod caves;

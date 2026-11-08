@@ -27,11 +27,14 @@ pub enum Kind {
     GraveSign,
     /// An answer to what the target just typed, in their own name, to them alone.
     Reply,
+    /// A line in a book it writes of them, in its own voice: the diary, a letter, its notes,
+    /// a page in their book.
+    DiaryLine,
 }
 
 impl Kind {
     /// Every kind, for the tests that go through them all.
-    pub const ALL: [Kind; 9] = [
+    pub const ALL: [Kind; 10] = [
         Kind::SignWord,
         Kind::ChatLine,
         Kind::KillLine,
@@ -41,6 +44,7 @@ impl Kind {
         Kind::GraveSign,
         Kind::Reply,
         Kind::ItemName,
+        Kind::DiaryLine,
     ];
 
     /// Whether a line of this kind may carry digits: only the ones that count what the player
@@ -108,6 +112,16 @@ impl Kind {
                 "again",
             ],
             Kind::GraveSign => &["{kind}", "rest", "the {kind}s", "{kind}. rest."],
+            Kind::DiaryLine => &[
+                "i watched you sleep again",
+                "you always look back at the door",
+                "i know which chest you open first",
+                "you were gone a long time today",
+                "i walked the way you walk home",
+                "you did not see me today",
+                "i kept the light on for you",
+                "you put it back where i left it",
+            ],
             Kind::Reply => &[
                 "i heard you",
                 "inside",
@@ -130,6 +144,7 @@ impl Kind {
             Kind::AnimalName | Kind::ItemName => 3,
             Kind::KillSign | Kind::GraveSign => 3,
             Kind::ChatLine | Kind::KillLine | Kind::Reply => 8,
+            Kind::DiaryLine => 12,
         }
     }
 }
@@ -156,6 +171,9 @@ impl Kind {
             Kind::ItemName => "The name it writes on one of the player's things:",
             Kind::GraveSign => "The sign on the small grave it raised says:",
             Kind::Reply => "What it types back in the player's own name, answering them:",
+            Kind::DiaryLine => {
+                "A line in the book it keeps about the player, in its own quiet voice:"
+            }
         }
     }
 }

@@ -244,6 +244,16 @@ public final class Senses {
 		events.computeIfAbsent(level, l -> new ArrayList<>()).add(event);
 	}
 
+	/** One of its sales bought, by this player (`bought`, ABI 51): `detail` the item. */
+	public void noticedBought(ServerLevel level, ServerPlayer player, BlockPos at, String item) {
+		JsonObject event = new JsonObject();
+		event.addProperty("player", indexOf(player));
+		event.addProperty("kind", "bought");
+		event.add("pos", blockPos(at));
+		event.addProperty("detail", item);
+		events.computeIfAbsent(level, l -> new ArrayList<>()).add(event);
+	}
+
 	/** A figure gone, and how it was looked at (`Gaze.detail`); ABI 47. */
 	public void noticedFigureSeen(ServerLevel shownIn, ServerPlayer player, BlockPos at, String detail) {
 		JsonObject event = new JsonObject();

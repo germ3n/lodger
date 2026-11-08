@@ -158,6 +158,22 @@ public final class Executors {
 					if (player == null) {
 						yield report(id, false, "the player is not here");
 					}
+					// One brings them what is kept, and drops it at their feet (ABI 51).
+					if ("give".equals(command.has("then") ? command.get("then").getAsString() : "")) {
+						String kept = command.has("kept") ? command.get("kept").getAsString() : "";
+						Entity first = command.getAsJsonArray("entities").isEmpty() ? null : level.getEntity(command.getAsJsonArray("entities").get(0).getAsInt());
+						Mob bringer = first == null ? null : Senses.mob(first);
+						if (bringer == null || bringer.entityTags().contains(Holds.TAG) || bringer.entityTags().contains(Warps.TAG)) {
+							yield report(id, false, "none of them here");
+						}
+						ItemStack give = data.giveBack(kept);
+						if (give == null || give.isEmpty()) {
+							yield report(id, false, "nothing kept under that name");
+						}
+						context.approaches().addGiving(bringer, player, command.get("stop").getAsFloat(), command.get("seconds").getAsFloat(),
+								command.has("pace") && !command.get("pace").isJsonNull() ? command.get("pace").getAsFloat() : 1f, give, data, kept);
+						yield report(id, true, "bringing it");
+					}
 					int walking = 0;
 					for (var each : command.getAsJsonArray("entities")) {
 						Entity entity = level.getEntity(each.getAsInt());
@@ -173,6 +189,9 @@ public final class Executors {
 					yield report(id, walking > 0, walking > 0 ? "walking " + walking : "none of them here");
 				}
 				case "shoot" -> shoot(level, command, id, context);
+				case "write_book" -> writeBook(command, id, data);
+				case "add_page" -> addPage(level, command, id);
+				case "put_book" -> putBook(level, command, id, data);
 				case "other_house" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -1459,6 +1478,71 @@ public final class Executors {
 				new net.minecraft.world.item.component.WrittenBookContent(net.minecraft.server.network.Filterable.passThrough(title.isEmpty() ? " " : title), "", 0, pages, true));
 		in.setItem(slot, written);
 		in.setChanged();
+
+		return report(id, true, "");
+	}
+
+	/**
+	 * A written book made and kept under a name (ABI 51), for a sale, a chest, a lectern or a
+	 * villager's hands: the title, the author, the pages as given, each a page of the book.
+	 */
+	private static JsonObject writeBook(JsonObject command, long id, WorldData data) {
+		List<net.minecraft.server.network.Filterable<Component>> pages = new ArrayList<>();
+		for (JsonElement page : command.getAsJsonArray("pages")) {
+			String text = page.getAsString();
+			pages.add(net.minecraft.server.network.Filterable.passThrough(Component.literal(text.length() > 1000 ? text.substring(0, 1000) : text)));
+			if (pages.size() >= 50) {
+				break;
+			}
+		}
+		if (pages.isEmpty()) {
+			return report(id, false, "a book of no pages");
+		}
+		String title = command.get("title").getAsString();
+		title = title.isBlank() ? " " : title.length() > 32 ? title.substring(0, 32) : title;
+		ItemStack book = new ItemStack(net.minecraft.world.item.Items.WRITTEN_BOOK);
+		book.set(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT,
+				new net.minecraft.world.item.component.WrittenBookContent(net.minecraft.server.network.Filterable.passThrough(title),
+						command.has("author") ? command.get("author").getAsString() : "", 0, pages, true));
+		data.keep(command.get("kept").getAsString(), book);
+
+		return report(id, true, "");
+	}
+
+	/** One page more in a book and quill of theirs, after what they wrote; theirs stay as they are (ABI 51). */
+	private static JsonObject addPage(ServerLevel level, JsonObject command, long id) {
+		Container in = container(level, blockPos(command.getAsJsonArray("pos")));
+		int slot = command.get("slot").getAsInt();
+		if (in == null || slot < 0 || slot >= in.getContainerSize() || !in.getItem(slot).is(net.minecraft.world.item.Items.WRITABLE_BOOK)) {
+			return report(id, false, "no book and quill there");
+		}
+		ItemStack book = in.getItem(slot);
+		var content = book.getOrDefault(net.minecraft.core.component.DataComponents.WRITABLE_BOOK_CONTENT, net.minecraft.world.item.component.WritableBookContent.EMPTY);
+		if (content.pages().size() >= 100) {
+			return report(id, false, "the book is full");
+		}
+		List<net.minecraft.server.network.Filterable<String>> pages = new ArrayList<>(content.pages());
+		String page = command.get("page").getAsString();
+		pages.add(net.minecraft.server.network.Filterable.passThrough(page.length() > 1000 ? page.substring(0, 1000) : page));
+		book.set(net.minecraft.core.component.DataComponents.WRITABLE_BOOK_CONTENT, new net.minecraft.world.item.component.WritableBookContent(pages));
+		in.setChanged();
+
+		return report(id, true, "");
+	}
+
+	/** A kept book onto a lectern that holds none (ABI 51). */
+	private static JsonObject putBook(ServerLevel level, JsonObject command, long id, WorldData data) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		BlockState state = level.getBlockState(pos);
+		if (!(level.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.LecternBlockEntity lectern) || lectern.hasBook()) {
+			return report(id, false, "no lectern without a book there");
+		}
+		ItemStack book = data.giveBack(command.get("kept").getAsString());
+		if (book == null || book.isEmpty()) {
+			return report(id, false, "nothing kept under that name");
+		}
+		lectern.setBook(book);
+		net.minecraft.world.level.block.LecternBlock.resetBookState(null, level, pos, state, true);
 
 		return report(id, true, "");
 	}

@@ -116,6 +116,7 @@ operators only) that shows what it knows, what it plans and why. Every decision 
   still.
 - A figure, far off, wearing your skin, walking the path you walked yesterday.
 - It builds. Slowly. Not far from you.
+- It writes. A villager has a book for sale with your name on it. Read it.
 - In the end, it leaves, it takes, or it stays, depending on how you treated it.
 
 </details>

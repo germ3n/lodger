@@ -161,6 +161,9 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             // A disc put on inside the house as they come to the door: heard, not seen, and
             // waiting until they looked away the approach was over and it never came.
             | crate::events::Action::JukeboxDisc
+            // A villager's trade or its walk up: meant to be seen.
+            | crate::events::Action::DiarySold
+            | crate::events::Action::DiaryBrought
     )
 }
 

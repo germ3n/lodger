@@ -1188,6 +1188,19 @@ The `[x]` lines above, summed up by day:
   runtime. Tests: JUnit for the xz unpacking and the Vulkan hint; each native checked as it is
   built. Was: six CPU natives each built on its own CI runner on every push, packed as they
   were, `gpu_share` 0.5, and no `docs/build.md`.
+- [x] **The books it writes** (owner: "an event where villager offers a book for sale that has
+  been written by the model"; "pay at first, then in later stages they drop it, if not purchased
+  already"; "up to you to create more based of that"; and all four of the others asked about):
+  `diary_sold` (a villager near them sells its diary of them for an emerald, titled and signed with
+  their name: a line of the model's, then what it has seen them do, every fact the memory's own),
+  `diary_brought` (not bought: a villager walks up and drops a newer one at their feet; the
+  `the_diary` chain), `letter_in_chest`, `villager_named`, `lectern_notes` (a page a day, the
+  latest first) and `page_in_your_book`. `core/src/books.rs` writes the pages, `Kind::DiaryLine`
+  the model's lines (twelve words at most, the bank's when it has none). The host: `write_book`,
+  `add_page`, `put_book`, `approach`'s `give` (kept again if it never arrives) and a `bought`
+  event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
+  its purchase remembered; the chain stay test now runs three stays and wants the place walked
+  in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
 - [x] **The seventh bug pass** (five reviewers; about fifty found, many in the sixth's own
   fixes). The other house again: a kept stack past 99 threw at every save and stopped the world
   saving (a full stack now spills beside it); its walls ran four high, so a flight, a pearl or a

@@ -179,6 +179,8 @@ pub enum Need {
     Makings,
     /// A boat of theirs near the home.
     TheirBoat,
+    /// Its diary went on sale and they never bought it (`diary_brought`).
+    DiaryUnbought,
     /// Water within this many blocks of the target.
     WaterNear(u32),
     /// The target holds this item in their main hand.
@@ -365,6 +367,7 @@ impl Need {
             Need::BrewIngredient => "no brewing ingredient in their chest".to_string(),
             Need::Makings => "nothing in their chest it could make something of".to_string(),
             Need::TheirBoat => "no boat of theirs".to_string(),
+            Need::DiaryUnbought => "its diary not on sale, or bought".to_string(),
             Need::WaterNear(n) => format!("no water within {n} blocks of them"),
             Need::Holding(id) => format!("they do not hold a {}", crate::memory::bare(id)),
             Need::FarFromVillage(n) => format!("the target is within {n} blocks of the village"),
@@ -800,6 +803,18 @@ pub enum Action {
     BedOccupied,
     /// The target wakes one block from where they lay down.
     WokeElsewhere,
+    /// Its diary of them on sale from a villager near them, signed with their name (owner).
+    DiarySold,
+    /// The diary not bought: a villager walks up and drops a newer one at their feet.
+    DiaryBrought,
+    /// A letter from it in the chest they use, for them.
+    LetterInChest,
+    /// The villager near them named, in a word or two it chose.
+    VillagerNamed,
+    /// Its notes of them on a lectern, a page a day.
+    LecternNotes,
+    /// One page more in a book and quill of theirs, in its words.
+    PageInBook,
     /// They wake in a copy of their house in the void dimension, the figure in its doorway,
     /// for a minute; then in their own bed, the door open (owner).
     OtherHouse,
@@ -3382,6 +3397,72 @@ pub const CATALOGUE: &[Event] = &[
         false,
     ),
     row(
+        "diary_sold",
+        3,
+        5,
+        &[Creature("villager"), TargetOutdoors],
+        8.0,
+        1,
+        Full,
+        Action::DiarySold,
+        false,
+    ),
+    row(
+        "diary_brought",
+        4,
+        5,
+        &[DiaryUnbought, Creature("villager"), TargetOutdoors],
+        6.0,
+        1,
+        Full,
+        Action::DiaryBrought,
+        false,
+    ),
+    row(
+        "letter_in_chest",
+        2,
+        5,
+        &[UsedContainer, TargetAwayOrAsleep],
+        5.0,
+        3,
+        Full,
+        Action::LetterInChest,
+        false,
+    ),
+    row(
+        "villager_named",
+        3,
+        5,
+        &[Creature("villager")],
+        6.0,
+        2,
+        Full,
+        Action::VillagerNamed,
+        false,
+    ),
+    row(
+        "lectern_notes",
+        4,
+        5,
+        &[Fixture("lectern"), TargetAwayOrAsleep],
+        8.0,
+        1,
+        Full,
+        Action::LecternNotes,
+        false,
+    ),
+    row(
+        "page_in_your_book",
+        4,
+        5,
+        &[InChest("writable_book"), TargetAwayOrAsleep],
+        6.0,
+        2,
+        Full,
+        Action::PageInBook,
+        false,
+    ),
+    row(
         "other_house",
         4,
         4,
@@ -4288,7 +4369,13 @@ impl Event {
             | Action::RenameOne
             | Action::NameAnimal
             | Action::TabEntry
-            | Action::Answers => "words",
+            | Action::Answers
+            | Action::DiarySold
+            | Action::DiaryBrought
+            | Action::LetterInChest
+            | Action::VillagerNamed
+            | Action::LecternNotes
+            | Action::PageInBook => "words",
             Action::OpenLid
             | Action::ShuffleContainer
             | Action::SplitStack
@@ -4563,6 +4650,12 @@ impl Event {
             "bed_occupied" => "tell them the bed is occupied",
             "woke_elsewhere" => "wake them a block from the bed",
             "other_house" => "wake them in a copy of their house, somewhere else",
+            "diary_sold" => "have a villager sell its diary of them",
+            "diary_brought" => "have a villager bring them its diary",
+            "letter_in_chest" => "leave a letter for them in their chest",
+            "villager_named" => "give the villager near them a name",
+            "lectern_notes" => "leave its notes of them on a lectern",
+            "page_in_your_book" => "write a page in their book",
             "pet_outside" => "put the pet outside the door",
             "tab_entry_stays" => "show their name twice all session",
             "note_tune" => "play three notes on the note block",

@@ -1,5 +1,7 @@
 package craftkit.host.world;
 
+import net.minecraft.world.item.ItemStack;
+
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
@@ -30,6 +32,10 @@ public final class Approaches {
 		/** Once there: `stare`, `leave`, `hit`, or "" to stand facing them (ABI 44). */
 		final String then;
 		final float damage;
+		/** With `give`: what it brings, and where it is kept if it never gets there (ABI 51). */
+		ItemStack give = ItemStack.EMPTY;
+		WorldData data;
+		String kept = "";
 		/** When it got there, 0 before; and once going, where to. */
 		long arrived;
 		net.minecraft.world.phys.Vec3 away;
@@ -52,6 +58,26 @@ public final class Approaches {
 		add(mob, player, stop, seconds, 1, "", 0);
 	}
 
+	/**
+	 * One walking at them to bring them {@code give}, dropped at their feet as it gets there and
+	 * then going its way; kept again under {@code kept} if it never gets there (ABI 51).
+	 */
+	public void addGiving(Mob mob, ServerPlayer player, float stop, float seconds, float pace, ItemStack give, WorldData data, String kept) {
+		add(mob, player, stop, seconds, pace, "give", 0);
+		Approach approach = active.get(active.size() - 1);
+		approach.give = give;
+		approach.data = data;
+		approach.kept = kept;
+	}
+
+	/** What it carried back where it was kept: it never got there. */
+	private static void keepAgain(Approach approach) {
+		if (!approach.give.isEmpty() && approach.data != null) {
+			approach.data.keep(approach.kept, approach.give);
+			approach.give = ItemStack.EMPTY;
+		}
+	}
+
 	/** One walking at them at `pace`, and then what it does once there (ABI 44). */
 	public void add(Mob mob, ServerPlayer player, float stop, float seconds, float pace, String then, float damage) {
 		active.removeIf(a -> a.mob == mob);
@@ -69,6 +95,7 @@ public final class Approaches {
 			if (mob.isRemoved() || player == null || player.level() != mob.level() || approach.untilTick < tick
 					|| mob.entityTags().contains(Holds.TAG) || mob.entityTags().contains(Warps.TAG)) {
 				mob.getNavigation().stop();
+				keepAgain(approach);
 				it.remove();
 				continue;
 			}
@@ -112,6 +139,18 @@ public final class Approaches {
 							approach.away = awayFrom(mob, player);
 						}
 					}
+					case "give" -> {
+						// At their feet, for good, and it goes its way.
+						if (there == 10 && !approach.give.isEmpty() && mob.level() instanceof net.minecraft.server.level.ServerLevel level) {
+							net.minecraft.world.entity.item.ItemEntity dropped = new net.minecraft.world.entity.item.ItemEntity(level, player.getX(), player.getY() + 0.3, player.getZ(), approach.give);
+							dropped.setUnlimitedLifetime();
+							level.addFreshEntity(dropped);
+							approach.give = ItemStack.EMPTY;
+						}
+						if (there >= 40) {
+							approach.away = awayFrom(mob, player);
+						}
+					}
 					case "stare" -> {
 						if (there >= 100) {
 							it.remove();
@@ -134,6 +173,8 @@ public final class Approaches {
 
 	/** Everything for every player, forgotten: the world is closing, and none of it is the next one's. */
 	public void clear() {
+		// What one was bringing is kept again, never lost with the world's close.
+		active.forEach(Approaches::keepAgain);
 		active.clear();
 	}
 }

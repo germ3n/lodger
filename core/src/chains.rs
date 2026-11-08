@@ -109,6 +109,13 @@ pub const CHAINS: &[Chain] = &[
         ],
     },
     Chain {
+        id: "the_diary",
+        steps: &[
+            step(&["diary_sold"], 0.0, Always),
+            step(&["diary_brought"], 8.0, Always),
+        ],
+    },
+    Chain {
         id: "the_pet",
         steps: &[
             step(&["pet_growl"], 0.0, Always),
@@ -327,7 +334,8 @@ mod tests {
                 }
             }
         }
-        assert_eq!(CHAINS.len(), 8);
+        // The design's eight, and the diary (sold, then brought if not bought).
+        assert_eq!(CHAINS.len(), 9);
     }
 
     #[test]

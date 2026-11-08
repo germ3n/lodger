@@ -215,6 +215,11 @@ public final class Worlds {
 		later.tick();
 		poses.tick();
 		figures.tick();
+		for (Gatherings.Bought sale : gatherings.takeBought()) {
+			if (open.containsKey(sale.level())) {
+				senses.noticedBought(sale.level(), sale.player(), sale.at(), sale.item());
+			}
+		}
 		for (Figures.Sighting sighting : figures.takeSightings()) {
 			if (sighting.level() instanceof ServerLevel shownIn && open.containsKey(shownIn)) {
 				senses.noticedFigureSeen(shownIn, sighting.player(), sighting.at(), sighting.detail());
