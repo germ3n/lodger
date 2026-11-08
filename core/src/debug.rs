@@ -355,6 +355,31 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
                 .unwrap_or_default()
         ),
     ));
+    // The players (`multiplayer.rs`): the target, the others here, and a change of target.
+    gauges.push(Gauge::new(
+        "players",
+        memory.others_online.len() as f32,
+        memory.others.len().max(1) as f32,
+        format!(
+            "{}; {} other{} here{}",
+            if memory.target_name.is_empty() {
+                "no target yet".to_string()
+            } else {
+                format!("lives with {}", memory.target_name)
+            },
+            memory.others_online.len(),
+            if memory.others_online.len() == 1 {
+                ""
+            } else {
+                "s"
+            },
+            if memory.retargeted {
+                ", the target changed once"
+            } else {
+                ""
+            }
+        ),
+    ));
     gauges.push(Gauge::new(
         "brain",
         if config.model.enabled { 1.0 } else { 0.0 },

@@ -16,6 +16,8 @@ pub enum Refused {
     Cooldown,
     Capped,
     NotOffered,
+    /// Another player is near, and witness traces are off (`multiplayer.rs`).
+    Witness,
 }
 
 impl Refused {
@@ -27,6 +29,7 @@ impl Refused {
             Refused::Cooldown => "within its cooldown",
             Refused::Capped => "at its cap for the stay",
             Refused::NotOffered => "not offered in this stage",
+            Refused::Witness => "another player is near",
         }
     }
 }
@@ -90,6 +93,12 @@ pub fn check(
         if !exempt && memory.in_view(pos, crate::temper::min_distance(config, memory)) {
             return Err(Refused::InView);
         }
+    }
+
+    // A change to the world (the house, their things, a sign) near another player, with
+    // witness traces off: it waits. What only the target sees goes on.
+    if matches!(event.effect(), "house" | "things" | "words") && memory.witness_near(config, pos) {
+        return Err(Refused::Witness);
     }
 
     Ok(())

@@ -109,6 +109,6 @@ the end whatever the difficulty. The menu's config page shows the preset and wha
 | Key | Default | What it changes |
 | --- | --- | --- |
 | `multiplayer.pick` | `"model"` | Who the lodger moves in with when several players are on: `model` asks the brain once two are seen (`Which player does it move in with?`, their ordinals as the choices; live), `first` takes the first player seen. Alone for five minutes, the first seen is it either way. |
-| `multiplayer.retarget` | `true` | Whether the lodger may change target once, at a stage boundary, if the current one has not played for `multiplayer.absent_days` real days. |
+| `multiplayer.retarget` | `true` | Whether the lodger may change target once, at a stage's beginning from stage two, if the current one has not been seen for `multiplayer.absent_days` real days (by the computer's clock) and someone else is here. It keeps its want, its place, its house and what it did, and lets the old target's home, chests, habits and favourites go. |
 | `multiplayer.absent_days` | `7` | See above. |
-| `multiplayer.witness_traces` | `true` | Whether witnesses see traces at all. `false` makes the stay invisible to everyone but the target, which is a different and lonelier mod. |
+| `multiplayer.witness_traces` | `true` | Whether witnesses see traces at all. `false` holds back every change to the world (the house, their things, a sign) within 48 blocks of another player until they are gone, so only the target sees its work: a different and lonelier mod. Sounds, figures, the screen and chat go to the target alone either way. |

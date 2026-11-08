@@ -959,8 +959,13 @@ because it can be built and tested without a game, and because the model layer i
   while its stage has not come, once a stay each; the debug screen's Chains section. Tests:
   three in `chains` and a balanced scripted stay that walks the place end to end (the scripted
   player notices nothing and keeps no pet, so one chain, not two, can run there). Was: **Chains** (owner: "one that influences the next"): follow-ups in `events.rs`   (weighted or exclusive, with a carried place or item), `Memory::chains`, the situation line,   and the weights in `offer.rs`. The eight chains of [Chains](entity.md#chains) as data, with a   scripted-stay test that walks at least two end to end and one that no step is offered with its   needs unmet.
-- [ ] **Multiplayer:** the `Others` memory, the target ask, witnesses' traces and nothing else,
-  retargeting once. Tested with two dev clients on a dev server.
+- [x] **Multiplayer** (`core/src/multiplayer.rs`): the target picked as before (the model among
+  several, or the first; `Memory::others`), its last sighting kept by the real clock, a change of
+  target once a stay at a stage's beginning when it has been gone `multiplayer.absent_days` and
+  someone else is here (its want, place, house and doings kept, the old target's home and habits
+  let go), and with `multiplayer.witness_traces` off every change to the world near another
+  player held back (`Refused::Witness`, a wait). The debug panel's players line. Not tried with
+  two dev clients yet. Tests: two in `multiplayer`. Was: **Multiplayer:** the `Others` memory, the target ask, witnesses' traces and nothing else,   retargeting once. Tested with two dev clients on a dev server.
 - [x] **Performance pass:** the per-tick JSON exchange measured (it should be well under 50 µs
   on a quiet tick), the senses' distance checks bounded to the target's chunk neighbourhood,
   the model's unload timer. Nothing the mod does should show in a tick profile on a server

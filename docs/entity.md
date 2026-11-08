@@ -812,6 +812,13 @@ One lodger per world, one target. Everyone else is a witness.
   and `multiplayer.retarget` is on, the lodger picks a new target at the next stage boundary, from
   stage two, keeping its want. It does this once per stay. Otherwise it waits; a stay can outlast
   a player.
+- **As coded (`core/src/multiplayer.rs`).** The pick as above. The target's last sighting is kept
+  by the real clock (`Memory::target_seen_unix`); at a stage's beginning from stage two, gone
+  `multiplayer.absent_days` and someone else here, the first other here it knows longest is the
+  target, once a stay, its own things kept and the old target's let go. With
+  `multiplayer.witness_traces` off, a change to the world within 48 blocks of another player
+  waits until they go. The debug panel's players line says who it lives with and who else is
+  here.
 - **The target's own house, not the server's.** The home is where *the target* sleeps and keeps
   things. A shared base is a home with other people in it, and the lodger works in the target's
   rooms, by the chests the target opens. Witnesses' chests are never touched.

@@ -23,6 +23,7 @@ pub mod habits;
 pub mod lights;
 pub mod memory;
 pub mod model;
+pub mod multiplayer;
 pub mod people;
 pub mod places;
 pub mod rules;

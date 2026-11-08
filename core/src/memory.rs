@@ -475,6 +475,15 @@ pub struct Memory {
     pub figure_looks: Vec<FigureLook>,
     /// Its temper, moved by how they treat it (`temper.rs`).
     pub temper: crate::temper::Temper,
+    /// When the target was last seen, seconds since the Unix epoch by the real clock; and
+    /// whether it has changed target this stay (`multiplayer.rs`).
+    pub target_seen_unix: u64,
+    pub retargeted: bool,
+    /// The other players here now, by index, and where. Not saved.
+    #[serde(skip)]
+    pub others_online: Vec<u32>,
+    #[serde(skip)]
+    pub others_at: Vec<BlockPos>,
     /// The chains under way, and those run this stay (`chains.rs`).
     pub chains: Vec<crate::chains::Open>,
     pub chains_done: Vec<String>,
@@ -1071,6 +1080,18 @@ impl Memory {
         if self.target.is_none() && (!self.defer_target || observations.players.len() == 1) {
             if let Some(first) = observations.players.first() {
                 self.set_target(first.index, &first.name, &first.uuid);
+            }
+        }
+        // Who else is here and where (`multiplayer.rs`), and when the target was last seen, by
+        // the real clock.
+        self.others_online.clear();
+        self.others_at.clear();
+        for player in &observations.players {
+            if Some(player.index) == self.target {
+                self.target_seen_unix = crate::multiplayer::now_unix();
+            } else {
+                self.others_online.push(player.index);
+                self.others_at.push(block(player.pos));
             }
         }
 

@@ -1068,7 +1068,9 @@ impl Brain {
         // lasts, as `cancel_reason` says; until now it gave the plan up.
         if matches!(
             checked,
-            Err(rules::Refused::Cooldown) | Err(rules::Refused::SameAsLast)
+            Err(rules::Refused::Cooldown)
+                | Err(rules::Refused::SameAsLast)
+                | Err(rules::Refused::Witness)
         ) {
             return Step::Wait(checked.unwrap_err().words().to_string());
         }

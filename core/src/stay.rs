@@ -240,6 +240,16 @@ impl Stay {
         };
         if let Some(stage) = self.arc.tick(day, &self.memory, config) {
             log.note(&format!("stage {stage} begins on day {day:.1}"));
+            // The target gone too long, by the real clock: at a stage's beginning, once a stay,
+            // someone else here is it now (`multiplayer.rs`).
+            let now_unix = crate::multiplayer::now_unix();
+            if self.memory.retarget_due(config, stage, now_unix) {
+                if let Some(name) = self.memory.retarget(now_unix) {
+                    log.note(&format!(
+                        "the target has been gone a long while: it is {name} now"
+                    ));
+                }
+            }
         }
 
         self.brain.tick(
