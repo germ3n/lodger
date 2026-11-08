@@ -29,7 +29,10 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .as_ref()
             .map(|h| !h.lights.is_empty())
             .unwrap_or(false),
-        Need::Candle => memory.has_fixture("candle"),
+        Need::Candle => memory
+            .walls
+            .iter()
+            .any(|(_, id)| id.contains("candle") && !id.contains("cake")),
         Need::Bed => memory
             .home
             .as_ref()
@@ -213,7 +216,8 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::WetSteps
         | Action::PetGrowl
         | Action::Footsteps
-        | Action::HandOnShoulder => config.events.sounds,
+        | Action::HandOnShoulder
+        | Action::ChestAnswers => config.events.sounds,
         Action::Hint(_, _) => config.events.glitches,
         Action::Figure(_, _, _)
         | Action::FigureSwing(_)

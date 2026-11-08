@@ -80,7 +80,7 @@ public final class Figures {
 	}
 
 	/** A figure gone, and how it was looked at: the senses tell the mind (`figure_seen`). */
-	public record Sighting(ServerPlayer player, net.minecraft.core.BlockPos at, String detail) {
+	public record Sighting(ServerPlayer player, net.minecraft.world.level.Level level, net.minecraft.core.BlockPos at, String detail) {
 	}
 
 	private final List<Figure> active = new ArrayList<>();
@@ -167,7 +167,8 @@ public final class Figures {
 				unsend(figure);
 				it.remove();
 				String end = left ? "gone" : approached ? "approached" : lookedAway ? "looked_away" : "timed";
-				sightings.add(new Sighting(figure.player, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail(end)));
+				// Told to the world it was shown in, not the one they went to.
+				sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail(end)));
 				continue;
 			}
 
@@ -194,16 +195,19 @@ public final class Figures {
 			}
 
 			if (!figure.path.isEmpty() && tick % STEP_TICKS == 0 && figure.player.level() instanceof ServerLevel level) {
-				figure.pathIndex++;
+				// The path's points in order, its first one first: the index used to move on before
+				// it was read, so the first point was skipped and a path of one ended at once.
 				if (figure.pathIndex >= figure.path.size()) {
 					unsend(figure);
 					it.remove();
+					sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail("walked")));
 					continue;
 				}
 				// A step: the entity is re-sent at the next point, which at the figures'
 				// distances reads as a stride.
 				figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
 				figure.at = ground(level, figure.path.get(figure.pathIndex));
+				figure.pathIndex++;
 				sendEntity(figure);
 			}
 		}

@@ -74,7 +74,7 @@ public final class PreparingScreen extends Screen {
 			preparation.choose(shown.mod(), choices.get((now + 1) % choices.size()));
 		})).bounds(this.width / 2 - 154, y - 24, 308, 20).build());
 		choice.visible = false;
-		without = addRenderableWidget(Button.builder(Component.translatable("craftkit.preparing.without"), button -> preparation.shown().ifPresent(shown -> {
+		without = addRenderableWidget(Button.builder(Component.translatable("craftkit.preparing.without"), button -> preparation.playableWithout().ifPresent(shown -> {
 			com.google.gson.JsonObject change = shown.resource().without();
 			if (change != null) {
 				// The download stopped, its part file kept; the mod initialised again without it,
@@ -110,8 +110,9 @@ public final class PreparingScreen extends Screen {
 				.flatMap(shown -> shown.resource().choices().stream().filter(craftkit.host.Resource.Choice::chosen).findFirst());
 		choice.visible = chosen.isPresent();
 		chosen.ifPresent(c -> choice.setMessage(Component.translatable("craftkit.preparing.choice", c.label())));
-		without.visible = progress.phase() != Preparation.Phase.LOADING
-				&& preparation.shown().map(shown -> shown.resource().without() != null).orElse(false);
+		// Whenever it is not loading, and after a failure too.
+		without.visible = (progress.phase() != Preparation.Phase.LOADING || progress.failed())
+				&& preparation.playableWithout().isPresent();
 
 		if (progress.done()) {
 			Minecraft.getInstance().gui.setScreen(parent);

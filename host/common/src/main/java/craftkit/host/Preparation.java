@@ -135,6 +135,30 @@ public final class Preparation {
 	}
 
 	/**
+	 * A resource with a way to play without it, needed or not, with its mod: the screen's Play
+	 * without it, which must be there when the download or the load failed too (it was not, and a
+	 * failing download left only Quit).
+	 */
+	public Optional<PendingLicense> playableWithout() {
+		Optional<PendingLicense> now = shown().filter(s -> s.resource().without() != null);
+		if (now.isPresent()) {
+			return now;
+		}
+		for (LoadedMod mod : mods) {
+			if (!mod.loaded()) {
+				continue;
+			}
+			for (Resource resource : mod.resources()) {
+				if (resource.without() != null && resource.required()) {
+					return Optional.of(new PendingLicense(mod, resource));
+				}
+			}
+		}
+
+		return Optional.empty();
+	}
+
+	/**
 	 * The screen's model choice: the running work stopped, the change written to the mod's
 	 * config and the mod initialised again with it, and the work started over for what it now
 	 * needs. Off the render thread.
@@ -219,6 +243,13 @@ public final class Preparation {
 				Thread watcher = watch(downloader);
 				downloader.run();
 				watcher.interrupt();
+				// Joined, so a last mirror of the download never lands after what comes next (a
+				// stale "downloading" over the failure left the screen with no Try again).
+				try {
+					watcher.join(1000);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
 				current.set(null);
 				fetching.set(null);
 

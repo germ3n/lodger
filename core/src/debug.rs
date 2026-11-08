@@ -75,7 +75,12 @@ pub fn answer(
                     for id in &ids {
                         stay.brain.drop_plan(*id, day, &mut stay.memory, log);
                     }
+                    // The commands queued for later go, and so do the host's waits on them: a
+                    // wait left behind kept the event from ever being recorded.
+                    let queued: Vec<u64> =
+                        stay.brain.later.iter().map(|l| l.command.id()).collect();
                     stay.brain.later.clear();
+                    stay.brain.pending.retain(|p| !queued.contains(&p.id));
                     match ids.len() {
                         0 => "there were no plans".to_string(),
                         n => format!("dropped {n} plan(s)"),

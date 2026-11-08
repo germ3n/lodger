@@ -223,7 +223,7 @@ pub enum EventKind {
     /// A figure shown to them went: `pos` where it stood, `detail` how it was looked at,
     /// `looked=<ticks> looks=<n> longest=<ticks> toward=<blocks> end=<how>` (a look is facing it
     /// within ten degrees for half a second; `toward` the distance they closed; `end` one of
-    /// `approached`, `looked_away`, `timed`, `gone`). ABI 47.
+    /// `approached`, `looked_away`, `timed`, `walked`, `gone`). ABI 47.
     FigureSeen,
     ChangedDimension,
     /// Hit an entity; `detail` is its kind, `pos` where it stood.

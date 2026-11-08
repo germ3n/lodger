@@ -214,7 +214,9 @@ public final class Worlds {
 		poses.tick();
 		figures.tick();
 		for (Figures.Sighting sighting : figures.takeSightings()) {
-			senses.noticedFigureSeen(sighting.player(), sighting.at(), sighting.detail());
+			if (sighting.level() instanceof ServerLevel shownIn) {
+				senses.noticedFigureSeen(shownIn, sighting.player(), sighting.at(), sighting.detail());
+			}
 		}
 		Surroundings.tick();
 		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves, bobbers, frameShows, deaths, fights, otherHouse);

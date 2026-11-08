@@ -1748,7 +1748,7 @@ pub const CATALOGUE: &[Event] = &[
         "fish_on_line",
         2,
         5,
-        &[Holding("fishing_rod"), WaterNear(16)],
+        &[Holding("minecraft:fishing_rod"), WaterNear(16)],
         2.0,
         3,
         Half,
@@ -4269,6 +4269,7 @@ impl Event {
             | Action::FishingLine
             | Action::WetSteps
             | Action::SoundPair(..)
+            | Action::ChestAnswers
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -4287,8 +4288,7 @@ impl Event {
             | Action::RenameOne
             | Action::NameAnimal
             | Action::TabEntry
-            | Action::Answers
-            | Action::ChestAnswers => "words",
+            | Action::Answers => "words",
             Action::OpenLid
             | Action::ShuffleContainer
             | Action::SplitStack

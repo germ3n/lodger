@@ -122,7 +122,13 @@ fn dig_spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
 
 /// Whether nothing the target placed is within [`DIG_CLEAR`] of `pos`.
 pub fn clear_of_built(memory: &Memory, pos: BlockPos) -> bool {
-    memory.placed.iter().all(|p| {
+    // Their torches along a tunnel are no building of theirs: a lit tunnel never got its dig.
+    let light = |p: &BlockPos| {
+        memory.walls.iter().any(|(q, id)| {
+            q == p && (id.ends_with("torch") || id.ends_with("lantern") || id.contains("candle"))
+        })
+    };
+    memory.placed.iter().filter(|p| !light(p)).all(|p| {
         let (dx, dy, dz) = (
             (p[0] - pos[0]) as f64,
             (p[1] - pos[1]) as f64,
@@ -281,7 +287,12 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             let candidates: Vec<BlockPos> = memory
                 .walls
                 .iter()
-                .filter(|(_, id)| suffix.is_empty() || id.ends_with(suffix))
+                .filter(|(_, id)| {
+                    // A light's swap takes a lantern too, as its need counts one.
+                    suffix.is_empty()
+                        || id.ends_with(suffix)
+                        || (suffix == "torch" && id.ends_with("lantern"))
+                })
                 .map(|(p, _)| *p)
                 .collect();
             pick_ref(&candidates, rng)
@@ -519,7 +530,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::PlantFlower => home.and_then(|h| pick(&h.doors, rng)),
         Action::ReplantOther => memory.feature("crops").map(|f| f.pos),
         Action::WokeElsewhere | Action::OtherHouse => home.and_then(|h| h.bed),
-        Action::BucketFloor => home.map(|h| [h.center[0] + 2, h.floor_y, h.center[2] + 2]),
+        // A block of the floor itself, under where they stand: at the standing level it was a
+        // source block in the room's air, which flooded it.
+        Action::BucketFloor => home.map(|h| [h.center[0] + 2, h.floor_y - 1, h.center[2] + 2]),
         Action::SnowCleared | Action::Trample | Action::DoorAhead => {
             home.and_then(|h| pick(&h.doors, rng))
         }
@@ -1131,6 +1144,29 @@ fn step_toward(from: BlockPos, to: BlockPos) -> [i32; 2] {
     }
 }
 
+/// What a ripe crop cleared gives: the crop's own item.
+pub fn harvest_of(block: &str) -> Option<&'static str> {
+    match block {
+        "minecraft:wheat" => Some("minecraft:wheat"),
+        "minecraft:carrots" => Some("minecraft:carrot"),
+        "minecraft:potatoes" => Some("minecraft:potato"),
+        "minecraft:beetroots" => Some("minecraft:beetroot"),
+        _ => None,
+    }
+}
+
+/// A torch's or a lantern's soul-fire kind, as it hangs; none for one already soul or another.
+fn soul_light(id: &str) -> Option<String> {
+    let name = id.rsplit(':').next().unwrap_or(id);
+    let soul = match name {
+        "torch" => "soul_torch",
+        "wall_torch" => "soul_wall_torch",
+        "lantern" => "soul_lantern",
+        _ => return None,
+    };
+    Some(format!("minecraft:{soul}"))
+}
+
 /// The other house, a copy of theirs in the void dimension, a minute or so (`other_house`).
 pub fn other_house(
     id: u64,
@@ -1259,17 +1295,12 @@ pub fn commands(
         Action::ToggleDoor | Action::ToggleFixture(_) => pos
             .map(|p| vec![(Command::ToggleBlock { id: ids(), pos: p }, 0)])
             .unwrap_or_default(),
+        // Their candles, as their lights know them: the fixtures never held a candle.
         Action::ToggleCandles => memory
-            .fixtures("candle")
-            .map(|f| {
-                (
-                    Command::ToggleBlock {
-                        id: ids(),
-                        pos: f.pos,
-                    },
-                    0,
-                )
-            })
+            .walls
+            .iter()
+            .filter(|(_, id)| id.contains("candle") && !id.contains("cake"))
+            .map(|(p, _)| (Command::ToggleBlock { id: ids(), pos: *p }, 0))
             .collect(),
         Action::Sound(sound) | Action::SoundAtFixture(_, sound) => pos
             .map(|p| vec![(sound_at(ids, target, sound, at(p), 1.0), 0)])
@@ -2331,19 +2362,10 @@ pub fn commands(
                 })
                 .collect()
         }
+        // Full that was empty, or empty that was full: the host's toggle of a cauldron (it was
+        // filled and emptied a tick apart, or failed on a full one).
         Action::Cauldron => pos
-            .map(|p| {
-                vec![
-                    (
-                        set(ids, p, "minecraft:water_cauldron", &["minecraft:cauldron"]),
-                        0,
-                    ),
-                    (
-                        set(ids, p, "minecraft:cauldron", &["minecraft:water_cauldron"]),
-                        1,
-                    ),
-                ]
-            })
+            .map(|p| vec![(Command::ToggleBlock { id: ids(), pos: p }, 0)])
             .unwrap_or_default(),
         Action::RotateFrame => pos
             .and_then(|p| memory.decor("item_frame").find(|d| d.pos == p))
@@ -2532,7 +2554,12 @@ pub fn commands(
             Command::PlayerList {
                 id: ids(),
                 player: target,
-                seconds: 60.0,
+                // `tab_entry_stays`: the whole session, as its row says (it shared the minute).
+                seconds: if event.id == "tab_entry_stays" {
+                    6.0 * 3600.0
+                } else {
+                    60.0
+                },
             },
             0,
         )],
@@ -2578,7 +2605,8 @@ pub fn commands(
             0,
         )],
         Action::MoveVehicle => {
-            let (Some(vehicle), Some(water)) = (memory.vehicles.first(), memory.feature("water"))
+            // Their boat, never a minecart of their mine moved into the lake.
+            let (Some(vehicle), Some(water)) = (memory.their_boat(), memory.feature("water"))
             else {
                 return vec![];
             };
@@ -2705,42 +2733,27 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // One ripe crop of any kind cleared; what it was goes in their chest, as the host says it
+        // replaced (the brain's report handling, `harvest_of`): wheat, a carrot, a potato, a
+        // beetroot. A seedling is never cut.
         Action::HarvestOne => match (pos, memory.used_container()) {
-            (Some(field), Some(chest)) => {
-                let Some(&empty) = chest.empty_slots().first() else {
-                    return vec![];
-                };
+            (Some(field), Some(chest)) if !chest.empty_slots().is_empty() => {
                 let dx = (seed % 5) as i32 - 2;
                 let dz = ((seed / 5) % 5) as i32 - 2;
-                vec![
-                    (
-                        // Wheat alone, since wheat is what goes in the chest: a carrot cleared
-                        // used to turn into wheat.
-                        set(
-                            ids,
-                            [field[0] + dx, field[1], field[2] + dz],
-                            "minecraft:air",
-                            &["minecraft:wheat"],
-                        ),
-                        0,
+                vec![(
+                    set(
+                        ids,
+                        [field[0] + dx, field[1], field[2] + dz],
+                        "minecraft:air",
+                        &[
+                            "minecraft:wheat[age=7]",
+                            "minecraft:carrots[age=7]",
+                            "minecraft:potatoes[age=7]",
+                            "minecraft:beetroots[age=3]",
+                        ],
                     ),
-                    (
-                        Command::PutItem {
-                            id: ids(),
-                            into: chest.pos,
-                            slot: Some(empty),
-                            item: ItemStack {
-                                id: "minecraft:wheat".to_string(),
-                                count: 1,
-                                slot: 0,
-                            },
-                            kept: String::new(),
-                            wear: 0,
-                            name: String::new(),
-                        },
-                        1,
-                    ),
-                ]
+                    0,
+                )]
             }
             _ => vec![],
         },
@@ -2807,8 +2820,11 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // Each door once: the read holds both halves of every door, and toggling the upper after
+        // the lower shut it again.
         Action::VillageDoors => memory
-            .scanned("door")
+            .village_doors()
+            .into_iter()
             .take(6)
             .enumerate()
             .map(|(i, door)| {
@@ -4667,12 +4683,21 @@ pub fn commands(
             .enumerate()
             .map(|(i, p)| (torch(ids, p, 4), i as u64 * 40))
             .collect(),
-        Action::WallSwap(_) => pos
+        Action::WallSwap(suffix) => pos
             .and_then(|p| memory.walls.iter().find(|(q, _)| *q == p))
             .and_then(|(p, id)| {
-                // Another member of the block's family, by the seed: any wood, any colour.
-                let others = crate::memory::cousins(id);
-                (!others.is_empty()).then(|| (*p, id.clone(), others[seed % others.len()].clone()))
+                // A light burns with soul fire (`torch_blue`), a pane becomes bars
+                // (`window_bars`); anything else another member of its family, by the seed:
+                // any wood, any colour.
+                let swapped = match suffix {
+                    "torch" => soul_light(id),
+                    "glass_pane" => Some("minecraft:iron_bars".to_string()),
+                    _ => {
+                        let others = crate::memory::cousins(id);
+                        (!others.is_empty()).then(|| others[seed % others.len()].clone())
+                    }
+                };
+                swapped.map(|to| (*p, id.clone(), to))
             })
             .map(|(p, id, cousin)| vec![(set(ids, p, &cousin, &[id.as_str()]), 0)])
             .unwrap_or_default(),
@@ -5667,6 +5692,10 @@ mod tests {
         memory
             .walls
             .push(([1, 65, 1], "minecraft:torch".to_string()));
+        // A candle of theirs, as the game records one: among the blocks they placed.
+        memory
+            .walls
+            .push(([0, 65, 1], "minecraft:candle".to_string()));
         memory.routes.push(crate::memory::Route {
             points: (0..20).map(|i| [3 + i * 2, 64, 0]).collect(),
             walked: 3,

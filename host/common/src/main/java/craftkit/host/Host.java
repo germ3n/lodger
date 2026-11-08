@@ -291,12 +291,11 @@ public final class Host {
 
 	private int debugCommand(CommandSourceStack source, String modId, String requestJson) {
 		net.minecraft.server.level.ServerPlayer player = source.getPlayer();
-		if (player == null) {
-			source.sendFailure(Component.translatable("craftkit.debug.no_screen"));
-			return 0;
-		}
-
-		com.google.gson.JsonObject answer = worlds.debug(player, modId, com.google.gson.JsonParser.parseString(requestJson).getAsJsonObject());
+		com.google.gson.JsonObject request = com.google.gson.JsonParser.parseString(requestJson).getAsJsonObject();
+		// From the console: the overworld's stay, as the docs say (it used to refuse the console).
+		com.google.gson.JsonObject answer = player == null
+				? worlds.debugIn(source.getServer().overworld(), null, modId, request)
+				: worlds.debug(player, modId, request);
 		if (answer.has("error") && !answer.get("error").getAsString().isEmpty()) {
 			source.sendFailure(Component.literal(answer.get("error").getAsString()));
 			return 0;

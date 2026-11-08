@@ -67,6 +67,10 @@ impl Memory {
     /// With witness traces off: whether a change to the world at `pos` would be seen near
     /// another player.
     pub fn witness_near(&self, config: &Config, pos: Option<BlockPos>) -> bool {
+        // With no place of its own, where it would be: by the house, or by the target.
+        let pos = pos
+            .or(self.home.as_ref().map(|h| h.center))
+            .or(Some(crate::memory::block_of(self.last.pos)));
         !config.multiplayer.witness_traces
             && pos.is_some_and(|p| {
                 self.others_at

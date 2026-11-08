@@ -1087,7 +1087,12 @@ impl Memory {
         self.others_online.clear();
         self.others_at.clear();
         for player in &observations.players {
-            if Some(player.index) == self.target {
+            // The target by uuid: after a restart another player may hold their old index.
+            let is_target = Some(player.index) == self.target
+                && (self.target_uuid.is_empty()
+                    || player.uuid.is_empty()
+                    || player.uuid == self.target_uuid);
+            if is_target {
                 self.target_seen_unix = crate::multiplayer::now_unix();
             } else {
                 self.others_online.push(player.index);
@@ -1196,6 +1201,13 @@ impl Memory {
             .filter(|p| {
                 self.target_uuid.is_empty() || p.uuid.is_empty() || p.uuid == self.target_uuid
             });
+        // Someone else at the target's index: their events and their chat are not the target's
+        // (they used to move the home's bed, the placed blocks and the temper).
+        let index = if player.is_none() && observations.players.iter().any(|p| p.index == index) {
+            u32::MAX
+        } else {
+            index
+        };
         self.observe_people(observations, day);
 
         match player {
@@ -3233,6 +3245,38 @@ mod tests {
         assert_eq!(memory.target, Some(3));
         assert_eq!(memory.target_name, "razor");
         assert_eq!(memory.favourites[0].0, "minecraft:iron_pickaxe");
+    }
+
+    #[test]
+    fn another_player_at_the_target_s_old_index_is_not_the_target() {
+        let mut memory = Memory::default();
+        memory.set_target(0, "razor", "uuid-r");
+        let mut friend = player(0, [100.0, 64.0, 100.0], 0.0);
+        friend.uuid = "uuid-f".to_string();
+        friend.name = "friend".to_string();
+        memory.observe(
+            &obs(
+                vec![friend],
+                vec![Event {
+                    player: 0,
+                    kind: EventKind::SleptBegan,
+                    pos: Some([100, 64, 100]),
+                    ..Event::default()
+                }],
+            ),
+            1.0,
+        );
+
+        assert!(
+            memory.home.is_none(),
+            "the friend's bed is not the target's home"
+        );
+        assert_eq!(
+            memory.others_online,
+            vec![0],
+            "the friend is another player here"
+        );
+        assert_eq!(memory.target_seen_unix, 0, "the target was not seen");
     }
 
     #[test]

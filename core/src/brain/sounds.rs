@@ -944,9 +944,18 @@ pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos>
         (dx * dx + dz * dz).sqrt() <= 24.0
     });
     let pick = |list: &[BlockPos]| (!list.is_empty()).then(|| list[seed % list.len()]);
+    // A door of theirs opened or turned is the home's, found when they come back; never
+    // another house's (it was the last house they ever stood in, however far).
+    let home_change = matches!(event, "open_door" | "close_door" | "door_hinge");
 
-    if !home_near {
-        if let Some(here) = &memory.here {
+    if !home_near && !home_change {
+        // A sound is heard where they are: the house they stand in now, if it is now (`here`
+        // was kept for good, and a knock played at a house long left, unheard).
+        let fresh = memory
+            .here
+            .as_ref()
+            .filter(|h| memory.today - h.day <= 0.01);
+        if let Some(here) = fresh {
             let found = if want_chest {
                 pick(&here.containers)
             } else if want_pane {

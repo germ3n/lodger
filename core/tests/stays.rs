@@ -622,9 +622,9 @@ fn the_tick_costs() {
     assert!(at(0.99) < 2_000, "p99 {} us", at(0.99));
 }
 
-/// The first day the stay reaches stage four, with the target chasing the figure three times a
-/// day or never; or the last day run.
-fn day_of_stage_four(provoke: bool, config: &str) -> (u64, f32) {
+/// The day the stay reaches stage four, to the hour, with the target chasing the figure three
+/// times a day or never; or the last day run.
+fn day_of_stage_four(provoke: bool, config: &str) -> (f32, f32) {
     let _turn = TURN.lock().unwrap_or_else(|err| err.into_inner());
     let harness = craftkit::harness!().unwrap();
     harness.init(config);
@@ -636,7 +636,7 @@ fn day_of_stage_four(provoke: bool, config: &str) -> (u64, f32) {
     let world = harness.open_world(&info, &[]).unwrap();
     let mut script = Script::new();
     let days = 20;
-    let mut reached = days;
+    let mut reached = days as f32;
     let mut temper: f32 = 0.0;
     while script.tick < days * 24_000 {
         let mut observations = script.observations();
@@ -662,11 +662,11 @@ fn day_of_stage_four(provoke: bool, config: &str) -> (u64, f32) {
         if !reports.is_empty() {
             world.report(&reports);
         }
-        if script.tick.is_multiple_of(24_000) {
+        if script.tick.is_multiple_of(1_000) {
             let stay = lodger_core::stay::Stay::open(&info, &world.save()).unwrap();
             temper = temper.max(stay.memory.temper.value);
             if stay.arc.stage >= 4 {
-                reached = script.tick / 24_000;
+                reached = script.tick as f32 / 24_000.0;
                 break;
             }
         }
@@ -684,9 +684,11 @@ fn a_provoking_player_brings_stage_four_days_sooner_than_a_quiet_one() {
     let (provoked, temper) = day_of_stage_four(true, config);
 
     assert!(temper > 0.9, "chased every day, it is furious: {temper}");
+    // A quiet stay reaches stage four at its least days now, so a day and a half is what
+    // halving them gives: at least a whole day sooner.
     assert!(
-        provoked + 2 <= quiet,
-        "provoked on day {provoked}, quiet on day {quiet}"
+        provoked + 1.0 <= quiet,
+        "provoked on day {provoked:.2}, quiet on day {quiet:.2}"
     );
 }
 

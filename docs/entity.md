@@ -312,7 +312,7 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `harvest_one` | 2 | One ripe crop is harvested and its yield is in the chest. The soil is left as it was. | A field and a chest. |
+| `harvest_one` | 2 | One ripe crop is harvested and its yield is in the chest: wheat, a carrot, a potato or a beetroot, whichever it was (the host says what it cleared). A crop not yet ripe is never cut. The soil is left as it was. | A field and a chest. |
 | `replant_other` | 3 | One crop is a different crop, from seeds in a chest. | A field and a chest with other seeds. |
 | `trample` | 3 | Farmland from the field toward the door, one line, while the target is away. | A field within 32 blocks of the home. |
 | `field_word` | 4 | Crops cut back to seedlings so that from above, north at the top, the field reads one word of the want's list in letters three by five: the longest that fits (`MINE`, `LOOK`, `GIVE`; `ME` in a field of 7). Coded from the brain's field read. | A field of 7 by 5 or more, four in five planted. |

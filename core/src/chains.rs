@@ -128,7 +128,10 @@ pub struct Open {
     pub id: String,
     /// Which of its steps have landed, by index: any order counts, the first step always.
     pub landed: Vec<usize>,
+    /// The day its waiting began: the last step's landing, held on while its stage has not come.
     pub since: f32,
+    /// The day its last step landed: what a noticing or a look must come after.
+    pub landed_day: f32,
 }
 
 impl Open {
@@ -155,6 +158,7 @@ impl Memory {
                 if step.events.contains(&event) && !open.landed.contains(&i) {
                     open.landed.push(i);
                     open.since = day;
+                    open.landed_day = day;
                     break;
                 }
             }
@@ -182,6 +186,7 @@ impl Memory {
                     id: chain.id.to_string(),
                     landed: vec![0],
                     since: day,
+                    landed_day: day,
                 });
             }
         }
@@ -190,7 +195,9 @@ impl Memory {
     /// The chains whose next step's moment has passed fall out; the watcher ends when they
     /// chased the figure instead.
     pub fn chains_tick(&mut self, day: f32, stage: u8) {
-        // A next step not offered in this stage yet waits for its stage, its days not counted.
+        // A next step not offered in this stage yet waits for its stage, its days not counted;
+        // the bold ones by temper's stage, as the menu offers them.
+        let temper = self.temper.clone();
         for open in &mut self.chains {
             let Some(chain) = find(&open.id) else {
                 continue;
@@ -200,16 +207,21 @@ impl Memory {
                     .events
                     .iter()
                     .filter_map(|e| crate::events::find(e))
-                    .all(|e| e.from_stage > stage)
+                    .all(|e| {
+                        !crate::temper::offered_in(e, stage, &temper)
+                            && (stage + 1..=5).any(|s| crate::temper::offered_in(e, s, &temper))
+                    })
             });
             if waiting {
                 open.since = day;
             }
         }
-        let chased = self
-            .figure_looks
-            .last()
-            .is_some_and(|l| l.chased() && l.day >= day - 0.5);
+        // Chased since the watcher began, not before it: an older chase ended it at once.
+        let chased_since = |since: f32| {
+            self.figure_looks
+                .last()
+                .is_some_and(|l| l.chased() && l.day >= day - 0.5 && l.day >= since)
+        };
         let mut gone = Vec::new();
         for open in &self.chains {
             let Some(chain) = find(&open.id) else {
@@ -220,7 +232,7 @@ impl Memory {
                 .next(chain)
                 .and_then(|i| chain.steps.get(i))
                 .is_none_or(|s| day - open.since > s.within_days);
-            if late || (chain.id == "the_watcher" && chased) {
+            if late || (chain.id == "the_watcher" && chased_since(open.landed_day)) {
                 gone.push(open.id.clone());
             }
         }
@@ -246,12 +258,12 @@ impl Memory {
                 When::LookedLong => self
                     .figure_looks
                     .iter()
-                    .any(|l| l.looked_long() && l.day >= open.since),
+                    .any(|l| l.looked_long() && l.day >= open.landed_day),
                 When::Noticed => {
                     let last = chain.steps[at.saturating_sub(1)].events;
                     self.reactions.iter().any(|r| {
                         last.contains(&r.event.as_str())
-                            && r.day >= open.since - 0.01
+                            && r.day >= open.landed_day - 0.01
                             && r.noticed()
                     })
                 }
@@ -329,6 +341,41 @@ mod tests {
 
         memory.chain_landed("take", 6.0);
         assert!(memory.chains.is_empty(), "once a stay");
+    }
+
+    #[test]
+    fn a_step_waiting_for_its_stage_still_sees_what_was_noticed_before() {
+        let mut memory = Memory::default();
+        memory.chain_landed("open_door", 1.0);
+        memory.reactions.push(crate::memory::Reaction {
+            event: "open_door".to_string(),
+            day: 1.0,
+            kind: "watched".to_string(),
+            ..Default::default()
+        });
+        // door_hinge from stage three: through stages one and two the chain waits.
+        memory.chains_tick(3.0, 1);
+        memory.chains_tick(6.0, 2);
+        assert_eq!(memory.chains.len(), 1, "it waited for its stage");
+        assert_eq!(
+            memory.chain_next(),
+            vec!["door_hinge"],
+            "the noticing before still counts"
+        );
+    }
+
+    #[test]
+    fn a_chase_before_the_watcher_began_does_not_end_it() {
+        let mut memory = Memory::default();
+        memory.figure_looks.push(crate::memory::FigureLook {
+            day: 5.0,
+            toward: 12.0,
+            end: "approached".to_string(),
+            ..Default::default()
+        });
+        memory.chain_landed("far_figure", 5.2);
+        memory.chains_tick(5.3, 3);
+        assert_eq!(memory.chains.len(), 1);
     }
 
     #[test]

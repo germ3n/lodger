@@ -46,6 +46,10 @@ pub struct Temper {
     /// The last day it drifted.
     pub drifted_day: f32,
     pub causes: Vec<Cause>,
+    /// Today's moves by cause, for the cap: apart from `causes`, which keeps eight for words
+    /// and evicted today's, so the cap reset.
+    pub today: Vec<(String, u32)>,
+    pub today_day: i64,
 }
 
 impl Default for Temper {
@@ -56,6 +60,8 @@ impl Default for Temper {
             begun: false,
             drifted_day: 0.0,
             causes: Vec::new(),
+            today: Vec::new(),
+            today_day: -1,
         }
     }
 }
@@ -102,14 +108,21 @@ const KIND: &[&str] = &[
 impl Temper {
     /// Moved by a cause, at most three times a cause a day, within 0 to 1.
     pub fn moved(&mut self, (what, by): (&str, f32), day: f32) {
-        let today = self
-            .causes
-            .iter()
-            .filter(|c| c.what == what && c.day.floor() == day.floor())
-            .count() as u32;
-        if today >= MOST_A_DAY {
+        if self.today_day != day.floor() as i64 {
+            self.today_day = day.floor() as i64;
+            self.today.clear();
+        }
+        let count = match self.today.iter_mut().find(|(w, _)| w == what) {
+            Some((_, n)) => n,
+            None => {
+                self.today.push((what.to_string(), 0));
+                &mut self.today.last_mut().unwrap().1
+            }
+        };
+        if *count >= MOST_A_DAY {
             return;
         }
+        *count += 1;
         self.value = (self.value + by).clamp(0.0, 1.0);
         if self.causes.len() >= MOST_CAUSES {
             self.causes.remove(0);
@@ -135,6 +148,11 @@ impl Temper {
         if days >= 1.0 {
             for _ in 0..(days as u32).min(30) {
                 self.value += (resting - self.value) * DRIFT_PER_DAY;
+            }
+            // Back at rest once near enough: drifting a tenth at a time it never quite got there,
+            // and on `calm`, resting at 0.2 exactly, a hair under held its stages slow for good.
+            if (self.value - resting).abs() < 0.01 {
+                self.value = resting;
             }
             self.drifted_day += days;
         }
@@ -245,6 +263,34 @@ pub fn min_distance(config: &Config, memory: &Memory) -> f64 {
     config.events.min_distance as f64 * memory.temper.distance_factor()
 }
 
+/// What its builds are made of (`building.rs`).
+const IT_BUILDS_WITH: &[&str] = &[
+    "minecraft:cobblestone",
+    "minecraft:oak_planks",
+    "minecraft:oak_log",
+    "minecraft:glass_pane",
+    "minecraft:oak_door",
+    "minecraft:chest",
+    "minecraft:wall_torch",
+    "minecraft:torch",
+    "minecraft:oak_fence",
+];
+
+/// The events that leave a thing of its own where they happen.
+const IT_MAKES: &[&str] = &[
+    "sign",
+    "sign_deep",
+    "sign_word",
+    "cairn",
+    "pillar",
+    "grave",
+    "grave_each",
+    "scarecrow",
+    "head_on_post",
+    "snowman",
+    "kill_sign",
+];
+
 fn is_light(id: &str) -> bool {
     id.ends_with("torch")
         || id.ends_with("lantern")
@@ -253,7 +299,11 @@ fn is_light(id: &str) -> bool {
 }
 
 fn is_harm(id: &str) -> bool {
-    id.ends_with("tnt") || id.contains("lava") || id.ends_with("water") || id.ends_with("fire")
+    // A campfire is a light, not a fire set.
+    id.ends_with("tnt")
+        || id.contains("lava")
+        || id.ends_with("water")
+        || (id.ends_with("fire") && !id.contains("campfire"))
 }
 
 impl Memory {
@@ -282,20 +332,35 @@ impl Memory {
             }
             EventKind::BrokeBlock => {
                 let Some(pos) = event.pos else { return };
+                // Only what it made: a block of their own, grass by its house, or their own door
+                // where something once happened is not its.
+                let theirs = self.placed.contains(&pos);
                 if self.its_lights.contains(&pos) {
                     self.temper.moved(BROKE_ITS_LIGHT, day);
-                } else if self
-                    .builds
-                    .iter()
-                    .any(|b| b.laid > 0 && b.ground_known() && distance(b.site, pos) <= 4.0)
+                } else if !theirs
+                    && IT_BUILDS_WITH.contains(&event.detail.as_str())
+                    && self
+                        .builds
+                        .iter()
+                        .any(|b| b.laid > 0 && b.ground_known() && distance(b.site, pos) <= 4.0)
                 {
                     self.temper.moved(BROKE_ITS_HOUSE, day);
-                } else if self.landmarks.iter().any(|l| l.ok && l.pos == Some(pos)) {
+                } else if !theirs
+                    && self
+                        .landmarks
+                        .iter()
+                        .any(|l| l.ok && l.pos == Some(pos) && IT_MAKES.contains(&l.event.as_str()))
+                {
                     self.temper.moved(BROKE_ITS_THINGS, day);
                 }
             }
             EventKind::OpenedContainer => {
-                let theirs = self.containers.iter().any(|c| Some(c.pos) == event.pos);
+                // Theirs by placing it; its own chest is remembered too once opened, and was
+                // taken for theirs from the second opening on.
+                let theirs = self
+                    .containers
+                    .iter()
+                    .any(|c| Some(c.pos) == event.pos && c.theirs());
                 let its = self
                     .builds
                     .iter()
@@ -318,10 +383,20 @@ impl Memory {
 
     /// A chat line about it: cursed, or spoken to kindly.
     pub fn temper_chat(&mut self, text: &str, day: f32) {
-        let text = format!("{} ", text.to_lowercase());
-        if CURSES.iter().any(|c| text.contains(c)) {
+        // Whole words only: "whatever" holds no "hate", "studied" no "die".
+        let words: String = text
+            .to_lowercase()
+            .chars()
+            .map(|c| if c.is_alphanumeric() { c } else { ' ' })
+            .collect();
+        let padded = format!(
+            " {} ",
+            words.split_whitespace().collect::<Vec<_>>().join(" ")
+        );
+        let has = |phrase: &str| padded.contains(&format!(" {} ", phrase.trim()));
+        if CURSES.iter().any(|c| has(c)) {
             self.temper.moved(CURSED_IT, day);
-        } else if KIND.iter().any(|k| text.contains(k)) {
+        } else if KIND.iter().any(|k| has(k)) {
             self.temper.moved(SPOKE_KINDLY, day);
         }
     }
@@ -427,6 +502,45 @@ mod tests {
         assert_eq!(
             temper.words(0.3).unwrap(),
             "It is angry: the player broke its lights and chased the figure."
+        );
+    }
+
+    #[test]
+    fn words_are_matched_whole_a_campfire_is_a_light_and_the_cap_outlasts_the_words_list() {
+        let mut memory = Memory::default();
+        memory.temper.settle(0.3, 0.0);
+        memory.temper_chat("whatever you are, thank you", 1.0);
+        assert!(memory.temper.value < 0.3, "no hate in whatever: kind words");
+
+        assert!(!is_harm("minecraft:campfire") && is_light("minecraft:soul_campfire"));
+        assert!(is_harm("minecraft:fire"));
+
+        let mut temper = Temper::default();
+        temper.settle(0.3, 0.0);
+        for cause in [LIT_ITS_PLACE, HARMED_ITS_PLACE, BROKE_ITS_LIGHT] {
+            for _ in 0..3 {
+                temper.moved(cause, 1.5);
+            }
+        }
+        let before = temper.value;
+        temper.moved(LIT_ITS_PLACE, 1.6);
+        assert_eq!(
+            temper.value, before,
+            "the fourth light that day moves nothing"
+        );
+    }
+
+    #[test]
+    fn a_calm_stay_drifts_all_the_way_back_to_rest() {
+        let mut temper = Temper::default();
+        temper.settle(0.2, 0.0);
+        temper.moved(WATCHED_FROM_AFAR, 0.5);
+        temper.settle(0.2, 60.0);
+        assert_eq!(temper.value, 0.2);
+        assert_eq!(
+            temper.most_factor(),
+            1.0,
+            "at rest, calm's stages as written"
         );
     }
 

@@ -703,8 +703,11 @@ impl Brain {
         // Nothing of its own while the fight is on or another mod's horror is near: the
         // reactions below used to go on through both.
         let held_back = arc.fighting_since > 0 || memory.last.other_horror_near;
-        if let Some(command) = self.reply_due(now, day, memory, log).filter(|_| !held_back) {
-            commands.push(command);
+        // Held back, the reply waits inside its window, unspent (it used to be spent and dropped).
+        if !held_back {
+            if let Some(command) = self.reply_due(now, day, memory, log) {
+                commands.push(command);
+            }
         }
         // An offering for their next fresh loot, armed when none is.
         if !memory.loot_armed && memory.last.online {
@@ -1063,6 +1066,22 @@ impl Brain {
                     })));
         if seen {
             return Step::Wait("in view".to_string());
+        }
+        // With witness traces off, every block it would change, not only its spot, waits for
+        // another player near to go (`multiplayer.rs`).
+        let witnessed = !plan.forced && matches!(event.effect(), "house" | "things" | "words") && {
+            let spots: Vec<BlockPos> = made.iter().flat_map(|(c, _)| act::spots(c)).collect();
+            // No block to change (frames turned, a stand dressed): where it would be.
+            if spots.is_empty() {
+                memory.witness_near(config, plan.pos)
+            } else {
+                spots
+                    .iter()
+                    .any(|spot| memory.witness_near(config, Some(*spot)))
+            }
+        };
+        if witnessed {
+            return Step::Wait("another player is near".to_string());
         }
         // Within its cooldown, or the same as the last, is a reason to wait while its window
         // lasts, as `cancel_reason` says; until now it gave the plan up.
@@ -2368,6 +2387,34 @@ impl Brain {
                     }
                 }
 
+                // A ripe crop harvested: its own item to their chest, whichever crop it was.
+                if let Some(item) = report
+                    .reason
+                    .strip_prefix("replaced ")
+                    .filter(|_| report.done && pending.event == "harvest_one")
+                    .and_then(act::harvest_of)
+                {
+                    if let Some(chest) = memory.used_container().map(|c| c.pos) {
+                        let id = self.id();
+                        self.later.push(Later {
+                            at_tick: 0,
+                            command: Command::PutItem {
+                                id,
+                                into: chest,
+                                slot: None,
+                                item: craftkit::world::ItemStack {
+                                    id: item.to_string(),
+                                    count: 1,
+                                    slot: 0,
+                                },
+                                kept: String::new(),
+                                wear: 0,
+                                name: String::new(),
+                            },
+                            while_still: false,
+                        });
+                    }
+                }
                 // A dig's block is the lodger's now ("replaced minecraft:dirt"): grass dug is dirt.
                 if let Some(was) = report
                     .reason

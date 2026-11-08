@@ -245,8 +245,13 @@ public final class Senses {
 	}
 
 	/** A figure gone, and how it was looked at (`Gaze.detail`); ABI 47. */
-	public void noticedFigureSeen(ServerPlayer player, BlockPos at, String detail) {
-		event(player, "figure_seen", at, detail, null);
+	public void noticedFigureSeen(ServerLevel shownIn, ServerPlayer player, BlockPos at, String detail) {
+		JsonObject event = new JsonObject();
+		event.addProperty("player", indexOf(player));
+		event.addProperty("kind", "figure_seen");
+		event.add("pos", blockPos(at));
+		event.addProperty("detail", detail);
+		events.computeIfAbsent(shownIn, l -> new ArrayList<>()).add(event);
 	}
 
 	public void noticedChangedDimension(ServerPlayer player, String from, String to) {

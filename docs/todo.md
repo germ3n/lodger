@@ -942,7 +942,8 @@ because it can be built and tested without a game, and because the model layer i
   fight (`fierce`, ABI 48); the situation says it; `events.temper` turns it off. Tests: six in
   `temper` (resting and drift, the daily cap, the pace each way, the words, chat, a provoked
   `calm` under a resting `balanced`) and one scripted stay (a provoking player reaches stage four
-  two days sooner or more). Was: **Temper** (owner: "doing certain things should speed up the progression"):   `memory/temper.rs` with the move table of [Provocation and temper](entity.md#provocation-and-temper),   the senses that feed it (the figure chased or hit, its blocks broken, its place walled or   lit, the thing taken back, chat lines at it, nights slept through), the scaling of the   budget, the stage lengths, the menu's stage gates, the distance and the ending, each bounded   by the preset, and the `How does it take this?` ask. Scripted-stay tests: a provoking player   reaches stage four days sooner than a quiet one; a `calm` preset provoked stays under the   `balanced` resting pace; temper drifts back.
+  a day or more sooner, measured to the hour; a quiet stay now runs at its least days, so
+  halving them gives a day and a half). Was: **Temper** (owner: "doing certain things should speed up the progression"):   `memory/temper.rs` with the move table of [Provocation and temper](entity.md#provocation-and-temper),   the senses that feed it (the figure chased or hit, its blocks broken, its place walled or   lit, the thing taken back, chat lines at it, nights slept through), the scaling of the   budget, the stage lengths, the menu's stage gates, the distance and the ending, each bounded   by the preset, and the `How does it take this?` ask. Scripted-stay tests: a provoking player   reaches stage four days sooner than a quiet one; a `calm` preset provoked stays under the   `balanced` resting pace; temper drifts back.
 - [x] **The other house, a dimension of its own** (owner: "Dimension, as designed"):
   `data/lodger/dimension/other.json` and its type in the content jar (a void, a black sky, no
   mobs, no day, no sleep), `world/OtherHouse.java` copying the house around the bed block for
@@ -1187,6 +1188,37 @@ The `[x]` lines above, summed up by day:
   runtime. Tests: JUnit for the xz unpacking and the Vulkan hint; each native checked as it is
   built. Was: six CPU natives each built on its own CI runner on every push, packed as they
   were, `gpu_share` 0.5, and no `docs/build.md`.
+- [x] **The sixth bug pass** (five reviewers, the fifth on the events one by one; about
+  fifty found). The other house could kill and duplicate: its floor ended in the dark, so a walk
+  out of the door dropped them into the void, and its copy could be mined in survival and carried
+  home; now one fixed place in the dimension, cleared before each copy, a barrier floor with walls
+  at its edge and a layer under the copy, adventure mode while there (put back after, a quit
+  too), everything checked before anything is written, and a refused move said. A figure's path
+  skipped its first point (a path of one ended at once, the other house's walker and the dig
+  exit's among them); a figure at its path's end said nothing of how it was looked at, and every
+  sighting went to the dimension they were in, not the one it was shown in. The target was matched
+  by index in three places (after a restart a friend at that index was taken for them: their
+  bed, their blocks, their curses); a change with no spot, or checked without one, passed the
+  witness rule. Temper: its chest angered it once a stay, calm stuck a hair under rest and kept
+  its stages slow, grass by its house and their own door counted as its things, the daily cap
+  reset when the words list was full, a campfire was a fire set, "whatever" a curse. Chains: a
+  step waiting on its stage lost the noticing before it, a chase before the watcher ended it, the
+  bold steps' stages were not temper's. A reply held back in the fight was spent; dropping the
+  plans left their waits; `absent_days` took 0. The download screen hid Play without it after a
+  failure, leaving only Quit; a last mirror of a download could land over the failure; the Vulkan
+  hint never showed (Java drops the system's reason: the loader is now tried by itself); the
+  console could not use show, force, stage and action. The events: `lever` had no TNT check (none
+  within 16 blocks now); a stand already wearing that slot kept the piece for good (dropped at
+  its feet now, and a store never overwrites one item with another); `bucket_floor` set water in
+  the room's air; `village_doors` opened and shut each door; `candles_lit` looked for a candle
+  among the fixtures, where none is; `fish_on_line` compared a short id; `cauldron` filled and
+  emptied a tick apart (the host toggles it now); the tunnel digs were refused for their own
+  torches; the house's door events while away went to the last village house; `harvest_one` cut
+  seedlings (ripe only now, any of the four crops, its own item to the chest); boats moved
+  minecarts; `torch_blue` missed lanterns and `window_bars` turned panes another colour;
+  `tab_entry_stays` lasted a minute; `chest_answers` was no sound to the switches. Tests: several
+  in `temper`, `chains` and `memory`; the catalogue's every-event test with the candle where
+  the game puts it. Was: all of that.
 - [x] **The fifth bug pass** (forty found, four reviewers): **picking a preset on the settings
   screen changed nothing** (the file holds every key, written at the first start, so balanced's
   values stayed; now the old preset's values the player never changed are taken out and the file

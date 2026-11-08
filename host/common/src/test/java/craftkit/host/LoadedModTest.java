@@ -94,9 +94,13 @@ class LoadedModTest {
 	@Test
 	void a_native_that_wants_vulkan_says_what_to_install() {
 		RuntimeException linux = new RuntimeException("libvulkan.so.1: cannot open shared object file");
-		org.junit.jupiter.api.Assertions.assertTrue(LoadedMod.vulkanHint(linux, "Linux").contains("apt install libvulkan1"));
+		org.junit.jupiter.api.Assertions.assertTrue(LoadedMod.vulkanHint(linux, "Linux", false).contains("apt install libvulkan1"));
 		RuntimeException windows = new RuntimeException("Can't find dependent libraries", new RuntimeException("vulkan-1.dll"));
-		org.junit.jupiter.api.Assertions.assertTrue(LoadedMod.vulkanHint(windows, "Windows 11").contains("graphics driver"));
-		org.junit.jupiter.api.Assertions.assertEquals("", LoadedMod.vulkanHint(new RuntimeException("no such file"), "Linux"));
+		org.junit.jupiter.api.Assertions.assertTrue(LoadedMod.vulkanHint(windows, "Windows 11", false).contains("graphics driver"));
+		org.junit.jupiter.api.Assertions.assertEquals("", LoadedMod.vulkanHint(new RuntimeException("no such file"), "Linux", false));
+		// As Java says it: no reason given; the loader tried by itself is missing.
+		RuntimeException bare = new IllegalArgumentException("Cannot open library: /x/liblodger_core.so");
+		org.junit.jupiter.api.Assertions.assertTrue(LoadedMod.vulkanHint(bare, "Linux", true).contains("apt install libvulkan1"));
+		org.junit.jupiter.api.Assertions.assertFalse(LoadedMod.vulkanLoaderMissing("Mac OS X"), "a Mac's natives use Metal");
 	}
 }

@@ -414,7 +414,25 @@ public final class Executors {
 		}
 
 		if (block instanceof LeverBlock lever) {
+			// Never a lever with TNT within 16 blocks: whatever it is wired to, nothing of theirs
+			// goes up (the docs promised this check, and there was none).
+			for (BlockPos near : BlockPos.betweenClosed(pos.offset(-16, -16, -16), pos.offset(16, 16, 16))) {
+				if (level.isLoaded(near) && level.getBlockState(near).is(net.minecraft.world.level.block.Blocks.TNT)) {
+					return report(id, false, "TNT within 16 blocks");
+				}
+			}
 			lever.pull(state, level, pos, null);
+			return report(id, true, "");
+		}
+
+		// A cauldron full that was empty, or empty that was full.
+		if (block == net.minecraft.world.level.block.Blocks.CAULDRON) {
+			level.setBlock(pos, net.minecraft.world.level.block.Blocks.WATER_CAULDRON.defaultBlockState()
+					.setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, 3), Block.UPDATE_ALL);
+			return report(id, true, "");
+		}
+		if (block == net.minecraft.world.level.block.Blocks.WATER_CAULDRON) {
+			level.setBlock(pos, net.minecraft.world.level.block.Blocks.CAULDRON.defaultBlockState(), Block.UPDATE_ALL);
 			return report(id, true, "");
 		}
 
@@ -938,9 +956,12 @@ public final class Executors {
 		}
 		net.minecraft.world.entity.EquipmentSlot slot = living.getEquipmentSlotForItem(stack);
 		if (!living.getItemBySlot(slot).isEmpty()) {
-			// A kept stack goes back where it was kept (until now it was lost here).
+			// Their piece, taken for it, at the stand's feet where they will find it, for good:
+			// kept out of sight it was never given back, and a later piece overwrote it.
 			if (command.has("kept") && !command.get("kept").getAsString().isEmpty()) {
-				data.keep(command.get("kept").getAsString(), stack);
+				net.minecraft.world.entity.item.ItemEntity dropped = new net.minecraft.world.entity.item.ItemEntity(level, entity.getX(), entity.getY() + 0.3, entity.getZ(), stack);
+				dropped.setUnlimitedLifetime();
+				level.addFreshEntity(dropped);
 			}
 			return report(id, false, "that slot is worn already");
 		}
@@ -1228,12 +1249,42 @@ public final class Executors {
 	 * destroyed: a block goes where there is nothing, or over one of the blocks the mod named,
 	 * which it keeps to natural ground.
 	 */
+	/**
+	 * Whether a block is one of {@code replace}: by its id, or by its id and a state in brackets
+	 * ({@code minecraft:wheat[age=7]}, a ripe crop alone).
+	 */
+	static boolean replaces(BlockState there, List<String> replace) {
+		String id = Senses.blockId(there);
+		for (String entry : replace) {
+			int bracket = entry.indexOf('[');
+			if (bracket < 0) {
+				if (entry.equals(id)) {
+					return true;
+				}
+			} else if (entry.substring(0, bracket).equals(id)) {
+				String wanted = entry.substring(bracket + 1, entry.length() - 1);
+				boolean all = true;
+				for (String pair : wanted.split(",")) {
+					String[] kv = pair.split("=", 2);
+					var property = there.getBlock().getStateDefinition().getProperty(kv[0].trim());
+					if (property == null || kv.length < 2 || !there.getValue(property).toString().equalsIgnoreCase(kv[1].trim())) {
+						all = false;
+					}
+				}
+				if (all) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	private static String taken(ServerLevel level, BlockPos pos, List<String> replace, boolean only) {
 		BlockState there = level.getBlockState(pos);
-		if (only && !replace.contains(Senses.blockId(there))) {
+		if (only && !replaces(there, replace)) {
 			return there.isAir() ? "nothing to replace there" : "the place holds " + Senses.blockId(there);
 		}
-		if (!there.isAir() && !replace.contains(Senses.blockId(there))) {
+		if (!there.isAir() && !replaces(there, replace)) {
 			return "the place holds " + Senses.blockId(there);
 		}
 		if (level.getBlockEntity(pos) != null) {

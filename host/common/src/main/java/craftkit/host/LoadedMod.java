@@ -60,13 +60,41 @@ public final class LoadedMod {
 	 * (then the CPU does the work). Empty when that is not why.
 	 */
 	static String vulkanHint(Throwable e, String osName) {
+		return vulkanHint(e, osName, vulkanLoaderMissing(osName));
+	}
+
+	/**
+	 * The hint, given whether Vulkan's loader is missing: Java's loader drops the system's own
+	 * words for why a library would not open ("Cannot open library: <path>"), so the loader is
+	 * tried by itself to know (until now the hint looked for "vulkan" in those words, and never
+	 * found it).
+	 */
+	static String vulkanHint(Throwable e, String osName, boolean loaderMissing) {
 		String text = String.valueOf(e.getMessage()) + (e.getCause() == null ? "" : " " + e.getCause().getMessage());
-		if (!text.toLowerCase(java.util.Locale.ROOT).contains("vulkan")) {
+		if (!loaderMissing && !text.toLowerCase(java.util.Locale.ROOT).contains("vulkan")) {
 			return "";
 		}
 		return Natives.os(osName).equals("windows")
 				? ". Vulkan is missing: update the graphics driver, which installs vulkan-1.dll"
 				: ". Vulkan's loader is missing: install it (Debian and Ubuntu: apt install libvulkan1; Fedora: dnf install vulkan-loader; Arch: pacman -S vulkan-icd-loader). No GPU is needed";
+	}
+
+	/** Whether Vulkan's loader is missing here: never on a Mac, whose natives use Metal. */
+	static boolean vulkanLoaderMissing(String osName) {
+		String name = switch (Natives.os(osName)) {
+			case "windows" -> "vulkan-1.dll";
+			case "linux" -> "libvulkan.so.1";
+			default -> null;
+		};
+		if (name == null) {
+			return false;
+		}
+		try {
+			java.lang.foreign.SymbolLookup.libraryLookup(name, java.lang.foreign.Arena.ofAuto());
+			return false;
+		} catch (IllegalArgumentException | UnsupportedOperationException | IllegalCallerException e) {
+			return true;
+		}
 	}
 
 	/** Loads the Rust mod a jar carries. Never throws: a failure is a value. */

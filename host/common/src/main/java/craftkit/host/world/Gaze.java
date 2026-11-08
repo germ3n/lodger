@@ -64,7 +64,8 @@ public final class Gaze {
 	 * The event's detail: {@code looked=<ticks> looks=<n> longest=<ticks> toward=<blocks>
 	 * end=<how>}, where how is {@code approached} (they came within its distance and it went),
 	 * {@code looked_away} (once seen, gone when they looked away), {@code timed} (its time ran
-	 * out) or {@code gone} (they left, died or went elsewhere).
+	 * out), {@code walked} (it reached its path's end) or {@code gone} (they left, died or went
+	 * elsewhere).
 	 */
 	public String detail(String end) {
 		return String.format(Locale.ROOT, "looked=%d looks=%d longest=%d toward=%.1f end=%s",

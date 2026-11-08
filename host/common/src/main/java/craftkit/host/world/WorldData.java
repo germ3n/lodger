@@ -49,8 +49,16 @@ public final class WorldData extends SavedData {
 		ItemStack had = kept.get(key);
 		if (had != null && ItemStack.isSameItemSameComponents(had, stack)) {
 			had.grow(stack.getCount());
-		} else {
+		} else if (had == null) {
 			kept.put(key, stack.copy());
+		} else {
+			// Another item under that name already: kept beside it, never over it (a second
+			// piece under one name used to destroy the first).
+			int n = 1;
+			while (kept.containsKey(key + "_" + n)) {
+				n++;
+			}
+			kept.put(key + "_" + n, stack.copy());
 		}
 		setDirty();
 	}

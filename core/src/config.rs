@@ -803,6 +803,10 @@ impl Config {
         if self.brain.queue == 0 {
             return Err("brain.queue must be at least 1".to_string());
         }
+        // 0 retargeted the moment the target logged off, at the next stage.
+        if self.multiplayer.absent_days == 0 {
+            return Err("multiplayer.absent_days must be at least 1".to_string());
+        }
         // 0 asked the model again the moment each answer came back, nearly without pause.
         if self.brain.plan_every < 15 {
             return Err("brain.plan_every must be at least 15".to_string());
