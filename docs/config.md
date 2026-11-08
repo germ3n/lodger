@@ -45,7 +45,7 @@ hold under every preset; a preset turns events off, never rules.
 | Menu offered | 8 | 8 | 8 | 12 |
 | Acts at confidence | 0.5 | 0.4 | 0.3 | 0.25 |
 | Chat and player list | off | on | on | on |
-| Left out | the sleep events, the near figures, `lights_fail`, `red_rain`, `your_voice`, `knock`, `stare`, `sign_word`, `tunnel_toward` | nothing | nothing | nothing |
+| Left out | the sleep events (`bed_breaks` and `foot_of_bed` among them), the near figures, every screen glitch (`events.glitches` off), `lights_fail`, `red_rain`, `your_voice`, `knock`, `stare`, `sign_word`, `tunnel_toward` | nothing | nothing | nothing |
 | Ending | `leave`, always | by difficulty | `take` on every difficulty | `take` on every difficulty |
 
 So `calm` is a presence that never touches your sleep, your screen or your chat, keeps 80 blocks

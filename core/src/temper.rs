@@ -265,6 +265,7 @@ pub fn min_distance(config: &Config, memory: &Memory) -> f64 {
 
 /// What its builds are made of (`building.rs`).
 const IT_BUILDS_WITH: &[&str] = &[
+    "minecraft:glass",
     "minecraft:cobblestone",
     "minecraft:oak_planks",
     "minecraft:oak_log",
@@ -335,14 +336,14 @@ impl Memory {
                 // Only what it made: a block of their own, grass by its house, or their own door
                 // where something once happened is not its.
                 let theirs = self.placed.contains(&pos);
-                if self.its_lights.contains(&pos) {
+                if self.its_lights.contains(&pos) && !theirs {
                     self.temper.moved(BROKE_ITS_LIGHT, day);
                 } else if !theirs
                     && IT_BUILDS_WITH.contains(&event.detail.as_str())
                     && self
                         .builds
                         .iter()
-                        .any(|b| b.laid > 0 && b.ground_known() && distance(b.site, pos) <= 4.0)
+                        .any(|b| b.laid > 0 && b.ground_known() && distance(b.site, pos) <= 8.0)
                 {
                     self.temper.moved(BROKE_ITS_HOUSE, day);
                 } else if !theirs
@@ -357,10 +358,12 @@ impl Memory {
             EventKind::OpenedContainer => {
                 // Theirs by placing it; its own chest is remembered too once opened, and was
                 // taken for theirs from the second opening on.
+                // Theirs by placing it or by its place in their home: opened for days it is still
+                // its own (`theirs()` adopts a chest after three days of openings).
                 let theirs = self
                     .containers
                     .iter()
-                    .any(|c| Some(c.pos) == event.pos && c.theirs());
+                    .any(|c| Some(c.pos) == event.pos && (c.placed || c.in_home));
                 let its = self
                     .builds
                     .iter()
@@ -393,7 +396,16 @@ impl Memory {
             " {} ",
             words.split_whitespace().collect::<Vec<_>>().join(" ")
         );
-        let has = |phrase: &str| padded.contains(&format!(" {} ", phrase.trim()));
+        // A word of four letters or more takes its endings too ("thanks", "fucking", "hates");
+        // a short one ("hi", "die") is itself alone.
+        let has = |phrase: &str| {
+            let phrase = phrase.trim();
+            if phrase.contains(' ') || phrase.len() < 4 {
+                padded.contains(&format!(" {phrase} "))
+            } else {
+                padded.contains(&format!(" {phrase}"))
+            }
+        };
         if CURSES.iter().any(|c| has(c)) {
             self.temper.moved(CURSED_IT, day);
         } else if KIND.iter().any(|k| has(k)) {

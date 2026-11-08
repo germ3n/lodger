@@ -245,7 +245,6 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ToggleCandles
         | Action::CarpetShift
         | Action::LightPath
-        | Action::MoveVehicle
         | Action::PushVehicle(_)
         | Action::MiningSounds
         | Action::VillageDoors
@@ -287,11 +286,12 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             let candidates: Vec<BlockPos> = memory
                 .walls
                 .iter()
-                .filter(|(_, id)| {
-                    // A light's swap takes a lantern too, as its need counts one.
-                    suffix.is_empty()
-                        || id.ends_with(suffix)
-                        || (suffix == "torch" && id.ends_with("lantern"))
+                .filter(|(_, id)| match suffix {
+                    // A light that soul fire can take: a torch, a wall torch, a lantern.
+                    "torch" => soul_light(id).is_some(),
+                    // Any block of theirs with a family; a light is among them for its id only.
+                    "" => !crate::memory::cousins(id).is_empty(),
+                    _ => id.ends_with(suffix),
                 })
                 .map(|(p, _)| *p)
                 .collect();
@@ -301,9 +301,17 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::Figure(FigureWhere::Roof, _, _) => {
             home.map(|h| [h.center[0], h.floor_y + 5, h.center[2]])
         }
-        Action::Figure(FigureWhere::Doorway, _, _) => home.and_then(|h| pick(&h.doors, rng)),
-        Action::Figure(FigureWhere::AtChest, _, _) => memory.used_container().map(|c| c.pos),
-        Action::Figure(FigureWhere::InBed, _, _) => home.and_then(|h| h.bed),
+        // The block under its feet, as the figure stands one up: in the doorway, beside the
+        // chest, in the bed (they stood a block too high, in the lintel and on the chest).
+        Action::Figure(FigureWhere::Doorway, _, _) => home
+            .and_then(|h| pick(&h.doors, rng))
+            .map(|d| [d[0], d[1] - 1, d[2]]),
+        Action::Figure(FigureWhere::AtChest, _, _) => memory
+            .used_container()
+            .map(|c| [c.pos[0] + 1, c.pos[1] - 1, c.pos[2]]),
+        Action::Figure(FigureWhere::InBed, _, _) => {
+            home.and_then(|h| h.bed).map(|b| [b[0], b[1] - 1, b[2]])
+        }
         // Its feet three below the water's top, so its head is just under the surface.
         Action::Figure(FigureWhere::UnderWater, _, _) => memory
             .shore_toward_target(3.0)
@@ -533,10 +541,18 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         // A block of the floor itself, under where they stand: at the standing level it was a
         // source block in the room's air, which flooded it.
         Action::BucketFloor => home.map(|h| [h.center[0] + 2, h.floor_y - 1, h.center[2] + 2]),
-        Action::SnowCleared | Action::Trample | Action::DoorAhead => {
-            home.and_then(|h| pick(&h.doors, rng))
-        }
+        // The door they walk up to, not another of the house's.
+        Action::DoorAhead => home.and_then(|h| {
+            h.doors
+                .iter()
+                .find(|d| memory.approaching(**d, 6.0))
+                .copied()
+                .or_else(|| pick(&h.doors, rng))
+        }),
+        Action::SnowCleared | Action::Trample => home.and_then(|h| pick(&h.doors, rng)),
         Action::HarvestOne => memory.feature("crops").map(|f| f.pos),
+        // Where the boat is: never moved while they look at it.
+        Action::MoveVehicle => memory.their_boat().map(|c| block_of(c.pos)),
         Action::PlateLaid => memory.used_container().map(|c| c.pos),
         Action::ToggleDoor
         | Action::DoorHinge
@@ -684,7 +700,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::StandTurn => memory.decor("armor_stand").next().map(|d| d.pos),
         Action::PetGrowl => memory.pets().next().map(|p| block_of(p.pos)),
         Action::MoveCreature(_, Where::Home) => home.map(|h| h.center),
-        Action::MoveCreature(_, Where::OutsideDoor) => home.and_then(|h| pick(&h.doors, rng)),
+        // Two blocks out from the door they use, on the ground (it was the door's own block).
+        Action::MoveCreature(_, Where::OutsideDoor) => memory.doorway_spot().map(|s| {
+            let b = block_of(s);
+            [b[0], b[1] - 1, b[2]]
+        }),
         Action::MoveCreature(_, Where::RouteEnd) => memory.route_end(),
         Action::MoveCreature(_, Where::Corner) => {
             home.map(|h| [h.center[0] + 3, h.floor_y, h.center[2] + 3])
@@ -1144,6 +1164,17 @@ fn step_toward(from: BlockPos, to: BlockPos) -> [i32; 2] {
     }
 }
 
+/// Which way an event's toggle goes: open or lit, shut or out, or (none) the other way from now.
+/// `close_door` on a door left shut used to open it.
+fn toggle_to(event: &str) -> Option<bool> {
+    match event {
+        "open_door" | "open_gate" | "light_campfire" | "wake" | "door_opens_itself"
+        | "village_doors" => Some(true),
+        "close_door" | "put_out_campfire" => Some(false),
+        _ => None,
+    }
+}
+
 /// What a ripe crop cleared gives: the crop's own item.
 pub fn harvest_of(block: &str) -> Option<&'static str> {
     match block {
@@ -1293,14 +1324,32 @@ pub fn commands(
         // Armed by the brain (`Brain::arm_loot`), given by the host.
         Action::LootGift => vec![],
         Action::ToggleDoor | Action::ToggleFixture(_) => pos
-            .map(|p| vec![(Command::ToggleBlock { id: ids(), pos: p }, 0)])
+            .map(|p| {
+                vec![(
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: p,
+                        to: toggle_to(event.id),
+                    },
+                    0,
+                )]
+            })
             .unwrap_or_default(),
         // Their candles, as their lights know them: the fixtures never held a candle.
         Action::ToggleCandles => memory
             .walls
             .iter()
             .filter(|(_, id)| id.contains("candle") && !id.contains("cake"))
-            .map(|(p, _)| (Command::ToggleBlock { id: ids(), pos: *p }, 0))
+            .map(|(p, _)| {
+                (
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: *p,
+                        to: toggle_to(event.id),
+                    },
+                    0,
+                )
+            })
             .collect(),
         Action::Sound(sound) | Action::SoundAtFixture(_, sound) => pos
             .map(|p| vec![(sound_at(ids, target, sound, at(p), 1.0), 0)])
@@ -1790,12 +1839,13 @@ pub fn commands(
             .unwrap_or_default(),
         // Each torch within five blocks of the one picked taken down, and at once put in their
         // chest: a failure stops the rest, and no torch is ever lost between the two.
+        // As many torches as their chest has room for: one put out with no room for it was lost.
         Action::RoomDark => match (pos, memory.used_container(), memory.home.as_ref()) {
             (Some(spot), Some(chest), Some(home)) => home
                 .lights
                 .iter()
                 .filter(|l| distance(**l, spot) <= 5.0)
-                .take(6)
+                .take(6.min(chest.empty_slots().len()))
                 .enumerate()
                 .flat_map(|(i, light)| {
                     [
@@ -1844,6 +1894,7 @@ pub fn commands(
                     Command::ToggleBlock {
                         id: ids(),
                         pos: door,
+                        to: toggle_to(event.id),
                     },
                     3,
                 )]
@@ -2181,6 +2232,7 @@ pub fn commands(
                     Command::ToggleBlock {
                         id: ids(),
                         pos: door,
+                        to: toggle_to(event.id),
                     },
                     5,
                 ));
@@ -2365,7 +2417,16 @@ pub fn commands(
         // Full that was empty, or empty that was full: the host's toggle of a cauldron (it was
         // filled and emptied a tick apart, or failed on a full one).
         Action::Cauldron => pos
-            .map(|p| vec![(Command::ToggleBlock { id: ids(), pos: p }, 0)])
+            .map(|p| {
+                vec![(
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: p,
+                        to: toggle_to(event.id),
+                    },
+                    0,
+                )]
+            })
             .unwrap_or_default(),
         Action::RotateFrame => pos
             .and_then(|p| memory.decor("item_frame").find(|d| d.pos == p))
@@ -2521,6 +2582,17 @@ pub fn commands(
                                 seconds: 600.0,
                             },
                             1,
+                        ));
+                    }
+                    // The villager back where it stood by morning, as its row says.
+                    if event.id == "villager_at_door" {
+                        made.push((
+                            Command::MoveEntity {
+                                id: ids(),
+                                entity: c.id,
+                                to: c.pos,
+                            },
+                            12_000,
                         ));
                     }
                     made
@@ -2815,6 +2887,7 @@ pub fn commands(
                     Command::ToggleBlock {
                         id: ids(),
                         pos: door,
+                        to: toggle_to(event.id),
                     },
                     0,
                 )]
@@ -2832,6 +2905,7 @@ pub fn commands(
                     Command::ToggleBlock {
                         id: ids(),
                         pos: door,
+                        to: toggle_to(event.id),
                     },
                     i as u64 * 20,
                 )
@@ -3828,6 +3902,7 @@ pub fn commands(
                     Command::ToggleBlock {
                         id: ids(),
                         pos: bell,
+                        to: toggle_to(event.id),
                     },
                     30,
                 )]
@@ -4080,7 +4155,16 @@ pub fn commands(
                     .map(|t| (lamp.pos, t))
                     .collect::<Vec<_>>()
             })
-            .map(|(p, t)| (Command::ToggleBlock { id: ids(), pos: p }, t))
+            .map(|(p, t)| {
+                (
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: p,
+                        to: toggle_to(event.id),
+                    },
+                    t,
+                )
+            })
             .collect(),
         Action::ComposterFills => pos
             .map(|p| {
@@ -4136,7 +4220,16 @@ pub fn commands(
             _ => vec![],
         },
         Action::BellRings => pos
-            .map(|p| vec![(Command::ToggleBlock { id: ids(), pos: p }, 0)])
+            .map(|p| {
+                vec![(
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: p,
+                        to: toggle_to(event.id),
+                    },
+                    0,
+                )]
+            })
             .unwrap_or_default(),
         // The game's own death line, one of a few, about them while they live.
         Action::DeathMessage => {
@@ -4699,7 +4792,19 @@ pub fn commands(
                 };
                 swapped.map(|to| (*p, id.clone(), to))
             })
-            .map(|(p, id, cousin)| vec![(set(ids, p, &cousin, &[id.as_str()]), 0)])
+            // Swapped with its state kept (facing, axis, half, hanging): rebuilt in its default
+            // state a wall torch fell, stairs turned, a double slab was half of one.
+            .map(|(p, id, to)| {
+                vec![(
+                    Command::SwapBlock {
+                        id: ids(),
+                        pos: p,
+                        block: to,
+                        only: vec![id],
+                    },
+                    0,
+                )]
+            })
             .unwrap_or_default(),
         Action::BedBreaks => pos
             .map(|bed| {
@@ -6821,7 +6926,7 @@ mod tests {
         assert_eq!(p, Some([5, 66, 5]));
         let made = commands(swap, p, &memory, &mut ids(), &now, None);
         assert!(
-            matches!(&made[0].0, Command::SetBlock { block, replace, .. } if block == "minecraft:iron_bars" && replace == &["minecraft:glass_pane".to_string()]),
+            matches!(&made[0].0, Command::SwapBlock { block, only, .. } if block == "minecraft:iron_bars" && only == &["minecraft:glass_pane".to_string()]),
             "{:?}",
             made[0].0
         );
@@ -6836,7 +6941,7 @@ mod tests {
             None,
         );
         assert!(
-            matches!(&made[0].0, Command::SetBlock { block, replace, .. } if block != "minecraft:torch" && block.ends_with("torch") && replace == &["minecraft:torch".to_string()]),
+            matches!(&made[0].0, Command::SwapBlock { block, only, .. } if block == "minecraft:soul_torch" && only == &["minecraft:torch".to_string()]),
             "{:?}",
             made[0].0
         );
@@ -6844,7 +6949,7 @@ mod tests {
         let wall = find("wall_swap").unwrap();
         let made = commands(wall, Some([5, 65, 5]), &memory, &mut ids(), &now, None);
         assert!(
-            matches!(&made[0].0, Command::SetBlock { block, .. } if block.ends_with("_planks") && block != "minecraft:oak_planks"),
+            matches!(&made[0].0, Command::SwapBlock { block, .. } if block.ends_with("_planks") && block != "minecraft:oak_planks"),
             "{:?}",
             made[0].0
         );

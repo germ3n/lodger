@@ -408,10 +408,14 @@ impl Mod for Lodger {
         // before each tick); before its first tick it has none, and day zero serves. Until
         // now it read a default clock, day zero always: habits, adopted chests, how long
         // they were gone and every reaction's age never moved.
-        let day = world
-            .first_day
-            .map(|_| world.day(&world.last_now))
-            .unwrap_or(0.0);
+        let day = if world.first_day.is_none() {
+            0.0
+        } else if world.last_now == Now::default() {
+            // Reopened, no tick yet: the day it was at.
+            world.last_day
+        } else {
+            world.day(&world.last_now)
+        };
         world.observe(observations, day);
     }
 
@@ -448,14 +452,6 @@ impl Mod for Lodger {
 
     fn save(&self, world: &Stay) -> Vec<u8> {
         world.save()
-    }
-
-    /// The overworld closed (the game back at its title, the server stopping): no one is
-    /// playing it, so the model is unloaded; the next world's first question loads it again.
-    fn close(&self, world: Stay) {
-        if world.world == "minecraft:overworld" {
-            self.model.unload();
-        }
     }
 
     fn debug(&self, world: &mut Stay, request: &DebugRequest) -> DebugReply {

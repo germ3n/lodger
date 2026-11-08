@@ -32,10 +32,12 @@ class AcceptanceTest {
 		Path file = dir.resolve("craftkit").resolve("accepted.json");
 		new Acceptance(file).accept("lodger", licensed());
 
-		assertTrue(Files.readString(file).contains("\"lodger:model\""));
+		assertTrue(Files.readString(file).contains("\"lodger:model:Apache License 2.0\""));
 		Acceptance again = new Acceptance(file);
 		assertTrue(again.accepted("lodger", licensed()));
 		assertFalse(again.accepted("other", licensed()), "another mod's same resource id is not accepted");
+		Resource research = new Resource("model", "t", "https://x/m", Path.of("/nowhere"), 0, new byte[0], "", true, new Resource.License("Qwen Research License", "https://x/R", "terms"));
+		assertFalse(again.accepted("lodger", research), "another size's other license is asked for itself");
 	}
 
 	@Test

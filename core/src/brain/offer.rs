@@ -58,8 +58,12 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .in_used_container(|id| id.ends_with(suffix))
             .is_some(),
         Need::Furnace => memory.furnace().is_some(),
+        // A furnace whose input and output are free: a full input sent their raw thing to the
+        // output slot, where it stopped what was smelting.
         Need::Smeltable => {
-            memory.furnace().is_some()
+            memory
+                .furnace()
+                .is_some_and(|f| !f.contents.iter().any(|s| s.slot == 0 || s.slot == 2))
                 && memory
                     .in_used_container(crate::brain::act::smeltable)
                     .is_some()
@@ -90,11 +94,18 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::LootOpened => false,
         Need::Night => night,
         Need::Dawn => now.day_time < 1_500 || now.day_time > 23_000,
-        Need::Wall => !memory.walls.is_empty(),
-        Need::PlacedLight => memory
+        // A block of theirs with a family: the lights among them are there for their ids.
+        Need::Wall => memory
             .walls
             .iter()
-            .any(|(_, id)| id.ends_with("torch") || id.ends_with("lantern")),
+            .any(|(_, id)| !crate::memory::cousins(id).is_empty()),
+        // One soul fire can take (`torch_blue`): a torch, a wall torch, a lantern.
+        Need::PlacedLight => memory.walls.iter().any(|(_, id)| {
+            matches!(
+                id.rsplit(':').next().unwrap_or(id),
+                "torch" | "wall_torch" | "lantern"
+            )
+        }),
         Need::Pane => memory
             .walls
             .iter()
@@ -170,7 +181,14 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::RangBell => false,
         Need::Villagers => memory.villager_near().is_some(),
         Need::BuildLeft(event) => memory.next_build(event).is_some(),
-        Need::Walls => memory.walls.len() >= 20,
+        Need::Walls => {
+            memory
+                .walls
+                .iter()
+                .filter(|(_, id)| !crate::memory::cousins(id).is_empty())
+                .count()
+                >= 20
+        }
         Need::LightNear => last.online && crate::brain::act::light_near(memory).is_some(),
         Need::Tunnel => memory.newest_tunnel().is_some(),
         Need::InTunnel => last.online && last.underground && memory.tunnel_at_target().is_some(),
@@ -218,7 +236,8 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::Footsteps
         | Action::HandOnShoulder
         | Action::ChestAnswers => config.events.sounds,
-        Action::Hint(_, _) => config.events.glitches,
+        // Their name in the ghasts' cries is a hint too: off with the glitches.
+        Action::Hint(_, _) | Action::GhastName => config.events.glitches,
         Action::Figure(_, _, _)
         | Action::FigureSwing(_)
         | Action::FigureWave

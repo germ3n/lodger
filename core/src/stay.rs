@@ -43,6 +43,10 @@ pub struct Stay {
     /// saved: a reopened stay reads the clock again on its first tick.
     #[serde(skip)]
     pub last_now: Now,
+    /// The stay's day at the last tick, saved: what an observation before the first tick after a
+    /// reopen is stamped with (it was day 0, which moved habits and the temper's day).
+    #[serde(default)]
+    pub last_day: f32,
 }
 
 /// The first bincode layout's leading fields, which formats 1 and 2 both began with.
@@ -221,6 +225,7 @@ impl Stay {
         }
 
         let day = self.day(now);
+        self.last_day = day;
         self.memory.clock(now, day);
         self.arc.sharing = self.memory.sharing_with_horror();
         // Its temper: drifted back toward the preset's resting value, and the pace it sets.

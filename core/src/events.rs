@@ -3727,7 +3727,7 @@ pub const CATALOGUE: &[Event] = &[
         "boat_moved",
         2,
         5,
-        &[Vehicle, Around("water"), TargetAwayOrAsleep],
+        &[TheirBoat, Around("water"), TargetAwayOrAsleep],
         3.0,
         3,
         Full,
@@ -3738,7 +3738,7 @@ pub const CATALOGUE: &[Event] = &[
         "boat_adrift",
         3,
         5,
-        &[Vehicle, Around("water"), TargetAwayOrAsleep],
+        &[TheirBoat, Around("water"), TargetAwayOrAsleep],
         3.0,
         2,
         Full,
@@ -4400,8 +4400,7 @@ impl Event {
             | Action::PlantFlower
             | Action::ReplantOther
             | Action::IcePath
-            | Action::WallSwap(..)
-            | Action::BedBreaks => "house",
+            | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
             | Action::StandWatch
@@ -4410,7 +4409,6 @@ impl Event {
             | Action::GolemTurned
             | Action::DyeSheep
             | Action::HostilesStare
-            | Action::BedOccupied
             | Action::Figure(..)
             | Action::FigureSwing(_)
             | Action::FigureWave
@@ -4437,9 +4435,13 @@ impl Event {
             Action::EnderHolds => "seen",
             Action::WhileAway => "house",
             Action::HandOnShoulder => "seen",
-            Action::RefuseRest | Action::Wake | Action::WokeElsewhere | Action::OtherHouse => {
-                "night"
-            }
+            // Their sleep: refused, broken, someone in their bed.
+            Action::RefuseRest
+            | Action::Wake
+            | Action::WokeElsewhere
+            | Action::OtherHouse
+            | Action::BedBreaks
+            | Action::BedOccupied => "night",
         }
     }
 

@@ -75,12 +75,23 @@ pub fn answer(
                     for id in &ids {
                         stay.brain.drop_plan(*id, day, &mut stay.memory, log);
                     }
-                    // The commands queued for later go, and so do the host's waits on them: a
-                    // wait left behind kept the event from ever being recorded.
-                    let queued: Vec<u64> =
-                        stay.brain.later.iter().map(|l| l.command.id()).collect();
-                    stay.brain.later.clear();
-                    stay.brain.pending.retain(|p| !queued.contains(&p.id));
+                    // The commands queued for an event under way go, and so do the host's waits
+                    // on them (a wait left behind kept the event from being recorded); what is
+                    // queued for no event (an ore or a crop on its way to their chest, the
+                    // ending's beats) stays, or it was lost.
+                    let waited: Vec<u64> = stay.brain.pending.iter().map(|p| p.id).collect();
+                    let dropped: Vec<u64> = stay
+                        .brain
+                        .later
+                        .iter()
+                        .map(|l| l.command.id())
+                        .filter(|id| waited.contains(id))
+                        .collect();
+                    stay.brain
+                        .later
+                        .retain(|l| !dropped.contains(&l.command.id()));
+                    // What was sent already still reports and is recorded.
+                    stay.brain.pending.retain(|p| !dropped.contains(&p.id));
                     match ids.len() {
                         0 => "there were no plans".to_string(),
                         n => format!("dropped {n} plan(s)"),
@@ -484,7 +495,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
                 "{}: {} (last step day {:.1}{})",
                 open.id,
                 steps.join(" > "),
-                open.since,
+                open.landed_day,
                 if memory.chain_next().iter().any(|e| open
                     .next(chain)
                     .is_some_and(|i| chain.steps[i].events.contains(e)))

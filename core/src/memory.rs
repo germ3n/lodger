@@ -833,8 +833,9 @@ const STONES: &[&str] = &[
 pub const CROUCHED_STILL: f32 = 10.0;
 
 const BRICKS: &[&str] = &["bricks", "mud_bricks", "nether_bricks", "red_nether_bricks"];
-const TORCHES: &[&str] = &["torch", "soul_torch", "redstone_torch"];
-const WALL_TORCHES: &[&str] = &["wall_torch", "soul_wall_torch", "redstone_wall_torch"];
+// Never a redstone torch: one set lit beside a door, a piston or TNT powers it.
+const TORCHES: &[&str] = &["torch", "soul_torch"];
+const WALL_TORCHES: &[&str] = &["wall_torch", "soul_wall_torch"];
 const LANTERNS: &[&str] = &["lantern", "soul_lantern"];
 const PANES: &[&str] = &["glass_pane", "iron_bars"];
 const GLASSES: &[&str] = &["glass", "tinted_glass"];
@@ -1385,6 +1386,8 @@ impl Memory {
                     }
                 }
                 EventKind::Joined => {
+                    // Joined, not back from elsewhere: a missing first observation set it.
+                    self.elsewhere_since = None;
                     self.sessions.push(Session {
                         began_real: self.last_real_millis,
                         ended_real: 0,
@@ -1419,7 +1422,9 @@ impl Memory {
                         push_capped(&mut self.placed, pos, MOST_PLACED);
                         self.react_to_placing(pos, &event.detail);
                         self.react_to_fixing(pos);
-                        if !cousins(&event.detail).is_empty() {
+                        // A light is kept with its id too (candles, the soul swap): it has no
+                        // family, so candles were never among them and `candles_lit` never came.
+                        if !cousins(&event.detail).is_empty() || is_light(&event.detail) {
                             self.walls.retain(|(p, _)| *p != pos);
                             push_capped(&mut self.walls, (pos, event.detail.clone()), MOST_WALLS);
                         }
@@ -1555,6 +1560,9 @@ impl Memory {
                 }
                 EventKind::BrokeBlock => {
                     if let Some(pos) = event.pos {
+                        // Gone, so not its light any more: the leave ending put out a torch of
+                        // theirs set where its had been.
+                        self.its_lights.retain(|p| *p != pos);
                         if self.last.underground
                             && crate::tunnels::is_rock(&event.detail)
                             && !self.placed.contains(&pos)

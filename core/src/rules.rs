@@ -158,6 +158,9 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::ScanVillage
             | crate::events::Action::TunnelToward
             | crate::events::Action::TorchesFarEnd
+            // A disc put on inside the house as they come to the door: heard, not seen, and
+            // waiting until they looked away the approach was over and it never came.
+            | crate::events::Action::JukeboxDisc
     )
 }
 

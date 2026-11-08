@@ -78,8 +78,12 @@ impl Preset {
                 config.events.min_distance = 80;
                 config.brain.most_plans = 2;
                 config.events.chat = false;
+                // Nothing on their screen, as calm promises (the glitches stayed on).
+                config.events.glitches = false;
                 config.events.disabled = [
                     "refuse_rest",
+                    "bed_breaks",
+                    "foot_of_bed",
                     "bed_occupied",
                     "wake",
                     "woke_elsewhere",
@@ -802,6 +806,9 @@ impl Config {
 
         if self.brain.queue == 0 {
             return Err("brain.queue must be at least 1".to_string());
+        }
+        if !["model", "first"].contains(&self.multiplayer.pick.as_str()) {
+            return Err("multiplayer.pick must be model or first".to_string());
         }
         // 0 retargeted the moment the target logged off, at the next stage.
         if self.multiplayer.absent_days == 0 {

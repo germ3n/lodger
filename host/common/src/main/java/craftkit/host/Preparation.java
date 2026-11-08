@@ -135,6 +135,29 @@ public final class Preparation {
 	}
 
 	/**
+	 * A resource with choices, with its mod: the one on screen, or after a failure (nothing on
+	 * screen then) the first needed one, so its size can still be changed (the button vanished).
+	 */
+	public Optional<PendingLicense> choosable() {
+		Optional<PendingLicense> now = shown().filter(s -> !s.resource().choices().isEmpty());
+		if (now.isPresent()) {
+			return now;
+		}
+		for (LoadedMod mod : mods) {
+			if (!mod.loaded()) {
+				continue;
+			}
+			for (Resource resource : mod.resources()) {
+				if (!resource.choices().isEmpty() && resource.required()) {
+					return Optional.of(new PendingLicense(mod, resource));
+				}
+			}
+		}
+
+		return Optional.empty();
+	}
+
+	/**
 	 * A resource with a way to play without it, needed or not, with its mod: the screen's Play
 	 * without it, which must be there when the download or the load failed too (it was not, and a
 	 * failing download left only Quit).
@@ -163,8 +186,16 @@ public final class Preparation {
 	 * config and the mod initialised again with it, and the work started over for what it now
 	 * needs. Off the render thread.
 	 */
+	/** A size being switched: the cancelled download is no failure to show or try again. */
+	private volatile boolean switching;
+
+	public boolean switching() {
+		return switching;
+	}
+
 	public void choose(LoadedMod mod, Resource.Choice choice) {
-		Thread switching = new Thread(() -> {
+		switching = true;
+		Thread switcher = new Thread(() -> {
 			cancel();
 			Thread running = thread;
 			if (running != null) {
@@ -178,14 +209,15 @@ public final class Preparation {
 			}
 			pendingLicense.set(null);
 			String error = mod.reconfigure(choice.config());
+			switching = false;
 			if (!error.isEmpty()) {
 				progress.set(new Progress(Phase.FAILED, mod.name(), 0, "", mod.id() + ": " + error));
 				return;
 			}
 			start();
 		}, "craftkit-choose");
-		switching.setDaemon(true);
-		switching.start();
+		switcher.setDaemon(true);
+		switcher.start();
 	}
 
 	/** Stops a running download; the screen's Quit button and the server's shutdown use it. */
@@ -254,6 +286,10 @@ public final class Preparation {
 				fetching.set(null);
 
 				if (downloader.state() != Downloader.State.DONE) {
+					if (switching) {
+						// Stopped for another size: the switch starts again, nothing failed.
+						return;
+					}
 					progress.set(new Progress(Phase.FAILED, resource.title(), downloader.fraction(), "", mod.id() + ": " + resource.id() + ": " + downloader.error()));
 					Log.LOGGER.warn("{}: could not fetch {}: {}", mod.id(), resource.id(), downloader.error());
 

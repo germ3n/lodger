@@ -47,8 +47,20 @@ public final class WorldData extends SavedData {
 	/** Keeps a taken stack under a key; a stack already kept there is added to if the same. */
 	public void keep(String key, ItemStack stack) {
 		ItemStack had = kept.get(key);
-		if (had != null && ItemStack.isSameItemSameComponents(had, stack)) {
+		if (had != null && ItemStack.isSameItemSameComponents(had, stack) && had.getCount() + stack.getCount() <= had.getMaxStackSize()) {
 			had.grow(stack.getCount());
+		} else if (had != null && ItemStack.isSameItemSameComponents(had, stack)) {
+			// A full stack: the rest beside it. A stack saved over 99 threw at every save and
+			// stopped the world saving at all.
+			int room = had.getMaxStackSize() - had.getCount();
+			had.grow(room);
+			ItemStack rest = stack.copy();
+			rest.shrink(room);
+			int n = 1;
+			while (kept.containsKey(key + "_" + n)) {
+				n++;
+			}
+			kept.put(key + "_" + n, rest);
 		} else if (had == null) {
 			kept.put(key, stack.copy());
 		} else {

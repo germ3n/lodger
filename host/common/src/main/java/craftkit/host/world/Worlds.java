@@ -190,6 +190,8 @@ public final class Worlds {
 		approaches.clear();
 		charges.clear();
 		loot.clear();
+		// A figure up as the world closed held the whole old level through its sighting.
+		figures.clear();
 	}
 
 	public void tick(MinecraftServer server) {
@@ -214,7 +216,7 @@ public final class Worlds {
 		poses.tick();
 		figures.tick();
 		for (Figures.Sighting sighting : figures.takeSightings()) {
-			if (sighting.level() instanceof ServerLevel shownIn) {
+			if (sighting.level() instanceof ServerLevel shownIn && open.containsKey(shownIn)) {
 				senses.noticedFigureSeen(shownIn, sighting.player(), sighting.at(), sighting.detail());
 			}
 		}

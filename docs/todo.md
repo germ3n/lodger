@@ -1188,6 +1188,35 @@ The `[x]` lines above, summed up by day:
   runtime. Tests: JUnit for the xz unpacking and the Vulkan hint; each native checked as it is
   built. Was: six CPU natives each built on its own CI runner on every push, packed as they
   were, `gpu_share` 0.5, and no `docs/build.md`.
+- [x] **The seventh bug pass** (five reviewers; about fifty found, many in the sixth's own
+  fixes). The other house again: a kept stack past 99 threw at every save and stopped the world
+  saving (a full stack now spills beside it); its walls ran four high, so a flight, a pearl or a
+  swim down found the void (walls the whole height now, and anyone out of the box is sent home
+  at once); TNT and respawn anchors were copied and their blast dropped the copy's blocks; what
+  they left in its chests or dropped there was lost (it comes home with them). A figure up as the
+  world closed held the old level for good. The wall swap rebuilt blocks in their default state
+  (a wall torch fell, stairs turned, a double slab was half one; `SwapBlock` keeps the state now)
+  and could make a redstone torch (none in the family now); candles were still never recorded;
+  one swapped torch was marked as its own light, which the leave ending would put out. Toggles
+  went the other way half the time: `close_door` opened a shut door, and the gates, campfires,
+  `wake`, `door_opens_itself` and `village_doors` likewise (`toggle_block`'s `to`, ABI 50). A
+  pet could be set into a wall (the host finds room within two blocks, or refuses); the villager
+  and the pet stood in the doorway itself (two blocks out now, and the villager back by morning);
+  `door_opens_itself` opened a random door; the doorway, chest and bed figures stood a block high;
+  `one_room_dark` lost a torch to a full chest; `head_on_post` never rested a head on its post;
+  `cook_one` could jam a full furnace; the jukebox waited out of sight it was never in; `busy_away`
+  set its work in front of them as they came back. The mind: the first observation after a reopen
+  was day 0; the retarget missed a friend at the old index and forgot too little; its lights were
+  kept after they broke theirs there; "thanks" and "fucking" stopped counting; the chest was its
+  own for three days only; the house's corners and glass were not its; the usual door could be
+  evicted; `multiplayer.pick` took anything; house sounds where they stand lapsed for most of
+  every half minute; a chain's noticing looked at the wrong step; boats were offered with no boat.
+  The download screen: one license accepted counted for every size (the 3B's was never shown),
+  the model unloaded at every quit to the title and loaded again behind "Getting ready" (it stays
+  loaded now, the idle unload alone), the size button vanished after a failure, and a size changed
+  mid-download showed a failure for a moment. `calm` now keeps the glitches off and two sleep
+  events out, as it promises. Tests: the swap's, the acceptance's, the catalogue's. Was: all of
+  that.
 - [x] **The sixth bug pass** (five reviewers, the fifth on the events one by one; about
   fifty found). The other house could kill and duplicate: its floor ended in the dark, so a walk
   out of the door dropped them into the void, and its copy could be mined in survival and carried
@@ -1245,7 +1274,7 @@ The `[x]` lines above, summed up by day:
   falling in fast could still kill; a second swapped loot item replaced the first kept one. The
   client and the rest: a download whose server never answered hung with no Try again, and Quit
   threw away a part file (it is kept now); `model.idle_minutes` was read by nothing (the model
-  unloads after it, and when the overworld closes); a key misspelt inside a section was ignored
+  unloads after it); a key misspelt inside a section was ignored
   silently (reported now); NeoForge counted tilling with torches in the off hand as building;
   the debug overlay kept the last world's picture on the next server. The CI builds the Linux
   natives on Ubuntu 22.04 (24.04's glibc did not load on Debian 12) and Windows on ARM with

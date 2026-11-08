@@ -116,7 +116,9 @@ public final class OtherHouse {
 				for (int y = floor - BELOW; y <= floor + ABOVE; y++) {
 					BlockPos pos = new BlockPos(x, y, z);
 					BlockState state = home.getBlockState(pos);
-					if (state.getLightEmission() > 0) {
+					// In the dark: its lights left out; and nothing that goes off (TNT, a respawn
+					// anchor), whose blast would drop the copy's blocks to carry home.
+					if (state.getLightEmission() > 0 || state.is(Blocks.TNT) || state.is(Blocks.RESPAWN_ANCHOR)) {
 						state = Blocks.AIR.defaultBlockState();
 					}
 					if (!state.isAir()) {
@@ -132,8 +134,10 @@ public final class OtherHouse {
 			for (int z = -out; z <= out; z++) {
 				barrier(other, ANCHOR.offset(x, 0, z));
 				barrier(other, ANCHOR.offset(x, -BELOW - 1, z));
+				// Walls the whole height, from the layer under the copy to above its roof: a swim
+				// down or a flight over found the void.
 				if (Math.abs(x) == out || Math.abs(z) == out) {
-					for (int y = 1; y <= WALL_HIGH; y++) {
+					for (int y = -BELOW - 1; y <= ABOVE + WALL_HIGH; y++) {
 						barrier(other, ANCHOR.offset(x, y, z));
 					}
 				}
@@ -186,7 +190,12 @@ public final class OtherHouse {
 				it.remove();
 				continue;
 			}
-			if (tick >= visit.untilTick || player.level().dimension() != KEY) {
+			// Out of the box all the same (a pearl, a flight): home at once, never into the void.
+			boolean out = player.level().dimension() == KEY && (player.getY() < ANCHOR.getY() - BELOW - 2
+					|| Math.abs(player.getX() - ANCHOR.getX()) > MOST_RADIUS + FLOOR_OUT + 1
+					|| Math.abs(player.getZ() - ANCHOR.getZ()) > MOST_RADIUS + FLOOR_OUT + 1
+					|| player.getY() > ANCHOR.getY() + ABOVE + WALL_HIGH + 8);
+			if (tick >= visit.untilTick || player.level().dimension() != KEY || out) {
 				it.remove();
 				home(server, player, visit.bed, visit.door);
 			}
@@ -225,6 +234,7 @@ public final class OtherHouse {
 	/** Back in their own bed with the door open; without a bed known, at their respawn or the world's. */
 	private static void home(MinecraftServer server, ServerPlayer player, BlockPos bed, BlockPos door) {
 		ServerLevel overworld = server.overworld();
+		List<ItemStack> left = leftBehind(server);
 		BlockPos to = bed;
 		if (to == null) {
 			ServerPlayer.RespawnConfig respawn = player.getRespawnConfig();
@@ -232,12 +242,55 @@ public final class OtherHouse {
 		}
 		player.teleportTo(overworld, to.getX() + 0.5, to.getY() + 0.6, to.getZ() + 0.5, java.util.Set.of(), player.getYRot(), player.getXRot(), false);
 		restoreMode(player);
+		// What they left there comes home with them: in their inventory, or at their feet.
+		for (ItemStack stack : left) {
+			if (!player.getInventory().add(stack) && !stack.isEmpty()) {
+				net.minecraft.world.entity.item.ItemEntity dropped = new net.minecraft.world.entity.item.ItemEntity(overworld, player.getX(), player.getY(), player.getZ(), stack);
+				dropped.setUnlimitedLifetime();
+				overworld.addFreshEntity(dropped);
+			}
+		}
 		if (door != null) {
 			BlockState state = overworld.getBlockState(door);
 			if (state.getBlock() instanceof DoorBlock doorBlock && !doorBlock.isOpen(state)) {
 				doorBlock.setOpen(null, overworld, state, door, true);
 			}
 		}
+	}
+
+	/**
+	 * What is left in the copy, taken out: what they put in its chests and what they dropped.
+	 * The next copy's clearing spilled it into a place torn down, and nothing came home.
+	 */
+	private static List<ItemStack> leftBehind(MinecraftServer server) {
+		List<ItemStack> left = new ArrayList<>();
+		ServerLevel other = server.getLevel(KEY);
+		if (other == null) {
+			return left;
+		}
+		int span = MOST_RADIUS + FLOOR_OUT + 1;
+		net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(ANCHOR.getX() - span, ANCHOR.getY() - BELOW - 2, ANCHOR.getZ() - span,
+				ANCHOR.getX() + span + 1, ANCHOR.getY() + ABOVE + WALL_HIGH + 2, ANCHOR.getZ() + span + 1);
+		for (net.minecraft.world.entity.item.ItemEntity item : other.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box)) {
+			left.add(item.getItem().copy());
+			item.discard();
+		}
+		for (int x = -MOST_RADIUS; x <= MOST_RADIUS; x++) {
+			for (int z = -MOST_RADIUS; z <= MOST_RADIUS; z++) {
+				for (int y = -BELOW; y <= ABOVE; y++) {
+					BlockPos pos = ANCHOR.offset(x, y, z);
+					if (other.getBlockEntity(pos) instanceof net.minecraft.world.Container container) {
+						for (int i = 0; i < container.getContainerSize(); i++) {
+							ItemStack stack = container.removeItemNoUpdate(i);
+							if (!stack.isEmpty()) {
+								left.add(stack);
+							}
+						}
+					}
+				}
+			}
+		}
+		return left;
 	}
 
 	/** Everyone there sent home: the server is stopping. */

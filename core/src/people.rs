@@ -35,14 +35,22 @@ impl Memory {
     /// Who is near the target and who is at the home, from one observation's players.
     pub(crate) fn observe_people(&mut self, observations: &Observations, day: f32) {
         let Some(index) = self.target else { return };
-        let Some(target) = observations.players.iter().find(|p| p.index == index) else {
+        // The target by uuid too: after a restart another player may hold their index.
+        let Some(target) = observations.players.iter().find(|p| {
+            p.index == index
+                && (self.target_uuid.is_empty() || p.uuid.is_empty() || p.uuid == self.target_uuid)
+        }) else {
             self.people.with.clear();
             return;
         };
         let today = day.floor() as i64;
         let center = self.home.as_ref().map(|h| h.center);
         self.people.with.clear();
-        for other in observations.players.iter().filter(|p| p.index != index) {
+        for other in observations
+            .players
+            .iter()
+            .filter(|p| !std::ptr::eq(*p, target))
+        {
             let dx = other.pos[0] - target.pos[0];
             let dy = other.pos[1] - target.pos[1];
             let dz = other.pos[2] - target.pos[2];

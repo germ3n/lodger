@@ -85,7 +85,8 @@ public final class Executors {
 					Surroundings.start(level, mod, id, blockPos(command.getAsJsonArray("around")), command.get("radius").getAsInt(), context.senses());
 					yield report(id, true, "started; the answer comes as an observation");
 				}
-				case "toggle_block" -> toggleBlock(level, blockPos(command.getAsJsonArray("pos")), id);
+				case "toggle_block" -> toggleBlock(level, blockPos(command.getAsJsonArray("pos")), id,
+						command.has("to") && !command.get("to").isJsonNull() ? command.get("to").getAsBoolean() : null);
 				case "move_block" -> moveBlock(level, command, id);
 				case "set_block" -> setBlock(level, command, id);
 				case "open_lid" -> openLid(level, blockPos(command.getAsJsonArray("pos")), command.get("seconds").getAsFloat(), id, context);
@@ -405,12 +406,30 @@ public final class Executors {
 	}
 
 	private static JsonObject toggleBlock(ServerLevel level, BlockPos pos, long id) {
+		return toggleBlock(level, pos, id, null);
+	}
+
+	/**
+	 * A block toggled, or with {@code to} set to open or lit ({@code true}) or shut or out ({@code
+	 * false}), left alone when it is so already (ABI 50: "close the door" opened a door left shut).
+	 */
+	private static JsonObject toggleBlock(ServerLevel level, BlockPos pos, long id, Boolean to) {
 		BlockState state = level.getBlockState(pos);
 		Block block = state.getBlock();
 
 		if (block instanceof DoorBlock door) {
-			door.setOpen(null, level, state, pos, !door.isOpen(state));
+			boolean open = to == null ? !door.isOpen(state) : to;
+			if (open == door.isOpen(state)) {
+				return report(id, true, "it is so already");
+			}
+			door.setOpen(null, level, state, pos, open);
 			return report(id, true, "");
+		}
+		if (to != null && state.hasProperty(BlockStateProperties.OPEN) && state.getValue(BlockStateProperties.OPEN) == to) {
+			return report(id, true, "it is so already");
+		}
+		if (to != null && state.hasProperty(BlockStateProperties.LIT) && state.getValue(BlockStateProperties.LIT) == to) {
+			return report(id, true, "it is so already");
 		}
 
 		if (block instanceof LeverBlock lever) {
@@ -608,9 +627,31 @@ public final class Executors {
 		if (entity == null || entity instanceof ServerPlayer) {
 			return report(id, false, "no movable entity with that id here");
 		}
-		entity.teleportTo(x, y, z);
+		// Never into a wall: the first spot with room for it within two blocks, up first, or not
+		// at all (a pet set into a wall suffocated).
+		Vec3 free = roomFor(level, entity, new Vec3(x, y, z));
+		if (free == null) {
+			return report(id, false, "no room for it there");
+		}
+		entity.teleportTo(free.x, free.y, free.z);
 
 		return report(id, true, "");
+	}
+
+	/** Where {@code entity} fits at or near {@code at}: up to two blocks up, then a block aside. */
+	private static Vec3 roomFor(ServerLevel level, Entity entity, Vec3 at) {
+		double[][] tries = {{0, 0, 0}, {0, 1, 0}, {0, 2, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}, {1, 1, 0}, {-1, 1, 0}, {0, 1, 1}, {0, 1, -1}};
+		for (double[] t : tries) {
+			Vec3 to = at.add(t[0], t[1], t[2]);
+			if (!level.isLoaded(BlockPos.containing(to))) {
+				continue;
+			}
+			net.minecraft.world.phys.AABB box = entity.getBoundingBox().move(to.subtract(entity.position()));
+			if (level.noCollision(entity, box) && !level.containsAnyLiquid(box)) {
+				return to;
+			}
+		}
+		return null;
 	}
 
 	private static JsonObject figure(ServerLevel level, JsonObject command, long id, Context context) {
@@ -1211,7 +1252,11 @@ public final class Executors {
 				why = dy == 0 ? taken : why;
 				continue;
 			}
-			if (rest && !level.getBlockState(at.below()).isFaceSturdy(level, at.below(), Direction.UP)) {
+			// A fence's or a wall's top holds a head on its post too, though it is no full face
+			// (`head_on_post` left a bare post every time).
+			BlockState under = level.getBlockState(at.below());
+			if (rest && !under.isFaceSturdy(level, at.below(), Direction.UP)
+					&& !under.is(net.minecraft.tags.BlockTags.FENCES) && !under.is(net.minecraft.tags.BlockTags.WALLS)) {
 				why = dy == 0 ? "nothing under it" : why;
 				continue;
 			}

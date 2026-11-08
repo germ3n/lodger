@@ -248,6 +248,19 @@ impl Memory {
         match self.habits.doors.iter_mut().find(|(d, _)| *d == door) {
             Some((_, uses)) => *uses += 1,
             None => {
+                // The least used makes room, never the usual door (the oldest went, which was).
+                if self.habits.doors.len() >= MOST_DOORS {
+                    if let Some(least) = self
+                        .habits
+                        .doors
+                        .iter()
+                        .enumerate()
+                        .min_by_key(|(_, (_, uses))| *uses)
+                        .map(|(i, _)| i)
+                    {
+                        self.habits.doors.remove(least);
+                    }
+                }
                 self.habits.doors.push((door, 1));
                 if self.habits.doors.len() > MOST_DOORS {
                     self.habits.doors.remove(0);

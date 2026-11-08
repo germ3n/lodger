@@ -41,6 +41,10 @@ pub struct Plan {
     /// and the rules say, and costs the day's budget nothing.
     #[serde(default)]
     pub forced: bool,
+    /// Forced, but still kept out of their sight and away from witnesses: what happened while
+    /// they were gone (`busy_away`) appeared in front of them as they came back.
+    #[serde(default)]
+    pub out_of_sight: bool,
     /// The model's `When?`: `away`, `sleep`, `home` (as they come home), `now`, or empty for
     /// whenever the needs hold.
     #[serde(default)]
@@ -1055,7 +1059,7 @@ impl Brain {
         }
         // In view is a reason to wait, not to give up: every block it would change, not just
         // its spot, stays out of sight until they look away, within the plan's day.
-        let seen = !plan.forced
+        let seen = (!plan.forced || plan.out_of_sight)
             && (checked == Err(rules::Refused::InView)
                 || (checked.is_ok()
                     && rules::hidden_from_view(event.action)
@@ -1069,17 +1073,19 @@ impl Brain {
         }
         // With witness traces off, every block it would change, not only its spot, waits for
         // another player near to go (`multiplayer.rs`).
-        let witnessed = !plan.forced && matches!(event.effect(), "house" | "things" | "words") && {
-            let spots: Vec<BlockPos> = made.iter().flat_map(|(c, _)| act::spots(c)).collect();
-            // No block to change (frames turned, a stand dressed): where it would be.
-            if spots.is_empty() {
-                memory.witness_near(config, plan.pos)
-            } else {
-                spots
-                    .iter()
-                    .any(|spot| memory.witness_near(config, Some(*spot)))
-            }
-        };
+        let witnessed = (!plan.forced || plan.out_of_sight)
+            && matches!(event.effect(), "house" | "things" | "words")
+            && {
+                let spots: Vec<BlockPos> = made.iter().flat_map(|(c, _)| act::spots(c)).collect();
+                // No block to change (frames turned, a stand dressed): where it would be.
+                if spots.is_empty() {
+                    memory.witness_near(config, plan.pos)
+                } else {
+                    spots
+                        .iter()
+                        .any(|spot| memory.witness_near(config, Some(*spot)))
+                }
+            };
         if witnessed {
             return Step::Wait("another player is near".to_string());
         }
@@ -1459,6 +1465,7 @@ impl Brain {
                 from_tick: now.tick,
                 until_tick: now.tick + 600 * TPS,
                 forced: true,
+                out_of_sight: true,
                 ..Plan::default()
             });
             memory.record(busy.id, pos, day, true, event.id);
@@ -2258,6 +2265,7 @@ impl Brain {
             until_tick: now.tick + delay + 24_000,
             decided_day: day,
             forced: false,
+            out_of_sight: false,
             when,
             waiting: String::new(),
             on: pos
@@ -2306,6 +2314,7 @@ impl Brain {
             until_tick: u64::MAX,
             decided_day: day,
             forced: true,
+            out_of_sight: false,
             when: String::new(),
             waiting: String::new(),
             on: String::new(),

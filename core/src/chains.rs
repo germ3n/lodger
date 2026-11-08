@@ -132,6 +132,9 @@ pub struct Open {
     pub since: f32,
     /// The day its last step landed: what a noticing or a look must come after.
     pub landed_day: f32,
+    /// Which step landed last: the one a `Noticed` step needs them to have noticed (steps land
+    /// in any order, and the one before by index may be older).
+    pub last: usize,
 }
 
 impl Open {
@@ -159,6 +162,7 @@ impl Memory {
                     open.landed.push(i);
                     open.since = day;
                     open.landed_day = day;
+                    open.last = i;
                     break;
                 }
             }
@@ -187,6 +191,7 @@ impl Memory {
                     landed: vec![0],
                     since: day,
                     landed_day: day,
+                    last: 0,
                 });
             }
         }
@@ -260,7 +265,7 @@ impl Memory {
                     .iter()
                     .any(|l| l.looked_long() && l.day >= open.landed_day),
                 When::Noticed => {
-                    let last = chain.steps[at.saturating_sub(1)].events;
+                    let last = chain.steps.get(open.last).map(|s| s.events).unwrap_or(&[]);
                     self.reactions.iter().any(|r| {
                         last.contains(&r.event.as_str())
                             && r.day >= open.landed_day - 0.01

@@ -63,7 +63,7 @@ public final class PreparingScreen extends Screen {
 				.bounds(this.width / 2 - 154, y + 24, 308, 20).build());
 		accept.visible = false;
 		readTerms.visible = false;
-		choice = addRenderableWidget(Button.builder(Component.empty(), button -> preparation.shown().ifPresent(shown -> {
+		choice = addRenderableWidget(Button.builder(Component.empty(), button -> preparation.choosable().ifPresent(shown -> {
 			java.util.List<craftkit.host.Resource.Choice> choices = shown.resource().choices();
 			int now = 0;
 			for (int i = 0; i < choices.size(); i++) {
@@ -101,12 +101,13 @@ public final class PreparingScreen extends Screen {
 	public void tick() {
 		super.tick();
 		Preparation.Progress progress = preparation.progress();
-		retry.visible = progress.failed();
+		// Not while a size is being switched: its cancelled download is no failure.
+		retry.visible = progress.failed() && !preparation.switching();
 		boolean license = progress.phase() == Preparation.Phase.LICENSE;
 		accept.visible = license;
 		readTerms.visible = license;
 		retry.active = !license;
-		java.util.Optional<craftkit.host.Resource.Choice> chosen = preparation.shown()
+		java.util.Optional<craftkit.host.Resource.Choice> chosen = preparation.choosable()
 				.flatMap(shown -> shown.resource().choices().stream().filter(craftkit.host.Resource.Choice::chosen).findFirst());
 		choice.visible = chosen.isPresent();
 		chosen.ifPresent(c -> choice.setMessage(Component.translatable("craftkit.preparing.choice", c.label())));
@@ -173,7 +174,7 @@ public final class PreparingScreen extends Screen {
 		graphics.centeredText(this.font, Component.literal(progress.line()), centerX, barTop + 16, GREY);
 
 		// The chosen size's note: how it differs, and the VRAM it wants.
-		preparation.shown()
+		preparation.choosable()
 				.flatMap(shown -> shown.resource().choices().stream().filter(craftkit.host.Resource.Choice::chosen).findFirst())
 				.filter(c -> !c.note().isEmpty())
 				.ifPresent(c -> {

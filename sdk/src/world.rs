@@ -352,6 +352,10 @@ pub enum Command {
     ToggleBlock {
         id: u64,
         pos: BlockPos,
+        /// Open or lit (`true`), shut or out (`false`), left as it is when it is so already;
+        /// absent, the other way from now. ABI 50.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        to: Option<bool>,
     },
     /// Move one block to another place within reach, as the lodger moves a torch.
     MoveBlock {
@@ -1219,6 +1223,7 @@ mod tests {
         let command = Command::ToggleBlock {
             id: 9,
             pos: [1, 2, 3],
+            to: Some(true),
         };
         let text = serde_json::to_string(&command).unwrap();
 

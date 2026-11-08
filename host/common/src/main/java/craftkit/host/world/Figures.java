@@ -86,6 +86,13 @@ public final class Figures {
 	private final List<Figure> active = new ArrayList<>();
 	private final List<Sighting> sightings = new ArrayList<>();
 
+	/** Everything forgotten: the world is closing, and its players and levels with it. */
+	public void clear() {
+		active.clear();
+		sightings.clear();
+		digs.clear();
+	}
+
 	/** The figures gone since the last ask, each with how it was looked at. */
 	public List<Sighting> takeSightings() {
 		List<Sighting> taken = List.copyOf(sightings);

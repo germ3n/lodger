@@ -40,11 +40,13 @@ impl Memory {
     /// things, how they looked at the figure) and what is its own kept (its want, its place, its
     /// house, lights and store, what it did, its temper and chains). Answers their name.
     pub fn retarget(&mut self, now: u64) -> Option<String> {
-        let target = self.target;
+        // Another player by uuid: one at the old target's index is someone else, and is a
+        // candidate (by index alone it was skipped, and the change never came).
+        let old = self.target_uuid.clone();
         let (index, name, uuid) = self
             .others
             .iter()
-            .find(|(i, _, _)| Some(*i) != target && self.others_online.contains(i))
+            .find(|(i, _, u)| self.others_online.contains(i) && (old.is_empty() || *u != old))
             .cloned()?;
         self.set_target(index, &name, &uuid);
         self.home = None;
@@ -58,6 +60,12 @@ impl Memory {
         self.routes.clear();
         self.trail.clear();
         self.last = Default::default();
+        // Where the old target stood still (the home was read again from it), when they were
+        // last elsewhere, and who visited their house: theirs.
+        self.still_cells.clear();
+        self.elsewhere_since = None;
+        self.back_after = None;
+        self.people = Default::default();
         self.target_seen_unix = now;
         self.retargeted = true;
 

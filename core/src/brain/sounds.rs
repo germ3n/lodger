@@ -954,7 +954,8 @@ pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos>
         let fresh = memory
             .here
             .as_ref()
-            .filter(|h| memory.today - h.day <= 0.01);
+            // The house is read every thirty seconds; a little more than that is now.
+            .filter(|h| memory.today - h.day <= 0.03);
         if let Some(here) = fresh {
             let found = if want_chest {
                 pick(&here.containers)

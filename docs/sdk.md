@@ -203,7 +203,8 @@ a figure gone with how it was looked at (facing it within ten degrees for half a
 long, how far they came toward it, how it ended; `world/Gaze.java`). ABI 48: `confront`'s
 `fierce`, 0 to 1, the fight's health up to a quarter more and a fifth wave from half on. ABI 49:
 `other_house`, the target woken in a copy of their house in the content jar's void dimension
-`lodger:other` for a while (`world/OtherHouse.java`).
+`lodger:other` for a while (`world/OtherHouse.java`). ABI 50: `toggle_block`'s `to`, open or lit
+(`true`) or shut or out (`false`), left alone when so already; without it, the other way.
 
 ## Resources
 

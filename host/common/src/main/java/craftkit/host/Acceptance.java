@@ -34,8 +34,13 @@ public final class Acceptance {
 		return file;
 	}
 
+	/**
+	 * {@code <mod id>:<resource id>:<license name>}: the terms accepted are these terms, so one
+	 * size's Apache license accepted is not the 3B's research license (it was, by the resource's
+	 * id alone, and that license was never shown).
+	 */
 	public static String key(String modId, Resource resource) {
-		return modId + ":" + resource.id();
+		return modId + ":" + resource.id() + ":" + resource.license().name();
 	}
 
 	/** Whether the terms of {@code resource} are accepted, or there are none to accept. */
