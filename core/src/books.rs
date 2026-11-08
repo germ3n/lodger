@@ -14,7 +14,7 @@ fn plain(id: &str) -> String {
 }
 
 /// What it has seen them do, a line each, as true as the memory is: where they sleep, the chest
-/// they open most, the way they walk home, what they carry, where else they keep, who comes.
+/// they open most, the way they walk home, what they carry, where else they keep.
 pub fn facts(memory: &Memory) -> Vec<String> {
     let mut out = Vec::new();
     if let Some(bed) = memory.home.as_ref().and_then(|h| h.bed) {
@@ -45,9 +45,8 @@ pub fn facts(memory: &Memory) -> Vec<String> {
     if let Some(site) = memory.sites.first() {
         out.push(format!("you keep a {} away from the house.", site.kind));
     }
-    if let Some(name) = memory.people.visitors.first().map(|v| v.name.clone()) {
-        out.push(format!("{name} comes to the house."));
-    }
+    // Who visits is left out: the book is theirs to show, and another player's name is not
+    // its to write in it.
     let things = memory.landmarks.iter().filter(|l| l.ok).count();
     if things > 0 {
         out.push(format!(
@@ -59,12 +58,35 @@ pub fn facts(memory: &Memory) -> Vec<String> {
     out
 }
 
-/// Lines into pages: as many lines as fit on one, never splitting a line.
+/// A line longer than a page, cut at the last space that fits (or mid-word, with none).
+fn pieces(line: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut rest = line.trim();
+    while rest.chars().count() > PAGE_CHARS {
+        let end = rest
+            .char_indices()
+            .nth(PAGE_CHARS)
+            .map(|(i, _)| i)
+            .unwrap_or(rest.len());
+        let cut = rest[..end].rfind(' ').filter(|&i| i > 0).unwrap_or(end);
+        out.push(rest[..cut].trim_end().to_string());
+        rest = rest[cut..].trim_start();
+    }
+    if !rest.is_empty() {
+        out.push(rest.to_string());
+    }
+
+    out
+}
+
+/// Lines into pages: as many lines as fit on one, a line split only when it is longer than a
+/// page (a model's line, or a day's notes, can be).
 pub fn into_pages(lines: &[String]) -> Vec<String> {
     let mut pages: Vec<String> = Vec::new();
-    for line in lines {
+    for line in lines.iter().flat_map(|l| pieces(l)) {
+        let line = &line;
         match pages.last_mut() {
-            Some(page) if page.len() + line.len() + 2 <= PAGE_CHARS => {
+            Some(page) if page.chars().count() + line.chars().count() + 2 <= PAGE_CHARS => {
                 page.push_str("\n\n");
                 page.push_str(line);
             }
@@ -128,6 +150,14 @@ mod tests {
         let pages = into_pages(&lines);
         assert!(pages.len() > 1 && pages.iter().all(|p| p.len() <= PAGE_CHARS));
         assert!(pages.iter().all(|p| !p.starts_with('\n')));
+        let long = vec!["word ".repeat(100), "x".repeat(500)];
+        let split = into_pages(&long);
+        assert!(
+            split.iter().all(|p| p.chars().count() <= PAGE_CHARS),
+            "{split:?}"
+        );
+        assert_eq!(split.concat().matches("word").count(), 100, "nothing lost");
+        assert_eq!(split.concat().matches('x').count(), 500);
 
         let mut memory = Memory::default();
         memory.home = Some(crate::memory::Home {

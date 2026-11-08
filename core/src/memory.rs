@@ -1063,12 +1063,25 @@ impl Memory {
             {
                 known.0 = player.index;
                 known.1 = player.name.clone();
-            } else if (!player.uuid.is_empty()
-                || !self.others.iter().any(|(i, _, _)| *i == player.index))
-                && self.others.len() < 16
+            } else if !player.uuid.is_empty()
+                || !self.others.iter().any(|(i, _, _)| *i == player.index)
             {
-                self.others
-                    .push((player.index, player.name.clone(), player.uuid.clone()));
+                // Full: one long gone (its index given up, not the target) makes room; the
+                // seventeenth player ever seen used to be never known.
+                if self.others.len() >= 16 {
+                    let target_uuid = self.target_uuid.clone();
+                    if let Some(gone) = self
+                        .others
+                        .iter()
+                        .position(|(i, _, u)| *i == u32::MAX && *u != target_uuid)
+                    {
+                        self.others.remove(gone);
+                    }
+                }
+                if self.others.len() < 16 {
+                    self.others
+                        .push((player.index, player.name.clone(), player.uuid.clone()));
+                }
             }
             // Whoever held this index before and is someone else holds none now.
             for other in self.others.iter_mut() {
@@ -1345,6 +1358,18 @@ impl Memory {
         }
 
         for event in &observations.events {
+            // Its diary bought, by whoever bought it: never brought to them after, and its chain
+            // over (the book is gone from the villager either way).
+            if event.kind == EventKind::Bought
+                && self.diary_offered > 0.0
+                && event.detail.ends_with("written_book")
+            {
+                self.diary_bought = true;
+                if self.chains.iter().any(|o| o.id == "the_diary") {
+                    self.chains.retain(|o| o.id != "the_diary");
+                    self.chains_done.push("the_diary".to_string());
+                }
+            }
             if event.player != index {
                 continue;
             }
@@ -1624,12 +1649,8 @@ impl Memory {
                 }
                 EventKind::RangBell => self.rang_bell_now = event.pos,
                 EventKind::Knocked => self.knocked_now = event.pos,
-                // Its diary bought: never brought to them after.
-                EventKind::Bought => {
-                    if self.diary_offered > 0.0 && event.detail.ends_with("written_book") {
-                        self.diary_bought = true;
-                    }
-                }
+                // Its diary bought: taken above, from anyone.
+                EventKind::Bought => {}
                 EventKind::FigureSeen => {
                     push_capped(
                         &mut self.figure_looks,
@@ -2392,8 +2413,13 @@ impl Memory {
 
     /// The block they build with most at home, by the walls it knows (`ender_holds`).
     pub fn block_built_most(&self) -> Option<String> {
+        // Their building, at home: not a light (a lit mine made the torch their block), not a
+        // block placed far off.
+        let home = self.home.as_ref().map(|h| h.center);
         let mut counts: Vec<(&str, usize)> = Vec::new();
-        for (_, id) in &self.walls {
+        for (_, id) in self.walls.iter().filter(|(p, id)| {
+            !is_light(id) && home.is_none_or(|h| distance(h, *p) <= (HOME_RADIUS * 2) as f64)
+        }) {
             match counts.iter_mut().find(|(i, _)| *i == id.as_str()) {
                 Some((_, n)) => *n += 1,
                 None => counts.push((id.as_str(), 1)),

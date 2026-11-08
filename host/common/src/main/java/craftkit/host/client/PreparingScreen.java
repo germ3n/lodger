@@ -109,7 +109,8 @@ public final class PreparingScreen extends Screen {
 		retry.active = !license;
 		java.util.Optional<craftkit.host.Resource.Choice> chosen = preparation.choosable()
 				.flatMap(shown -> shown.resource().choices().stream().filter(craftkit.host.Resource.Choice::chosen).findFirst());
-		choice.visible = chosen.isPresent();
+		// Not while loading: a size changed under a load left the old one loading beside the new.
+		choice.visible = chosen.isPresent() && progress.phase() != Preparation.Phase.LOADING && !preparation.switching();
 		chosen.ifPresent(c -> choice.setMessage(Component.translatable("craftkit.preparing.choice", c.label())));
 		// Whenever it is not loading, and after a failure too.
 		without.visible = (progress.phase() != Preparation.Phase.LOADING || progress.failed())

@@ -81,8 +81,10 @@ public final class OtherHouse {
 		if (player.isCreative() || player.isSpectator()) {
 			return "never in creative or spectator";
 		}
-		if (visits.stream().anyMatch(v -> v.player.equals(player.getUUID()))) {
-			return "they are there already";
+		// One visit at a time: the copy has one place, and a second house built there tore down
+		// the first around whoever was in it.
+		if (!visits.isEmpty()) {
+			return visits.stream().anyMatch(v -> v.player.equals(player.getUUID())) ? "they are there already" : "someone is there already";
 		}
 		radius = Math.max(4, Math.min(radius, MOST_RADIUS));
 		int floor = bed.getY() - 1;
@@ -120,6 +122,16 @@ public final class OtherHouse {
 					// anchor), whose blast would drop the copy's blocks to carry home.
 					if (state.getLightEmission() > 0 || state.is(Blocks.TNT) || state.is(Blocks.RESPAWN_ANCHOR)) {
 						state = Blocks.AIR.defaultBlockState();
+					}
+					// Nothing of the copy to carry home: no crop to trample off its farmland, and a
+					// pot without its plant (a plant comes out of a pot by hand, in adventure too).
+					if (state.getBlock() instanceof net.minecraft.world.level.block.CropBlock
+							|| state.getBlock() instanceof net.minecraft.world.level.block.StemBlock
+							|| state.getBlock() instanceof net.minecraft.world.level.block.SweetBerryBushBlock) {
+						state = Blocks.AIR.defaultBlockState();
+					}
+					if (state.getBlock() instanceof net.minecraft.world.level.block.FlowerPotBlock) {
+						state = Blocks.FLOWER_POT.defaultBlockState();
 					}
 					if (!state.isAir()) {
 						other.setBlock(inCopy(pos, center, floor), state, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
@@ -188,6 +200,11 @@ public final class OtherHouse {
 			if (player == null) {
 				// Gone with a quit: brought back by the sweep when next seen.
 				it.remove();
+				continue;
+			}
+			// Dead, on the death screen: what they carried lies in the copy, and given to the
+			// dead player it was lost with the respawn. The visit ends as they come back.
+			if (player.isDeadOrDying()) {
 				continue;
 			}
 			// Out of the box all the same (a pearl, a flight): home at once, never into the void.
@@ -259,7 +276,8 @@ public final class OtherHouse {
 	}
 
 	/**
-	 * What is left in the copy, taken out: what they put in its chests and what they dropped.
+	 * What is left in the copy, taken out: what they put in its chests, on its lecterns, what
+	 * they dropped (and what fell as they died there), and what they threw or shot.
 	 * The next copy's clearing spilled it into a place torn down, and nothing came home.
 	 */
 	private static List<ItemStack> leftBehind(MinecraftServer server) {
@@ -275,10 +293,23 @@ public final class OtherHouse {
 			left.add(item.getItem().copy());
 			item.discard();
 		}
+		// A trident thrown, arrows shot that can be picked up: stuck in the copy, theirs.
+		for (net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow : other.getEntitiesOfClass(net.minecraft.world.entity.projectile.arrow.AbstractArrow.class, box)) {
+			if (arrow.pickup == net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.ALLOWED) {
+				left.add(arrow.getPickupItemStackOrigin().copy());
+			}
+			arrow.discard();
+		}
 		for (int x = -MOST_RADIUS; x <= MOST_RADIUS; x++) {
 			for (int z = -MOST_RADIUS; z <= MOST_RADIUS; z++) {
 				for (int y = -BELOW; y <= ABOVE; y++) {
 					BlockPos pos = ANCHOR.offset(x, y, z);
+					// A book put on a copied lectern (not a container, and it works in adventure).
+					if (other.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.LecternBlockEntity lectern && lectern.hasBook()) {
+						left.add(lectern.getBook().copy());
+						lectern.clearContent();
+						net.minecraft.world.level.block.LecternBlock.resetBookState(null, other, pos, other.getBlockState(pos), false);
+					}
 					if (other.getBlockEntity(pos) instanceof net.minecraft.world.Container container) {
 						for (int i = 0; i < container.getContainerSize(); i++) {
 							ItemStack stack = container.removeItemNoUpdate(i);

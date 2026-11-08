@@ -1445,6 +1445,24 @@ public final class Executors {
 			return report(id, false, "no such slot");
 		}
 
+		// The item it means (ABI 52): the chest changed since it was seen, and what is in that
+		// slot now is not taken in its place (with no key, it was spent and gone). That item in
+		// another slot is.
+		String expect = command.has("expect") ? command.get("expect").getAsString() : "";
+		if (!expect.isEmpty() && !BuiltInRegistries.ITEM.getKey(from.getItem(slot).getItem()).toString().equals(expect)) {
+			slot = -1;
+			for (int candidate = 0; candidate < from.getContainerSize(); candidate++) {
+				ItemStack there = from.getItem(candidate);
+				if (!there.isEmpty() && there.getCount() >= count && BuiltInRegistries.ITEM.getKey(there.getItem()).toString().equals(expect)) {
+					slot = candidate;
+					break;
+				}
+			}
+			if (slot < 0) {
+				return report(id, false, "not there any more");
+			}
+		}
+
 		ItemStack source = from.getItem(slot);
 		if (source.isEmpty() || source.getCount() < count) {
 			return report(id, false, "the slot has too few");
@@ -1531,12 +1549,26 @@ public final class Executors {
 	}
 
 	/** A kept book onto a lectern that holds none (ABI 51). */
+	/** How far from the lectern asked a free one is looked for. */
+	private static final int LECTERN_REACH = 8;
+
 	private static JsonObject putBook(ServerLevel level, JsonObject command, long id, WorldData data) {
-		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
-		BlockState state = level.getBlockState(pos);
-		if (!(level.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.LecternBlockEntity lectern) || lectern.hasBook()) {
+		// The lectern asked, or the nearest one within eight blocks that holds no book: the
+		// mind knows its lecterns, not which hold a book now.
+		BlockPos asked = blockPos(command.getAsJsonArray("pos"));
+		BlockPos pos = null;
+		double nearest = Double.MAX_VALUE;
+		for (BlockPos at : BlockPos.betweenClosed(asked.offset(-LECTERN_REACH, -LECTERN_REACH, -LECTERN_REACH), asked.offset(LECTERN_REACH, LECTERN_REACH, LECTERN_REACH))) {
+			if (level.isLoaded(at) && level.getBlockEntity(at) instanceof net.minecraft.world.level.block.entity.LecternBlockEntity free && !free.hasBook()
+					&& at.distSqr(asked) < nearest) {
+				nearest = at.distSqr(asked);
+				pos = at.immutable();
+			}
+		}
+		if (pos == null || !(level.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.LecternBlockEntity lectern)) {
 			return report(id, false, "no lectern without a book there");
 		}
+		BlockState state = level.getBlockState(pos);
 		ItemStack book = data.giveBack(command.get("kept").getAsString());
 		if (book == null || book.isEmpty()) {
 			return report(id, false, "nothing kept under that name");
@@ -1595,25 +1627,15 @@ public final class Executors {
 		if (stack == null || stack.isEmpty()) {
 			return report(id, false, "no such item, or nothing kept under that name");
 		}
-		// As it goes back: a little more wear (never broken by it), a name.
-		int wear = command.has("wear") ? command.get("wear").getAsInt() : 0;
-		if (wear > 0 && stack.isDamageableItem()) {
-			stack.setDamageValue(Math.min(stack.getMaxDamage() - 1, stack.getDamageValue() + wear));
-		}
-		if (command.has("name") && !command.get("name").getAsString().isEmpty()) {
-			stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal(command.get("name").getAsString()));
-		}
+		// The slot it was taken from, or any free one: a slot the container no longer has (a
+		// double chest broken in half) is any free one too, and the kept stack is never lost.
 		int slot = -1;
 		if (command.has("slot") && !command.get("slot").isJsonNull()) {
-			slot = command.get("slot").getAsInt();
-			if (slot < 0 || slot >= into.getContainerSize()) {
-				return report(id, false, "no such slot");
-			}
-			if (!into.getItem(slot).isEmpty()) {
-				slot = -1;
+			int wanted = command.get("slot").getAsInt();
+			if (wanted >= 0 && wanted < into.getContainerSize() && into.getItem(wanted).isEmpty()) {
+				slot = wanted;
 			}
 		}
-
 		if (slot < 0) {
 			for (int candidate = 0; candidate < into.getContainerSize(); candidate++) {
 				if (into.getItem(candidate).isEmpty()) {
@@ -1624,13 +1646,22 @@ public final class Executors {
 		}
 
 		if (slot < 0) {
-			// Never lost: what does not fit goes back to where it was kept.
+			// Never lost: what does not fit goes back to where it was kept, as it was (the wear
+			// and the name only once it goes in, so a retry does not wear it twice).
 			if (command.has("kept") && !command.get("kept").getAsString().isEmpty()) {
 				data.keep(command.get("kept").getAsString(), stack);
 			}
 			return report(id, false, "the container is full");
 		}
 
+		// As it goes back: a little more wear (never broken by it), a name.
+		int wear = command.has("wear") ? command.get("wear").getAsInt() : 0;
+		if (wear > 0 && stack.isDamageableItem()) {
+			stack.setDamageValue(Math.min(stack.getMaxDamage() - 1, stack.getDamageValue() + wear));
+		}
+		if (command.has("name") && !command.get("name").getAsString().isEmpty()) {
+			stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal(command.get("name").getAsString()));
+		}
 		into.setItem(slot, stack);
 		into.setChanged();
 

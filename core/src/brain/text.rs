@@ -167,7 +167,9 @@ impl Kind {
             Kind::KillLine => "What it types in the player's own name about what they killed:",
             Kind::KillSign => "The sign it puts up counting what the player killed says:",
             Kind::Whisper => "The whisper the player gets from themselves says:",
-            Kind::AnimalName => "The name it gives one of the player's animals:",
+            Kind::AnimalName => {
+                "The name it gives one of the player's animals, or a villager near them:"
+            }
             Kind::ItemName => "The name it writes on one of the player's things:",
             Kind::GraveSign => "The sign on the small grave it raised says:",
             Kind::Reply => "What it types back in the player's own name, answering them:",

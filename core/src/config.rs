@@ -804,6 +804,9 @@ impl Config {
             }
         }
 
+        if !(0.0..=2.0).contains(&self.brain.text_temperature) {
+            return Err("brain.text_temperature must be between 0 and 2".to_string());
+        }
         if self.brain.queue == 0 {
             return Err("brain.queue must be at least 1".to_string());
         }

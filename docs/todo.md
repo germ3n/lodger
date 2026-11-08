@@ -1201,6 +1201,35 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **The eighth bug pass** (five reviewers, the fifth on the events one by one; about forty
+  found, many in the books). Items: a taken thing put back into a slot the chest no longer had (a
+  double chest broken in half) was destroyed (any free slot now), and a full chest wore it again at
+  every retry; a villager's sale was lost when it took or lost a profession (its offers made
+  again: the item drops at its feet), and sold twice after a zombie turned it and it was cured
+  (dropped only when killed); a book a villager was bringing was lost when another walk of it
+  began; a take now names the item it means (`take_item`'s `expect`, ABI 52), so a slot holding
+  something else since is not spent; a failed event dropped what would have given a kept stack
+  back (the scarecrow's piece when the stand would not move; those are sent all the same, the
+  event still a failure). The books: bought by a witness, the diary was still brought (bought by
+  anyone now, its chain closed), it named a visiting player, a line longer than a page overflowed
+  it, its own line was never kept as written (so written again), the lectern notes were refused
+  by a lectern holding a book (the nearest free one within eight blocks now), and a retarget kept
+  the old target's diary. `villager_named` renamed villagers the player had named, with the item
+  names' words. The other house: a second player's visit built a house around the first (one at
+  a time now); a death there ended the visit on the death screen, and what they carried was lost
+  with the respawn; crops trampled and a plant out of a pot came home (left out of the copy); a
+  book on a copied lectern, a trident or arrows stayed there. The mind: the villager at the door
+  kept its night unrecorded for half a day (a move back by morning is a tail now); the ending's
+  tick ran with the target gone; the log never rotated over many starts; the diary's unbought
+  need ignored the days; the house's most-built block counted lights and far blocks; the
+  seventeenth player could evict the target; a retarget kept the old target's words, places and
+  people; `text_temperature` was unchecked. The client: the choice showed while switching, a
+  singleplayer world waited on the server's preparation, a license accepted for one model counted
+  for another of the same mod. The rule on making things is amended (owner): what it makes of its
+  own is its own work and worth no more than paper (its books, `brew_left`, `second_bed`,
+  `composter_fills`), never ore, a tool or anything worth more. Tests: a failed event giving back,
+  the tail, the log's rotation, the hopper's slots, the long line, the unnamed villager, the diary
+  bought by another. Was: all of that.
 - [x] **The seventh bug pass** (five reviewers; about fifty found, many in the sixth's own
   fixes). The other house again: a kept stack past 99 threw at every save and stopped the world
   saving (a full stack now spills beside it); its walls ran four high, so a flight, a pearl or a

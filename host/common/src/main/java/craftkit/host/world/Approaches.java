@@ -80,7 +80,15 @@ public final class Approaches {
 
 	/** One walking at them at `pace`, and then what it does once there (ABI 44). */
 	public void add(Mob mob, ServerPlayer player, float stop, float seconds, float pace, String then, float damage) {
-		active.removeIf(a -> a.mob == mob);
+		// A mob walks one way at a time: an earlier walk of it ends here, what it was bringing
+		// kept again (until now the book it carried was gone).
+		active.removeIf(a -> {
+			if (a.mob == mob) {
+				keepAgain(a);
+				return true;
+			}
+			return false;
+		});
 		active.add(new Approach(mob, player.getUUID(), Math.max(1.2, Math.min(stop, 16)), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20),
 				Math.max(0.2, Math.min(pace, 1.5)), then, Math.max(0, Math.min(damage, 6))));
 	}

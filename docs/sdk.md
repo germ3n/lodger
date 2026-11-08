@@ -207,7 +207,10 @@ long, how far they came toward it, how it ended; `world/Gaze.java`). ABI 48: `co
 (`true`) or shut or out (`false`), left alone when so already; without it, the other way. ABI 51:
 `write_book` (a written book made and kept under a name), `add_page` (a page more in a book and
 quill), `put_book` (a kept book onto a lectern), `approach`'s `give` with `kept` (brought and
-dropped at their feet, kept again if never), and the `bought` event (a sale of its bought).
+dropped at their feet, kept again if never), and the `bought` event (a sale of its bought). ABI 52:
+`take_item`'s `expect`, the item it means by id: a slot holding something else now is not
+taken from, that item in another slot is, and with none the take is refused; and `put_book`
+takes the nearest lectern without a book within eight blocks when the one asked holds one.
 
 ## Resources
 

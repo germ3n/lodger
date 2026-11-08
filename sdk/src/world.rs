@@ -841,6 +841,11 @@ pub enum Command {
         /// `drop_item` to give back: enchantments, wear and name and all. ABI 13.
         #[serde(default, skip_serializing_if = "String::is_empty")]
         keep: String,
+        /// The item it means to take, by id: a slot holding something else now (the chest
+        /// changed since it was seen) is not taken from; that item in another slot is, and with
+        /// none the take is refused. Empty: whatever is there. ABI 52.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        expect: String,
     },
     /// Put an item into a container: the slot given, or the first empty one when `slot` is
     /// absent. The mod gives back what it took this way.
@@ -952,7 +957,8 @@ pub enum Command {
         slot: u32,
         page: String,
     },
-    /// The book kept under `kept` onto the lectern at `pos`, which holds none. ABI 51.
+    /// The book kept under `kept` onto the lectern at `pos`, or, holding a book, the nearest
+    /// within eight blocks that holds none. ABI 51.
     PutBook {
         id: u64,
         pos: BlockPos,

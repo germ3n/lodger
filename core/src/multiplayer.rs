@@ -63,9 +63,23 @@ impl Memory {
         // Where the old target stood still (the home was read again from it), when they were
         // last elsewhere, and who visited their house: theirs.
         self.still_cells.clear();
+        // Their words and their places too: the new target was told the old one's last line,
+        // and its signs wrote it.
+        self.last_said.clear();
+        self.sites.clear();
+        self.sessions.clear();
+        self.walls.clear();
+        self.fixtures.clear();
+        self.tunnels.clear();
+        self.holes.clear();
+        self.placed.clear();
         self.elsewhere_since = None;
         self.back_after = None;
         self.people = Default::default();
+        // The diary was of the old target: a new one is written for the new.
+        self.diary_offered = 0.0;
+        self.diary_bought = false;
+        self.chains.retain(|o| o.id != "the_diary");
         self.target_seen_unix = now;
         self.retargeted = true;
 
@@ -130,6 +144,7 @@ mod tests {
         assert_eq!(memory.want, "a place of its own", "the want is kept");
         assert_eq!(memory.place, Some([40, 64, 40]), "its place is kept");
         assert!(memory.home.is_none(), "the old target's home is let go");
+        assert_eq!(memory.diary_offered, 0.0, "the old target's diary too");
         assert!(
             !memory.retarget_due(&config, 3, 1_000_000 + 3 * week),
             "once a stay"

@@ -73,6 +73,9 @@ enum Step {
     Sent(Vec<Command>),
 }
 
+/// A command this long after its event's first is its tail (`Pending::tail`): a quarter day.
+const TAIL_TICKS: u64 = 6_000;
+
 /// A command sent and not yet reported.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -85,6 +88,11 @@ pub struct Pending {
     /// it is done.
     #[serde(default)]
     pub puts_held: bool,
+    /// Sent after the event is recorded: what gives a kept stack back after the event failed, a
+    /// villager walked back by morning. Its report is not the event's, and the event does not
+    /// wait for it (the night's villager kept the event unrecorded for half a day).
+    #[serde(default)]
+    pub tail: bool,
 }
 
 /// A command to send at a later tick: a chest's close after its open.
@@ -1195,6 +1203,7 @@ impl Brain {
                 pos: plan.pos,
                 day,
                 puts_held,
+                tail: later_ticks >= TAIL_TICKS,
             });
             if later_ticks == 0 {
                 sent.push(command);
@@ -2352,8 +2361,12 @@ impl Brain {
                 let others = self
                     .pending
                     .iter()
-                    .any(|p| p.event == pending.event && p.day == pending.day);
-                if !others || !report.done {
+                    .any(|p| !p.tail && p.event == pending.event && p.day == pending.day);
+                if pending.tail {
+                    if !report.done {
+                        log.note(&format!("{}, after it: {}", pending.event, report.reason));
+                    }
+                } else if !others || !report.done {
                     memory.record(
                         &pending.event,
                         pending.pos,
@@ -2368,16 +2381,29 @@ impl Brain {
                     );
                     if !report.done {
                         // The rest of a failed event is not sent: the sign's text after a sign
-                        // that did not go down, the take after a planting that failed.
+                        // that did not go down, the take after a planting that failed. But what
+                        // gives a kept stack back still goes (the piece taken for a stand that
+                        // could not be moved, worn where it stands), or it was kept for good.
+                        let gives_back: Vec<u64> = self
+                            .later
+                            .iter()
+                            .filter(|l| gives_back(&l.command))
+                            .map(|l| l.command.id())
+                            .collect();
                         let dropped: Vec<u64> = self
                             .pending
                             .iter()
                             .filter(|p| p.event == pending.event && p.day == pending.day)
                             .map(|p| p.id)
+                            .filter(|id| !gives_back.contains(id))
                             .collect();
                         self.later.retain(|l| !dropped.contains(&l.command.id()));
-                        self.pending
-                            .retain(|p| !(p.event == pending.event && p.day == pending.day));
+                        self.pending.retain(|p| !dropped.contains(&p.id));
+                        for p in self.pending.iter_mut() {
+                            if p.event == pending.event && p.day == pending.day {
+                                p.tail = true;
+                            }
+                        }
                     }
                 }
 
@@ -2486,6 +2512,23 @@ impl Brain {
 /// stage moved on, the config disabled it, its cap reached), a lasting need gone (the chest,
 /// the home: `Need::lasting`), or what was at its spot gone (`Plan::on`). A need that comes and
 /// goes, a cooldown or the view only make it wait.
+/// Whether a command gives a kept stack back to the world (the stand's piece, the taken tool
+/// put back, the diary offered or brought): sent even after its event failed, so nothing taken
+/// stays kept for good.
+fn gives_back(command: &Command) -> bool {
+    match command {
+        Command::EquipEntity { kept, .. }
+        | Command::PutItem { kept, .. }
+        | Command::DropItem { kept, .. }
+        | Command::PutBook { kept, .. }
+        | Command::OfferTrade { kept, .. }
+        | Command::PlaceEntity { kept, .. }
+        | Command::ArmLoot { kept, .. }
+        | Command::Approach { kept, .. } => !kept.is_empty(),
+        _ => false,
+    }
+}
+
 fn cancel_reason(
     event: &Event,
     plan: &Plan,
@@ -3909,6 +3952,115 @@ mod tests {
                 .iter()
                 .all(|p| (p[0] - -2.5).abs() < 0.01 && (p[2] - 1.5).abs() < 0.01),
             "the other chest, never the one opened: {answered:?}"
+        );
+    }
+
+    #[test]
+    fn a_failed_event_still_gives_back_what_it_took_and_stays_a_failure() {
+        let mut memory = home_memory();
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        // The scarecrow: the piece taken (done), the stand moved (fails), then the piece worn
+        // and a pose, later.
+        for id in [1, 2, 3, 4] {
+            brain.pending.push(Pending {
+                id,
+                event: "scarecrow".to_string(),
+                day: 5.0,
+                ..Pending::default()
+            });
+        }
+        brain.later.push(Later {
+            at_tick: 100,
+            command: Command::PoseStand {
+                id: 3,
+                entity: 9,
+                at: None,
+                follow: None,
+                seconds: 0.0,
+            },
+            while_still: false,
+        });
+        brain.later.push(Later {
+            at_tick: 100,
+            command: Command::EquipEntity {
+                id: 4,
+                entity: 9,
+                item: craftkit::world::ItemStack::default(),
+                kept: "scarecrow".to_string(),
+            },
+            while_still: false,
+        });
+        let report = |id, done| Report {
+            id,
+            done,
+            reason: if done {
+                String::new()
+            } else {
+                "gone".to_string()
+            },
+        };
+        brain.report(&[report(1, true), report(2, false)], &mut memory, &mut log);
+
+        assert_eq!(
+            brain.later.len(),
+            1,
+            "the pose is dropped, the piece is not"
+        );
+        assert!(matches!(
+            brain.later[0].command,
+            Command::EquipEntity { .. }
+        ));
+        brain.report(&[report(4, true)], &mut memory, &mut log);
+        let scarecrow: Vec<_> = memory
+            .done
+            .iter()
+            .filter(|d| d.event == "scarecrow")
+            .collect();
+        assert_eq!(scarecrow.len(), 1, "{scarecrow:?}");
+        assert!(
+            !scarecrow[0].ok,
+            "the piece given back does not make it a success"
+        );
+        assert!(memory.landmarks.iter().all(|d| d.event != "scarecrow"));
+    }
+
+    #[test]
+    fn the_villager_walked_back_by_morning_does_not_hold_the_night_unrecorded() {
+        let mut memory = home_memory();
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        for (id, tail) in [(1, false), (2, false), (3, true)] {
+            brain.pending.push(Pending {
+                id,
+                event: "villager_at_door".to_string(),
+                day: 5.0,
+                tail,
+                ..Pending::default()
+            });
+        }
+        let done = |id| Report {
+            id,
+            done: true,
+            reason: String::new(),
+        };
+        brain.report(&[done(1), done(2)], &mut memory, &mut log);
+        assert!(
+            memory
+                .done
+                .iter()
+                .any(|d| d.event == "villager_at_door" && d.ok),
+            "recorded as the villager stands there, not by morning"
+        );
+        brain.report(&[done(3)], &mut memory, &mut log);
+        assert_eq!(
+            memory
+                .done
+                .iter()
+                .filter(|d| d.event == "villager_at_door")
+                .count(),
+            1,
+            "and once"
         );
     }
 

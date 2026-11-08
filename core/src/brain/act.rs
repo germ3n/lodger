@@ -551,9 +551,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::SnowCleared | Action::Trample => home.and_then(|h| pick(&h.doors, rng)),
         Action::HarvestOne => memory.feature("crops").map(|f| f.pos),
-        Action::DiarySold | Action::DiaryBrought | Action::VillagerNamed => {
-            memory.villager_near().map(|v| block_of(v.pos))
-        }
+        Action::DiarySold | Action::DiaryBrought => memory.villager_near().map(|v| block_of(v.pos)),
+        Action::VillagerNamed => memory.unnamed_villager_near().map(|v| block_of(v.pos)),
         Action::LetterInChest => memory.used_container().map(|c| c.pos),
         Action::LecternNotes => memory.fixtures("lectern").next().map(|f| f.pos),
         Action::PageInBook => memory
@@ -1113,6 +1112,15 @@ pub fn texts(command: &Command) -> Vec<String> {
         Command::SetSign { lines, .. } => lines.iter().filter(|l| !l.is_empty()).cloned().collect(),
         Command::GameMessage { text, .. } if !text.is_empty() => vec![text.clone()],
         Command::NameEntity { name, .. } => vec![name.clone()],
+        // A book's own line, the first of its first page (the facts after it are the memory's,
+        // not words of its own), and a page written in theirs.
+        Command::WriteBook { pages, .. } => pages
+            .first()
+            .and_then(|p| p.split("\n\n").next())
+            .filter(|l| !l.is_empty())
+            .map(|l| vec![l.to_string()])
+            .unwrap_or_default(),
+        Command::AddPage { page, .. } if !page.is_empty() => vec![page.clone()],
         _ => vec![],
     }
 }
@@ -1630,6 +1638,7 @@ pub fn commands(
                         id: ids(),
                         from: container.pos,
                         slot: stack.slot,
+                        expect: stack.id.clone(),
                         count: 1,
                         keep: "item_on_table".to_string(),
                     },
@@ -1682,6 +1691,7 @@ pub fn commands(
                     id: ids(),
                     from: container.pos,
                     slot: stack.slot,
+                    expect: stack.id.clone(),
                     count: 1,
                     keep: "held".to_string(),
                 },
@@ -1750,6 +1760,7 @@ pub fn commands(
                         id: ids(),
                         from: chest.pos,
                         slot: meal.slot,
+                        expect: meal.id.clone(),
                         count: meal.count.min(3),
                         keep: String::new(),
                     },
@@ -2082,7 +2093,27 @@ pub fn commands(
                         d[0].abs() + d[1].abs() + d[2].abs() == 1
                     })
                     .map(|chest| {
-                        (0..5)
+                        // The slots that hold something, as last seen: an empty one asked for
+                        // failed the event and dropped the rest. Never looked in, one move (the
+                        // host takes the first slot that is not empty).
+                        let mut slots: Vec<u32> = memory
+                            .containers
+                            .iter()
+                            .find(|c| c.pos == hopper)
+                            .map(|c| {
+                                c.contents
+                                    .iter()
+                                    .filter(|s| !s.id.is_empty() && s.count > 0)
+                                    .map(|s| s.slot)
+                                    .filter(|s| *s < 5)
+                                    .collect()
+                            })
+                            .unwrap_or_default();
+                        if slots.is_empty() {
+                            slots.push(0);
+                        }
+                        slots
+                            .into_iter()
                             .map(|slot| {
                                 (
                                     Command::MoveItem {
@@ -2319,6 +2350,7 @@ pub fn commands(
                         id: ids(),
                         from: container.pos,
                         slot: stack.slot,
+                        expect: stack.id.clone(),
                         count: 1,
                         keep: String::new(),
                     },
@@ -2746,6 +2778,7 @@ pub fn commands(
                         id: ids(),
                         from: container.pos,
                         slot: stack.slot,
+                        expect: stack.id.clone(),
                         count: 1,
                         keep: String::new(),
                     },
@@ -2936,14 +2969,15 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // A villager with no name yet: one the player named keeps theirs.
         Action::VillagerNamed => memory
-            .villager_near()
+            .unnamed_villager_near()
             .map(|v| {
                 vec![(
                     Command::NameEntity {
                         id: ids(),
                         entity: v.id,
-                        name: words(Kind::ItemName, "", 0),
+                        name: words(Kind::AnimalName, "", 0),
                     },
                     0,
                 )]
@@ -3034,6 +3068,7 @@ pub fn commands(
                             id: ids(),
                             from: container.pos,
                             slot: stack.slot,
+                            expect: stack.id.clone(),
                             count: 1,
                             keep: String::new(),
                         },
@@ -3177,6 +3212,7 @@ pub fn commands(
                             id: ids(),
                             from: chest.pos,
                             slot: stack.slot,
+                            expect: stack.id.clone(),
                             count: 1,
                             keep: "stand_dress".to_string(),
                         },
@@ -3310,6 +3346,7 @@ pub fn commands(
                                 id: ids(),
                                 from: chest.pos,
                                 slot: stack.slot,
+                                expect: stack.id.clone(),
                                 count: 1,
                                 keep: String::new(),
                             },
@@ -3344,6 +3381,7 @@ pub fn commands(
                                 id: ids(),
                                 from: chest.pos,
                                 slot: stack.slot,
+                                expect: stack.id.clone(),
                                 count: 1,
                                 keep: String::new(),
                             },
@@ -3488,6 +3526,7 @@ pub fn commands(
                         id: ids(),
                         from: chest.pos,
                         slot: stack.slot,
+                        expect: stack.id.clone(),
                         count: 1,
                         keep: String::new(),
                     },
@@ -3880,6 +3919,7 @@ pub fn commands(
                             id: ids(),
                             from: chest.pos,
                             slot: ladders.slot,
+                            expect: ladders.id.clone(),
                             count: deep as u32,
                             keep: String::new(),
                         },
@@ -4353,6 +4393,7 @@ pub fn commands(
                                 id: ids(),
                                 from: chest.pos,
                                 slot: stack.slot,
+                                expect: stack.id.clone(),
                                 count: n,
                                 keep: String::new(),
                             },
@@ -4543,6 +4584,7 @@ pub fn commands(
                     id: ids(),
                     from: chest.pos,
                     slot: piece.slot,
+                    expect: piece.id.clone(),
                     count: 1,
                     keep: "scarecrow".to_string(),
                 };
@@ -4587,6 +4629,7 @@ pub fn commands(
                                 id: ids(),
                                 from: chest.pos,
                                 slot: item.slot,
+                                expect: item.id.clone(),
                                 count: 1,
                                 keep: String::new(),
                             },
@@ -5479,7 +5522,7 @@ pub fn text_kind(event: &Event) -> Option<Kind> {
         | Action::LetterInChest
         | Action::LecternNotes
         | Action::PageInBook => Some(Kind::DiaryLine),
-        Action::VillagerNamed => Some(Kind::ItemName),
+        Action::VillagerNamed => Some(Kind::AnimalName),
         _ => None,
     }
 }
@@ -6781,7 +6824,7 @@ mod tests {
 
     #[test]
     fn the_hopper_empties_into_its_chest_and_the_box_moves_with_what_it_holds() {
-        let memory = rich_memory();
+        let mut memory = rich_memory();
         let now = Now::default();
         let mut rng = Rng::new(2);
         let hopper = find("hopper_emptied").unwrap();
@@ -6793,7 +6836,37 @@ mod tests {
             &now,
             None,
         );
-        assert_eq!(made.len(), 5, "its five slots");
+        assert_eq!(
+            made.len(),
+            1,
+            "never looked in: one move, the host's first full slot"
+        );
+        let stack = |slot| craftkit::world::ItemStack {
+            id: "minecraft:iron_ingot".to_string(),
+            count: 3,
+            slot,
+        };
+        memory.containers.push(crate::memory::Container {
+            pos: [2, 65, 0],
+            kind: "minecraft:hopper".to_string(),
+            contents: vec![stack(1), stack(3)],
+            ..Default::default()
+        });
+        let made = commands(
+            hopper,
+            place(hopper, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &now,
+            None,
+        );
+        assert!(
+            made.len() == 2
+                && made
+                    .iter()
+                    .all(|(c, _)| matches!(c, Command::MoveItem { from_slot, .. } if *from_slot == 1 || *from_slot == 3)),
+            "the slots that hold something, an empty one never asked for: {made:?}"
+        );
         assert!(
             made.iter().all(|(c, _)| matches!(c, Command::MoveItem { from, to, .. } if *from == [2, 65, 0] && *to == [2, 64, 0])),
             "from the hopper into the chest under it: {made:?}"
@@ -7003,6 +7076,11 @@ mod tests {
             &now,
             Some("i watched you"),
         );
+        assert_eq!(
+            texts(&sold[0].0),
+            vec!["i watched you".to_string()],
+            "its own line is kept as written, not the facts after it"
+        );
         let kept = match &sold[0].0 {
             Command::WriteBook {
                 kept,
@@ -7035,6 +7113,8 @@ mod tests {
         );
 
         memory.diary_offered = 4.0;
+        memory.chain_landed("diary_sold", 4.0);
+        assert!(memory.chains.iter().any(|o| o.id == "the_diary"));
         let target = memory.target.unwrap_or(0);
         memory.observe(
             &craftkit::world::Observations {
@@ -7044,7 +7124,7 @@ mod tests {
                     ..Default::default()
                 }],
                 events: vec![craftkit::world::Event {
-                    player: target,
+                    player: target + 1,
                     kind: craftkit::world::EventKind::Bought,
                     detail: "minecraft:written_book".to_string(),
                     ..Default::default()
@@ -7053,7 +7133,14 @@ mod tests {
             },
             5.0,
         );
-        assert!(memory.diary_bought, "bought: never brought");
+        assert!(
+            memory.diary_bought,
+            "bought, by someone else too: never brought"
+        );
+        assert!(
+            memory.chains.iter().all(|o| o.id != "the_diary"),
+            "and its chain is over"
+        );
     }
 
     #[test]

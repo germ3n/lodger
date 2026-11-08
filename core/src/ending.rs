@@ -331,6 +331,12 @@ pub fn tick(
     if now.day < arc.script_day {
         return made;
     }
+    // Its beats are for them alone: while they are not here, none goes (another player at their
+    // old index after a restart would have had them, the death among them). A moment missed
+    // meanwhile is skipped when it comes late, as any is.
+    if !memory.last.online {
+        return made;
+    }
     made.extend(beacon(arc, memory, now, ids));
     if !made.is_empty() {
         return made;

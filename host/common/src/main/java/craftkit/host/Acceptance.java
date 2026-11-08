@@ -15,7 +15,7 @@ import java.util.Set;
 
 /**
  * Which resources' terms have been accepted, in {@code config/craftkit/accepted.json}: a list of
- * {@code <mod id>:<resource id>}. A client's license screen adds to it; a dedicated server's
+ * {@code <mod id>:<resource id>:<license name>}. A client's license screen adds to it; a dedicated server's
  * operator adds to it by hand, after the server logs the terms, so no one accepts anything on
  * their behalf. A resource with no license needs no acceptance.
  */
@@ -43,9 +43,16 @@ public final class Acceptance {
 		return modId + ":" + resource.id() + ":" + resource.license().name();
 	}
 
-	/** Whether the terms of {@code resource} are accepted, or there are none to accept. */
+	/**
+	 * Whether the terms of {@code resource} are accepted, or there are none to accept. An entry of
+	 * the old form, {@code <mod id>:<resource id>}, still counts for the Apache license it was
+	 * written for, never for another (the 3B's research license is asked for itself).
+	 */
 	public boolean accepted(String modId, Resource resource) {
-		return !resource.hasLicense() || accepted.contains(key(modId, resource));
+		if (!resource.hasLicense() || accepted.contains(key(modId, resource))) {
+			return true;
+		}
+		return accepted.contains(modId + ":" + resource.id()) && resource.license().name().startsWith("Apache");
 	}
 
 	/** Records the acceptance and writes the file. */

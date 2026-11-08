@@ -133,29 +133,61 @@ public final class Gatherings {
 		sales.removeIf(sale -> {
 			AbstractVillager villager = sale.villager();
 			if (villager.isRemoved()) {
-				// Killed before it sold: what it was selling drops where it fell, never lost.
-				if (villager.isDeadOrDying() && !sale.offer().isOutOfStock() && villager.level() instanceof ServerLevel level) {
-					var item = new net.minecraft.world.entity.item.ItemEntity(level, villager.getX(), villager.getY() + 0.5, villager.getZ(), sale.offer().getResult().copy());
-					item.setUnlimitedLifetime();
-					level.addFreshEntity(item);
+				// Killed before it sold: what it was selling drops where it fell, never lost. Only
+				// killed: a villager a zombie turned took its trades and tag with it, and sells
+				// when cured (dropped too, it sold twice); one unloaded is watched again when next
+				// seen.
+				if (villager.getRemovalReason() == net.minecraft.world.entity.Entity.RemovalReason.KILLED
+						&& !sale.offer().isOutOfStock() && villager.level() instanceof ServerLevel level) {
+					drop(level, villager, sale.offer());
 				}
 				return true;
 			}
 			if (sale.offer().isOutOfStock()) {
-				// Bought: by the player nearest it, as the mind is told (`bought`, ABI 51).
-				if (villager.level() instanceof ServerLevel level) {
-					net.minecraft.world.entity.player.Player buyer = level.getNearestPlayer(villager, 8);
-					if (buyer instanceof net.minecraft.server.level.ServerPlayer player) {
-						bought.add(new Bought(level, player, villager.blockPosition(),
-								net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(sale.offer().getResult().getItem()).toString()));
-					}
-				}
+				report(villager, sale.offer());
 				villager.getOffers().remove(sale.offer());
+				villager.removeTag(SELLING);
+				return true;
+			}
+			// Its trades made again (a profession taken or lost clears them): the offer is gone
+			// unsold, and what it was selling at its feet, never lost.
+			if (!villager.getOffers().contains(sale.offer())) {
+				if (villager.level() instanceof ServerLevel level) {
+					drop(level, villager, sale.offer());
+				}
 				villager.removeTag(SELLING);
 				return true;
 			}
 			return false;
 		});
+	}
+
+	private static void drop(ServerLevel level, AbstractVillager villager, MerchantOffer offer) {
+		var item = new net.minecraft.world.entity.item.ItemEntity(level, villager.getX(), villager.getY() + 0.5, villager.getZ(), offer.getResult().copy());
+		item.setUnlimitedLifetime();
+		level.addFreshEntity(item);
+	}
+
+	/**
+	 * Bought, as the mind is told (`bought`, ABI 51): by the player trading with it, else the one
+	 * nearest it (the screen closed already), else the nearest in the level (a sale found sold as
+	 * its chunk loaded again).
+	 */
+	private void report(AbstractVillager villager, MerchantOffer offer) {
+		if (!(villager.level() instanceof ServerLevel level)) {
+			return;
+		}
+		net.minecraft.world.entity.player.Player buyer = villager.getTradingPlayer();
+		if (buyer == null) {
+			buyer = level.getNearestPlayer(villager, 8);
+		}
+		if (buyer == null) {
+			buyer = level.getNearestPlayer(villager, -1);
+		}
+		if (buyer instanceof net.minecraft.server.level.ServerPlayer player) {
+			bought.add(new Bought(level, player, villager.blockPosition(),
+					net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(offer.getResult().getItem()).toString()));
+		}
 	}
 
 	/** Puts every villager of a level back: the level is about to be saved and closed. */
@@ -197,6 +229,8 @@ public final class Gatherings {
 					for (MerchantOffer offer : List.copyOf(villager.getOffers())) {
 						if (ours(offer)) {
 							if (offer.getUses() > 0 || offer.isOutOfStock()) {
+								// Bought before the sweep saw it again: told all the same.
+								report(villager, offer);
 								villager.getOffers().remove(offer);
 							} else {
 								sales.add(new Sale(villager, offer));

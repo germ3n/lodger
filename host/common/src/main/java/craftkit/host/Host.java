@@ -109,6 +109,17 @@ public final class Host {
 	public void prepareBlocking() {
 		Preparation preparation = preparation();
 
+		// A client's own world starts without waiting: the title screen's preparation is where
+		// terms are accepted and the download shown. A world opened past it (quick play, a
+		// launcher's join-on-launch) hung here on terms no screen could accept, or downloaded
+		// with no progress shown; it runs on the rules until the screen has done its work.
+		if (!platform.dedicatedServer()) {
+			if (preparation.needed()) {
+				LOGGER.info("not ready yet: the world opens, and the mods go without until the title screen's preparation is done");
+			}
+			return;
+		}
+
 		if (!preparation.needed()) {
 			return;
 		}

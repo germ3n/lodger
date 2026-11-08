@@ -19,10 +19,17 @@ pub struct Log {
 
 impl Log {
     pub fn new(path: Option<PathBuf>, keep_mb: u32, enabled: bool) -> Self {
+        // From the file's size as it is: a log appended to over many starts still rotates (from
+        // 0 each start, it grew past `keep_mb` without end).
+        let written = path
+            .as_ref()
+            .and_then(|p| std::fs::metadata(p).ok())
+            .map(|m| m.len())
+            .unwrap_or(0);
         Self {
             path,
             lines: Vec::new(),
-            written: 0,
+            written,
             keep_bytes: keep_mb as u64 * 1024 * 1024,
             enabled,
         }
@@ -147,6 +154,22 @@ mod tests {
         );
     }
     use crate::events::find;
+
+    #[test]
+    fn a_log_already_past_its_size_is_rotated_on_the_next_start() {
+        let dir = std::env::temp_dir().join(format!("lodger-rotate-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("decisions.log");
+        std::fs::write(&path, vec![b'x'; 2 * 1024 * 1024]).unwrap();
+
+        let mut log = Log::new(Some(path.clone()), 1, true);
+        log.note("a new start");
+
+        assert!(path.with_extension("log.1").exists(), "the old log rotated");
+        assert!(std::fs::metadata(&path).unwrap().len() < 1024);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn a_decision_is_one_entry_with_the_situation_the_menu_and_the_pick() {

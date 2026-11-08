@@ -200,8 +200,10 @@ public final class Preparation {
 			Thread running = thread;
 			if (running != null) {
 				running.interrupt();
+				// Until it has stopped, however long: a load or a check that ignores the interrupt
+				// ran on past three seconds, and its "ready" or its failure landed over the new size.
 				try {
-					running.join(3000);
+					running.join();
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 					return;

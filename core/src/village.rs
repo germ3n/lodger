@@ -52,6 +52,16 @@ impl Memory {
             .min_by(|a, b| distance(block_of(a.pos), at).total_cmp(&distance(block_of(b.pos), at)))
     }
 
+    /// The nearest villager no one has named: the one it gives a name.
+    pub fn unnamed_villager_near(&self) -> Option<&Creature> {
+        let at = block_of(self.last.pos);
+        self.last
+            .creatures_near
+            .iter()
+            .filter(|c| c.kind == "villager" && !c.named)
+            .min_by(|a, b| distance(block_of(a.pos), at).total_cmp(&distance(block_of(b.pos), at)))
+    }
+
     /// The point of their route nearest the village: where its lantern is set down.
     pub fn route_by_village(&self) -> Option<BlockPos> {
         let middle = self.village_middle()?;
@@ -98,6 +108,27 @@ mod tests {
         assert_eq!(doors.len(), 2);
         assert!(doors.contains(&[104, 64, 100]));
         assert_eq!(memory.gathering_door(), Some([104, 64, 100]));
+    }
+
+    #[test]
+    fn the_villager_it_names_is_one_no_one_named() {
+        let mut memory = village();
+        let villager = |id, x, named| crate::memory::Creature {
+            id,
+            kind: "villager".to_string(),
+            pos: [x, 64.0, 100.0],
+            named,
+            pet: false,
+        };
+        memory.last.pos = [100.0, 64.0, 100.0];
+        memory.last.creatures_near = vec![villager(1, 101.0, true), villager(2, 110.0, false)];
+        assert_eq!(memory.villager_near().map(|v| v.id), Some(1));
+        assert_eq!(memory.unnamed_villager_near().map(|v| v.id), Some(2));
+        memory.last.creatures_near.pop();
+        assert!(
+            memory.unnamed_villager_near().is_none(),
+            "their named one keeps its name"
+        );
     }
 
     #[test]
