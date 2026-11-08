@@ -50,6 +50,11 @@ public final class Gatherings {
 	public static final String FROM = "craftkit_gathered_from:";
 	/** On a villager selling what the lodger took: one sale. */
 	public static final String SELLING = "craftkit_selling";
+	/** On one that was selling and turned (a zombie villager): its kept offers of ours are void. */
+	public static final String SOLD = "craftkit_sold";
+
+	/** The sales bought and told to the mind, while their screen is still open. */
+	private final java.util.Set<MerchantOffer> told = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 
 	private record Sale(AbstractVillager villager, MerchantOffer offer) {
 	}
@@ -133,20 +138,39 @@ public final class Gatherings {
 		sales.removeIf(sale -> {
 			AbstractVillager villager = sale.villager();
 			if (villager.isRemoved()) {
-				// Killed before it sold: what it was selling drops where it fell, never lost. Only
-				// killed: a villager a zombie turned took its trades and tag with it, and sells
-				// when cured (dropped too, it sold twice); one unloaded is watched again when next
-				// seen.
-				if (villager.getRemovalReason() == net.minecraft.world.entity.Entity.RemovalReason.KILLED
-						&& !sale.offer().isOutOfStock() && villager.level() instanceof ServerLevel level) {
-					drop(level, villager, sale.offer());
+				net.minecraft.world.entity.Entity.RemovalReason reason = villager.getRemovalReason();
+				boolean unloaded = reason == net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_TO_CHUNK
+						|| reason == net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_WITH_PLAYER
+						|| reason == net.minecraft.world.entity.Entity.RemovalReason.CHANGED_DIMENSION;
+				// Unloaded: watched again when next seen. Killed, or turned (a zombie villager,
+				// a witch, which the sweep never watched, and the thing was gone with it): what
+				// it was selling drops where it stood, never lost; and what it became is marked,
+				// so a cure does not sell it again from the offers it kept.
+				if (!unloaded) {
+					if (!sale.offer().isOutOfStock() && villager.level() instanceof ServerLevel level) {
+						drop(level, villager, sale.offer());
+						for (net.minecraft.world.entity.Entity became : level.getEntities((net.minecraft.world.entity.Entity) null, villager.getBoundingBox().inflate(2),
+								e -> e != villager && e.entityTags().contains(SELLING))) {
+							became.removeTag(SELLING);
+							became.addTag(SOLD);
+						}
+					}
+					told.remove(sale.offer());
 				}
 				return true;
 			}
 			if (sale.offer().isOutOfStock()) {
-				report(villager, sale.offer());
+				if (told.add(sale.offer())) {
+					report(villager, sale.offer());
+				}
+				// Taken off once its trading screen is closed: taken off while open, the
+				// client's list and the server's no longer matched.
+				if (villager.getTradingPlayer() != null) {
+					return false;
+				}
 				villager.getOffers().remove(sale.offer());
-				villager.removeTag(SELLING);
+				told.remove(sale.offer());
+				untag(villager, sale);
 				return true;
 			}
 			// Its trades made again (a profession taken or lost clears them): the offer is gone
@@ -155,11 +179,29 @@ public final class Gatherings {
 				if (villager.level() instanceof ServerLevel level) {
 					drop(level, villager, sale.offer());
 				}
-				villager.removeTag(SELLING);
+				untag(villager, sale);
 				return true;
 			}
 			return false;
 		});
+	}
+
+	/**
+	 * Its selling tag off, once no other sale is on it: taken off with one sale of two, the other
+	 * was never watched again after a reload, and restocked to sell again and again.
+	 */
+	private void untag(AbstractVillager villager, Sale sale) {
+		if (sales.stream().noneMatch(s -> s != sale && s.villager() == villager)) {
+			villager.removeTag(SELLING);
+		}
+	}
+
+	/** Forgotten with the world: its villagers and their level are not the next world's. */
+	public void clear() {
+		sales.clear();
+		told.clear();
+		gathered.clear();
+		bought.clear();
 	}
 
 	private static void drop(ServerLevel level, AbstractVillager villager, MerchantOffer offer) {
@@ -221,6 +263,17 @@ public final class Gatherings {
 			for (net.minecraft.world.entity.Entity entity : level.getAllEntities()) {
 				if (!(entity instanceof Villager villager)) {
 					continue;
+				}
+				// Cured of a zombie that took its sale with it: the thing dropped when it turned,
+				// so the offer it kept is taken off, never sold a second time.
+				if (villager.entityTags().contains(SOLD)) {
+					for (MerchantOffer offer : List.copyOf(villager.getOffers())) {
+						if (ours(offer)) {
+							villager.getOffers().remove(offer);
+						}
+					}
+					villager.removeTag(SOLD);
+					villager.removeTag(SELLING);
 				}
 				// A sale saved with it (its chunk unloaded, the game quit): watched again, so it
 				// sells once; sold, taken away, so a restock never sells it twice (until

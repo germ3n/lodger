@@ -79,6 +79,50 @@ public final class LoadedMod {
 				: ". Vulkan's loader is missing: install it (Debian and Ubuntu: apt install libvulkan1; Fedora: dnf install vulkan-loader; Arch: pacman -S vulkan-icd-loader). No GPU is needed";
 	}
 
+	/** The oldest glibc the Linux natives load on (`scripts/build_natives.py` keeps them there). */
+	static final int[] GLIBC_NEEDED = {2, 34};
+
+	/**
+	 * Why a Linux native would not open on an older system: Java's loader says only "Cannot open
+	 * library", and RHEL 8's glibc 2.28 failed with no reason given. Empty when that is not why.
+	 */
+	static String glibcHint(String osName, String version) {
+		if (!Natives.os(osName).equals("linux") || version.isEmpty()) {
+			return "";
+		}
+		String[] parts = version.split("\\.");
+		try {
+			int major = Integer.parseInt(parts[0]);
+			int minor = parts.length > 1 ? Integer.parseInt(parts[1].replaceAll("[^0-9].*", "")) : 0;
+			if (major > GLIBC_NEEDED[0] || (major == GLIBC_NEEDED[0] && minor >= GLIBC_NEEDED[1])) {
+				return "";
+			}
+		} catch (NumberFormatException e) {
+			return "";
+		}
+		return ". This system's C library is glibc " + version + "; the native needs " + GLIBC_NEEDED[0] + "." + GLIBC_NEEDED[1]
+				+ " or newer (Debian 12, Ubuntu 22.04, RHEL 9 or newer)";
+	}
+
+	/** This system's glibc version, by asking it; empty off Linux or where it cannot be asked. */
+	static String glibcVersion(String osName) {
+		if (!Natives.os(osName).equals("linux")) {
+			return "";
+		}
+		try {
+			java.lang.foreign.Linker linker = java.lang.foreign.Linker.nativeLinker();
+			var found = linker.defaultLookup().find("gnu_get_libc_version");
+			if (found.isEmpty()) {
+				return "";
+			}
+			var call = linker.downcallHandle(found.get(), java.lang.foreign.FunctionDescriptor.of(java.lang.foreign.ValueLayout.ADDRESS));
+			java.lang.foreign.MemorySegment text = (java.lang.foreign.MemorySegment) call.invokeExact();
+			return text.reinterpret(64).getString(0);
+		} catch (Throwable e) {
+			return "";
+		}
+	}
+
 	/** Whether Vulkan's loader is missing here: never on a Mac, whose natives use Metal. */
 	static boolean vulkanLoaderMissing(String osName) {
 		String name = switch (Natives.os(osName)) {
@@ -146,7 +190,7 @@ public final class LoadedMod {
 		try {
 			library = Native.load(extracted);
 		} catch (RuntimeException e) {
-			return failed(jar.id(), Optional.of(manifest), "could not load " + extracted + ": " + e.getMessage() + vulkanHint(e, osName));
+			return failed(jar.id(), Optional.of(manifest), "could not load " + extracted + ": " + e.getMessage() + vulkanHint(e, osName) + glibcHint(osName, glibcVersion(osName)));
 		}
 
 		int abi = library.abiVersion();

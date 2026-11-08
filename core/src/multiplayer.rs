@@ -72,7 +72,18 @@ impl Memory {
         self.fixtures.clear();
         self.tunnels.clear();
         self.holes.clear();
-        self.placed.clear();
+        // `placed` is kept: it is what it never digs beside, whoever built it (cleared, the old
+        // target's house was open to its digging).
+        // What happened to them and what was around them: their death, where they fished, their
+        // obsidian, their frames and boats, plants and field, the land around them.
+        self.milestones.clear();
+        self.last_fished = None;
+        self.placed_obsidian.clear();
+        self.decor.clear();
+        self.vehicles.clear();
+        self.plants.clear();
+        self.field.clear();
+        self.surroundings = None;
         self.elsewhere_since = None;
         self.back_after = None;
         self.people = Default::default();
@@ -80,6 +91,11 @@ impl Memory {
         self.diary_offered = 0.0;
         self.diary_bought = false;
         self.chains.retain(|o| o.id != "the_diary");
+        self.chains_done.retain(|c| c != "the_diary");
+        // Its once-a-stay count too, or the new one's was never written.
+        let diary = |d: &crate::memory::Done| d.event == "diary_sold" || d.event == "diary_brought";
+        self.done.retain(|d| !diary(d));
+        self.landmarks.retain(|d| !diary(d));
         self.target_seen_unix = now;
         self.retargeted = true;
 
@@ -117,6 +133,14 @@ mod tests {
             want: "a place of its own".to_string(),
             place: Some([40, 64, 40]),
             home: Some(crate::memory::Home::default()),
+            placed: vec![[3, 64, 3]],
+            milestones: vec![crate::memory::Milestone::default()],
+            diary_offered: 4.0,
+            done: vec![crate::memory::Done {
+                event: "diary_sold".to_string(),
+                ok: true,
+                ..Default::default()
+            }],
             ..Memory::default()
         };
         memory.set_target(0, "razor", "u0");
@@ -144,7 +168,16 @@ mod tests {
         assert_eq!(memory.want, "a place of its own", "the want is kept");
         assert_eq!(memory.place, Some([40, 64, 40]), "its place is kept");
         assert!(memory.home.is_none(), "the old target's home is let go");
+        assert!(
+            memory.placed.contains(&[3, 64, 3]),
+            "what was built stays where it never digs"
+        );
+        assert!(
+            memory.milestones.is_empty(),
+            "their death was not the new one's"
+        );
         assert_eq!(memory.diary_offered, 0.0, "the old target's diary too");
+        assert_eq!(memory.times("diary_sold"), 0, "and a new one may be sold");
         assert!(
             !memory.retarget_due(&config, 3, 1_000_000 + 3 * week),
             "once a stay"

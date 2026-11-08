@@ -88,11 +88,36 @@ pub struct Pending {
     /// it is done.
     #[serde(default)]
     pub puts_held: bool,
-    /// Sent after the event is recorded: what gives a kept stack back after the event failed, a
+    /// Sent after the event is recorded: a taken thing put back after the event failed, a
     /// villager walked back by morning. Its report is not the event's, and the event does not
     /// wait for it (the night's villager kept the event unrecorded for half a day).
     #[serde(default)]
     pub tail: bool,
+    /// A take's chest, slot and item, and the name it keeps it under.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub took: Option<Took>,
+}
+
+/// What a take took: from where, which item, kept under what name.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Took {
+    pub from: BlockPos,
+    pub slot: u32,
+    pub item: String,
+    /// The name it is kept under; empty, spent (an ingredient, a sapling), and given back as
+    /// plain items of its kind if the event fails.
+    pub keep: String,
+    pub count: u32,
+}
+
+/// A take done for an event not over yet: put back into its chest if the event fails.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Taken {
+    pub event: String,
+    pub day: f32,
+    pub took: Took,
 }
 
 /// A command to send at a later tick: a chest's close after its open.
@@ -116,6 +141,9 @@ pub struct Brain {
     pub next_plan_id: u64,
     pub pending: Vec<Pending>,
     pub later: Vec<Later>,
+    /// What the events under way took and keep, until each is over.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub taken: Vec<Taken>,
     pub next_plan_tick: u64,
     /// The tick the surroundings may be asked for again, so an unanswered pass is retried, not
     /// repeated every tick.
@@ -1160,8 +1188,9 @@ impl Brain {
                 }
             }
             // What it gives without having taken it comes out of what it dug.
+            // Not the torches it took down off their walls (`one_room_dark`): those were theirs.
             if let Command::PutItem { item, kept, .. } = command {
-                if kept.is_empty() && memory.stored(&item.id) > 0 {
+                if kept.is_empty() && plan.event != "one_room_dark" && memory.stored(&item.id) > 0 {
                     memory.store(&item.id, -(item.count as i64));
                 }
             }
@@ -1204,6 +1233,23 @@ impl Brain {
                 day,
                 puts_held,
                 tail: later_ticks >= TAIL_TICKS,
+                took: match &command {
+                    Command::TakeItem {
+                        from,
+                        slot,
+                        keep,
+                        expect,
+                        count,
+                        ..
+                    } if !keep.is_empty() || !expect.is_empty() => Some(Took {
+                        from: *from,
+                        slot: *slot,
+                        item: expect.clone(),
+                        keep: keep.clone(),
+                        count: *count,
+                    }),
+                    _ => None,
+                },
             });
             if later_ticks == 0 {
                 sent.push(command);
@@ -2358,6 +2404,19 @@ impl Brain {
         for report in reports {
             if let Some(index) = self.pending.iter().position(|p| p.id == report.id) {
                 let pending = self.pending.remove(index);
+                if report.done {
+                    if let Some(took) = pending
+                        .took
+                        .clone()
+                        .filter(|t| t.keep != "held" && (!t.keep.is_empty() || !t.item.is_empty()))
+                    {
+                        self.taken.push(Taken {
+                            event: pending.event.clone(),
+                            day: pending.day,
+                            took,
+                        });
+                    }
+                }
                 let others = self
                     .pending
                     .iter()
@@ -2379,30 +2438,55 @@ impl Brain {
                         &pending.event,
                         if report.done { "done" } else { &report.reason },
                     );
-                    if !report.done {
+                    let mine = |t: &Taken| t.event == pending.event && t.day == pending.day;
+                    if report.done {
+                        // Over: what it took is where the event put it.
+                        self.taken.retain(|t| !mine(t));
+                    } else {
                         // The rest of a failed event is not sent: the sign's text after a sign
-                        // that did not go down, the take after a planting that failed. But what
-                        // gives a kept stack back still goes (the piece taken for a stand that
-                        // could not be moved, worn where it stands), or it was kept for good.
-                        let gives_back: Vec<u64> = self
-                            .later
-                            .iter()
-                            .filter(|l| gives_back(&l.command))
-                            .map(|l| l.command.id())
-                            .collect();
+                        // that did not go down, the take after a planting that failed, the
+                        // stand placed for a piece never taken.
                         let dropped: Vec<u64> = self
                             .pending
                             .iter()
                             .filter(|p| p.event == pending.event && p.day == pending.day)
                             .map(|p| p.id)
-                            .filter(|id| !gives_back.contains(id))
                             .collect();
                         self.later.retain(|l| !dropped.contains(&l.command.id()));
                         self.pending.retain(|p| !dropped.contains(&p.id));
-                        for p in self.pending.iter_mut() {
-                            if p.event == pending.event && p.day == pending.day {
-                                p.tail = true;
-                            }
+                        // What it took for it goes back into the chest it came from, or it was
+                        // kept for good (the scarecrow's piece when the stand would not move),
+                        // or spent for nothing (the stick of a craft whose coal was gone).
+                        let back: Vec<Taken> =
+                            self.taken.iter().filter(|t| mine(t)).cloned().collect();
+                        self.taken.retain(|t| !mine(t));
+                        for taken in back {
+                            let id = self.id();
+                            self.pending.push(Pending {
+                                id,
+                                event: pending.event.clone(),
+                                pos: pending.pos,
+                                day: pending.day,
+                                tail: true,
+                                ..Pending::default()
+                            });
+                            self.later.push(Later {
+                                at_tick: 0,
+                                command: Command::PutItem {
+                                    id,
+                                    into: taken.took.from,
+                                    slot: Some(taken.took.slot),
+                                    item: craftkit::world::ItemStack {
+                                        id: taken.took.item.clone(),
+                                        count: taken.took.count.max(1),
+                                        slot: taken.took.slot,
+                                    },
+                                    kept: taken.took.keep.clone(),
+                                    wear: 0,
+                                    name: String::new(),
+                                },
+                                while_still: false,
+                            });
                         }
                     }
                 }
@@ -2489,8 +2573,11 @@ impl Brain {
                     memory.held = None;
                 }
                 if report.done && pending.event == "take" {
-                    // The host took it; the memory holds it from here.
-                    act::took(memory, pending.pos);
+                    // The host took it; the memory holds it from here, what the command took.
+                    match &pending.took {
+                        Some(took) if !took.item.is_empty() => act::took_this(memory, took),
+                        _ => act::took(memory, pending.pos),
+                    }
                 }
                 if report.done
                     && (pending.event == "return_taken"
@@ -2512,23 +2599,6 @@ impl Brain {
 /// stage moved on, the config disabled it, its cap reached), a lasting need gone (the chest,
 /// the home: `Need::lasting`), or what was at its spot gone (`Plan::on`). A need that comes and
 /// goes, a cooldown or the view only make it wait.
-/// Whether a command gives a kept stack back to the world (the stand's piece, the taken tool
-/// put back, the diary offered or brought): sent even after its event failed, so nothing taken
-/// stays kept for good.
-fn gives_back(command: &Command) -> bool {
-    match command {
-        Command::EquipEntity { kept, .. }
-        | Command::PutItem { kept, .. }
-        | Command::DropItem { kept, .. }
-        | Command::PutBook { kept, .. }
-        | Command::OfferTrade { kept, .. }
-        | Command::PlaceEntity { kept, .. }
-        | Command::ArmLoot { kept, .. }
-        | Command::Approach { kept, .. } => !kept.is_empty(),
-        _ => false,
-    }
-}
-
 fn cancel_reason(
     event: &Event,
     plan: &Plan,
@@ -3956,28 +4026,38 @@ mod tests {
     }
 
     #[test]
-    fn a_failed_event_still_gives_back_what_it_took_and_stays_a_failure() {
+    fn a_failed_event_puts_what_it_took_back_in_its_chest_and_stays_a_failure() {
         let mut memory = home_memory();
         let mut log = log::Log::new(None, 16, false);
         let mut brain = Brain::new(1);
-        // The scarecrow: the piece taken (done), the stand moved (fails), then the piece worn
-        // and a pose, later.
+        // The scarecrow from the chest: the piece taken (done), the stand taken (fails), then
+        // the stand placed and the piece worn, later.
+        let took = Took {
+            from: [2, 64, 0],
+            slot: 7,
+            item: "minecraft:iron_helmet".to_string(),
+            keep: "scarecrow".to_string(),
+            count: 1,
+        };
         for id in [1, 2, 3, 4] {
             brain.pending.push(Pending {
                 id,
                 event: "scarecrow".to_string(),
                 day: 5.0,
+                took: (id == 1).then(|| took.clone()),
                 ..Pending::default()
             });
         }
         brain.later.push(Later {
             at_tick: 100,
-            command: Command::PoseStand {
+            command: Command::PlaceEntity {
                 id: 3,
-                entity: 9,
-                at: None,
-                follow: None,
+                of: "minecraft:armor_stand".to_string(),
+                pos: [0.0, 64.0, 0.0],
+                yaw: 0.0,
                 seconds: 0.0,
+                kept: "scarecrow".to_string(),
+                face: None,
             },
             while_still: false,
         });
@@ -3997,7 +4077,7 @@ mod tests {
             reason: if done {
                 String::new()
             } else {
-                "gone".to_string()
+                "not there any more".to_string()
             },
         };
         brain.report(&[report(1, true), report(2, false)], &mut memory, &mut log);
@@ -4005,24 +4085,106 @@ mod tests {
         assert_eq!(
             brain.later.len(),
             1,
-            "the pose is dropped, the piece is not"
+            "no stand from nothing: {:?}",
+            brain.later
         );
-        assert!(matches!(
-            brain.later[0].command,
-            Command::EquipEntity { .. }
-        ));
-        brain.report(&[report(4, true)], &mut memory, &mut log);
+        let back = match &brain.later[0].command {
+            Command::PutItem {
+                id,
+                into,
+                slot,
+                kept,
+                ..
+            } if *into == [2, 64, 0] && *slot == Some(7) && kept == "scarecrow" => *id,
+            other => panic!("the piece back in its chest, not {other:?}"),
+        };
+        assert!(brain.taken.is_empty());
+        brain.report(&[report(back, true)], &mut memory, &mut log);
         let scarecrow: Vec<_> = memory
             .done
             .iter()
             .filter(|d| d.event == "scarecrow")
             .collect();
         assert_eq!(scarecrow.len(), 1, "{scarecrow:?}");
-        assert!(
-            !scarecrow[0].ok,
-            "the piece given back does not make it a success"
-        );
+        assert!(!scarecrow[0].ok, "put back, it is still a failure");
         assert!(memory.landmarks.iter().all(|d| d.event != "scarecrow"));
+    }
+
+    #[test]
+    fn a_craft_that_fails_gives_back_the_ingredient_it_spent() {
+        let mut memory = home_memory();
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        for (id, took) in [
+            (
+                1,
+                Some(Took {
+                    from: [2, 64, 0],
+                    slot: 4,
+                    item: "minecraft:stick".to_string(),
+                    keep: String::new(),
+                    count: 1,
+                }),
+            ),
+            (2, None),
+        ] {
+            brain.pending.push(Pending {
+                id,
+                event: "crafted_for_you".to_string(),
+                day: 5.0,
+                took,
+                ..Pending::default()
+            });
+        }
+        let report = |id, done| Report {
+            id,
+            done,
+            reason: String::new(),
+        };
+        brain.report(&[report(1, true), report(2, false)], &mut memory, &mut log);
+        assert!(
+            matches!(&brain.later[..], [Later { command: Command::PutItem { item, kept, into, .. }, .. }]
+                if item.id == "minecraft:stick" && kept.is_empty() && *into == [2, 64, 0]),
+            "the stick back: {:?}",
+            brain.later
+        );
+    }
+
+    #[test]
+    fn a_take_holds_what_its_command_took_not_the_plans_chest() {
+        let mut memory = home_memory();
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        brain.pending.push(Pending {
+            id: 1,
+            event: "take".to_string(),
+            pos: Some([99, 64, 99]),
+            day: 5.0,
+            took: Some(Took {
+                from: [2, 64, 0],
+                slot: 3,
+                item: "minecraft:bread".to_string(),
+                keep: "held".to_string(),
+                count: 1,
+            }),
+            ..Pending::default()
+        });
+        brain.report(
+            &[Report {
+                id: 1,
+                done: true,
+                reason: String::new(),
+            }],
+            &mut memory,
+            &mut log,
+        );
+        let held = memory.held.as_ref().expect("held");
+        assert_eq!(held.item.id, "minecraft:bread");
+        assert_eq!((held.from, held.slot), ([2, 64, 0], 3));
+        assert!(
+            brain.taken.is_empty(),
+            "held is the take's own, not put back"
+        );
     }
 
     #[test]

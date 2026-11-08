@@ -78,6 +78,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Decor(kind) => memory.decor(kind).next().is_some(),
         Need::Decors(kind, n) => memory.decor(kind).count() >= n,
         Need::Creature(kind) => memory.creatures(kind).next().is_some(),
+        Need::UnnamedVillager => memory.unnamed_villager_near().is_some(),
+        Need::TheirAnimal(kind) => crate::brain::act::their_animal(memory, kind, false).is_some(),
         Need::Pet => memory.pets().next().is_some(),
         // On sale three days and not bought: never brought while it is still new on the shelf.
         Need::DiaryUnbought => {

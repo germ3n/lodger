@@ -2545,9 +2545,7 @@ pub fn commands(
                 )
             })
             .collect(),
-        Action::NameAnimal => memory
-            .creatures("")
-            .find(|c| !c.named && c.kind != "villager")
+        Action::NameAnimal => their_animal(memory, "", true)
             .map(|c| {
                 vec![(
                     Command::NameEntity {
@@ -2561,9 +2559,7 @@ pub fn commands(
             .unwrap_or_default(),
         Action::DyeSheep => {
             const COLOURS: &[&str] = &["red", "black", "light_blue", "purple", "lime", "pink"];
-            memory
-                .creatures("sheep")
-                .next()
+            their_animal(memory, "sheep", false)
                 .map(|sheep| {
                     vec![(
                         Command::DyeSheep {
@@ -2596,9 +2592,7 @@ pub fn commands(
                 if event.id.starts_with("pet_") {
                     memory.pets().next()
                 } else {
-                    memory
-                        .creatures("")
-                        .find(|c| !c.pet && c.kind != "villager")
+                    their_animal(memory, "", false)
                 }
             } else {
                 memory.creatures(kind).next()
@@ -3374,8 +3368,22 @@ pub fn commands(
                     };
                     // Planted first, taken after: a planting that fails drops the take, so no
                     // seed of theirs is lost (until now it was taken first).
+                    // Young wheat only: a ripe one replaced was their harvest gone.
                     vec![
-                        (set(ids, field, crop, &["minecraft:wheat"]), 0),
+                        (
+                            set(
+                                ids,
+                                field,
+                                crop,
+                                &[
+                                    "minecraft:wheat[age=0]",
+                                    "minecraft:wheat[age=1]",
+                                    "minecraft:wheat[age=2]",
+                                    "minecraft:wheat[age=3]",
+                                ],
+                            ),
+                            0,
+                        ),
                         (
                             Command::TakeItem {
                                 id: ids(),
@@ -5564,6 +5572,58 @@ fn sign_at(
 }
 
 /// The host took the favourite: the memory holds it now and the container's contents lose it.
+/// One of their farm animals by the house (`Memory::penned`), of `kind` (any, empty), not a pet,
+/// not in front of them within the distance the view rule keeps (the event's own spot is
+/// elsewhere, or none, so the animal's was never checked), unnamed when `unnamed`. Until now
+/// any creature near the target would do: a wild one, another player's, one they watched.
+pub fn their_animal<'a>(
+    memory: &'a Memory,
+    kind: &str,
+    unnamed: bool,
+) -> Option<&'a crate::memory::Creature> {
+    memory.penned().into_iter().find(|c| {
+        (kind.is_empty() || c.kind == kind)
+            && !c.pet
+            && !(unnamed && c.named)
+            && !memory.in_view(block_of(c.pos), ANIMAL_VIEW)
+    })
+}
+
+/// How far an animal it moves, names or dyes is kept out of their view: the view rule's
+/// distance (`events.min_distance`, 64 by default).
+const ANIMAL_VIEW: f64 = 64.0;
+
+/// What a `take` took, as its command said: the chest, the slot and the item. Held from that,
+/// not from the plan's chest (the chest changed between the plan and the take, and the memory
+/// held another thing than the host, or nothing, and a second take was kept for good).
+pub fn took_this(memory: &mut Memory, taken: &crate::brain::Took) {
+    if let Some(container) = memory.containers.iter_mut().find(|c| c.pos == taken.from) {
+        if let Some(index) = container
+            .contents
+            .iter()
+            .position(|s| s.slot == taken.slot && s.id == taken.item)
+            .or_else(|| container.contents.iter().position(|s| s.id == taken.item))
+        {
+            if container.contents[index].count <= 1 {
+                container.contents.remove(index);
+            } else {
+                container.contents[index].count -= 1;
+            }
+        }
+    }
+    memory.held = Some(Held {
+        item: ItemStack {
+            id: taken.item.clone(),
+            count: 1,
+            slot: 0,
+        },
+        from: taken.from,
+        slot: taken.slot,
+        taken_day: memory.done.last().map(|d| d.day).unwrap_or(0.0),
+    });
+}
+
+/// What a `take` from a save without its `Took` took: the plan's chest's first favourite.
 pub fn took(memory: &mut Memory, pos: Option<BlockPos>) {
     let Some(pos) = pos else { return };
     // The favourite `take` chose (`Memory::favourite_in_container`): the first of their

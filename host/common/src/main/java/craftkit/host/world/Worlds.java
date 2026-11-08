@@ -192,6 +192,9 @@ public final class Worlds {
 		loot.clear();
 		// A figure up as the world closed held the whole old level through its sighting.
 		figures.clear();
+		// Its sales held the old world's villagers and their level (watched again from their tag
+		// when the world is opened again).
+		gatherings.clear();
 	}
 
 	public void tick(MinecraftServer server) {

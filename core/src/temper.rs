@@ -277,6 +277,23 @@ const IT_BUILDS_WITH: &[&str] = &[
     "minecraft:oak_fence",
 ];
 
+/// Whether a log at `pos` is one its build laid: the house's roof, the hut's posts.
+fn its_log(build: &crate::building::Build, pos: BlockPos) -> bool {
+    let parts = match build.kind.as_str() {
+        "house_near" => crate::building::house(build.way, build.grown),
+        "hut_on_route" => crate::building::hut(build.way),
+        _ => return false,
+    };
+    parts.iter().any(|p| {
+        p.block.ends_with("_log")
+            && [
+                build.site[0] + p.at[0],
+                build.site[1] + p.at[1],
+                build.site[2] + p.at[2],
+            ] == pos
+    })
+}
+
 /// The events that leave a thing of its own where they happen.
 const IT_MAKES: &[&str] = &[
     "sign",
@@ -340,10 +357,14 @@ impl Memory {
                     self.temper.moved(BROKE_ITS_LIGHT, day);
                 } else if !theirs
                     && IT_BUILDS_WITH.contains(&event.detail.as_str())
-                    && self
-                        .builds
-                        .iter()
-                        .any(|b| b.laid > 0 && b.ground_known() && distance(b.site, pos) <= 8.0)
+                    && self.builds.iter().any(|b| {
+                        b.laid > 0
+                            && b.ground_known()
+                            && distance(b.site, pos) <= 8.0
+                            // A log only where its house or hut laid one: an oak felled beside
+                            // it is a tree of the world's, and angered it.
+                            && (!event.detail.ends_with("_log") || its_log(b, pos))
+                    })
                 {
                     self.temper.moved(BROKE_ITS_HOUSE, day);
                 } else if !theirs
@@ -565,5 +586,32 @@ mod tests {
         let angry = memory.temper.value;
         memory.temper_chat("hello, what do you want", 1.0);
         assert!(memory.temper.value < angry);
+    }
+
+    #[test]
+    fn a_tree_felled_by_its_house_is_not_its_house() {
+        let mut memory = Memory {
+            target: Some(0),
+            ..Memory::default()
+        };
+        memory.temper.settle(0.3, 0.0);
+        memory.builds.push(crate::building::Build {
+            kind: "house_near".to_string(),
+            site: [0, 64, 0],
+            way: [0, 1],
+            laid: 60,
+            grown: false,
+            last_day: 1.0,
+        });
+        let broke = |pos| Event {
+            kind: EventKind::BrokeBlock,
+            pos: Some(pos),
+            detail: "minecraft:oak_log".to_string(),
+            ..Default::default()
+        };
+        memory.temper_event(&broke([5, 64, 3]), 2.0);
+        assert_eq!(memory.temper.value, 0.3, "a tree beside it");
+        memory.temper_event(&broke([1, 68, 1]), 2.0);
+        assert!(memory.temper.value > 0.3, "its roof");
     }
 }

@@ -114,7 +114,7 @@ public final class PreparingScreen extends Screen {
 		chosen.ifPresent(c -> choice.setMessage(Component.translatable("craftkit.preparing.choice", c.label())));
 		// Whenever it is not loading, and after a failure too.
 		without.visible = (progress.phase() != Preparation.Phase.LOADING || progress.failed())
-				&& preparation.playableWithout().isPresent();
+				&& preparation.playableWithout().isPresent() && !preparation.switching();
 
 		if (progress.done()) {
 			Minecraft.getInstance().gui.setScreen(parent);

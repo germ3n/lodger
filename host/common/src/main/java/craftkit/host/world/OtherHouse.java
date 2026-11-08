@@ -87,7 +87,12 @@ public final class OtherHouse {
 			return visits.stream().anyMatch(v -> v.player.equals(player.getUUID())) ? "they are there already" : "someone is there already";
 		}
 		radius = Math.max(4, Math.min(radius, MOST_RADIUS));
-		int floor = bed.getY() - 1;
+		// From the lower of the bed and the door: a bed upstairs left the ground floor's doorway
+		// out of the copy, and its figure in the barrier under it.
+		int floor = Math.min(bed.getY(), door.getY()) - 1;
+		if (bed.getY() - floor > ABOVE - 2) {
+			return "the bed is too far above the door";
+		}
 		// All of it loaded before a block is written: a failure leaves nothing half copied.
 		for (int x = center.getX() - radius; x <= center.getX() + radius; x += 8) {
 			for (int z = center.getZ() - radius; z <= center.getZ() + radius; z += 8) {
@@ -132,6 +137,21 @@ public final class OtherHouse {
 					}
 					if (state.getBlock() instanceof net.minecraft.world.level.block.FlowerPotBlock) {
 						state = Blocks.FLOWER_POT.defaultBlockState();
+					}
+					// Nothing that hands out an item by use, adventure mode or not: a full
+					// composter's bone meal, a hive's honey, a cauldron's water or snow, a pot's
+					// contents. Empty, or left out.
+					if (state.getBlock() instanceof net.minecraft.world.level.block.ComposterBlock) {
+						state = state.setValue(net.minecraft.world.level.block.ComposterBlock.LEVEL, 0);
+					}
+					if (state.getBlock() instanceof net.minecraft.world.level.block.BeehiveBlock) {
+						state = state.setValue(net.minecraft.world.level.block.BeehiveBlock.HONEY_LEVEL, 0);
+					}
+					if (state.getBlock() instanceof net.minecraft.world.level.block.AbstractCauldronBlock) {
+						state = Blocks.CAULDRON.defaultBlockState();
+					}
+					if (state.is(Blocks.DECORATED_POT)) {
+						state = Blocks.AIR.defaultBlockState();
 					}
 					if (!state.isAir()) {
 						other.setBlock(inCopy(pos, center, floor), state, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
@@ -221,7 +241,9 @@ public final class OtherHouse {
 			ServerLevel other = server.getLevel(KEY);
 			if (other != null) {
 				for (ServerPlayer player : List.copyOf(other.players())) {
-					if (visits.stream().noneMatch(v -> v.player.equals(player.getUUID()))) {
+					// Not while dead: given to a dead player, what they carried was lost with the
+					// respawn (a quit on the death screen came back here with no visit).
+					if (!player.isDeadOrDying() && visits.stream().noneMatch(v -> v.player.equals(player.getUUID()))) {
 						home(server, player, null, null);
 					}
 				}
@@ -329,6 +351,11 @@ public final class OtherHouse {
 		ServerLevel other = server.getLevel(KEY);
 		if (other != null) {
 			for (ServerPlayer player : List.copyOf(other.players())) {
+				// One dead there is left as they are: what they carried waits in the copy, and
+				// comes home with the next one sent home from it.
+				if (player.isDeadOrDying()) {
+					continue;
+				}
 				Visit visit = visits.stream().filter(v -> v.player.equals(player.getUUID())).findFirst().orElse(null);
 				home(server, player, visit == null ? null : visit.bed, visit == null ? null : visit.door);
 			}

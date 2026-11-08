@@ -1201,6 +1201,31 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **The ninth bug pass** (five reviewers, the fifth on the events one by one; about forty
+  found, two in the eighth's own fixes). A failed event no longer runs its own steps to give back
+  what it kept (a failed scarecrow put down an armour stand from nothing, a failed alcove dropped
+  the held thing where it never dug and forgot it): what its takes took goes back into the chest
+  it came from, a spent ingredient as plain items of its kind; and a take holds what its command
+  took, not the plan's chest's first favourite. The animal events used any creature near the
+  target, wild, another player's or one in front of them, and boats, carts and leash knots passed
+  for animals (now their own farm animals by the house, out of their view, and only living kinds);
+  `potion_changed` made a real potion of a bottle of water; `replant_other` replaced ripe wheat;
+  felling an oak by its house angered it as a broken house. The retarget opened the old target's
+  house to its digging (it forgot what was built), kept their death, fishing spot, obsidian and
+  frames, and never let a new diary be sold; another player's blocks were never protected; on one
+  long run the seventeenth player was never known; `ate` and `fished` were never sent, so the late
+  meal and the dock never came. Sales: a villager turned into a zombie or a witch lost what it
+  sold, and a cured one sold it again; two sales on one villager lost the second's tag and it
+  restocked for ever; a bought offer was taken off while the trading screen was open; the sales
+  outlived the world. The other house: a death screen quit kept them from their things, a bed
+  upstairs left the doorway out, and a full composter, hive or cauldron handed out items. A chiseled
+  bookshelf swallowed what was put in it. The client: Play without it while a size was switching
+  kept downloading, a finished download was deleted when its rename failed, a switch that threw
+  stuck for good, and a Linux too old for the native said nothing of why (its glibc is named now).
+  The harm rule now says what the catalogue does: nips from stage three, real harm from four,
+  always spared, the one kill the ending's. Tests: the put back, the spent ingredient, the take's
+  hold, the felled tree, the seventeenth player, the retarget's keeps, the glibc hint. Was: all of
+  that.
 - [x] **The eighth bug pass** (five reviewers, the fifth on the events one by one; about forty
   found, many in the books). Items: a taken thing put back into a slot the chest no longer had (a
   double chest broken in half) was destroyed (any free slot now), and a full chest wore it again at

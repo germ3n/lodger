@@ -92,6 +92,15 @@ class LoadedModTest {
 	}
 
 	@Test
+	void a_linux_too_old_for_the_native_says_its_glibc() {
+		assertTrue(LoadedMod.glibcHint("Linux", "2.28").contains("glibc 2.28"));
+		org.junit.jupiter.api.Assertions.assertEquals("", LoadedMod.glibcHint("Linux", "2.34"));
+		org.junit.jupiter.api.Assertions.assertEquals("", LoadedMod.glibcHint("Linux", "2.39"));
+		org.junit.jupiter.api.Assertions.assertEquals("", LoadedMod.glibcHint("Windows 11", "2.28"), "not Linux");
+		org.junit.jupiter.api.Assertions.assertEquals("", LoadedMod.glibcHint("Linux", ""), "not asked");
+	}
+
+	@Test
 	void a_native_that_wants_vulkan_says_what_to_install() {
 		RuntimeException linux = new RuntimeException("libvulkan.so.1: cannot open shared object file");
 		org.junit.jupiter.api.Assertions.assertTrue(LoadedMod.vulkanHint(linux, "Linux", false).contains("apt install libvulkan1"));

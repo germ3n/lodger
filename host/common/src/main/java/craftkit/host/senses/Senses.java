@@ -54,6 +54,10 @@ public final class Senses {
 	private final Map<UUID, MovementTracker> movement = new HashMap<>();
 	private final Map<UUID, Boolean> wasSleeping = new HashMap<>();
 	private final Map<UUID, String> wasRiding = new HashMap<>();
+	/** The fish they had caught, by the game's count, and what they were eating with how fed. */
+	private final Map<UUID, Integer> fishCaught = new HashMap<>();
+	private final Map<UUID, String> eating = new HashMap<>();
+	private final Map<UUID, Integer> fedBefore = new HashMap<>();
 	private final Map<UUID, Boolean> hadContainerOpen = new HashMap<>();
 	/** The container each player opened last, so its close can say what it holds now. */
 	private final Map<UUID, BlockPos> openedAt = new HashMap<>();
@@ -113,6 +117,9 @@ public final class Senses {
 		movement.remove(uuid);
 		wasSleeping.remove(uuid);
 		wasRiding.remove(uuid);
+		fishCaught.remove(uuid);
+		eating.remove(uuid);
+		fedBefore.remove(uuid);
 		hadContainerOpen.remove(uuid);
 		openedAt.remove(uuid);
 		refuseSleepUntil.remove(uuid);
@@ -416,6 +423,30 @@ public final class Senses {
 		String rode = wasRiding.put(uuid, riding);
 		if (rode != null && !rode.equals(riding)) {
 			event(player, riding.isEmpty() ? "dismounted" : "mounted", player.blockPosition(), riding.isEmpty() ? rode : riding, null);
+		}
+
+		// A fish caught: the game's own count went up (until now `fished` was never sent, and
+		// the dock was never built).
+		int fish = player.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.FISH_CAUGHT));
+		Integer hadFish = fishCaught.put(uuid, fish);
+		if (hadFish != null && fish > hadFish) {
+			event(player, "fished", player.blockPosition(), "", null);
+		}
+
+		// Eaten: a food used to its end, and they are fed more for it (until now `ate` was never
+		// sent, and the late meal never came).
+		net.minecraft.world.item.ItemStack using = player.isUsingItem() ? player.getUseItem() : net.minecraft.world.item.ItemStack.EMPTY;
+		String food = using.has(net.minecraft.core.component.DataComponents.FOOD) ? itemId(using) : "";
+		int fed = player.getFoodData().getFoodLevel() * 100 + Math.round(player.getFoodData().getSaturationLevel());
+		String wasEating = eating.put(uuid, food);
+		if (!food.isEmpty() && !food.equals(wasEating)) {
+			fedBefore.put(uuid, fed);
+		}
+		if (wasEating != null && !wasEating.isEmpty() && !wasEating.equals(food)) {
+			Integer before = fedBefore.remove(uuid);
+			if (before != null && fed > before) {
+				event(player, "ate", player.blockPosition(), wasEating, null);
+			}
 		}
 
 		boolean containerOpen = player.containerMenu != player.inventoryMenu;

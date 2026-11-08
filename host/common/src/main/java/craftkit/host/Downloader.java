@@ -143,8 +143,26 @@ public final class Downloader {
 				keepPart = true;
 				throw last;
 			}
-			check(part);
-			Files.move(part, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+			// All of it here: kept from now on, but for a wrong SHA-256 (a rename that failed,
+			// a virus scanner holding the new file, threw the whole download away).
+			keepPart = true;
+			try {
+				check(part);
+			} catch (Final e) {
+				keepPart = false;
+				throw e;
+			}
+			for (int attempt = 1; ; attempt++) {
+				try {
+					Files.move(part, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+					break;
+				} catch (IOException e) {
+					if (attempt >= 5) {
+						throw e;
+					}
+					Thread.sleep(500L * attempt);
+				}
+			}
 			state.set(State.DONE);
 		} catch (IOException | InterruptedException | RuntimeException e) {
 			if (!keepPart && !cancelled) {

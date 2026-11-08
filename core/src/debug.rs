@@ -30,8 +30,17 @@ pub fn answer(
             let Some(row) = events::find(event) else {
                 return DebugReply::message(format!("no event called {event}"));
             };
+            // With its name and uuid, as a target found by watching has (a bare index signed
+            // its books "you" and was lost after a restart).
             if stay.memory.target.is_none() {
-                stay.memory.target = Some(*player);
+                let known = stay
+                    .memory
+                    .others
+                    .iter()
+                    .find(|(i, _, _)| i == player)
+                    .map(|(_, name, uuid)| (name.clone(), uuid.clone()))
+                    .unwrap_or_default();
+                stay.memory.set_target(*player, &known.0, &known.1);
             }
             if !offer::switched_on(row, config) {
                 return DebugReply::message(format!(

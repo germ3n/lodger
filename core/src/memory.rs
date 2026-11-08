@@ -1048,6 +1048,57 @@ fn is_storage(id: &str) -> bool {
         || id.ends_with("smoker")
 }
 
+/// Whether an entity kind is a living one, not a thing: an animal can be named, dyed, moved,
+/// a boat, a cart, a leash knot or a thrown thing cannot (since boats became `oak_boat` and
+/// the like, three boats at a dock made animals, and a boat was named and moved indoors).
+pub fn living(kind: &str) -> bool {
+    let bare = kind.rsplit(':').next().unwrap_or(kind);
+    const THINGS: &[&str] = &[
+        "item",
+        "player",
+        "experience_orb",
+        "experience_bottle",
+        "arrow",
+        "spectral_arrow",
+        "trident",
+        "leash_knot",
+        "falling_block",
+        "tnt",
+        "fishing_bobber",
+        "snowball",
+        "egg",
+        "potion",
+        "splash_potion",
+        "lingering_potion",
+        "ender_pearl",
+        "eye_of_ender",
+        "firework_rocket",
+        "area_effect_cloud",
+        "marker",
+        "interaction",
+        "end_crystal",
+        "lightning_bolt",
+        "wind_charge",
+        "breeze_wind_charge",
+        "fireball",
+        "small_fireball",
+        "dragon_fireball",
+        "wither_skull",
+        "shulker_bullet",
+        "llama_spit",
+        "evoker_fangs",
+        "ominous_item_spawner",
+        "painting",
+        "item_frame",
+        "glow_item_frame",
+    ];
+    !(THINGS.contains(&bare)
+        || bare.ends_with("boat")
+        || bare.ends_with("raft")
+        || bare.ends_with("minecart")
+        || bare.ends_with("_display"))
+}
+
 impl Memory {
     /// Takes in a tick's observations. The target is the first player seen until the brain picks
     /// another (multiplayer, a later phase).
@@ -1066,15 +1117,22 @@ impl Memory {
             } else if !player.uuid.is_empty()
                 || !self.others.iter().any(|(i, _, _)| *i == player.index)
             {
-                // Full: one long gone (its index given up, not the target) makes room; the
-                // seventeenth player ever seen used to be never known.
+                // Full: one long gone (its index given up, not the target) makes room, else the
+                // longest known who is not here now (indices are given up only across restarts,
+                // so on one long run the seventeenth player was never known).
                 if self.others.len() >= 16 {
                     let target_uuid = self.target_uuid.clone();
-                    if let Some(gone) = self
+                    let here = |u: &str| observations.players.iter().any(|p| p.uuid == u);
+                    let gone = self
                         .others
                         .iter()
                         .position(|(i, _, u)| *i == u32::MAX && *u != target_uuid)
-                    {
+                        .or_else(|| {
+                            self.others
+                                .iter()
+                                .position(|(_, _, u)| *u != target_uuid && !here(u))
+                        });
+                    if let Some(gone) = gone {
                         self.others.remove(gone);
                     }
                 }
@@ -1255,15 +1313,7 @@ impl Memory {
                 .filter(|e| {
                     !e.hostile
                         && !is_decor(&e.kind)
-                        && !matches!(
-                            e.kind.as_str(),
-                            "minecraft:item"
-                                | "minecraft:player"
-                                | "minecraft:experience_orb"
-                                | "minecraft:arrow"
-                                | "minecraft:boat"
-                                | "minecraft:minecart"
-                        )
+                        && living(&e.kind)
                         && distance(block(e.pos), at) <= 32.0
                 })
                 .take(MOST_CREATURES)
@@ -1368,6 +1418,13 @@ impl Memory {
                 if self.chains.iter().any(|o| o.id == "the_diary") {
                     self.chains.retain(|o| o.id != "the_diary");
                     self.chains_done.push("the_diary".to_string());
+                }
+            }
+            // A block another player placed is as much a build it never digs beside as the
+            // target's (`act::clear_of_built`); the rest of their doings are not its business.
+            if event.player != index && event.kind == EventKind::PlacedBlock {
+                if let Some(pos) = event.pos {
+                    push_capped(&mut self.placed, pos, MOST_PLACED);
                 }
             }
             if event.player != index {
@@ -4457,5 +4514,35 @@ mod tests {
             memory.detail_lines().starts_with(&lines),
             "among the first details"
         );
+    }
+
+    #[test]
+    fn a_seventeenth_player_on_one_long_run_is_known_and_the_target_kept() {
+        let mut memory = Memory {
+            others: (0..16)
+                .map(|i| (i, format!("p{i}"), format!("u{i}")))
+                .collect(),
+            ..Memory::default()
+        };
+        memory.set_target(0, "p0", "u0");
+        let player = |index: u32, uuid: &str| craftkit::world::Player {
+            index,
+            uuid: uuid.to_string(),
+            name: format!("new{index}"),
+            ..Default::default()
+        };
+        memory.observe(
+            &Observations {
+                players: vec![player(16, "u16")],
+                ..Default::default()
+            },
+            1.0,
+        );
+        assert!(memory.others.iter().any(|(_, _, u)| u == "u16"));
+        assert!(
+            memory.others.iter().any(|(_, _, u)| u == "u0"),
+            "the target stays"
+        );
+        assert_eq!(memory.others.len(), 16);
     }
 }

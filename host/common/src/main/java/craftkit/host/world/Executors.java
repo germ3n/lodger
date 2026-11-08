@@ -800,7 +800,7 @@ public final class Executors {
 		if (!jukebox.getTheItem().isEmpty()) {
 			ItemStack disc = jukebox.getTheItem().copy();
 			for (int slot = 0; slot < from.getContainerSize(); slot++) {
-				if (from.getItem(slot).isEmpty()) {
+				if (from.getItem(slot).isEmpty() && from.canPlaceItem(slot, disc)) {
 					jukebox.setTheItem(ItemStack.EMPTY);
 					from.setItem(slot, disc);
 					return report(id, true, "stopped");
@@ -1632,13 +1632,14 @@ public final class Executors {
 		int slot = -1;
 		if (command.has("slot") && !command.get("slot").isJsonNull()) {
 			int wanted = command.get("slot").getAsInt();
-			if (wanted >= 0 && wanted < into.getContainerSize() && into.getItem(wanted).isEmpty()) {
+			if (wanted >= 0 && wanted < into.getContainerSize() && into.getItem(wanted).isEmpty() && into.canPlaceItem(wanted, stack)) {
 				slot = wanted;
 			}
 		}
+		// A slot that takes it: a chiseled bookshelf throws away what is not a book.
 		if (slot < 0) {
 			for (int candidate = 0; candidate < into.getContainerSize(); candidate++) {
-				if (into.getItem(candidate).isEmpty()) {
+				if (into.getItem(candidate).isEmpty() && into.canPlaceItem(candidate, stack)) {
 					slot = candidate;
 					break;
 				}
@@ -1651,7 +1652,7 @@ public final class Executors {
 			if (command.has("kept") && !command.get("kept").getAsString().isEmpty()) {
 				data.keep(command.get("kept").getAsString(), stack);
 			}
-			return report(id, false, "the container is full");
+			return report(id, false, "the container is full, or takes no such thing");
 		}
 
 		// As it goes back: a little more wear (never broken by it), a name.
@@ -2201,12 +2202,37 @@ public final class Executors {
 		return report(id, false, "the container is full");
 	}
 
+	/** A potion with an effect of its own: not water, nor the awkward, mundane or thick base. */
+	private static boolean realPotion(ItemStack stack) {
+		var contents = stack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+		if (contents == null || contents.potion().isEmpty()) {
+			return false;
+		}
+		var potion = contents.potion().get();
+		return java.util.stream.Stream.of(net.minecraft.world.item.alchemy.Potions.WATER, net.minecraft.world.item.alchemy.Potions.AWKWARD,
+				net.minecraft.world.item.alchemy.Potions.MUNDANE, net.minecraft.world.item.alchemy.Potions.THICK).noneMatch(potion::equals);
+	}
+
 	/** A potion of theirs, another kind, its name kept (ABI 42). */
 	private static JsonObject changePotion(ServerLevel level, JsonObject command, long id) {
 		Container in = container(level, blockPos(command.getAsJsonArray("pos")));
 		int slot = command.get("slot").getAsInt();
 		if (in == null || slot < 0 || slot >= in.getContainerSize()) {
 			return report(id, false, "no such slot");
+		}
+		// A potion that is one: a bottle of water, or an awkward, mundane or thick one, made into
+		// a real potion was something of value from nothing. Another slot's real one, if any.
+		if (!realPotion(in.getItem(slot))) {
+			slot = -1;
+			for (int candidate = 0; candidate < in.getContainerSize(); candidate++) {
+				if (realPotion(in.getItem(candidate))) {
+					slot = candidate;
+					break;
+				}
+			}
+			if (slot < 0) {
+				return report(id, false, "no potion there, only bottles of water or a base");
+			}
 		}
 		ItemStack stack = in.getItem(slot);
 		var had = stack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);

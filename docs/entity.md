@@ -311,7 +311,7 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | `head_on_post` | 4 | A fence post two blocks out from the door they use, and on it the head of the kind they kill most (a zombie's, a skeleton's, a creeper's, a piglin's), facing the door. Owner's pick. | A kill of a kind with a head, a door. |
 | `grave_each` | 4 | A row of graves at its place, two blocks apart: for each kind they killed, most first and five at most, a stone and a sign with the count and the kind. Once a stay. Owner's pick. | Two kinds killed, a home. |
 | `banner_turned` | 2 | A banner faces another way. | A placed banner. |
-| `named_animal` | 3 | One of the target's animals has a name, one word from the want's list. | A penned animal without a name. |
+| `named_animal` | 3 | One of the target's animals has a name, one word from the want's list. | A penned animal without a name, out of their view. |
 | `plant_flower` | 2 | A flower from a chest is planted by the door or on the route. | A chest with a flower. |
 
 ### Farm and animals
@@ -319,14 +319,14 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
 | `harvest_one` | 2 | One ripe crop is harvested and its yield is in the chest: wheat, a carrot, a potato or a beetroot, whichever it was (the host says what it cleared). A crop not yet ripe is never cut. The soil is left as it was. | A field and a chest. |
-| `replant_other` | 3 | One crop is a different crop, from seeds in a chest. | A field and a chest with other seeds. |
+| `replant_other` | 3 | One young crop of wheat is a different crop, from seeds in a chest (never a ripe one). | A field and a chest with other seeds. |
 | `trample` | 3 | Farmland from the field toward the door, one line, while the target is away. | A field within 32 blocks of the home. |
 | `field_word` | 4 | Crops cut back to seedlings so that from above, north at the top, the field reads one word of the want's list in letters three by five: the longest that fits (`MINE`, `LOOK`, `GIVE`; `ME` in a field of 7). Coded from the brain's field read. | A field of 7 by 5 or more, four in five planted. |
 | `scarecrow` | 3 | An armour stand in the field, wearing one piece of the target's armour (the very piece, from their chest), facing the house: their own stand moved there, or one from the chest set down. | A piece of armour and an armour stand (or one in a chest), and a field. |
 | `open_gate` | 2 | A pen's gate is open in the morning. The animals wandered. | A fence gate with animals behind it. |
 | `animal_indoors` | 3 | One of the target's animals is inside the house in the morning. Moved, not spawned; the gate is closed behind it. | A penned animal and a home with a door. |
 | `animal_gone` | 3 | One animal is missing from the pen, and is at the end of the target's route, grazing. | A pen and a route. |
-| `sheep_dyed` | 2 | A sheep is another colour, from dye in a chest. | A sheep and dye. |
+| `sheep_dyed` | 2 | One of their sheep by the house is another colour (no dye spent: a sheep's wool is not an item). | A sheep of theirs by the house, out of their view. |
 | `horse_moved` | 2 | The horse is tied to a different post, within eight blocks of the first (`move_leash`, ABI 27). | A horse (or donkey, mule, llama, camel) on a lead. |
 | `face_the_house` | 4 | At dawn every animal in their pens (up to twelve) stands still facing the house for two minutes (`hold` with `at`, ABI 27). Owner's pick. | Three animals in the pens, dawn. |
 | `one_more` | 3 | In the morning one more of the kind they keep most stands with the others, and is gone by noon (`place_entity` for a while, ABI 27: gone at once when the level closes). Owner's pick. | Two animals in the pens, dawn. |
@@ -502,7 +502,7 @@ Heard by the target alone. Nothing in the world changes.
 | `arrow_hits` | 5 | The same: two hearts, never below half a heart. | Night, outdoors. |
 | `splash_dark` | 3 | A splash potion from the dark lands at their feet: darkness, slowness, blindness, nausea, or levitation for a moment and a half (a fall of no harm). Never damage, poison or wither: the host throws those five alone (`splash_potion`, ABI 42). | Night, outdoors. |
 | `brew_left` | 3 | A potion of its brewing in the chest they use, named `for the night`: night vision and darkness at once (`put_potion`, ABI 42: nothing that harms). | A chest they use, the target away or asleep. |
-| `potion_changed` | 3 | One of their potions is another kind, its name as it was: night vision, invisibility, water breathing, fire resistance, leaping, swiftness or slow falling, never one that harms (`change_potion`, ABI 42). | A potion in the chest they use, the target away or asleep. |
+| `potion_changed` | 3 | One of their potions (one with an effect, never a bottle of water or an awkward, mundane or thick one) is another kind, its name as it was: night vision, invisibility, water breathing, fire resistance, leaping, swiftness or slow falling, never one that harms (`change_potion`, ABI 42). | A potion in the chest they use, the target away or asleep. |
 | `door_cloud` | 3 | At dawn a lingering cloud of slowness or weakness on the step outside the door they use, gone the moment it touches them (`effect_cloud`, ABI 42). | Dawn, a door. |
 | `wolf_far` | 2 | A wolf whines far off, long and low, in a biome with none (26.3 has no howl). | Night. |
 | `disc_phantom` | 3 | A disc the target does not own plays from the jukebox, which is empty. | A jukebox. |
@@ -906,6 +906,6 @@ the next night. Its health and its hits are scaled to your armour, your weapon a
 difficulty. A beacon on its roof, lit only at night from stage five's first dusk, shows the way.
 
 After any ending the stay is closed in `lodger.dat` and no lodger moves into that world again
-unless `/craftkit lodger reset`. The one death the hard ending deals is the only harm the lodger ever does,
-it is at the end of a stay of two weeks, and it keeps the inventory: the point is that it happened,
+unless `/craftkit lodger reset`. The one death the hard ending deals is the only kill the lodger ever makes
+(the harm before it is spared, never below half a heart), it is at the end of a stay of two weeks, and it keeps the inventory: the point is that it happened,
 not that it cost anything. `stages.ending` is there for servers that want none of it.

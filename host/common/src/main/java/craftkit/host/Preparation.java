@@ -42,7 +42,7 @@ public final class Preparation {
 	private final AtomicReference<Downloader> current = new AtomicReference<>();
 	/** The resource being fetched, and whose: for the screen's choice while it downloads. */
 	private final AtomicReference<PendingLicense> fetching = new AtomicReference<>();
-	private Thread thread;
+	private volatile Thread thread;
 
 	/**
 	 * @param interactive whether someone can accept terms (a client with a screen). A dedicated
@@ -193,33 +193,53 @@ public final class Preparation {
 		return switching;
 	}
 
+	/**
+	 * One switch after another, in the order clicked: two at once (a size, then Play without
+	 * it) both read the old work's thread, and the second's start found the first's download
+	 * running and let it run.
+	 */
+	private final java.util.concurrent.ExecutorService switches = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+		Thread switcher = new Thread(r, "craftkit-choose");
+		switcher.setDaemon(true);
+		return switcher;
+	});
+
 	public void choose(LoadedMod mod, Resource.Choice choice) {
 		switching = true;
-		Thread switcher = new Thread(() -> {
-			cancel();
-			Thread running = thread;
-			if (running != null) {
-				running.interrupt();
-				// Until it has stopped, however long: a load or a check that ignores the interrupt
-				// ran on past three seconds, and its "ready" or its failure landed over the new size.
+		switches.execute(() -> {
+			try {
+				cancel();
+				Thread running = thread;
+				if (running != null) {
+					running.interrupt();
+					// Until it has stopped, however long: a load or a check that ignores the
+					// interrupt ran on past three seconds, and its "ready" or its failure landed
+					// over the new size.
+					try {
+						running.join();
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						return;
+					}
+				}
+				pendingLicense.set(null);
+				String error;
 				try {
-					running.join();
-				} catch (InterruptedException e) {
-					Thread.currentThread().interrupt();
+					error = mod.reconfigure(choice.config());
+				} catch (RuntimeException e) {
+					// A reply it could not read: said, never a switch stuck with its buttons hidden.
+					error = String.valueOf(e.getMessage());
+				}
+				switching = false;
+				if (!error.isEmpty()) {
+					progress.set(new Progress(Phase.FAILED, mod.name(), 0, "", mod.id() + ": " + error));
 					return;
 				}
+				start();
+			} finally {
+				switching = false;
 			}
-			pendingLicense.set(null);
-			String error = mod.reconfigure(choice.config());
-			switching = false;
-			if (!error.isEmpty()) {
-				progress.set(new Progress(Phase.FAILED, mod.name(), 0, "", mod.id() + ": " + error));
-				return;
-			}
-			start();
-		}, "craftkit-choose");
-		switcher.setDaemon(true);
-		switcher.start();
+		});
 	}
 
 	/** Stops a running download; the screen's Quit button and the server's shutdown use it. */
