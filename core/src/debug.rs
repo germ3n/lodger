@@ -329,26 +329,20 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             None => format!("none of {most}; {}", next_decision(stay, config, now, day)),
         },
     ));
-    // The other mods: how many, and the first few by name.
+    // The other mods it does something with (owner: "only mods we detect and do something
+    // with"): a horror mod it makes room for, a mod whose furniture or lamps it uses.
+    let used = memory.mods_it_uses();
     gauges.push(Gauge::new(
         "mods",
-        memory.mods.len() as f32,
-        memory.mods.len().max(1) as f32,
-        if memory.mods.is_empty() {
-            "no other mods told".to_string()
+        used.len() as f32,
+        used.len().max(1) as f32,
+        if used.is_empty() {
+            "none it uses".to_string()
         } else {
-            let names: Vec<&str> = memory
-                .mods
-                .iter()
-                .take(6)
-                .map(|(id, _)| id.as_str())
-                .collect();
-            format!(
-                "{} other mods: {}{}",
-                memory.mods.len(),
-                names.join(", "),
-                if memory.mods.len() > 6 { ", ..." } else { "" }
-            )
+            used.iter()
+                .map(|(id, what)| format!("{id} ({what})"))
+                .collect::<Vec<_>>()
+                .join(", ")
         },
     ));
     gauges.push(Gauge::new(

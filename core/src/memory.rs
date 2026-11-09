@@ -505,6 +505,10 @@ pub struct Memory {
     /// The other mods the game runs with, by id and version, as the host told them: for the
     /// debug screen, and for a mind that would keep out of another mod's way.
     pub mods: Vec<(String, String)>,
+    /// The mods whose blocks it uses as its own, by namespace: their furniture it moves, their
+    /// lamps it counts as lights (`is_mod_furniture`, `is_mod_lamp`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mods_used: Vec<String>,
     /// What of theirs stood within five blocks of its place when it chose it: what they build
     /// there after meets its want, this does not (a snapshot, where a count into a list that
     /// drops its oldest and its broken would drift).
@@ -1593,6 +1597,7 @@ impl Memory {
                         if is_storage(&event.detail) {
                             self.container_placed(pos, &event.detail);
                         }
+                        self.note_mod_block(&event.detail);
                         if let Some(kind) = fixture_kind(&event.detail) {
                             self.fixtures.retain(|f| f.pos != pos);
                             push_capped(
@@ -1953,6 +1958,9 @@ impl Memory {
             !(inside(&f.pos) && READ_FIXTURES.contains(&f.kind.as_str()))
                 || found.iter().any(|(_, p)| *p == f.pos)
         });
+        for (id, _) in found {
+            self.note_mod_block(id);
+        }
         for (id, pos) in found {
             if let Some(kind) = fixture_kind(id).filter(|k| READ_FIXTURES.contains(k)) {
                 if !self.fixtures.iter().any(|f| f.pos == *pos) {
@@ -2526,6 +2534,34 @@ impl Memory {
         } else {
             None
         }
+    }
+
+    /// A block of another mod's it uses (furniture it moves, a lamp it counts): that mod is used.
+    fn note_mod_block(&mut self, id: &str) {
+        if is_mod_furniture(id) || is_mod_lamp(id) {
+            let space = id.split(':').next().unwrap_or(id).to_string();
+            if !self.mods_used.contains(&space) {
+                push_capped(&mut self.mods_used, space, 16);
+            }
+        }
+    }
+
+    /// The other mods it does something with, and what: their blocks used, or a horror mod it
+    /// makes room for. The rest are only there.
+    pub fn mods_it_uses(&self) -> Vec<(String, &'static str)> {
+        let mut out: Vec<(String, &'static str)> = self
+            .mods
+            .iter()
+            .filter(|(id, _)| is_horror_mod(id))
+            .map(|(id, _)| (id.clone(), "a horror mod: it acts half as often"))
+            .collect();
+        for space in &self.mods_used {
+            if !out.iter().any(|(id, _)| id == space) {
+                out.push((space.clone(), "its furniture and lamps are used"));
+            }
+        }
+
+        out
     }
 
     /// Another horror mod loaded: the lodger acts half as often.
@@ -4695,5 +4731,31 @@ mod tests {
             )],
         );
         assert!(memory.placed_by_others.is_empty(), "broken, let go");
+    }
+
+    #[test]
+    fn the_mods_it_uses_are_its_furniture_s_and_a_horror_mod_not_every_mod() {
+        let mut memory = Memory {
+            mods: vec![
+                ("liteminer".to_string(), "4.5".to_string()),
+                ("amber".to_string(), "11".to_string()),
+                ("the_obsessed_horror".to_string(), "1".to_string()),
+            ],
+            ..Memory::default()
+        };
+        memory.note_mod_block("mcwfurnitures:oak_chair");
+        memory.note_mod_block("minecraft:oak_stairs");
+        let used: Vec<String> = memory
+            .mods_it_uses()
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert!(used.contains(&"mcwfurnitures".to_string()), "{used:?}");
+        assert!(used.iter().any(|id| id.contains("horror")), "{used:?}");
+        assert!(
+            !used.contains(&"liteminer".to_string()),
+            "a mod only there is not listed"
+        );
+        assert_eq!(used.len(), 2);
     }
 }

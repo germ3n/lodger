@@ -1190,6 +1190,15 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **Tooltips on every key, All keys as it is now, and only the mods it uses** (owner: "add
+  tooltips on hover to explain what it does. it should reflect the current setting"; "only have
+  it show mods we detect and do something with"): each key's line of the table in `config.md` is
+  its tooltip on both tabs (`scripts/gen_config_docs.py` writes it into the content jar, a test
+  keeps them agreeing); changing tabs applies the tab left, so All keys shows a preset just
+  picked; the debug screen's mods line names only the mods it does something with, a horror mod
+  it makes room for and a mod whose furniture or lamps it uses (`Memory::mods_it_uses`). Tests:
+  the docs test, one in `memory`. Was: no tooltips, All keys as the screen opened, and every mod
+  loaded listed.
 - [x] **Every key in the settings, and the F8 screen smaller** (owner: "a full config editor to
   the lodger settings... every key, just in a separate tab"; "make the ingame menu also 0.6
   scale"): the settings screen has two tabs, Settings and All keys; All keys reads the mod's

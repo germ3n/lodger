@@ -255,6 +255,10 @@ skipped in silence.
 
 ## Third-party notices
 
+`python3 scripts/gen_config_docs.py` writes the content jar's `META-INF/craftkit-config.json`,
+the settings screen's tooltips, from the table of keys in [Configuration](config.md); a test
+fails while the two disagree, so run it after that table changes.
+
 `python3 gen_notices.py` writes `THIRD_PARTY_NOTICES.txt` at the root from `Cargo.lock`, the
 crates' own license files and llama.cpp's (adapted from `~/chainv4`'s). Run it after
 any dependency changes; it stops with a message when a crate no longer carries what it expects. Both

@@ -1157,6 +1157,23 @@ mod tests {
         schema.sort();
 
         assert_eq!(documented, schema);
+
+        // The settings screen's tooltips, written from the same table
+        // (`scripts/gen_config_docs.py`): a key added or renamed in the docs is in them too.
+        let tooltips: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../mod/src/main/resources/META-INF/craftkit-config.json"
+            ))
+            .expect("the content jar's key descriptions"),
+        )
+        .unwrap();
+        let mut described: Vec<String> = tooltips.as_object().unwrap().keys().cloned().collect();
+        described.sort();
+        assert_eq!(
+            described, schema,
+            "run scripts/gen_config_docs.py after docs/config.md changes"
+        );
     }
 
     #[test]

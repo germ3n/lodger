@@ -40,6 +40,8 @@ public final class LoadedMod {
 	/** Where the mod was loaded from and reads its config, for {@link #reconfigure}. */
 	private Path gameDir;
 	private Path configDir;
+	/** Each config key's description from the content jar (`META-INF/craftkit-config.json`), for the settings' tooltips. */
+	private java.util.Map<String, String> configDocs = java.util.Map.of();
 
 	private LoadedMod(String jarId, Optional<Manifest> manifest, Optional<Native> library, String failure, String name, String version, String sdk, List<String> unknownKeys, boolean wroteConfig, List<Resource> resources) {
 		this.jarId = jarId;
@@ -268,10 +270,35 @@ public final class LoadedMod {
 				List.copyOf(unknown), wrote, List.copyOf(resources));
 		made.gameDir = gameDir;
 		made.configDir = configDir;
+		made.configDocs = configDocsOf(jar);
 		made.settings = settingsOf(reply);
 		made.warnings = warningsOf(reply);
 
 		return made;
+	}
+
+	/** Where a content jar keeps its config keys' descriptions: a key's dotted name to its words. */
+	public static final String CONFIG_DOCS = "META-INF/craftkit-config.json";
+
+	private static java.util.Map<String, String> configDocsOf(Platform.ContentJar jar) {
+		try {
+			Optional<byte[]> bytes = jar.read(CONFIG_DOCS);
+			if (bytes.isEmpty()) {
+				return java.util.Map.of();
+			}
+			java.util.Map<String, String> docs = new java.util.HashMap<>();
+			for (var entry : JsonParser.parseString(new String(bytes.get(), StandardCharsets.UTF_8)).getAsJsonObject().entrySet()) {
+				docs.put(entry.getKey(), entry.getValue().getAsString());
+			}
+			return java.util.Map.copyOf(docs);
+		} catch (IOException | RuntimeException e) {
+			return java.util.Map.of();
+		}
+	}
+
+	/** A config key's description, or the empty string. */
+	public String configDoc(String key) {
+		return configDocs.getOrDefault(key, "");
 	}
 
 	/** The mod's config file as it is now, every key the mod wrote into it; empty when unread. */

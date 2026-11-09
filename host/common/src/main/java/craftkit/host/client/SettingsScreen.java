@@ -67,6 +67,14 @@ public final class SettingsScreen extends Screen {
 		super(Component.translatable("craftkit.settings.title", mod.name()));
 		this.parent = parent;
 		this.mod = mod;
+		load();
+	}
+
+	/** Both tabs from the mod as it is now: its settings, and its config file key by key. */
+	private void load() {
+		values.clear();
+		leaves.clear();
+		edits.clear();
 		for (Setting setting : mod.settings()) {
 			values.put(setting.key(), setting.value());
 		}
@@ -150,7 +158,16 @@ public final class SettingsScreen extends Screen {
 		place();
 	}
 
+	/**
+	 * The other tab, after what was changed in this one is applied and both read again: All keys
+	 * shows the file as it is (a preset picked a moment ago, its values filled in), never as it was
+	 * when the screen opened.
+	 */
 	private void tab(boolean toAll) {
+		if (!apply()) {
+			return;
+		}
+		load();
 		all = toAll;
 		scroll = 0;
 		error = "";
@@ -180,8 +197,18 @@ public final class SettingsScreen extends Screen {
 		values.put(setting.key(), setting.next(values.get(setting.key()), up));
 	}
 
-	/** The changed keys of both tabs written and the mod initialised again with them. */
+	/** The changed keys of both tabs applied, then back to where the screen came from. */
 	private void done() {
+		if (!apply()) {
+			return;
+		}
+		Minecraft minecraft = Minecraft.getInstance();
+		Preparation.current().filter(Preparation::needed)
+				.ifPresentOrElse(p -> minecraft.gui.setScreen(new PreparingScreen(parent, p)), () -> minecraft.gui.setScreen(parent));
+	}
+
+	/** The changed keys of both tabs written and the mod initialised again with them; false, and said, when refused. */
+	private boolean apply() {
 		JsonObject change = new JsonObject();
 		for (Setting setting : mod.settings()) {
 			JsonElement now = values.get(setting.key());
@@ -198,7 +225,7 @@ public final class SettingsScreen extends Screen {
 			JsonElement now = ConfigText.parse(leaf.value(), typed);
 			if (now == null) {
 				error = leaf.key() + ": not " + kind(leaf.value());
-				return;
+				return false;
 			}
 			if (now.equals(leaf.value())) {
 				continue;
@@ -216,12 +243,10 @@ public final class SettingsScreen extends Screen {
 			String failed = mod.reconfigure(change);
 			if (!failed.isEmpty()) {
 				error = failed;
-				return;
+				return false;
 			}
 		}
-		Minecraft minecraft = Minecraft.getInstance();
-		Preparation.current().filter(Preparation::needed)
-				.ifPresentOrElse(p -> minecraft.gui.setScreen(new PreparingScreen(parent, p)), () -> minecraft.gui.setScreen(parent));
+		return true;
 	}
 
 	private static String kind(JsonElement value) {
@@ -270,6 +295,21 @@ public final class SettingsScreen extends Screen {
 		}
 		graphics.disableScissor();
 
+		// What the key under the mouse does, from the mod's own words for it.
+		String about = "";
+		if (mouseY >= TOP && mouseY < bottom() && mouseX >= left && mouseX < left + WIDTH - 152) {
+			for (int i = 0; i < rows; i++) {
+				int y = TOP + places.get(i).top() - scroll;
+				if (mouseY >= y && mouseY < y + 20) {
+					String key = all ? leaves.get(i).key() : mod.settings().get(i).key();
+					about = mod.configDoc(key);
+					if (!about.isEmpty()) {
+						about = key + "\n" + about;
+					}
+				}
+			}
+		}
+
 		int height = ListLayout.height(places);
 		int view = bottom() - TOP;
 		if (height > view) {
@@ -280,6 +320,28 @@ public final class SettingsScreen extends Screen {
 		}
 		if (!error.isEmpty()) {
 			graphics.centeredText(this.font, Component.literal(trim(error, this.width - 16)), this.width / 2, this.height - 44, RED);
+		}
+		if (!about.isEmpty()) {
+			tooltip(graphics, about, mouseX, mouseY);
+		}
+	}
+
+	/** A dark box of wrapped lines by the mouse, kept on the screen. */
+	private void tooltip(GuiGraphicsExtractor graphics, String text, int mouseX, int mouseY) {
+		int width = Math.min(this.width - 16, 260);
+		List<net.minecraft.util.FormattedCharSequence> lines = new ArrayList<>();
+		for (String part : text.split("\n")) {
+			lines.addAll(this.font.split(Component.literal(part), width - 8));
+		}
+		int height = lines.size() * 10 + 6;
+		int x = Math.max(4, Math.min(mouseX + 10, this.width - width - 4));
+		int y = Math.max(4, Math.min(mouseY + 12, this.height - height - 4));
+		graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, GREY);
+		graphics.fill(x, y, x + width, y + height, 0xF4101016);
+		int ty = y + 3;
+		for (net.minecraft.util.FormattedCharSequence line : lines) {
+			graphics.text(this.font, line, x + 4, ty, WHITE);
+			ty += 10;
 		}
 	}
 

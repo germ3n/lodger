@@ -14,7 +14,9 @@ and carries out what they decide. The lodger is its first mod. This page is the 
 - **A jar per loader,** with no Java of the mod's own: the crate's shared library for each of
   six platforms (Linux, Windows and macOS, each on x86_64 and arm64), each with its
   GPU on, xz-compressed under `natives/<os>-<arch>/` (see [Building](build.md)), the
-  mod's assets (lang files, textures, sounds), `META-INF/craftkit.json` for the host, the
+  mod's assets (lang files, textures, sounds), `META-INF/craftkit.json` for the host (and,
+  if it likes, `META-INF/craftkit-config.json`: each config key's dotted name to its words, the
+  settings screen's tooltips), the
   loader's manifest (`fabric.mod.json`, or a `META-INF/neoforge.mods.toml` with no language
   loader), and the host itself nested inside (`META-INF/jars/` on Fabric, `META-INF/jarjar/` on
   NeoForge), so a player installs one file and never meets craftkit by name. Two Rust mods on

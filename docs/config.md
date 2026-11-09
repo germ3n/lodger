@@ -18,8 +18,10 @@ without opening the file: whether the model is used, its size, its GPU share and
 (sounds, glitches, chat, the figure); plans at once and the seconds between decisions; the
 words (generated or the bank) and their variety. Its **All keys** tab has every key of this
 file, by section: a toggle for a yes or no, a field for the rest (a list as JSON, `[40.0, 40.0]`),
-a changed key's name in yellow. Done writes the changes of both tabs here and loads the lodger
-again, which checks them: a value it refuses is said under the list, and the file is put back. A
+a changed key's name in yellow, and each key's line here as its tooltip. A key set in this file
+wins over the preset, so a key changed by hand stays when another preset is picked. Changing
+tabs applies the tab left, so All keys shows the file as it is now. Done writes the changes of
+both tabs here and loads the lodger again, which checks them: a value it refuses is said under the list, and the file is put back. A
 new model size is fetched at once.
 
 ## General
