@@ -252,6 +252,22 @@ pub fn answer(
     }
 }
 
+/// When the next decision comes, in words: before it moves in there is none (the brain decides
+/// nothing until then, and "in about 0s" stood there for days).
+fn next_decision(stay: &Stay, config: &Config, now: &Now, day: f32) -> String {
+    if !stay.arc.moved_in() {
+        let left = (config.stages.start_after_days as f32 - day).max(0.0);
+        return format!("none until it moves in, in about {left:.1} days");
+    }
+    if stay.brain.asking.is_some() {
+        return "now: the model is thinking".to_string();
+    }
+    format!(
+        "in about {}s",
+        stay.brain.next_plan_tick.saturating_sub(now.tick) / 20
+    )
+}
+
 fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> DebugReply {
     let memory = &stay.memory;
     let arc = &stay.arc;
@@ -299,7 +315,6 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
         ));
     }
     let most = config.brain.most_plans.max(1);
-    let next = brain.next_plan_tick.saturating_sub(now.tick) / 20;
     gauges.push(Gauge::new(
         "plans",
         brain.plans.len() as f32,
@@ -311,7 +326,10 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
                 plan.event,
                 plan_when(plan, now)
             ),
-            None => format!("none of {most}; next decision in {next}s"),
+            None => format!(
+                "none of {most}; next decision {}",
+                next_decision(stay, config, now, day)
+            ),
         },
     ));
     // The other mods: how many, and the first few by name.
@@ -475,8 +493,8 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
     }
     if plans.items.is_empty() {
         plans.lines.push(format!(
-            "nothing planned; a decision in about {}s",
-            brain.next_plan_tick.saturating_sub(now.tick) / 20
+            "nothing planned; a decision {}",
+            next_decision(stay, config, now, day)
         ));
     }
     sections.push(plans);
@@ -662,8 +680,8 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
         ));
     } else {
         story.push(format!(
-            "NEXT: a decision in about {}s",
-            brain.next_plan_tick.saturating_sub(now.tick) / 20
+            "NEXT: a decision {}",
+            next_decision(stay, config, now, day)
         ));
     }
     for decision in brain.story.iter().rev().take(12) {
@@ -1265,5 +1283,16 @@ mod tests {
             &now,
         );
         assert_eq!(reply.message, "no action called nope");
+    }
+
+    #[test]
+    fn before_it_moves_in_the_next_decision_says_so() {
+        let stay = Stay::new(&WorldInfo {
+            id: "w".to_string(),
+            ..Default::default()
+        });
+        let config = Config::default();
+        let said = next_decision(&stay, &config, &Now::default(), 0.5);
+        assert!(said.contains("until it moves in"), "{said}");
     }
 }

@@ -1190,6 +1190,10 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **The debug screen's next decision before it moves in** (owner: "it keeps saying next a
+  decision in about 0s"): before the stay begins (`stages.start_after_days`) the brain decides
+  nothing, and the screen says when it moves in; while the model is thinking it says so. Tests: one
+  in `debug`. Was: "a decision in about 0s", for days, as if stuck.
 - [x] **What is only here a while gives nothing, and no frame turns in view** (owner: "can you
   fix those 2"): a placed-for-a-while animal (`one_more`'s, the squid under the water) cannot be
   hurt, comes shorn, lays no egg and cannot breed, and is never a mooshroom (shorn, one became a
