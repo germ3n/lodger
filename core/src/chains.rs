@@ -41,7 +41,7 @@ const fn step(events: &'static [&'static str], within_days: f32, when: When) -> 
 
 use When::*;
 
-/// The eight chains of the design, with the catalogue's events.
+/// The nine chains of the design, with the catalogue's events.
 pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_thing",

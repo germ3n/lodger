@@ -8,7 +8,7 @@ not place lights the way to somewhere, and a figure far off, wearing your skin, 
 walked yesterday.
 
 What it does next is decided by a small language model, Qwen2.5 1.5B, running on the server's own
-CPU. The model never writes text and never invents an action. It reads a short plain-English
+machine, on its GPU by default. The model never writes text and never invents an action. It reads a short plain-English
 account of what the lodger knows and picks from a fixed list of choices, the way the AI in
 `~/engine` scores NPC decisions. Every choice the model can make is one the mod wrote and bounded
 first.
@@ -20,8 +20,7 @@ mods are written against and a host, a Java mod for Fabric and NeoForge, that lo
 carries out what they decide. The Java is there because the loaders load Java; everything that
 can be Rust is Rust (see [The SDK](docs/sdk.md) and [Architecture](docs/architecture.md)).
 
-**Status:** design only. Nothing is built or run yet; the docs are the plan. See
-[Todo](docs/todo.md) for the order of work.
+**Status:** playable, before its first release. See [Todo](docs/todo.md) for what is left.
 
 `lodger` is a working name.
 
@@ -35,12 +34,15 @@ can be Rust is Rust (see [The SDK](docs/sdk.md) and [Architecture](docs/architec
   Fabric's, NeoForged's and Mojang's own metadata (see [Development](docs/development.md#toolchain)).
 - One jar for your loader, `lodger-fabric-26.3-<version>.jar` or
   `lodger-neoforge-26.3-<version>.jar`, with the craftkit host nested inside it. Nothing else.
-- **The first start downloads the model.** The title screen waits behind a progress bar for the
-  1.1 GB model (from Hugging Face, Qwen's own file; `model.size` picks the 491 MB one instead),
-  then loads it, then lets you in. Once. A
+- **The first start downloads the model.** The title screen shows the model's license, then
+  waits behind a progress bar for the 1.1 GB model (from Hugging Face, Qwen's own file;
+  `model.size` picks another, 491 MB to 2.5 GB), then loads it, then lets you in. Once.
+  **Play without it** skips the download. A
   dedicated server does the same at its first startup, with progress in its log.
-- About 1.6 GB of RAM on the server for the model, two CPU threads while it thinks, and 1.1 GB
-  of disk for the model file, which the first start downloads (see [Model](docs/model.md)).
+- About 1.6 GB of memory on the server for the model, nearly all of it VRAM with the model on
+  the GPU (the default, `model.gpu_share` 1) and RAM without a GPU, two CPU threads while it
+  thinks, and 1.1 GB of disk for the model file, which the first start downloads (see
+  [Model](docs/model.md)).
 - Without the model the mod still runs, on a rule-based brain. It is less interesting, not
   broken.
 
@@ -51,7 +53,7 @@ All of them are for operators, since the point of the mod is not knowing.
 | Command | What it does |
 | --- | --- |
 | `/craftkit status` | The host's: every Rust mod loaded, its version and native, or why it did not load. |
-| `/craftkit lodger debug` | Opens the debug screen (also F8 in a world): the host's senses of you as meters, the lodger's gauges, memory and plan, every event with whether it could happen now and a Fire button, and what landed. `/craftkit lodger show`, `force <event>`, `stage <n>` and `action <id>` do the same from chat or a console. The config pages are still to come. |
+| `/craftkit lodger debug` | Opens the debug screen (also F8 in a world): the host's senses of you as meters, the lodger's gauges, memory and plan, every event with whether it could happen now and a Fire button, and what landed. `/craftkit lodger show`, `force <event>`, `stage <n>` and `action <id>` do the same from chat or a console. |
 | `/craftkit lodger status` | Which stage the stay is in and how far, whom it lives with, how many things it has done that they would notice and what it holds, and whether the model or the rules decide. From anywhere, the console too. |
 | `/craftkit lodger leave` | Ends the stay gently: its leaves ending (everything it holds goes back, its last three days) begins at the next dawn. Before it has moved in, it never will. |
 | `/craftkit lodger reset` | Forgets everything it knows of this world and starts the stay over, as a fresh world would; what it holds goes back first. Typed twice within 30 seconds. |
@@ -68,6 +70,7 @@ How each part works and why it is built that way is in [docs/](docs/README.md). 
 
 ## License
 
-MIT for the mod. The model, Qwen2.5-Instruct (1.5B by default), is Apache-2.0 and is downloaded by the
-player, not distributed with the mod. llama.cpp, which runs it, is MIT, and its notice ships
+MIT for the mod. The model, Qwen2.5-Instruct (1.5B by default), is Apache-2.0, as are the 0.5B
+and Qwen3 4B; the 3B is under Qwen's research license (non-commercial). Each is downloaded by
+the player, not distributed with the mod. llama.cpp, which runs it, is MIT, and its notice ships
 with the natives in the jar (see [Development](docs/development.md#third-party-notices)).

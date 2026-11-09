@@ -17,9 +17,10 @@ edge, which is kept to a few known places:
 | Where | What touches the game there |
 | --- | --- |
 | `host/common/.../senses/Senses.java`, `MovementTracker.java` | Reading players, entities, blocks, light, biomes, kills into observations; the debug panel's host half. |
-| `host/common/.../world/Executors.java`, `Looks.java`, `Poses.java`, `Surroundings.java`, `Later.java` | Carrying commands out: blocks, containers, signs, items, sounds, mobs' looks, stands' poses, frames, paintings, the player list, chat lines, the surroundings pass. |
+| `host/common/.../world/Executors.java` and the rest of `world/` (`Looks`, `Poses`, `Surroundings`, `Later`, `Figures`, `Fights`, `Warps`, `OtherHouse` among them) | Carrying commands out: blocks, containers, signs, items, sounds, mobs' looks, stands' poses, frames, paintings, the player list, chat lines, the surroundings pass, the figures, the fight, the other house. |
 | `host/common/.../world/Worlds.java`, `WorldData.java` | The per-tick loop, saved data, the clock. |
-| `host/common/.../client/` | The preparing screen, the title gate, the glitch renderers (`Glitches.java`), the debug screen (`client/debug/DebugScreen.java`). |
+| `host/common/.../client/` | The preparing screen, the title gate, the settings screen, the glitch renderers (`Glitches.java`, `Atmospheres.java`), the debug screen (`client/debug/DebugScreen.java`). |
+| `host/common/.../mixin/` | The render hooks (below). |
 | `host/common/.../net/` | The payload records and their stream codecs. |
 | `host/common/.../Host.java` | The `/craftkit` commands and the permission check. |
 | `host/fabric/`, `host/neoforge/` | Each loader's entry points, events, networking registration, key mapping, HUD layer, and the Fabric mixin for block placement. |
@@ -69,7 +70,7 @@ step's build green before the next.
    Reflection into game classes (`Executors.withEntries` sets the player-list packet's private
    entries) is the first thing to re-check: the test is `/craftkit lodger force tab_entry` in a
    dev client.
-4. **Run the tests.** `./gradlew test` in `host/` (JUnit, 50 tests); with
+4. **Run the tests.** `./gradlew test` in `host/` (JUnit, about a hundred tests); with
    `target/release/liblodger_core.dylib` built (`cargo build --release -p lodger-core`) the
    real-native tests load the mind through FFM too. Nothing on the Rust side needs to move, so
    `cargo test --workspace` is a check that nothing did.
@@ -85,7 +86,7 @@ step's build green before the next.
    `flicker` and `cut_music` with the world and the screen doing what each says. Then
    `:neoforge:runClient` the same. Then a dedicated server of each loader with the plain jar,
    as the [queue's](queue.md#rules-for-every-session) smoke test has it.
-7. **Write it down.** A line under Done in [Todo](todo.md) with the date, the versions and what
+7. **Write it down.** A line under Done in [Todo](todo.md) with the versions and what
    moved, and a row in the history below. The README's "What it will take to run" if the
    versions a player needs changed.
 
@@ -142,7 +143,7 @@ moved.
 
 ## History
 
-| Date | From | To | What moved |
+| Bump | From | To | What moved |
 | --- | --- | --- | --- |
 | First | the design, for 1.21.x | Minecraft 26.3, Java 25, Fabric Loader 0.20.1, Fabric API 0.165.2+26.3, NeoForge 26.3.0.101, NeoForm 26.3-1, Loom 1.19.4, ModDevGradle 2.0.148, Gradle 9.8.2 | First build. Found by reading 26.3's sources: `Commands.hasPermission`, `PayloadTypeRegistry.clientboundConfiguration`, `IModFile.getContents` (JarContents) in NeoForge, `GuiGraphicsExtractor`, `Blaze3D.openUri`, `getGameTime` for the clock, `SavedDataType` with a null extra, `ItemEntity.setUnlimitedLifetime`, `ClientboundSetActionBarTextPacket`, the four-argument `SignText`, `ServerLevelEvents`, `ServerEntityLevelChangeEvents`, NeoForge's `BreakBlockEvent` under `event/level/block/`, `KeyMapping.Category`, `InputConstants.Type.KEYBOARD`, `Minecraft.gui.screen()`. |
 

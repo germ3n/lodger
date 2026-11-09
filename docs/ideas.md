@@ -9,9 +9,9 @@ a test. Until then it is an idea.
 Each line: a working id, what the player experiences, and in brackets the stage it might first be
 offered in and what it needs. The rules in [What it never does](good-to-know.md#what-it-never-does)
 hold for all of them: nothing a player placed is destroyed, nothing is spawned (everything placed
-was dug, cut, picked or taken first), no one is harmed before the ending, nothing is written but
-the want's words, nothing happens in view within 24 blocks, and the world's time and weather are
-never touched (the sky things are the target's client alone). Ideas that would break a rule are
+was dug, cut, picked or taken first), no one is killed before the last stage, nothing is said to
+anyone but the target, nothing changes in view within 64 blocks, and the world's time and weather
+are never touched (the sky things are the target's client alone). Ideas that would break a rule are
 in [Set aside](#set-aside) with why.
 
 ## Containers and items
@@ -907,9 +907,9 @@ What moves the temper, beyond the table in the catalogue, and what the lodger do
 
 ## The other house
 
-A dimension of the lodger's own (owner), used twice at most, as the todo has it:
-a void with a dark sky where your house stands copied block for block. Things that could happen
-in it, in the one minute you are there:
+A dimension of the lodger's own (owner), in the catalogue as `other_house` and used twice at
+most: a void with a dark sky where your house stands copied block for block. Things that could
+happen in it, in the one minute you are there:
 
 - `other_wake` you wake in the copy's bed; the door is open onto nothing [4]
 - `other_doorway` the figure in the doorway, facing in, not moving [4]
@@ -1010,7 +1010,7 @@ lodger's jar never depends on any of them.
 ## Chains
 
 Sequences where one event sets the next up; the catalogue's [Chains](entity.md#chains) has the
-eight that are in. More:
+nine that are in. More:
 
 - the boat: `boat_moved` → `boat_adrift` → `figure_in_boat` → `boat_sunk` with the held item in its chest at the bottom → `boat_waiting` at the shore on the last day
 - the field: `harvest_one` → `harvest_row` → `scarecrow` → `scarecrow_moved` nightly toward the house → `field_word` → the scarecrow in the doorway on the last night
@@ -1040,22 +1040,26 @@ Ideas that break a rule, or the design, kept so they are not reconsidered from s
 - **Free prose** beyond the phrase bank and, as an experiment, three constrained words from
   the model: signs with another player's name, books in free prose, chat to witnesses. Chat and
   the player list in the target's own name, to the target, moved into the catalogue
-  (the owner's call); the model writing words is `brain.text: generate`, judged in
-  the calibration pass.
+  (the owner's call); the model writing words is `brain.text: generate`, the default, judged
+  in the calibration pass.
 - **Anything that makes an item from nothing:** a compass, a bell, a lodestone, rotten flesh in
   place of food, a message in a bottle. It digs, cuts, picks, cooks, crafts from what it has, and
   takes. A compass can appear if the player has iron and redstone in a chest and it crafts one.
 - **Anything that spawns a mob:** a chicken jockey, a second lodger, a zombie with the player's
   skin. It redirects mobs that exist.
-- **Harm before the ending:** TNT, fire on the house, lava, a trap, a fall. The fuse hiss is kept
-  as a sound only, since nothing follows it.
+- **Harm beyond the stages' own** (a nip from stage three, a blow from stage four, never a kill
+  before the last): TNT, fire on the house, lava, a trap, a fall of more than three blocks. The
+  fuse hiss is kept as a sound only, since nothing follows it.
 - **Input control** beyond a nudge: moving the player, opening their inventory, dropping their
   items. The screen glitches render; they never act for the player.
-- **Reading the client or other mods.** The senses read the server's own facts, which now
-  include the server's chat (the owner's call); the client's state and other mods'
-  stay off limits.
+- **Reading the client or other mods.** The senses read the server's own facts, which
+  include the server's chat (the owner's call), which mods are loaded, and other mods' chests,
+  lamps and furniture in the house; the client's state and the rest of other mods' stay off
+  limits.
 - **Real-world data** beyond the clock: no birthdays, no weekends, no names.
 - **Destroying what a player built,** even to rebuild it elsewhere. Moved within reach, same
   night, is the limit.
-- **Following into the Nether or the End.** The portal things happen on this side.
+- **Following into the Nether or the End.** The figure stays on this side; there, only a
+  ghast's cry and an enderman's block (`ghast_name`, `ender_holds`), and coming home, it has been
+  busy (`busy_away`).
 - **Two figures at once,** or a figure in any skin but the target's. One of you is the design.

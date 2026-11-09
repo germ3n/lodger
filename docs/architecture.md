@@ -22,15 +22,14 @@ and generic: nothing in it is the lodger's, so a second Rust mod runs on the sam
 | Part | Where | What it does |
 | --- | --- | --- |
 | Stay | `core/src/stay.rs` | One lodger in one world: the stage, the target, the memory and the open plan. `Stay::observe` takes the body's observations, `Stay::tick` advances time and asks, `Stay::commands` hands out what to do. Serializes itself to bytes the body stores. |
-| Memory | `core/src/memory/` | What the lodger knows about its target, bounded, and `describe`, which turns it into the lines of the situation text. See [Memory](memory.md). |
+| Memory | `core/src/memory.rs` | What the lodger knows about its target, bounded, and `describe`, which turns it into the lines of the situation text. See [Memory](memory.md). |
 | Brain | `core/src/brain/` | Builds the situation text, picks the questions for the moment, asks the model or the rule brain, applies the rules to the answer, logs it. See [Brain](brain.md). |
 | Model | `core/src/model/` | The worker thread, the queue with its keys, llama.cpp through `llama-cpp-2`, and the scoring. Ported from `~/engine/game/base/src/ai/` with the game taken out. See [Model](model.md). |
-| Download | `core/src/model/download.rs` | Fetches the GGUF on a thread of its own, checks the magic, writes under a temporary name. As in the engine. |
 | Events | `core/src/events.rs` | Every event as data: its id, which stages offer it, what it needs (a chest the target uses, a route, darkness), and the command it becomes. See [Events](entity.md#events). |
 | Rules | `core/src/rules.rs` | The hard rules, applied to every decided event before it becomes a command. See [What it never does](good-to-know.md#what-it-never-does). |
 | Arc | `core/src/arc.rs` | When a stage ends and what the next one is, and the endings. See [The five stages](entity.md#the-five-stages). |
-| Log | `core/src/log.rs` | The decision log. |
-| Mod | `core/src/lib.rs` | `Lodger`, the `craftkit::Mod`: `init` and `info`, and from phase 2 the per-world calls; `craftkit::export_mod!` makes the C ABI from it. |
+| Log | `core/src/brain/log.rs` | The decision log. |
+| Mod | `core/src/lib.rs` | `Lodger`, the `craftkit::Mod`: `init`, `info` and `warm`, and the per-world calls; `craftkit::export_mod!` makes the C ABI from it. |
 
 ### The content jar, `mod/`
 
@@ -38,8 +37,8 @@ No Java. `mod/build.gradle` runs cargo, puts the mind's library under `natives/<
 (and the other platforms' from `natives-extra/`, compressed, which `scripts/build_jars.py`
 fills; see [Building](build.md)), and packs it with
 `META-INF/craftkit.json`, `fabric.mod.json`, a `META-INF/neoforge.mods.toml` with no language loader,
-`pack.mcmeta` and `assets/lodger/` (lang files, and later the figure's and the glitches' assets).
-One jar for both loaders.
+`pack.mcmeta`, `assets/lodger/` (the lang file and the icon) and `data/lodger/` (its dimension).
+One jar per loader, from one tree.
 
 ### The body, `host/`
 
@@ -50,11 +49,12 @@ leans on, all generic:
 | --- | --- | --- |
 | Native | `host/common/.../Native.java` | Binds one mod's library through FFM. The only Java that knows there is a native. |
 | LoadedMod, Host | `host/common/.../LoadedMod.java`, `Host.java` | Finds content jars by their manifest, extracts the native to `config/craftkit/natives/<id>/<os>-<arch>/`, checks the ABI, hands the mod its config, answers `/craftkit status`. |
-| Worlds | `host/common/.../world/` (phase 2) | Per loaded world: the mind's handle, the per-tick exchange, the mod's bytes in the world's saved data. |
-| Senses | `host/common/.../senses/` (phase 3) | Turns server events and distance checks into observations: positions, chests opened, blocks placed, sleep, death, looking toward a figure, dimension changes. |
-| Executors | `host/common/.../commands/` (phase 3) | One per command of the protocol. Each re-checks the world (`fits`), runs, and reports `done` or `did not fit`. |
-| Figure | `host/common/.../figure/` (phase 5) | A figure entity in a player's skin that stands or walks a path: server entity and client renderer. |
-| Net | `host/common/.../net/` (phase 3) | Packets to a player's client: a sound at a place, a figure and its skin, a hint. |
+| Worlds | `host/common/.../world/Worlds.java`, `WorldData.java` | Per loaded world: the mind's handle, the per-tick exchange, the mod's bytes in the world's saved data. |
+| Senses | `host/common/.../senses/` | Turns server events and distance checks into observations: positions, chests opened, blocks placed, sleep, death, looking toward a figure, dimension changes. |
+| Executors | `host/common/.../world/Executors.java`, and the rest of `world/` | One per command of the protocol. Each re-checks the world (`fits`), runs, and reports `done` or `did not fit`. |
+| Figure | `host/common/.../world/Figures.java` | A figure in a player's skin that stands or walks a path, sent as packets to the target's client alone (see [What the client knows](#what-the-client-knows)). |
+| Net | `host/common/.../net/` | The host's own packets to a player's client: a hint, and the debug screen's asks and answers. Sounds and the figure go as the game's own packets. |
+| Download | `host/common/.../Preparation.java`, `Downloader.java` | Before play, fetches a missing model on a thread of its own (the magic checked, written under a temporary name, the SHA-256 checked, a cut-off download resumed), then has the mind load it (`warm`). |
 | Platform | `host/fabric/`, `host/neoforge/` | Each loader's entry point, events, config directory, loaded jars, and the handshake that refuses clients without the host. |
 
 Each part has one owner, passed down rather than shared:
@@ -82,22 +82,23 @@ asked. Errors come back as JSON, never as a panic across the boundary.
 - **The server thread** runs the game. Every call into the mind happens here, once per tick,
   from the host's world loop. The mind's own code runs on this thread too, except the two below, so it never
   needs a lock the body can see.
-- **The model worker** is one thread per process, `lodger-model`, started on the first question
-  and stopped by `lodger_shutdown`. It takes `Job`s off a channel, scores them, sends `Reply`s
+- **The model worker** is one thread per process, `lodger-model`, started when the model loads
+  (`warm`, before play, or else the first question) and stopped by `craftkit_shutdown`. It takes `Job`s off a channel, scores them, sends `Reply`s
   back. It is the only thread that touches llama.cpp. One per process, not per world, because the
-  model is 700 MB in memory and a client that opens two worlds in a row must not load two.
-- **The download thread** runs one download at a time and sends one `Finished`.
+  model is a gigabyte or more in memory and a client that opens two worlds in a row must not load two.
+- **The host's preparation thread** fetches a missing model before play, one download at a time,
+  and has the mind load it.
 - **The client's render thread** draws the figure and plays sounds. It gets packets and asks for
   nothing.
 
-Replies and finished downloads cross back into the server thread inside `tick`, which
-drains both channels first, so a model's answer is acted on in a tick, never inside the
+Replies cross back into the server thread inside `tick`, which
+drains them first, so a model's answer is acted on in a tick, never inside the
 call that asked. This is the engine's `ai.pump`, moved inside the mind.
 
 ## A tick's way through
 
 1. **Senses** gather what the target did since last tick and the host sends it as observations
-   (and, once an in-game day, a scan of the surroundings within 128 blocks of the home, which
+   (and, once an in-game day, a scan of the surroundings within 96 blocks of the home, which
    the memory keeps as [Surroundings](memory.md#what-is-kept)):
    position and facing, a chest opened (which one, what is in it, by id and count), a block
    placed, sleep begun or refused, a figure looked at (within 10 degrees), a dimension change, a
@@ -127,16 +128,18 @@ As little as possible, because the mod is about not knowing:
   player and no other mod ever sees it, and the server's world never holds it;
 - a sound to play at a position, by id, once;
 - a hint, with a duration and a place, which the client renders and then stops; the world the
-  server holds never changed. The kinds the client renders today (`client/Glitches.java`):
+  server holds never changed. The kinds the client renders (`client/Glitches.java`):
   `cut_music` (the music stops and stays stopped), `silence` (ambient, weather and
   hostile sounds stopped as they start), `flicker` (the screen darkens in flickers),
   `lights_fail` (dark, then back), `sun_blink` (black for a blink, twice), `lightning_silent`
-  (a white flash), `red_rain` (a red cast), `crosshair_gone`, `hotbar_slip` (the selected slot
-  jumps to the favourite tool once), `camera_nudge` (two degrees toward the place, once),
-  `fov_pull` (the field of view narrows over the hint's time and snaps back), `fog_close` (a
-  dark ring closes in from the screen's edges for a minute), `snow_indoors` and
-  `rain_indoors` (snow or rain falls around the player). Still to come: a painting rendered
-  upside down, a compass pointing somewhere, footprints on the snow;
+  (a white flash), `red_rain` (the drops red), `mist`, `red_mist`, `darkness`, `dusk_noon` and
+  `fog_close` (real fog), `stars_out`, `moon_wrong`, `night_early` and `wrong_sky` (the sky),
+  `compass_points` (a compass turned) and `painting_flip` (a painting upside down until looked
+  at), `hunger_shake`, `heart_skip`, `subtitle`, `name_called` and `ghast_name` (the HUD and the
+  subtitles), `crosshair_gone`, `hotbar_slip` (the selected slot jumps to an item once),
+  `camera_nudge` (two degrees toward the place, once), `fov_pull` (the field of view narrows
+  over the hint's time and snaps back), `snow_indoors` and `rain_indoors` (snow or rain falls
+  around the player), `ripples` and `bobber` (on water at a place), `advancement_toast`;
 - whether this player is the target, so a witness's client drops sounds and figures aimed at
   someone else. The server never sends them to a witness anyway; the flag is a second guard.
 

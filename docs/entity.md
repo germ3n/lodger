@@ -47,10 +47,10 @@ world is first played, so a new world is a new world first.
 
 | # | Stage | What the player experiences | Ends when |
 | --- | --- | --- | --- |
-| 1 | **Noticing** | Nothing, almost. One door open. A torch missing from a dark corner and found two blocks away. The chest's contents in different slots. A chest's sound from the next room. The music does not play one evening. | The memory holds a home, a chest the target uses most and one route, and at least two events landed. |
-| 2 | **Residue** | Things are not where they were. One item gone from the chest you open first, found later on your bed, your crafting table, or at the end of your route. A torch you did not place. Footstep sounds after you stop. A sign with one word: `here`, `again`, `yours`. | The target has reacted (lit the house, walled a room, stood watching, came back for the item) and the brain has judged the reaction. |
-| 3 | **Habits** | It knows your day. The thing you reach for first is the thing that moves. `You may not rest now` with nothing in sight, on the nights you are tired. Your bed is one block over from where you left it. Crops trampled in a line toward your door. The animals stop and look at you. The lights go out over your head for ten seconds and come back. The sun is gone for a breath at noon. | The target has seen the far figure at least once, or the stage's most days have passed. |
-| 4 | **Company** | The figure. Far off, in your skin, with your name over it at the limit of nameplate distance, walking a route you walked, at the hour you walked it. Looked at, it keeps walking; approached, it is gone around the next corner, and in the place it stood is the thing it took. Indoors, a chest opens as you enter the room. | The want is met, refused, or the stage's most days pass. See [What it wants](#what-it-wants). |
+| 1 | **Noticing** | Nothing, almost. One door open. A torch missing from a dark corner and found two blocks away. The chest's contents in different slots. A chest's sound from the next room. The music does not play one evening. | The memory holds a home and a chest the target uses, and at least two events landed. |
+| 2 | **Residue** | Things are not where they were. One item gone from the chest you open first, found later on your bed, your crafting table, or at the end of your route. A torch you did not place. Footstep sounds after you stop. A sign with one word: `here`, `again`, `yours`. | Six events landed in it, or the stage's most days have passed. |
+| 3 | **Habits** | It knows your day. The thing you reach for first is the thing that moves. `You may not rest now` with nothing in sight, on the nights you are tired. Your bed is one block over from where you left it. Crops trampled in a line toward your door. The animals stop and look at you. The lights go out over your head for ten seconds and come back. The sun is gone for a breath at noon. | Ten events landed in it, or the stage's most days have passed. |
+| 4 | **Company** | The figure. Far off, in your skin, with your name over it at the limit of nameplate distance, walking a route you walked, at the hour you walked it. Looked at, it keeps walking; approached, it is gone around the next corner, and in the place it stood is the thing it took. Indoors, a chest opens as you enter the room. | The stage's most days pass. Whether the want was met is read as stage five begins: see [What it wants](#what-it-wants). |
 | 5 | **Settlement** | The ending, over one to three days. See [How it ends](#how-it-ends). | It is over. |
 
 The stages are gates, not scripts. Within a stage the brain decides what, when and where, and
@@ -112,7 +112,7 @@ out when chosen, and the host checks again when the time comes.
 
 The catalogue is long on purpose. A stay is about two in-game weeks, events are spaced out (see
 [How often](#how-often)), and the thing that makes a haunting wear thin is the third time the
-same door opens. A hundred and some small things, each once or twice, each at a time and place
+same door opens. Nearly three hundred small things, each once or twice, each at a time and place
 the model picked for *this* player, do not wear thin. Adding one is a row here, a row in
 `events.rs`, an executor in the host if it needs a new command, and a game test (see
 [Conventions](development.md#conventions)). [Ideas](ideas.md) is the well: several hundred more,
@@ -291,7 +291,7 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | `bed_occupied` | 3 | `This bed is occupied`, vanilla's message, with nobody in it. The next try works. | The target trying to sleep. |
 | `wake` | 3 | The target is woken in the middle of the night, sleep cancelled, and the door is open. | The target asleep. |
 | `woke_elsewhere` | 4 | The target wakes one block from where they lay down, on ground, never over a drop or in water. | The target asleep and room beside the bed. |
-| `other_house` | 4 | Once a stay, asleep in stage four, they wake in a copy of their house in a void dimension of its own (`lodger:other`): block for block, its lights left out, a black sky, the doors opening onto nothing (an unseen floor runs on, so no one falls), the figure in the doorway. After a minute they wake in their own bed, their door open, with what they left there (in its chests, on a lectern, dropped, thrown or shot; a death there waits for the respawn, its drops come home). Its crops and the plants in its pots are left out, so nothing of the copy comes home; one player there at a time. The second and last visit is the take ending's last night, the figure walking at them from the copy's doorway; the death that night stays at its place, in their own world. Owner's design. The world keeps the dimension: a world opened again without the mod warns of it. | The target asleep, a bed, a door and a home. |
+| `other_house` | 4 only | Once a stay, asleep in stage four, they wake in a copy of their house in a void dimension of its own (`lodger:other`): block for block, its lights left out, a black sky, the doors opening onto nothing (an unseen floor runs on, so no one falls), the figure in the doorway. After a minute they wake in their own bed, their door open, with what they left there (in its chests, on a lectern, dropped, thrown or shot; a death there waits for the respawn, its drops come home). Its crops and the plants in its pots are left out, so nothing of the copy comes home; one player there at a time. The second and last visit is the take ending's last night, the figure walking at them from the copy's doorway; the death that night stays at its place, in their own world. Owner's design. The world keeps the dimension: a world opened again without the mod warns of it. | The target asleep, a bed, a door and a home. |
 | `egg_on_bed` | 2 | An egg from the pen is on the bed. | Chickens and a bed. |
 
 ### Decoration and signs
@@ -299,10 +299,10 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
 | `frame_rotate` | 1 | An item frame's item is rotated one notch. | An item frame with an item. |
-| `frames_turn` | 3 | Every item frame in the room is turned to the same orientation, while the target is away. | Three or more item frames in a room. |
-| `frame_swap` | 3 | The item in a frame is traded with a thing of one from their chest: the very stacks, the frame's into that slot (`set_frame_item`'s `swap`, ABI 40; until now the frame's was lost). | An item frame and a chest. |
+| `frames_turn` | 3 | Every item frame in the room out of their view is turned to the same orientation, while the target is away (a frame or a stand it turns or dresses is never one in front of them). | Three or more item frames in a room. |
+| `frame_swap` | 3 | The item in a frame is traded with a thing of one from their chest: the very stacks, the frame's into that slot (`set_frame_item`'s `swap`, ABI 40). | An item frame and a chest. |
 | `item_frames_face` | 3 | While they are indoors, every item frame of the house shows the same thing, to them alone, for three minutes: what it took, or else what they hold most; then what each really holds again (`frames_show`, ABI 38: the frame's item as their client sees it; nothing in a frame changes). | An item frame, indoors. |
-| `frame_emptied` | 3 | An item frame is empty; its own item is on the bed, the very stack (`set_frame_item`'s `drop_at`, ABI 40; until now it was deleted and a stand-in laid there). | An item frame with an item and a bed. |
+| `frame_emptied` | 3 | An item frame is empty; its own item is on the bed, the very stack (`set_frame_item`'s `drop_at`, ABI 40). | An item frame with an item and a bed. |
 | `painting_change` | 2 | A painting is another painting of the same size. | A painting. |
 | `sign` | 2 | A sign with one word from the want's list, at the spot or by the door. | A spot. |
 | `sign_word` | 3 | One line of a sign the target wrote reads one word of its own instead: the last line with text (`set_sign`'s `one_line`, ABI 28: a blank sign is refused). The other lines are kept. | A sign they placed. |
@@ -329,10 +329,10 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | `sheep_dyed` | 2 | One of their sheep by the house is another colour (no dye spent: a sheep's wool is not an item). | A sheep of theirs by the house, out of their view. |
 | `horse_moved` | 2 | The horse is tied to a different post, within eight blocks of the first (`move_leash`, ABI 27). | A horse (or donkey, mule, llama, camel) on a lead. |
 | `face_the_house` | 4 | At dawn every animal in their pens (up to twelve) stands still facing the house for two minutes (`hold` with `at`, ABI 27). Owner's pick. | Three animals in the pens, dawn. |
-| `one_more` | 3 | In the morning one more of the kind they keep most stands with the others, and is gone by noon (`place_entity` for a while, ABI 27: gone at once when the level closes). Owner's pick. | Two animals in the pens, dawn. |
+| `one_more` | 3 | In the morning one more of the kind they keep most stands with the others, and is gone by noon (`place_entity` for a while, ABI 27: gone at once when the level closes). It gives nothing while it is here: it cannot be hurt, a sheep comes shorn, a chicken lays no egg, it cannot breed, and never a mooshroom. Owner's pick. | Two animals in the pens, dawn. |
 | `row_withered` | 3 | One row of their crops is back to seedlings; the rest untouched. Owner's pick. | A field, the target away or asleep. |
 | `eggs_to_door` | 2 | Eggs in a line from the coop to the door they use, two blocks apart, up to six. Owner's pick. | Two chickens by the home and a door. |
-| `animals_nip` | 3 | The nearest farm animal turns on them: it runs at them and nips, half a heart, twice at most, and never below half a heart (`charge`, ABI 27). The owner's harm stages: a nip at 3. Owner's idea. | A farm animal within 16 blocks, the target outdoors. |
+| `animals_nip` | 3 only | The nearest farm animal turns on them: it runs at them and nips, half a heart, twice at most, and never below half a heart (`charge`, ABI 27). The owner's harm stages: a nip at 3. Owner's idea. | A farm animal within 16 blocks, the target outdoors. |
 | `animals_turn` | 4 | Up to three of the nearest farm animals turn on them for half a minute, a heart and a half a hit, three hits each at most, never below half a heart: real harm from stage 4, never a kill. Owner's idea. | Farm animals within 16 blocks, the target outdoors. |
 | `hostiles_stare` | 3 | At night every hostile mob within 48 blocks (up to sixteen) stops where it stands and turns to the target, and stays so, facing them as they move, attacking no one, until dawn burns or frees them. Hit once, a held mob takes it unmoved, still staring; hit twice, that one wakes alone and acts as it would (owner). None is spawned: a night with few has few. Owner's idea. | Three or more hostile mobs near, night. |
 | `hostiles_close` | 4 | At night in the open the hostile mobs near (up to sixteen) hold and stare as in `hostiles_stare`, and each moment the target looks away, one comes a step nearer along the ground, to six blocks; the moment they look at it, it is back where it stood (`hold`'s `creep`, ABI 37), so what they glimpse turning is never there when they face it. Three minutes, then every one back where it stood and as it was; one saved mid-creep goes back when next seen. | Three or more hostile mobs near, night, outdoors. |
@@ -357,7 +357,7 @@ speaks nor shows in the list, and still reads.
 | `tab_entry_stays` | 4 | The entry stays all session. | Any. |
 | `joined` | 3 | `<your name> joined the game`, in the target's chat, while they are already in. Nobody joined. | Any. |
 | `left` | 4 | `<your name> left the game`, in the target's chat, while they are still in. Then nothing for an hour. | Any. |
-| `answers_you` | 2 | What the target types is sometimes answered, 5 to 60 seconds later, in their own name, to them alone: often a line about it (the house, a door, `who`, a question, its want's words), rarely anything else (60 and 15 in a hundred), at most three a day and five minutes of play apart. The model writes it with their words in its prompt, cleaned to letters (it may echo one: `house?`), from the reply bank's examples (`i heard you`, `inside`, `not yet`); the bank stands in. Started by the chat line, never from the menu; the one event that may follow itself. Owner. | The target typed, `events.chat`. |
+| `answers_you` | 2 | What the target types is sometimes answered, 5 to 60 seconds later, in their own name, to them alone: often a line about it (the house, a door, `who`, a question, its want's words), rarely anything else (60 and 15 in a hundred), at most three a day and five minutes of play apart. The model writes it with their words in its prompt, cleaned to letters (it may echo one: `house?`), from the reply bank's examples (`i heard you`, `inside`, `not yet`); the bank stands in. Started by the chat line, never from the menu; it may follow itself. Owner. | The target typed, `events.chat`. |
 | `says_back` | 3 | When the target types something about the lodger (the senses' chat line matches the want's words, `house`, `door`, `chest`, a question), a chat line in the target's own name, to the target alone, from the bank: `i know`, `it was me`, `look behind the door`. Once a day at most. | The target typed. |
 | `says_first` | 4 | A chat line in the target's name, unprompted, at night: one word from the want's list, or a bank line. | Night. |
 | `whisper_from_you` | 4 | A whisper to the target from the target: `<you> whispers to you: here`. | Any. |
@@ -420,7 +420,7 @@ Offered with water within 32 blocks of the home or the route.
 | `rain_indoors` | 3 | The same with rain. | The target indoors, rain outside. |
 | `lightning_silent` | 3 | A flash of lightning with no thunder, in clear weather, for the target alone. | The target outdoors at night. |
 | `thunder_clear` | 2 | Thunder, for the target alone, under a clear sky. | The target outdoors. |
-| `fog_close` | 3 | The mist rolls in for a minute, then lifts: the real fog of `mist`, (it was a dark ring on the screen). | The target outdoors. |
+| `fog_close` | 3 | The mist rolls in for a minute, then lifts: the real fog of `mist`. | The target outdoors. |
 
 ### Mines and caves
 
@@ -438,7 +438,7 @@ they use. Digging is what a player digs, at a player's pace, with a player's sou
 | `mined_out` | 3 | The ore vein ahead of their newest tunnel (within 16 blocks past its end, from the ore read) is dug out while they are away, a torch where it was. | Ore ahead of a tunnel of theirs. |
 | `tunnel_sealed` | 3 | The mouth of their oldest tunnel is walled, floor and head, with cobblestone from the lodger's store (digging stone gives it cobblestone, as a pick does). | A tunnel of theirs and two cobblestone dug. |
 | `ladder_down` | 3 | A one-block shaft dug down from its place, as deep as their ladders (four to twelve), the ladders up its side, each taken from their chest as it goes up. | Ladders in the chest they use, a home. |
-| `minecart_rolls` | 3 | The target's minecart rolls out of the tunnel on its own and stops at the mouth. | A minecart on a track. |
+| `minecart_rolls` | 2 | The target's minecart rolls out of the tunnel on its own and stops at the mouth. | A minecart on a track. |
 | `tunnel_toward` | 4 | While the target is in their tunnel, digging comes toward them from 25 blocks past its end, a column every four seconds, each heard as it breaks, and it breaks through just ahead or stops one block short. Built to be heard and found: out of the view rule. | The target in a tunnel of theirs. |
 | `tunnel_goes_on` | 3 | Their newest tunnel is five blocks longer when they come back to it, their size, unlit. Owner's pick. | A tunnel of theirs, the target away or asleep. |
 | `torches_far_end` | 3 | While they stand in their tunnel, its lights go out one by one from the far end toward them, a second apart, back in five minutes. Owner's pick. | The target in a tunnel of theirs with two of their lights. |
@@ -491,14 +491,14 @@ Heard by the target alone. Nothing in the world changes.
 | `late_steps` | 2 | The target's own footstep sounds play once more, half a second after they stop, from their own position. | The target walking. |
 | `late_eating` | 2 | The same with eating: one more bite after the target's. | The target eating. |
 | `place_sound` | 2 | A block-placed sound behind the target. Nothing placed. | The target indoors. |
-| `knock` | 2 | Soft knocks on a door of the house the target is in, at night: three evenly, or two, a pause and one, or four quick, or one; the door shut, no one there. A door-close sound pitched up and quiet (owner: soft knocks early, the heavy one later). | A door, the target indoors, night. |
+| `knock` | 2 to 3 | Soft knocks on a door of the house the target is in, at night: three evenly, or two, a pause and one, or four quick, or one; the door shut, no one there. A door-close sound pitched up and quiet (owner: soft knocks early, the heavy one later). | A door, the target indoors, night. |
 | `answer_knock` | 2 | They knock on a door (strike it twice within a second and a half, the `knocked` sense, ABI 38); half the time it knocks back from that door a second later: two knocks, or three, or one slow one. Started by the knock, never planned. | They just knocked. |
 | `knock_heavy` | 4 | Something heavy at the door at night: slow pounding, two, three or five, the sound of a zombie at a wooden door pitched low; nothing there when it is opened. | A door, the target indoors, night. |
 | `lever_click` | 2 | A lever's click, in a house with no lever. | The target indoors. |
 | `page_turn` | 2 | Pages turning by the lectern. | A lectern. |
 | `arrow_hit` | 3 | An arrow hits the wall behind the target. Nothing is there. | The target indoors. |
 | `arrow_near` | 3 | At night in the open, the figure stands a moment in the dark behind them and to one side, a bow in its hand; then a real arrow flies past their head and sticks where it lands, harmless (`shoot`, ABI 42: no harm, never picked up, never gone). | Night, outdoors. |
-| `arrow_grazes` | 4 | The same, at them: a heart, never below half a heart. | Night, outdoors. |
+| `arrow_grazes` | 4 only | The same, at them: a heart, never below half a heart. | Night, outdoors. |
 | `arrow_hits` | 5 | The same: two hearts, never below half a heart. | Night, outdoors. |
 | `splash_dark` | 3 | A splash potion from the dark lands at their feet: darkness, slowness, blindness, nausea, or levitation for a moment and a half (a fall of no harm). Never damage, poison or wither: the host throws those five alone (`splash_potion`, ABI 42). | Night, outdoors. |
 | `brew_left` | 3 | A potion of its brewing in the chest they use, named `for the night`: night vision and darkness at once (`put_potion`, ABI 42: nothing that harms). | A chest they use, the target away or asleep. |
@@ -539,7 +539,7 @@ it stands. A render hook at the end of the game's fog setup closes and tints it
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `mist` | 2 | Pale grey mist to thirteen blocks, motes drifting near the ground, four minutes. `fog_close` is this mist now, a minute long. | The target awake. |
+| `mist` | 2 | Pale grey mist to thirteen blocks, motes drifting near the ground, four minutes. `fog_close` is this mist, a minute long. | The target awake. |
 | `dusk_noon` | 3 | At noon the light drains: the fog grey-violet to forty blocks, the sky dimmed, a grey veil, five minutes. | Day, the target awake. |
 | `red_mist` | 4 | Deep red mist to twenty blocks, a rust sky, red motes, four and a half minutes. | Night, the target awake. |
 | `darkness` | 4 | The dark closes to seven blocks, black, their own light still showing what is near, three minutes. | Night, the target awake. |
@@ -598,7 +598,7 @@ a dock or bridge), never over anything a player built (see the
 | `hut_on_route` | 3 | A 3x3 shelter of logs, two high, a log roof, an opening along the way, halfway along their route, a torch inside. | A route, the target away or asleep. |
 | `house_near` | 4 | A house of its own, 56 blocks from theirs on the side away from their route's far end, 5 by 5: a plank floor, cobblestone walls three high, a log roof, its door facing theirs, a pane in the wall across, a torch and a chest inside, built a third a night over three nights (`place_blueprint`, ABI 34: the ground found on the first night and kept). The chest takes what it holds once the ground is known. | A home, the target away or asleep. |
 | `house_grows` | 5 | Its house grows a second room, five by four, behind it, through the back wall. | Its house standing, the target away or asleep. |
-| `bridge` | 4 | A plank bridge from the far shore of the water toward the target's, three blocks a night, stopping two short of their shore. | Water by the home, the target away or asleep. |
+| `bridge` | 4 only | A plank bridge from the far shore of the water toward the target's, three blocks a night, stopping two short of their shore. | Water by the home, the target away or asleep. |
 | `bridge_done` | 5 | The bridge finished, to their shore. | Its bridge, the target away or asleep. |
 | `copy_house` | 5 | A copy of the target's house at its place from their building blocks: stone as cobblestone, wood as logs, glass as glass, forty blocks a night. | Twenty building blocks of theirs, the target away or asleep. |
 
@@ -614,7 +614,7 @@ a dock or bridge), never over anything a player built (see the
 | `at_the_chest` | 4 | Coming into the room, the target sees the figure at their chest, back to them. It closes the lid and is around the corner before they reach it. | A used container in a room with two ways out. |
 | `in_your_bed` | 4 | Coming home late at night, the target sees the figure lying in their bed through the door, and the bed is empty when the door opens. | A bed in view of the door, night. |
 | `replay` | 4 | The replay figure walks a recorded route, at the recorded pace, starting out of view. Looked at, it keeps walking. Approached within 24 blocks it rounds a corner and is gone, leaving the held item where it stood if it held one. | A recorded route of 20 or more points. |
-| `figure_nip` | 3 | The figure right behind them for a second, two blocks back: it swings once, a hit, half a heart, the hurt's jolt, never below half a heart (`figure_swing`, ABI 33). The owner's harm stages: a nip at 3. | The target awake. |
+| `figure_nip` | 3 only | The figure right behind them for a second, two blocks back: it swings once, a hit, half a heart, the hurt's jolt, never below half a heart (`figure_swing`, ABI 33). The owner's harm stages: a nip at 3. | The target awake. |
 | `figure_swing` | 4 | The same, hard: two hearts, still never below half a heart, never a kill. | The target awake. |
 | `shove` | 4 | Armed for two minutes: the first moment they stand at the edge of a drop of two or three blocks onto solid ground (or on a ladder with ground that near below), not crouching, in no water, with more than two hearts, they are pushed off it, and a step sounds right behind them (`shove`, ABI 37). Never a fall of more than three blocks, so never any harm. | The target awake. |
 | `figure_mirror` | 3 | The figure forty blocks to their side moves as they move, step for step, stopping when they stop, forty seconds, gone if they come within twenty (`figure`'s `mirror`, ABI 33). Owner's pick. | The target outdoors. |
@@ -666,17 +666,17 @@ menu's weights and, for an exclusive step, the menu itself for a day or two. The
 tests check that a stay with the rule brain walks at least two chains end to end and that no
 follow-up is ever offered with its needs unmet.
 
-**As coded (`core/src/chains.rs`).** The eight, with the catalogue's events: the thing (`take`,
+**As coded (`core/src/chains.rs`).** The nine, with the catalogue's events: the thing (`take`,
 `place_taken` or `return_taken`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
 `mined_out`), the tunnel (`mining_sounds`, `mine_beside`, `tunnel_toward`, `cave_room`), the
 place (`light_path`, `hole`, `pillar`, `sign`, `house_near`; its house grows in the ending's
 script), the watcher (`far_figure`, then `behind_you` once they looked at a figure two seconds
 or more, `on_the_roof`, `in_doorway`, `in_your_bed`, `copy_crouch`, `figure_waves`; chased, it
 ends), the copy (`copy_build`, `copy_house`, `second_bed`), the house (`open_door`, then
-`door_hinge`, `door_held` and `window_bars`, each once they noticed the last), the pet
-(`pet_growl`, `pet_moved`, `pet_outside`). A chain opens when its first event lands; its steps
+`door_hinge`, `door_held` and `window_bars`, each once they noticed the last), the diary
+(`diary_sold`, `diary_brought`), the pet (`pet_growl`, `pet_moved`, `pet_outside`). A chain opens when its first event lands; its steps
 count in any order; its next step is four times likelier on the menu and in the rule brain's
-pick for the days it waits (three to five), its days held while its stage has not come; once
+pick for the days it waits (three to five; the diary's eight), its days held while its stage has not come; once
 every step has landed it is walked; once a stay each. Not exclusive, and nothing carried from
 one step to the next yet. The scripted stay walks the place end to end: the scripted player
 notices nothing and keeps no pet, so the rest wait on what a player does.
@@ -719,7 +719,7 @@ What temper does, each bounded by the preset so `calm` never becomes `relentless
 
 The rules still hold at every temper: a furious lodger does everything it does more often and
 sooner, never anything it would not do. How much temper moves per act is a table in
-`memory/temper.rs` with a scripted-stay test per row.
+`temper.rs`, with its tests.
 
 **As coded (`core/src/temper.rs`, `events.temper`).** It rests at 0.2 on `calm`, 0.3 on
 `balanced`, 0.4 on `intense`, 0.5 on `relentless`, and one cause moves it three times a day at
@@ -752,13 +752,14 @@ move it either way.
 
 Repetition is held off three ways, all in `events.rs` and `brain/offer.rs`:
 
-- **Cooldowns.** Each event has one (`cooldown_days`, 2 by default; 1 for sounds and
-  `open_chest`), and is not offered again until it has passed, nor at the same place for twice
-  as long.
-- **Caps.** Each event has a most-per-stay (`most_per_stay`, 4 by default; `take` and the
-  figures more, `sign_word`, `animal_indoors`, `field_word`, `copy_build` and `in_your_bed`
-  once). Past its cap it is gone for the stay. With a hundred and some events and forty to sixty
-  in a stay, most happen once or never.
+- **Cooldowns.** Each event has one (`cooldown_days`: two days for most small things, three for
+  most the target would notice, a day or less for many sounds and for `open_chest`), and is not
+  offered again until it has passed; one that did not land waits it out at that place.
+- **Caps.** Each event has a most-per-stay (`most_per_stay`: two for most things the target
+  would notice, three or four for most small ones; `take`, the far figure and the night-by-night
+  builds more; some thirty once, `field_word`, `copy_build`, `in_your_bed` and `other_house`
+  among them). Past its cap it is gone for the stay. With nearly three hundred events and forty
+  to sixty in a stay, most happen once or never.
 - **A changing menu.** The brain is offered at most `events.offered` events, eight by default,
   drawn from the eligible ones with a weight that favours what has not happened yet in this
   stay, and never the event that happened last. The model picks from a different menu each
@@ -791,8 +792,12 @@ target took out is known.
 
 ### The distance rule
 
-No event but the sounds, the glitches, the screen, `refuse_rest`, `bed_occupied`, `wake`,
-`stand_watch`, `stare`, `door_opens_itself`, `open_on_enter` and the figures happens within
+No event but the sounds, the glitches, the screen, the chat and the player list, the sleep
+events (`refuse_rest`, `bed_occupied`, `wake`, `woke_elsewhere`, `bed_breaks`), the creatures
+that stare or come at them (`stand_watch`, `stare`, `pack`, `hostiles_stare`, `hostiles_close`,
+the approaches), the figures, and what is meant to be noticed as it happens (`open_chest`,
+`open_on_enter`, `door_opens_itself`, `chest_answers`, `tunnel_toward`, `torches_far_end`, the
+diary's villager) happens within
 `events.min_distance` blocks, 64 by default (24 until the owner watched a path of torches go
 up from farther off), of the target while the target faces the spot. Every block
 the event changes is checked, not only its own spot, and an event whose blocks are in view
@@ -835,15 +840,15 @@ Stage five is three days, and it is the point of the stay. Everything before it 
 this is not. Which ending depends on `stages.ending`, the world's difficulty when it reads
 `difficulty`, and whether the want was met, and every ending is a script of three days that
 ramps from the first evening to the last night, with the chains above coming to their ends
-inside it. The script is data in `arc.rs`, each day a list of beats with a time and a
+inside it. The script is data in `ending.rs`, each day a list of beats with a time and a
 condition; the brain's part is small (which of two ways a beat goes), and the rules still hold
 every step but the one death.
 
 | Ending | When | Day one | Day two | The last night |
 | --- | --- | --- | --- | --- |
-| **Leaves** | The want was met, on any difficulty; or `stages.ending` is `leave` | Everything it took comes back over the day, one thing an hour, each to where it was taken from. The animals it moved come home. Its torches go out one by one along the path, from the far end toward the house. | Its house (if it built one) is emptied: the chest's contents are on your doorstep at dawn. The figure stands at its door at noon, in plain light, for a full minute, and goes in. At dusk its torch goes out. Every pet of yours sits facing its house. | The music plays, the first time in a week. Every light in your house flickers once at midnight and steadies. At the edge of the light, the figure, in your skin, for as long as you look. When you look away and back, nothing. At dawn its house is gone, the ground flat, one torch where its door was. `/lodger status` says `left`. |
+| **Leaves** | The want was met, on any difficulty; or `stages.ending` is `leave` | Everything it took comes back over the day, one thing an hour, each to where it was taken from. The animals it moved come home. Its torches go out one by one along the path, from the far end toward the house. | Its house (if it built one) is emptied: the chest's contents are on your doorstep at dawn. The figure stands at its door at noon, in plain light, for a full minute, and goes in. At dusk its torch goes out. Every pet of yours sits facing its house. | The music plays, the first time in a week. Every light in your house flickers once at midnight and steadies. At the edge of the light, the figure, in your skin, for as long as you look. When you look away and back, nothing. At dawn its house is gone, the ground flat, one torch where its door was. `/craftkit lodger status` says `left`. |
 | **Takes** | The want was refused, on normal or hard; or `stages.ending` is `take` | You cannot sleep (`You may not rest now`, all night). Every door in the house opens at midnight at once, and the pets go out. The animals stare at the house all day. The sun blinks out three times before noon. | Every frame is empty, the items on your bed, in a line pointing at the door. Every sign in the house says the same word. The figure is behind you on every route, closer each time, to 32 blocks. Your tunnels are all sealed with cobblestone. The village bell rings every hour. | Every torch it ever placed lights at once, the whole path to its place, and every torch of yours goes dark in the client's render. Red rain. The lights of its house are on. At its place, the figure, holding everything it took, which it keeps. It walks toward you for the first time, at a player's pace, and stops at one block. On hard, you die there, once, with your inventory kept, and the death message is vanilla's for falling out of the world. Then the night is ordinary, the house is as it was minus what it took, and it is gone. |
-| **Keeps** | The want was refused, on easy or peaceful; or `stages.ending` is `keep` | Its house gets a second room overnight, a copy of your bedroom, your spare bed in it. The far figure is in its window every hour. | A path of cobblestone from your door to its door. A gate in its fence facing your door, open. Your pets go and sit at its door and come back. | At midnight, its door is open and lit, and the figure is in its doorway, facing you, for as long as you look. It does not come. At dawn it stops acting, for good. The torches stay lit, the signs stay, the things stay where they were put, its house stays with its door open. The music comes back. Every few in-game weeks, one door of yours is open. `/lodger status` says `stayed`. |
+| **Keeps** | The want was refused, on easy or peaceful; or `stages.ending` is `keep` | Its house gets a second room overnight, a copy of your bedroom, your spare bed in it. The far figure is in its window every hour. | A path of cobblestone from your door to its door. A gate in its fence facing your door, open. Your pets go and sit at its door and come back. | At midnight, its door is open and lit, and the figure is in its doorway, facing you, for as long as you look. It does not come. At dawn it stops acting, for good. The torches stay lit, the signs stay, the things stay where they were put, its house stays with its door open. The music comes back. Every few in-game weeks, one door of yours is open. `/craftkit lodger status` says `stayed`. |
 
 Within each day the beats are ordered and timed, but which of two forms a beat takes (the figure
 at its door or on its roof; the frames emptied or the paintings turned) is the model's, asked
@@ -859,11 +864,11 @@ place, or a chest of theirs there with something in it; three things it showed t
 and never run from; their favourite left in the chest it uses). The script starts at the next
 dawn and its beats run in order as the clock reaches them; a moment (a sound, a sight, the
 screen) that comes more than two thousand ticks late is skipped, a change to the world is done
-late. Where it differs from the table, for now:
+late. Where it differs from the table:
 
 - **Leaves.** What it holds goes back (it holds one thing at a time, so one, not one an hour);
   its torches go out one by one, the farthest from the house first (the lights it placed itself
-  are kept from now on); the chest of its house is spilled on their doorstep
+  are kept); the chest of its house is spilled on their doorstep
   (`spill_container`, ABI 41); the figure at its door a full minute, then in; their pets held
   facing its house ten minutes (held, not sitting); its torch out at dusk; the music (the
   game's music as a sound); the flicker; the figure at the edge of the light, gone once looked
@@ -875,9 +880,10 @@ late. Where it differs from the table, for now:
   sign of theirs says the want's word (`here`, `again`, `yours`; the line it replaced is not
   given back); the figure behind them at 64, 48 and 32 blocks; their tunnels walled at the mouth
   with cobblestone; the village bell every hour of the day; on the last night its torches lit,
-  theirs dark on their screen alone (`hide_block`, five minutes), red rain; the figure from its
-  place, holding what it holds, walks up to a block from them at a walk; on hard, one death as
-  if fallen out of the world (`kill_player`, ABI 41: what they carry held in the world's data
+  theirs dark on their screen alone (`hide_block`, five minutes), red rain; the second visit to
+  the other house (see `other_house`); the figure from its place, holding what it holds, walks
+  up to a block from them at a walk; on hard (on normal too with `intense`, on any difficulty
+  with `relentless`), one death as if fallen out of the world (`kill_player`, ABI 41: what they carry held in the world's data
   and given back as they respawn, their experience with it); at dawn the doors shut again.
 - **Keeps.** The second room of its house (an empty room, no copy of their bedroom); the figure
   in its window every two hours of the night; a cobblestone path from their door to its door
@@ -885,8 +891,7 @@ late. Where it differs from the table, for now:
   its door open, a torch beside it, the figure in the doorway until they look away; at dawn it
   stops for good, and every three in-game weeks after, while they are away or asleep, the door
   they use is found open. It has no fence, so no gate; the music is not brought back.
-- The model does not yet choose between two forms of a beat; temper is not kept, so it has no
-  say in the ending. The stay's status line (the debug screen) says `the stay is over: it left`,
+- The model does not yet choose between two forms of a beat. The stay's status line (the debug screen) says `the stay is over: it left`,
   `took` or `stayed`; `/craftkit lodger status` says so.
 
 **The fourth ending: you confront it** (owner). In stage five, at night, knock on its

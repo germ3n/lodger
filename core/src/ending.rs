@@ -6,7 +6,8 @@
 //! is over and says how: `left`, `took` or `stayed`.
 //!
 //! Which ending: `stages.ending`, or with `difficulty` the want met leaves, refused takes on
-//! normal and hard and keeps on easy and peaceful. Temper is not kept yet, so it has no say.
+//! normal and hard and keeps on easy and peaceful; a furious temper takes on any difficulty, and
+//! an angry one does not leave for a met want (`temper.rs`).
 
 use craftkit::world::{BlockPos, BlueprintPart, Command, ItemStack, Now, Pos};
 

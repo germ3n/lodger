@@ -15,12 +15,12 @@ pages explain each part in full; this one is the short list to keep in mind.
   words and self-harm and nothing else; horror words are the mod's subject. See
   [Brain](brain.md#why-scoring-and-not-generation) and [Text](brain.md#text).
 - **The model is downloaded, not shipped, and the game waits for it.** It is 1.1 GB, Qwen's
-  own `q4_k_m` GGUF of Qwen2.5-1.5B-Instruct (`model.size` picks 0.5B at 491 MB or 3B at 2 GB
-  instead). The first start shows Qwen's terms, then a progress bar over the title screen,
-  fetches it to `config/lodger/models/<size>.gguf`,
+  own `q4_k_m` GGUF of Qwen2.5-1.5B-Instruct (`model.size` picks 0.5B at 491 MB, 3B at 2.1 GB or
+  Qwen3 4B at 2.5 GB instead). The first start shows Qwen's terms, then a progress bar over the title screen,
+  fetches it to `config/lodger/models/` (`qwen2.5-1.5b-q4_k_m.gguf` for the default),
   loads it, and only then lets the player in; a dedicated server does the same at startup with
-  progress in its log. A file that does not start with the GGUF magic is refused and nothing is
-  left behind. `model.url` in the config says where from. The host does the fetching, for any
+  progress in its log. A file that does not start with the GGUF magic, or whose SHA-256 is not the one expected, is
+  refused and nothing is left behind. `model.url` in the config says where from. The host does the fetching, for any
   Rust mod's declared resources. See [Model](model.md#downloading).
 - **Without the model the mod still runs.** The rule brain picks from the same choices with fixed
   weights. The lodger is duller, not absent. `/craftkit lodger status` says which brain is in charge.
@@ -42,19 +42,18 @@ pages explain each part in full; this one is the short list to keep in mind.
   operator level on a server cannot open it; the owner of a singleplayer world can, cheats or
   not. See [Running a stay quickly](development.md#running-a-stay-quickly).
 - **It shares the GPU with the game.** The whole model runs on the GPU by default (`model.gpu_share` 1), and a question is fed in small chunks with rests between, so the frames do not wait; lower it if the game stutters, and `0` keeps it off the GPU entirely.
-- **It costs CPU on the server.** Two threads while scoring, about 1.6 GB of RAM while the
-  default model is loaded (700 MB for the small one).
-  It loads when a target is online and unloads after `model.idle_minutes` with no one to think
-  about. A client connected to someone else's server pays nothing.
-- **Decisions are logged.** `config/lodger/decisions.log`, and `/lodger decisions`, show every
+- **It costs the server memory.** About 1.6 GB while the default model is loaded (700 MB for the
+  small one), nearly all of it VRAM at the default `model.gpu_share`, RAM without a GPU, and two
+  CPU threads while scoring. It loads before play and unloads after `model.idle_minutes` with no
+  one to think about, loading again when a target comes back. A client connected to someone else's server pays nothing.
+- **Decisions are logged.** `config/lodger/decisions.log`, and the debug panel's Mind tab, show every
   situation text, question, choice and confidence, so a strange event can always be traced to what
   the lodger believed at the time. The log is the only way to tune the prompts; keep it on while
   developing.
-- **Runs are reproducible from the log, and otherwise not.** Scoring is deterministic, the
-  pick from the scores is a seeded draw (`brain.temperature`), and the seed is in every decision
-  log entry, so a strange run can be replayed from its seed and situations. Two worlds never go
-  the same way on their own: the situation text carries times, positions and what the player
-  did, and the seed differs per start.
+- **Runs are not reproducible.** Scoring is deterministic, but the pick from the scores is a
+  seeded draw (`brain.temperature`) whose seed differs per start, joined by the world's, and is
+  not logged; `brain.temperature: 0` always takes the best choice. Two worlds never go the same
+  way on their own: the situation text carries times, positions and what the player did.
 
 ## Where things run
 
@@ -70,8 +69,8 @@ pages explain each part in full; this one is the short list to keep in mind.
   Java in it; the host is what runs.
 - **Everything that decides runs on the server.** The client renders what it is told, plays
   sounds it is told to, and reports nothing but what vanilla reports already. Both sides need
-  the mod: the client for the entity, the replay figure and the sounds, the server for all the
-  rest. A vanilla client is refused at login with a message saying so.
+  the mod: the client for the glitches it renders and the model's download, the server for all
+  the rest. A vanilla client is refused at login with a message saying so.
 - **One lodger per world, one target at a time.** It attaches to one player and the stay is that
   player's. Others in the world are witnesses: they see the traces, never the figure, and they
   hear nothing. Who is the target is the lodger's choice and it can change once, at a stage
@@ -105,8 +104,7 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   time at a player's pace, never within 8 blocks of anything placed (checked on every command, the debug screen's Fire too) but `alcove`, which may take one block of natural stone from behind a house wall (owner) and never into a cave, water
   or lava it can see coming (see [Like a player](entity.md#like-a-player)).
 - **What it takes is the very thing it gives back.** The host keeps the taken stack with the
-  world, enchantments, wear and name and all (until now a taken enchanted tool came
-  back plain).
+  world, enchantments, wear and name and all (a taken enchanted tool once came back plain).
 - **It never takes more than one item at a time, and never anything from the inventory, a hand,
   an armour slot or the ender chest.** From a chest the player opens often, one item, one that
   the memory says they use. What it takes it holds, and it always comes back, somewhere. Items
@@ -139,15 +137,16 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   never does anything it would not do; it does what it does sooner and more. The preset is the
   ceiling: `calm` provoked is still calm. See [Provocation and temper](entity.md#provocation-and-temper).
 - **It never does the same thing twice in a row,** and no event more than a few times in a stay.
-  Cooldowns, caps and a menu of eight drawn from a hundred and some keep a stay from wearing
+  Cooldowns, caps and a menu of eight drawn from nearly three hundred keep a stay from wearing
   thin, and the menu is filtered by what is around and what the target is doing before the model
   sees it, so a player with no lake never hears of boats. See
   [What is offered when](entity.md#what-is-offered-when).
 - **It never changes the world's time or weather.** The sun blinking out and the red rain are
   the target's client rendering a hint for a few seconds. The server's clock and sky are the
   same for everyone, and a witness looking up sees noon.
-- **It never follows the target into another dimension.** The Nether and the End are the one
-  place it is not. Coming back, it has been busy.
+- **It lives in the overworld alone.** In the Nether and the End it is not there in person: it
+  reaches the target there by two events alone (`ghast_name`, `ender_holds`), allowed by the
+  overworld's rules and counted in its budget. Coming back, it has been busy.
 - **It never spawns anything, and never makes anything of value.** What it gives without taking
   it first comes out of what it dug, counted in `Memory::stores`. Everything it places it dug,
   cut, picked, cooked, crafted from those or took first, as a player would have to: its
@@ -181,21 +180,22 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
 - **`You may not rest now` with nothing nearby is the lodger**, in stage three and up: it leans
   on the vanilla check, which is why it reads exactly like vanilla. There is no other message.
 - **The recorded routes are the target's own movements.** They are kept in the world save,
-  downsampled to at most 64 routes of 256 points, and never leave it. A server operator should
+  downsampled to at most 16 routes of 128 points, and never leave it. A server operator should
   know they are there; a player on a public server should be told the mod records paths.
-- **The lodger's own torches and signs are the mod's blocks.** They look like vanilla's and drop
-  vanilla's, and the memory knows which they are, so a mod that strips unknown blocks strips
-  them.
+- **The lodger's own torches and signs are vanilla's.** The mod adds no blocks; the memory alone
+  knows which are its own, by where they stand, so breaking one of its lights is something it
+  notices.
 - **The native must match the machine.** The lodger's jar carries its mind built for Linux,
-  macOS and Windows, x86_64 and arm64 each. On anything else the host logs `no native for
-  <os>-<arch>` and the lodger is not there at all: its assets load, nothing else.
+  macOS and Windows, x86_64 (with AVX2) and arm64 each. On anything else the host logs that the
+  jar has no native library for this computer and which it carries, an older x86_64 CPU is told
+  it lacks AVX2, and the lodger is not there at all: its assets load, nothing else.
   `/craftkit status` says so. Build the native yourself (see
   [Development](development.md#building-the-native)) and put it in the jar, or in
   `config/craftkit/natives/lodger/<os>-<arch>/` where the host would have extracted it.
 - **The glitches are the target's client lying to the target,** on the server's instruction.
   A screenshot shows them; a witness standing beside the target sees nothing. F3 shows the true
   time and light. That is the design; a player who reads F3 to check is playing the game.
-- **A model file in a wrong place is a silent fallback.** If `qwen.gguf` is missing or unreadable
+- **A model file in a wrong place is a silent fallback.** If the model file is missing or unreadable
   the rule brain takes over and the only sign is `/craftkit lodger status` and one line in the log at
   load. Check both when the lodger seems dumb.
 - **Changing `brain.*` thresholds mid-stay changes behaviour at once.** Nothing is recomputed,

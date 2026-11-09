@@ -1,5 +1,5 @@
-//! How the lodger decides: the menu offered (`offer`), the pick (`rules_brain` today; the model
-//! in phase 4), the plan it becomes, the commands the plan turns into (`act`), and the log of
+//! How the lodger decides: the menu offered (`offer`), the pick (the model, or `rules_brain`
+//! without it), the plan it becomes, the commands the plan turns into (`act`), and the log of
 //! every decision (`log`). The `Brain` lives in a `Stay` and is driven once a tick.
 
 pub mod act;
@@ -372,7 +372,7 @@ const ASK_PATIENCE_TICKS: u64 = 60 * TPS;
 pub struct Decision {
     pub day: f32,
     pub stage: u8,
-    /// Which brain answered: `rules` today, `model` in phase 4.
+    /// Which brain answered: `model`, or `rules` without it.
     pub brain: String,
     pub menu: Vec<String>,
     pub chosen: String,

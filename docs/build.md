@@ -96,7 +96,7 @@ Other sources for the natives:
 every pin that changes with it (Minecraft, NeoForm, Fabric API and loader, Loom, NeoForge,
 ModDevGradle, Java), laid over the gradle.properties files for that build only (`-P`). A version
 with no file is refused: the host is written against one version's code, and another needs its
-file and usually a port ([Upgrading](upgrading.md)). Today: 26.3.
+file and usually a port ([Upgrading](upgrading.md)). The one there is 26.3.
 
 ## Building natives alone
 

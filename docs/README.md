@@ -1,8 +1,7 @@
 # lodger docs
 
 How the lodger works, part by part, and what to keep in mind while running it or changing it.
-Nothing is built yet: these pages are the design, written so that building can start
-from them and so that every page is kept true as code lands.
+The pages were the design before there was code, and are kept true as code lands.
 
 - The [README](../README.md) covers installing, the commands and the licenses at a glance.
 - These pages explain how each part works and why it is built that way.
@@ -14,7 +13,7 @@ from them and so that every page is kept true as code lands.
 | [The SDK](sdk.md) | craftkit, the Rust SDK the lodger is the first mod of: what a Rust mod is (a crate and a content jar), the host for Fabric and NeoForge, the C ABI, the `Mod` trait, the protocol, and testing without a game. |
 | [The lodger](entity.md) | The design: what it is, why it is not another thing in the fog, the five stages of its stay, its senses, every event it can do, multiplayer, and how its stay ends. |
 | [Brain](brain.md) | How decisions are made: the situation text, the questions and their choices, scoring with the model, confidence, cadence, the rule brain that stands in without a model, and the decision log. |
-| [Model](model.md) | The model file: Qwen2.5 1.5B (or 0.5B or 3B) as a GGUF, downloading and checking it, loading it through llama.cpp from Java, threads, memory and unloading. |
+| [Model](model.md) | The model file: Qwen2.5 1.5B (or 0.5B or 3B, or Qwen3 4B) as a GGUF, downloading and checking it, loading it through llama.cpp in the mind, the GPU, threads, memory and unloading. |
 | [Memory](memory.md) | What the lodger remembers about its target: home, routes, habits, reactions, what it took, and how all of it is kept small and turned into text. |
 | [Ideas](ideas.md) | The brainstorm the catalogue draws from: several hundred events by what is around and what the player is doing, what it could build, and what was set aside and why. |
 | [Config](config.md) | Every key in `config/lodger.json`, its default and what it changes. |

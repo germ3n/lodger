@@ -16,8 +16,7 @@ scoring, the same queue, the same download, behind the mind's C ABI instead of a
 | `4b` | `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` from unsloth's repository, 2.5 GB | about 3.5 GB | about the 3B's | the newest and best reader (owner: "how about we offer this too?"); Apache-2.0; non-thinking only, so no `<think>` block gets in the way of scoring; the vendored llama.cpp (llama-cpp-sys-2 0.1.161) knows its `qwen3` architecture |
 
 The 0.5B, 1.5B and 4B are Apache-2.0; the 3B is under Qwen's research license, which the
-preparing screen names and links before the download (it said Apache for every size until
-now). Qwen's own GGUF repository for the 4B answers 401 to a plain download, so its file
+preparing screen names and links before the download. Qwen's own GGUF repository for the 4B answers 401 to a plain download, so its file
 comes from unsloth's, which repackages Qwen's model under the same license. Each file's exact
 length and SHA-256 are in `ModelSize` (from Hugging Face's `x-linked-size` and `x-linked-etag`),
 and the host checks the sum after the download; a file from `model.url` of one's
@@ -34,7 +33,7 @@ measure item in the todo replaces them with numbers.
   and time, still well inside a tick budget on a worker thread, for judgment that holds up over
   a longer situation text and words that read as words. 0.5B stays a setting for a small
   machine.
-- **Why Qwen:** Apache-2.0, so a player may download it without a licence click; GGUF builds by
+- **Why Qwen:** Apache-2.0 for every size but the 3B, so the terms a player accepts are plain; GGUF builds by
   Qwen themselves; and it is what the engine already runs, so the scoring code is known to work
   on it. Qwen3-0.6B is also Apache-2.0 and a todo item is to score both on the same log and
   see whether it reads situations better.
@@ -49,14 +48,17 @@ with the size it is about to fetch (`Qwen2.5 1.5B, 1117 MB (click for another)`)
 picks the next of the four, writes `model.size` into the config and starts that download
 instead. A model already there skips the screen; the settings page changes it then.
 
-The model is not in the jar. 491 MB is too much to ship with a mod and Hugging Face serves it
+The model is not in the jar. A gigabyte is too much to ship with a mod and Hugging Face serves it
 well. The mind declares it as a *resource* in its `init` reply (the SDK's `Resource`: the URL
-from `model.url`, the path from `model.path` under the game directory, the `GGUF` magic, the
-size), and the host fetches it (owner: "lock them out of the main menu until the
+from `model.url`, the path from `model.path` under the game directory, by default
+`config/lodger/models/` and the size's own file name such as `qwen2.5-1.5b-q4_k_m.gguf`, the
+`GGUF` magic, the size and the SHA-256), and the host fetches it (owner: "lock them out of the main menu until the
 model is downloaded and loaded"):
 
 - **On a client,** the first time the title screen opens with the file missing, a screen comes
-  up over it: the title, a progress bar, the megabytes so far, and a Quit button; Escape does
+  up over it. First the model's license, its name and text with a link to the full terms, and
+  `I accept` (kept in `config/craftkit/accepted.json`, so it is asked once per license); then the
+  title, a progress bar, the megabytes so far, and a Quit button; Escape does
   nothing. When the file is there the screen says `Loading the lodger's model` with a sweeping
   bar while the mind loads it (a second or two), and then the title screen is back. On failure,
   the error and a Try again button. A player with the file already there never sees any of it.
@@ -66,19 +68,21 @@ model is downloaded and loaded"):
   a player who only joins servers needs nothing more, the server's model deciding there. The
   settings' **Use the model** turns it back on, and the screen comes back to download.
 - **On a dedicated server,** at startup, before the world opens, blocking, with a log line at
-  every ten percent and one when the model is loaded. On failure the server starts anyway and
-  the lodger waits for the next start.
+  every ten percent and one when the model is loaded. There is no screen to accept the license
+  on, so the log prints it and the key to add to `accepted` in `config/craftkit/accepted.json`;
+  until it is there and the server restarts, nothing is downloaded and the rules decide. On a
+  failed download the server starts anyway, the rules decide, and the next start tries again.
 - **It must be a GGUF.** The first four bytes must be `GGUF`; anything else, an HTML error page
   above all, fails on those bytes rather than after half a gigabyte.
-- **It is written under a temporary name,** `qwen.gguf.part`, and renamed when complete, so a
+- **It is written under a temporary name,** the file's name with `.part` after it, and renamed when complete, so a
   failed download never replaces a good model and a half file is never loaded.
 - **`http://` or `https://` only.** Redirects are followed. The connect timeout is 15 seconds.
   A slow connection is still a connection, but a quiet one is not: thirty seconds without a
   byte and it is closed, and the download goes on from where it stopped with an HTTP range, up
   to five tries with a pause between (a server that ignores the range sends the whole file
   again). When every try fails the `.part` file stays, and the next start goes on from it; a
-  cancel, the wrong magic or a wrong SHA-256 removes it. The 4B's download hung at 2059 of
-  2381 MB on a connection gone quiet until now, when reading had no limit at all.
+  cancel, the wrong magic or a wrong SHA-256 removes it. Without that limit, the 4B's download
+  once hung at 2059 of 2381 MB on a connection gone quiet.
 - **`/craftkit lodger status`** says whether the model or the rules decide, and the debug
   screen's model line whether the file is there and the model loaded. Deleting the
   file makes the next start fetch it again, from `model.url`.
@@ -96,19 +100,21 @@ mind to load the model right after the download, through the SDK's `warm` (block
 thread, while `status` answers the screen), so the first ask never waits; if it somehow is not
 loaded, the first ask loads it on the worker thread and waits the second or two.
 
-- **The file must be loose.** llama.cpp maps it; a file inside the jar or any archive is
-  `qwen.gguf is inside an archive, llama.cpp needs it as a loose file`.
-- **Context 512** (`model.context`), batch and ubatch the same, so one decode takes the whole
-  situation. **Two threads** (`model.threads`) for decoding and three for the batch, the engine's
-  numbers. Raising threads speeds scoring and takes from the server's own threads; the default
-  leaves a four-core server its game.
-- **CPU only by default.** `model.gpu_layers` is `0`. Metal on macOS and Vulkan elsewhere are
-  features of the native build and a config switch, but every server behaves alike on the CPU
-  and 0.5B does not need a GPU. The feature exists because `~/engine` has it on macOS; it is an
-  experiment here.
-- **Memory:** the model's 491 MB mapped plus the context's buffers, about 700 MB resident. The
-  JVM does not see it: it is native memory outside the heap, so `-Xmx` is unaffected and the
-  machine's own memory is what must have room.
+- **The file must be loose.** llama.cpp maps it from the path; it cannot read one inside the
+  jar or any archive.
+- **Context 1536** (`model.context`), batch and ubatch the same. The prompt is decoded 64 tokens
+  at a time with a rest of `model.pause_ms` between (`DECODE_CHUNK`), so a long situation is not
+  one burst of work the game's frames wait behind. **Two threads** (`model.threads`) for decoding
+  and one more for the batch, the engine's numbers. Raising threads speeds scoring and takes from
+  the server's own threads; the default leaves a four-core server its game.
+- **On the GPU by default.** `model.gpu_share` is `1`: every layer on the GPU, Vulkan on Windows
+  and Linux, Metal on macOS, each native built with its backend. `0` keeps it on the CPU, and a
+  share between puts that share of the layers (of 24, 28 or 36, by size) on the GPU. With no
+  usable GPU llama.cpp runs it all on the CPU.
+- **Memory:** the default 1.5B's 1.1 GB mapped plus the context's buffers, about 1.6 GB, in VRAM
+  when it is on the GPU and RAM when not (the 0.5B about 700 MB). The JVM does not see it: it is
+  native memory outside the heap, so `-Xmx` is unaffected and the machine's own memory is what
+  must have room.
 - **Unloading** after `model.idle_minutes` with no target online, and at server stop
   (`craftkit_shutdown`). The context, then the model, then the backend are freed in that order,
   because ggml asserts at process exit if any buffer is alive, which would take the server down
@@ -126,8 +132,10 @@ loaded, the first ask loads it on the worker thread and waits the second or two.
    the log-probability of each token given the ones before: the first from the question's
    logits, the rest by decoding the choice one token at a time, then rewinding to the end of
    the question for the next choice. A one-token choice costs no decode.
-4. Softmax over the choices' scores. The best is the answer; its probability is the confidence.
-   A tie keeps the first choice.
+4. Softmax over the choices' scores. At `brain.temperature` 0 the best is the answer, a tie
+   keeping the first choice; above 0 (0.7 by default) the answer is a seeded draw weighted by the
+   scores over the temperature, so the same situation is not always answered the same way. The
+   answer's probability is the confidence.
 
 The mean, not the sum, so a two-word choice is not punished for being two words. Choices are
 kept short and plain for the same reason: `move a torch`, not `relocate the nearest light
@@ -145,8 +153,8 @@ model only in the ignored `model::` tests, which need the file (see
 - **One thread, `lodger-model`,** started on the first ask with a loader closure, which reports
   whether the model loaded before the first job is accepted. A load failure is the asker's error
   and the worker does not stay up.
-- **Jobs** carry an id, an optional key, the situation and the questions, and a channel to reply
-  on. `MAX_QUEUED` is 64 (`brain.queue`); a full queue refuses the job with a message, so the
+- **Jobs** carry an id, an optional key, the situation and the questions (or, for a written line,
+  the prompt and its leash), and a channel to reply on. `MAX_QUEUED` is 64; a full queue refuses the job with a message, so the
   brain can fall back at once rather than wait.
 - **Keys.** The worker keeps the newest job id per key. When it takes a job whose key has a newer
   id waiting, it replies `superseded` without scoring. A job already being scored finishes.

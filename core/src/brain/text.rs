@@ -1,6 +1,6 @@
 //! The words the lodger writes and says, by what they are for. Each kind has a bank of short
-//! handwritten lines; today an event picks one from its bank by seed. In phase 4 the same banks
-//! are the examples the model is shown before it writes a line of that kind itself
+//! handwritten lines. The same banks are the examples the model is shown before it writes a line
+//! of that kind itself
 //! (`brain.text = "generate"`, the default; see `docs/brain.md`, Text), so a sign after a kill
 //! is shown sign-after-a-kill examples and a whisper is shown whispers, and `bank` falls back
 //! to picking from here when a generated line fails its checks.
@@ -137,7 +137,7 @@ impl Kind {
         }
     }
 
-    /// How many words a line of this kind may run to, for the model's leash in phase 4.
+    /// How many words a line of this kind may run to, the model's leash.
     pub fn most_words(self) -> usize {
         match self {
             Kind::SignWord | Kind::Whisper => 2,

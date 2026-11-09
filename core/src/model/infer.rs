@@ -73,7 +73,7 @@ fn load_engine(settings: &Settings, rng: Arc<Mutex<Rng>>) -> Result<Engine, Stri
 
     if !path.is_file() {
         return Err(format!(
-            "missing {}, fetch it with /craftkit lodger model download",
+            "missing {}: it is downloaded on the title screen (or Use the model in the settings)",
             path.display()
         ));
     }

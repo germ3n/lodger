@@ -270,8 +270,7 @@ impl ModelSize {
         }
     }
 
-    /// Its license: Apache 2.0, but for the 3B, which is under Qwen's research license (the
-    /// screen said Apache for every size until now).
+    /// Its license: Apache 2.0, but for the 3B, which is under Qwen's research license.
     pub fn license(self) -> ModelLicense {
         match self {
             Self::Small => ModelLicense {
@@ -343,7 +342,8 @@ pub struct Model {
     /// Whether the model is used at all: off, nothing is downloaded and the rule brain decides
     /// (the download screen's "Play without it", or the settings; owner).
     pub enabled: bool,
-    /// `0.5b`, `1.5b` or `3b`: which Qwen2.5-Instruct to run. See `docs/model.md`.
+    /// `0.5b`, `1.5b` or `3b`, a Qwen2.5-Instruct, or `4b`, Qwen3-4B-Instruct-2507: which model
+    /// to run. See `docs/model.md`.
     pub size: String,
     /// Where to fetch from. Empty means Qwen's own file for `size`.
     pub url: String,
@@ -521,9 +521,6 @@ impl Default for Multiplayer {
     }
 }
 
-/// Numbers written whole with a point (`2.0`) read as whole numbers, so a count written by a
-/// settings screen or by hand that way still loads: `2.0` for `brain.most_plans` refused the
-/// whole config, and the mod with it (the dev client). A fraction keeps its point.
 /// A config file whose preset was just changed, with the old preset's values taken out: every
 /// value the file holds that is the old preset's own, so the new preset's apply. A file holds
 /// every key, written at the first start, and picking `calm` on the settings screen used to
@@ -567,6 +564,9 @@ fn strip_same(file: &mut serde_json::Value, base: &serde_json::Value) {
     });
 }
 
+/// Numbers written whole with a point (`2.0`) read as whole numbers, so a count written by a
+/// settings screen or by hand that way still loads: `2.0` for `brain.most_plans` refused the
+/// whole config, and the mod with it (the dev client). A fraction keeps its point.
 fn whole_numbers(value: &mut serde_json::Value) {
     match value {
         serde_json::Value::Number(number) => {

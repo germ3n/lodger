@@ -47,7 +47,7 @@ loader adds its entry point and events. The host:
 - refuses clients that do not run the host, with a configuration-phase channel on Fabric and a
   required payload on NeoForge, because Rust mods' client-side effects need the host on both
   sides;
-- from phase 2 on, runs each mod's worlds once a tick: observations in, commands out, and the
+- runs each mod's worlds once a tick: observations in, commands out, and the
   executors that carry commands out against the game (see [What the host does for a mod](#what-the-host-does-for-a-mod)).
 
 A mod's assets load as any mod's do, so a content jar without a usable native (another platform,
@@ -247,6 +247,7 @@ pub trait Mod: Sized + Send + Sync + 'static {
     fn report(&self, world: &mut Self::World, reports: &[Report]);
     fn save(&self, world: &Self::World) -> Vec<u8>;
     fn close(&self, world: Self::World) { drop(world) }
+    fn debug(&self, world: &mut Self::World, request: &DebugRequest) -> DebugReply { /* no page */ }
 }
 ```
 
@@ -289,8 +290,8 @@ written from the lodger's needs and generalized as a second mod needs them:
   schedule, not every tick: a quiet tick carries a player's position and nothing else.
 - **Scoring,** for mods that use a model as the lodger does: the SDK has no model in it; the
   lodger's `model/` is the lodger's. What the SDK gives such a mod is the observations above in
-  a form `describe` can turn into lines of text, and a worker-thread pattern (`sdk::work`) for
-  bringing answers back inside `tick`.
+  a form `describe` can turn into lines of text; bringing a worker thread's answers back inside
+  `tick` is the mod's own, as the lodger's model does it.
 - **Commands:** log a line, scan a box for block kinds, look around a point for the
   surroundings' features, play a sound to a player at a place, send a client hint (a kind, a
   place, a duration; the kinds the client renders are in [Glitches](architecture.md#what-the-client-knows)),
@@ -312,8 +313,8 @@ written from the lodger's needs and generalized as a second mod needs them:
   facing them, holding an item, gone after its seconds or when they come within its vanishing
   distance) and take it away, show a second entry with a player's own name in their player
   list for a while, send a line in the game's own words to one player (`joined`, `left`, `says`
-  in their own name, `whisper` from themselves, `sleepers` on the action bar), spawn and drive a
-  figure in a player's skin (phase 5). Each has a `fits` the host's executor checks before
+  in their own name, `whisper` from themselves, `sleepers` on the action bar), and the rest the
+  ABI history above names. Each has a `fits` the host's executor checks before
   running (see [Events re-check](entity.md#events-re-check-before-they-happen)), and an unknown
   command is reported as such rather than dropped.
 - **Reports:** per command, `done` or `did not fit` with why.
@@ -348,18 +349,19 @@ The host owns the Minecraft side so a mod never has to: the FFM binding, the per
 the senses (the observations above, the scans and the daily surroundings pass, sliced over ticks
 so none of it shows in a tick profile), the saved data (a mod's world bytes as a byte array in
 the world's saved data), the executors for every command and their `fits` checks, the client
-side (the glitch renderers for hints, sounds, the debug screen, figure renderers in phase 5)
+side (the glitch renderers for hints, sounds, the debug screen, the settings and preparing
+  screens, the figure as packets to one client)
 and the packets to carry them, the commands (`/craftkit status`, and each mod's debug commands
 as `/craftkit <id> ...`), and the handshake. A
-new command is a row in the protocol, an executor in `host/common`, a game test for it, and a
-line in this page.
+new command is a row in the protocol, an executor in `host/common` (`core/tests/host_carries_out.rs`
+fails without one), and a line in this page.
 
 ## Testing a mod without a game
 
 `craftkit::harness!()` builds a `Harness` from the functions `export_mod!` exported in the same
 crate, and drives them as the host does: bytes in, JSON out, panics caught, the ABI version
-checked. A mod's tests ask it `info` and `init` (and from phase 2 open a world and tick it with
-scripted observations) in `cargo test`, in milliseconds. The SDK's own `tests/exported.rs` does
+checked. A mod's tests ask it `info` and `init`, open a world and tick it with scripted
+observations, in `cargo test`, in milliseconds. The SDK's own `tests/exported.rs` does
 the same with a two-line mod, and is the test of the macro.
 
 ## Versions and publishing

@@ -25,8 +25,8 @@ layout:
 | NeoForm | 26.3-1, the vanilla jar `host/common` compiles against | the same |
 | Gradle | 9.8.2 | `host/gradle/wrapper/gradle-wrapper.properties`, and `mod/`'s copy |
 | Mappings | Mojang's official ones, on both loaders. Yarn ended at 1.21.11, so there is no `mappings` line | nothing to pin |
-| llama.cpp | the commit `llama-cpp-2`'s pinned `llama-cpp-sys-2` builds, so the crate's version pins it | `core/Cargo.toml`, from phase 1 |
-| cmake and a C++ compiler | whatever the machine has; the CI's runners' own | for `llama-cpp-sys-2`, from phase 1 |
+| llama.cpp | the commit `llama-cpp-2`'s pinned `llama-cpp-sys-2` builds, so the crate's version pins it | `core/Cargo.toml` |
+| cmake and a C++ compiler | whatever the machine has; the CI's runners' own | for `llama-cpp-sys-2` |
 
 Confirmed against meta.fabricmc.net (game, loader), Mojang's version manifest (26.3
 and 26.2 both run Java 25), Modrinth (the Fabric API build for 26.3), maven.neoforged.net
@@ -113,8 +113,8 @@ A stay takes weeks of play by design. For development:
   and why each waits, the chains (each open one's steps, the landed ones in brackets, and
   whether its next is weighed up or waits on them; those walked and those that fell out), how
   the figure was looked at lately, what it did lately, what it never forgets, the last decision log
-  entries, and buttons (move in, next stage, decide now, drop the plans, forget cooldowns,
-  forget everything); the Events tab every event with whether it is offered right now
+  entries, and buttons (move in now, next stage, decide now, drop the plan, forget cooldowns,
+  fight it now, forget everything); the Events tab every event with whether it is offered right now
   and the first reason it is not, a filter, and a Fire button that forces it on the next tick
   past every rule but the ones that protect what the player built (no digging within 8 blocks
   of it); the Log tab the last events the senses took in and the last commands carried
@@ -163,7 +163,7 @@ from the start.
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all --check
-cargo test -p lodger-core -- --ignored model::     # needs the real model at core/models/qwen-1.5b.gguf (or qwen.gguf
+cargo test -p lodger-core -- --ignored model::     # needs the real model at core/models/qwen-1.5b.gguf (or qwen.gguf)
 ```
 
 - **The SDK's tests:** the ABI helpers (`abi.rs`), the harness refusing another ABI version, and
@@ -173,15 +173,20 @@ cargo test -p lodger-core -- --ignored model::     # needs the real model at cor
 - **Unit tests** of the pure parts: softmax and scoring math, `Memory::describe`'s lines, the
   memory's bounds, the rules, the arc's stage conditions, serialization across format versions.
 - **Scripted stays** (`core/tests/stays.rs`): a `Player` script (a home, a daily route, a chest
-  opened each morning, reactions to events) drives a `Stay` tick by tick for fourteen in-game days
-  against an `Echo` or a table-driven fake scorer, and the test checks what the lodger did: that
-  stage one never offered `take`, that nothing happened within reach in view, that the hard
-  ending dealt exactly one death, that a `superseded` reply did not event. These are the tests that
-  prove the rules.
+  opened each morning, reactions to events) drives a `Stay` tick by tick for days against the
+  rule brain, through the SDK's harness, and the test checks what the lodger did: that nothing
+  happens before it moves in and the first stage offers only small things, that nothing lands
+  in view, that no event lands inside its cooldown or past its cap, that a disabled event never
+  happens, that a saved stay reopens where it was, that nothing happens after the ending. These
+  are the tests that prove the rules.
+- **The host carries out every command** (`core/tests/host_carries_out.rs`): a command added to
+  the protocol without an executor in the host fails here, read from both sources.
 - **Model tests**, ignored by default, load the real model and check that known situations score
-  the expected way: `The player walked toward the figure twice` makes `to be looked at` win over
-  the other wants, and an empty-feeling situation leaves `nothing yet` with the most probability.
-  They are the regression tests for prompt changes.
+  the expected way: a player who walks toward the figure makes `to be looked at` win over the
+  other wants, and two questions on one situation score as each asked alone. They are the
+  regression tests for prompt changes. **Calibration** (`core/tests/calibration.rs`, ignored) runs
+  a scripted stay against the real model and prints every decision, for
+  [the calibration notes](calibration/).
 - **Harness tests** in the mind (`core/src/lib.rs`) call `info` and `init` through the exported
   functions, as the host would, with good and bad config, and check that nothing panics across
   the boundary.
@@ -199,17 +204,16 @@ cargo test -p lodger-core -- --ignored model::     # needs the real model at cor
 ```sh
 cd host
 ./gradlew test               # JUnit in common: the manifest, the native's names and extraction, the config file, the versions agreeing
-./gradlew :fabric:runGametest  # game tests (phase 3): each command's executor against a built test world
 ```
 
-Each command's executor gets one game test: the world is set up (a house, a chest with an iron
-pickaxe, a torch), the command is run, and the world is checked, including that `fits` refuses
-when the target is standing in view. These are the tests that prove the body does what the mind
-said and nothing more.
+Besides those, JUnit covers the download and the license acceptance, the settings, the debug
+panel's layout, and the pure parts of the world edge (`world/`: facing, gaze, moves, slots,
+scans, the warp's math). There are no game tests: an executor is seen working in the dev
+client.
 
 As in `~/chainv4`: each module keeps its tests next to it, as `tests.rs` or an inline
 `mod tests`, and tests read as sentences: `a_queued_plan_is_superseded_by_a_newer_one`,
-`nothing_happens_within_24_blocks_while_in_view`. Every change adds tests, updates the ones it
+`no_event_lands_inside_its_cooldown_or_past_its_cap`. Every change adds tests, updates the ones it
 changes the truth of, and removes those with nothing left to prove. A test is never weakened to
 make it pass. A test that needs the real model is `#[ignore]` with a sentence saying why, not
 skipped in silence.
@@ -231,19 +235,20 @@ skipped in silence.
 - **The host is nobody's mod.** Nothing in `host/` names the lodger. A capability the lodger
   needs is a command of the protocol any mod could send, with an executor written for the
   general case.
-- **Text the player sees is written once, in `mod/src/main/resources/assets/lodger/lang/`.** The
-  signs' words, the status lines, the native's error. Nothing the model chooses is shown as text;
-  the model chooses events.
-- **The situation text and the choices are in `brain/text.rs`,** nowhere else, so a prompt change
-  is one diff and the model tests cover it.
-- **No `static mut`, one `OnceLock`:** the model worker, which is one per process on purpose. All
-  else is owned through `Stay`.
+- **Text the player sees is written once.** The host's screens and messages in
+  `host/common/src/main/resources/assets/craftkit/lang/`; the lodger's signs, books and chat lines
+  in `brain/text.rs`'s banks, which are also the examples the model is shown when it writes a
+  few words itself (`brain.text`), checked and filtered, with a bank line when a check fails.
+- **The situation text is in `brain/situation.rs` and the questions in `brain/mod.rs`,** nowhere
+  else, so a prompt change is one diff and the model tests cover it.
+- **No `static mut`.** The one mod of the process, and with it the model worker, is held by
+  `export_mod!`, one per process on purpose. All else is owned through `Stay`.
 - **No panics across the FFI,** and no `unwrap` in the mind outside tests. Errors are strings in
   JSON the body logs.
 - **Comments say why.** Full sentences. A cap has its reason beside it.
 - **Docs and tests land with the change, every change,** as `~/chainv4` does it: the page for
   the part, [Good to know](good-to-know.md) for what would surprise someone, a `[x]` in
-  [Todo](todo.md) saying what was done and when with the old text kept after `Was:`, and the tests
+  [Todo](todo.md) saying what was done with the old text kept after `Was:`, and the tests
   above. A change is reported with exactly which checks ran and how they came out.
 - **Commit messages:** a lowercase first line saying what it lets the lodger or a player do, then
   `- area: ...` bullets, then `- docs:` and `- tests:`.
@@ -255,9 +260,7 @@ crates' own license files and llama.cpp's (adapted from `~/chainv4`'s). Run it a
 any dependency changes; it stops with a message when a crate no longer carries what it expects. Both
 jars carry it at their root, beside `LICENSE_lodger`.
 
-The jar carries llama.cpp (MIT) and ggml (MIT) compiled into the native, plus every Rust crate
-in `core/Cargo.lock` and the Java dependencies Loom bundles. `scripts/gen_notices.py`, adapted
-from `~/engine`'s, writes `THIRD_PARTY_NOTICES.txt` from the lockfile and Gradle's dependency
-report, with the licence text of each, and stops naming what to update when a crate it expects
-is gone. Run it after changing dependencies; it ships inside the jar at `META-INF/`. The model
-is not a dependency: the player downloads it, and its Apache-2.0 notice is Qwen's to give.
+The jar carries llama.cpp (MIT) and ggml (MIT) compiled into the native, every Rust crate the
+mind links from `Cargo.lock`, and XZ for Java (0BSD) in the host jar, each with its licence text.
+The model is not a dependency: the player downloads it, and its license (Apache-2.0, or Qwen's
+research license for the 3B) is named, not reproduced.

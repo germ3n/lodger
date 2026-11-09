@@ -253,8 +253,8 @@ fn model_url(config: &Config) -> String {
     }
 }
 
-/// A seed that differs per start, so two starts do not pick the same way; logged so a run can
-/// be replayed. The world's seed joins it when a world opens (phase 2).
+/// A seed that differs per start, so two starts do not pick the same way. The world's seed joins
+/// it when a world opens.
 fn start_seed(init: &Init) -> u64 {
     use std::hash::{Hash, Hasher};
 

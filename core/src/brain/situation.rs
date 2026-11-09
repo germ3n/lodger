@@ -1,7 +1,7 @@
 //! The situation text the model reads: a fixed frame, the memory's lines, and the way a question
 //! and its choices are appended (`docs/brain.md`, The situation text). Everything in it is text
-//! the mod wrote; a player's words never reach it (chat lines are described, not quoted, by
-//! `Memory::describe`'s template).
+//! the mod wrote, but for the last line of chat about it, quoted as the player said it (its
+//! words filtered before anything it writes is shown).
 
 /// The frame around the memory's lines, the same every time.
 pub const FRAME: &str = "You are a quiet presence living unseen in a player's house in a game. \

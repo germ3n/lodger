@@ -14,6 +14,19 @@ Something moves into your world and learns how you play. Not quite horror. Come 
 
 ## Description
 
+### Generative AI notice
+
+- **A language model drives the lodger's decisions while you play.** It reads a short,
+  plain-English account of what the lodger knows about you and picks among choices the mod
+  defines. It cannot invent actions. Every rule the mod sets (what it may never do, when, how
+  often) is checked after every choice. It also writes a few words now and then (on a sign, in a
+  book, or a chat line in your name). These are kept short, letters only, and filtered, with a
+  hand-written line used instead if a check fails.
+- **The lodger reads your server's chat** for lines about it, and keeps at most the last
+  eight. Everything it learns stays in your world's save, on your machine.
+- **This mod was made with the help of generative AI** (Anthropic's Claude), working on
+  the code, the tests and the documentation alongside its author.
+
 **Play Minecraft as you always do.** Build, mine, farm, sleep. Something has moved in. You will
 not see it for a long time. It notices where you sleep, which chest you open first, the way you
 walk home, and it uses what it noticed.
@@ -31,6 +44,18 @@ because what it does comes from what *you* did.
 - **Starting fresh?** Pick a calmer preset on the title screen's settings (Lodger, then
   `calm` or `balanced`).
 - **Don't read the spoilers below** if you want to find out for yourself.
+
+### What it never does
+
+- It never breaks what you built, and never takes anything for good: what it moves comes back,
+  somewhere.
+- It never makes anything of value out of nothing. What it makes is its own work: the books it
+  writes, a potion of its brewing, a little more in your composter.
+- It never kills you before the very end of a stay, and never harms another player. It can nip
+  at you from the middle of a stay (half a heart, never below half a heart), and from later on
+  hit harder, always spared.
+- What it does to your house, it does while you look away.
+- It lives in the overworld. Past a portal, you are mostly on your own.
 
 ### Presets
 
@@ -84,27 +109,14 @@ no GPU it all runs on the CPU.
 "Memory in all" is RAM and VRAM together. At the default nearly all of it is VRAM; with
 `model.gpu_share` at `0`, or no GPU, all of it is RAM. The figures are estimates and vary with your system. The model
 uses two CPU threads while it thinks and runs on its own thread, so the game never waits for
-it. It loads when someone is playing and unloads when no one is.
+it. It loads before you play and unloads after ten minutes with no one playing.
 
 On a server, the model runs on the server; a client that only plays there can press **Play
 without it** and download nothing.
 
-### Generative AI notice
-
-- **A language model drives the lodger's decisions while you play.** It reads a short,
-  plain-English account of what the lodger knows about you and picks among choices the mod
-  defines. It cannot invent actions. Every rule the mod sets (what it may never do, when, how
-  often) is checked after every choice. It also writes a few words now and then (on a sign, or
-  a chat line in your name). These are kept short, letters only, and filtered, with a
-  hand-written line used instead if a check fails.
-- **The lodger reads your server's chat** for lines about it, and keeps at most the last
-  eight. Everything it learns stays in your world's save, on your machine.
-- **This mod was made with the help of generative AI** (Anthropic's Claude), working on
-  the code, the tests and the documentation alongside its author.
-
 ### Operators
 
-`/craftkit status`, `/craftkit lodger show`, and a debug screen (F8, with an overlay on F9,
+`/craftkit status`, `/craftkit lodger status`, `leave` and `reset`, `/craftkit lodger show`, and a debug screen (F8, with an overlay on F9,
 operators only) that shows what it knows, what it plans and why. Every decision is logged in `config/lodger/decisions.log`.
 
 <details>
@@ -117,7 +129,11 @@ operators only) that shows what it knows, what it plans and why. Every decision 
   still.
 - A figure, far off, wearing your skin, walking the path you walked yesterday.
 - It builds. Slowly. Not far from you.
-- It writes. A villager has a book for sale with your name on it. Read it.
+- It writes. A villager has a book for sale with your name on it. Read it. If you do not buy
+  it, someone brings it to you. A letter in your chest. Its notes on your lectern. A page in
+  your own book.
+- One night you wake in your house, and it is not your house.
+- It has a temper. How you treat it changes how it treats you.
 - In the end, it leaves, it takes, or it stays, depending on how you treated it.
 
 </details>

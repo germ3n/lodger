@@ -1,25 +1,14 @@
 # Notes and todo
 
-What lodger still lacks, which is everything, in the order to build it, and what
-got done. The things to keep in mind while running or changing it are in
+What lodger still lacks, in the order to build it, and what got done. The things to keep in mind while running or changing it are in
 [Good to know](good-to-know.md), and how each part works is in the [docs](README.md).
 
 ## Where it stands
 
-**Paused.** The Rust side (`sdk/`, `core/`) builds and passes: `cargo test
---workspace` 22 tests, clippy and rustfmt clean, `target/release/liblodger_core.dylib` built.
-The host (`host/`), the content jar build (`mod/`) and the CI are written but have not compiled
-once: the machine's network was too slow to fetch Gradle's 151 MB distribution or a JDK 25, so
-every Gradle run stopped at the download. Nothing is committed yet. To pick up:
-
-1. Get Gradle and a JDK in place: `brew install openjdk@25` (or let `host/`'s foojay resolver
-   fetch one), and let `./gradlew` download its distribution, or put `gradle-9.8.2-bin.zip` in
-   `~/.gradle/wrapper/dists/gradle-9.8.2-bin/<hash>/` yourself.
-2. `cd mod && ./gradlew jar`, then `cd host && ./gradlew build`. Expect the Java to need fixes
-   against the real Fabric API, NeoForge and Mojang-mapped names (the networking and the
-   `IModFile.findResource` calls were written from memory). `host/common`'s JUnit tests run in
-   that build.
-3. Make the two phase-0 items `[x]` with the date, then the dev-client item.
+The mind, the host and both jars build and pass their tests, and the lodger has been played
+in the dev client: the whole catalogue is coded, the model decides and writes, and ten bug passes are
+done. What is next, in order, is in [Queue](queue.md); every open `[ ]` below is something still
+to do.
 
 ## Todo
 
@@ -1201,6 +1190,12 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **What is only here a while gives nothing, and no frame turns in view** (owner: "can you
+  fix those 2"): a placed-for-a-while animal (`one_more`'s, the squid under the water) cannot be
+  hurt, comes shorn, lays no egg and cannot breed, and is never a mooshroom (shorn, one became a
+  cow that stayed); the frames and stands an event turns, empties, swaps or dresses are only ones
+  out of their view. Tests: a frame in front of them left alone. Was: killed, the animal dropped
+  its meat, leather or ink; a frame turned or a stand was dressed as they watched.
 - [x] **The tenth bug pass** (five reviewers, the fifth on the events one by one; about forty
   found). A snowman's head made a real snow golem (a pumpkin or a head is set without waking
   what it tops now); a wither skeleton's skull, iron bars and tinted glass came from nothing; a
@@ -1225,8 +1220,7 @@ The `[x]` lines above, summed up by day:
   emulated Java is told to use an arm64 one); the Linux Docker build names its target, so its
   build scripts never run the AVX2 code; the glibc floor is 2.34 on both sides. Tests: the put
   back's drop, abandon, the bed far off, the friend's blocks, the shaft's takes, the pot's order.
-  Left: the temporary animals of `one_more` and `under_the_water` drop as any mob; frames and
-  stands turned or dressed are not checked for view. Was: all of that.
+  Was: all of that.
 - [x] **One x86_64 baseline** (owner: "AVX2 + clear refusal"): the three x86_64 natives are
   built for x86-64-v3 (`.cargo/config.toml`'s `target-cpu`, which llama-cpp-sys-2 hands on to
   llama.cpp), and the host refuses one on a CPU without AVX2 before loading it, naming why
@@ -1433,10 +1427,15 @@ The `[x]` lines above, summed up by day:
 
 ## At the very end
 
-- [ ] **A pass over the docs for anything stale** (owner): every page under `docs/`, the README,
-  `mod/modrinth.md` and the config's comments read against the code as it is: features, numbers,
-  commands and paths that changed, dates that crept back in, promises the mod no longer keeps.
-  After the last bug pass.
+- [x] **A pass over the docs for anything stale** (owner). Done: every page under `docs/`, the
+  README, `mod/modrinth.md` and the config's comments read against the code and put right: the
+  status lines (design only, phases still to come) now say where it stands, the paths and
+  modules as they are, ABI 52, the four model sizes, the GPU by default, six natives, the stage
+  table and the counts from `arc.rs` and the catalogue, the hint kinds the client renders, the
+  tests as they are (no game tests), the seed and `brain.queue` as the code has them, and no
+  time words. Was: every page under `docs/`, the README, `mod/modrinth.md` and the config's
+  comments read against the code as it is: features, numbers, commands and paths that changed,
+  dates that crept back in, promises the mod no longer keeps. After the last bug pass.
 
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved

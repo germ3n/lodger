@@ -1,8 +1,10 @@
-//! The model layer: Qwen 0.5B scoring fixed choices against a situation, on a worker thread.
+//! The model layer: Qwen (the size `model.size` picks) scoring fixed choices against a
+//! situation, on a worker thread.
 //!
-//! Ported from `~/engine/game/base/src/ai/`, with the game taken out. The model never writes
-//! text: [`ask`] hands it a situation and questions with choices, and it answers the choice it
-//! finds most probable as the continuation, with a confidence (see `docs/model.md`). One
+//! Ported from `~/engine/game/base/src/ai/`, with the game taken out. [`ask`] hands it a
+//! situation and questions with choices, and it answers the choice it finds most probable as the
+//! continuation, with a confidence; it also writes the few short lines `brain.text` asks of it
+//! (see `docs/model.md`). One
 //! [`Model`] per process, owned by the `Lodger`, holding the worker once it has started.
 
 pub mod queue;

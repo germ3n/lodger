@@ -16,13 +16,13 @@ reports (`client4.log`, twenty-five minutes of play).
 - **A2. `hostiles_stare` is an ordinary event,** offered at night from stage three when three or
   more hostile mobs are within 48 blocks, chosen by the model or the rules like any other.
   When it ends (dawn, or ten minutes at most) each mob gets its own AI back exactly as it was
-  and walks, paths and attacks as normal; zombies and skeletons burn at dawn as always. Not yet
-  compiled or seen in a game (the queue's paused item).
+  and walks, paths and attacks as normal; zombies and skeletons burn at dawn as always.
 - **A3. Villagers.** `stare` turns animals and villagers; `village_abandoned` (all of them in
-  one house) is a separate event, written up but not coded.
-- **A4. Plans run side by side,** up to three (`brain.most_plans`), since `a4a6aa1`.
+  one house) is a separate event, coded in batch 12.
+- **A4. Plans run side by side,** up to three by default (`brain.most_plans`).
 - **A5. Nether and End.** None, by a rule set on day one: "it never follows the target into
-  another dimension; coming back, it has been busy." See question Q7.
+  another dimension; coming back, it has been busy." See question Q7. **Since Q7:**
+  `ghast_name` in the Nether, `ender_holds` in the End, and `busy_away` at home (batch 16).
 - **A6. `ice_path`** lays a line of ice across the lake nearest the house, from the shore
   toward its place, as if something walked over the water. It did nothing because it aimed
   at the wrong height (B4).
@@ -136,8 +136,8 @@ a separate event that can stack ... fog_close ... why not the actual fog?"
 The owner: "there need to be more events where we get attacked or something happens close to
 you"; "passive mobs randomly aggro and attack you".
 
-The rule today: it never harms a player before the last stage, and nothing changes within
-64 blocks in view. Close events and attacks need the rule loosened by stage. See Q1 and Q2.
+The rule then: it never harmed a player before the last stage, and nothing changed within
+64 blocks in view. Close events and attacks needed the rule loosened by stage. See Q1 and Q2.
 
 - **F1. `turned`**: a cow, pig or sheep near you stops, stares, then walks at you and butts
   you (a knockback, half a heart at most), then wanders off as if nothing happened. Stage 3+.
@@ -157,6 +157,10 @@ The rule today: it never harms a player before the last stage, and nothing chang
   stopping when you move. Stage 3.
 - **F10. `torch_out_in_hand`**: the torch in your offhand goes out (the light stops, the item
   stays). Stage 3.
+
+**Done** (batches 3, 6, 14 and 16): F1 is `animals_turn`, F4 `figure_nip` and `figure_swing`, F8
+`woke_elsewhere`, the rest by their own names; F10 cannot be (a torch in the hand gives no
+light in the game).
 
 ## G. More events (the owner's and the model's)
 
@@ -178,6 +182,9 @@ The rule today: it never harms a player before the last stage, and nothing chang
 - **G11. Nether and End rows**, if Q7 says yes: in the Nether, the ghast cries are your
   own name; in the End, an enderman holds your favourite block; coming home, it has been
   busy (a landmark event set while you were away).
+
+**Done** (batches 2, 12, 15 and 16), each by its own name; G2 is `village_abandoned`, G11
+`ghast_name`, `ender_holds` and `busy_away`.
 
 ## H. Questions
 
@@ -214,7 +221,7 @@ The rule today: it never harms a player before the last stage, and nothing chang
 batches, check each is properly implemented, fix it, test it, flesh it out, ask questions
 along the way, and add the new ones.
 
-- **Q1. Harm before the last stage.** Today nothing touches you before stage five. For
+- **Q1. Harm before the last stage.** Then, nothing touched you before stage five. For
   F1, F4, F5, F8: allow small harm (knockback, half a heart, no death) from stage 3 or 4? Or
   only make it look like an attack (sound, shake, knockback, no damage)?
 - **Q2. Close and in view.** Allow some events to happen in front of you (F2, F3, F6) from
@@ -246,11 +253,12 @@ along the way, and add the new ones.
 
 - **L1. The door they use, for the model** (asked): the memory could count which
   door they come and go by and say so ("They come and go by the north door"), so door events
-  are planned on knowledge. A proposal.
+  are planned on knowledge. **Done** with N1 (`core/src/habits.rs`).
 - **M1. A bug check pass and an optimization run** (owner) once the event review is
-  done: every module read for bugs, every per-tick path timed.
+  done: every module read for bugs, every per-tick path timed. **Done:** the bug passes and
+  the performance pass in [Todo](todo.md).
 - **M2. Inference and the game's frame rate** (owner: "limit it to like 50% gpu cuz it makes
-  my game stutter"): **done**, `model.gpu_share` 0.5 and chunked decoding (the old `gpu_layers` had never been passed on).
+  my game stutter"): **done**, `model.gpu_share` and chunked decoding (the old `gpu_layers` had never been passed on). The share was 0.5; it is 1 by default now (owner: the full model on the GPU), with `model.pause_ms` resting between each piece of the work.
 
 - **N. Better memory** (owner: "we should make better memory ... find stuff that
   can be done better"; every proposal taken):
@@ -282,14 +290,15 @@ along the way, and add the new ones.
 
 The owner's standing ask: every event, section by section, checked in code and in the game,
 fixed, given its scope (home, any house, either; Q4), fleshed out, tested, with questions per
-batch. 139 of the catalogue's rows are coded. The order, smallest risk first, the
-sections with the most coded rows early so the play sessions find the most:
+batch. 139 of the catalogue's rows were coded when it began; all 299 are now. The order,
+smallest risk first, the sections with the most coded rows early so the play sessions find the
+most:
 
 | Batch | Section | Coded | Not yet |
 | --- | --- | --- | --- |
 | 1 | Sounds | 22 (eight more on the owner's ask) | **Done:** scope any house, theirs first; block sounds; `knock` soft (2, 3) and `knock_heavy` (4, 5); three to five ways each. |
 | 2 | Containers | 12 | **Answered:** home only; all four missing; new `chest_full_of_one` (dug dirt), `renamed_item`, `returned_used`, `chest_answers`. **Done so far:** the taken item kept itself (it came back plain), forgiving moves, `renamed_item`, `returned_used`, `chest_answers`, `book_word`, `map_marked`, `hopper_emptied`, `shulker_moved`, the dug store and `chest_full_of_one`: the batch is done. |
-| 3 | The house; The house, changed | 13 | **Answered:** doors and windows any house, changes home only; all seven; the house read often and wider; four new (furniture shifted, one room dark, door held, bed turned). **Done so far:** the home read, the door and window scope, `door_hinge`, `ladder_gap`, `flowers_potted`, `pumpkin_face`, `tree_grown`, `backfill`. `alcove` (one block of stone behind a wall, the owner's exception), and the four new: `furniture_shifted`, `one_room_dark`, `door_held`, `bed_turned`. The batch is done. | door_hinge ladder_gap flowers_potted alcove backfill tree_grown pumpkin_face |
+| 3 | The house; The house, changed | 13 | **Answered:** doors and windows any house, changes home only; all seven; the house read often and wider; four new (furniture shifted, one room dark, door held, bed turned). **Done so far:** the home read, the door and window scope, `door_hinge`, `ladder_gap`, `flowers_potted`, `pumpkin_face`, `tree_grown`, `backfill`. `alcove` (one block of stone behind a wall, the owner's exception), and the four new: `furniture_shifted`, `one_room_dark`, `door_held`, `bed_turned`. The batch is done. |
 | 4 | Lights and fire | 7 | **Done:** `lantern_ahead`, `cave_lit`, `lights_out`, `soul_swap`, `death_light`, `light_taken`, `warped_animal`. **Answered:** `lantern_ahead` (a lantern from their chest) and `cave_lit` (its own torches) both, caves found by the cave air near them; four new: lights out as they pass (stage 4, night, back after a minute), soul fire swap (stage 3), a light where they died (stage 2+), their last light taken along their route (stage 3). And the owner's warped animals ("warped versions of the entity ... a cow or pig model"): too tall, upside down, head always on them, closer each time they look away and gone when walked up to; one of their own animals warped for a minute and put back, or an animal outside when they have too few ("3 but also mobs outside if they dont own enough"). |
 | 5 | Beds and rest | 5 | **Done:** `shift_bed`, `sheets_changed`, `under_the_bed`, `foot_of_bed`, `second_bed`; the panel's Shift+click. **Answered:** `shift_bed` built (both halves, while away); `turn_bed` is batch 3's `bed_turned`; four new: sheets changed (stage 3, another colour), under the bed (stage 3, scratching as they lie down), at the foot of the bed (stage 4, the figure for half a second as they wake), a second bed beside theirs (stage 4). And the debug panel's teleport needs Shift+click (the owner was moved into a cave by a stray click). |
 | 6 | Farm and animals | 12 | **Done:** `scarecrow`, `bees_out`, `horse_moved`, `field_word`, `face_the_house`, `one_more`, `row_withered`, `eggs_to_door`, `animals_nip`, `animals_turn`; the field read. **Answered:** all four built (`scarecrow`, `bees_out`, `horse_moved`, `field_word`); four new: they face the house at dawn (stage 4), one more in the pen till noon (stage 3), a row withered back to seedlings (stage 3), eggs from the coop to the door (stage 2); and "animals turn on you" brought here from batch 16, by the harm stages (small harm from 3, real from 4). |

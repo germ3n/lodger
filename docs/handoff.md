@@ -2,8 +2,7 @@
 
 For whoever picks this up next, a person or a model that has never seen the repository: what
 this is, how it is built, where things are, how to work in it, and where to start. Written
-at the end of the first two days, at the owner's ask ("a guide to help the next model
-continue"). [Queue](queue.md) is the short version that every session reads first; this page is
+at the owner's ask ("a guide to help the next model continue"). [Queue](queue.md) is the short version that every session reads first; this page is
 the long one, read once.
 
 ## In one paragraph
@@ -33,7 +32,7 @@ page in `docs/` explains one part and is kept true as code lands.
 ## The shape of the code
 
 ```
-sdk/src/        craftkit: lib.rs (Mod trait, export_mod!, ABI 21), abi.rs, protocol.rs (Init,
+sdk/src/        craftkit: lib.rs (Mod trait, export_mod!, ABI 52), abi.rs, protocol.rs (Init,
                 InitReply, Resource, Status), world.rs (Observations, Command, Report, Now),
                 debug.rs (DebugRequest, DebugReply), harness.rs (drive a mod in tests)
 core/src/       the lodger: lib.rs (the Mod impl), config.rs (presets, sizes, bounds),
@@ -42,8 +41,13 @@ core/src/       the lodger: lib.rs (the Mod impl), config.rs (presets, sizes, bo
                 World: JSON save behind a format byte), debug.rs (the debug pages),
                 brain/ (mod.rs: the loop, the asks and the story; offer.rs: needs, switches and
                 the draw; act.rs: events into commands; rules_brain.rs; text.rs: banks and
-                checks; situation.rs: the prompt; log.rs: decisions.log)
-core/tests/     stays.rs: ten scripted stays through the ABI
+                checks; situation.rs: the prompt; log.rs: decisions.log); what events lean
+                on: ending.rs, chains.rs, temper.rs, books.rs, elsewhere.rs (the Nether and
+                the End), multiplayer.rs, habits.rs, places.rs, people.rs, village.rs,
+                building.rs, tunnels.rs, caves.rs, farm.rs, water.rs, lights.rs, warped.rs,
+                workshop.rs
+core/tests/     stays.rs: the scripted stays through the ABI; host_carries_out.rs: every
+                command has an executor; calibration.rs: the real model, ignored
 host/common/    the host: Host (commands), LoadedMod, Native (FFM), Natives, Manifest,
                 ConfigFile, Downloader, Preparation, Acceptance; senses/ (Senses,
                 MovementTracker); world/ (Worlds, WorldData, Executors, Looks, Poses, Later,
@@ -105,30 +109,24 @@ overlay (`fn+F8` and `fn+F9` on a Mac keyboard, or rebind them under Controls, M
 the Events tab fires anything. `config/lodger/decisions.log` has every decision. Rebuilding
 the host while the client runs breaks the client; quit it first.
 
-## Where it stands (night)
+## Where it stands
 
-Phases 0 to 4 are done; phase 5 has the figure's first cut. The brain asks the model the four
-planning questions (what, how soon, when, where), the want once, the target in multiplayer,
-and the reactions on triggers, and has the model write the words on signs and in chat; the
-rule brain stands in whenever the model is not there. A first calibration run against the
-real 1.5B is in [calibration/round-1.md](calibration/round-1.md) with what to move next. 138
-events are coded of the catalogue's two hundred; the ones left need the figure's poses and
-movement, building and digging as a player, pens and caves in the surroundings pass, or client
-renderers not yet written (a painting upside down, a compass, footprints, the sky). The 1.5B
-model is downloaded under `core/models/` (gitignored; the tests prefer it) and in the dev
-client's config folder.
-
-Nothing from the second half of the day has been seen in a client yet: the debug screen's
-tabs, the HUD, the new events, the model deciding, the written lines, the figure, the house
-changed. That is the first thing to do, with the owner at the keyboard: open the screen, fire
-every event, read the log, fix what the world shows.
+The whole catalogue is coded (299 rows), with the stages, the three endings and the fight, the
+chains, the temper, the other house, the books and multiplayer. The brain asks the model the
+planning questions, the want, the target in multiplayer and the reactions on triggers, and has
+the model write the words on signs, in books and in chat; the rule brain stands in whenever
+the model is not there. A first calibration run against the real 1.5B is in
+[calibration/round-1.md](calibration/round-1.md) with what to move next. The 1.5B model is
+downloaded under `core/models/` (gitignored; the tests prefer it) and in the dev client's config
+folder. The release build makes both jars with six natives. It has been played in the dev
+client and gone through ten bug passes; [Queue](queue.md) has what is next.
 
 ## Open questions for the owner
 
 - The crate's final name (`craftkit` was free on crates.io).
 - Commands: everything lives under `/craftkit lodger ...` (`status`, `leave`, `reset`, and the
   debug ones).
-- The tone of the lines in the target's own name (lower case, no punctuation today).
+- The tone of the lines in the target's own name (lower case, no punctuation).
 - Whether the figure wears the target's skin on servers (it is seen by the target alone, so
   the question is only whether that is wanted) and how it should pose in the bed.
 - What "use this to piggyback and implement various events, as a guide" referred to (asked

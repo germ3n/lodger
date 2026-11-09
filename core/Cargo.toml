@@ -16,7 +16,8 @@ crate-type = ["cdylib", "rlib"]
 # the mind still builds and runs on the rule brain; the CI builds with it.
 default = ["model"]
 model = ["dep:llama-cpp-2"]
-# GPU builds, an experiment: CPU is the default so every server behaves alike (docs/model.md).
+# The GPU backends: every release native is built with one (Vulkan, or Metal on a Mac), the
+# whole model on the GPU by default (`model.gpu_share`, docs/model.md).
 metal = ["model", "llama-cpp-2/metal"]
 vulkan = ["model", "llama-cpp-2/vulkan"]
 
