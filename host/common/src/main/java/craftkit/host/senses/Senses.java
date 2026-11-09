@@ -93,9 +93,16 @@ public final class Senses {
 		return null;
 	}
 
-	/** The other mods loaded, told once, on the first tick. */
+	/** The platform's own and ours, never told as other mods. */
+	private static final java.util.Set<String> NOT_OTHERS = java.util.Set.of(
+			"minecraft", "java", "fabricloader", "fabric-api", "fabric", "neoforge", "forge", "craftkit", "lodger", "mixinextras");
+
+	/** The other mods loaded, told once, on the first tick: the platform's own left out. */
 	public void mods(List<String[]> idsAndVersions) {
 		for (String[] mod : idsAndVersions) {
+			if (NOT_OTHERS.contains(mod[0]) || mod[0].startsWith("fabric-") || mod[0].startsWith("fabric_")) {
+				continue;
+			}
 			JsonObject object = new JsonObject();
 			object.addProperty("id", mod[0]);
 			object.addProperty("version", mod[1]);

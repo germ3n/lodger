@@ -18,7 +18,14 @@ import java.util.function.Consumer;
  */
 public final class DebugHud {
 	private static final int ASK_EVERY_TICKS = 20;
-	private static final int WIDTH = 230;
+	/**
+	 * The overlay is drawn smaller than the GUI, so more of each line fits (at the GUI's own size
+	 * the values were cut short); its width, in those smaller units, is half the screen's.
+	 */
+	private static final float SCALE = 0.6f;
+	private static final int LEAST_WIDTH = 230;
+	private static final int MOST_WIDTH = 420;
+	private static int WIDTH = LEAST_WIDTH;
 	private static final int BAR = 70;
 	private static final int BACK = 0x90101014;
 	private static final int WHITE = 0xFFFFFFFF;
@@ -100,6 +107,10 @@ public final class DebugHud {
 		}
 
 		List<Runnable> lines = new ArrayList<>();
+		graphics.pose().pushMatrix();
+		graphics.pose().scale(SCALE, SCALE);
+		width = (int) (width / SCALE);
+		WIDTH = Math.max(LEAST_WIDTH, Math.min(MOST_WIDTH, width / 2));
 		int x = width - WIDTH - 4;
 		int[] y = {4};
 		int lineHeight = 10;
@@ -150,6 +161,7 @@ public final class DebugHud {
 			graphics.text(font, "nothing yet", x, y[0], DIM);
 		}
 		lines.forEach(Runnable::run);
+		graphics.pose().popMatrix();
 	}
 
 	private static int senseLines() {

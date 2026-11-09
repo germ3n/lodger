@@ -34,7 +34,10 @@ public final class FabricPlatform implements Platform {
 
 	@Override
 	public List<String[]> loadedMods() {
+		// The mods installed in their own right: not Minecraft or Java themselves ("builtin"), nor a
+		// module inside another's jar (Fabric API's fifty-odd made the list).
 		return FabricLoader.getInstance().getAllMods().stream()
+				.filter(mod -> mod.getContainingMod().isEmpty() && !"builtin".equals(mod.getMetadata().getType()))
 				.map(mod -> new String[] {mod.getMetadata().getId(), mod.getMetadata().getVersion().getFriendlyString()})
 				.toList();
 	}

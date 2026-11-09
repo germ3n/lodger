@@ -1190,6 +1190,12 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **The overlay fits more, and other mods are only other mods** (owner: "a lot of it is cut
+  off"; "the mods list also shows a bunch of fabric stuff"): the F9 overlay is drawn at 0.6 of the
+  GUI's size, half the screen wide (230 to 420 of its units), so its values fit; the mods told to
+  the mind are those installed in their own right, not Minecraft or Java, nor the modules inside
+  another's jar (Fabric API's), nor the loader's or our own. The next decision reads as one
+  sentence. Was: values cut off at the GUI's size, and fifty-odd Fabric modules among the mods.
 - [x] **The debug screen's next decision before it moves in** (owner: "it keeps saying next a
   decision in about 0s"): before the stay begins (`stages.start_after_days`) the brain decides
   nothing, and the screen says when it moves in; while the model is thinking it says so. Tests: one

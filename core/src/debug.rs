@@ -257,13 +257,13 @@ pub fn answer(
 fn next_decision(stay: &Stay, config: &Config, now: &Now, day: f32) -> String {
     if !stay.arc.moved_in() {
         let left = (config.stages.start_after_days as f32 - day).max(0.0);
-        return format!("none until it moves in, in about {left:.1} days");
+        return format!("no decision until it moves in, in about {left:.1} days");
     }
     if stay.brain.asking.is_some() {
-        return "now: the model is thinking".to_string();
+        return "a decision now: the model is thinking".to_string();
     }
     format!(
-        "in about {}s",
+        "a decision in about {}s",
         stay.brain.next_plan_tick.saturating_sub(now.tick) / 20
     )
 }
@@ -326,10 +326,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
                 plan.event,
                 plan_when(plan, now)
             ),
-            None => format!(
-                "none of {most}; next decision {}",
-                next_decision(stay, config, now, day)
-            ),
+            None => format!("none of {most}; {}", next_decision(stay, config, now, day)),
         },
     ));
     // The other mods: how many, and the first few by name.
@@ -493,7 +490,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
     }
     if plans.items.is_empty() {
         plans.lines.push(format!(
-            "nothing planned; a decision {}",
+            "nothing planned; {}",
             next_decision(stay, config, now, day)
         ));
     }
@@ -679,10 +676,7 @@ fn snapshot(stay: &Stay, config: &Config, log: &Log, now: &Now, day: f32) -> Deb
             brain.plans.len()
         ));
     } else {
-        story.push(format!(
-            "NEXT: a decision {}",
-            next_decision(stay, config, now, day)
-        ));
+        story.push(format!("NEXT: {}", next_decision(stay, config, now, day)));
     }
     for decision in brain.story.iter().rev().take(12) {
         story.push(format!(
