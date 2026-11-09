@@ -12,8 +12,8 @@ scoring, the same queue, the same download, behind the mind's C ABI instead of a
 | --- | --- | --- | --- | --- |
 | `0.5b` | `qwen2.5-0.5b-instruct-q4_k_m.gguf`, 491 MB | about 700 MB | tens to a few hundred milliseconds | a small machine; the file `~/engine` runs, byte for byte; the dev client's choice |
 | `1.5b`, the default | `qwen2.5-1.5b-instruct-q4_k_m.gguf`, 1.1 GB | about 1.6 GB | a few times slower | most machines; the owner's default for sharper judgment and for writing its own few words (`brain.text`) |
-| `3b` | `qwen2.5-3b-instruct-q4_k_m.gguf`, 2.1 GB | about 3 GB | slower again, a second or more | a dedicated server with the headroom; under the **Qwen Research License** (non-commercial use only, which it defines as research or evaluation; commercial use needs a license from Alibaba Cloud), not Apache |
-| `4b` | `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` from unsloth's repository, 2.5 GB | about 3.5 GB | about the 3B's | the newest and best reader (owner: "how about we offer this too?"); Apache-2.0; non-thinking only, so no `<think>` block gets in the way of scoring; the vendored llama.cpp (llama-cpp-sys-2 0.1.161) knows its `qwen3` architecture |
+| `3b` | `qwen2.5-3b-instruct-q4_k_m.gguf`, 2.1 GB | about 2.6 GB | slower again, a second or more | a dedicated server with the headroom; under the **Qwen Research License** (non-commercial use only, which it defines as research or evaluation; commercial use needs a license from Alibaba Cloud), not Apache |
+| `4b` | `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` from unsloth's repository, 2.5 GB | about 3.2 GB | about the 3B's | the newest and best reader (owner: "how about we offer this too?"); Apache-2.0; non-thinking only, so no `<think>` block gets in the way of scoring; the vendored llama.cpp (llama-cpp-sys-2 0.1.161) knows its `qwen3` architecture |
 
 The 0.5B, 1.5B and 4B are Apache-2.0; the 3B is under Qwen's research license, which the
 preparing screen names and links before the download. Qwen's own GGUF repository for the 4B answers 401 to a plain download, so its file
