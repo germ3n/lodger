@@ -1190,6 +1190,14 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **Every key in the settings, and the F8 screen smaller** (owner: "a full config editor to
+  the lodger settings... every key, just in a separate tab"; "make the ingame menu also 0.6
+  scale"): the settings screen has two tabs, Settings and All keys; All keys reads the mod's
+  config file as it is (`LoadedMod.configFile`) and shows every key by section, a toggle for a yes
+  or no and a field for the rest, read back as the kind the key had (`ConfigText`); Done applies
+  both tabs, and the mod's own check refuses a bad value with the file put back. The F8 debug
+  screen is drawn at 0.6, as the overlay is. Tests: `ConfigTextTest`; `PanelLayoutTest`'s numbers
+  for the new scale. Was: a dozen keys on the screen, the rest in the file alone; F8 at 0.75.
 - [x] **The overlay fits more, and other mods are only other mods** (owner: "a lot of it is cut
   off"; "the mods list also shows a bunch of fabric stuff"): the F9 overlay is drawn at 0.6 of the
   GUI's size, half the screen wide (230 to 420 of its units), so its values fit; the mods told to

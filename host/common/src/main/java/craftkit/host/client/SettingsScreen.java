@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -18,27 +19,47 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A mod's settings, from the title screen (owner): the few keys it offers, grouped,
- * in a list that scrolls between a fixed title and a fixed footer of Done and Cancel; each row a
- * label and a button that changes it (a press for the next value, or - and + for a number).
- * Done writes the changes into the mod's config file and initialises the mod again; when that
- * leaves something to fetch or load (a new model size), the preparing screen comes up at once.
+ * A mod's settings, from the title screen (owner), in two tabs. **Settings**: the few keys it
+ * offers, grouped, each row a label and a button that changes it (a press for the next value, or
+ * - and + for a number). **All keys** (owner: "a full config editor... every key, just in a
+ * separate tab"): every key of the mod's config file as it is, grouped by its section, a toggle
+ * for a yes or no and a field for the rest (a list as its JSON). The list scrolls between a fixed
+ * title and a fixed footer of Done and Cancel. Done writes the changes of both tabs into the mod's
+ * config file and initialises the mod again, which checks them: a value it refuses is said, and
+ * the file is put back. When that leaves something to fetch or load (a new model size), the
+ * preparing screen comes up at once.
  */
 public final class SettingsScreen extends Screen {
 	private static final int WHITE = 0xFFFFFFFF;
 	private static final int GREY = 0xFF9A9A9A;
 	private static final int DIM = 0xFF6A6A6A;
+	private static final int RED = 0xFFE06060;
 	private static final int PANEL = 0xA0000000;
 	private static final int LINE = 0xFF3A3A3A;
 	private static final int WIDTH = 320;
-	private static final int TOP = 32;
+	private static final int TOP = 52;
 	private static final int FOOTER = 40;
+
+	/** One key of the config file: its path, its section and its value as the file has it. */
+	private record Leaf(List<String> path, String group, JsonElement value) {
+		String key() {
+			return String.join(".", path);
+		}
+
+		String label() {
+			return path.size() > 1 ? String.join(".", path.subList(1, path.size())) : path.get(0);
+		}
+	}
 
 	private final Screen parent;
 	private final LoadedMod mod;
 	private final Map<String, JsonElement> values = new LinkedHashMap<>();
+	private final List<Leaf> leaves = new ArrayList<>();
+	/** All keys' rows as edited: a field's text, or a toggle's value, by key. */
+	private final Map<String, String> edits = new LinkedHashMap<>();
 	private final List<List<AbstractWidget>> rowWidgets = new ArrayList<>();
 	private List<ListLayout.Place> places = List.of();
+	private boolean all;
 	private int scroll;
 	private String error = "";
 
@@ -48,6 +69,23 @@ public final class SettingsScreen extends Screen {
 		this.mod = mod;
 		for (Setting setting : mod.settings()) {
 			values.put(setting.key(), setting.value());
+		}
+		mod.configFile().ifPresent(file -> flatten(file, new ArrayList<>()));
+		for (Leaf leaf : leaves) {
+			edits.put(leaf.key(), ConfigText.text(leaf.value()));
+		}
+	}
+
+	/** Every key of an object, depth first, in the file's own order. */
+	private void flatten(JsonObject object, List<String> path) {
+		for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+			List<String> at = new ArrayList<>(path);
+			at.add(entry.getKey());
+			if (entry.getValue().isJsonObject()) {
+				flatten(entry.getValue().getAsJsonObject(), at);
+			} else {
+				leaves.add(new Leaf(at, at.size() > 1 ? at.get(0) : "general", entry.getValue()));
+			}
 		}
 	}
 
@@ -62,20 +100,48 @@ public final class SettingsScreen extends Screen {
 	@Override
 	protected void init() {
 		rowWidgets.clear();
-		places = ListLayout.places(mod.settings().stream().map(Setting::group).toList());
+		int half = WIDTH / 2 - 2;
+		addRenderableWidget(Button.builder(Component.translatable("craftkit.settings.tab.settings"), b -> tab(false))
+				.bounds(left(), 26, half, 20).build()).active = all;
+		addRenderableWidget(Button.builder(Component.translatable("craftkit.settings.tab.all"), b -> tab(true))
+				.bounds(left() + WIDTH - half, 26, half, 20).build()).active = !all && !leaves.isEmpty();
+
 		int control = left() + WIDTH - 150;
-		for (Setting setting : mod.settings()) {
-			List<AbstractWidget> widgets = new ArrayList<>();
-			if (setting.kind().equals("number")) {
-				widgets.add(addRenderableWidget(Button.builder(Component.literal("-"), b -> step(setting, false)).bounds(control, 0, 20, 20).build()));
-				widgets.add(addRenderableWidget(Button.builder(Component.literal("+"), b -> step(setting, true)).bounds(control + 130, 0, 20, 20).build()));
-			} else {
-				widgets.add(addRenderableWidget(Button.builder(Component.literal(Setting.show(values.get(setting.key()))), b -> {
-					step(setting, true);
-					b.setMessage(Component.literal(Setting.show(values.get(setting.key()))));
-				}).bounds(control, 0, 150, 20).build()));
+		if (all) {
+			places = ListLayout.places(leaves.stream().map(Leaf::group).toList());
+			for (Leaf leaf : leaves) {
+				List<AbstractWidget> widgets = new ArrayList<>();
+				JsonElement was = leaf.value();
+				if (was.isJsonPrimitive() && was.getAsJsonPrimitive().isBoolean()) {
+					widgets.add(addRenderableWidget(Button.builder(Component.literal(edits.get(leaf.key())), b -> {
+						String flipped = edits.get(leaf.key()).equals("true") ? "false" : "true";
+						edits.put(leaf.key(), flipped);
+						b.setMessage(Component.literal(flipped));
+					}).bounds(control, 0, 150, 20).build()));
+				} else {
+					EditBox field = new EditBox(this.font, control, 0, 150, 20, Component.literal(leaf.key()));
+					field.setMaxLength(4096);
+					field.setValue(edits.get(leaf.key()));
+					field.setResponder(text -> edits.put(leaf.key(), text));
+					widgets.add(addRenderableWidget(field));
+				}
+				rowWidgets.add(widgets);
 			}
-			rowWidgets.add(widgets);
+		} else {
+			places = ListLayout.places(mod.settings().stream().map(Setting::group).toList());
+			for (Setting setting : mod.settings()) {
+				List<AbstractWidget> widgets = new ArrayList<>();
+				if (setting.kind().equals("number")) {
+					widgets.add(addRenderableWidget(Button.builder(Component.literal("-"), b -> step(setting, false)).bounds(control, 0, 20, 20).build()));
+					widgets.add(addRenderableWidget(Button.builder(Component.literal("+"), b -> step(setting, true)).bounds(control + 130, 0, 20, 20).build()));
+				} else {
+					widgets.add(addRenderableWidget(Button.builder(Component.literal(Setting.show(values.get(setting.key()))), b -> {
+						step(setting, true);
+						b.setMessage(Component.literal(Setting.show(values.get(setting.key()))));
+					}).bounds(control, 0, 150, 20).build()));
+				}
+				rowWidgets.add(widgets);
+			}
 		}
 		int footer = this.height - 30;
 		addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> done()).bounds(this.width / 2 - 154, footer, 150, 20).build());
@@ -84,7 +150,14 @@ public final class SettingsScreen extends Screen {
 		place();
 	}
 
-	/** Moves each row's buttons to where the scroll puts them, hiding the ones out of the list. */
+	private void tab(boolean toAll) {
+		all = toAll;
+		scroll = 0;
+		error = "";
+		rebuildWidgets();
+	}
+
+	/** Moves each row's widgets to where the scroll puts them, hiding the ones out of the list. */
 	private void place() {
 		for (int i = 0; i < rowWidgets.size(); i++) {
 			int y = TOP + places.get(i).top() - scroll;
@@ -107,7 +180,7 @@ public final class SettingsScreen extends Screen {
 		values.put(setting.key(), setting.next(values.get(setting.key()), up));
 	}
 
-	/** The changed keys written and the mod initialised again with them. */
+	/** The changed keys of both tabs written and the mod initialised again with them. */
 	private void done() {
 		JsonObject change = new JsonObject();
 		for (Setting setting : mod.settings()) {
@@ -115,6 +188,29 @@ public final class SettingsScreen extends Screen {
 			if (!now.equals(setting.value())) {
 				craftkit.host.ConfigFile.mergeInto(change, setting.change(now));
 			}
+		}
+		// All keys after: a key changed in both is the one typed in full.
+		for (Leaf leaf : leaves) {
+			String typed = edits.get(leaf.key());
+			if (typed.equals(ConfigText.text(leaf.value()))) {
+				continue;
+			}
+			JsonElement now = ConfigText.parse(leaf.value(), typed);
+			if (now == null) {
+				error = leaf.key() + ": not " + kind(leaf.value());
+				return;
+			}
+			if (now.equals(leaf.value())) {
+				continue;
+			}
+			JsonObject at = change;
+			for (String part : leaf.path().subList(0, leaf.path().size() - 1)) {
+				if (!at.has(part) || !at.get(part).isJsonObject()) {
+					at.add(part, new JsonObject());
+				}
+				at = at.getAsJsonObject(part);
+			}
+			at.add(leaf.path().get(leaf.path().size() - 1), now);
 		}
 		if (change.size() > 0) {
 			String failed = mod.reconfigure(change);
@@ -128,6 +224,16 @@ public final class SettingsScreen extends Screen {
 				.ifPresentOrElse(p -> minecraft.gui.setScreen(new PreparingScreen(parent, p)), () -> minecraft.gui.setScreen(parent));
 	}
 
+	private static String kind(JsonElement value) {
+		if (value.isJsonArray()) {
+			return "a list (as [a, b])";
+		}
+		if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber()) {
+			return value.toString().contains(".") ? "a number" : "a whole number";
+		}
+		return "a value of its kind";
+	}
+
 	@Override
 	public void onClose() {
 		Minecraft.getInstance().gui.setScreen(parent);
@@ -139,20 +245,27 @@ public final class SettingsScreen extends Screen {
 		graphics.fill(left - 8, TOP - 4, left + WIDTH + 8, bottom() + 2, PANEL);
 		graphics.fill(left - 8, bottom() + 2, left + WIDTH + 8, bottom() + 3, LINE);
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-		graphics.centeredText(this.font, this.title, this.width / 2, 12, WHITE);
+		graphics.centeredText(this.font, this.title, this.width / 2, 10, WHITE);
 
 		graphics.enableScissor(left - 8, TOP - 4, left + WIDTH + 8, bottom() + 2);
-		List<Setting> settings = mod.settings();
-		for (int i = 0; i < settings.size(); i++) {
-			Setting setting = settings.get(i);
+		int rows = all ? leaves.size() : mod.settings().size();
+		for (int i = 0; i < rows; i++) {
 			int y = TOP + places.get(i).top() - scroll;
+			String group = all ? leaves.get(i).group() : mod.settings().get(i).group();
 			if (places.get(i).heading()) {
-				graphics.text(this.font, setting.group().toUpperCase(java.util.Locale.ROOT), left, y - 12, DIM);
+				graphics.text(this.font, group.toUpperCase(java.util.Locale.ROOT), left, y - 12, DIM);
 			}
-			graphics.text(this.font, setting.label(), left, y + 6, WHITE);
-			if (setting.kind().equals("number")) {
-				int control = left + WIDTH - 150;
-				graphics.centeredText(this.font, Component.literal(Setting.show(values.get(setting.key()))), control + 75, y + 6, WHITE);
+			if (all) {
+				Leaf leaf = leaves.get(i);
+				boolean changed = !edits.get(leaf.key()).equals(ConfigText.text(leaf.value()));
+				graphics.text(this.font, trim(leaf.label(), WIDTH - 156), left, y + 6, changed ? 0xFFE8C860 : WHITE);
+			} else {
+				Setting setting = mod.settings().get(i);
+				graphics.text(this.font, setting.label(), left, y + 6, WHITE);
+				if (setting.kind().equals("number")) {
+					int control = left + WIDTH - 150;
+					graphics.centeredText(this.font, Component.literal(Setting.show(values.get(setting.key()))), control + 75, y + 6, WHITE);
+				}
 			}
 		}
 		graphics.disableScissor();
@@ -166,7 +279,19 @@ public final class SettingsScreen extends Screen {
 			graphics.fill(left + WIDTH + 4, at, left + WIDTH + 6, at + thumb, GREY);
 		}
 		if (!error.isEmpty()) {
-			graphics.centeredText(this.font, Component.literal(error), this.width / 2, this.height - 44, 0xFFE06060);
+			graphics.centeredText(this.font, Component.literal(trim(error, this.width - 16)), this.width / 2, this.height - 44, RED);
 		}
+	}
+
+	private String trim(String text, int width) {
+		if (this.font.width(text) <= width) {
+			return text;
+		}
+		String cut = text;
+		while (cut.length() > 1 && this.font.width(cut + "…") > width) {
+			cut = cut.substring(0, cut.length() - 1);
+		}
+
+		return cut + "…";
 	}
 }

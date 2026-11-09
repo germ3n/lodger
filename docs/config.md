@@ -16,8 +16,11 @@ is no key that turns one off.
 **In the game:** the title screen's "Lodger settings" button (top left) changes the useful keys
 without opening the file: whether the model is used, its size, its GPU share and its pause; the preset and the event groups
 (sounds, glitches, chat, the figure); plans at once and the seconds between decisions; the
-words (generated or the bank) and their variety. Done writes them here and loads the lodger
-again; a new model size is fetched at once.
+words (generated or the bank) and their variety. Its **All keys** tab has every key of this
+file, by section: a toggle for a yes or no, a field for the rest (a list as JSON, `[40.0, 40.0]`),
+a changed key's name in yellow. Done writes the changes of both tabs here and loads the lodger
+again, which checks them: a value it refuses is said under the list, and the file is put back. A
+new model size is fetched at once.
 
 ## General
 

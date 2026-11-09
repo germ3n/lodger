@@ -274,6 +274,21 @@ public final class LoadedMod {
 		return made;
 	}
 
+	/** The mod's config file as it is now, every key the mod wrote into it; empty when unread. */
+	public synchronized java.util.Optional<JsonObject> configFile() {
+		if (manifest.isEmpty() || configDir == null) {
+			return java.util.Optional.empty();
+		}
+		ConfigFile config = new ConfigFile(configDir.resolve(manifest.get().config()));
+		try {
+			return config.exists()
+					? java.util.Optional.of(com.google.gson.JsonParser.parseString(config.read()).getAsJsonObject())
+					: java.util.Optional.empty();
+		} catch (IOException | RuntimeException e) {
+			return java.util.Optional.empty();
+		}
+	}
+
 	/**
 	 * A change to the mod's config, written to its file, and the mod initialised again with it:
 	 * its resources are what the new config asks for. Before any world is open alone (the

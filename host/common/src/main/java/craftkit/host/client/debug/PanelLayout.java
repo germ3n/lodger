@@ -8,7 +8,7 @@ package craftkit.host.client.debug;
  */
 public final class PanelLayout {
 	/** The panel's text and rows against the game's GUI scale: small enough to read more. */
-	public static final float SCALE = 0.75f;
+	public static final float SCALE = 0.6f;
 	public static final float SHARE = 1f / 3f;
 	public static final int LEAST_WIDTH = 230;
 

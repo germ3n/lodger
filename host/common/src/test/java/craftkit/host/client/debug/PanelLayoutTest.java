@@ -10,13 +10,13 @@ class PanelLayoutTest {
 		assertEquals(640, PanelLayout.left(960), "a third of 960 is 320");
 		assertEquals(170, PanelLayout.left(400), "never under 230 wide");
 		assertEquals(0, PanelLayout.left(200), "never past the left edge");
-		assertEquals(426, PanelLayout.units(960), "320 pixels at three quarters are 426 units");
+		assertEquals(533, PanelLayout.units(960), "320 pixels at 0.6 are 533 units");
 	}
 
 	@Test
 	void a_click_is_read_in_the_panel_s_units() {
 		assertEquals(0, PanelLayout.toPanel(640, 640));
-		assertEquals(100, PanelLayout.toPanel(715, 640), 1e-9);
-		assertEquals(40, PanelLayout.toPanel(30, 0), 1e-9, "y has no left");
+		assertEquals(100, PanelLayout.toPanel(700, 640), 1e-4);
+		assertEquals(50, PanelLayout.toPanel(30, 0), 1e-4, "y has no left");
 	}
 }
