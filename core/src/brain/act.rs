@@ -2491,8 +2491,7 @@ pub fn commands(
             .unwrap_or_default(),
         Action::FramesTurn => {
             let rotation = (seed % 8) as u32;
-            memory
-                .decor("item_frame")
+            unseen_decor(memory, "item_frame")
                 .map(|frame| {
                     (
                         Command::RotateFrame {
@@ -2518,7 +2517,7 @@ pub fn commands(
             })
             .unwrap_or_default(),
         Action::StandTurn => {
-            let Some(stand) = memory.decor("armor_stand").next() else {
+            let Some(stand) = unseen_decor(memory, "armor_stand").next() else {
                 return vec![];
             };
             let look = memory
@@ -3159,7 +3158,7 @@ pub fn commands(
         // The frame's own item, out of it and onto the bed, the very stack (the host drops it
         // there; until now the frame's was deleted and a stand-in laid on the bed).
         Action::FrameEmptied => match (
-            memory.decor("item_frame").next(),
+            unseen_decor(memory, "item_frame").next(),
             memory.home.as_ref().and_then(|h| h.bed),
         ) {
             (Some(frame), Some(bed)) => vec![(
@@ -3182,7 +3181,10 @@ pub fn commands(
         },
         // A thing of one from their chest into the frame, the frame's into that slot: the very
         // stacks traded (until now the frame's was lost and the chest's made anew).
-        Action::FrameSwap => match (memory.decor("item_frame").next(), memory.used_container()) {
+        Action::FrameSwap => match (
+            unseen_decor(memory, "item_frame").next(),
+            memory.used_container(),
+        ) {
             (Some(frame), Some(chest)) => {
                 let Some(stack) = chest.contents.iter().find(|s| s.count == 1) else {
                     return vec![];
@@ -3209,7 +3211,7 @@ pub fn commands(
                     .any(|a| id.ends_with(a))
             };
             match (
-                memory.decor("armor_stand").next(),
+                unseen_decor(memory, "armor_stand").next(),
                 memory.in_used_container(armour),
             ) {
                 // The very piece, kept between the chest and the stand, its enchantments and
@@ -4747,8 +4749,10 @@ pub fn commands(
             None => vec![],
         },
         // One more of what they keep, beside the others, gone by noon.
+        // Never a mooshroom (the host refuses one for a while: shorn, it is a cow that stays).
         Action::OneMore => memory
             .kept_most()
+            .filter(|(kind, _)| *kind != "mooshroom")
             .map(|(kind, at)| {
                 let to_noon = 6_000u32.saturating_sub(now.day_time) as f32 / 20.0;
                 vec![(
@@ -5607,9 +5611,20 @@ pub fn their_animal<'a>(
     })
 }
 
-/// How far an animal it moves, names or dyes is kept out of their view: the view rule's
-/// distance (`events.min_distance`, 64 by default).
+/// How far an animal it moves, names or dyes, or a frame or stand it turns or dresses, is kept
+/// out of their view: the view rule's distance (`events.min_distance`, 64 by default).
 const ANIMAL_VIEW: f64 = 64.0;
+
+/// Their frames or stands of a kind not in front of them: these events have no spot of their
+/// own, so the view rule never looked, and a frame turned or a stand dressed as they watched.
+fn unseen_decor<'a>(
+    memory: &'a Memory,
+    kind: &'a str,
+) -> impl Iterator<Item = &'a crate::memory::Decor> + 'a {
+    memory
+        .decor(kind)
+        .filter(move |d| !memory.in_view(d.pos, ANIMAL_VIEW))
+}
 
 /// What a `take` took, as its command said: the chest, the slot and the item. Held from that,
 /// not from the plan's chest (the chest changed between the plan and the take, and the memory
@@ -6898,6 +6913,34 @@ mod tests {
             "{:?}",
             map[0].0
         );
+    }
+
+    #[test]
+    fn a_frame_in_front_of_them_is_never_turned() {
+        let mut memory = rich_memory();
+        memory.decor = vec![crate::memory::Decor {
+            kind: "item_frame".to_string(),
+            id: 5,
+            pos: [0, 64, 10],
+        }];
+        memory.last.online = true;
+        memory.last.sleeping = false;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let now = Now::default();
+        let turn = |memory: &Memory| {
+            commands(
+                find("frames_turn").unwrap(),
+                None,
+                memory,
+                &mut ids(),
+                &now,
+                None,
+            )
+        };
+        assert!(turn(&memory).is_empty(), "facing it, ten blocks off");
+        memory.last.yaw = 180.0;
+        assert_eq!(turn(&memory).len(), 1, "their back to it");
     }
 
     #[test]

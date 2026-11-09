@@ -1950,6 +1950,10 @@ public final class Executors {
 		if (type.isEmpty()) {
 			return report(id, false, "no such entity");
 		}
+		// Never a mooshroom for a while: shorn, it turns into a cow that stays, and its mushrooms.
+		if (of.equals("minecraft:mooshroom") && command.has("seconds") && command.get("seconds").getAsFloat() > 0) {
+			return report(id, false, "a mooshroom is never placed for a while");
+		}
 		JsonArray p = command.getAsJsonArray("pos");
 		Vec3 pos = new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
 		BlockPos at = BlockPos.containing(pos);

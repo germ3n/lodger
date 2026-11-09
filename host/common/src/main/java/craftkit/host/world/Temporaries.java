@@ -26,6 +26,23 @@ public final class Temporaries {
 
 	public void add(Entity entity, float seconds) {
 		entity.addTag(TAG);
+		// Nothing of value from what is only here a while (the rule: it makes nothing worth more
+		// than paper): it cannot be hurt, so it never dies to drop its meat or leather, the
+		// squid its ink; a sheep comes shorn, a chicken lays no egg in its time, and an adult
+		// cannot breed. What it carries of theirs is still dropped when it goes (`gone`).
+		entity.setPermanentlyInvulnerable(true);
+		if (entity instanceof LivingEntity living) {
+			living.skipDropExperience();
+		}
+		if (entity instanceof net.minecraft.world.entity.animal.sheep.Sheep sheep) {
+			sheep.setSheared(true);
+		}
+		if (entity instanceof net.minecraft.world.entity.animal.chicken.Chicken chicken) {
+			chicken.eggTime = (int) (MOST_SECONDS * 20) + 200;
+		}
+		if (entity instanceof net.minecraft.world.entity.AgeableMob ageable && ageable.getAge() >= 0) {
+			ageable.setAge((int) (MOST_SECONDS * 20) + 200);
+		}
 		active.add(entity);
 		due.add(entity, tick + (long) (Math.min(seconds, MOST_SECONDS) * 20));
 	}
