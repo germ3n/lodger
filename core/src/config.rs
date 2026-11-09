@@ -549,6 +549,21 @@ pub fn rebased(before: &str, now: &str) -> Option<String> {
     serde_json::to_string(&now).ok()
 }
 
+/// Whether the file's text lacks a key the effective config has (a key taken out to fall back to
+/// its preset, or an older file): then it is written again with every key.
+pub fn lacks_a_key(file: &str, effective: &serde_json::Value) -> bool {
+    fn lacks(file: &serde_json::Value, full: &serde_json::Value) -> bool {
+        match (file.as_object(), full.as_object()) {
+            (Some(file), Some(full)) => full.iter().any(|(key, value)| match file.get(key) {
+                None => true,
+                Some(inner) => value.is_object() && lacks(inner, value),
+            }),
+            _ => false,
+        }
+    }
+    serde_json::from_str::<serde_json::Value>(file).is_ok_and(|file| lacks(&file, effective))
+}
+
 /// Takes out of `file` every value equal to `base`'s at the same keys; objects left empty go.
 fn strip_same(file: &mut serde_json::Value, base: &serde_json::Value) {
     let (Some(file), Some(base)) = (file.as_object_mut(), base.as_object()) else {
@@ -1128,6 +1143,25 @@ mod tests {
         let text = Config::default().to_json();
 
         assert_eq!(Config::parse(&text).unwrap(), Config::default());
+    }
+
+    #[test]
+    fn a_file_without_a_key_is_written_again_with_it() {
+        let full = serde_json::to_value(Config::default()).unwrap();
+        let mut file = full.clone();
+        assert!(
+            !lacks_a_key(&file.to_string(), &full),
+            "every key: left alone"
+        );
+        file["stages"]
+            .as_object_mut()
+            .unwrap()
+            .remove("events_per_day");
+        assert!(
+            lacks_a_key(&file.to_string(), &full),
+            "one sent back to its preset"
+        );
+        assert!(!lacks_a_key("not json", &full));
     }
 
     /// Every key in docs/config.md is in the schema and every key in the schema is in the docs,

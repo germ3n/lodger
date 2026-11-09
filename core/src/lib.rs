@@ -288,7 +288,13 @@ impl Mod for Lodger {
             unknown: config.unknown_keys(),
             warnings: config.warnings.clone(),
             settings: settings(&config),
-            rewrite: rebased.is_some(),
+            // Written again, too, when the file lacks a key (one sent back to its preset on the
+            // settings screen): the file shows every key, the preset's value filled in.
+            rewrite: rebased.is_some()
+                || crate::config::lacks_a_key(
+                    rebased.as_deref().unwrap_or(&init.config),
+                    &serde_json::to_value(&config).map_err(|err| err.to_string())?,
+                ),
             resources: vec![Resource {
                 id: "model".to_string(),
                 title: format!(

@@ -40,4 +40,13 @@ class ConfigFileTest {
 
 		assertEquals("{\"preset\": \"calm\"}" + System.lineSeparator(), Files.readString(file.path()));
 	}
+
+	@org.junit.jupiter.api.Test
+	void a_key_sent_back_to_its_preset_leaves_the_file_and_an_empty_section_with_it() {
+		com.google.gson.JsonObject config = com.google.gson.JsonParser.parseString("{\"stages\":{\"least_days\":[0],\"ending\":\"take\"},\"log\":{\"keep_mb\":16}}").getAsJsonObject();
+		ConfigFile.remove(config, java.util.List.of("stages", "least_days"));
+		ConfigFile.remove(config, java.util.List.of("log", "keep_mb"));
+		org.junit.jupiter.api.Assertions.assertEquals("{\"stages\":{\"ending\":\"take\"}}", config.toString());
+	}
 }
+

@@ -57,6 +57,8 @@ public final class SettingsScreen extends Screen {
 	private final List<Leaf> leaves = new ArrayList<>();
 	/** All keys' rows as edited: a field's text, or a toggle's value, by key. */
 	private final Map<String, String> edits = new LinkedHashMap<>();
+	/** All keys' rows sent back to their preset: taken out of the file, which the mod fills in again. */
+	private final java.util.Set<String> toPreset = new java.util.HashSet<>();
 	private final List<List<AbstractWidget>> rowWidgets = new ArrayList<>();
 	private List<ListLayout.Place> places = List.of();
 	private boolean all;
@@ -75,6 +77,7 @@ public final class SettingsScreen extends Screen {
 		values.clear();
 		leaves.clear();
 		edits.clear();
+		toPreset.clear();
 		for (Setting setting : mod.settings()) {
 			values.put(setting.key(), setting.value());
 		}
@@ -120,17 +123,31 @@ public final class SettingsScreen extends Screen {
 			for (Leaf leaf : leaves) {
 				List<AbstractWidget> widgets = new ArrayList<>();
 				JsonElement was = leaf.value();
+				// Back to its preset: the key taken out of the file as Done or a tab change
+				// applies, and the preset's value written in its place.
+				Button reset = Button.builder(Component.literal("↺"), b -> {
+					toPreset.add(leaf.key());
+					edits.put(leaf.key(), ConfigText.text(leaf.value()));
+					rebuildWidgets();
+				}).bounds(control, 0, 20, 20).tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("craftkit.settings.to_preset"))).build();
+				widgets.add(addRenderableWidget(reset));
 				if (was.isJsonPrimitive() && was.getAsJsonPrimitive().isBoolean()) {
 					widgets.add(addRenderableWidget(Button.builder(Component.literal(edits.get(leaf.key())), b -> {
 						String flipped = edits.get(leaf.key()).equals("true") ? "false" : "true";
 						edits.put(leaf.key(), flipped);
+						toPreset.remove(leaf.key());
 						b.setMessage(Component.literal(flipped));
-					}).bounds(control, 0, 150, 20).build()));
+					}).bounds(control + 24, 0, 126, 20).build()));
 				} else {
-					EditBox field = new EditBox(this.font, control, 0, 150, 20, Component.literal(leaf.key()));
+					EditBox field = new EditBox(this.font, control + 24, 0, 126, 20, Component.literal(leaf.key()));
 					field.setMaxLength(4096);
 					field.setValue(edits.get(leaf.key()));
-					field.setResponder(text -> edits.put(leaf.key(), text));
+					field.setResponder(text -> {
+						edits.put(leaf.key(), text);
+						if (!text.equals(ConfigText.text(leaf.value()))) {
+							toPreset.remove(leaf.key());
+						}
+					});
 					widgets.add(addRenderableWidget(field));
 				}
 				rowWidgets.add(widgets);
@@ -239,8 +256,9 @@ public final class SettingsScreen extends Screen {
 			}
 			at.add(leaf.path().get(leaf.path().size() - 1), now);
 		}
-		if (change.size() > 0) {
-			String failed = mod.reconfigure(change);
+		List<List<String>> removed = leaves.stream().filter(l -> toPreset.contains(l.key())).map(Leaf::path).toList();
+		if (change.size() > 0 || !removed.isEmpty()) {
+			String failed = mod.reconfigure(change, removed);
 			if (!failed.isEmpty()) {
 				error = failed;
 				return false;
@@ -283,7 +301,8 @@ public final class SettingsScreen extends Screen {
 			if (all) {
 				Leaf leaf = leaves.get(i);
 				boolean changed = !edits.get(leaf.key()).equals(ConfigText.text(leaf.value()));
-				graphics.text(this.font, trim(leaf.label(), WIDTH - 156), left, y + 6, changed ? 0xFFE8C860 : WHITE);
+				String label = toPreset.contains(leaf.key()) ? leaf.label() + " → preset" : leaf.label();
+				graphics.text(this.font, trim(label, WIDTH - 156), left, y + 6, changed || toPreset.contains(leaf.key()) ? 0xFFE8C860 : WHITE);
 			} else {
 				Setting setting = mod.settings().get(i);
 				graphics.text(this.font, setting.label(), left, y + 6, WHITE);

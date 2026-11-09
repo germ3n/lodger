@@ -1190,6 +1190,12 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **Back to the preset, key by key** (owner: "yes back to preset would be good"): each row of
+  All keys has a ↺ button; the key is taken out of the file as the change applies
+  (`ConfigFile.remove`, `LoadedMod.reconfigure` with removals), and the mod writes the file again
+  with the preset's value whenever it lacks a key (`config::lacks_a_key`, on a reload and at
+  start). Tests: one in `config`, one in `ConfigFileTest`. Was: a key set by hand stayed through
+  every preset change, and only typing the preset's value took it back.
 - [x] **Tooltips on every key, All keys as it is now, and only the mods it uses** (owner: "add
   tooltips on hover to explain what it does. it should reflect the current setting"; "only have
   it show mods we detect and do something with"): each key's line of the table in `config.md` is

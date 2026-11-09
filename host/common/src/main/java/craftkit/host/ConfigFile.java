@@ -47,6 +47,35 @@ public final class ConfigFile {
 		Files.writeString(path, new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(config) + System.lineSeparator(), StandardCharsets.UTF_8);
 	}
 
+	/** Takes keys out of the file, each by its path's parts; a section left empty goes too. */
+	public void remove(java.util.List<java.util.List<String>> paths) throws IOException {
+		if (paths.isEmpty() || !exists()) {
+			return;
+		}
+		String text = read();
+		com.google.gson.JsonObject config = text.isBlank() ? new com.google.gson.JsonObject() : com.google.gson.JsonParser.parseString(text).getAsJsonObject();
+		for (java.util.List<String> key : paths) {
+			remove(config, key);
+		}
+		Files.writeString(path, new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(config) + System.lineSeparator(), StandardCharsets.UTF_8);
+	}
+
+	static void remove(com.google.gson.JsonObject config, java.util.List<String> path) {
+		if (path.isEmpty()) {
+			return;
+		}
+		if (path.size() == 1) {
+			config.remove(path.get(0));
+			return;
+		}
+		if (config.get(path.get(0)) instanceof com.google.gson.JsonObject inner) {
+			remove(inner, path.subList(1, path.size()));
+			if (inner.isEmpty()) {
+				config.remove(path.get(0));
+			}
+		}
+	}
+
 	/** A change merged into another, for gathering several before one write. */
 	public static void mergeInto(com.google.gson.JsonObject into, com.google.gson.JsonObject change) {
 		merge(into, change);

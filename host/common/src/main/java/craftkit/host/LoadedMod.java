@@ -248,6 +248,10 @@ public final class LoadedMod {
 		boolean wrote = false;
 		try {
 			wrote = config.writeIfMissing(GSON.toJson(reply.get("config")));
+			// A file lacking a key (an older one): written again with every key, as the mod asks.
+			if (!wrote && reply.has("rewrite") && reply.get("rewrite").getAsBoolean() && reply.has("config")) {
+				config.write(GSON.toJson(reply.get("config")));
+			}
 		} catch (IOException e) {
 			// Not fatal: the mod runs on what it read; the player just has no file to edit yet.
 			unknown.add("(could not write " + config.path() + ": " + e.getMessage() + ")");
@@ -322,6 +326,14 @@ public final class LoadedMod {
 	 * preparing screen's model choice). Answers an error, or the empty string.
 	 */
 	public synchronized String reconfigure(com.google.gson.JsonObject change) {
+		return reconfigure(change, List.of());
+	}
+
+	/**
+	 * As {@link #reconfigure(JsonObject)}, with keys taken out of the file first (each a dotted
+	 * path's parts): sent back to their preset, which the mod fills in as it writes the file again.
+	 */
+	public synchronized String reconfigure(com.google.gson.JsonObject change, List<List<String>> removed) {
 		if (library.isEmpty() || manifest.isEmpty() || configDir == null) {
 			return "the mod is not loaded";
 		}
@@ -336,6 +348,7 @@ public final class LoadedMod {
 			return e.getMessage();
 		}
 		try {
+			config.remove(removed);
 			config.merge(change);
 			JsonObject init = new JsonObject();
 			init.addProperty("config", config.read());

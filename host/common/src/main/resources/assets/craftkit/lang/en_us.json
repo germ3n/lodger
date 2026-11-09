@@ -26,5 +26,6 @@
 	"craftkit.debug.no_screen": "that needs a player; the console can use show, force, stage and action",
 	"key.craftkit.hud": "craftkit debug overlay",
 	"craftkit.settings.tab.settings": "Settings",
-	"craftkit.settings.tab.all": "All keys"
+	"craftkit.settings.tab.all": "All keys",
+	"craftkit.settings.to_preset": "Back to the preset: this key's own value goes, the preset's comes back (on Done)"
 }
