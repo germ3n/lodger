@@ -14,7 +14,7 @@ on:
       prerelease:
         description: "Mark the release as a pre-release"
         type: boolean
-        default: false
+        default: false 
 
 jobs:
   checks:
