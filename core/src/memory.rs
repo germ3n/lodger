@@ -322,6 +322,9 @@ pub struct Creature {
     pub named: bool,
     /// Tamed by the target.
     pub pet: bool,
+    /// A young one: a baby villager cannot trade.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub baby: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -1348,6 +1351,7 @@ impl Memory {
                     kind: e.kind.rsplit(':').next().unwrap_or(&e.kind).to_string(),
                     pos: e.pos,
                     named: !e.name.is_empty(),
+                    baby: e.baby,
                     pet: !e.owner.is_empty() && e.owner == self.target_uuid,
                 })
                 .collect();
@@ -1386,6 +1390,7 @@ impl Memory {
                     kind: e.kind.rsplit(':').next().unwrap_or(&e.kind).to_string(),
                     pos: e.pos,
                     named: !e.name.is_empty(),
+                    baby: e.baby,
                     pet: false,
                 })
                 .collect();
@@ -1410,6 +1415,7 @@ impl Memory {
                         pos: e.pos,
                         named: false,
                         pet: false,
+                        baby: false,
                     })
                     .collect();
                 self.decor = observations

@@ -1190,6 +1190,12 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **The last three small ones** (owner: "tend to the small minor issues"): a baby villager is
+  never the one that sells (an entity's `baby`, ABI 53; its sale waited until it grew up); the
+  lectern notes go on the lectern asked or one of the others the mind names out of their view
+  (`put_book`'s `also`), never one the host found within eight blocks, which could be in front of
+  them; the scarecrow's armour stand, taken and not placed, goes back to the chest (the put back
+  of a failed event's takes already did it). Tests: one in `village`, one in `act`. Was: those.
 - [x] **Small events cost a quarter, and `intense` is the default** (owner: "should the amount of
   events per day be scaled up since most events are things the player doesnt notice?"; "make the
   default preset be the intense one"): a small event (the catalogue's `small`, one they may not

@@ -48,7 +48,8 @@ impl Memory {
         self.last
             .creatures_near
             .iter()
-            .filter(|c| c.kind == "villager")
+            // Never a baby: it cannot trade, so its sale waited until it grew up.
+            .filter(|c| c.kind == "villager" && !c.baby)
             .min_by(|a, b| distance(block_of(a.pos), at).total_cmp(&distance(block_of(b.pos), at)))
     }
 
@@ -119,6 +120,8 @@ mod tests {
             pos: [x, 64.0, 100.0],
             named,
             pet: false,
+
+            baby: false,
         };
         memory.last.pos = [100.0, 64.0, 100.0];
         memory.last.creatures_near = vec![villager(1, 101.0, true), villager(2, 110.0, false)];
@@ -129,6 +132,11 @@ mod tests {
             memory.unnamed_villager_near().is_none(),
             "their named one keeps its name"
         );
+        memory.last.creatures_near = vec![crate::memory::Creature {
+            baby: true,
+            ..villager(3, 100.5, false)
+        }];
+        assert!(memory.villager_near().is_none(), "a baby never sells");
     }
 
     #[test]

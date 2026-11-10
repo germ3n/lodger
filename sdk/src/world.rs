@@ -157,6 +157,9 @@ pub struct Entity {
     pub looking_at_player: Option<u32>,
     /// Tied by a lead to a fence post. ABI 27.
     pub leashed: bool,
+    /// A young one (a baby villager cannot trade). ABI 53.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub baby: bool,
 }
 
 /// The weather and the sky.
@@ -957,12 +960,14 @@ pub enum Command {
         slot: u32,
         page: String,
     },
-    /// The book kept under `kept` onto the lectern at `pos`, or, holding a book, the nearest
-    /// within eight blocks that holds none. ABI 51.
+    /// The book kept under `kept` onto the lectern at `pos`, or, holding a book, the first of
+    /// `also` that holds none (the mind's other lecterns out of their view, ABI 53). ABI 51.
     PutBook {
         id: u64,
         pos: BlockPos,
         kept: String,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        also: Vec<BlockPos>,
     },
     /// Mark the filled map in a container's slot with a target at `at`. ABI 14.
     MarkMap {

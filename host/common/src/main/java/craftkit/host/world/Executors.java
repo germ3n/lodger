@@ -1567,20 +1567,21 @@ public final class Executors {
 	}
 
 	/** A kept book onto a lectern that holds none (ABI 51). */
-	/** How far from the lectern asked a free one is looked for. */
-	private static final int LECTERN_REACH = 8;
-
 	private static JsonObject putBook(ServerLevel level, JsonObject command, long id, WorldData data) {
-		// The lectern asked, or the nearest one within eight blocks that holds no book: the
-		// mind knows its lecterns, not which hold a book now.
-		BlockPos asked = blockPos(command.getAsJsonArray("pos"));
+		// The lectern asked, or the first of the others the mind names that holds no book (ABI
+		// 53: its lecterns out of their view; a search around one could find one before them).
+		List<BlockPos> candidates = new ArrayList<>();
+		candidates.add(blockPos(command.getAsJsonArray("pos")));
+		if (command.has("also")) {
+			for (JsonElement at : command.getAsJsonArray("also")) {
+				candidates.add(blockPos(at.getAsJsonArray()));
+			}
+		}
 		BlockPos pos = null;
-		double nearest = Double.MAX_VALUE;
-		for (BlockPos at : BlockPos.betweenClosed(asked.offset(-LECTERN_REACH, -LECTERN_REACH, -LECTERN_REACH), asked.offset(LECTERN_REACH, LECTERN_REACH, LECTERN_REACH))) {
-			if (level.isLoaded(at) && level.getBlockEntity(at) instanceof net.minecraft.world.level.block.entity.LecternBlockEntity free && !free.hasBook()
-					&& at.distSqr(asked) < nearest) {
-				nearest = at.distSqr(asked);
-				pos = at.immutable();
+		for (BlockPos at : candidates) {
+			if (level.isLoaded(at) && level.getBlockEntity(at) instanceof net.minecraft.world.level.block.entity.LecternBlockEntity free && !free.hasBook()) {
+				pos = at;
+				break;
 			}
 		}
 		if (pos == null || !(level.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.LecternBlockEntity lectern)) {

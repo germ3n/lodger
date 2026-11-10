@@ -1441,6 +1441,8 @@ mod tests {
             pos: [1.0, 64.0, 1.0],
             named: true,
             pet: true,
+
+            baby: false,
         });
         memory.builds.push(Build {
             kind: "house_near".to_string(),

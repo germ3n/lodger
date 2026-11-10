@@ -582,6 +582,8 @@ public final class Senses {
 			// Tied by a lead to a fence post (ABI 27, `horse_moved`).
 			e.addProperty("leashed", entity instanceof net.minecraft.world.entity.Leashable leashable && leashable.isLeashed()
 					&& leashable.getLeashHolder() instanceof net.minecraft.world.entity.decoration.LeashFenceKnotEntity);
+			// A young one (ABI 53): a baby villager cannot trade, so it never sells.
+			e.addProperty("baby", entity instanceof net.minecraft.world.entity.AgeableMob ageable && ageable.isBaby());
 
 			if (entity instanceof LivingEntity living) {
 				Vec3 view = living.getViewVector(1.0f);

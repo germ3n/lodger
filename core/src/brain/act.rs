@@ -3011,6 +3011,13 @@ pub fn commands(
                             id: ids(),
                             pos: lectern,
                             kept,
+                            // Its other lecterns out of their view, should this one hold a book:
+                            // the host looked within eight blocks, at any, one before them too.
+                            also: memory
+                                .fixtures("lectern")
+                                .map(|f| f.pos)
+                                .filter(|p| *p != lectern && !memory.in_view(*p, ANIMAL_VIEW))
+                                .collect(),
                         },
                         1,
                     ),
@@ -5952,6 +5959,7 @@ mod tests {
                 pos: [10.0, 64.0, 10.0],
                 named,
                 pet,
+                baby: false,
             });
         }
         for (kind, id) in [("zombie", 301), ("skeleton", 302), ("spider", 303)] {
@@ -6020,6 +6028,8 @@ mod tests {
             pos: [20.0, 63.0, 0.0],
             named: false,
             pet: false,
+
+            baby: false,
         });
         memory.vehicles.push(Creature {
             id: 302,
@@ -6027,6 +6037,8 @@ mod tests {
             pos: [5.0, 64.0, 5.0],
             named: false,
             pet: false,
+
+            baby: false,
         });
         memory.surroundings = Some(crate::memory::Surround {
             day: 0.0,
@@ -6141,6 +6153,8 @@ mod tests {
                 pos: [x, 64.0, 6.5],
                 named: false,
                 pet: false,
+
+                baby: false,
             });
         }
         memory.last.leashed.push(80);
@@ -6151,6 +6165,8 @@ mod tests {
             pos: [3.5, 1.0, 3.5],
             named: false,
             pet: false,
+
+            baby: false,
         });
         // Two sheep grazing near them, with the pig a herd (`pack`).
         for (id, x) in [(86, -5.5), (87, -6.5)] {
@@ -6160,6 +6176,8 @@ mod tests {
                 pos: [x, 1.0, -4.5],
                 named: false,
                 pet: false,
+
+                baby: false,
             });
         }
         // A cow of theirs in sight, twenty blocks off.
@@ -6169,6 +6187,8 @@ mod tests {
             pos: [0.5, 1.0, 20.5],
             named: false,
             pet: false,
+
+            baby: false,
         });
         // A torch of theirs behind where they stand (the memory's player is at the origin,
         // facing +z).
@@ -6913,6 +6933,49 @@ mod tests {
             "{:?}",
             map[0].0
         );
+    }
+
+    #[test]
+    fn the_notes_name_only_lecterns_out_of_their_view() {
+        let mut memory = rich_memory();
+        memory.fixtures = [[0, 64, 10], [0, 64, -10], [0, 64, -20]]
+            .iter()
+            .map(|p| crate::memory::Fixture {
+                kind: "lectern".to_string(),
+                pos: *p,
+            })
+            .collect();
+        memory.last.online = true;
+        memory.last.sleeping = false;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 180.0;
+        let made = commands(
+            find("lectern_notes").unwrap(),
+            Some([0, 64, 10]),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let also = made.iter().find_map(|(c, _)| match c {
+            Command::PutBook { also, .. } => Some(also.clone()),
+            _ => None,
+        });
+        assert_eq!(
+            also,
+            Some(Vec::<BlockPos>::new()),
+            "both others are in front of them (yaw 180 faces north)"
+        );
+        memory.last.yaw = 0.0;
+        let made = commands(
+            find("lectern_notes").unwrap(),
+            Some([0, 64, 10]),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::PutBook { also, .. } if also == &vec![[0, 64, -10], [0, 64, -20]])));
     }
 
     #[test]

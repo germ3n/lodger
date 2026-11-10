@@ -211,8 +211,9 @@ long, how far they came toward it, how it ended; `world/Gaze.java`). ABI 48: `co
 quill), `put_book` (a kept book onto a lectern), `approach`'s `give` with `kept` (brought and
 dropped at their feet, kept again if never), and the `bought` event (a sale of its bought). ABI 52:
 `take_item`'s `expect`, the item it means by id: a slot holding something else now is not
-taken from, that item in another slot is, and with none the take is refused; and `put_book`
-takes the nearest lectern without a book within eight blocks when the one asked holds one.
+taken from, that item in another slot is, and with none the take is refused. ABI 53: an
+entity's `baby` (a baby villager cannot trade), and `put_book`'s `also`, the other lecterns the
+mod would use, the first without a book taken when the one asked holds one.
 
 ## Resources
 

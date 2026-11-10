@@ -119,6 +119,7 @@ mod tests {
             pos,
             named: false,
             pet: false,
+            baby: false,
         }
     }
 
