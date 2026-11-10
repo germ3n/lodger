@@ -221,7 +221,12 @@ fn run(days: u64, config: &str) -> Run {
 
 #[test]
 fn a_stay_of_twelve_days_on_the_rule_brain_acts_within_its_budget_and_never_in_view() {
-    let run = run(12, r#"{ "stages": { "start_after_days": 1 } }"#);
+    let run = run(
+        12,
+        // Every event a whole one, so the cap below is the budget's own arithmetic (a small
+        // event's quarter is `events.rs`'s test).
+        r#"{ "preset": "balanced", "stages": { "start_after_days": 1 }, "events": { "small_cost": 1.0 } }"#,
+    );
 
     assert!(!run.commands.is_empty(), "nothing happened in twelve days");
     // The budget is 1, 2, 4, 6 events a day: eleven days after moving in land 66 at most.
@@ -386,7 +391,7 @@ fn stay_after(days: u64, config: &str, seed: i64) -> lodger_core::stay::Stay {
 fn no_event_lands_inside_its_cooldown_or_past_its_cap() {
     let stay = stay_after(
         14,
-        r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [3, 3, 3, 3, 3], "events_per_day": [8, 8, 8, 8, 8] } }"#,
+        r#"{ "preset": "balanced", "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [3, 3, 3, 3, 3], "events_per_day": [8, 8, 8, 8, 8] } }"#,
         21,
     );
     let landed: Vec<_> = stay
@@ -456,7 +461,7 @@ fn sleep_is_only_ever_refused_while_the_player_is_in_bed_and_sounds_play_only_wh
 {
     let run = run(
         10,
-        r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [2, 2, 2, 2, 2] } }"#,
+        r#"{ "preset": "balanced", "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [2, 2, 2, 2, 2] } }"#,
     );
     for (tick, command) in &run.commands {
         let time = tick % 24_000;

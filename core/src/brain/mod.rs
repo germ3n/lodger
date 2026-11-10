@@ -1211,7 +1211,7 @@ impl Brain {
         // Only what was sent spends: an event that made nothing (a tidy chest, no slot free)
         // used the day's budget and counted toward the next stage until now.
         if !plan.forced && (!made.is_empty() || plan.event == "wait") {
-            arc.spend(event.cost(), now.day);
+            arc.spend(event.cost_in(config), now.day);
         }
         if plan.forced && made.is_empty() {
             memory.record(&plan.event, plan.pos, day, false, "nothing to do it with");
@@ -2331,9 +2331,9 @@ impl Brain {
             .iter()
             .filter(|p| !p.forced)
             .filter_map(|p| events::find(&p.event))
-            .map(|e| e.cost())
+            .map(|e| e.cost_in(config))
             .sum();
-        if !arc.affords(chosen.cost() + held, now.day, config) {
+        if !arc.affords(chosen.cost_in(config) + held, now.day, config) {
             log.note("the day's budget is spent");
             self.writings.retain(|w| w.event != chosen.id);
             return;
@@ -3837,7 +3837,7 @@ mod tests {
             .plans
             .iter()
             .filter_map(|p| events::find(&p.event))
-            .map(|e| e.cost())
+            .map(|e| e.cost_in(&config))
             .sum();
         assert!(
             arc.spent_today + held <= 1.0 + 1e-6,

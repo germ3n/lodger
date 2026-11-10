@@ -42,7 +42,7 @@ because what it does comes from what *you* did.
 - **Use your existing world.** It works best in a world you already care about. It never
   breaks what you built and never takes anything for good.
 - **Starting fresh?** Pick a calmer preset on the title screen's settings (Lodger, then
-  `calm` or `balanced`).
+  `calm` or `balanced`): the default is `intense`.
 - **Don't read the spoilers below** if you want to find out for yourself.
 
 ### What it never does
@@ -62,8 +62,8 @@ because what it does comes from what *you* did.
 | Preset | What it is like |
 | --- | --- |
 | `calm` | Rare and quiet. Nothing touches your screen, your chat or your sleep, and the stay ends gently. |
-| `balanced` | The default: a stay of a few in-game weeks that builds slowly. |
-| `intense` | Denser, bolder, sooner. |
+| `balanced` | A stay of a few in-game weeks that builds slowly. |
+| `intense` | The default: denser, bolder, sooner. |
 | `relentless` | Something every evening from the first day. For people who asked. |
 
 You can also switch whole groups off in the settings (sounds, screen effects, the figure, chat

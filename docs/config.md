@@ -32,14 +32,15 @@ new model size is fetched at once.
 | Key | Default | What it changes |
 | --- | --- | --- |
 | `enabled` | `true` | Whether a lodger moves into new worlds and existing ones keep theirs. `false` ends the stay in every world, where `/craftkit lodger leave` ends one gently. |
-| `preset` | `"balanced"` | `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below (see [Presets](#presets)). A key the file names wins over the preset; the file written back shows the preset's values filled in. Picking another preset on the settings screen takes the old preset's values out of the file, the ones you never changed, so the new preset's apply, and writes the file again with them. |
+| `preset` | `"intense"` | `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below (see [Presets](#presets)). A key the file names wins over the preset; the file written back shows the preset's values filled in. Picking another preset on the settings screen takes the old preset's values out of the file, the ones you never changed, so the new preset's apply, and writes the file again with them. |
 | `log.decisions` | `true` | Writes every decision to `config/lodger/decisions.log`. Keep it on while developing; see [The decision log](brain.md#the-decision-log). |
 | `log.keep_mb` | `16` | The log rotates past this size, keeping one older file. |
 
 ## Presets
 
 Four ways to play, as the owner asked: how much happens, how bold it is, and what
-is left out. `balanced` is the design as the docs describe it and the default; the others change
+is left out. `balanced` is the design as the docs describe it, and `intense` the default (owner: "make the
+default preset be the intense one"), denser and sooner; the others change
 the keys below and nothing else. The hard rules in [What it never does](good-to-know.md#what-it-never-does)
 hold under every preset; a preset turns events off, never rules.
 
@@ -51,6 +52,7 @@ hold under every preset; a preset turns events off, never rules.
 | Cooldowns | doubled | as written | three quarters | halved |
 | Keeps its distance (`events.min_distance`) | 80 blocks | 64 | 48 | 32 |
 | Menu offered | 8 | 8 | 8 | 12 |
+| A small event costs (`events.small_cost`) | a whole one | a quarter | a quarter | a quarter |
 | Acts at confidence | 0.5 | 0.4 | 0.3 | 0.25 |
 | Chat and player list | off | on | on | on |
 | Left out | the sleep events (`bed_breaks` and `foot_of_bed` among them), the near figures, every screen glitch (`events.glitches` off), `lights_fail`, `red_rain`, `your_voice`, `knock`, `stare`, `sign_word`, `tunnel_toward` | nothing | nothing | nothing |
@@ -94,7 +96,7 @@ the end whatever the difficulty. The settings page picks the preset; the file wr
 | --- | --- | --- |
 | `stages.least_days` | `[1, 2, 2, 3, 1]` | The least in-game days each stage lasts, in order. See [The five stages](entity.md#the-five-stages). |
 | `stages.most_days` | `[3, 5, 5, 7, 3]` | The most. A stage that has not ended on its own ends here. |
-| `stages.events_per_day` | `[1, 2, 4, 6, 3]` | The budget of events per in-game day in each stage. Sounds count half. Stage five has its ending's script besides (its budget was 0 before, and its own rows, `arrow_hits` among them, could never run). See [How often](entity.md#how-often). |
+| `stages.events_per_day` | `[1, 2, 4, 6, 3]` | The budget of events per in-game day in each stage. Sounds count half, a small event a quarter (`events.small_cost`). Stage five has its ending's script besides (its budget was 0 before, and its own rows, `arrow_hits` among them, could never run). See [How often](entity.md#how-often). |
 | `stages.start_after_days` | `3` | In-game days a world is played before the lodger moves in. A fresh world is a fresh world first. |
 | `stages.ending` | `"difficulty"` | `"difficulty"`, `"leave"`, `"take"` or `"keep"`. Which ending the last stage works toward; `"difficulty"` reads the world's. See [How it ends](entity.md#how-it-ends). |
 
@@ -107,6 +109,7 @@ the end whatever the difficulty. The settings page picks the preset; the file wr
 | `events.disabled` | `[]` | Event ids the brain never offers as choices. For servers that want, say, no `take` or no `sign_word`. See [Events](entity.md#events). |
 | `events.offered` | `8` | How many eligible events the brain is offered per plan. Fewer is a more predictable lodger; more is a longer prompt. |
 | `events.cooldown_scale` | `1.0` | Multiplies every event's cooldown. `2.0` is a lodger that repeats itself half as often and so does less. |
+| `events.small_cost` | `0.25` | What a small event costs of the day's budget, at most: the ones they may not notice (a chest tidied, a tool worn, a frame turned, a sound behind a wall; the catalogue marks them). A quarter lets four of them fit where one noticed thing would, so the house drifts more while the things they will notice keep their pace. `1` counts them as any event (`calm`). 0.05 to 1. Owner: "should the amount of events per day be scaled up since most events are things the player doesnt notice?" |
 | `events.sounds` | `true` | Whether the sounds (the door and chest sounds, the knocks, the late steps, the mining sounds, the pet's growl) may happen. Off, nothing in the group is offered or forced. |
 | `events.figure` | `true` | Whether the far presence and the replay figure are ever shown. |
 | `events.chat` | `true` | Whether the lodger may touch the target's chat and player list (a line in their own name, a whisper from themselves, their name twice in the list, the joined and left lines, the sleepers count). |

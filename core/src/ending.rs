@@ -193,6 +193,22 @@ pub enum Beat {
 }
 
 impl Beat {
+    /// Whether the config's groups let it happen, as they do the catalogue's events
+    /// (`offer::switched_on`): with the glitches off the sun never blinked for the catalogue, and
+    /// did all the same in the ending's script.
+    pub fn switched_on(self, config: &Config) -> bool {
+        match self {
+            Beat::SunBlink | Beat::Flicker => config.events.glitches,
+            Beat::Music | Beat::BellRings => config.events.sounds,
+            Beat::FigureAtItsDoor
+            | Beat::FigureAtEdge
+            | Beat::FigureBehind(_)
+            | Beat::FigureComes
+            | Beat::FigureInItsWindow => config.events.figure,
+            _ => true,
+        }
+    }
+
     /// A moment: skipped when it comes late, where a change to the world is done late.
     pub fn moment(self) -> bool {
         matches!(
@@ -365,6 +381,9 @@ pub fn tick(
         return Vec::new();
     }
     if step.beat == Beat::Death && !deals_death(config, memory) {
+        return Vec::new();
+    }
+    if !step.beat.switched_on(config) {
         return Vec::new();
     }
 

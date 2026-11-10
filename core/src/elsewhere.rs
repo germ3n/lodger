@@ -44,7 +44,7 @@ impl Stay {
         for (id, world) in shared.done.drain(..) {
             if let Some(event) = events::find(id) {
                 self.memory.record(id, None, day, true, &world);
-                self.arc.spend(event.cost(), now.day);
+                self.arc.spend(event.cost_in(config), now.day);
                 // The enderman's block came out of what it holds, never from nothing.
                 if id == "ender_holds" {
                     if let Some(block) = &shared.block {
@@ -73,7 +73,7 @@ impl Stay {
             if crate::brain::offer::switched_on(event, config)
                 && crate::rules::check(event, None, &self.memory, self.arc.stage, day, config)
                     .is_ok()
-                && self.arc.affords(event.cost(), now.day, config)
+                && self.arc.affords(event.cost_in(config), now.day, config)
                 && (*id != "ender_holds" || shared.block.is_some())
             {
                 shared.allowed.push(id);

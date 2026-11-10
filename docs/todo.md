@@ -1190,6 +1190,20 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **Small events cost a quarter, and `intense` is the default** (owner: "should the amount of
+  events per day be scaled up since most events are things the player doesnt notice?"; "make the
+  default preset be the intense one"): a small event (the catalogue's `small`, one they may not
+  notice) costs at most `events.small_cost` of the day's budget, a quarter by default and a whole
+  one on `calm` (`Event::cost_in`), so more of them land while the noticed ones keep their pace; a
+  file that names no preset plays `intense` (`DEFAULT_PRESET`; `Config::default()` stays
+  `balanced`'s values, the base every preset is laid over). Tests: the budget test counts by the
+  config's costs, the empty-file test wants `intense`, one in `events` for the costs; three stay
+  tests name `balanced`, whose numbers they check, and the twelve-day one counts every event whole
+  so its cap is still the budget's own. The groups test, on `intense`, reached the ending and found
+  its script blinking the sun with the glitches off: the ending's beats keep the groups now
+  (`Beat::switched_on`: the sun and the flicker with the glitches, the music and the bell with the
+  sounds, the figures with the figure). Was: every event cost the same but sounds, an empty file
+  was `balanced`, and the ending ignored the groups.
 - [x] **Back to the preset, key by key** (owner: "yes back to preset would be good"): each row of
   All keys has a ↺ button; the key is taken out of the file as the change applies
   (`ConfigFile.remove`, `LoadedMod.reconfigure` with removals), and the mod writes the file again

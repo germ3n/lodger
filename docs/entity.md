@@ -743,7 +743,7 @@ standing at its sign, and the `How does it take this?` ask.
 Events are rare, and get less rare. Each stage has a budget of events per in-game day
 (`stages.events_per_day`, by default one a day in stage one, two in stage two, four in stage
 three, six in stage four), and the brain is asked to plan only while the day has budget left.
-Sounds and the screen's glitches count half. A day with budget left at its end does not carry it
+Sounds and the screen's glitches count half, and a small event (one they may not notice) a quarter (`events.small_cost`; `calm` counts it whole), so the house drifts more while the noticed things keep their pace. A day with budget left at its end does not carry it
 over; a quiet day is a quiet day. So a whole stay of about two in-game weeks holds some forty to
 sixty events, one most evenings from the start and several a day in the last days before the
 end. That is the denser of the two paces considered (the other was half of it over three weeks;

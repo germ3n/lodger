@@ -25,8 +25,9 @@ fn merge_into(base: &mut serde_json::Value, file: &serde_json::Value) {
     }
 }
 
-/// The four presets: what each sets. Everything not listed is the `balanced` default, which is
-/// `Config::default()`; `balanced` sets nothing.
+/// The four presets: what each sets. Everything not listed is `balanced`'s, which is
+/// `Config::default()`; `balanced` sets nothing. A file that names no preset plays
+/// [`DEFAULT_PRESET`], `intense`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Preset {
     /// Rare, quiet, nothing that touches the player's screen, chat or sleep, no death at the
@@ -75,6 +76,8 @@ impl Preset {
                 config.stages.least_days = [2, 3, 3, 4, 1];
                 config.stages.most_days = [5, 7, 7, 9, 3];
                 config.events.cooldown_scale = 2.0;
+                // Rare and quiet: a small thing costs what any event does.
+                config.events.small_cost = 1.0;
                 config.events.min_distance = 80;
                 config.brain.most_plans = 2;
                 config.events.chat = false;
@@ -406,6 +409,10 @@ pub struct Events {
     pub disabled: Vec<String>,
     pub offered: u32,
     pub cooldown_scale: f64,
+    /// What a small event (one they may not notice: a chest tidied, a tool worn, a frame
+    /// turned) costs of the day's budget, at most: so the house drifts more while the things
+    /// they will notice keep their pace. 1 counts them as any event.
+    pub small_cost: f32,
     pub sounds: bool,
     pub figure: bool,
     pub glitches: bool,
@@ -502,6 +509,7 @@ impl Default for Events {
             disabled: Vec::new(),
             offered: 8,
             cooldown_scale: 1.0,
+            small_cost: 0.25,
             sounds: true,
             figure: true,
             glitches: true,
@@ -526,11 +534,15 @@ impl Default for Multiplayer {
 /// every key, written at the first start, and picking `calm` on the settings screen used to
 /// change the name alone, every value staying `balanced`'s. None when the preset is the same,
 /// or either text is not a config.
+/// The preset a file without one plays (owner: "make the default preset be the intense one").
+/// `Config::default()` stays the base every preset is laid over, which is `balanced`'s values.
+pub const DEFAULT_PRESET: &str = "intense";
+
 pub fn rebased(before: &str, now: &str) -> Option<String> {
     let preset_of = |v: &serde_json::Value| {
         v.get("preset")
             .and_then(|p| p.as_str())
-            .unwrap_or("balanced")
+            .unwrap_or(DEFAULT_PRESET)
             .to_string()
     };
     let before: serde_json::Value = serde_json::from_str(before).ok()?;
@@ -713,7 +725,9 @@ impl Config {
     /// the preset's, so `{ "preset": "calm" }` alone is a whole calm config.
     pub fn parse(text: &str) -> Result<Self, String> {
         if text.trim().is_empty() {
-            return Ok(Self::default());
+            return Ok(Preset::named(DEFAULT_PRESET)
+                .map(Preset::config)
+                .unwrap_or_default());
         }
 
         let mut file: serde_json::Value =
@@ -722,7 +736,7 @@ impl Config {
         let preset_name = file
             .get("preset")
             .and_then(|p| p.as_str())
-            .unwrap_or("balanced");
+            .unwrap_or(DEFAULT_PRESET);
         let preset = Preset::named(preset_name)
             .ok_or_else(|| "preset must be calm, balanced, intense or relentless".to_string())?;
         let base = serde_json::to_value(preset.config()).map_err(|err| err.to_string())?;
@@ -866,6 +880,10 @@ impl Config {
             return Err("events.cooldown_scale must be positive".to_string());
         }
 
+        if !(0.05..=1.0).contains(&self.events.small_cost) {
+            return Err("events.small_cost must be between 0.05 and 1".to_string());
+        }
+
         Ok(())
     }
 
@@ -888,9 +906,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn an_empty_file_is_the_defaults() {
-        assert_eq!(Config::parse("").unwrap(), Config::default());
-        assert_eq!(Config::parse("  \n").unwrap(), Config::default());
+    fn an_empty_file_is_the_default_preset() {
+        let intense = Preset::named(DEFAULT_PRESET).unwrap().config();
+        assert_eq!(intense.preset, "intense");
+        assert_eq!(Config::parse("").unwrap(), intense);
+        assert_eq!(Config::parse("  \n").unwrap(), intense);
+        assert_eq!(
+            Config::parse(r#"{"log": {"keep_mb": 16}}"#).unwrap().preset,
+            "intense",
+            "a file that names none plays it too"
+        );
     }
 
     #[test]

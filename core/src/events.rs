@@ -4340,11 +4340,22 @@ impl Event {
         self.from_stage <= stage && stage <= self.to_stage
     }
 
-    /// What the event counts against the day's budget.
+    /// What the event counts against the day's budget, by its weight alone (a sound half).
     pub fn cost(&self) -> f32 {
         match self.weight {
             Weight::Full => 1.0,
             Weight::Half => 0.5,
+        }
+    }
+
+    /// What it counts against the day's budget as the config has it: a small event (one they
+    /// may not notice) at most `events.small_cost`, so more of them fit beside the things they
+    /// will notice.
+    pub fn cost_in(&self, config: &crate::config::Config) -> f32 {
+        if self.small {
+            self.cost().min(config.events.small_cost)
+        } else {
+            self.cost()
         }
     }
 
@@ -4866,6 +4877,27 @@ impl Event {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn a_small_event_costs_a_quarter_a_noticed_one_a_whole_and_calm_counts_them_all() {
+        let config = crate::config::Config::default();
+        let small = CATALOGUE
+            .iter()
+            .find(|e| e.small && e.weight == Weight::Full)
+            .unwrap();
+        let noticed = CATALOGUE
+            .iter()
+            .find(|e| !e.small && e.weight == Weight::Full)
+            .unwrap();
+        assert_eq!(small.cost_in(&config), 0.25, "{}", small.id);
+        assert_eq!(noticed.cost_in(&config), 1.0, "{}", noticed.id);
+        let calm = crate::config::Preset::named("calm").unwrap().config();
+        assert_eq!(
+            small.cost_in(&calm),
+            1.0,
+            "calm: a small thing is any event"
+        );
+    }
     use super::*;
     use std::collections::HashSet;
 
