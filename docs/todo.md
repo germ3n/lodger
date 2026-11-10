@@ -1197,7 +1197,8 @@ The `[x]` lines above, summed up by day:
   `lights_out`, `face_the_house`, `hostiles_stare`, `frames_turn`) skip a spot that fails and go
   on, done if any spot was (`SPOT_BY_SPOT`), and the path's torches look eight blocks up and down
   for footing; the CI's Windows checks use the dynamic C runtime throughout (llama.cpp's MSVC
-  build kept it whatever it was asked, and the static one left its imports unresolved). Tests: one
+  build kept it whatever it was asked, and the static one left its imports unresolved; set through
+  `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
 - [x] **The debug panel in one's own singleplayer world** (owner: "i am in a singleplayer world"
