@@ -41,7 +41,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace
+      # Every test binary, a failure in one not hiding the next.
+      - run: cargo test --workspace --no-fail-fast
 
   # Both macOS natives (Metal; Intel cross-built on the Apple chip), and both Windows natives
   # (Vulkan) cross-built with cargo-xwin, as on a developer's Mac.

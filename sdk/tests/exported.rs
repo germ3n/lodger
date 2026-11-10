@@ -196,9 +196,14 @@ fn init_carries_the_directories_and_the_mod_knows_its_own_folder() {
         ..Init::default()
     };
 
+    // As paths: on Windows the folder is joined with `\`.
     assert_eq!(
-        harness.init_with(&init)["config"]["own_dir"],
-        "/game/config/tiny"
+        std::path::PathBuf::from(
+            harness.init_with(&init)["config"]["own_dir"]
+                .as_str()
+                .unwrap()
+        ),
+        std::path::PathBuf::from("/game/config/tiny")
     );
 }
 

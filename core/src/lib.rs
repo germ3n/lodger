@@ -593,9 +593,10 @@ mod tests {
         let resource = &reply["resources"][0];
 
         assert_eq!(resource["id"], "model");
+        // As paths: on Windows the folders are joined with `\`.
         assert_eq!(
-            resource["path"],
-            "/game/config/lodger/models/qwen2.5-1.5b-q4_k_m.gguf"
+            PathBuf::from(resource["path"].as_str().unwrap()),
+            PathBuf::from("/game/config/lodger/models/qwen2.5-1.5b-q4_k_m.gguf")
         );
         assert_eq!(resource["size_hint"], 1_117_320_736u64);
         assert!(resource["title"]
@@ -756,13 +757,17 @@ mod tests {
             PathBuf::from("/game/models/q.gguf")
         );
 
-        let absolute =
-            Config::parse(r#"{ "model": { "path": "/models/q.gguf", "url": "https://x/q" } }"#)
-                .unwrap();
-        assert_eq!(
-            model_path(&absolute, &init),
-            PathBuf::from("/models/q.gguf")
-        );
+        // Absolute as the system has it: on Windows a path needs its drive.
+        let at = if cfg!(windows) {
+            r"C:\models\q.gguf"
+        } else {
+            "/models/q.gguf"
+        };
+        let absolute = Config::parse(
+            &serde_json::json!({ "model": { "path": at, "url": "https://x/q" } }).to_string(),
+        )
+        .unwrap();
+        assert_eq!(model_path(&absolute, &init), PathBuf::from(at));
         assert_eq!(model_url(&absolute), "https://x/q");
     }
 
