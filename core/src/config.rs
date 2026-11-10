@@ -551,14 +551,76 @@ pub fn rebased(before: &str, now: &str) -> Option<String> {
     if old == new {
         return None;
     }
-    let mut base = serde_json::to_value(Preset::named(&old)?.config()).ok()?;
-    whole_numbers(&mut base);
+    Preset::named(&old)?;
+    Preset::named(&new)?;
+    // Every key a preset sets goes, so all of the new preset's values apply (owner: "when
+    // changing preset it should apply all values automatically"; until now a value set by hand
+    // stayed over it). What no preset sets (the model, the log, multiplayer) is the player's and
+    // stays.
     whole_numbers(&mut now);
-    strip_same(&mut now, &base);
+    for path in preset_keys() {
+        remove_path(&mut now, &path);
+    }
     now.as_object_mut()?
         .insert("preset".to_string(), serde_json::Value::from(new));
 
     serde_json::to_string(&now).ok()
+}
+
+/// The keys any preset sets: those where some preset's value is not `balanced`'s, each as its
+/// path. `preset` itself is not among them.
+pub fn preset_keys() -> Vec<Vec<String>> {
+    fn walk(
+        base: &serde_json::Value,
+        other: &serde_json::Value,
+        path: &mut Vec<String>,
+        out: &mut Vec<Vec<String>>,
+    ) {
+        match (base.as_object(), other.as_object()) {
+            (Some(base), Some(other)) => {
+                for (key, value) in base {
+                    if let Some(theirs) = other.get(key) {
+                        path.push(key.clone());
+                        walk(value, theirs, path, out);
+                        path.pop();
+                    }
+                }
+            }
+            _ => {
+                if base != other
+                    && !out.contains(path)
+                    && path.first().map(String::as_str) != Some("preset")
+                {
+                    out.push(path.clone());
+                }
+            }
+        }
+    }
+    let base = serde_json::to_value(Config::default()).unwrap_or_default();
+    let mut out = Vec::new();
+    for name in ["calm", "intense", "relentless"] {
+        if let Some(preset) = Preset::named(name) {
+            let theirs = serde_json::to_value(preset.config()).unwrap_or_default();
+            walk(&base, &theirs, &mut Vec::new(), &mut out);
+        }
+    }
+    out
+}
+
+fn remove_path(value: &mut serde_json::Value, path: &[String]) {
+    let Some((last, parents)) = path.split_last() else {
+        return;
+    };
+    let mut at = value;
+    for key in parents {
+        match at.get_mut(key) {
+            Some(next) => at = next,
+            None => return,
+        }
+    }
+    if let Some(object) = at.as_object_mut() {
+        object.remove(last);
+    }
 }
 
 /// Whether the file's text lacks a key the effective config has (a key taken out to fall back to
@@ -574,21 +636,6 @@ pub fn lacks_a_key(file: &str, effective: &serde_json::Value) -> bool {
         }
     }
     serde_json::from_str::<serde_json::Value>(file).is_ok_and(|file| lacks(&file, effective))
-}
-
-/// Takes out of `file` every value equal to `base`'s at the same keys; objects left empty go.
-fn strip_same(file: &mut serde_json::Value, base: &serde_json::Value) {
-    let (Some(file), Some(base)) = (file.as_object_mut(), base.as_object()) else {
-        return;
-    };
-    file.retain(|key, value| match base.get(key) {
-        Some(b) if value.is_object() && b.is_object() => {
-            strip_same(value, b);
-            value.as_object().is_some_and(|o| !o.is_empty())
-        }
-        Some(b) => value != b,
-        None => true,
-    });
 }
 
 /// Numbers written whole with a point (`2.0`) read as whole numbers, so a count written by a
@@ -1236,11 +1283,29 @@ mod tests {
     }
 
     #[test]
-    fn a_preset_picked_over_a_file_of_every_key_takes_effect_and_the_player_s_own_stay() {
+    fn the_keys_a_preset_sets_are_its_pace_not_the_player_s_machine() {
+        let keys: Vec<String> = preset_keys().iter().map(|p| p.join(".")).collect();
+        for key in [
+            "stages.events_per_day",
+            "events.min_distance",
+            "events.small_cost",
+        ] {
+            assert!(keys.contains(&key.to_string()), "{key}: {keys:?}");
+        }
+        assert!(
+            keys.iter()
+                .all(|k| !k.starts_with("model.") && !k.starts_with("log.") && k != "preset"),
+            "{keys:?}"
+        );
+    }
+
+    #[test]
+    fn a_preset_picked_sets_every_value_a_preset_sets_and_the_rest_stays() {
         // The file as the first start writes it: every key, balanced's values, and one the
         // player set themselves.
         let mut written = serde_json::to_value(Config::default()).unwrap();
         written["model"]["threads"] = serde_json::json!(6);
+        written["stages"]["events_per_day"] = serde_json::json!([40.0, 40.0, 40.0, 40.0, 0.0]);
         let before = written.to_string();
         written["preset"] = serde_json::json!("calm");
         let now = written.to_string();
@@ -1251,7 +1316,15 @@ mod tests {
         assert_eq!(config.preset, "calm");
         assert!(!config.events.chat, "calm's own value, not balanced's");
         assert_eq!(config.events.min_distance, 80);
-        assert_eq!(config.model.threads, 6, "what the player set is kept");
+        assert_eq!(
+            config.stages.events_per_day,
+            Preset::Calm.config().stages.events_per_day,
+            "a value a preset sets is the new preset's, even one set by hand"
+        );
+        assert_eq!(
+            config.model.threads, 6,
+            "what no preset sets is the player's, kept"
+        );
         assert!(
             rebased(&now, &now).is_none(),
             "the same preset: nothing to do"

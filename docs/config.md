@@ -19,7 +19,7 @@ without opening the file: whether the model is used, its size, its GPU share and
 words (generated or the bank) and their variety. Its **All keys** tab has every key of this
 file, by section: a toggle for a yes or no, a field for the rest (a list as JSON, `[40.0, 40.0]`),
 a changed key's name in yellow, and each key's line here as its tooltip. A key set in this file
-wins over the preset, so a key changed by hand stays when another preset is picked; its ↺
+wins over its preset until another preset is picked, which sets every key a preset sets; its ↺
 button sends it back to the preset (the key taken out of the file, the preset's value written
 in its place), and All to preset does so for every key but `preset`, `enabled` and the `model` and
 `log` sections (a model size sent back would fetch the default's). Changing
@@ -32,7 +32,7 @@ new model size is fetched at once.
 | Key | Default | What it changes |
 | --- | --- | --- |
 | `enabled` | `true` | Whether a lodger moves into new worlds and existing ones keep theirs. `false` ends the stay in every world, where `/craftkit lodger leave` ends one gently. |
-| `preset` | `"intense"` | `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below (see [Presets](#presets)). A key the file names wins over the preset; the file written back shows the preset's values filled in. Picking another preset on the settings screen takes the old preset's values out of the file, the ones you never changed, so the new preset's apply, and writes the file again with them. |
+| `preset` | `"intense"` | `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below (see [Presets](#presets)). A key the file names wins over the preset; the file written back shows the preset's values filled in. Picking another preset (on the settings screen, or in this file) sets every key a preset sets to the new preset's value, those changed by hand too, and writes the file again with them; what no preset sets (the model, the log, multiplayer) stays as it was. |
 | `log.decisions` | `true` | Writes every decision to `config/lodger/decisions.log`. Keep it on while developing; see [The decision log](brain.md#the-decision-log). |
 | `log.keep_mb` | `16` | The log rotates past this size, keeping one older file. |
 

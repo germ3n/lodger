@@ -1190,6 +1190,12 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **A preset picked applies all its values** (owner: "when changing preset it should apply
+  all values automatically"): picking another preset takes out of the file every key a preset
+  sets (`config::preset_keys`, where any preset differs from `balanced`), those changed by hand
+  too, so all of the new preset's values apply; what no preset sets (the model, the log,
+  multiplayer) stays. Tests: two in `config`. Was: only the keys still at the old preset's values
+  moved, and a value set by hand stayed over the new preset.
 - [x] **The last three small ones** (owner: "tend to the small minor issues"): a baby villager is
   never the one that sells (an entity's `baby`, ABI 53; its sale waited until it grew up); the
   lectern notes go on the lectern asked or one of the others the mind names out of their view
