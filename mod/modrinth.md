@@ -64,10 +64,11 @@ because what it does comes from what *you* did.
 | `calm` | Rare and quiet. Nothing touches your screen, your chat or your sleep, and the stay ends gently. |
 | `balanced` | A stay of a few in-game weeks that builds slowly. |
 | `intense` | The default: denser, bolder, sooner. |
-| `relentless` | Something every evening from the first day. For people who asked. |
+| `relentless` | It moves in the moment you open the world, and something happens every evening. For people who asked. |
 
 You can also switch whole groups off in the settings (sounds, screen effects, the figure, chat
-lines), or turn off single events by name in `config/lodger.json`.
+lines). The settings' **All keys** tab has every option, each explained when you hover it, with a
+button to put one (or all) back to the preset; single events can be turned off by name there too.
 
 ### Requirements
 
