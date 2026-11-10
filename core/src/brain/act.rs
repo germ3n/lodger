@@ -1449,7 +1449,8 @@ pub fn commands(
             for i in 0..count {
                 let step = step_toward(p, spot);
                 p = [p[0] + step[0] * 3, p[1], p[2] + step[1] * 3];
-                made.push((torch(ids, [p[0], p[1] + 1, p[2]], 4), i as u64 * 20));
+                // Footing looked for eight blocks up and down: the ground falls away toward water.
+                made.push((torch(ids, [p[0], p[1] + 1, p[2]], 8), i as u64 * 20));
             }
             made
         }

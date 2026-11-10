@@ -257,7 +257,7 @@ hardcoded, why only spruce"; it was a table at first.)
 | --- | --- | --- | --- |
 | `move_light` | 1 | A torch, lantern or candle the target placed is removed and placed within three blocks, the same light kept. | A placed light not in view. |
 | `add_torch` | 2 | One torch where there was none, in the darkest corner of the home. The lodger's own torch, which the memory counts. | A dark spot in the home. |
-| `light_path` | 2 | Torches, three to seven, from the home toward the want's spot, placed while the target is away. | A home and a spot. |
+| `light_path` | 2 | Torches, three to seven, from the home toward the want's spot, placed while the target is away; a spot with no footing within eight blocks up or down is skipped, the rest still laid. | A home and a spot. |
 | `put_out_campfire` | 2 | A campfire is out. | A lit campfire. |
 | `light_campfire` | 2 | A campfire is lit. | An unlit campfire. |
 | `candles_lit` | 3 | Every candle in the house is lit at night, or every lit one out. | Candles in the home. |

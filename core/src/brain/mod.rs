@@ -73,6 +73,21 @@ enum Step {
     Sent(Vec<Command>),
 }
 
+/// Events whose commands are spots of their own (a torch each, a block of ice each): one with no
+/// footing is skipped and the rest go on, where the rest of any other event is dropped (a path
+/// of seven torches stopped at the fourth over water). The event is done if any spot was.
+const SPOT_BY_SPOT: &[&str] = &[
+    "light_path",
+    "ice_path",
+    "village_doors",
+    "candles_lit",
+    "torches_far_end",
+    "lights_out",
+    "face_the_house",
+    "hostiles_stare",
+    "frames_turn",
+];
+
 /// A command this long after its event's first is its tail (`Pending::tail`): a quarter day.
 const TAIL_TICKS: u64 = 6_000;
 
@@ -147,6 +162,10 @@ pub struct Brain {
     /// What the events under way took and keep, until each is over.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub taken: Vec<Taken>,
+    /// The events of `SPOT_BY_SPOT` under way with a spot already done: a later spot that fails
+    /// does not make the event a failure.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spots_done: Vec<(String, f32)>,
     pub next_plan_tick: u64,
     /// The tick the surroundings may be asked for again, so an unanswered pass is retried, not
     /// repeated every tick.
@@ -2534,10 +2553,30 @@ impl Brain {
                     .pending
                     .iter()
                     .any(|p| !p.tail && p.event == pending.event && p.day == pending.day);
+                let by_spot = SPOT_BY_SPOT.contains(&pending.event.as_str());
+                let this = (pending.event.clone(), pending.day);
+                if by_spot && report.done && !self.spots_done.contains(&this) {
+                    self.spots_done.push(this.clone());
+                }
                 if pending.tail {
                     if !report.done {
                         log.note(&format!("{}, after it: {}", pending.event, report.reason));
                     }
+                } else if by_spot && others {
+                    if !report.done {
+                        log.note(&format!(
+                            "{}: a spot skipped, {}",
+                            pending.event, report.reason
+                        ));
+                    }
+                } else if by_spot {
+                    // Its last spot: done if any spot was.
+                    let any = self.spots_done.contains(&this);
+                    self.spots_done.retain(|s| *s != this);
+                    let reason = if any { "" } else { report.reason.as_str() };
+                    memory.record(&pending.event, pending.pos, pending.day, any, reason);
+                    log.reported(&pending.event, any, reason);
+                    self.outcome(&pending.event, if any { "done" } else { reason });
                 } else if !others || !report.done {
                     memory.record(
                         &pending.event,
@@ -4274,6 +4313,61 @@ mod tests {
             "dropped by the chest: {:?}",
             brain.later
         );
+    }
+
+    #[test]
+    fn a_path_of_torches_skips_the_spot_with_no_footing_and_is_done() {
+        let mut memory = home_memory();
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        for id in 1..=4 {
+            brain.pending.push(Pending {
+                id,
+                event: "light_path".to_string(),
+                day: 5.0,
+                ..Pending::default()
+            });
+        }
+        brain.later.push(Later {
+            at_tick: 100,
+            command: Command::SetBlock {
+                id: 4,
+                pos: [9, 64, 9],
+                block: "minecraft:torch".to_string(),
+                state: String::new(),
+                replace: vec![],
+                settle: 8,
+                wall: String::new(),
+                rest: false,
+                only: false,
+            },
+            while_still: false,
+        });
+        let report = |id, done| Report {
+            id,
+            done,
+            reason: if done {
+                String::new()
+            } else {
+                "nothing holds it there".to_string()
+            },
+        };
+        brain.report(
+            &[report(1, true), report(2, true), report(3, false)],
+            &mut memory,
+            &mut log,
+        );
+        assert_eq!(brain.later.len(), 1, "the next torch still goes");
+        assert!(
+            memory.done.iter().all(|d| d.event != "light_path"),
+            "not over yet"
+        );
+        brain.report(&[report(4, true)], &mut memory, &mut log);
+        assert!(
+            memory.done.iter().any(|d| d.event == "light_path" && d.ok),
+            "done, a spot skipped"
+        );
+        assert!(brain.spots_done.is_empty());
     }
 
     #[test]

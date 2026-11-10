@@ -1190,6 +1190,16 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **A spot with no footing skipped, not the whole path; the Windows checks link** (owner: "what
+  was the set_block error from?"; "are there other events where the safety rule might be a bit too
+  blunt?"; "the ci is erroring during the windows build"): the events whose commands are spots of
+  their own (`light_path`, `ice_path`, `village_doors`, `candles_lit`, `torches_far_end`,
+  `lights_out`, `face_the_house`, `hostiles_stare`, `frames_turn`) skip a spot that fails and go
+  on, done if any spot was (`SPOT_BY_SPOT`), and the path's torches look eight blocks up and down
+  for footing; the CI's Windows checks use the dynamic C runtime throughout (llama.cpp's MSVC
+  build kept it whatever it was asked, and the static one left its imports unresolved). Tests: one
+  in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
+  link.
 - [x] **The debug panel in one's own singleplayer world** (owner: "i am in a singleplayer world"
   and it said operators only, in a launcher with an offline profile): a singleplayer world not
   open to LAN lets its one player in whatever the name check says, and a refusal is logged with

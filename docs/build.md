@@ -144,7 +144,8 @@ deleting `target/` give it back.
 and whether it is a pre-release as its two inputs. Its jobs:
 
 1. **checks** on macOS, Ubuntu 22.04 and Windows: `cargo fmt --check`, clippy with warnings as
-   errors, `cargo test --workspace`.
+   errors, `cargo test --workspace`. On Windows these build with MSVC itself and the dynamic C
+   runtime (llama.cpp's CMake build keeps it there); the shipped natives carry theirs inside.
 2. **natives-mac-windows** on macOS: `build_natives.py macos-aarch64 macos-x86_64
    windows-x86_64 windows-aarch64`, four natives, as on a developer's Mac (Homebrew's LLVM, lld and shaderc; cargo-xwin).
 3. **natives-linux**, one runner per chip (`ubuntu-22.04`, `ubuntu-22.04-arm`): `build_natives.py

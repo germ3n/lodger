@@ -23,6 +23,13 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-22.04, windows-latest]
     runs-on: ${{ matrix.os }}
+    # The checks build on Windows with MSVC itself, where llama.cpp's CMake build keeps the
+    # dynamic C runtime whatever it is asked: so Rust's is dynamic here too (the CRT's imports
+    # were left unresolved against the static one). The natives a player gets are cross-built
+    # with the runtime inside (`.cargo/config.toml`), below; these builds ship nowhere.
+    env:
+      CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: "-C target-cpu=x86-64-v3"
+      LLAMA_STATIC_CRT: "0"
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
