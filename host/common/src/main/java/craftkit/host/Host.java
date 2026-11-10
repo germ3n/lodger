@@ -146,8 +146,20 @@ public final class Host {
 		if (server != null && server.isSingleplayerOwner(new net.minecraft.server.players.NameAndId(player.getGameProfile()))) {
 			return true;
 		}
+		// A singleplayer world not open to LAN holds no one but its owner: whoever is in it may
+		// (the name check above refused a singleplayer owner in a launcher's offline profile).
+		if (server != null && server.isSingleplayer() && !server.isPublished()) {
+			return true;
+		}
 
-		return Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(player.createCommandSourceStack());
+		boolean operator = Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(player.createCommandSourceStack());
+		if (!operator) {
+			var owner = server == null ? null : server.getSingleplayerProfile();
+			Log.LOGGER.info("debug refused for {}: not an operator (singleplayer {}, owner {}, open to LAN {})", player.getGameProfile().name(),
+					server != null && server.isSingleplayer(), owner == null ? "none" : owner.name(), server != null && server.isPublished());
+		}
+
+		return operator;
 	}
 
 	/**

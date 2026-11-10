@@ -118,7 +118,7 @@ without it** and download nothing.
 ### Operators
 
 `/craftkit status`, `/craftkit lodger status`, `leave` and `reset`, `/craftkit lodger show`, and a debug screen (F8, with an overlay on F9,
-operators only) that shows what it knows, what it plans and why. Every decision is logged in `config/lodger/decisions.log`.
+operators, and you in your own singleplayer world) that shows what it knows, what it plans and why. Every decision is logged in `config/lodger/decisions.log`.
 
 <details>
 <summary>What it can do (spoilers)</summary>

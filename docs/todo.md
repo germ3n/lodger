@@ -1190,6 +1190,11 @@ The `[x]` lines above, summed up by day:
   event for its sales (ABI 51). Tests: two in `books`, one in `act` for the diary's commands and
   its purchase remembered; the chain stay test now runs three stays and wants the place walked
   in two (one seed's luck had decided it, and the new events moved it). Was: no such events.
+- [x] **The debug panel in one's own singleplayer world** (owner: "i am in a singleplayer world"
+  and it said operators only, in a launcher with an offline profile): a singleplayer world not
+  open to LAN lets its one player in whatever the name check says, and a refusal is logged with
+  why (the player, the owner's profile, open to LAN or not). Was: "operators only" to the world's
+  own owner.
 - [x] **A preset picked applies all its values** (owner: "when changing preset it should apply
   all values automatically"): picking another preset takes out of the file every key a preset
   sets (`config::preset_keys`, where any preset differs from `balanced`), those changed by hand

@@ -35,7 +35,7 @@ pages explain each part in full; this one is the short list to keep in mind.
 - **The model's answer is not the last word.** The rules in [What it never does](#what-it-never-does)
   are checked after every decision, and an event they forbid is replaced by `wait`. Nothing in the
   situation text, the config or the memory can turn a rule off.
-- **There is a debug panel, for operators.** F8 in a world (or `/craftkit lodger debug`)
+- **There is a debug panel, for operators and the singleplayer world's owner.** F8 in a world (or `/craftkit lodger debug`)
   opens a strip down the right of the screen, the world still in view and running beside it,
   showing what the host senses of you as meters, the plans it holds with why each waits, what the mind holds, every event with whether it
   could happen right now and why not, a Fire button on each, and what landed. Players without
