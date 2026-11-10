@@ -27,5 +27,7 @@
 	"key.craftkit.hud": "craftkit debug overlay",
 	"craftkit.settings.tab.settings": "Settings",
 	"craftkit.settings.tab.all": "All keys",
-	"craftkit.settings.to_preset": "Back to the preset: this key's own value goes, the preset's comes back (on Done)"
+	"craftkit.settings.to_preset": "Back to the preset: this key's own value goes, the preset's comes back (on Done)",
+	"craftkit.settings.all_to_preset": "All to preset",
+	"craftkit.settings.all_to_preset.about": "Every key back to the preset's value (on Done), but the preset itself, whether it is on, the model and the log"
 }

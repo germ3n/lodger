@@ -1194,7 +1194,9 @@ The `[x]` lines above, summed up by day:
   All keys has a ↺ button; the key is taken out of the file as the change applies
   (`ConfigFile.remove`, `LoadedMod.reconfigure` with removals), and the mod writes the file again
   with the preset's value whenever it lacks a key (`config::lacks_a_key`, on a reload and at
-  start). Tests: one in `config`, one in `ConfigFileTest`. Was: a key set by hand stayed through
+  start). All to preset does it for every key but `preset`, `enabled`, `model` and `log` (owner:
+  "a button that resets all values to a preset"). Tests: one in `config`, one in `ConfigFileTest`.
+  Was: a key set by hand stayed through
   every preset change, and only typing the preset's value took it back.
 - [x] **Tooltips on every key, All keys as it is now, and only the mods it uses** (owner: "add
   tooltips on hover to explain what it does. it should reflect the current setting"; "only have

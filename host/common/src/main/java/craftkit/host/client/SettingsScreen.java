@@ -57,6 +57,12 @@ public final class SettingsScreen extends Screen {
 	private final List<Leaf> leaves = new ArrayList<>();
 	/** All keys' rows as edited: a field's text, or a toggle's value, by key. */
 	private final Map<String, String> edits = new LinkedHashMap<>();
+	/**
+	 * What All to preset leaves as it is: the preset itself, whether the mod is on, its model (the
+	 * size picked would go back to the default, and a download with it) and its log.
+	 */
+	private static final java.util.Set<String> KEPT_BY_ALL_TO_PRESET = java.util.Set.of("preset", "enabled", "model", "log");
+
 	/** All keys' rows sent back to their preset: taken out of the file, which the mod fills in again. */
 	private final java.util.Set<String> toPreset = new java.util.HashSet<>();
 	private final List<List<AbstractWidget>> rowWidgets = new ArrayList<>();
@@ -111,11 +117,24 @@ public final class SettingsScreen extends Screen {
 	@Override
 	protected void init() {
 		rowWidgets.clear();
-		int half = WIDTH / 2 - 2;
+		// The tabs, and on All keys a third: every key back to the preset at once.
+		int part = all ? WIDTH / 3 - 2 : WIDTH / 2 - 2;
 		addRenderableWidget(Button.builder(Component.translatable("craftkit.settings.tab.settings"), b -> tab(false))
-				.bounds(left(), 26, half, 20).build()).active = all;
+				.bounds(left(), 26, part, 20).build()).active = all;
 		addRenderableWidget(Button.builder(Component.translatable("craftkit.settings.tab.all"), b -> tab(true))
-				.bounds(left() + WIDTH - half, 26, half, 20).build()).active = !all && !leaves.isEmpty();
+				.bounds(all ? left() + part + 3 : left() + WIDTH - part, 26, part, 20).build()).active = !all && !leaves.isEmpty();
+		if (all) {
+			addRenderableWidget(Button.builder(Component.translatable("craftkit.settings.all_to_preset"), b -> {
+				for (Leaf leaf : leaves) {
+					if (!KEPT_BY_ALL_TO_PRESET.contains(leaf.path().get(0))) {
+						toPreset.add(leaf.key());
+						edits.put(leaf.key(), ConfigText.text(leaf.value()));
+					}
+				}
+				rebuildWidgets();
+			}).bounds(left() + WIDTH - part, 26, part, 20)
+					.tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("craftkit.settings.all_to_preset.about"))).build());
+		}
 
 		int control = left() + WIDTH - 150;
 		if (all) {

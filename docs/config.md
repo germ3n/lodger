@@ -21,7 +21,8 @@ file, by section: a toggle for a yes or no, a field for the rest (a list as JSON
 a changed key's name in yellow, and each key's line here as its tooltip. A key set in this file
 wins over the preset, so a key changed by hand stays when another preset is picked; its ↺
 button sends it back to the preset (the key taken out of the file, the preset's value written
-in its place). Changing
+in its place), and All to preset does so for every key but `preset`, `enabled` and the `model` and
+`log` sections (a model size sent back would fetch the default's). Changing
 tabs applies the tab left, so All keys shows the file as it is now. Done writes the changes of
 both tabs here and loads the lodger again, which checks them: a value it refuses is said under the list, and the file is put back. A
 new model size is fetched at once.
