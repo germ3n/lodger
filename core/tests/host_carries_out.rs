@@ -7,6 +7,8 @@ use std::fs;
 fn repo(path: &str) -> String {
     fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../").to_string() + path)
         .unwrap_or_else(|err| panic!("{path}: {err}"))
+        // A Windows checkout's line endings, as written: the enum's end was looked for by `\n`.
+        .replace("\r\n", "\n")
 }
 
 /// `MoveBlock` as the wire names it, `move_block`.

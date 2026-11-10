@@ -1,0 +1,5 @@
+# Text files are checked out with LF everywhere, a Windows checkout too: tests read the
+# repository's own sources and docs, and the CI's Windows runner turned them to CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
