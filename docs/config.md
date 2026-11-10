@@ -48,7 +48,7 @@ hold under every preset; a preset turns events off, never rules.
 | --- | --- | --- | --- | --- |
 | Events a day by stage | 0.5, 1, 1.5, 2, 1 | 1, 2, 4, 6, 3 | 2, 3, 5, 8, 4 | 4, 6, 8, 12, 6 |
 | Stage lengths, least to most days | 2 to 5, up to 4 to 9 | 1 to 3, up to 3 to 7 | 1 to 2, up to 2 to 6 | 1 to 1, up to 1 to 3 |
-| Move-in after | 3 days | 3 days | 3 days | the first night |
+| Move-in after | 3 days | 3 days | 3 days | at once, as the world opens |
 | Cooldowns | doubled | as written | three quarters | halved |
 | Keeps its distance (`events.min_distance`) | 80 blocks | 64 | 48 | 32 |
 | Menu offered | 8 | 8 | 8 | 12 |
