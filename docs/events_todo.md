@@ -1,6 +1,6 @@
 # Events to come
 
-Twenty event ideas not yet in the catalogue (`core/src/events.rs`, `docs/entity.md`), none of
+Forty event ideas not yet in the catalogue (`core/src/events.rs`, `docs/entity.md`), none of
 them a copy of one there or of a line in `docs/ideas.md`. Each says the stage it fits, what the
 target must be doing, what it would take (the commands there are today, or what the host would
 need), and a rough size: **S** (the mind alone, today's commands), **M** (a small host change),
@@ -28,3 +28,23 @@ need), and a rough size: **S** (the mind alone, today's commands), **M** (a smal
 | 18 | `falls_from_the_sky` | 5 | Looking up at night, they see a figure falling from high above, landing far off with a thud; gone where it fell. | Night, the target outdoors, looking up. | A figure gliding straight down, a landing sound there. | M |
 | 19 | `pet_follows` | 4 | Their dog or cat gets up and walks off toward a figure standing at the tree line; the figure is gone, and the pet comes back. | A pet near them, outdoors. | `figure` far, `approach` of the pet to it and back. | M |
 | 20 | `lies_beside` | 5 | Asleep, their eyes held open as in `choke`: a figure lies down on the floor beside the bed, facing them, and lies there until they get up. | The target in bed. | The bedside walk of `choke`, then the sleeping pose on the floor. | M |
+| 21 | `inventory_stare` | 4 | In the inventory screen their character stops following the mouse and stares straight out at them, for a few openings. | Any time. | A client hook on the inventory's paper doll. | M |
+| 22 | `false_death` | 5 | For a second the death screen, "You died!", then the game as it was, nothing lost. | The target walking, no danger near. | A client hint drawing the death screen over the game. | M |
+| 23 | `respawn_its_bed` | 5 | Their respawn point is quietly moved to the bed in the house it built; the next death, they wake there. | `house_near` built with a bed. | Their respawn position set to its bed. | M |
+| 24 | `ender_chest_note` | 4 | A note in their ender chest, the one place nothing else can reach. | They own an ender chest. | A written book put into their ender chest's own inventory. | M |
+| 25 | `eye_turns_home` | 5 | An eye of ender they throw flies toward their house instead of the stronghold, once. | The target throwing an eye of ender. | The thrown eye's target changed for that throw. | M |
+| 26 | `crossing_ahead` | 3 | Far ahead on their route a figure walks across their path, left to right, never looking at them. | The target walking their route. | `figure` with a path across the route ahead. | S |
+| 27 | `in_a_line` | 4 | Along their route, figures stand single file, all facing the house; each is gone as they pass it. | The target on their route, dusk or night. | `figure` per spot along the route, `vanish_within`. | S |
+| 28 | `peeks_from_ground` | 4 | Far off, only a figure's head shows above the grass, as if it stood in a hole; it sinks out of sight as they look. | The target outdoors on open ground. | A figure stood a block and a half into the ground, a short path down. | S |
+| 29 | `wears_your_face` | 4 | At night a zombie walks toward them wearing their own head; killed or gone at dawn, the head goes with it. | Night, a zombie near them. | A real zombie equipped with a head of their skin, taken back after. | M |
+| 30 | `animal_follows` | 3 | One of their animals follows them all day at a distance, stopping when they stop, wherever they go. | An animal of theirs near them. | `approach` of the animal, again and again, for a day. | M |
+| 31 | `held_breath` | 4 | Underwater, their air runs out twice as fast, once, and nothing is there. | The target underwater. | Their air supply drawn down faster for one dive. | M |
+| 32 | `all_freeze` | 4 | Every animal and mob around them stops mid-step at once for three seconds, then carries on. | Mobs near them. | `hold` on each, all together. | S |
+| 33 | `figure_on_map` | 4 | On a map they carry, a player marker stands at their house while they are away from it. | A map of the home in their hands, the target away. | A marker on their map's decorations, for them alone. | M |
+| 34 | `waits_at_the_portal` | 4 | Coming back from the Nether, a figure stands beside their portal, facing it, as if it had waited. | The target back through their portal. | `figure` beside the portal on their return (`CameBack`). | S |
+| 35 | `firework_over_its_house` | 4 | At night a firework goes up over the house it built, bursting in the colours of their skin. | `house_near` built, night, the target outdoors. | A firework launched there, its colours from their skin. | M |
+| 36 | `chicken_lays` | 3 | One of the chickens near their house lays something of theirs instead of an egg. | Chickens near the home, something taken and kept. | A drop of the kept stack at the chicken, with the laying sound. | S |
+| 37 | `handprints` | 4 | On the inside of a window, handprints, as if pressed from inside the house while they were out. | The target coming home, a pane. | Client particles or a decal on the pane, for them alone. | M |
+| 38 | `in_the_screenshot` | 5 | A screenshot they take (F2) shows the figure behind them, though it was never on their screen. | The target taking a screenshot. | A client hook drawing the figure into the screenshot's frame alone. | M |
+| 39 | `only_in_third_person` | 4 | In third person (F5) a figure stands right behind them; in first person there is nothing. | The target switching to third person. | A figure drawn only while the camera is detached. | M |
+| 40 | `f3_line` | 5 | The debug screen (F3) has one more line among the others: "Lodger: watching". | The target opening F3. | A client hook on the debug screen's lines. | M |
