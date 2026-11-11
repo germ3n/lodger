@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A figure at every window** (`docs/events_todo.md`, 6): `every_window`, stage 5, at night
+  with the target indoors and two windows or more (a window a run of panes): a figure outside
+  each, a block out, its head at the glass, all gone together when one is seen and looked away
+  from (`figure`'s `together`, ABI 54). Tests: one in `act`. Was: no such event.
 - [x] **A passenger in their boat** (`docs/events_todo.md`, 5): `boat_passenger`, stages 4 and
   5, rowing alone in a boat or raft with a second seat (the memory keeps what they ride now):
   a figure in the seat behind them, on their client alone (the boat's passengers sent them as

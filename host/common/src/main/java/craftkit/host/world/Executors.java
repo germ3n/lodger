@@ -712,6 +712,9 @@ public final class Executors {
 				command.has("swinging") && command.get("swinging").getAsBoolean(),
 				command.has("upside_down") && command.get("upside_down").getAsBoolean(),
 				command.has("crawls") && command.get("crawls").getAsBoolean());
+		if (command.has("together") && command.get("together").getAsInt() != 0) {
+			context.figures().together(skinOf, command.get("figure").getAsInt(), command.get("together").getAsInt());
+		}
 		if (command.has("rushes") && command.get("rushes").getAsBoolean()) {
 			context.figures().rushAt(skinOf, command.get("figure").getAsInt());
 		}

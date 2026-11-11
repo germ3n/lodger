@@ -1143,6 +1143,10 @@ pub enum Command {
         /// gone when they leave the boat. Refused when they ride none with a seat to spare. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         rides_behind: bool,
+        /// Figures shown with the same number here (above 0) go together: when one is gone,
+        /// seen and looked away from or come near or its time up, so are the rest. ABI 54.
+        #[serde(default, skip_serializing_if = "is_zero_u32")]
+        together: u32,
     },
     RemoveFigure {
         id: u64,

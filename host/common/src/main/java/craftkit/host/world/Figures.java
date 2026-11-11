@@ -61,6 +61,8 @@ public final class Figures {
 		boolean crawls;
 		/** Running at its player, after them, gone just short with a jolt (ABI 54). */
 		boolean rushes;
+		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
+		int together;
 		/** The boat it sits in behind its player, on their client alone (ABI 54); null on foot. */
 		net.minecraft.world.entity.Entity seat;
 		int pathIndex;
@@ -232,6 +234,24 @@ public final class Figures {
 		tick++;
 		tickDigs();
 		tickChokes();
+		List<Figure> gone = new ArrayList<>();
+		tickFigures(gone);
+		// A group goes with any of it: the rest of each gone figure's group, told as theirs.
+		for (Figure was : gone) {
+			Iterator<Figure> rest = active.iterator();
+			while (rest.hasNext()) {
+				Figure figure = rest.next();
+				if (figure.player == was.player && figure.together == was.together) {
+					unsend(figure);
+					rest.remove();
+					sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail("together")));
+				}
+			}
+		}
+	}
+
+	/** The figures a tick on; those of a group that are gone, into {@code gone}. */
+	private void tickFigures(List<Figure> gone) {
 		Iterator<Figure> it = active.iterator();
 		while (it.hasNext()) {
 			Figure figure = it.next();
@@ -255,6 +275,9 @@ public final class Figures {
 				String end = left ? "gone" : approached ? "approached" : lookedAway ? "looked_away" : "timed";
 				// Told to the world it was shown in, not the one they went to.
 				sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail(end)));
+				if (figure.together != 0) {
+					gone.add(figure);
+				}
 				continue;
 			}
 
@@ -328,6 +351,14 @@ public final class Figures {
 				figure.pathIndex++;
 				sendEntity(figure);
 			}
+		}
+	}
+
+	/** The figure {@code number} shown to {@code player} goes with the rest of group {@code together} (ABI 54). */
+	public void together(ServerPlayer player, int number, int together) {
+		Figure figure = find(player, number);
+		if (figure != null) {
+			figure.together = together;
 		}
 	}
 

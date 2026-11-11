@@ -309,6 +309,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::RingOfFigures(_) => home.map(|h| h.center),
         Action::UpsideDown => home.and_then(|h| h.bed),
         Action::Crawl => memory.usual_door(),
+        // The house's middle, with two windows or more: a figure goes outside each.
+        Action::EveryWindow => home
+            .filter(|h| windows(memory, h.center).len() >= 2)
+            .map(|h| h.center),
         // Where they are: the host seats it in their boat.
         Action::BoatPassenger => Some(block_of(memory.last.pos)),
         // Ahead of them, where they look, far off on the ground: they see it start.
@@ -1074,6 +1078,22 @@ fn bedside(
     .unwrap_or_default()
 }
 
+/// The most windows `every_window` fills, and the first of their figures' numbers.
+const WINDOWS_MOST: usize = 8;
+const WINDOWS_FIRST: u32 = 21;
+
+/// The house's windows: its panes within twelve blocks of its middle, one for each run of
+/// panes (a pane two blocks or less from one already taken is the same window).
+fn windows(memory: &Memory, center: BlockPos) -> Vec<BlockPos> {
+    let mut taken: Vec<BlockPos> = Vec::new();
+    for pane in memory.fixtures("glass_pane").map(|f| f.pos) {
+        if distance(pane, center) <= 12.0 && !taken.iter().any(|t| distance(*t, pane) <= 2.0) {
+            taken.push(pane);
+        }
+    }
+    taken
+}
+
 /// How far ahead of them `hunted`'s figure starts its run.
 const HUNTED_FROM: f64 = 36.0;
 
@@ -1123,6 +1143,7 @@ fn figure_shown(
         crawls: false,
         rushes: false,
         rides_behind: false,
+        together: 0,
     }
 }
 
@@ -3992,6 +4013,36 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Outside each window, a block out from it, its head at the glass, looking in; all gone
+        // together when one is seen and looked away from.
+        Action::EveryWindow => pos
+            .map(|center| {
+                windows(memory, center)
+                    .into_iter()
+                    .take(WINDOWS_MOST)
+                    .enumerate()
+                    .map(|(i, pane)| {
+                        let out = step_toward(center, pane);
+                        let spot = [pane[0] + out[0], pane[1] - 2, pane[2] + out[1]];
+                        let mut shown = figure_shown(ids, memory, target, spot, 40.0, false);
+                        if let Command::Figure {
+                            figure,
+                            held,
+                            once_seen,
+                            together,
+                            ..
+                        } = &mut shown
+                        {
+                            *figure = WINDOWS_FIRST + i as u32;
+                            *held = ItemStack::default();
+                            *once_seen = true;
+                            *together = WINDOWS_FIRST;
+                        }
+                        (shown, 0)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -5315,6 +5366,7 @@ pub fn commands(
                         crawls: false,
                         rushes: false,
                         rides_behind: false,
+                        together: 0,
                     },
                     0,
                 )]
@@ -6120,6 +6172,8 @@ mod tests {
             ("anvil", [-1, 64, 2]),
             ("lectern", [-1, 64, -2]),
             ("glass_pane", [0, 65, -3]),
+            // A second window, for `every_window`.
+            ("glass_pane", [4, 65, 3]),
             ("carpet", [1, 64, 1]),
             ("carpet", [2, 64, 1]),
             ("carpet", [3, 64, 1]),
@@ -7632,6 +7686,53 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn at_night_a_figure_stands_outside_every_window_and_they_go_together() {
+        let mut memory = rich_memory();
+        let center = memory.home.as_ref().unwrap().center;
+        memory.fixtures.retain(|f| f.kind != "glass_pane");
+        // Two panes of one window, and two more windows.
+        for pos in [
+            [center[0] + 5, 65, center[2]],
+            [center[0] + 5, 65, center[2] + 1],
+            [center[0] - 5, 65, center[2]],
+            [center[0], 65, center[2] + 5],
+        ] {
+            memory.fixtures.push(crate::memory::Fixture {
+                kind: "glass_pane".to_string(),
+                pos,
+            });
+        }
+        let every = find("every_window").unwrap();
+        let p = place(every, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some(center));
+        let made = commands(every, p, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 3, "one a window: {made:?}");
+        for (command, _) in &made {
+            let Command::Figure {
+                together,
+                once_seen,
+                pos,
+                ..
+            } = command
+            else {
+                panic!("{command:?}");
+            };
+            assert!(*together > 0 && *once_seen);
+            assert_eq!(pos[1], 64.0, "its head at the glass");
+            let out = ((pos[0] - 0.5 - center[0] as f64).powi(2)
+                + (pos[2] - 0.5 - center[2] as f64).powi(2))
+            .sqrt();
+            assert!(out >= 5.9, "outside, {out} out");
+        }
+
+        // One window only: not this event.
+        memory
+            .fixtures
+            .retain(|f| f.kind != "glass_pane" || f.pos[0] == center[0] + 5);
+        assert_eq!(place(every, &memory, &mut Rng::new(1)), None);
     }
 
     #[test]

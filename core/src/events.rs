@@ -862,6 +862,8 @@ pub enum Action {
     Hunted,
     /// In their boat, a figure in the seat behind them.
     BoatPassenger,
+    /// At night, a figure outside every window of the house at once, all gone together.
+    EveryWindow,
 }
 
 /// Where a figure stands.
@@ -3837,6 +3839,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BoatPassenger,
         false,
     ),
+    // docs/events_todo.md, 6.
+    row(
+        "every_window",
+        5,
+        5,
+        &[Night, TargetIndoors, Pane, Home],
+        5.0,
+        2,
+        Full,
+        Action::EveryWindow,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4638,6 +4652,7 @@ impl Event {
             | Action::Crawl
             | Action::Hunted
             | Action::BoatPassenger
+            | Action::EveryWindow
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -4942,6 +4957,7 @@ impl Event {
             "the_crawl" => "have the figure crawl from their door to their bed while they are in",
             "hunted" => "have the figure run at them out of the dark",
             "boat_passenger" => "sit the figure in their boat behind them",
+            "every_window" => "stand a figure outside every window of the house at once",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

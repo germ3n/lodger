@@ -771,6 +771,7 @@ fn figure(
         crawls: false,
         rushes: false,
         rides_behind: false,
+        together: 0,
     }
 }
 
