@@ -932,6 +932,8 @@ pub enum Action {
     InALine,
     /// Far off, a figure's head alone above the ground; it sinks out of sight once seen.
     PeeksFromGround,
+    /// At night a zombie near them wears their own head and walks at them.
+    WearsYourFace,
 }
 
 /// Where a figure stands.
@@ -4162,6 +4164,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PeeksFromGround,
         false,
     ),
+    // docs/events_todo.md, 29.
+    row(
+        "wears_your_face",
+        4,
+        5,
+        &[Night, Hostiles, TargetOutdoors],
+        4.0,
+        2,
+        Full,
+        Action::WearsYourFace,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4985,6 +4999,7 @@ impl Event {
             | Action::DoorWontOpen
             | Action::PulledUnder
             | Action::EyeTurnsHome
+            | Action::WearsYourFace
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5335,6 +5350,7 @@ impl Event {
             "crossing_ahead" => "walk the figure across their way far ahead",
             "in_a_line" => "stand figures in single file along their route, facing the house",
             "peeks_from_ground" => "show the figure's head alone above the ground far off",
+            "wears_your_face" => "put their own head on a zombie and walk it at them",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

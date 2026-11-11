@@ -580,6 +580,14 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// The mob `entity` wears `player`'s own head for `seconds` (ten minutes at most), never
+    /// dropping it; then what it wore before. ABI 54.
+    WearFace {
+        id: u64,
+        entity: u32,
+        player: u32,
+        seconds: f32,
+    },
     /// For `seconds` (half an hour at most), the next eye of ender `player` throws flies toward
     /// `to` instead of the stronghold, once. ABI 54.
     EyeHome {
@@ -1246,6 +1254,7 @@ impl Command {
             | Command::SetRespawn { id, .. }
             | Command::PutEnderChest { id, .. }
             | Command::EyeHome { id, .. }
+            | Command::WearFace { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

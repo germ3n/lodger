@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **It wears your face** (`docs/events_todo.md`, 29): `wears_your_face`, stages 4 and 5, at
+  night outdoors: the zombie nearest them wears their own head five minutes, never dropping it,
+  and walks at them (`wear_face`, ABI 54: the host's `Masks`, what it wore put back after, and
+  taken off as the world closes). Tests: one in `act`. Was: no such event.
 - [x] **A head above the ground** (`docs/events_todo.md`, 28): `peeks_from_ground`, stages 4
   and 5, outdoors: twenty-four blocks ahead a figure sunk a block and a half into the ground, its
   head alone above it; once looked at, it sinks slowly out of sight (`figure`'s `sunk`, ABI 54).

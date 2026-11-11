@@ -353,6 +353,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
         Action::EyeTurnsHome => home.map(|h| h.center),
         Action::InALine => in_a_line(memory).first().copied(),
+        Action::WearsYourFace => face_wearer(memory).map(|z| block_of(z.pos)),
         // Twenty-four blocks ahead of where they look, a little to the side, on the ground.
         Action::PeeksFromGround => {
             let at = block_of(memory.last.pos);
@@ -1218,6 +1219,21 @@ pub fn shaft_top(memory: &Memory) -> Option<BlockPos> {
         .filter(|p| (p[0] - at[0]).abs() <= 2 && (p[2] - at[2]).abs() <= 2)
         .max_by_key(|p| p[1])
         .filter(|top| top[1] - at[1] >= 6)
+}
+
+/// The zombie (a husk or a drowned too) nearest them, for `wears_your_face`.
+fn face_wearer(memory: &Memory) -> Option<&crate::memory::Creature> {
+    memory
+        .last
+        .hostiles_near
+        .iter()
+        .filter(|h| matches!(h.kind.as_str(), "zombie" | "husk" | "drowned"))
+        .min_by(|a, b| {
+            let d = |c: &crate::memory::Creature| {
+                (c.pos[0] - memory.last.pos[0]).powi(2) + (c.pos[2] - memory.last.pos[2]).powi(2)
+            };
+            d(a).total_cmp(&d(b))
+        })
 }
 
 /// How far ahead of them `peeks_from_ground`'s head shows.
@@ -4812,6 +4828,37 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // The zombie nearest them wears their own head five minutes, and walks at them.
+        Action::WearsYourFace => face_wearer(memory)
+            .map(|zombie| {
+                vec![
+                    (
+                        Command::WearFace {
+                            id: ids(),
+                            entity: zombie.id,
+                            player: target,
+                            seconds: 300.0,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::Approach {
+                            id: ids(),
+                            entities: vec![zombie.id],
+                            player: target,
+                            stop: 2.0,
+                            seconds: 40.0,
+                            pace: Some(0.8),
+                            then: String::new(),
+                            damage: 0.0,
+                            kept: String::new(),
+                            to: None,
+                        },
+                        2,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7646,6 +7693,8 @@ mod tests {
                 || event.id == "house_grows"
                 || event.id == "its_lights_on"
                 || event.id == "respawn_its_bed"
+                // A zombie near them, which this memory has not: its own test.
+                || event.id == "wears_your_face"
                 // The block comes from home and the enderman from the End: `elsewhere`'s tests.
                 || event.id == "ender_holds"
                 // Runs another event in its stead: the brain's test.
@@ -8592,6 +8641,40 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn at_night_a_zombie_wears_their_face_and_walks_at_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.hostiles_near = vec![
+            crate::memory::Creature {
+                id: 5,
+                kind: "skeleton".to_string(),
+                pos: [3.0, 64.0, 0.0],
+                ..Default::default()
+            },
+            crate::memory::Creature {
+                id: 9,
+                kind: "zombie".to_string(),
+                pos: [12.0, 64.0, 0.0],
+                ..Default::default()
+            },
+        ];
+        let event = find("wears_your_face").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[0].0, Command::WearFace { entity: 9, .. }),
+            "the zombie, not the skeleton: {made:?}"
+        );
+        assert!(matches!(&made[1].0, Command::Approach { entities, .. } if entities == &vec![9]));
     }
 
     #[test]
