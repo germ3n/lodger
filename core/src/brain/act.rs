@@ -348,6 +348,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Forty blocks ahead of where they look: the middle of its walk.
+        Action::LanternInTheWoods => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            Some([
+                at[0] + (-yaw.sin() * 40.0).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * 40.0).round() as i32,
+            ])
+        }
         Action::RidesTheCart => memory
             .vehicles
             .iter()
@@ -6177,6 +6187,40 @@ pub fn commands(
                 ]
             })
             .unwrap_or_default(),
+        // A lantern in its hand, walking across their way there, thirty blocks at a walk, facing
+        // its way; gone at the far end.
+        Action::LanternInTheWoods => pos
+            .map(|middle| {
+                let yaw = (memory.last.yaw as f64).to_radians();
+                let right = [-yaw.cos(), -yaw.sin()];
+                let point = |side: f64| {
+                    [
+                        middle[0] as f64 + 0.5 + right[0] * side,
+                        -10_000.0,
+                        middle[2] as f64 + 0.5 + right[1] * side,
+                    ]
+                };
+                let mut shown = figure_shown(ids, memory, target, middle, 60.0, false);
+                if let Command::Figure {
+                    held,
+                    walks,
+                    pos,
+                    path,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack {
+                        id: "minecraft:lantern".to_string(),
+                        count: 1,
+                        slot: 0,
+                    };
+                    *walks = true;
+                    *pos = point(-15.0);
+                    *path = vec![point(-15.0), point(15.0)];
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11704,6 +11748,24 @@ mod tests {
         );
         assert!(
             matches!(&made[..], [(Command::Hint { hint, pos: Some(p), .. }, _)] if hint == "eyes_in_the_dark" && *p == [0, 21, 12]),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn at_night_a_lantern_moves_through_the_dark_far_off() {
+        let memory = rich_memory();
+        let event = find("lantern_in_the_woods").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { held, walks: true, path, .. }, 0)] if held.id == "minecraft:lantern" && path.len() == 2),
             "{made:?}"
         );
     }

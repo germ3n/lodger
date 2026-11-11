@@ -1496,6 +1496,9 @@ The `[x]` lines above, summed up by day:
 - [x] **It rides the cart** (`docs/events_todo.md`, 74): `rides_the_cart`, stages 4 and 5: their
   minecart rolls off with a figure in it for them alone (`rides`, `push_entity`). Tests: one in
   `act`. Was: no such event.
+- [x] **A lantern in the woods** (`docs/events_todo.md`, 76): `lantern_in_the_woods`, stages 4 and
+  5, at night outdoors: forty blocks ahead a figure walks across with a lantern in hand (`walks`).
+  Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.
