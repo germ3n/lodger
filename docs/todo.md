@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Where they died** (`docs/events_todo.md`, 11): `where_you_died`, stages 3 to 5, where
+  they last died twelve to sixty-four blocks from them: a figure lies on its side there as a
+  body lies, gone when they come within ten blocks (`figure`'s `lies`, ABI 54: the sleeping pose
+  with no bed). Tests: one in `act`. Was: no such event.
 - [x] **A figure in the light** (`docs/events_todo.md`, 10): `torch_flash`, stages 4 and 5, on
   a light placed underground (the memory's `lit_underground_now`, the brain's next tick, by
   `TORCH_FLASH_CHANCE`; never from the menu): a figure two blocks past it in its light, on the

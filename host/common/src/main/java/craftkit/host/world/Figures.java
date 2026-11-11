@@ -61,6 +61,8 @@ public final class Figures {
 		boolean crawls;
 		/** Running at its player, after them, gone just short with a jolt (ABI 54). */
 		boolean rushes;
+		/** Lying on its side as a body lies (ABI 54). */
+		boolean lies;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
 		int together;
 		/** The boat it sits in behind its player, on their client alone (ABI 54); null on foot. */
@@ -351,6 +353,18 @@ public final class Figures {
 				figure.pathIndex++;
 				sendEntity(figure);
 			}
+		}
+	}
+
+	/**
+	 * The figure {@code number} shown to {@code player} lies on the ground (ABI 54): the sleeping
+	 * pose with no bed, which the game draws on its side, as a body.
+	 */
+	public void lie(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure != null) {
+			figure.lies = true;
+			pose(figure, net.minecraft.world.entity.Pose.SLEEPING);
 		}
 	}
 
@@ -1059,6 +1073,9 @@ public final class Figures {
 		sendLayers(figure);
 		if (figure.crawls) {
 			pose(figure, net.minecraft.world.entity.Pose.SWIMMING);
+		}
+		if (figure.lies) {
+			pose(figure, net.minecraft.world.entity.Pose.SLEEPING);
 		}
 		if (!figure.held.isEmpty()) {
 			figure.player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));

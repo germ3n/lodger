@@ -346,6 +346,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             };
             [light[0] + away[0] * 2, floor - 1, light[2] + away[1] * 2]
         }),
+        Action::WhereYouDied => memory.last_death(),
         // Where they are: the host seats it in their boat.
         Action::BoatPassenger => Some(block_of(memory.last.pos)),
         // Ahead of them, where they look, far off on the ground: they see it start.
@@ -1181,6 +1182,7 @@ fn figure_shown(
         rushes: false,
         rides_behind: false,
         together: 0,
+        lies: false,
     }
 }
 
@@ -4209,6 +4211,32 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Lying where they died, on its side as a body lies, empty-handed; gone when they come
+        // within ten blocks.
+        Action::WhereYouDied => pos
+            .map(|died| {
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [died[0], died[1] - 1, died[2]],
+                    90.0,
+                    false,
+                );
+                if let Command::Figure {
+                    held,
+                    lies,
+                    vanish_within,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *lies = true;
+                    *vanish_within = 10.0;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -5533,6 +5561,7 @@ pub fn commands(
                         rushes: false,
                         rides_behind: false,
                         together: 0,
+                        lies: false,
                     },
                     0,
                 )]
@@ -7852,6 +7881,34 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn where_they_last_died_a_figure_lies_as_a_body_would() {
+        let mut memory = rich_memory();
+        memory.milestone("died", 2.0, Some([30, 64, 0]), "");
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let died = find("where_you_died").unwrap();
+        assert!(crate::brain::offer::meets(
+            crate::events::Need::NearTheirDeath,
+            &memory,
+            &Now::default()
+        ));
+        let p = place(died, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some([30, 64, 0]));
+        let made = commands(died, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { lies: true, vanish_within, pos, .. }, 0)] if *vanish_within >= 8.0 && pos[1] == 64.0),
+            "{made:?}"
+        );
+        // Standing on the spot, or far off: not now.
+        memory.last.pos = [30.5, 64.0, 0.5];
+        assert!(!crate::brain::offer::meets(
+            crate::events::Need::NearTheirDeath,
+            &memory,
+            &Now::default()
+        ));
     }
 
     #[test]

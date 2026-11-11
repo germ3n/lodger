@@ -145,6 +145,15 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::CameBack => false,
         Need::HoldsNothing => memory.held.is_none(),
         Need::LitUnderground => false,
+        Need::NearTheirDeath => memory.last_death().is_some_and(|died| {
+            let at = [
+                last.pos[0].floor() as i32,
+                last.pos[1].floor() as i32,
+                last.pos[2].floor() as i32,
+            ];
+            let d = crate::memory::distance(at, died);
+            last.online && (12.0..=64.0).contains(&d)
+        }),
         Need::TargetInBoat => {
             let riding = memory.last.riding.as_str();
             memory.last.online
@@ -271,6 +280,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::EveryWindow
         | Action::OneMoreEachNight
         | Action::TorchFlash
+        | Action::WhereYouDied
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
@@ -316,6 +326,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::EveryWindow
         | Action::OneMoreEachNight
         | Action::TorchFlash
+        | Action::WhereYouDied
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)

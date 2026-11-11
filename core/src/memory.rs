@@ -2470,7 +2470,7 @@ impl Memory {
         self.sessions.len() >= 2 && nights * 2 > self.sessions.len()
     }
 
-    fn milestone(&mut self, kind: &str, day: f32, pos: Option<BlockPos>, detail: &str) {
+    pub(crate) fn milestone(&mut self, kind: &str, day: f32, pos: Option<BlockPos>, detail: &str) {
         push_capped(
             &mut self.milestones,
             Milestone {

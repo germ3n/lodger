@@ -633,6 +633,7 @@ a dock or bridge), never over anything a player built (see the
 | `every_window` | 5 | At night, while they are in the house, a figure stands outside every window at once (one for each run of panes, eight at most), a block out, its head at the glass, looking in; all gone together the moment one has been seen and looked away from (`figure`'s `together`). | Night, the target indoors, two windows or more. |
 | `one_more_each_night` | 4 | At night, at the edge of their light (seven blocks past it from them), one figure the first night it comes, two the next, three the next, up to six, side by side across the way out, still, empty-handed, never closer; all gone together when one is seen and looked away from, or when they come within six blocks. A night apart at least. | Night, a light of theirs near them. |
 | `torch_flash` | 4 | Underground, as they place a light (one time in seven or so; never from the menu), a figure stands two blocks past it in its light, facing them, for a blink (a fifth of a second). | A light placed underground, that moment. |
+| `where_you_died` | 3 | Where they last died, a figure lies on the ground on its side as a body lies, empty-handed, seen from twelve to sixty-four blocks off; gone when they come within ten blocks (`figure`'s `lies`). | Where they last died, twelve to sixty-four blocks from them. |
 
 ### The ending
 

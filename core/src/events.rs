@@ -237,6 +237,8 @@ pub enum Need {
     TargetInBoat,
     /// A light they have just placed underground: met only then.
     LitUnderground,
+    /// Where they last died is in sight: twelve to sixty-four blocks from them.
+    NearTheirDeath,
 }
 
 impl Need {
@@ -303,6 +305,7 @@ impl Need {
                 | Need::TargetApproachingChest
                 | Need::TargetInBoat
                 | Need::LitUnderground
+                | Need::NearTheirDeath
         )
     }
 
@@ -414,6 +417,7 @@ impl Need {
             Need::HoldsNothing => "it holds something already".to_string(),
             Need::TargetInBoat => "the target is not in a boat with a seat to spare".to_string(),
             Need::LitUnderground => "happens only as they place a light underground".to_string(),
+            Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -877,6 +881,8 @@ pub enum Action {
     Sleepwalk,
     /// The light they just placed underground shows a figure in front of it, for a blink.
     TorchFlash,
+    /// Where they last died, a figure lies as a body would.
+    WhereYouDied,
 }
 
 /// Where a figure stands.
@@ -3915,6 +3921,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TorchFlash,
         false,
     ),
+    // docs/events_todo.md, 11.
+    row(
+        "where_you_died",
+        3,
+        5,
+        &[NearTheirDeath],
+        4.0,
+        2,
+        Full,
+        Action::WhereYouDied,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4720,6 +4738,7 @@ impl Event {
             | Action::EveryWindow
             | Action::OneMoreEachNight
             | Action::TorchFlash
+            | Action::WhereYouDied
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -5032,6 +5051,7 @@ impl Event {
             "door_wont_open" => "hold their door shut as they come to it, and knock",
             "sleepwalk" => "wake them outside their front door, the door open behind them",
             "torch_flash" => "show a figure in the light they just placed underground",
+            "where_you_died" => "lay a figure where they last died",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

@@ -209,6 +209,11 @@ impl Memory {
         })
     }
 
+    /// Where they last died, if they have.
+    pub fn last_death(&self) -> Option<BlockPos> {
+        self.milestones.iter().rev().find(|m| m.kind == "died")?.pos
+    }
+
     /// Where they last died, when no `death_light` of its own stands within three blocks of it.
     pub fn unmarked_death(&self) -> Option<BlockPos> {
         let died = self

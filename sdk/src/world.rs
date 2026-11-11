@@ -1155,6 +1155,9 @@ pub enum Command {
         /// seen and looked away from or come near or its time up, so are the rest. ABI 54.
         #[serde(default, skip_serializing_if = "is_zero_u32")]
         together: u32,
+        /// Lying on the ground as a body lies, on its side. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        lies: bool,
     },
     RemoveFigure {
         id: u64,
