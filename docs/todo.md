@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **In a line** (`docs/events_todo.md`, 27): `in_a_line`, stages 4 and 5, at night outdoors
+  with their route known: figures in single file along it ahead of them, eight blocks apart, six
+  at most, all facing the house, each gone within four blocks (`figure`'s `faces`, ABI 54).
+  Tests: one in `act`. Was: no such event.
 - [x] **Crossing ahead** (`docs/events_todo.md`, 26): `crossing_ahead`, stages 3 to 5, walking
   outdoors: thirty blocks ahead a figure walks across their way from their left to their right,
   twenty blocks, facing its way and never them, gone at the far side (`figure`'s `walks`, ABI 54,

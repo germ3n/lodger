@@ -928,6 +928,8 @@ pub enum Action {
     EyeTurnsHome,
     /// Far ahead, a figure walks across their way, left to right, never looking at them.
     CrossingAhead,
+    /// Along their route at dusk, figures in single file facing the house, each gone as passed.
+    InALine,
 }
 
 /// Where a figure stands.
@@ -4134,6 +4136,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CrossingAhead,
         false,
     ),
+    // docs/events_todo.md, 27.
+    row(
+        "in_a_line",
+        4,
+        5,
+        &[Route, Night, TargetOutdoors, Home],
+        4.0,
+        2,
+        Full,
+        Action::InALine,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4976,6 +4990,7 @@ impl Event {
             | Action::FallsFromTheSky
             | Action::PetFollows
             | Action::CrossingAhead
+            | Action::InALine
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -5303,6 +5318,7 @@ impl Event {
             "ender_chest_note" => "leave a note in their ender chest",
             "eye_turns_home" => "turn the next eye of ender they throw toward their house",
             "crossing_ahead" => "walk the figure across their way far ahead",
+            "in_a_line" => "stand figures in single file along their route, facing the house",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

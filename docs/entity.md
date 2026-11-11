@@ -616,6 +616,7 @@ a dock or bridge), never over anything a player built (see the
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
 | `crossing_ahead` | 3 | Walking outdoors: thirty blocks ahead of them a figure walks across their way, from their left to their right, twenty blocks at an unhurried walk, facing its way and never them, empty-handed; gone at the far side (`figure`'s `walks`). | The target walking outdoors. |
+| `in_a_line` | 4 | At night, outdoors on their route: figures stand in single file along it ahead of them, one every eight blocks, six at most, all facing the house, empty-handed; each gone as they come within four blocks of it (`figure`'s `faces`). | Their route known, night, the target outdoors. |
 | `far_figure` | 3 | The far presence: a figure in the target's skin, name shown, 48 to 80 blocks away, standing, facing the target, for ten to forty seconds. Approached within 32 blocks, it is gone. | A line of sight from the route or home. |
 | `behind_you` | 3 | When the target looks back along their route, the figure is 60 blocks behind, standing. The next time, 50. It is never nearer than 32. | The target travelling a route. |
 | `on_the_roof` | 3 | At dawn, from outside, the figure stands on the target's roof, and is gone when they look away. | A home with a roof and the target outdoors at dawn. |

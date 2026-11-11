@@ -352,6 +352,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::ItsLightsOn | Action::RespawnItsBed => memory.its_house().map(|h| h.site),
         Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
         Action::EyeTurnsHome => home.map(|h| h.center),
+        Action::InALine => in_a_line(memory).first().copied(),
         // Thirty blocks ahead of where they look: the middle of its crossing.
         Action::CrossingAhead => {
             let at = block_of(memory.last.pos);
@@ -1209,6 +1210,45 @@ pub fn shaft_top(memory: &Memory) -> Option<BlockPos> {
         .filter(|top| top[1] - at[1] >= 6)
 }
 
+/// `in_a_line`'s figures: the first's number, how far apart along the route, how many at most.
+const IN_A_LINE_FIRST: u32 = 41;
+const IN_A_LINE_APART: f64 = 8.0;
+const IN_A_LINE_MOST: usize = 6;
+
+/// Where `in_a_line`'s figures stand: along their route from the point nearest them, the way
+/// that leads from them (toward its far end), one every eight blocks, beginning eight on.
+fn in_a_line(memory: &Memory) -> Vec<BlockPos> {
+    let Some(route) = memory.route() else {
+        return Vec::new();
+    };
+    let at = block_of(memory.last.pos);
+    let points = &route.points;
+    let Some(near) = (0..points.len())
+        .min_by(|a, b| distance(points[*a], at).total_cmp(&distance(points[*b], at)))
+    else {
+        return Vec::new();
+    };
+    // On from them: toward the end farther from where they stand.
+    let ahead: Vec<BlockPos> = if distance(points[points.len() - 1], at) >= distance(points[0], at)
+    {
+        points[near..].to_vec()
+    } else {
+        points[..=near].iter().rev().copied().collect()
+    };
+    let mut spots = Vec::new();
+    let mut last = at;
+    for p in ahead {
+        if distance(p, last) >= IN_A_LINE_APART {
+            spots.push(p);
+            last = p;
+            if spots.len() == IN_A_LINE_MOST {
+                break;
+            }
+        }
+    }
+    spots
+}
+
 /// How far ahead of them `crossing_ahead`'s figure crosses, and half its way across.
 const CROSSING_AHEAD: f64 = 30.0;
 const CROSSING_HALF: f64 = 10.0;
@@ -1275,6 +1315,7 @@ fn figure_shown(
         lies: false,
         falls: false,
         walks: false,
+        faces: None,
     }
 }
 
@@ -4705,6 +4746,46 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Along their route ahead of them, one every eight blocks, all facing the house, empty-
+        // handed; each gone as they come within four blocks of it.
+        Action::InALine => match memory.home.as_ref() {
+            Some(h) => {
+                let house = [
+                    h.center[0] as f64 + 0.5,
+                    h.center[1] as f64 + 1.5,
+                    h.center[2] as f64 + 0.5,
+                ];
+                in_a_line(memory)
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, spot)| {
+                        let mut shown = figure_shown(
+                            ids,
+                            memory,
+                            target,
+                            [spot[0], -10_000, spot[2]],
+                            120.0,
+                            false,
+                        );
+                        if let Command::Figure {
+                            figure,
+                            held,
+                            vanish_within,
+                            faces,
+                            ..
+                        } = &mut shown
+                        {
+                            *figure = IN_A_LINE_FIRST + i as u32;
+                            *held = ItemStack::default();
+                            *vanish_within = 4.0;
+                            *faces = Some(house);
+                        }
+                        (shown, 0)
+                    })
+                    .collect()
+            }
+            None => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -6034,6 +6115,7 @@ pub fn commands(
                         lies: false,
                         falls: false,
                         walks: false,
+                        faces: None,
                     },
                     0,
                 )]
@@ -8483,6 +8565,47 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn along_their_route_figures_stand_in_single_file_facing_the_house() {
+        let mut memory = rich_memory();
+        memory.routes = vec![crate::memory::Route {
+            points: (0..40).map(|i| [i * 2, 64, 0]).collect(),
+            walked: 3,
+            first_day: 0.0,
+        }];
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("in_a_line").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), IN_A_LINE_MOST, "{made:?}");
+        let center = memory.home.as_ref().unwrap().center;
+        let mut xs = Vec::new();
+        for (command, _) in &made {
+            let Command::Figure {
+                faces: Some(faces),
+                vanish_within,
+                pos,
+                ..
+            } = command
+            else {
+                panic!("{command:?}");
+            };
+            assert_eq!(faces[0], center[0] as f64 + 0.5, "facing the house");
+            assert!(*vanish_within > 0.0);
+            xs.push(pos[0]);
+        }
+        assert!(
+            xs.windows(2).all(|w| w[1] - w[0] >= IN_A_LINE_APART),
+            "single file on from them: {xs:?}"
+        );
     }
 
     #[test]

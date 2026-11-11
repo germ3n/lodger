@@ -739,6 +739,10 @@ public final class Executors {
 				command.has("swinging") && command.get("swinging").getAsBoolean(),
 				command.has("upside_down") && command.get("upside_down").getAsBoolean(),
 				command.has("crawls") && command.get("crawls").getAsBoolean());
+		if (command.has("faces") && !command.get("faces").isJsonNull()) {
+			JsonArray faces = command.getAsJsonArray("faces");
+			context.figures().face(skinOf, command.get("figure").getAsInt(), new Vec3(faces.get(0).getAsDouble(), faces.get(1).getAsDouble(), faces.get(2).getAsDouble()));
+		}
 		if (command.has("walks") && command.get("walks").getAsBoolean()) {
 			context.figures().walk(skinOf, command.get("figure").getAsInt());
 		}

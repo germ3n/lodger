@@ -1203,6 +1203,9 @@ pub enum Command {
         /// at its end. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         walks: bool,
+        /// Facing this place instead of the player. ABI 54.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        faces: Option<Pos>,
     },
     RemoveFigure {
         id: u64,

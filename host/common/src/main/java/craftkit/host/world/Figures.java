@@ -67,6 +67,8 @@ public final class Figures {
 		boolean falls;
 		/** Walking its path facing its way, never its player (ABI 54). */
 		boolean walks;
+		/** Facing this place instead of its player (ABI 54); null to face them. */
+		Vec3 faces;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
 		int together;
 		/** The boat it sits in behind its player, on their client alone (ABI 54); null on foot. */
@@ -375,6 +377,17 @@ public final class Figures {
 			figure.lies = true;
 			pose(figure, net.minecraft.world.entity.Pose.SLEEPING);
 		}
+	}
+
+	/** The figure {@code number} shown to {@code player} faces {@code place} instead of them (ABI 54). */
+	public void face(ServerPlayer player, int number, Vec3 place) {
+		Figure figure = find(player, number);
+		if (figure == null) {
+			return;
+		}
+		figure.faces = place;
+		figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
+		sendEntity(figure);
 	}
 
 	/** How fast a walking figure glides, blocks a tick: an unhurried walk. */
@@ -1141,8 +1154,8 @@ public final class Figures {
 	}
 
 	private void sendEntity(Figure figure) {
-		// Facing the player: yaw from the figure to them.
-		Vec3 to = figure.player.position().subtract(figure.at);
+		// Facing the player, or the place it was told to face: yaw from the figure to it.
+		Vec3 to = (figure.faces != null ? figure.faces : figure.player.position()).subtract(figure.at);
 		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
 		float pitch = (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
 		// The player type by its id: 26.3 keeps the entity types in the registry, not as constants.
