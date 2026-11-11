@@ -1508,6 +1508,9 @@ The `[x]` lines above, summed up by day:
 - [x] **An arrow in the door** (`docs/events_todo.md`, 79): `arrow_in_the_door`, stages 4 and 5,
   while they are out: an arrow from ten blocks out struck in their front door (`shoot`). Tests: one
   in `act`. Was: no such event.
+- [x] **It raises their sword** (`docs/events_todo.md`, 80): `raises_their_sword`, stages 4 and 5,
+  outdoors: far off a figure with their weapon, raising it again and again. Tests: one in `act`. Was:
+  no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

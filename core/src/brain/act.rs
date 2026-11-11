@@ -348,6 +348,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Thirty-five blocks ahead of where they look, when their weapon is known.
+        Action::RaisesTheirSword => their_weapon(memory).map(|_| {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians() - 0.2;
+            [
+                at[0] + (-yaw.sin() * 35.0).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * 35.0).round() as i32,
+            ]
+        }),
         Action::ArrowInTheDoor => memory.usual_door(),
         Action::SnowballThrown => Some(block_of(memory.last.pos)),
         // Ten blocks ahead of where they look and well to one side, on the ground.
@@ -6298,6 +6308,30 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // There, holding their weapon (a plain one of its kind), raising it again and again,
+        // facing them; gone once seen and looked away from.
+        Action::RaisesTheirSword => match (pos, their_weapon(memory)) {
+            (Some(spot), Some(weapon)) => {
+                let mut shown = figure_shown(ids, memory, target, spot, 40.0, false);
+                if let Command::Figure {
+                    held,
+                    swinging,
+                    once_seen,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack {
+                        id: weapon.1.id.clone(),
+                        count: 1,
+                        slot: 0,
+                    };
+                    *swinging = true;
+                    *once_seen = true;
+                }
+                vec![(shown, 0)]
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11900,6 +11934,27 @@ mod tests {
         );
         assert!(
             matches!(&made[..], [(Command::Shoot { at, damage, .. }, 0)] if at[0] == door[0] as f64 + 0.5 && *damage == 0.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn far_off_a_figure_raises_their_own_sword() {
+        let memory = rich_memory();
+        let event = find("raises_their_sword").unwrap();
+        let Some(weapon) = their_weapon(&memory) else {
+            return;
+        };
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { held, swinging: true, .. }, 0)] if held.id == weapon.1.id),
             "{made:?}"
         );
     }

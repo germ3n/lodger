@@ -95,5 +95,5 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 77 | `crouched_behind_a_tree` | 4 | **Built (where it is, not behind a tree: the mind does not know where the trees are).** A figure crouched behind a tree near them; gone when they come round it. | Outdoors near trees. | `figure` crouching, `vanish_within`. | S |
 | 78 | `snowball_thrown` | 3 | **Built.** A snowball hits their back; no one is there. | Snow, outdoors. | A snowball thrown at them from behind. | M |
 | 79 | `arrow_in_the_door` | 4 | **Built.** While they were out, an arrow struck in their front door. | Away, a door. | `shoot` at the door. | S |
-| 80 | `raises_their_sword` | 4 | Far off, a figure holds their own sword up high, still. | Their weapon known. | `figure` holding it, arm up. | S |
+| 80 | `raises_their_sword` | 4 | **Built (raising it again and again: a player's arm holds no pose up).** Far off, a figure holds their own sword up high, still. | Their weapon known. | `figure` holding it, arm up. | S |
 
