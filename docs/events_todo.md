@@ -75,7 +75,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 57 | `bats_in_the_house` | 4 | **Built.** At night bats flutter about inside the house for a minute, then are gone. | Night, the target indoors. | Bats for a while. | M |
 | 58 | `lost_hour` | 5 | **Built.** A blink of black, and an hour of the day is gone. | Daytime. | The time moved on, a hint. | M |
 | 59 | `chest_wont_open` | 4 | **Built.** Their chest will not open for a few seconds, and something knocks inside it. | Walking to the chest they use. | A container held shut, a sound. | M |
-| 60 | `name_in_the_snow` | 4 | Near the house, their name trodden into the snow. | Snow near the home. | Snow layers taken away in letters. | M |
+| 60 | `name_in_the_snow` | 4 | **Built.** Near the house, their name trodden into the snow. | Snow near the home. | Snow layers taken away in letters. | M |
 | 61 | `torch_ring` | 4 | Overnight, a ring of torches round the house, twelve blocks out. | The target asleep or away. | `set_block` torches. | S |
 | 62 | `breadcrumbs` | 4 | A line of single blocks of theirs leads from their door off into the dark. | A stack of theirs in the chest. | `take_item`, `drop_item` one at a time. | S |
 | 63 | `fishing_figure` | 3 | Where they fish, a figure sits fishing, its line in the water. | Where they fished known. | `figure` holding a rod, swinging. | S |

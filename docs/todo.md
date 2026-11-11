@@ -1446,6 +1446,9 @@ The `[x]` lines above, summed up by day:
 - [x] **The chest will not open** (`docs/events_todo.md`, 59): `chest_wont_open`, stages 4 and 5,
   walking to their chest: it will not open five seconds, a locked chest's rattle each try, two
   knocks inside (`hold_container`, ABI 54). Tests: one in `act`. Was: no such event.
+- [x] **Their name in the snow** (`docs/events_todo.md`, 60): `name_in_the_snow`, stages 4 and 5,
+  snow near the home: their name trodden in, letters three by five, the snow taken off only where
+  they are (`act::snow_letter`). Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

@@ -984,6 +984,8 @@ pub enum Action {
     LostHour,
     /// The chest they walk to will not open a few seconds; something knocks inside.
     ChestWontOpen,
+    /// Their name trodden into the snow near the house.
+    NameInTheSnow,
 }
 
 /// Where a figure stands.
@@ -4502,6 +4504,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ChestWontOpen,
         false,
     ),
+    // docs/events_todo.md, 60.
+    row(
+        "name_in_the_snow",
+        4,
+        5,
+        &[Around("snow"), Home, TargetAwayOrAsleep],
+        6.0,
+        1,
+        Full,
+        Action::NameInTheSnow,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5404,6 +5418,7 @@ impl Event {
             | Action::FlowersWilted
             | Action::CampNearby
             | Action::StoneCircle
+            | Action::NameInTheSnow
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5503,6 +5518,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "name_in_the_snow" => "tread their name into the snow near the house",
             "chest_wont_open" => "hold their chest shut as they come to it, and knock inside",
             "lost_hour" => "take an hour of their day in a blink",
             "bats_in_the_house" => "let bats loose in the house a minute",

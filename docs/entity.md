@@ -429,6 +429,7 @@ Offered with water within 32 blocks of the home or the route.
 | `trail` | 3 | Footprints in the snow by the home, from the door toward the lodger's place, that the target did not make: a snow layer taken off at each step, left and right (`prints`, ABI 30; snow only, sand cannot show them). Gone with the next snowfall. | Snow around the home and a door. |
 | `trail_in` | 4 | Footprints leading *to* the door, from twenty blocks out in the dark, and none leading away. | Snow around the home and a door. |
 | `snowman` | 3 | Two snow blocks and a carved pumpkin stacked beside the door, facing it, not a golem. Owner's pick. | Snow around the home and a door. |
+| `name_in_the_snow` | 4 | While they are away or asleep, ten blocks south of the house, their name ("you" before it is known) trodden into the snow in letters three blocks wide and five long (ten letters at most): the snow taken off where the letters are, snow only (`place_blueprint` of air over snow). | Snow near the home, the target away or asleep. |
 | `snow_cleared` | 2 | The snow is gone from the path between the door and the route, one block wide. | Snow layers on the path. |
 | `snow_indoors` | 3 | Snow falls inside the house for a few seconds, for the target alone. | The target indoors, snow outside. |
 | `rain_indoors` | 3 | The same with rain. | The target indoors, rain outside. |

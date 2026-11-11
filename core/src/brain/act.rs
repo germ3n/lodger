@@ -348,6 +348,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Ten blocks south of the house's middle, on the ground there.
+        Action::NameInTheSnow => home.map(|h| [h.center[0] - 8, -10_000, h.center[2] + 10]),
         Action::ChestWontOpen => memory.used_container().map(|c| c.pos),
         Action::LostHour => Some(block_of(memory.last.pos)),
         Action::BatsInTheHouse => home.map(|h| h.center),
@@ -1401,6 +1403,65 @@ fn lantern_state(
         rest: true,
         only: false,
     }
+}
+
+/// A letter of `name_in_the_snow` in a font three wide and five long: the cells trodden,
+/// `[x, z]`, z down the letter. Anything it has no shape for is a blank.
+pub fn snow_letter(letter: char) -> Vec<[i32; 2]> {
+    const FONT: &[(char, [&str; 5])] = &[
+        ('A', ["###", "#.#", "###", "#.#", "#.#"]),
+        ('B', ["##.", "#.#", "##.", "#.#", "##."]),
+        ('C', ["###", "#..", "#..", "#..", "###"]),
+        ('D', ["##.", "#.#", "#.#", "#.#", "##."]),
+        ('E', ["###", "#..", "##.", "#..", "###"]),
+        ('F', ["###", "#..", "##.", "#..", "#.."]),
+        ('G', ["###", "#..", "#.#", "#.#", "###"]),
+        ('H', ["#.#", "#.#", "###", "#.#", "#.#"]),
+        ('I', ["###", ".#.", ".#.", ".#.", "###"]),
+        ('J', ["..#", "..#", "..#", "#.#", "###"]),
+        ('K', ["#.#", "#.#", "##.", "#.#", "#.#"]),
+        ('L', ["#..", "#..", "#..", "#..", "###"]),
+        ('M', ["#.#", "###", "#.#", "#.#", "#.#"]),
+        ('N', ["##.", "#.#", "#.#", "#.#", "#.#"]),
+        ('O', ["###", "#.#", "#.#", "#.#", "###"]),
+        ('P', ["###", "#.#", "###", "#..", "#.."]),
+        ('Q', ["###", "#.#", "#.#", "###", "..#"]),
+        ('R', ["###", "#.#", "##.", "#.#", "#.#"]),
+        ('S', ["###", "#..", "###", "..#", "###"]),
+        ('T', ["###", ".#.", ".#.", ".#.", ".#."]),
+        ('U', ["#.#", "#.#", "#.#", "#.#", "###"]),
+        ('V', ["#.#", "#.#", "#.#", "#.#", ".#."]),
+        ('W', ["#.#", "#.#", "#.#", "###", "#.#"]),
+        ('X', ["#.#", "#.#", ".#.", "#.#", "#.#"]),
+        ('Y', ["#.#", "#.#", ".#.", ".#.", ".#."]),
+        ('Z', ["###", "..#", ".#.", "#..", "###"]),
+        ('0', ["###", "#.#", "#.#", "#.#", "###"]),
+        ('1', [".#.", "##.", ".#.", ".#.", "###"]),
+        ('2', ["###", "..#", "###", "#..", "###"]),
+        ('3', ["###", "..#", "###", "..#", "###"]),
+        ('4', ["#.#", "#.#", "###", "..#", "..#"]),
+        ('5', ["###", "#..", "###", "..#", "###"]),
+        ('6', ["###", "#..", "###", "#.#", "###"]),
+        ('7', ["###", "..#", "..#", "..#", "..#"]),
+        ('8', ["###", "#.#", "###", "#.#", "###"]),
+        ('9', ["###", "#.#", "###", "..#", "###"]),
+        ('_', ["...", "...", "...", "...", "###"]),
+    ];
+    let upper = letter.to_ascii_uppercase();
+    FONT.iter()
+        .find(|(c, _)| *c == upper)
+        .map(|(_, rows)| {
+            rows.iter()
+                .enumerate()
+                .flat_map(|(z, row)| {
+                    row.chars()
+                        .enumerate()
+                        .filter(|(_, c)| *c == '#')
+                        .map(move |(x, _)| [x as i32, z as i32])
+                })
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// How far ahead of them `peeks_from_ground`'s head shows.
@@ -5622,6 +5683,37 @@ pub fn commands(
                     ));
                 }
                 made
+            })
+            .unwrap_or_default(),
+        // Their name in letters three blocks wide and five long, a block apart, along x: the
+        // snow taken off where the letters are, snow only (its layer on the ground or over it).
+        Action::NameInTheSnow => pos
+            .map(|at| {
+                let mut parts = Vec::new();
+                // Their name as the books sign it: "you" before it is known.
+                for (i, letter) in crate::books::signed(memory).chars().take(10).enumerate() {
+                    for [x, z] in snow_letter(letter) {
+                        for y in 0..=1 {
+                            parts.push(craftkit::world::BlueprintPart {
+                                at: [i as i32 * 4 + x, y, z],
+                                block: "minecraft:air".to_string(),
+                                state: String::new(),
+                            });
+                        }
+                    }
+                }
+                if parts.is_empty() {
+                    return Vec::new();
+                }
+                vec![(
+                    Command::PlaceBlueprint {
+                        id: ids(),
+                        at,
+                        parts,
+                        replace: vec!["minecraft:snow".to_string()],
+                    },
+                    0,
+                )]
             })
             .unwrap_or_default(),
         Action::FigureWave => pos
@@ -10773,6 +10865,36 @@ mod tests {
             2,
             "two knocks"
         );
+    }
+
+    #[test]
+    fn their_name_is_trodden_into_the_snow() {
+        let mut memory = rich_memory();
+        memory.target_name = "Ab".to_string();
+        let event = find("name_in_the_snow").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let [(Command::PlaceBlueprint { parts, replace, .. }, 0)] = &made[..] else {
+            panic!("{made:?}")
+        };
+        assert_eq!(replace, &vec!["minecraft:snow".to_string()], "snow only");
+        let cells = (snow_letter('A').len() + snow_letter('b').len()) * 2;
+        assert_eq!(
+            parts.len(),
+            cells,
+            "each letter's cells, at the ground and a block over"
+        );
+        assert!(
+            parts.iter().any(|p| p.at[0] >= 4),
+            "the second letter four blocks on"
+        );
+        assert_eq!(snow_letter('?'), Vec::<[i32; 2]>::new());
     }
 
     #[test]
