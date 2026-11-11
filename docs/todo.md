@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Respawn in its bed** (`docs/events_todo.md`, 23): `respawn_its_bed`, stage 5, once a
+  stay, its house built: a bed laid along its house's left wall, then made their respawn point
+  quietly (`set_respawn`, ABI 54); its lanterns (`its_lights_on`) moved clear of it. Tests: one in
+  `act`. Was: no such event.
 - [x] **A false death** (`docs/events_todo.md`, 22): `false_death`, stage 5, walking outdoors,
   once a stay: a hint of a second and a fifth drawing the death screen over the game as the game
   draws it (its wash, its title twice the size, their score), no buttons, nothing died. A screen

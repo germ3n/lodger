@@ -247,6 +247,8 @@ pub enum Need {
     ItsHouseNear,
     /// The target outdoors, looking up at the sky.
     LookingUp,
+    /// Its house built whole.
+    ItsHouse,
 }
 
 impl Need {
@@ -434,6 +436,7 @@ impl Need {
             Need::TargetSwimming => "the target is not swimming".to_string(),
             Need::ItsHouseNear => "its house is not built, or they are not near it".to_string(),
             Need::LookingUp => "the target is not looking up at the sky".to_string(),
+            Need::ItsHouse => "its house is not built".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -917,6 +920,8 @@ pub enum Action {
     PetFollows,
     /// Asleep, a figure comes to the bed and lies down on the floor beside it, facing them.
     LiesBeside,
+    /// A bed laid in its house, quietly made their respawn point.
+    RespawnItsBed,
 }
 
 /// Where a figure stands.
@@ -4075,6 +4080,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LiesBeside,
         false,
     ),
+    // docs/events_todo.md, 23.
+    row(
+        "respawn_its_bed",
+        5,
+        5,
+        &[ItsHouse, TargetOnline],
+        30.0,
+        1,
+        Full,
+        Action::RespawnItsBed,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4885,6 +4902,7 @@ impl Event {
             | Action::IcePath
             | Action::ItsLightsOn
             | Action::FaceInTheChest
+            | Action::RespawnItsBed
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5236,6 +5254,7 @@ impl Event {
             "falls_from_the_sky" => "drop the figure from the sky far off as they look up",
             "pet_follows" => "walk their pet off to a figure ahead of them",
             "lies_beside" => "lay the figure on the floor beside their bed as they sleep",
+            "respawn_its_bed" => "make the bed in its house their respawn point",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

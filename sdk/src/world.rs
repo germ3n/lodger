@@ -580,6 +580,13 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// The bed at `pos` (either half) made `player`'s respawn point, quietly: no message. Their
+    /// next death wakes them there. Refused when it is no bed. ABI 54.
+    SetRespawn {
+        id: u64,
+        player: u32,
+        pos: BlockPos,
+    },
     /// Push `player` by `velocity`, blocks a tick, as a hit or a current would (each axis at
     /// most one), once. ABI 54.
     PushPlayer {
@@ -1208,6 +1215,7 @@ impl Command {
             | Command::Choke { id, .. }
             | Command::HoldDoor { id, .. }
             | Command::PushPlayer { id, .. }
+            | Command::SetRespawn { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

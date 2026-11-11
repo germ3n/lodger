@@ -349,7 +349,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
         Action::PulledUnder => Some(block_of(memory.last.pos)),
-        Action::ItsLightsOn => memory.its_house().map(|h| h.site),
+        Action::ItsLightsOn | Action::RespawnItsBed => memory.its_house().map(|h| h.site),
         // Nine blocks ahead of them, on the ground: near enough that their pet never strays far
         // enough from them for the game to bring it back at once (twelve).
         Action::PetFollows => {
@@ -4579,6 +4579,40 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // A bed laid along its house's left wall, then quietly made their respawn point: their
+        // next death wakes them in its house.
+        Action::RespawnItsBed => match memory.its_house() {
+            Some(house) => {
+                let (parts, head) = crate::building::house_bed(house.site, house.way);
+                vec![
+                    (
+                        Command::PlaceBlueprint {
+                            id: ids(),
+                            at: house.site,
+                            parts: parts
+                                .into_iter()
+                                .map(|p| craftkit::world::BlueprintPart {
+                                    at: p.at,
+                                    block: p.block.to_string(),
+                                    state: p.state,
+                                })
+                                .collect(),
+                            replace: Vec::new(),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::SetRespawn {
+                            id: ids(),
+                            player: target,
+                            pos: head,
+                        },
+                        2,
+                    ),
+                ]
+            }
+            None => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7409,6 +7443,7 @@ mod tests {
                 // Its house must stand first: its own test below.
                 || event.id == "house_grows"
                 || event.id == "its_lights_on"
+                || event.id == "respawn_its_bed"
                 // The block comes from home and the enderman from the End: `elsewhere`'s tests.
                 || event.id == "ender_holds"
                 // Runs another event in its stead: the brain's test.
@@ -8355,6 +8390,48 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn a_bed_is_laid_in_its_house_and_made_their_respawn_point() {
+        let mut memory = rich_memory();
+        let way = [1, 0];
+        memory.builds.push(crate::building::Build {
+            kind: "house_near".to_string(),
+            site: [40, 63, 0],
+            way,
+            laid: crate::building::house(way, false).len(),
+            ..Default::default()
+        });
+        let event = find("respawn_its_bed").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let (_, head) = crate::building::house_bed([40, 63, 0], way);
+        let Command::PlaceBlueprint { parts, .. } = &made[0].0 else {
+            panic!("{made:?}");
+        };
+        assert_eq!(parts.len(), 2, "both halves");
+        assert!(parts.iter().all(|p| p.block.ends_with("_bed")));
+        assert!(parts.iter().any(
+            |p| p.state.contains("part=head") && [40 + p.at[0], 63 + p.at[1], p.at[2]] == head
+        ));
+        assert!(matches!(&made[1], (Command::SetRespawn { pos, .. }, 2) if *pos == head));
+        // Its lights never stand where the bed lies.
+        let (_, lights) = crate::building::house_lights([40, 63, 0], way);
+        let bed: Vec<BlockPos> = parts
+            .iter()
+            .map(|p| [40 + p.at[0], 63 + p.at[1], p.at[2]])
+            .collect();
+        assert!(
+            lights.iter().all(|l| !bed.contains(l)),
+            "{lights:?} {bed:?}"
+        );
     }
 
     #[test]

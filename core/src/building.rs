@@ -150,9 +150,27 @@ pub fn house_lights(site: BlockPos, way: [i32; 2]) -> (BlockPos, Vec<BlockPos>) 
         let t = house_spot(way, p);
         [site[0] + t[0], site[1] + t[1], site[2] + t[2]]
     };
+    // Clear of the bed `respawn_its_bed` lays along the left wall.
     (
         at([1, 2, -1]),
-        vec![at([1, 1, 1]), at([-1, 1, 1]), at([0, 1, 0])],
+        vec![at([1, 1, 1]), at([0, 1, 0]), at([1, 1, -1])],
+    )
+}
+
+/// The bed `respawn_its_bed` lays in its house, along its left wall, the head toward the back,
+/// as blueprint parts from its site, and where the head stands.
+pub fn house_bed(site: BlockPos, way: [i32; 2]) -> (Vec<Part>, BlockPos) {
+    let parts = turned(
+        vec![
+            with(-1, 1, 1, "minecraft:red_bed", "facing=north,part=foot"),
+            with(-1, 1, 0, "minecraft:red_bed", "facing=north,part=head"),
+        ],
+        way,
+    );
+    let head = parts[1].at;
+    (
+        parts,
+        [site[0] + head[0], site[1] + head[1], site[2] + head[2]],
     )
 }
 

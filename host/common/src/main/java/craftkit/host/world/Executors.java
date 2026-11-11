@@ -142,6 +142,7 @@ public final class Executors {
 				case "choke" -> choke(level, command, id, context);
 				case "hold_door" -> holdDoor(level, command, id, context);
 				case "push_player" -> pushPlayer(level, command, id, context);
+				case "set_respawn" -> setRespawn(level, command, id, context);
 				case "dig_in" -> digIn(level, command, id, context);
 				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
@@ -2094,6 +2095,22 @@ public final class Executors {
 	}
 
 	/** The figure shown to a player swings once, perhaps a hit, never below half a heart with spare (ABI 33). */
+	/** A bed made a player's respawn point, quietly: no "Respawn point set" (ABI 54). */
+	private static JsonObject setRespawn(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		if (!(level.getBlockState(pos).getBlock() instanceof net.minecraft.world.level.block.BedBlock)) {
+			return report(id, false, Senses.blockId(level.getBlockState(pos)) + " is no bed");
+		}
+		player.setRespawnPosition(new ServerPlayer.RespawnConfig(
+				net.minecraft.world.level.storage.LevelData.RespawnData.of(level.dimension(), pos, 0, 0), false), false);
+
+		return report(id, true, "");
+	}
+
 	/** The most a push moves a player each tick on an axis. */
 	static final double MOST_PUSH = 1;
 
