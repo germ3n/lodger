@@ -348,6 +348,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::RidesTheCart => memory
+            .vehicles
+            .iter()
+            .find(|v| v.kind.contains("minecart"))
+            .map(|v| block_of(v.pos)),
         // Forty-five blocks from the house, any way: where the line begins.
         Action::PathThroughTheTrees => home.map(|h| {
             let angle = rng.next_f64() * std::f64::consts::TAU;
@@ -6135,6 +6140,33 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // The figure in their cart for them alone, and the cart rolling off away from them.
+        Action::RidesTheCart => memory
+            .vehicles
+            .iter()
+            .find(|v| v.kind.contains("minecart"))
+            .map(|cart| {
+                let mut shown = figure_shown(ids, memory, target, block_of(cart.pos), 30.0, false);
+                if let Command::Figure { held, rides, .. } = &mut shown {
+                    *held = ItemStack::default();
+                    *rides = cart.id;
+                }
+                let dx = cart.pos[0] - memory.last.pos[0];
+                let dz = cart.pos[2] - memory.last.pos[2];
+                let length = (dx * dx + dz * dz).sqrt().max(1.0);
+                vec![
+                    (shown, 0),
+                    (
+                        Command::PushEntity {
+                            id: ids(),
+                            entity: cart.id,
+                            velocity: [dx / length * 0.4, 0.0, dz / length * 0.4],
+                        },
+                        2,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -8982,6 +9014,8 @@ mod tests {
                 || event.id == "firework_over_its_house"
                 // What it took, which this memory holds not: its own test.
                 || event.id == "chicken_lays"
+                // A minecart of theirs, which this memory may not have: its own test.
+                || event.id == "rides_the_cart"
                 // Down a shaft, which this memory is not: its own test.
                 || event.id == "climbs_ahead"
                 // A trapdoor of theirs, which this memory has not: its own test.
@@ -11617,6 +11651,31 @@ mod tests {
         );
         assert!(made.len() >= 50, "thirty blocks, two wide: {}", made.len());
         assert!(made.iter().all(|(c, at)| *at == 0 && matches!(c, Command::PlaceBlueprint { replace, parts, .. } if replace.iter().all(|r| r.ends_with("_leaves")) && parts.iter().all(|p| p.block == "minecraft:air"))), "leaves only, all at once");
+    }
+
+    #[test]
+    fn their_cart_rolls_past_with_a_figure_in_it() {
+        let mut memory = rich_memory();
+        memory.vehicles = vec![crate::memory::Creature {
+            id: 61,
+            kind: "minecart".to_string(),
+            pos: [6.0, 64.0, 0.0],
+            ..Default::default()
+        }];
+        let event = find("rides_the_cart").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[0].0, Command::Figure { rides: 61, .. }),
+            "{made:?}"
+        );
+        assert!(matches!(&made[1].0, Command::PushEntity { entity: 61, .. }));
     }
 
     #[test]
