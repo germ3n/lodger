@@ -353,6 +353,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
         Action::EyeTurnsHome => home.map(|h| h.center),
         Action::InALine => in_a_line(memory).first().copied(),
+        // Twenty-four blocks ahead of where they look, a little to the side, on the ground.
+        Action::PeeksFromGround => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians() + 0.3;
+            Some([
+                at[0] + (-yaw.sin() * PEEK_FROM).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * PEEK_FROM).round() as i32,
+            ])
+        }
         // Thirty blocks ahead of where they look: the middle of its crossing.
         Action::CrossingAhead => {
             let at = block_of(memory.last.pos);
@@ -1210,6 +1220,9 @@ pub fn shaft_top(memory: &Memory) -> Option<BlockPos> {
         .filter(|top| top[1] - at[1] >= 6)
 }
 
+/// How far ahead of them `peeks_from_ground`'s head shows.
+const PEEK_FROM: f64 = 24.0;
+
 /// `in_a_line`'s figures: the first's number, how far apart along the route, how many at most.
 const IN_A_LINE_FIRST: u32 = 41;
 const IN_A_LINE_APART: f64 = 8.0;
@@ -1316,6 +1329,7 @@ fn figure_shown(
         falls: false,
         walks: false,
         faces: None,
+        sunk: false,
     }
 }
 
@@ -4786,6 +4800,18 @@ pub fn commands(
             }
             None => Vec::new(),
         },
+        // Sunk to its head there, facing them; once seen, it sinks out of sight (the host's
+        // `sunk`).
+        Action::PeeksFromGround => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 60.0, false);
+                if let Command::Figure { held, sunk, .. } = &mut shown {
+                    *held = ItemStack::default();
+                    *sunk = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -6116,6 +6142,7 @@ pub fn commands(
                         falls: false,
                         walks: false,
                         faces: None,
+                        sunk: false,
                     },
                     0,
                 )]
@@ -8565,6 +8592,22 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn far_off_a_head_shows_above_the_ground() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("peeks_from_ground").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1)).unwrap();
+        assert_eq!(p[1], -10_000, "on the ground");
+        assert!((distance([p[0], 0, p[2]], [0, 0, 0]) - PEEK_FROM).abs() <= 1.5);
+        let made = commands(event, Some(p), &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { sunk: true, .. }, 0)]),
+            "{made:?}"
+        );
     }
 
     #[test]

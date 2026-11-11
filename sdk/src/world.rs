@@ -1206,6 +1206,10 @@ pub enum Command {
         /// Facing this place instead of the player. ABI 54.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         faces: Option<Pos>,
+        /// Standing a block and a half into the ground, its head alone above it; once they have
+        /// looked at it, sinking slowly out of sight and gone. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        sunk: bool,
     },
     RemoveFigure {
         id: u64,

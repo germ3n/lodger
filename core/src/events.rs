@@ -930,6 +930,8 @@ pub enum Action {
     CrossingAhead,
     /// Along their route at dusk, figures in single file facing the house, each gone as passed.
     InALine,
+    /// Far off, a figure's head alone above the ground; it sinks out of sight once seen.
+    PeeksFromGround,
 }
 
 /// Where a figure stands.
@@ -4148,6 +4150,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::InALine,
         false,
     ),
+    // docs/events_todo.md, 28.
+    row(
+        "peeks_from_ground",
+        4,
+        5,
+        &[TargetOutdoors],
+        3.0,
+        3,
+        Full,
+        Action::PeeksFromGround,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4991,6 +5005,7 @@ impl Event {
             | Action::PetFollows
             | Action::CrossingAhead
             | Action::InALine
+            | Action::PeeksFromGround
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -5319,6 +5334,7 @@ impl Event {
             "eye_turns_home" => "turn the next eye of ender they throw toward their house",
             "crossing_ahead" => "walk the figure across their way far ahead",
             "in_a_line" => "stand figures in single file along their route, facing the house",
+            "peeks_from_ground" => "show the figure's head alone above the ground far off",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

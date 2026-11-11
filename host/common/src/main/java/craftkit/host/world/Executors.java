@@ -743,6 +743,9 @@ public final class Executors {
 			JsonArray faces = command.getAsJsonArray("faces");
 			context.figures().face(skinOf, command.get("figure").getAsInt(), new Vec3(faces.get(0).getAsDouble(), faces.get(1).getAsDouble(), faces.get(2).getAsDouble()));
 		}
+		if (command.has("sunk") && command.get("sunk").getAsBoolean()) {
+			context.figures().sink(skinOf, command.get("figure").getAsInt());
+		}
 		if (command.has("walks") && command.get("walks").getAsBoolean()) {
 			context.figures().walk(skinOf, command.get("figure").getAsInt());
 		}

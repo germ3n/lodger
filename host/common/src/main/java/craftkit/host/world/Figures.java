@@ -69,6 +69,8 @@ public final class Figures {
 		boolean walks;
 		/** Facing this place instead of its player (ABI 54); null to face them. */
 		Vec3 faces;
+		/** Its head alone above the ground, sinking once looked at (ABI 54). */
+		boolean sunk;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
 		int together;
 		/** The boat it sits in behind its player, on their client alone (ABI 54); null on foot. */
@@ -289,6 +291,14 @@ public final class Figures {
 				continue;
 			}
 
+			// Sunk to its head: looked at, it sinks out of sight, slowly, and is gone.
+			if (figure.sunk && figure.seen && figure.path.isEmpty() && !figure.glides) {
+				figure.path = List.of(figure.at.add(0, -SINK, 0));
+				figure.pathIndex = 0;
+				figure.glides = true;
+				figure.speed = SINK_PER_TICK;
+			}
+
 			// Crouching as they crouch; swinging at the rock now and then.
 			if (figure.copyCrouch && figure.player.isShiftKeyDown() != figure.crouched) {
 				figure.crouched = figure.player.isShiftKeyDown();
@@ -377,6 +387,23 @@ public final class Figures {
 			figure.lies = true;
 			pose(figure, net.minecraft.world.entity.Pose.SLEEPING);
 		}
+	}
+
+	/** How deep a sunk figure stands, how far it sinks once looked at, and how fast. */
+	static final double SUNK = 1.5;
+	static final double SINK = 2.2;
+	static final double SINK_PER_TICK = 0.03;
+
+	/** The figure {@code number} shown to {@code player} stands sunk to its head (ABI 54). */
+	public void sink(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure == null) {
+			return;
+		}
+		figure.sunk = true;
+		figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
+		figure.at = figure.at.add(0, -SUNK, 0);
+		sendEntity(figure);
 	}
 
 	/** The figure {@code number} shown to {@code player} faces {@code place} instead of them (ABI 54). */
