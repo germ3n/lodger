@@ -38,6 +38,8 @@ import java.util.Set;
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
+ *   <li>{@code only_in_third_person}: in third person (F5) a figure in their skin right behind
+ *       them while it lasts, in first person nothing ({@link BehindFigure}).</li>
  *   <li>{@code in_the_screenshot}: the next screenshot they take while it lasts has a figure in
  *       their skin far ahead in it ({@link ScreenshotFigure}), once.</li>
  *   <li>{@code handprints}: two hands of pale dust on the glass at the hint's place, facing
@@ -107,6 +109,7 @@ public final class Glitches {
 		}
 
 		ScreenshotFigure.tick(minecraft);
+		boolean behind = false;
 		boolean pullingFov = false;
 		boolean shaking = false;
 		long now = System.currentTimeMillis();
@@ -135,6 +138,10 @@ public final class Glitches {
 						// The HUD moved its fields: no blink, nothing else lost.
 					}
 				});
+				case "only_in_third_person" -> {
+					behind = true;
+					BehindFigure.tick(minecraft);
+				}
 				// Two hands pressed on the glass from the house's side, renewed as the dust fades.
 				case "handprints" -> hint.pos().ifPresent(pos -> {
 					if (minecraft.level.getGameTime() % 6 != 0) {
@@ -287,6 +294,9 @@ public final class Glitches {
 			}
 		}
 
+		if (!behind) {
+			BehindFigure.clear(minecraft);
+		}
 		if (!pullingFov && fovBefore != null) {
 			minecraft.options.fov().set(fovBefore);
 			fovBefore = null;

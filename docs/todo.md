@@ -1201,6 +1201,11 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Only in third person** (`docs/events_todo.md`, 39): `only_in_third_person`, stages 4 and
+  5, a hint of ten minutes: in third person a figure in their skin right behind them, moving as
+  they move, nothing in first person (`BehindFigure`, the client's own figure with its own player
+  entry, `ClientFigure`, shared with the screenshot). A screen glitch, off with
+  `events.glitches`. Tests: the catalogue's own. Was: no such event.
 - [x] **In the screenshot** (`docs/events_todo.md`, 38): `in_the_screenshot`, stage 5, a hint of
   half an hour: their next screenshot is held back a tick, a figure in their skin set fourteen
   blocks ahead in their view on their client alone (its own player entry, so their skin), the

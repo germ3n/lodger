@@ -1,17 +1,11 @@
 package craftkit.host.client;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.io.File;
-import java.util.Map;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -30,7 +24,7 @@ public final class ScreenshotFigure {
 	private static Consumer<Component> done;
 	/** The ticks since the figure was set there: 0 when none. */
 	private static int since;
-	private static UUID uuid;
+	private static ClientFigure figure;
 	/** The screenshot taken again, here: the game's own, not to be held back. */
 	private static boolean taking;
 
@@ -75,49 +69,19 @@ public final class ScreenshotFigure {
 	}
 
 	private static boolean place(Minecraft minecraft) {
-		try {
-			var player = minecraft.player;
-			var level = minecraft.level;
-			double yaw = Math.toRadians(player.getYRot());
-			double x = player.getX() - Math.sin(yaw) * AHEAD;
-			double z = player.getZ() + Math.cos(yaw) * AHEAD;
-			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) Math.floor(x), (int) Math.floor(z));
-			uuid = UUID.randomUUID();
-			GameProfile profile = new GameProfile(uuid, player.getGameProfile().name(), player.getGameProfile().properties());
-			// Their skin by a player entry of its own, as the server's figures have one.
-			playerInfos(minecraft).put(uuid, new PlayerInfo(profile, false));
-			RemotePlayer figure = new RemotePlayer(level, profile);
-			figure.setId(ENTITY_ID);
-			float facing = player.getYRot() + 180;
-			figure.snapTo(x, y, z, facing, 0);
-			figure.setYHeadRot(facing);
-			figure.setYBodyRot(facing);
-			level.addEntity(figure);
-			return true;
-		} catch (ReflectiveOperationException | RuntimeException ignored) {
-			// The client moved its fields: the screenshot as the game takes it.
-			return false;
-		}
+		var player = minecraft.player;
+		double yaw = Math.toRadians(player.getYRot());
+		double x = player.getX() - Math.sin(yaw) * AHEAD;
+		double z = player.getZ() + Math.cos(yaw) * AHEAD;
+		int y = minecraft.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) Math.floor(x), (int) Math.floor(z));
+		figure = ClientFigure.add(minecraft, ENTITY_ID, x, y, z, player.getYRot() + 180);
+		return figure != null;
 	}
 
 	private static void remove(Minecraft minecraft) {
-		if (minecraft.level != null) {
-			minecraft.level.removeEntity(ENTITY_ID, Entity.RemovalReason.DISCARDED);
+		if (figure != null) {
+			figure.remove(minecraft);
+			figure = null;
 		}
-		try {
-			if (uuid != null && minecraft.getConnection() != null) {
-				playerInfos(minecraft).remove(uuid);
-			}
-		} catch (ReflectiveOperationException ignored) {
-			// Nothing was put there.
-		}
-		uuid = null;
-	}
-
-	@SuppressWarnings("unchecked")
-	private static Map<UUID, PlayerInfo> playerInfos(Minecraft minecraft) throws ReflectiveOperationException {
-		var field = net.minecraft.client.multiplayer.ClientPacketListener.class.getDeclaredField("playerInfoMap");
-		field.setAccessible(true);
-		return (Map<UUID, PlayerInfo>) field.get(minecraft.getConnection());
 	}
 }
