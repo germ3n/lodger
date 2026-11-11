@@ -1387,6 +1387,9 @@ The `[x]` lines above, summed up by day:
 - [x] **It waves from inside** (`docs/events_todo.md`, 43): `waves_from_inside`, stages 4 and 5,
   coming home: a figure just inside a window raises its arm three times, waving, gone within five
   blocks. Tests: one in `act`. Was: no such event.
+- [x] **Prints to the cave** (`docs/events_todo.md`, 44): `prints_to_the_cave`, stages 4 and 5,
+  the target away or asleep with snow near: prints from their door toward the nearest cave,
+  forty-eight blocks at most (`prints`). Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

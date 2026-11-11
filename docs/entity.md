@@ -399,6 +399,7 @@ Offered with water within 32 blocks of the home or the route.
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
 | `boat_moved` | 2 | The target's boat is on the other bank, or their minecart at the other end of its track. | A boat or minecart the target used. |
+| `prints_to_the_cave` | 4 | While they are away or asleep, prints in the snow from their door toward the nearest cave they know of, forty-eight blocks at most (`prints`). Once a stay. | Snow near the home, a door, a cave known, the target away or asleep. |
 | `boat_adrift` | 3 | The boat is in the middle of the water, still, going nowhere. | A boat and open water. |
 | `boat_drifts` | 2 | While the target watches from the shore, the boat drifts off on its own, slowly, away from them. (Owner's idea: "boats and minecarts move on their own".) | A boat on the water and the target outdoors. |
 | `boat_waiting` | 3 | The boat is at the shore the target is walking toward, before they get there: on their side of the water, a block in from its edge. | Their boat, water within 48 blocks, the target walking. |

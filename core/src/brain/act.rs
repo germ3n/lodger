@@ -348,6 +348,21 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // The cave nearest their door, its x and z, forty-eight blocks off at most along the way.
+        Action::PrintsToTheCave => memory.usual_door().and_then(|door| {
+            let cave = memory
+                .caves
+                .iter()
+                .min_by(|a, b| distance(**a, door).total_cmp(&distance(**b, door)))?;
+            let (dx, dz) = ((cave[0] - door[0]) as f64, (cave[2] - door[2]) as f64);
+            let length = (dx * dx + dz * dz).sqrt().max(1.0);
+            let far = length.min(48.0);
+            Some([
+                door[0] + (dx / length * far).round() as i32,
+                door[1],
+                door[2] + (dz / length * far).round() as i32,
+            ])
+        }),
         Action::WavesFromInside => home.and_then(|h| windows(memory, h.center).first().copied()),
         // Thirty blocks ahead of where they look, a little aside, on the ground.
         Action::JumpingFar => {
@@ -5153,6 +5168,18 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // From their door to there, where there is snow.
+        Action::PrintsToTheCave => match (memory.usual_door(), pos) {
+            (Some(door), Some(to)) => vec![(
+                Command::Prints {
+                    id: ids(),
+                    from: door,
+                    to,
+                },
+                0,
+            )],
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7997,6 +8024,8 @@ mod tests {
                 || event.id == "firework_over_its_house"
                 // What it took, which this memory holds not: its own test.
                 || event.id == "chicken_lays"
+                // A cave known, which this memory has not: its own test.
+                || event.id == "prints_to_the_cave"
                 // The block comes from home and the enderman from the End: `elsewhere`'s tests.
                 || event.id == "ender_holds"
                 // Runs another event in its stead: the brain's test.
@@ -9952,6 +9981,25 @@ mod tests {
                 .count(),
             3,
             "a wave, no harm"
+        );
+    }
+
+    #[test]
+    fn prints_lead_from_their_door_toward_a_cave() {
+        let mut memory = rich_memory();
+        let door = memory.usual_door().unwrap();
+        memory.caves = vec![[door[0] + 100, 20, door[2]]];
+        let event = find("prints_to_the_cave").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(
+            p,
+            Some([door[0] + 48, door[1], door[2]]),
+            "toward it, forty-eight blocks at most"
+        );
+        let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Prints { from, .. }, 0)] if *from == door),
+            "{made:?}"
         );
     }
 
