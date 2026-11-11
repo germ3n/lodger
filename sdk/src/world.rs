@@ -580,6 +580,14 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// For `seconds` (ten minutes at most), a player's marker at `at` on every map `player`
+    /// holds, for them alone; nothing in the map changes. ABI 54.
+    MapMark {
+        id: u64,
+        player: u32,
+        at: Pos,
+        seconds: f32,
+    },
     /// For `seconds` (a minute at most), `player`'s air runs out twice as fast under water; the
     /// drowning itself is the game's. ABI 54.
     DrainAir {
@@ -1263,6 +1271,7 @@ impl Command {
             | Command::EyeHome { id, .. }
             | Command::WearFace { id, .. }
             | Command::DrainAir { id, .. }
+            | Command::MapMark { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

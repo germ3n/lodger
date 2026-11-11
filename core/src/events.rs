@@ -944,6 +944,8 @@ pub enum Action {
     HeldBreath,
     /// Every animal and mob around them stops at once, a few seconds, facing them.
     AllFreeze,
+    /// On the map they hold, a player's marker at their house while they are away.
+    FigureOnMap,
 }
 
 /// Where a figure stands.
@@ -4222,6 +4224,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::AllFreeze,
         false,
     ),
+    // docs/events_todo.md, 33.
+    row(
+        "figure_on_map",
+        4,
+        5,
+        &[Holding("minecraft:filled_map"), Home],
+        3.0,
+        3,
+        Full,
+        Action::FigureOnMap,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5049,6 +5063,7 @@ impl Event {
             | Action::AnimalFollows
             | Action::HeldBreath
             | Action::AllFreeze
+            | Action::FigureOnMap
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5403,6 +5418,7 @@ impl Event {
             "animal_follows" => "have one of their animals follow them all day",
             "held_breath" => "make their air run out twice as fast under water",
             "all_freeze" => "stop every animal and mob around them at once",
+            "figure_on_map" => "mark someone at their house on the map they hold",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

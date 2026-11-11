@@ -354,6 +354,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::ItsLightsOn | Action::RespawnItsBed => memory.its_house().map(|h| h.site),
         Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
         Action::EyeTurnsHome => home.map(|h| h.center),
+        // Their house, when they are away from it: thirty-two blocks or more.
+        Action::FigureOnMap => home
+            .map(|h| h.center)
+            .filter(|c| distance(*c, block_of(memory.last.pos)) >= 32.0),
         Action::InALine => in_a_line(memory).first().copied(),
         Action::WearsYourFace => face_wearer(memory).map(|z| block_of(z.pos)),
         Action::AnimalFollows => memory
@@ -4932,6 +4936,24 @@ pub fn commands(
                 })
                 .collect()
         }
+        // A player's marker at their house on the map they hold, five minutes.
+        Action::FigureOnMap => pos
+            .map(|house| {
+                vec![(
+                    Command::MapMark {
+                        id: ids(),
+                        player: target,
+                        at: [
+                            house[0] as f64 + 0.5,
+                            house[1] as f64,
+                            house[2] as f64 + 0.5,
+                        ],
+                        seconds: 300.0,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7768,6 +7790,8 @@ mod tests {
                 || event.id == "respawn_its_bed"
                 // A zombie near them, which this memory has not: its own test.
                 || event.id == "wears_your_face"
+                // Away from home, which this memory is not: its own test.
+                || event.id == "figure_on_map"
                 // The block comes from home and the enderman from the End: `elsewhere`'s tests.
                 || event.id == "ender_holds"
                 // Runs another event in its stead: the brain's test.
@@ -8714,6 +8738,27 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn away_with_a_map_someone_is_marked_at_their_house() {
+        let mut memory = rich_memory();
+        let center = memory.home.as_ref().unwrap().center;
+        let event = find("figure_on_map").unwrap();
+        memory.last.pos = [center[0] as f64 + 0.5, 64.0, center[2] as f64 + 0.5];
+        assert_eq!(
+            place(event, &memory, &mut Rng::new(1)),
+            None,
+            "at home: nobody marked there"
+        );
+        memory.last.pos = [200.5, 64.0, 0.5];
+        let p = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some(center));
+        let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::MapMark { at, .. }, 0)] if at[0] == center[0] as f64 + 0.5),
+            "{made:?}"
+        );
     }
 
     #[test]

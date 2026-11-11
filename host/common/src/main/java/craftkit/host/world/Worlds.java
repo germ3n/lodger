@@ -48,6 +48,7 @@ public final class Worlds {
 	private final Eyes eyes = new Eyes();
 	private final Masks masks = new Masks();
 	private final Breaths breaths = new Breaths();
+	private final MapMarks mapMarks = new MapMarks();
 	private final Shoves shoves = new Shoves();
 	private final Bobbers bobbers = new Bobbers();
 	private final FrameShows frameShows = new FrameShows();
@@ -194,6 +195,7 @@ public final class Worlds {
 		eyes.clear();
 		masks.clear();
 		breaths.clear();
+		mapMarks.clear();
 		charges.clear();
 		loot.clear();
 		// A figure up as the world closed held the whole old level through its sighting.
@@ -217,6 +219,7 @@ public final class Worlds {
 		eyes.tick(server);
 		masks.tick();
 		breaths.tick(server);
+		mapMarks.tick(server);
 		shoves.tick(server);
 		bobbers.tick(server);
 		frameShows.tick(server);
@@ -238,7 +241,7 @@ public final class Worlds {
 			}
 		}
 		Surroundings.tick();
-		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves, bobbers, frameShows, deaths, fights, otherHouse, eyes, masks, breaths);
+		Executors.Context context = new Executors.Context(senses, sendHint, looks, later, poses, figures, holds, loot, hidden, warps, temporaries, charges, gatherings, footsteps, approaches, shoves, bobbers, frameShows, deaths, fights, otherHouse, eyes, masks, breaths, mapMarks);
 
 		open.forEach((level, perMod) -> {
 			String observations = senses.observe(level, server.getTickCount()).toString();

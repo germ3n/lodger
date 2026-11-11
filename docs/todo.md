@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Someone on the map** (`docs/events_todo.md`, 33): `figure_on_map`, stages 4 and 5, away
+  from home holding a map: a player's marker at their house on it, five minutes, for them alone
+  (`map_mark`, ABI 54: the host's `MapMarks` sends the map's own markers again with it a few times
+  a second). Tests: one in `act`, `MapSpotTest`. Was: no such event.
 - [x] **All freeze** (`docs/events_todo.md`, 32): `all_freeze`, stages 4 and 5, animals near them
   outdoors: every animal, villager and mob within twenty-four blocks stops at once three seconds,
   facing them (`hold` on each). Tests: one in `act`. Was: no such event.
