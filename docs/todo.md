@@ -1393,6 +1393,10 @@ The `[x]` lines above, summed up by day:
 - [x] **It rides their horse** (`docs/events_todo.md`, 45): `rides_their_horse`, stages 4 and 5:
   their horse with a figure in its saddle for them alone, gone once seen and looked away from or as
   anyone gets on (`figure`'s `rides`, ABI 54). Tests: one in `act`. Was: no such event.
+- [x] **It eats at their chest** (`docs/events_todo.md`, 46): `eats_at_their_chest`, stages 4 and
+  5, coming home with food in the chest they use: a figure crouched there eating it, its sound, gone
+  once seen and looked away from; nothing eaten (`figure`'s `eats`, ABI 54). Tests: one in `act`.
+  Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

@@ -348,6 +348,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::EatsAtTheirChest => memory
+            .used_container()
+            .filter(|c| chest_food(c).is_some())
+            .map(|c| c.pos),
         Action::RidesTheirHorse => their_animal(memory, "horse", false).map(|h| block_of(h.pos)),
         // The cave nearest their door, its x and z, forty-eight blocks off at most along the way.
         Action::PrintsToTheCave => memory.usual_door().and_then(|door| {
@@ -1299,6 +1303,32 @@ fn face_wearer(memory: &Memory) -> Option<&crate::memory::Creature> {
         })
 }
 
+/// Food of theirs in a chest, by id: the first eaten thing it holds.
+fn chest_food(chest: &crate::memory::Container) -> Option<String> {
+    const FOOD: &[&str] = &[
+        "bread",
+        "apple",
+        "carrot",
+        "potato",
+        "beef",
+        "porkchop",
+        "chicken",
+        "mutton",
+        "cod",
+        "salmon",
+        "cookie",
+        "melon_slice",
+        "pie",
+        "stew",
+    ];
+    chest
+        .contents
+        .iter()
+        .map(|s| s.id.as_str())
+        .find(|id| FOOD.iter().any(|f| id.ends_with(f)))
+        .map(str::to_string)
+}
+
 /// How far ahead of them `peeks_from_ground`'s head shows.
 const PEEK_FROM: f64 = 24.0;
 
@@ -1411,6 +1441,7 @@ fn figure_shown(
         sunk: false,
         jumps: false,
         rides: 0,
+        eats: false,
     }
 }
 
@@ -5201,6 +5232,58 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Crouched in front of their chest, facing it, eating their food, the sound of it; gone
+        // once seen and looked away from.
+        Action::EatsAtTheirChest => match (pos, memory.used_container().and_then(chest_food)) {
+            (Some(chest), Some(food)) => {
+                let home = memory.home.as_ref().map(|h| h.center).unwrap_or(chest);
+                let front = step_toward(chest, home);
+                let spot = [chest[0] + front[0], chest[1] - 1, chest[2] + front[1]];
+                let mut shown = figure_shown(ids, memory, target, spot, 30.0, false);
+                if let Command::Figure {
+                    held,
+                    eats,
+                    once_seen,
+                    faces,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack {
+                        id: food.clone(),
+                        count: 1,
+                        slot: 0,
+                    };
+                    *eats = true;
+                    *once_seen = true;
+                    *faces = Some([
+                        chest[0] as f64 + 0.5,
+                        chest[1] as f64,
+                        chest[2] as f64 + 0.5,
+                    ]);
+                }
+                let at = [
+                    spot[0] as f64 + 0.5,
+                    spot[1] as f64 + 1.5,
+                    spot[2] as f64 + 0.5,
+                ];
+                let mut made = vec![(shown, 0)];
+                for (i, tick) in [8, 16, 24, 32, 40].into_iter().enumerate() {
+                    made.push((
+                        Command::PlaySound {
+                            id: ids(),
+                            player: target,
+                            sound: "minecraft:entity.generic.eat".to_string(),
+                            pos: at,
+                            volume: 0.7,
+                            pitch: 0.9 + 0.05 * i as f32,
+                        },
+                        tick,
+                    ));
+                }
+                made
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -6534,6 +6617,7 @@ pub fn commands(
                         sunk: false,
                         jumps: false,
                         rides: 0,
+                        eats: false,
                     },
                     0,
                 )]
@@ -10050,6 +10134,41 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Figure { rides, .. }, 0)] if *rides == horse),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn coming_home_a_figure_eats_their_food_at_their_chest() {
+        let mut memory = rich_memory();
+        memory.containers[0]
+            .contents
+            .push(stack("minecraft:bread", 5, 22));
+        let event = find("eats_at_their_chest").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let Command::Figure {
+            eats: true, held, ..
+        } = &made[0].0
+        else {
+            panic!("{made:?}")
+        };
+        assert!(
+            held.id.ends_with("bread")
+                || chest_food(&memory.containers[0]).as_deref() == Some(held.id.as_str())
+        );
+        assert!(
+            made.iter()
+                .filter(
+                    |(c, _)| matches!(c, Command::PlaySound { sound, .. } if sound.ends_with("eat"))
+                )
+                .count()
+                >= 3
         );
     }
 

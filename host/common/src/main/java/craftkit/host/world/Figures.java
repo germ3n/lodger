@@ -409,6 +409,15 @@ public final class Figures {
 	/** A jump each this many ticks. */
 	static final long JUMP_EVERY = 20;
 
+	/** The figure {@code number} shown to {@code player} crouches, eating what it holds (ABI 54). */
+	public void eat(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure != null) {
+			pose(figure, net.minecraft.world.entity.Pose.CROUCHING);
+			using(player, figure, true);
+		}
+	}
+
 	/** The figure {@code number} shown to {@code player} jumps in place, again and again (ABI 54). */
 	public void jump(ServerPlayer player, int number) {
 		Figure figure = find(player, number);

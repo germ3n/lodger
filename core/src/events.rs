@@ -962,6 +962,8 @@ pub enum Action {
     PrintsToTheCave,
     /// Their horse far off with a figure in its saddle.
     RidesTheirHorse,
+    /// Coming home, a figure crouched at their chest, eating their food.
+    EatsAtTheirChest,
 }
 
 /// Where a figure stands.
@@ -4348,6 +4350,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::RidesTheirHorse,
         false,
     ),
+    // docs/events_todo.md, 46.
+    row(
+        "eats_at_their_chest",
+        4,
+        5,
+        &[TargetApproachingDoor, UsedContainer, Home],
+        4.0,
+        2,
+        Full,
+        Action::EatsAtTheirChest,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5231,6 +5245,7 @@ impl Event {
             | Action::JumpingFar
             | Action::WavesFromInside
             | Action::RidesTheirHorse
+            | Action::EatsAtTheirChest
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5302,6 +5317,9 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "eats_at_their_chest" => {
+                "have the figure eat their food at their chest as they come home"
+            }
             "rides_their_horse" => "sit the figure on their horse",
             "prints_to_the_cave" => "leave prints in the snow from their door to a cave",
             "waves_from_inside" => {

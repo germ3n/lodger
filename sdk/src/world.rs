@@ -1249,6 +1249,9 @@ pub enum Command {
         /// gone when anyone else gets on it or it is gone. 0 for none. ABI 54.
         #[serde(default, skip_serializing_if = "is_zero_u32")]
         rides: u32,
+        /// Crouched, eating what it holds, as a player eats. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        eats: bool,
     },
     RemoveFigure {
         id: u64,
