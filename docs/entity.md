@@ -149,6 +149,7 @@ never a witness's container.
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
 | `open_chest` | 1 | A chest in the home opens, lid and sound, while the target is in another room or facing away, and closes before they can see it. Nothing inside changes. | A used container out of view. |
+| `chest_rattles` | 3 | While they are in the house, the lid of the chest they use opens and shuts five times fast, with its sounds, then is still; nothing inside changes (`open_lid`). | The chest they use, the target indoors. |
 | `shuffle_chest` | 1 | The items in the chest the target uses most are in different slots. Same items, same counts. | A used container. |
 | `stack_split` | 1 | One stack is two stacks, in two slots, the same total. | A used container with a stack of 2 or more. |
 | `tidy_chest` | 2 | The chest is sorted by kind, which the target never did. | A used container of 10 or more stacks. |

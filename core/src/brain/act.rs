@@ -348,6 +348,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::ChestRattles => memory
+            .used_container()
+            .filter(|c| !c.is_furnace())
+            .map(|c| c.pos),
         Action::ItsBanner => memory.its_house().map(|h| h.site),
         // Twenty-five blocks ahead of where they look, on the ground.
         Action::StandsInTheRain => {
@@ -5945,6 +5949,23 @@ pub fn commands(
             )],
             None => Vec::new(),
         },
+        // Its lid open and shut five times, fast, with its sounds; nothing inside changes.
+        Action::ChestRattles => pos
+            .map(|chest| {
+                (0..5)
+                    .map(|i| {
+                        (
+                            Command::OpenLid {
+                                id: ids(),
+                                pos: chest,
+                                seconds: 0.2,
+                            },
+                            i * 7,
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11288,6 +11309,26 @@ mod tests {
         assert_eq!(
             parts[0].state, "facing=south",
             "facing out of the front, built facing south"
+        );
+    }
+
+    #[test]
+    fn their_chest_lid_rattles_open_and_shut() {
+        let memory = rich_memory();
+        let event = find("chest_rattles").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 5);
+        assert!(
+            made.iter()
+                .all(|(c, _)| matches!(c, Command::OpenLid { seconds, .. } if *seconds < 0.35)),
+            "fast: {made:?}"
         );
     }
 

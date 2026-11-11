@@ -83,7 +83,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 65 | `swims_beneath` | 4 | **Built.** Swimming, a figure swims past beneath them. | Swimming in deep water. | A figure crawling (swimming) along under them. | S |
 | 66 | `stands_in_the_rain` | 3 | **Built.** In the rain, a figure stands in the open with its face to the sky. | Raining, outdoors. | `figure`, facing up. | M |
 | 67 | `its_banner` | 4 | **Built (plain black: a pattern is no block state).** A banner of its own hangs on its house's door, black, a skull on it. | Its house built. | `set_block` a banner with patterns. | M |
-| 68 | `chest_rattles` | 3 | Their chest's lid opens and shuts five times fast, then is still. | A chest of theirs near them. | `open_lid` in a row. | S |
+| 68 | `chest_rattles` | 3 | **Built.** Their chest's lid opens and shuts five times fast, then is still. | A chest of theirs near them. | `open_lid` in a row. | S |
 | 69 | `trapdoor_taps` | 3 | A trapdoor of theirs taps open and shut, again and again. | A trapdoor of theirs. | `toggle_block` in a row. | S |
 | 70 | `climbs_ahead` | 4 | Climbing their shaft, a figure climbs ahead of them, above, and is gone at the top. | On a ladder of theirs. | A figure gliding up the shaft. | S |
 | 71 | `on_the_water` | 4 | Far off, a figure stands on the surface of the water. | Water near them. | `figure` on the water's top. | S |
