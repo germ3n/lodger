@@ -38,6 +38,8 @@ import java.util.Set;
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
+ *   <li>{@code f3_line}: one more line on the debug screen while it lasts, "Lodger: watching"
+ *       ({@code DebugEntryPositionMixin}).</li>
  *   <li>{@code only_in_third_person}: in third person (F5) a figure in their skin right behind
  *       them while it lasts, in first person nothing ({@link BehindFigure}).</li>
  *   <li>{@code in_the_screenshot}: the next screenshot they take while it lasts has a figure in
@@ -60,6 +62,17 @@ public final class Glitches {
 	private static long lastSeen;
 
 	private Glitches() {
+	}
+
+	/** Whether the debug screen has its one more line (`f3_line`). */
+	public static boolean f3Line() {
+		for (Hints.Active active : Hints.active()) {
+			if (active.hint().hint().equals("f3_line")) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/** Whether their next screenshot is to have the figure in it (`in_the_screenshot`). */

@@ -4801,6 +4801,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("red_rain", 150.0),
         false,
     ),
+    // docs/events_todo.md, 40: half an hour, for whenever they open it.
+    row(
+        "f3_line",
+        5,
+        5,
+        &[TargetOnline],
+        6.0,
+        2,
+        Half,
+        Action::Hint("f3_line", 1800.0),
+        true,
+    ),
     // docs/events_todo.md, 39: ten minutes, for whenever they look at themselves.
     row(
         "only_in_third_person",
@@ -5549,6 +5561,7 @@ impl Event {
             "sun_blink" => "make the sun blink out",
             "lightning_silent" => "flash lightning with no thunder",
             "red_rain" => "turn the rain red",
+            "f3_line" => "write one more line on their debug screen",
             "only_in_third_person" => {
                 "stand the figure behind them where only the third person shows it"
             }

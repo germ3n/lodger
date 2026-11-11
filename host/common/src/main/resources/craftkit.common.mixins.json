@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"CompassAngleStateMixin",
+		"DebugEntryPositionMixin",
 		"FogRendererMixin",
 		"InventoryScreenMixin",
 		"LivingEntityRendererMixin",

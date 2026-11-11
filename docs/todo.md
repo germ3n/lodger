@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A line on the debug screen** (`docs/events_todo.md`, 40): `f3_line`, stage 5, a hint of
+  half an hour: one more line on their F3 screen after where they stand, "Lodger: watching"
+  (`DebugEntryPositionMixin`). A screen glitch, off with `events.glitches`. Tests: the
+  catalogue's own. Was: no such event.
 - [x] **Only in third person** (`docs/events_todo.md`, 39): `only_in_third_person`, stages 4 and
   5, a hint of ten minutes: in third person a figure in their skin right behind them, moving as
   they move, nothing in first person (`BehindFigure`, the client's own figure with its own player
