@@ -1201,6 +1201,13 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **The figure upside down over the bed** (`docs/events_todo.md`, 2): `upside_down`,
+  stages 4 and 5, as they wake (a waking picks it or `foot_of_bed`, of those the stage offers,
+  `brain::WOKE_EVENTS`): the figure hangs feet up from the ceiling over the bed, gone once seen
+  and looked away from (`figure`'s `upside_down`, ABI 54: its profile named Dinnerbone and its
+  cape layer shown, as the game flips a player; the ceiling the first solid block above). And
+  every figure now wears its player's skin layers (hat, jacket, sleeves): it was sent none and
+  wore the bare skin. Tests: one in `act`. Was: no such event, and figures without their hats.
 - [x] **A ring of figures round the house** (owner: "can you add an event where while we are
   inside our house, we get multiple figures standing in a circle around our home";
   `docs/events_todo.md`, 1): `ring_of_figures`, stages 4 and 5, at night with the target

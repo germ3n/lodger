@@ -850,6 +850,8 @@ pub enum Action {
     /// At night, figures in a ring round the house, this many, each gone once seen and looked
     /// away from.
     RingOfFigures(u32),
+    /// As they wake, the figure hangs feet up from the ceiling over the bed.
+    UpsideDown,
 }
 
 /// Where a figure stands.
@@ -3777,6 +3779,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::RingOfFigures(8),
         false,
     ),
+    // docs/events_todo.md, 2.
+    row(
+        "upside_down",
+        4,
+        5,
+        &[JustWoke, Bed],
+        4.0,
+        2,
+        Full,
+        Action::UpsideDown,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4574,6 +4588,7 @@ impl Event {
             | Action::FigureSwing(_)
             | Action::FigureWave
             | Action::RingOfFigures(_)
+            | Action::UpsideDown
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -4874,6 +4889,7 @@ impl Event {
             "choke" => "walk to their bed as they sleep and choke them with a lead",
             "shot_in_bed" => "walk to their bed as they sleep and shoot them with a burning bolt",
             "ring_of_figures" => "stand figures in a ring round the house while they are inside",
+            "upside_down" => "hang the figure from the ceiling over their bed as they wake",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

@@ -709,7 +709,8 @@ public final class Executors {
 				command.has("mirror") && command.get("mirror").getAsBoolean(),
 				command.has("once_seen") && command.get("once_seen").getAsBoolean(),
 				command.has("copy_crouch") && command.get("copy_crouch").getAsBoolean(),
-				command.has("swinging") && command.get("swinging").getAsBoolean());
+				command.has("swinging") && command.get("swinging").getAsBoolean(),
+				command.has("upside_down") && command.get("upside_down").getAsBoolean());
 
 		return report(id, true, "");
 	}

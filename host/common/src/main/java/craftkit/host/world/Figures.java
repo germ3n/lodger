@@ -70,6 +70,8 @@ public final class Figures {
 		boolean crouched;
 		/** Swings now and then, as at the rock (ABI 35). */
 		boolean swinging;
+		/** The skin layers it shows: its player's, and the cape's bit when it hangs upside down (ABI 54). */
+		byte layers;
 		/** How it is looked at, told to the mind as it goes (ABI 47). */
 		final Gaze gaze = new Gaze();
 
@@ -126,11 +128,20 @@ public final class Figures {
 
 	/** {@link #show} copying their crouch and swinging now and then (ABI 35). */
 	public void show(ServerLevel level, ServerPlayer player, int number, ServerPlayer skinOf, Vec3 pos, List<Vec3> path, ItemStack held, boolean nameShown, float seconds, float vanishWithin, boolean mirror, boolean onceSeen, boolean copyCrouch, boolean swinging) {
+		show(level, player, number, skinOf, pos, path, held, nameShown, seconds, vanishWithin, mirror, onceSeen, copyCrouch, swinging, false);
+	}
+
+	/**
+	 * {@link #show} hanging feet up from the ceiling over {@code pos} (ABI 54): the game draws a
+	 * player upside down whose profile is named Dinnerbone and whose cape layer is shown, so the
+	 * figure's profile takes that name (it shows no name) and its layers the cape's bit.
+	 */
+	public void show(ServerLevel level, ServerPlayer player, int number, ServerPlayer skinOf, Vec3 pos, List<Vec3> path, ItemStack held, boolean nameShown, float seconds, float vanishWithin, boolean mirror, boolean onceSeen, boolean copyCrouch, boolean swinging, boolean upsideDown) {
 		remove(player, number);
 
-		Vec3 at = ground(level, pos);
+		Vec3 at = upsideDown ? hanging(level, pos) : ground(level, pos);
 		UUID uuid = UUID.randomUUID();
-		GameProfile profile = new GameProfile(uuid, skinOf.getGameProfile().name(), skinOf.getGameProfile().properties());
+		GameProfile profile = new GameProfile(uuid, upsideDown ? "Dinnerbone" : skinOf.getGameProfile().name(), skinOf.getGameProfile().properties());
 		Figure figure = new Figure(player, number, nextId++, uuid, profile, held, at, path, seconds > 0 ? tick + (long) (seconds * 20) : Long.MAX_VALUE, vanishWithin);
 		figure.level = level;
 		figure.mirror = mirror;
@@ -139,8 +150,45 @@ public final class Figures {
 		figure.onceSeen = onceSeen;
 		figure.copyCrouch = copyCrouch;
 		figure.swinging = swinging;
+		figure.layers = (byte) (layers(skinOf) | (upsideDown ? net.minecraft.world.entity.player.PlayerModelPart.CAPE.getMask() : 0));
 		active.add(figure);
 		send(level, figure, nameShown);
+	}
+
+	/** How high the game draws an upside-down player above its place: its height and a tenth. */
+	static final double UPSIDE_DOWN_DRAWN = 1.9;
+	/** The farthest up a ceiling is looked for over the place. */
+	static final int MOST_CEILING = 8;
+
+	/**
+	 * Where an upside-down figure stands for its feet to touch the ceiling over {@code pos}: the
+	 * first solid block above it, the drawn height below that. Where it is with no ceiling.
+	 */
+	private static Vec3 hanging(ServerLevel level, Vec3 pos) {
+		BlockPos from = BlockPos.containing(pos);
+		for (int up = 1; up <= MOST_CEILING; up++) {
+			BlockPos above = from.above(up);
+			if (!level.getBlockState(above).getCollisionShape(level, above).isEmpty()) {
+				return new Vec3(pos.x, above.getY() - UPSIDE_DOWN_DRAWN, pos.z);
+			}
+		}
+
+		return pos;
+	}
+
+	/**
+	 * The skin layers a player shows (hat, jacket, sleeves, trousers, cape), for their figure: it
+	 * was sent none, so it wore the bare skin and never their hat. Nothing when the field moved.
+	 */
+	@SuppressWarnings("unchecked")
+	private static byte layers(ServerPlayer player) {
+		try {
+			var field = net.minecraft.world.entity.Avatar.class.getDeclaredField("DATA_PLAYER_MODE_CUSTOMISATION");
+			field.setAccessible(true);
+			return player.getEntityData().get((net.minecraft.network.syncher.EntityDataAccessor<Byte>) field.get(null));
+		} catch (ReflectiveOperationException | ClassCastException ignored) {
+			return 0;
+		}
 	}
 
 	public boolean remove(ServerPlayer player, int number) {
@@ -868,8 +916,25 @@ public final class Figures {
 				.map(holder -> (EntityType<?>) holder.value())
 				.orElseThrow(() -> new IllegalStateException("no player entity type"));
 		figure.player.connection.send(new ClientboundAddEntityPacket(figure.entityId, figure.uuid, figure.at.x, figure.at.y, figure.at.z, pitch, yaw, playerType, 0, Vec3.ZERO, yaw));
+		sendLayers(figure);
 		if (!figure.held.isEmpty()) {
 			figure.player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void sendLayers(Figure figure) {
+		if (figure.layers == 0) {
+			return;
+		}
+		try {
+			var field = net.minecraft.world.entity.Avatar.class.getDeclaredField("DATA_PLAYER_MODE_CUSTOMISATION");
+			field.setAccessible(true);
+			var accessor = (net.minecraft.network.syncher.EntityDataAccessor<Byte>) field.get(null);
+			figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(figure.entityId,
+					List.of(net.minecraft.network.syncher.SynchedEntityData.DataValue.create(accessor, figure.layers))));
+		} catch (ReflectiveOperationException ignored) {
+			// The field moved: the bare skin, as before.
 		}
 	}
 

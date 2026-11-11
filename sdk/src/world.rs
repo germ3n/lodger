@@ -1127,6 +1127,10 @@ pub enum Command {
         /// Swinging what it holds now and then, as at the rock. ABI 35.
         #[serde(default, skip_serializing_if = "is_false")]
         swinging: bool,
+        /// Hanging feet up from the ceiling over `pos` (the first solid block above it), as the
+        /// game draws a player named Dinnerbone. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        upside_down: bool,
     },
     RemoveFigure {
         id: u64,

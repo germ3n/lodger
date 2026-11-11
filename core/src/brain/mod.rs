@@ -276,6 +276,8 @@ pub const ECHO_CHANCE: f64 = 0.3;
 pub const BELL_CHANCE: f64 = 0.5;
 /// The chance the figure stands at the foot of the bed as they wake, its rules allowing.
 pub const WOKE_CHANCE: f64 = 0.35;
+/// The events a waking may start, one of those the stage offers picked.
+pub const WOKE_EVENTS: &[&str] = &["foot_of_bed", "upside_down"];
 /// The chance crouching still ten seconds brings the breathing at their ear (`breath`).
 pub const BREATH_CHANCE: f64 = 0.3;
 /// The bold things that may have happened at home while they were in another dimension
@@ -900,18 +902,23 @@ impl Brain {
             self.consider_started("breath", BREATH_CHANCE, now, day, memory, arc, config, log);
         }
 
-        // They woke: perhaps the figure at the foot of the bed, for half a second.
+        // They woke: perhaps the figure at the foot of the bed for half a second, or hanging
+        // from the ceiling over it, whichever the stage offers, one picked.
         if std::mem::take(&mut memory.woke_now) && !held_back {
-            self.consider_started(
-                "foot_of_bed",
-                WOKE_CHANCE,
-                now,
-                day,
-                memory,
-                arc,
-                config,
-                log,
-            );
+            let woken: Vec<&str> = WOKE_EVENTS
+                .iter()
+                .copied()
+                .filter(|id| {
+                    events::find(id)
+                        .is_some_and(|e| (e.from_stage..=e.to_stage).contains(&arc.stage))
+                })
+                .collect();
+            let pick = if woken.is_empty() {
+                "foot_of_bed"
+            } else {
+                woken[(self.rng.next_f64() * woken.len() as f64) as usize % woken.len()]
+            };
+            self.consider_started(pick, WOKE_CHANCE, now, day, memory, arc, config, log);
         }
 
         // A chest of theirs opened: perhaps another closes in the house at the same moment.

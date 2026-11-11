@@ -219,7 +219,9 @@ the pillow, found by the host, takes `item` out with a lead's rope to their neck
 a second for `seconds`, the harm taken without waking them; Leave Bed ends it; `door` opened as it
 begins and left open, passed over when it is no door; their eyes kept open by the host itself, the
 `eyes_open` hint sent with it; `how` `shoot`: a crossbow loaded, aimed and shot once instead, and
-they burn, spared through the fire).
+they burn, spared through the fire); `figure`'s `upside_down` (hanging feet up from the first
+solid block over its place, as the game draws a player named Dinnerbone); and a figure wears its
+player's skin layers (the hat, the jacket), where it wore the bare skin.
 
 ## Resources
 

@@ -307,6 +307,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::Choke(_) | Action::ShotInBed(_) => memory.usual_door(),
         // The middle of the house: the ring stands round it.
         Action::RingOfFigures(_) => home.map(|h| h.center),
+        Action::UpsideDown => home.and_then(|h| h.bed),
         Action::Figure(FigureWhere::Roof, _, _) => {
             home.map(|h| [h.center[0], h.floor_y + 5, h.center[2]])
         }
@@ -1102,6 +1103,7 @@ fn figure_shown(
         once_seen: false,
         copy_crouch: false,
         swinging: false,
+        upside_down: false,
     }
 }
 
@@ -3887,6 +3889,32 @@ pub fn commands(
                     .collect()
             })
             .unwrap_or_default(),
+        // Over the bed, feet up from the ceiling (the host finds it), facing them as they get
+        // up; gone once seen and looked away from.
+        Action::UpsideDown => pos
+            .map(|bed| {
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [bed[0], bed[1] - 1, bed[2]],
+                    8.0,
+                    false,
+                );
+                if let Command::Figure {
+                    held,
+                    once_seen,
+                    upside_down,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *once_seen = true;
+                    *upside_down = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -5206,6 +5234,7 @@ pub fn commands(
                         once_seen: matches!(where_, FigureWhere::Crowd),
                         copy_crouch: matches!(where_, FigureWhere::FarCopying),
                         swinging: matches!(where_, FigureWhere::FarWorking),
+                        upside_down: false,
                     },
                     0,
                 )]
@@ -7522,6 +7551,27 @@ mod tests {
         assert!(
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
+        );
+    }
+
+    #[test]
+    fn as_they_wake_the_figure_hangs_from_the_ceiling_over_the_bed() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(3);
+        let hung = find("upside_down").unwrap();
+        assert!(hung.needs.contains(&crate::events::Need::JustWoke));
+        let bed = memory.home.as_ref().unwrap().bed.unwrap();
+        let p = place(hung, &memory, &mut rng);
+        assert_eq!(p, Some(bed));
+        let made = commands(hung, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { upside_down: true, once_seen: true, pos, held, .. }, 0)]
+                if pos[0] == bed[0] as f64 + 0.5 && pos[1] == bed[1] as f64 && held.id.is_empty()),
+            "{made:?}"
+        );
+        assert!(
+            crate::brain::WOKE_EVENTS.contains(&"upside_down"),
+            "a waking may start it"
         );
     }
 

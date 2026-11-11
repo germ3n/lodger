@@ -767,6 +767,7 @@ fn figure(
         once_seen,
         copy_crouch: false,
         swinging: false,
+        upside_down: false,
     }
 }
 
