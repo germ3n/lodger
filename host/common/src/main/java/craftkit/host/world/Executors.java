@@ -860,6 +860,9 @@ public final class Executors {
 			JsonArray faces = command.getAsJsonArray("faces");
 			context.figures().face(skinOf, command.get("figure").getAsInt(), new Vec3(faces.get(0).getAsDouble(), faces.get(1).getAsDouble(), faces.get(2).getAsDouble()));
 		}
+		if (command.has("while_unseen") && !command.get("while_unseen").isJsonNull()) {
+			context.figures().whileUnseen(skinOf, command.get("figure").getAsInt(), command.get("while_unseen").getAsFloat());
+		}
 		if (command.has("peeks") && !command.get("peeks").isJsonNull()) {
 			JsonArray behind = command.getAsJsonArray("peeks");
 			context.figures().peek(skinOf, command.get("figure").getAsInt(), new Vec3(behind.get(0).getAsDouble(), behind.get(1).getAsDouble(), behind.get(2).getAsDouble()));

@@ -1905,6 +1905,13 @@ The `[x]` lines above, summed up by day:
   squashed and turned its own random way at once, which read as a broken model, and the server's
   1.8 times on top of the stretch made it twice as tall again, at once.
 
+- [x] **Moves only while unseen** (`docs/events_todo.md`, 101, owner's): `while_unseen`, stages 4 and
+  5, at night in the open: a figure behind them that holds still while on their screen with nothing
+  between and comes a step nearer each fifth of a second it is not; at arm's length a real hit by the
+  harm stages (two hearts, as `figure_swing`, owner: "a real hit by stage"), never a kill
+  (`figure`'s `while_unseen`, ABI 54; `Unseen.java`). Tests: `UnseenTest`'s two, one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

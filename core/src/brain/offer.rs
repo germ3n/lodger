@@ -325,6 +325,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::LanternInTheWoods
         | Action::CrouchedBehindATree
         | Action::PeeksFromTheTrees
+        | Action::WhileUnseen(_)
         | Action::RaisesTheirSword
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
@@ -399,6 +400,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::LanternInTheWoods
         | Action::CrouchedBehindATree
         | Action::PeeksFromTheTrees
+        | Action::WhileUnseen(_)
         | Action::RaisesTheirSword
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry

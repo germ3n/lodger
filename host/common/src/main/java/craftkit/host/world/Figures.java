@@ -73,6 +73,8 @@ public final class Figures {
 		boolean sunk;
 		/** Where it slips to once looked at, behind a trunk, and is gone (ABI 54); null for none. */
 		Vec3 hidesAt;
+		/** Coming at its player only while unseen, striking for this when it reaches them, spared (ABI 54); below 0 for none. */
+		float unseenStrike = -1;
 		/** Jumping in place, from where it stands (ABI 54); null for none. */
 		Vec3 jumpsFrom;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
@@ -358,6 +360,14 @@ public final class Figures {
 				}
 				figure.at = figure.seat.position();
 			}
+			if (figure.unseenStrike >= 0 && figure.player.level() instanceof ServerLevel level) {
+				if (creepUnseen(level, figure)) {
+					unsend(figure);
+					it.remove();
+					sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail("struck")));
+				}
+				continue;
+			}
 			if (figure.rushes && figure.player.level() instanceof ServerLevel level) {
 				if (rush(level, figure)) {
 					unsend(figure);
@@ -597,6 +607,53 @@ public final class Figures {
 		player.connection.send(net.minecraft.network.protocol.game.ClientboundSetPassengersPacket.STREAM_CODEC.decode(buf));
 
 		return true;
+	}
+
+	/** The figure {@code number} shown to {@code player} comes at them only while unseen, striking for {@code damage} at the end (ABI 54). */
+	public void whileUnseen(ServerPlayer player, int number, float damage) {
+		Figure figure = find(player, number);
+		if (figure != null) {
+			figure.unseenStrike = Math.max(0, damage);
+		}
+	}
+
+	/**
+	 * A figure that moves only while unseen, a tick on ({@link Unseen}): seen, it holds still;
+	 * unseen, a step nearer them along the ground every few ticks, facing them; true when it has
+	 * reached them and struck, the hit spared, never a kill.
+	 */
+	private boolean creepUnseen(ServerLevel level, Figure figure) {
+		ServerPlayer player = figure.player;
+		Vec3 eyes = figure.at.add(0, 1.4, 0);
+		boolean clear = level.clip(new net.minecraft.world.level.ClipContext(player.getEyePosition(), eyes,
+				net.minecraft.world.level.ClipContext.Block.VISUAL, net.minecraft.world.level.ClipContext.Fluid.NONE, player))
+				.getType() == net.minecraft.world.phys.HitResult.Type.MISS;
+		if (Unseen.seen(viewDot(figure), clear) || (tick + figure.entityId) % Unseen.EVERY_TICKS != 0) {
+			return false;
+		}
+		Vec3 them = player.position();
+		double[] next = Unseen.step(figure.at.x, figure.at.z, them.x, them.z);
+		if (next == null) {
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket(figure.entityId,
+					net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
+			float harm = Math.min(figure.unseenStrike, Math.max(0, player.getHealth() - 1));
+			player.playSound(net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_STRONG, 1f, 0.9f);
+			if (harm > 0) {
+				player.hurtServer(level, level.damageSources().generic(), harm);
+			}
+			return true;
+		}
+		figure.at = ground(level, new Vec3(next[0], -10_000, next[1]));
+		Vec3 to = them.subtract(figure.at);
+		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
+				net.minecraft.world.entity.PositionPath.of(figure.at), yaw, 0, true));
+		var head = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+		head.writeVarInt(figure.entityId);
+		head.writeByte(net.minecraft.util.Mth.floor(yaw * 256f / 360f));
+		player.connection.send(net.minecraft.network.protocol.game.ClientboundRotateHeadPacket.STREAM_CODEC.decode(head));
+
+		return false;
 	}
 
 	/** How fast a rushing figure runs, blocks a tick: a sprint and a half. */

@@ -360,6 +360,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::ArrowInTheDoor => memory.usual_door(),
         Action::SnowballThrown => Some(block_of(memory.last.pos)),
+        // Eighteen blocks behind them, on the ground: out of their view.
+        Action::WhileUnseen(_) => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            Some([
+                at[0] + (yaw.sin() * UNSEEN_BEHIND).round() as i32,
+                -10_000,
+                at[2] - (yaw.cos() * UNSEEN_BEHIND).round() as i32,
+            ])
+        }
         // The nearest trunk ahead of where they look, ten blocks off or more.
         Action::PeeksFromTheTrees => memory.trunks_ahead(10.0, 22.0).first().copied(),
         // Ten blocks ahead of where they look and well to one side, on the ground.
@@ -1651,6 +1661,9 @@ const HUNTED_FROM: f64 = 36.0;
 const RING_BLOCKS: f64 = 20.0;
 /// The ring's figures are numbered from here, apart from the one figure (1).
 const RING_FIRST: u32 = 11;
+/// The figure that comes on while unseen (`while_unseen`), and how far behind them it starts.
+const UNSEEN_FIGURE: u32 = 61;
+const UNSEEN_BEHIND: f64 = 18.0;
 /// The peeking figures' numbers (`peeks_from_the_trees`), and the ticks between them.
 const PEEK_FIRST: u32 = 51;
 const PEEK_AGAIN_TICKS: u64 = 100;
@@ -1707,6 +1720,7 @@ fn figure_shown(
         eats: false,
         on_leaves: false,
         peeks: None,
+        while_unseen: None,
     }
 }
 
@@ -6260,6 +6274,25 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Behind them, empty-handed, facing them: still while they look, a step nearer each moment
+        // they do not, and at arm's length it strikes and is gone. Three minutes at most.
+        Action::WhileUnseen(damage) => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 180.0, false);
+                if let Command::Figure {
+                    figure,
+                    held,
+                    while_unseen,
+                    ..
+                } = &mut shown
+                {
+                    *figure = UNSEEN_FIGURE;
+                    *held = ItemStack::default();
+                    *while_unseen = Some(damage);
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         // Leaning out from behind the trunk, half of it showing, empty-handed, facing them; once
         // looked at it slips back behind the trunk and is gone. Then again five seconds on, from
         // a trunk farther in, when there is one.
@@ -7739,6 +7772,7 @@ pub fn commands(
                         eats: false,
                         on_leaves: false,
                         peeks: None,
+                        while_unseen: None,
                     },
                     0,
                 )]
@@ -13381,5 +13415,34 @@ mod tests {
             let height: f32 = height.parse().unwrap();
             assert!(height == 0.6 || (1.5..=2.2).contains(&height), "{detail}");
         }
+    }
+
+    #[test]
+    fn behind_them_a_figure_comes_on_only_while_unseen_and_strikes_at_the_end() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        // Looking south (+z): it starts north of them.
+        memory.last.yaw = 0.0;
+        let event = find("while_unseen").unwrap();
+        let spot = place(event, &memory, &mut Rng::new(1)).unwrap();
+        assert!(
+            spot[2] <= -17 && spot[0].abs() <= 1,
+            "behind them: {spot:?}"
+        );
+        let made = commands(
+            event,
+            Some(spot),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { while_unseen: Some(d), held, seconds, .. }, 0)]
+                if *d == 4.0 && held.id.is_empty() && *seconds >= 60.0),
+            "{made:?}"
+        );
+        assert!(event.needs.contains(&crate::events::Need::Night));
     }
 }

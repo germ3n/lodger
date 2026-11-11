@@ -1025,6 +1025,8 @@ pub enum Action {
     CrouchedBehindATree,
     /// In the woods, a figure peeking out from behind a trunk ahead, slipping back once seen.
     PeeksFromTheTrees,
+    /// A figure behind them that comes on only while unseen, and strikes for this at the end.
+    WhileUnseen(f32),
     /// A snowball hits their back; no one is there.
     SnowballThrown,
     /// While they are out, an arrow struck in their front door.
@@ -4741,6 +4743,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::LanternInTheWoods,
         false,
     ),
+    // docs/events_todo.md, 101 (owner's): the hit by the harm stages, two hearts as
+    // `figure_swing`'s.
+    row(
+        "while_unseen",
+        4,
+        5,
+        &[Night, TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::WhileUnseen(4.0),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -5762,6 +5777,7 @@ impl Event {
             | Action::LanternInTheWoods
             | Action::CrouchedBehindATree
             | Action::PeeksFromTheTrees
+            | Action::WhileUnseen(_)
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -5842,6 +5858,7 @@ impl Event {
             "peeks_from_the_trees" => {
                 "have the figure peek out at them from behind the trees ahead"
             }
+            "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "lantern_in_the_woods" => "walk a figure with a lantern through the dark far off",
             "rides_the_cart" => "roll their minecart past with a figure in it",
             "path_through_the_trees" => "cut a straight line through the trees toward their house",

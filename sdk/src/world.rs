@@ -1291,6 +1291,12 @@ pub enum Command {
         /// (behind the trunk), quickly, and is gone there. ABI 54.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         peeks: Option<Pos>,
+        /// Coming at the player only while it is out of their view (off their screen, or behind
+        /// a wall), a step at a time along the ground, still while seen; within reach it strikes
+        /// for this much harm (half hearts; 0 a jolt alone), never below half a heart, and is
+        /// gone. ABI 54.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        while_unseen: Option<f32>,
     },
     RemoveFigure {
         id: u64,
