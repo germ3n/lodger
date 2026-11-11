@@ -2081,7 +2081,20 @@ public final class Executors {
 				command.get("seconds").getAsFloat(), command.get("damage").getAsFloat(),
 				command.has("spare") && command.get("spare").getAsBoolean());
 
-		return held ? report(id, true, "") : report(id, false, "no figure shown with that number");
+		if (!held) {
+			return report(id, false, "no figure shown with that number");
+		}
+		// The door it came in by: open, heard, and left open; anything else there now (the door
+		// gone since) is left alone and the choke goes on.
+		if (command.has("door")) {
+			BlockPos door = blockPos(command.getAsJsonArray("door"));
+			BlockState state = level.getBlockState(door);
+			if (state.getBlock() instanceof DoorBlock block && !block.isOpen(state)) {
+				block.setOpen(null, level, state, door, true);
+			}
+		}
+
+		return report(id, true, "");
 	}
 
 	private static JsonObject figureSwing(ServerLevel level, JsonObject command, long id, Context context) {

@@ -12,8 +12,10 @@ import java.util.List;
 public final class ChokeWay {
 	/** The farthest it walks: from farther it first stands this far off along the way. */
 	public static final double MOST_WALK = 7;
-	/** A stride each half second: a slow creep. */
+	/** The points of its way this far apart. */
 	public static final double STEP = 0.6;
+	/** How far it glides a tick: a slow creep, a block a second. */
+	public static final double PER_TICK = 0.05;
 
 	private ChokeWay() {
 	}
@@ -43,6 +45,18 @@ public final class ChokeWay {
 		spots.add(new int[] {footX - faceX, footZ - faceZ});
 
 		return spots;
+	}
+
+	/** The ticks a walk takes at {@link #PER_TICK}, whole, from its first point to its last. */
+	public static int ticks(List<double[]> walk) {
+		double length = 0;
+		for (int i = 1; i < walk.size(); i++) {
+			double[] a = walk.get(i - 1);
+			double[] b = walk.get(i);
+			length += Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+		}
+
+		return (int) Math.ceil(length / PER_TICK - 1e-9);
 	}
 
 	/**

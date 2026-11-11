@@ -1217,7 +1217,12 @@ The `[x]` lines above, summed up by day:
   without waking them, each a drowning gasp, the hurt's jolt, the dark closing in (`choke`, ABI
   54). Their client keeps its own fade to sleep off (`eyes_open`), so they see it come. Leave Bed
   breaks free and it is gone; otherwise they wake as it ends. In the sleep events' group, so
-  `calm` leaves it out. Tests: one in `act`, `ChokeWayTest` in JUnit. Was: no such event.
+  `calm` leaves it out. The owner after a try: "the walking up to the bed is very laggy" (it was
+  re-sent a point every half second; it glides now, a block a second, eased by the client, its
+  legs moving), "its kinda hard to see the lead" (its rope is drawn from its hand to their neck,
+  tied to an unseen silverfish sent to them alone), and "verify the open/closed door logic":
+  the door is opened by the choke itself, so a door gone since is passed over (a toggle of its
+  own that failed stopped the rest of the event, leaving the figure in the doorway). Tests: one in `act`, `ChokeWayTest` in JUnit. Was: no such event.
 - [x] **A long stay's memory is saved whole** (owner: "i left my world and rejoined and the
   stage reset"; "it seems like it dropped the whole memory"): the mind's bytes are saved as an
   NBT byte array (`SavedMemory`), as large as they grow, and an older save's base64 string is

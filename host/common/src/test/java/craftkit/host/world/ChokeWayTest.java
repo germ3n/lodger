@@ -47,4 +47,11 @@ class ChokeWayTest {
 		List<double[]> there = ChokeWay.walk(2, 64, 2, 2, 64, 2);
 		assertEquals(1, there.size(), "already there: it stands");
 	}
+
+	@Test
+	void its_glide_takes_a_second_a_block_and_seven_seconds_at_most() {
+		assertEquals(60, ChokeWay.ticks(ChokeWay.walk(0, 64, 0, 3, 64, 0)));
+		assertEquals(140, ChokeWay.ticks(ChokeWay.walk(0, 64, 0, 20, 64, 0)), "begun seven blocks off");
+		assertEquals(0, ChokeWay.ticks(ChokeWay.walk(2, 64, 2, 2, 64, 2)));
+	}
 }

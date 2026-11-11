@@ -49,6 +49,12 @@ public final class Figures {
 		List<Vec3> path;
 		/** Stands where its path ends instead of going: a choke's figure at the bed (ABI 54). */
 		boolean stays;
+		/**
+		 * Glides along its path a little each tick, the client easing it between and moving its
+		 * legs, instead of a re-send at each point every half second, which read as a stutter
+		 * up close (the owner: "the walking up to the bed is very laggy").
+		 */
+		boolean glides;
 		int pathIndex;
 		long untilTick;
 		final double vanishWithin;
@@ -205,6 +211,10 @@ public final class Figures {
 				}
 			}
 
+			if (figure.glides && !figure.path.isEmpty()) {
+				glide(figure);
+				continue;
+			}
 			if (!figure.path.isEmpty() && tick % STEP_TICKS == 0 && figure.player.level() instanceof ServerLevel level) {
 				// The path's points in order, its first one first: the index used to move on before
 				// it was read, so the first point was skipped and a path of one ended at once.
@@ -226,6 +236,35 @@ public final class Figures {
 				sendEntity(figure);
 			}
 		}
+	}
+
+	/** A gliding figure a tick along its path, its place and facing sent; it stops at the end. */
+	private static void glide(Figure figure) {
+		double left = ChokeWay.PER_TICK;
+		while (left > 1e-9 && figure.pathIndex < figure.path.size()) {
+			Vec3 next = figure.path.get(figure.pathIndex);
+			double gap = figure.at.distanceTo(next);
+			if (gap <= left) {
+				figure.at = next;
+				figure.pathIndex++;
+				left -= gap;
+			} else {
+				figure.at = figure.at.add(next.subtract(figure.at).scale(left / gap));
+				left = 0;
+			}
+		}
+		if (figure.pathIndex >= figure.path.size()) {
+			figure.path = List.of();
+		}
+		Vec3 to = figure.player.position().subtract(figure.at);
+		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+		float pitch = (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
+		figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
+				net.minecraft.world.entity.PositionPath.of(figure.at), yaw, pitch, true));
+		var head = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+		head.writeVarInt(figure.entityId);
+		head.writeByte(net.minecraft.util.Mth.floor(yaw * 256f / 360f));
+		figure.player.connection.send(net.minecraft.network.protocol.game.ClientboundRotateHeadPacket.STREAM_CODEC.decode(head));
 	}
 
 	/** The figure's pose to its player: crouching or standing. */
@@ -422,6 +461,8 @@ public final class Figures {
 		final float damage;
 		final boolean spare;
 		boolean began;
+		/** The unseen thing at their neck the lead's rope is tied to, once it is out; -1 before. */
+		int knot = -1;
 
 		Choke(ServerPlayer player, int number, ItemStack item, long fromTick, long untilTick, float damage, boolean spare) {
 			this.player = player;
@@ -461,8 +502,9 @@ public final class Figures {
 		figure.path = walk;
 		figure.pathIndex = 0;
 		figure.stays = true;
-		// A stride each half second from the next step on; it squeezes once at the bed.
-		long arrives = tick - tick % STEP_TICKS + (long) walk.size() * STEP_TICKS;
+		figure.glides = true;
+		// It glides from the next tick on; it squeezes once at the bed.
+		long arrives = tick + 1 + ChokeWay.ticks(ChokeWay.walk(figure.at.x, figure.at.y, figure.at.z, to.x, to.y, to.z));
 		long squeezes = Math.round(Math.max(1, Math.min(seconds, MOST_CHOKE_SECONDS)) * 20);
 		figure.untilTick = Math.max(figure.untilTick, arrives + squeezes + 40);
 		chokes.removeIf(choke -> choke.player == player);
@@ -518,11 +560,13 @@ public final class Figures {
 			ServerPlayer player = choke.player;
 			// Out of bed, by Leave Bed or anything else: it lets go, and it is gone.
 			if (player.isRemoved() || !player.isSleeping() || !(player.level() instanceof ServerLevel level)) {
+				untie(player, choke);
 				remove(player, choke.number);
 				it.remove();
 				continue;
 			}
 			if (tick >= choke.untilTick) {
+				untie(player, choke);
 				remove(player, choke.number);
 				player.stopSleepInBed(true, true);
 				it.remove();
@@ -540,6 +584,8 @@ public final class Figures {
 				if (figure != null) {
 					figure.held = choke.item;
 					player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));
+					choke.knot = nextId++;
+					tie(player, figure, choke.knot);
 				}
 				player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DARKNESS,
 						(int) (choke.untilTick - tick) + 40, 0, false, false));
@@ -547,6 +593,52 @@ public final class Figures {
 			if ((tick - choke.fromTick) % 20 == 0) {
 				squeeze(level, player, figure, choke);
 			}
+		}
+	}
+
+	/**
+	 * The lead's rope from the figure's hand to their neck, as the game draws a leashed mob's: an
+	 * invisible, silent silverfish at their neck, sent to them alone, its lead held by the
+	 * figure. The held lead alone was hard to make out at the bedside (the owner).
+	 */
+	@SuppressWarnings("unchecked")
+	private static void tie(ServerPlayer player, Figure figure, int knot) {
+		var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(net.minecraft.resources.Identifier.parse("minecraft:silverfish"));
+		if (type.isEmpty()) {
+			return;
+		}
+		Vec3 neck = player.position();
+		player.connection.send(new ClientboundAddEntityPacket(knot, UUID.randomUUID(), neck.x, neck.y, neck.z, 0, 0, type.get().value(), 0, Vec3.ZERO, 0));
+		try {
+			var flags = net.minecraft.world.entity.Entity.class.getDeclaredField("DATA_SHARED_FLAGS_ID");
+			var silent = net.minecraft.world.entity.Entity.class.getDeclaredField("DATA_SILENT");
+			var floats = net.minecraft.world.entity.Entity.class.getDeclaredField("DATA_NO_GRAVITY");
+			flags.setAccessible(true);
+			silent.setAccessible(true);
+			floats.setAccessible(true);
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(knot, List.of(
+					// Invisible: the shared flags' sixth bit.
+					net.minecraft.network.syncher.SynchedEntityData.DataValue.create(
+							(net.minecraft.network.syncher.EntityDataAccessor<Byte>) flags.get(null), (byte) 0x20),
+					net.minecraft.network.syncher.SynchedEntityData.DataValue.create(
+							(net.minecraft.network.syncher.EntityDataAccessor<Boolean>) silent.get(null), true),
+					net.minecraft.network.syncher.SynchedEntityData.DataValue.create(
+							(net.minecraft.network.syncher.EntityDataAccessor<Boolean>) floats.get(null), true))));
+		} catch (ReflectiveOperationException ignored) {
+			// The fields moved: a silverfish they may see at their neck is worse than no rope.
+			player.connection.send(new ClientboundRemoveEntitiesPacket(knot));
+			return;
+		}
+		var link = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+		link.writeInt(knot);
+		link.writeInt(figure.entityId);
+		player.connection.send(net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket.STREAM_CODEC.decode(link));
+	}
+
+	/** The rope gone with the thing it was tied to. */
+	private static void untie(ServerPlayer player, Choke choke) {
+		if (choke.knot >= 0 && player.connection != null) {
+			player.connection.send(new ClientboundRemoveEntitiesPacket(choke.knot));
 		}
 	}
 

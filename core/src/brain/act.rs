@@ -5050,10 +5050,11 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
-        // Asleep: their door opens, heard, and is left open; the figure in the doorway walks
-        // slowly to the bed's side (the host finds it, by the pillow), takes out a lead and
-        // chokes them five seconds, never a kill; their eyes kept open to see it come, and the
-        // night held meanwhile.
+        // Asleep: the figure in their doorway walks slowly to the bed's side (the host finds it,
+        // by the pillow), takes out a lead and chokes them five seconds, never a kill; their
+        // eyes kept open to see it come, and the night held meanwhile. Their door opens, heard,
+        // and is left open: by the choke itself, as it begins, so a door gone since is passed
+        // over (a toggle of its own that failed stopped the rest of the event).
         Action::Choke(damage) => pos
             .map(|door| {
                 let mut shown = figure_shown(
@@ -5081,14 +5082,6 @@ pub fn commands(
                     ),
                     (shown, 0),
                     (
-                        Command::ToggleBlock {
-                            id: ids(),
-                            pos: door,
-                            to: Some(true),
-                        },
-                        0,
-                    ),
-                    (
                         Command::Choke {
                             id: ids(),
                             player: target,
@@ -5097,6 +5090,7 @@ pub fn commands(
                             seconds: 5.0,
                             damage,
                             spare: true,
+                            door: Some(door),
                         },
                         1,
                     ),
@@ -7498,7 +7492,7 @@ mod tests {
         assert_eq!(p, Some(door), "it comes in at their door");
 
         let made = commands(choke, p, &memory, &mut ids(), &Now::default(), None);
-        assert_eq!(made.len(), 4, "{made:?}");
+        assert_eq!(made.len(), 3, "{made:?}");
         // Their eyes kept open to see it come, longer than its walk and its squeezing.
         assert!(
             matches!(&made[0], (Command::Hint { hint, seconds, .. }, 0) if hint == "eyes_open" && *seconds >= 12.0),
@@ -7512,18 +7506,14 @@ mod tests {
             "{:?}",
             made[1]
         );
-        // The door it came in by opens, and is left open for them to find.
+        // After the figure is shown: the lead, a heart a squeeze, never a kill; the door it came
+        // in by opened by the choke itself, so a door gone since never stops the rest (a toggle
+        // of its own that failed would have).
         assert!(
-            matches!(&made[2], (Command::ToggleBlock { pos, to: Some(true), .. }, 0) if *pos == door),
+            matches!(&made[2], (Command::Choke { item, damage, spare: true, figure: 1, seconds, door: Some(d), .. }, 1)
+                if item == "minecraft:lead" && *damage == 2.0 && *seconds == 5.0 && *d == door),
             "{:?}",
             made[2]
-        );
-        // After the figure is shown: the lead, a heart a squeeze, never a kill.
-        assert!(
-            matches!(&made[3], (Command::Choke { item, damage, spare: true, figure: 1, seconds, .. }, 1)
-                if item == "minecraft:lead" && *damage == 2.0 && *seconds == 5.0),
-            "{:?}",
-            made[3]
         );
     }
 

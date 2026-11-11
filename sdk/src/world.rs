@@ -552,13 +552,14 @@ pub enum Command {
         spare: bool,
     },
     /// `player`, asleep, is kept lying in bed, the night not passing meanwhile, while the figure
-    /// `figure` walks slowly from where it stands (seven blocks off at most) to their bed's
-    /// side by the pillow, the side nearer it with room to stand; there it takes `item` into its
-    /// hand and, for `seconds` (six at most), squeezes once a second: its arm moves, and
-    /// `damage` (half hearts) is taken without waking them, with a drowning gasp, the hurt's
-    /// jolt and the dark closing in; with `spare` never below half a heart. Leaving the bed ends
-    /// it at once, the figure gone; at its end they wake. Refused when they are not asleep.
-    /// ABI 54.
+    /// `figure` walks slowly (a glide, its legs moving) from where it stands (seven blocks off at
+    /// most) to their bed's side by the pillow, the side nearer it with room to stand; there it
+    /// takes `item` into its hand, a lead's rope drawn from it to their neck, and for `seconds`
+    /// (six at most) squeezes once a second: its arm moves, and `damage` (half hearts) is taken
+    /// without waking them, with a drowning gasp, the hurt's jolt and the dark closing in; with
+    /// `spare` never below half a heart. Leaving the bed ends it at once, the figure gone; at its
+    /// end they wake. `door`, when it is still a door, opens as it begins, with its sound, and is
+    /// left open (anything else there is left alone). Refused when they are not asleep. ABI 54.
     Choke {
         id: u64,
         player: u32,
@@ -568,6 +569,8 @@ pub enum Command {
         damage: f32,
         #[serde(default, skip_serializing_if = "is_false")]
         spare: bool,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        door: Option<BlockPos>,
     },
     /// Lay blocks relative to `at`: `parts`' each `at` an offset, `y` 0 the ground's own
     /// block. With `at`'s y below -1000 the host finds the ground there (the highest block
