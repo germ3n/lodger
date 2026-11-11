@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::LostHour => Some(block_of(memory.last.pos)),
         Action::BatsInTheHouse => home.map(|h| h.center),
         // The wall block of theirs nearest their pet.
         Action::PetStaresAtWall => memory.pets().next().and_then(|pet| {
@@ -5568,6 +5569,28 @@ pub fn commands(
                 .collect(),
             _ => Vec::new(),
         },
+        // Their screen black a moment (the lights failing), and as it comes back an hour of the
+        // day is gone, the sun moved on.
+        Action::LostHour => vec![
+            (
+                Command::Hint {
+                    id: ids(),
+                    player: target,
+                    hint: "lights_fail".to_string(),
+                    pos: None,
+                    seconds: 1.2,
+                    detail: String::new(),
+                },
+                0,
+            ),
+            (
+                Command::SkipTime {
+                    id: ids(),
+                    ticks: 1_000,
+                },
+                8,
+            ),
+        ],
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -10672,6 +10695,25 @@ mod tests {
         );
         assert_eq!(made.len(), 4);
         assert!(made.iter().all(|(c, _)| matches!(c, Command::PlaceEntity { of, seconds, .. } if of == "minecraft:bat" && *seconds > 0.0)), "for a while only: {made:?}");
+    }
+
+    #[test]
+    fn in_a_blink_an_hour_of_their_day_is_gone() {
+        let memory = rich_memory();
+        let event = find("lost_hour").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(matches!(&made[0].0, Command::Hint { hint, .. } if hint == "lights_fail"));
+        assert!(
+            matches!(&made[1], (Command::SkipTime { ticks: 1_000, .. }, at) if *at > 0),
+            "{made:?}"
+        );
     }
 
     #[test]

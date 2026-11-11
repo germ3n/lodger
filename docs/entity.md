@@ -533,6 +533,7 @@ seconds and then stops; `events.glitches` turns the group off, with [The screen]
 | --- | --- | --- | --- |
 | `flicker` | 2 | One light near the target flickers for a few seconds, then is steady. | A light within 8 blocks of the target, indoors. |
 | `lights_fail` | 3 | Every light in the room gives no light, for five to twenty seconds, and the room is as dark as night. Then they are back. | The target indoors at night. |
+| `lost_hour` | 5 | By day, their screen goes black a moment, and as it comes back an hour of the day is gone, the sun moved on (`lights_fail`, then `skip_time` of a thousand ticks: the world's clock, for everyone in it). Off with `events.glitches`. | By day, the target in the game. |
 | `painting_flip` | 2 | The painting nearest them hangs upside down until they have looked straight at it for two seconds (a render hook turns it half round on the wall). | A painting, the target indoors. |
 | `sun_blink` | 3 | The sun is gone, and the sky night-dark, for one to three seconds in the middle of the day. Then it is back and the time is right. | The target outdoors by day. |
 | `moon_wrong` | 3 | The moon is full when it is not, for a few seconds (the sky's hook; twice its size is beyond the hook). | The target outdoors at night. |

@@ -980,6 +980,8 @@ pub enum Action {
     PetStaresAtWall,
     /// At night, bats fluttering about inside the house a minute.
     BatsInTheHouse,
+    /// A blink of black, and an hour of the day gone.
+    LostHour,
 }
 
 /// Where a figure stands.
@@ -4474,6 +4476,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BatsInTheHouse,
         false,
     ),
+    // docs/events_todo.md, 58: by day; the world's clock, for everyone in it.
+    row(
+        "lost_hour",
+        5,
+        5,
+        &[Day, TargetOnline],
+        6.0,
+        2,
+        Full,
+        Action::LostHour,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5402,6 +5416,7 @@ impl Event {
             | Action::SlipsFromHand
             | Action::PetStaresAtWall
             | Action::BatsInTheHouse
+            | Action::LostHour
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5473,6 +5488,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "lost_hour" => "take an hour of their day in a blink",
             "bats_in_the_house" => "let bats loose in the house a minute",
             "pet_stares_at_wall" => "stand their pet staring at a wall of the house",
             "glass_breaks" => "make the sound of a window breaking in the house",

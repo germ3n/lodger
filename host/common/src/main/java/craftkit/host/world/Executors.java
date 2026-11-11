@@ -145,6 +145,16 @@ public final class Executors {
 				case "set_respawn" -> setRespawn(level, command, id, context);
 				case "put_ender_chest" -> putEnderChest(level, command, id, context, data);
 				case "firework" -> firework(level, command, id);
+				case "skip_time" -> {
+					// The overworld's clock moved on, as `/time add` does: the sky with it.
+					var clock = level.registryAccess().get(net.minecraft.world.clock.WorldClocks.OVERWORLD);
+					if (clock.isEmpty()) {
+						yield report(id, false, "no overworld clock");
+					}
+					int ticks = Math.max(0, Math.min(command.get("ticks").getAsInt(), 6000));
+					level.getServer().clockManager().addTicks(clock.get(), ticks);
+					yield report(id, true, "");
+				}
 				case "drop_held" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

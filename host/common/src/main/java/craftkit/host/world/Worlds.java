@@ -388,8 +388,10 @@ public final class Worlds {
 	private static JsonObject now(MinecraftServer server, ServerLevel level, long realMillis) {
 		JsonObject now = new JsonObject();
 		now.addProperty("tick", server.getTickCount());
-		// 26.3 keeps the clock as game time on the level data; the time of day is its remainder.
-		long time = level.getLevelData().getGameTime();
+		// The time of day is the overworld's clock, the one the sky shows and sleeping moves on
+		// to morning: the game's tick count goes on through a slept night, so read from it the
+		// mind thought it still night at dawn (and its days were the ticks', not the days seen).
+		long time = level.getOverworldClockTime();
 		now.addProperty("day_time", time % 24000L);
 		now.addProperty("day", time / 24000L);
 		now.addProperty("real_millis", realMillis);

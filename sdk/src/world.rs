@@ -581,6 +581,12 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// The world's day moved on `ticks` (a quarter of a day at most), as `/time add` does, the
+    /// sky with it, for everyone. ABI 54.
+    SkipTime {
+        id: u64,
+        ticks: u32,
+    },
     /// What `player` holds in their main hand slips from it and lies at their feet, picked up
     /// again as anything is; never thrown, never lost. ABI 54.
     DropHeld {
@@ -1300,6 +1306,7 @@ impl Command {
             | Command::MapMark { id, .. }
             | Command::Firework { id, .. }
             | Command::DropHeld { id, .. }
+            | Command::SkipTime { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

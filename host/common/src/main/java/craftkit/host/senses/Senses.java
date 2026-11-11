@@ -682,7 +682,7 @@ public final class Senses {
 		panel.add("player", seen);
 		panel.addProperty("index", indexOf(player));
 		panel.addProperty("tick", tick);
-		long time = level.getLevelData().getGameTime();
+		long time = level.getOverworldClockTime();
 		panel.addProperty("day_time", time % 24000L);
 		panel.addProperty("day", time / 24000L);
 		panel.addProperty("raining", level.isRaining());

@@ -276,7 +276,8 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::HandOnShoulder
         | Action::ChestAnswers => config.events.sounds,
         // Their name in the ghasts' cries is a hint too: off with the glitches.
-        Action::Hint(_, _) | Action::GhastName => config.events.glitches,
+        // The lost hour begins with their screen black: a glitch too.
+        Action::Hint(_, _) | Action::GhastName | Action::LostHour => config.events.glitches,
         // The bedside figure too: with the figures off, none comes to the bed (until now the
         // choke and the shot came whatever `events.figure` said).
         Action::Figure(_, _, _)

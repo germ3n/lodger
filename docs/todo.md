@@ -1438,6 +1438,11 @@ The `[x]` lines above, summed up by day:
   an open chain's next step, while it may happen, always has a place on the menu. Never forced:
   the mind still chooses. Tests: one in `offer`; the stay test as it was. Was: with a hundred and
   more events a chain's first step was one weight among them all, and chains often never opened.
+- [x] **The lost hour** (`docs/events_todo.md`, 58): `lost_hour`, stage 5, by day: a blink of black,
+  and an hour of the day gone (`skip_time`, ABI 54, the overworld's clock, for everyone). With it,
+  the host reads the time of day and the day from the overworld's clock, which the sky shows and
+  sleeping moves to morning. Tests: one in `act`. Was: no such event, and the mind's time was the
+  game's tick count: after a night slept, it thought it still night at dawn.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.
