@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::ByTheBed => home.and_then(|h| h.bed),
         // Where they last fished; the water near them when they never have.
         Action::FishingFigure => memory
             .last_fished
@@ -5834,6 +5835,32 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // A block from their bed toward their door, facing the bed, empty-handed, still; gone
+        // once seen and looked away from.
+        Action::ByTheBed => match (pos, memory.usual_door()) {
+            (Some(bed), Some(door)) => {
+                let toward = step_toward(bed, door);
+                let spot = [bed[0] + toward[0], bed[1] - 1, bed[2] + toward[1]];
+                let mut shown = figure_shown(ids, memory, target, spot, 60.0, false);
+                if let Command::Figure {
+                    held,
+                    once_seen,
+                    faces,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *once_seen = true;
+                    *faces = Some([
+                        bed[0] as f64 + 0.5,
+                        bed[1] as f64 + 0.5,
+                        bed[2] as f64 + 0.5,
+                    ]);
+                }
+                vec![(shown, 0)]
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11081,6 +11108,25 @@ mod tests {
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Figure { held, swinging: true, .. }, 0)] if held.id == "minecraft:fishing_rod"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn coming_in_at_night_a_figure_stands_by_their_bed() {
+        let memory = rich_memory();
+        let bed = memory.home.as_ref().unwrap().bed.unwrap();
+        let event = find("by_the_bed").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { faces: Some(f), once_seen: true, pos, .. }, 0)] if f[0] == bed[0] as f64 + 0.5 && pos[1] == bed[1] as f64),
             "{made:?}"
         );
     }

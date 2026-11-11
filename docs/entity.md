@@ -651,6 +651,7 @@ a dock or bridge), never over anything a player built (see the
 | `in_doorway` | 4 | As the target turns, the figure is in the doorway or at the window for less than half a second, then not. No sound. | The target indoors, facing away from a door or window. |
 | `at_the_chest` | 4 | Coming into the room, the target sees the figure at their chest, back to them. It closes the lid and is around the corner before they reach it. | A used container in a room with two ways out. |
 | `in_your_bed` | 4 | Coming home late at night, the target sees the figure lying in their bed through the door, and the bed is empty when the door opens. | A bed in view of the door, night. |
+| `by_the_bed` | 4 | Coming in at night, a figure stands a block from their bed toward their door, facing the bed, empty-handed, still; gone once seen and looked away from. | Night, coming home, a bed. |
 | `replay` | 4 | The replay figure walks a recorded route, at the recorded pace, starting out of view. Looked at, it keeps walking. Approached within 24 blocks it rounds a corner and is gone, leaving the held item where it stood if it held one. | A recorded route of 20 or more points. |
 | `figure_nip` | 3 only | The figure right behind them for a second, two blocks back: it swings once, a hit, half a heart, the hurt's jolt, never below half a heart (`figure_swing`, ABI 33). The owner's harm stages: a nip at 3. | The target awake. |
 | `figure_swing` | 4 | The same, hard: two hearts, still never below half a heart, never a kill. | The target awake. |
