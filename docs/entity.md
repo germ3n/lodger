@@ -635,6 +635,7 @@ a dock or bridge), never over anything a player built (see the
 | `torch_flash` | 4 | Underground, as they place a light (one time in seven or so; never from the menu), a figure stands two blocks past it in its light, facing them, for a blink (a fifth of a second). | A light placed underground, that moment. |
 | `where_you_died` | 3 | Where they last died, a figure lies on the ground on its side as a body lies, empty-handed, seen from twelve to sixty-four blocks off; gone when they come within ten blocks (`figure`'s `lies`). | Where they last died, twelve to sixty-four blocks from them. |
 | `rubberband` | 4 | Walking outdoors, they are set back along their trail three blocks or more, as on a bad connection (`move_player`), and where they had been a figure stands facing them, empty-handed, gone once seen and looked away from. | The target walking outdoors. |
+| `the_offer` | 4 | In their doorway, as they are outside, a figure stands holding out what it took from them, facing them; come within three blocks and it is gone and the very thing lies at their feet, given back (the host's word that the figure was come to, then `drop_item` of what it keeps). Gone any other way, it keeps it. Once a stay. | It holds something of theirs, a door known, the target outdoors. |
 
 ### The ending
 

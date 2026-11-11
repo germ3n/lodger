@@ -885,6 +885,8 @@ pub enum Action {
     WhereYouDied,
     /// Walking, they are set back a few blocks, and a figure stands where they were.
     Rubberband,
+    /// In their doorway, a figure holds out what it took; walk to it and it is at their feet.
+    TheOffer,
 }
 
 /// Where a figure stands.
@@ -3947,6 +3949,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Rubberband,
         false,
     ),
+    // docs/events_todo.md, 13: what it took, not what they lost dying (that it never holds).
+    row(
+        "the_offer",
+        4,
+        5,
+        &[Held, Door, Home, TargetOutdoors],
+        6.0,
+        1,
+        Full,
+        Action::TheOffer,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4754,6 +4768,7 @@ impl Event {
             | Action::TorchFlash
             | Action::WhereYouDied
             | Action::Rubberband
+            | Action::TheOffer
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -5068,6 +5083,7 @@ impl Event {
             "torch_flash" => "show a figure in the light they just placed underground",
             "where_you_died" => "lay a figure where they last died",
             "rubberband" => "set them back a few steps and stand a figure where they were",
+            "the_offer" => "hold out what it took from their doorway, and give it if they come",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

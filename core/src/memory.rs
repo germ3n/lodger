@@ -547,6 +547,11 @@ pub struct Memory {
     /// (`torch_flash`, which finds it as `habits.last_light`). Not saved.
     #[serde(skip)]
     pub lit_underground_now: Option<BlockPos>,
+    /// Where `the_offer`'s figure stands holding out what it took, until it is gone.
+    pub offer_waiting: Option<BlockPos>,
+    /// They came to it: where, taken by the brain on its next tick, which gives it. Not saved.
+    #[serde(skip)]
+    pub offer_reached_now: Option<BlockPos>,
     /// The target has just been crouched still ten seconds, taken by the brain on its next
     /// tick (`breath`). Not saved.
     #[serde(skip)]
@@ -1791,11 +1796,18 @@ impl Memory {
                 // Its diary bought: taken above, from anyone.
                 EventKind::Bought => {}
                 EventKind::FigureSeen => {
-                    push_capped(
-                        &mut self.figure_looks,
-                        FigureLook::parse(&event.detail, day, event.pos),
-                        MOST_FIGURE_LOOKS,
-                    );
+                    let look = FigureLook::parse(&event.detail, day, event.pos);
+                    // The offer's figure gone: come to, it gives what it held out; gone any
+                    // other way, it keeps it.
+                    if let (Some(waiting), Some(at)) = (self.offer_waiting, event.pos) {
+                        if distance(waiting, at) <= 3.0 {
+                            self.offer_waiting = None;
+                            if look.end == "approached" {
+                                self.offer_reached_now = Some(at);
+                            }
+                        }
+                    }
+                    push_capped(&mut self.figure_looks, look, MOST_FIGURE_LOOKS);
                 }
                 EventKind::FightWon => self.fight_ended = Some("won".to_string()),
                 EventKind::FightLost => self.fight_ended = Some("lost".to_string()),

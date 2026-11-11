@@ -347,6 +347,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             [light[0] + away[0] * 2, floor - 1, light[2] + away[1] * 2]
         }),
         Action::WhereYouDied => memory.last_death(),
+        Action::TheOffer => memory.usual_door(),
         // The point of their trail three blocks or more back from where they stand; three
         // blocks behind them when the trail is short.
         Action::Rubberband => {
@@ -4283,6 +4284,35 @@ pub fn commands(
                 ]
             })
             .unwrap_or_default(),
+        // In their doorway, holding out what it took, facing them; come within three blocks and
+        // it is gone, what it held at their feet (the brain, on the host's word).
+        Action::TheOffer => match (pos, &memory.held) {
+            (Some(door), Some(held)) => {
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [door[0], door[1] - 1, door[2]],
+                    120.0,
+                    false,
+                );
+                if let Command::Figure {
+                    held: holding,
+                    vanish_within,
+                    ..
+                } = &mut shown
+                {
+                    *holding = ItemStack {
+                        id: held.item.id.clone(),
+                        count: 1,
+                        slot: 0,
+                    };
+                    *vanish_within = 3.0;
+                }
+                vec![(shown, 0)]
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7099,6 +7129,8 @@ mod tests {
         for event in CATALOGUE {
             if event.id == "wait"
                 || event.id == "return_taken"
+                // It holds out what it took, which this memory has not: the brain's test.
+                || event.id == "the_offer"
                 || event.id == "place_taken"
                 || event.id == "returned_used"
                 || event.id == "loot_gift"

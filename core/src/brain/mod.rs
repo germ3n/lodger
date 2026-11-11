@@ -923,6 +923,28 @@ impl Brain {
             self.consider_started(pick, WOKE_CHANCE, now, day, memory, arc, config, log);
         }
 
+        // They came to the offer's figure: what it held out is at their feet, given back.
+        if let Some(at) = memory.offer_reached_now.take() {
+            if let Some(held) = memory.held.clone() {
+                let id = self.id();
+                self.pending.push(Pending {
+                    id,
+                    event: "the_offer".to_string(),
+                    pos: Some(at),
+                    day,
+                    puts_held: true,
+                    tail: true,
+                    ..Pending::default()
+                });
+                commands.push(Command::DropItem {
+                    id,
+                    pos: [at[0] as f64 + 0.5, at[1] as f64 + 0.5, at[2] as f64 + 0.5],
+                    item: held.item,
+                    kept: "held".to_string(),
+                });
+            }
+        }
+
         // A light placed underground: perhaps a figure in its light, for a blink.
         if memory.lit_underground_now.take().is_some() && !held_back {
             self.consider_started(
@@ -1332,6 +1354,10 @@ impl Brain {
             }
         }
         let mut sent = Vec::new();
+        // The offer's figure stands holding it out: the memory waits for them to come to it.
+        if plan.event == "the_offer" {
+            memory.offer_waiting = plan.pos;
+        }
         for (command, later_ticks) in made {
             let puts_held = matches!(&command, Command::PutItem { kept, .. } if kept == "held");
             self.pending.push(Pending {
@@ -4923,6 +4949,100 @@ mod tests {
         let reply = brain.reply.as_ref().unwrap();
         assert_eq!((reply.due_tick, reply.until_tick), (100, 2_000));
         assert_eq!(brain.next_here_scan, 600);
+    }
+
+    #[test]
+    fn come_to_the_offer_s_figure_and_what_it_held_out_is_at_their_feet() {
+        let mut memory = home_memory();
+        memory.held = Some(crate::memory::Held {
+            item: craftkit::world::ItemStack {
+                id: "minecraft:clock".to_string(),
+                count: 1,
+                slot: 0,
+            },
+            ..Default::default()
+        });
+        memory.offer_waiting = Some([4, 64, 0]);
+        // The host: the figure gone as they came within three blocks.
+        memory.observe(
+            &craftkit::world::Observations {
+                players: vec![craftkit::world::Player {
+                    index: 0,
+                    pos: [3.0, 64.0, 0.5],
+                    ..Default::default()
+                }],
+                events: vec![craftkit::world::Event {
+                    player: 0,
+                    kind: craftkit::world::EventKind::FigureSeen,
+                    pos: Some([4, 64, 0]),
+                    detail: "looked=40 looks=1 toward=5 end=approached".to_string(),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            1.0,
+        );
+        assert_eq!(memory.offer_waiting, None);
+        let mut brain = Brain::new(10);
+        let mut arc = Arc {
+            stage: 4,
+            ..Arc::default()
+        };
+        let mut log = log::Log::new(None, 16, false);
+        let made = brain.tick(
+            &Now::default(),
+            1.0,
+            &mut memory,
+            &mut arc,
+            &Config::default(),
+            &mut log,
+            None,
+        );
+        let Some(Command::DropItem { id, kept, item, .. }) =
+            made.iter().find(|c| matches!(c, Command::DropItem { .. }))
+        else {
+            panic!("nothing dropped: {made:?}");
+        };
+        assert_eq!(
+            (kept.as_str(), item.id.as_str()),
+            ("held", "minecraft:clock")
+        );
+        brain.report(
+            &[Report {
+                id: *id,
+                done: true,
+                reason: String::new(),
+            }],
+            &mut memory,
+            &mut log,
+        );
+        assert!(memory.held.is_none(), "given back, held no more");
+
+        // Gone any other way, it keeps it.
+        memory.held = Some(crate::memory::Held::default());
+        memory.offer_waiting = Some([4, 64, 0]);
+        memory.observe(
+            &craftkit::world::Observations {
+                players: vec![craftkit::world::Player {
+                    index: 0,
+                    pos: [30.0, 64.0, 0.5],
+                    ..Default::default()
+                }],
+                events: vec![craftkit::world::Event {
+                    player: 0,
+                    kind: craftkit::world::EventKind::FigureSeen,
+                    pos: Some([4, 64, 0]),
+                    detail: "end=timed".to_string(),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            1.0,
+        );
+        assert_eq!(
+            (memory.offer_waiting, memory.offer_reached_now),
+            (None, None)
+        );
     }
 
     #[test]

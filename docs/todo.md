@@ -1201,6 +1201,12 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **The offer** (`docs/events_todo.md`, 13): `the_offer`, stages 4 and 5, holding something
+  of theirs, a door known, the target outdoors: a figure in their doorway holds it out; come
+  within three blocks and it is gone and the very thing drops at their feet, given back (the
+  memory's `offer_waiting` and `offer_reached_now` from the host's `figure_seen` "approached",
+  the brain's `drop_item` of what it holds, done clearing it). What it took, not what they lost
+  dying, which it never holds. Tests: one in `brain`. Was: no such event.
 - [x] **Set back** (`docs/events_todo.md`, 12): `rubberband`, stages 4 and 5, walking outdoors:
   set back along their trail three blocks or more, as on a bad connection, and a figure stands
   where they had been, gone once seen and looked away from. Tests: one in `act`. Was: no such
