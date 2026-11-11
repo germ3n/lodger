@@ -580,6 +580,12 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// What `player` holds in their main hand slips from it and lies at their feet, picked up
+    /// again as anything is; never thrown, never lost. ABI 54.
+    DropHeld {
+        id: u64,
+        player: u32,
+    },
     /// A firework launched from `pos`: `flight` (1 to 3) how high, bursting as `shape`
     /// (`small_ball`, `large_ball`, `star`, `creeper`, `burst`) in `colors` (RGB). ABI 54.
     Firework {
@@ -1292,6 +1298,7 @@ impl Command {
             | Command::DrainAir { id, .. }
             | Command::MapMark { id, .. }
             | Command::Firework { id, .. }
+            | Command::DropHeld { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

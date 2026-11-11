@@ -562,6 +562,7 @@ The target's own HUD and camera, for a moment. Off with `events.glitches`.
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
 | `hotbar_slip` | 2 | The selected hotbar slot moves to the favourite tool for one tick. | The favourite in the hotbar. |
+| `slips_from_hand` | 4 | Walking, what they hold in their main hand slips from it and lies still at their feet, to be picked up again; never with a monster near, never thrown, never lost (`drop_held`). | The target walking, holding something, no monster near. |
 | `hunger_shake` | 2 | The hunger bar shakes as if starving, for three seconds, their saturation put back after. | The target awake. |
 | `heart_skip` | 3 | The hearts blink as if hurt, once, with no damage. | The target awake. |
 | `subtitle` | 2 | With subtitles on, `Footsteps` appears behind them, with no sound. | The target awake. |

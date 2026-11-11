@@ -348,6 +348,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Where they are, holding something, with no monster near.
+        Action::SlipsFromHand => (!memory.last.main_hand.is_empty()
+            && memory.last.hostiles_near.is_empty())
+        .then_some(block_of(memory.last.pos)),
         // Fifty blocks from the house, any way, on the ground there.
         Action::StoneCircle => home.map(|h| {
             let angle = rng.next_f64() * std::f64::consts::TAU;
@@ -5499,6 +5503,17 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        Action::SlipsFromHand => pos
+            .map(|_| {
+                vec![(
+                    Command::DropHeld {
+                        id: ids(),
+                        player: target,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -8345,6 +8360,8 @@ mod tests {
                 || event.id == "firework_over_its_house"
                 // What it took, which this memory holds not: its own test.
                 || event.id == "chicken_lays"
+                // Something held, monsters away: its own test.
+                || event.id == "slips_from_hand"
                 // Their route, which this memory has not: its own test.
                 || event.id == "camp_nearby"
                 // Two doors or more, which this memory has not: its own test.
@@ -10508,6 +10525,43 @@ mod tests {
             let out = ((p.at[0] * p.at[0] + p.at[2] * p.at[2]) as f64).sqrt();
             p.at[1] >= 1 && (4.0..=6.0).contains(&out)
         }));
+    }
+
+    #[test]
+    fn what_they_hold_slips_from_their_hand_never_with_monsters_near() {
+        let mut memory = rich_memory();
+        memory.last.main_hand = "minecraft:iron_pickaxe".to_string();
+        memory.last.hostiles_near.clear();
+        let event = find("slips_from_hand").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::DropHeld { .. }, 0)]),
+            "{made:?}"
+        );
+        memory.last.hostiles_near.push(crate::memory::Creature {
+            id: 3,
+            kind: "zombie".to_string(),
+            ..Default::default()
+        });
+        assert_eq!(
+            place(event, &memory, &mut Rng::new(1)),
+            None,
+            "not with a monster near"
+        );
+        memory.last.hostiles_near.clear();
+        memory.last.main_hand.clear();
+        assert_eq!(
+            place(event, &memory, &mut Rng::new(1)),
+            None,
+            "nothing held"
+        );
     }
 
     #[test]

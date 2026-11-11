@@ -974,6 +974,8 @@ pub enum Action {
     CampNearby,
     /// Overnight, a ring of stone pillars far off.
     StoneCircle,
+    /// What they hold slips from their hand to their feet.
+    SlipsFromHand,
 }
 
 /// Where a figure stands.
@@ -4432,6 +4434,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::StoneCircle,
         false,
     ),
+    // docs/events_todo.md, 52: never with monsters near.
+    row(
+        "slips_from_hand",
+        4,
+        5,
+        &[TargetWalking],
+        3.0,
+        3,
+        Full,
+        Action::SlipsFromHand,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5321,6 +5335,7 @@ impl Event {
             | Action::RidesTheirHorse
             | Action::EatsAtTheirChest
             | Action::MirrorInTheWindow
+            | Action::SlipsFromHand
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5392,6 +5407,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "slips_from_hand" => "make what they hold slip from their hand",
             "stone_circle" => "raise a ring of stone pillars far off",
             "camp_nearby" => "make a camp out where they walk, a figure sitting by its fire",
             "flowers_wilted" => "wilt their flowers to dead bushes for a day",

@@ -145,6 +145,21 @@ public final class Executors {
 				case "set_respawn" -> setRespawn(level, command, id, context);
 				case "put_ender_chest" -> putEnderChest(level, command, id, context, data);
 				case "firework" -> firework(level, command, id);
+				case "drop_held" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					ItemStack held = player.getInventory().removeFromSelected(true);
+					if (held.isEmpty()) {
+						yield report(id, false, "they hold nothing");
+					}
+					// At their feet, still, a moment before it can be picked up.
+					var dropped = new net.minecraft.world.entity.item.ItemEntity(level, player.getX(), player.getY() + 0.1, player.getZ(), held, 0, 0, 0);
+					dropped.setPickUpDelay(20);
+					level.addFreshEntity(dropped);
+					yield report(id, true, "");
+				}
 				case "map_mark" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

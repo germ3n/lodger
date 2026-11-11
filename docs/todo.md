@@ -1413,6 +1413,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A stone circle** (`docs/events_todo.md`, 51): `stone_circle`, stages 4 and 5, once a
   stay: fifty blocks from the house a ring of eight stone-brick pillars, three high, five out
   (`place_blueprint`). Tests: one in `act`. Was: no such event.
+- [x] **It slips from their hand** (`docs/events_todo.md`, 52): `slips_from_hand`, stages 4 and 5,
+  walking with something held and no monster near: it slips to their feet, picked up again
+  (`drop_held`, ABI 54). Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.
