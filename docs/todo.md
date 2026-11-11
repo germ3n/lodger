@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Twenty events to come** (owner: "can you think of more potential events? come up with
+  like 20 ... and also write it to docs/events_todo.md"): `docs/events_todo.md`, twenty ideas not
+  in the catalogue or `ideas.md`, each with its stage, needs, what it takes and a size, the ring of
+  figures the owner asked for first. Was: none written down.
 - [x] **Shot in bed** (owner: "can you also add a variation of this where we get lit on fire,
   maybe shot at with a crossbow"): `shot_in_bed`, as `choke` (stages 4 and 5, asleep, a door and
   the bed known): the same walk, the door opened; at the bed a crossbow out and loaded as a player
