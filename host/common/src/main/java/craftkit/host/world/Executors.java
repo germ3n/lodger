@@ -143,6 +143,7 @@ public final class Executors {
 				case "hold_door" -> holdDoor(level, command, id, context);
 				case "push_player" -> pushPlayer(level, command, id, context);
 				case "set_respawn" -> setRespawn(level, command, id, context);
+				case "put_ender_chest" -> putEnderChest(level, command, id, context, data);
 				case "dig_in" -> digIn(level, command, id, context);
 				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
@@ -2095,6 +2096,26 @@ public final class Executors {
 	}
 
 	/** The figure shown to a player swings once, perhaps a hit, never below half a heart with spare (ABI 33). */
+	/** A kept stack into a player's own ender chest, kept again when it is full (ABI 54). */
+	private static JsonObject putEnderChest(ServerLevel level, JsonObject command, long id, Context context, WorldData data) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		String kept = command.get("kept").getAsString();
+		ItemStack stack = data.giveBack(kept);
+		if (stack == null || stack.isEmpty()) {
+			return report(id, false, "nothing kept under that name");
+		}
+		ItemStack rest = player.getEnderChestInventory().addItem(stack);
+		if (!rest.isEmpty()) {
+			data.keep(kept, rest);
+			return report(id, false, "their ender chest is full");
+		}
+
+		return report(id, true, "");
+	}
+
 	/** A bed made a player's respawn point, quietly: no "Respawn point set" (ABI 54). */
 	private static JsonObject setRespawn(ServerLevel level, JsonObject command, long id, Context context) {
 		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());

@@ -224,7 +224,8 @@ them, nothing more); `figure`'s `crawls` (on its belly along its path, gliding, 
 at the player after them, gone two blocks short with a hit's jolt, no harm), `rides_behind` (in the
 seat behind them in their boat, on their client alone, gone with the boat left), `together` (a
 group gone at once when any of it is), `lies` (on the ground on its side, as a body), `falls` (from forty blocks over its place to it,
-fast, a heavy fall's sound as it lands, gone there); `approach`'s `to` (walking to a place instead, the ground there below -1000, then as it was); `set_respawn` (a bed made a player's respawn point, no message); `push_player` (a player pushed once, a block a tick at most on each axis); `hold_door` (a door that will not open for a while, each
+fast, a heavy fall's sound as it lands, gone there); `approach`'s `to` (walking to a place instead, the ground there below -1000, then as it was); `set_respawn` (a bed made a player's respawn point, no message); `put_ender_chest` (a kept stack
+into a player's own ender chest, kept again when full); `push_player` (a player pushed once, a block a tick at most on each axis); `hold_door` (a door that will not open for a while, each
 try refused, the door put back on their screen and a blow on it heard) and `upside_down` (hanging feet up from the first
 solid block over its place, as the game draws a player named Dinnerbone); and a figure wears its
 player's skin layers (the hat, the jacket), where it wore the bare skin.

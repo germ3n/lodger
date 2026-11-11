@@ -350,6 +350,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::TheOffer => memory.usual_door(),
         Action::PulledUnder => Some(block_of(memory.last.pos)),
         Action::ItsLightsOn | Action::RespawnItsBed => memory.its_house().map(|h| h.site),
+        Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
         // Nine blocks ahead of them, on the ground: near enough that their pet never strays far
         // enough from them for the game to bring it back at once (twelve).
         Action::PetFollows => {
@@ -3216,6 +3217,32 @@ pub fn commands(
             }
             None => vec![],
         },
+        // A note in its words, signed for them, into their ender chest: the one place nothing
+        // else can reach.
+        Action::EnderChestNote => {
+            let book = ids();
+            let kept = format!("book_{book}");
+            vec![
+                (
+                    Command::WriteBook {
+                        id: book,
+                        kept: kept.clone(),
+                        title: format!("for {}", crate::books::signed(memory)),
+                        author: String::new(),
+                        pages: vec![words(Kind::DiaryLine, "", 0)],
+                    },
+                    0,
+                ),
+                (
+                    Command::PutEnderChest {
+                        id: ids(),
+                        player: target,
+                        kept,
+                    },
+                    1,
+                ),
+            ]
+        }
         // A letter for them in their chest, in its words.
         Action::LetterInChest => match memory.used_container() {
             Some(chest) if !chest.empty_slots().is_empty() => {
@@ -8390,6 +8417,35 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn a_note_is_left_in_their_ender_chest() {
+        let mut memory = rich_memory();
+        memory.fixtures.push(crate::memory::Fixture {
+            kind: "ender_chest".to_string(),
+            pos: [3, 64, -3],
+        });
+        let event = find("ender_chest_note").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let (Command::WriteBook { kept, pages, .. }, Command::PutEnderChest { kept: put, .. }) =
+            (&made[0].0, &made[1].0)
+        else {
+            panic!("{made:?}");
+        };
+        assert_eq!(kept, put, "the very book written");
+        assert!(!pages[0].is_empty());
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:ender_chest"),
+            Some("ender_chest")
+        );
     }
 
     #[test]

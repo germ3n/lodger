@@ -580,6 +580,14 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// The stack kept under `kept` (`write_book`, `take_item`'s `keep`) into `player`'s own
+    /// ender chest, the inventory every ender chest of theirs opens on; kept again when it is
+    /// full. ABI 54.
+    PutEnderChest {
+        id: u64,
+        player: u32,
+        kept: String,
+    },
     /// The bed at `pos` (either half) made `player`'s respawn point, quietly: no message. Their
     /// next death wakes them there. Refused when it is no bed. ABI 54.
     SetRespawn {
@@ -1216,6 +1224,7 @@ impl Command {
             | Command::HoldDoor { id, .. }
             | Command::PushPlayer { id, .. }
             | Command::SetRespawn { id, .. }
+            | Command::PutEnderChest { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

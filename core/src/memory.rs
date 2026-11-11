@@ -710,6 +710,12 @@ const MOST_SESSIONS: usize = 30;
 const MOST_REACTIONS: usize = 128; // oldest dropped first
 const MOST_WALLS: usize = 512; // oldest dropped first
 
+/// [`fixture_kind`] for the tests of other modules.
+#[cfg(test)]
+pub fn fixture_kind_of(id: &str) -> Option<&'static str> {
+    fixture_kind(id)
+}
+
 /// The plain kind of a placed block an event can use, or none.
 fn fixture_kind(id: &str) -> Option<&'static str> {
     const KINDS: &[&str] = &[
@@ -743,6 +749,7 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "bee_nest",
         "brewing_stand",
         "grindstone",
+        "ender_chest",
     ];
     if is_mod_furniture(id) {
         return Some("furniture");

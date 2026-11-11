@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A note in the ender chest** (`docs/events_todo.md`, 24): `ender_chest_note`, stages 4
+  and 5, an ender chest of theirs known (a fixture now): a written book in its words into their
+  own ender chest's inventory (`put_ender_chest`, ABI 54, kept again when full). Tests: one in
+  `act`. Was: no such event.
 - [x] **Respawn in its bed** (`docs/events_todo.md`, 23): `respawn_its_bed`, stage 5, once a
   stay, its house built: a bed laid along its house's left wall, then made their respawn point
   quietly (`set_respawn`, ABI 54); its lanterns (`its_lights_on`) moved clear of it. Tests: one in

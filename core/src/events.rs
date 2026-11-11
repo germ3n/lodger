@@ -922,6 +922,8 @@ pub enum Action {
     LiesBeside,
     /// A bed laid in its house, quietly made their respawn point.
     RespawnItsBed,
+    /// A note of its own in their ender chest.
+    EnderChestNote,
 }
 
 /// Where a figure stands.
@@ -4092,6 +4094,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::RespawnItsBed,
         false,
     ),
+    // docs/events_todo.md, 24.
+    row(
+        "ender_chest_note",
+        4,
+        5,
+        &[Fixture("ender_chest"), TargetOnline],
+        8.0,
+        2,
+        Full,
+        Action::EnderChestNote,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4903,6 +4917,7 @@ impl Event {
             | Action::ItsLightsOn
             | Action::FaceInTheChest
             | Action::RespawnItsBed
+            | Action::EnderChestNote
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5255,6 +5270,7 @@ impl Event {
             "pet_follows" => "walk their pet off to a figure ahead of them",
             "lies_beside" => "lay the figure on the floor beside their bed as they sleep",
             "respawn_its_bed" => "make the bed in its house their respawn point",
+            "ender_chest_note" => "leave a note in their ender chest",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
