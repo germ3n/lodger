@@ -138,6 +138,33 @@ pub fn house(way: [i32; 2], grown: bool) -> Vec<Part> {
     turned(parts, way)
 }
 
+/// A spot of its house, by its place in the house built facing south, turned to `way`.
+pub fn house_spot(way: [i32; 2], at: [i32; 3]) -> [i32; 3] {
+    turned(vec![part(at[0], at[1], at[2], "minecraft:air")], way)[0].at
+}
+
+/// Where its house's wall torch hangs, and the three spots on its floor its lights stand on
+/// (`its_lights_on`), from its site, the house built facing `way`.
+pub fn house_lights(site: BlockPos, way: [i32; 2]) -> (BlockPos, Vec<BlockPos>) {
+    let at = |p: [i32; 3]| {
+        let t = house_spot(way, p);
+        [site[0] + t[0], site[1] + t[1], site[2] + t[2]]
+    };
+    (
+        at([1, 2, -1]),
+        vec![at([1, 1, 1]), at([-1, 1, 1]), at([0, 1, 0])],
+    )
+}
+
+impl crate::memory::Memory {
+    /// Its house near theirs, built whole, its ground known.
+    pub fn its_house(&self) -> Option<&Build> {
+        self.builds.iter().find(|b| {
+            b.kind == "house_near" && b.ground_known() && b.laid >= house(b.way, false).len()
+        })
+    }
+}
+
 /// A pillar of cobblestone, `high` blocks.
 pub fn pillar(high: i32) -> Vec<Part> {
     (1..=high.max(1))

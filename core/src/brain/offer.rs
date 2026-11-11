@@ -146,6 +146,15 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::HoldsNothing => memory.held.is_none(),
         Need::LitUnderground => false,
         Need::TargetSwimming => last.online && last.swimming,
+        Need::ItsHouseNear => memory.its_house().is_some_and(|house| {
+            let at = [
+                last.pos[0].floor() as i32,
+                house.site[1],
+                last.pos[2].floor() as i32,
+            ];
+            let d = crate::memory::distance(at, house.site);
+            last.online && (8.0..=48.0).contains(&d)
+        }),
         Need::DownTheShaft => last.online && crate::brain::act::shaft_top(memory).is_some(),
         Need::NearTheirDeath => memory.last_death().is_some_and(|died| {
             let at = [

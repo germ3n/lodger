@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Its lights on** (`docs/events_todo.md`, 16): `its_lights_on`, stages 4 and 5, at night
+  eight to forty-eight blocks from its house built whole (`Memory::its_house`): its wall torch
+  taken away a while, three lanterns lit on its floor one by one, then all out, its lanterns
+  only (`building::house_lights`). Tests: one in `act`. Was: no such event.
 - [x] **Pulled under** (`docs/events_todo.md`, 15): `pulled_under`, stages 4 and 5, swimming
   (the memory keeps it now): pulled down twice a moment apart, a whirl of water and a drowning
   gasp, no harm (`push_player`, ABI 54, a block a tick at most). Tests: one in `act`. Was: no

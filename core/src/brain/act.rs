@@ -349,6 +349,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
         Action::PulledUnder => Some(block_of(memory.last.pos)),
+        Action::ItsLightsOn => memory.its_house().map(|h| h.site),
         // The top of the shaft they are down; its highest ladder when they have climbed out
         // since it was offered.
         Action::TopOfTheLadder => shaft_top(memory).or_else(|| {
@@ -1317,6 +1318,22 @@ pub fn texts(command: &Command) -> Vec<String> {
 /// A torch near `pos`, as a player would place one: on the ground within `settle` blocks down
 /// or up, else on a wall there, never floating. The mind knows positions, not terrain; the
 /// host finds the spot (`docs/sdk.md`, `set_block`).
+/// A block set on a floor spot, only into air or over one of `replace`: its lanterns and their
+/// going (`its_lights_on`).
+fn lantern(ids: &mut impl FnMut() -> u64, pos: BlockPos, block: &str, replace: &[&str]) -> Command {
+    Command::SetBlock {
+        id: ids(),
+        pos,
+        block: block.to_string(),
+        state: String::new(),
+        replace: replace.iter().map(|r| r.to_string()).collect(),
+        settle: 0,
+        wall: String::new(),
+        rest: false,
+        only: !replace.is_empty(),
+    }
+}
+
 fn torch(ids: &mut impl FnMut() -> u64, pos: BlockPos, settle: u8) -> Command {
     Command::SetBlock {
         id: ids(),
@@ -4387,6 +4404,37 @@ pub fn commands(
                 (sound(ids, "minecraft:entity.player.hurt_drown"), 8),
             ]
         }
+        // Its house dark (its torch taken away a while), then a lantern on its floor, and
+        // another, and another, a few seconds apart; half a minute on, all out again, and its
+        // torch back.
+        Action::ItsLightsOn => match memory.its_house() {
+            Some(house) => {
+                let (torch, floor) = crate::building::house_lights(house.site, house.way);
+                let mut made = vec![(
+                    Command::HideBlock {
+                        id: ids(),
+                        pos: torch,
+                        seconds: 45.0,
+                        only: vec!["minecraft:wall_torch".to_string()],
+                    },
+                    0,
+                )];
+                for (i, spot) in floor.iter().enumerate() {
+                    made.push((
+                        lantern(ids, *spot, "minecraft:lantern", &[]),
+                        80 + i as u64 * 60,
+                    ));
+                }
+                for spot in &floor {
+                    made.push((
+                        lantern(ids, *spot, "minecraft:air", &["minecraft:lantern"]),
+                        720,
+                    ));
+                }
+                made
+            }
+            None => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7211,6 +7259,7 @@ mod tests {
                 || event.id == "door_opens_itself"
                 // Its house must stand first: its own test below.
                 || event.id == "house_grows"
+                || event.id == "its_lights_on"
                 // The block comes from home and the enderman from the End: `elsewhere`'s tests.
                 || event.id == "ender_holds"
                 // Runs another event in its stead: the brain's test.
@@ -8033,6 +8082,65 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn at_night_its_house_goes_dark_then_lights_one_by_one_then_out() {
+        let mut memory = rich_memory();
+        let way = [0, 1];
+        memory.builds.push(crate::building::Build {
+            kind: "house_near".to_string(),
+            site: [40, 63, 0],
+            way,
+            laid: crate::building::house(way, false).len(),
+            ..Default::default()
+        });
+        memory.last.online = true;
+        memory.last.pos = [20.5, 64.0, 0.5];
+        assert!(crate::brain::offer::meets(
+            crate::events::Need::ItsHouseNear,
+            &memory,
+            &Now::default()
+        ));
+        let lights = find("its_lights_on").unwrap();
+        let made = commands(
+            lights,
+            place(lights, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let (torch, floor) = crate::building::house_lights([40, 63, 0], way);
+        assert_eq!(
+            torch,
+            [41, 65, -1],
+            "its wall torch, as the blueprint hangs it"
+        );
+        assert!(
+            matches!(&made[0], (Command::HideBlock { pos, .. }, 0) if *pos == torch),
+            "dark first"
+        );
+        let on: Vec<u64> = made
+            .iter()
+            .filter(|(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:lantern"))
+            .map(|(_, at)| *at)
+            .collect();
+        assert_eq!(on.len(), floor.len());
+        assert!(on.windows(2).all(|w| w[0] < w[1]), "one by one: {on:?}");
+        let off = made
+            .iter()
+            .filter(|(c, at)| matches!(c, Command::SetBlock { block, only: true, replace, .. } if block == "minecraft:air" && replace == &["minecraft:lantern".to_string()]) && *at > on[2])
+            .count();
+        assert_eq!(off, floor.len(), "all out again, its lanterns only");
+
+        // Half built, or they are inside it: not now.
+        memory.builds[0].laid = 3;
+        assert!(!crate::brain::offer::meets(
+            crate::events::Need::ItsHouseNear,
+            &memory,
+            &Now::default()
+        ));
     }
 
     #[test]

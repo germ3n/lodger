@@ -243,6 +243,8 @@ pub enum Need {
     DownTheShaft,
     /// The target swimming.
     TargetSwimming,
+    /// Its house built whole, the target within forty-eight blocks of it and out of it.
+    ItsHouseNear,
 }
 
 impl Need {
@@ -312,6 +314,7 @@ impl Need {
                 | Need::NearTheirDeath
                 | Need::DownTheShaft
                 | Need::TargetSwimming
+                | Need::ItsHouseNear
         )
     }
 
@@ -426,6 +429,7 @@ impl Need {
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetSwimming => "the target is not swimming".to_string(),
+            Need::ItsHouseNear => "its house is not built, or they are not near it".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -899,6 +903,8 @@ pub enum Action {
     TopOfTheLadder,
     /// Swimming, they are pulled under a moment, a drowning gasp, and let go.
     PulledUnder,
+    /// At night, its house goes dark, then its lights come on one by one, then out.
+    ItsLightsOn,
 }
 
 /// Where a figure stands.
@@ -3997,6 +4003,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PulledUnder,
         false,
     ),
+    // docs/events_todo.md, 16.
+    row(
+        "its_lights_on",
+        4,
+        5,
+        &[Night, ItsHouseNear],
+        3.0,
+        3,
+        Full,
+        Action::ItsLightsOn,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4781,6 +4799,7 @@ impl Event {
             | Action::PlantFlower
             | Action::ReplantOther
             | Action::IcePath
+            | Action::ItsLightsOn
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5124,6 +5143,7 @@ impl Event {
             "the_offer" => "hold out what it took from their doorway, and give it if they come",
             "top_of_the_ladder" => "stand the figure at the top of their shaft looking down",
             "pulled_under" => "pull them under the water a moment as they swim",
+            "its_lights_on" => "light its house one light at a time, then put them out",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
