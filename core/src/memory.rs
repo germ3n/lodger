@@ -402,6 +402,8 @@ pub struct Done {
 pub struct Snapshot {
     pub pos: [f64; 3],
     pub yaw: f32,
+    /// Up is below zero, as the game has it.
+    pub pitch: f32,
     pub online: bool,
     pub indoors: bool,
     pub sleeping: bool,
@@ -2050,6 +2052,7 @@ impl Memory {
     fn observe_player(&mut self, player: &Player) {
         self.last.pos = player.pos;
         self.last.yaw = player.yaw;
+        self.last.pitch = player.pitch;
         self.last.online = true;
         if self.last.sleeping && !player.sleeping {
             self.woke_now = true;

@@ -350,6 +350,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::TheOffer => memory.usual_door(),
         Action::PulledUnder => Some(block_of(memory.last.pos)),
         Action::ItsLightsOn => memory.its_house().map(|h| h.site),
+        // Forty blocks ahead of where they look, on the ground: it falls into their sky there.
+        Action::FallsFromTheSky => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            Some([
+                at[0] + (-yaw.sin() * FALLS_AHEAD).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * FALLS_AHEAD).round() as i32,
+            ])
+        }
         // The chest they use, when a face can be laid in it.
         Action::FaceInTheChest => memory
             .used_container()
@@ -1176,6 +1186,9 @@ pub fn shaft_top(memory: &Memory) -> Option<BlockPos> {
         .filter(|top| top[1] - at[1] >= 6)
 }
 
+/// How far ahead of them `falls_from_the_sky`'s figure lands.
+const FALLS_AHEAD: f64 = 40.0;
+
 /// How far back `rubberband` sets them, at least.
 const RUBBERBAND_BACK: f64 = 3.0;
 
@@ -1230,6 +1243,7 @@ fn figure_shown(
         rides_behind: false,
         together: 0,
         lies: false,
+        falls: false,
     }
 }
 
@@ -4503,6 +4517,18 @@ pub fn commands(
                 .collect(),
             _ => Vec::new(),
         },
+        // From forty blocks over the spot down to it, fast, with a heavy fall's thud as it lands,
+        // and gone there (the host's `falls`).
+        Action::FallsFromTheSky => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 15.0, false);
+                if let Command::Figure { held, falls, .. } = &mut shown {
+                    *held = ItemStack::default();
+                    *falls = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -5828,6 +5854,7 @@ pub fn commands(
                         rides_behind: false,
                         together: 0,
                         lies: false,
+                        falls: false,
                     },
                     0,
                 )]
@@ -8149,6 +8176,39 @@ mod tests {
         assert!(
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
+        );
+    }
+
+    #[test]
+    fn looking_up_at_night_they_see_a_figure_fall_far_off() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.indoors = false;
+        memory.last.underground = false;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.last.pitch = -50.0;
+        assert!(crate::brain::offer::meets(
+            crate::events::Need::LookingUp,
+            &memory,
+            &Now::default()
+        ));
+        let fall = find("falls_from_the_sky").unwrap();
+        let p = place(fall, &memory, &mut Rng::new(1));
+        assert_eq!(
+            p,
+            Some([0, -10_000, FALLS_AHEAD as i32]),
+            "ahead of them, on the ground"
+        );
+        let made = commands(fall, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { falls: true, .. }, 0)]),
+            "{made:?}"
+        );
+        memory.last.pitch = 10.0;
+        assert!(
+            !crate::brain::offer::meets(crate::events::Need::LookingUp, &memory, &Now::default()),
+            "looking down"
         );
     }
 

@@ -63,6 +63,8 @@ public final class Figures {
 		boolean rushes;
 		/** Lying on its side as a body lies (ABI 54). */
 		boolean lies;
+		/** Falling to its place, a heavy fall's sound as it lands (ABI 54). */
+		boolean falls;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
 		int together;
 		/** The boat it sits in behind its player, on their client alone (ABI 54); null on foot. */
@@ -326,6 +328,11 @@ public final class Figures {
 			if (figure.glides && !figure.path.isEmpty()) {
 				glide(figure);
 				// A glide's end: one that stays stands there; the rest are gone (a crawl at the bed).
+				if (figure.path.isEmpty() && figure.falls) {
+					figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+							net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.PLAYER_BIG_FALL), net.minecraft.sounds.SoundSource.HOSTILE,
+							figure.at.x, figure.at.y, figure.at.z, 1f, 0.8f, figure.player.getRandom().nextLong()));
+				}
 				if (figure.path.isEmpty() && !figure.stays) {
 					unsend(figure);
 					it.remove();
@@ -366,6 +373,30 @@ public final class Figures {
 			figure.lies = true;
 			pose(figure, net.minecraft.world.entity.Pose.SLEEPING);
 		}
+	}
+
+	/** How high over its place a falling figure starts, and how fast it falls, blocks a tick. */
+	static final double FALL_FROM = 40;
+	static final double FALL_PER_TICK = 1.6;
+
+	/**
+	 * The figure {@code number} shown to {@code player} falls from high over where it stands to
+	 * it, landing with a heavy fall's sound, and is gone there (ABI 54).
+	 */
+	public void fall(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure == null) {
+			return;
+		}
+		Vec3 ground = figure.at;
+		figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
+		figure.at = ground.add(0, FALL_FROM, 0);
+		sendEntity(figure);
+		figure.path = List.of(ground);
+		figure.pathIndex = 0;
+		figure.glides = true;
+		figure.speed = FALL_PER_TICK;
+		figure.falls = true;
 	}
 
 	/** The figure {@code number} shown to {@code player} goes with the rest of group {@code together} (ABI 54). */

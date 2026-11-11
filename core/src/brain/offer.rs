@@ -146,6 +146,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::HoldsNothing => memory.held.is_none(),
         Need::LitUnderground => false,
         Need::TargetSwimming => last.online && last.swimming,
+        Need::LookingUp => last.online && !last.indoors && !last.underground && last.pitch <= -35.0,
         Need::ItsHouseNear => memory.its_house().is_some_and(|house| {
             let at = [
                 last.pos[0].floor() as i32,
@@ -295,6 +296,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::Rubberband
         | Action::TheOffer
         | Action::TopOfTheLadder
+        | Action::FallsFromTheSky
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
@@ -344,6 +346,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::Rubberband
         | Action::TheOffer
         | Action::TopOfTheLadder
+        | Action::FallsFromTheSky
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)

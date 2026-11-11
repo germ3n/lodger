@@ -1165,6 +1165,10 @@ pub enum Command {
         /// Lying on the ground as a body lies, on its side. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         lies: bool,
+        /// Falling from forty blocks over its place to it, fast, landing with a heavy fall's
+        /// sound, and gone there. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        falls: bool,
     },
     RemoveFigure {
         id: u64,

@@ -245,6 +245,8 @@ pub enum Need {
     TargetSwimming,
     /// Its house built whole, the target within forty-eight blocks of it and out of it.
     ItsHouseNear,
+    /// The target outdoors, looking up at the sky.
+    LookingUp,
 }
 
 impl Need {
@@ -315,6 +317,7 @@ impl Need {
                 | Need::DownTheShaft
                 | Need::TargetSwimming
                 | Need::ItsHouseNear
+                | Need::LookingUp
         )
     }
 
@@ -430,6 +433,7 @@ impl Need {
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetSwimming => "the target is not swimming".to_string(),
             Need::ItsHouseNear => "its house is not built, or they are not near it".to_string(),
+            Need::LookingUp => "the target is not looking up at the sky".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -907,6 +911,8 @@ pub enum Action {
     ItsLightsOn,
     /// Their chest's grid laid out as a face: two eyes and a mouth of single items.
     FaceInTheChest,
+    /// Looking up at night, a figure falls from high above and lands far off, gone there.
+    FallsFromTheSky,
 }
 
 /// Where a figure stands.
@@ -4029,6 +4035,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FaceInTheChest,
         false,
     ),
+    // docs/events_todo.md, 18.
+    row(
+        "falls_from_the_sky",
+        5,
+        5,
+        &[Night, LookingUp],
+        4.0,
+        2,
+        Full,
+        Action::FallsFromTheSky,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4841,6 +4859,7 @@ impl Event {
             | Action::Rubberband
             | Action::TheOffer
             | Action::TopOfTheLadder
+            | Action::FallsFromTheSky
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -5160,6 +5179,7 @@ impl Event {
             "pulled_under" => "pull them under the water a moment as they swim",
             "its_lights_on" => "light its house one light at a time, then put them out",
             "a_face_in_the_chest" => "lay out a face in their chest's grid",
+            "falls_from_the_sky" => "drop the figure from the sky far off as they look up",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
