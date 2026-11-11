@@ -216,6 +216,7 @@ Blocks the target placed, moved within reach, never broken for good.
 | `stairs_turned` | 2 | One stair block the target placed faces another way. | A placed stair out of view. |
 | `ladder_gap` | 3 | One rung from the middle of the home's tallest ladder is missing, and is set on top of the ladder. | A ladder of four rungs or more. |
 | `flowers_potted` | 2 | Up to three flowers around the house are picked and are in the home's empty pots. | Flowers around the home, an empty flower pot. |
+| `flowers_wilted` | 3 | While they are away or asleep, each flower they planted (six at most) is a dead bush; a day on, each is the flower it was again (`swap_block` there and back, each over its own kind only). | Flowers of theirs, the target away or asleep. |
 | `path_worn` | 3 | A line of dirt path from the door toward the lodger's place, as if walked a hundred times. | Grass between the door and the spot. |
 | `cairn` | 3 | A small stack of cobblestone at the end of the target's route, from the lodger's own digging. | A route and held stone. |
 | `hole` | 3 | A one-block hole three deep at the lodger's place, with a torch at the bottom. | A spot on natural ground. |

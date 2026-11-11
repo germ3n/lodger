@@ -968,6 +968,8 @@ pub enum Action {
     MirrorInTheWindow,
     /// At night, inside, every door of the house opens at once.
     EveryDoorOpens,
+    /// Their flowers dead bushes for a day, then flowers again.
+    FlowersWilted,
 }
 
 /// Where a figure stands.
@@ -4390,6 +4392,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EveryDoorOpens,
         false,
     ),
+    // docs/events_todo.md, 49.
+    row(
+        "flowers_wilted",
+        3,
+        5,
+        &[TargetAwayOrAsleep],
+        5.0,
+        2,
+        Full,
+        Action::FlowersWilted,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5253,6 +5267,7 @@ impl Event {
             | Action::FireworkOverItsHouse
             | Action::PrintsToTheCave
             | Action::EveryDoorOpens
+            | Action::FlowersWilted
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5347,6 +5362,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "flowers_wilted" => "wilt their flowers to dead bushes for a day",
             "every_door_opens" => "open every door of the house at once",
             "mirror_in_the_window" => "have a figure in their window copy their every move",
             "eats_at_their_chest" => {

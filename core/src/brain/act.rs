@@ -348,6 +348,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::FlowersWilted => memory
+            .plants
+            .iter()
+            .find(|(id, _)| crate::memory::is_flower(id))
+            .map(|(_, p)| *p),
         // The house, with two doors or more.
         Action::EveryDoorOpens => home.filter(|h| h.doors.len() >= 2).map(|h| h.center),
         // A window of the house within twenty blocks of them; its first, when none is.
@@ -1339,6 +1344,9 @@ fn chest_food(chest: &crate::memory::Container) -> Option<String> {
         .find(|id| FOOD.iter().any(|f| id.ends_with(f)))
         .map(str::to_string)
 }
+
+/// How long `flowers_wilted` keeps their flowers dead: a day of the game's.
+const WILTED_FOR: u64 = 24_000;
 
 /// How far ahead of them `peeks_from_ground`'s head shows.
 const PEEK_FROM: f64 = 24.0;
@@ -5335,6 +5343,36 @@ pub fn commands(
                 .collect(),
             _ => Vec::new(),
         },
+        // Each of their flowers (six at most) a dead bush, its own kind only; a day on, each
+        // the flower it was, over the dead bush only.
+        Action::FlowersWilted => memory
+            .plants
+            .iter()
+            .filter(|(id, _)| crate::memory::is_flower(id))
+            .take(6)
+            .flat_map(|(id, at)| {
+                [
+                    (
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: *at,
+                            block: "minecraft:dead_bush".to_string(),
+                            only: vec![id.clone()],
+                        },
+                        0,
+                    ),
+                    (
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: *at,
+                            block: id.clone(),
+                            only: vec!["minecraft:dead_bush".to_string()],
+                        },
+                        WILTED_FOR,
+                    ),
+                ]
+            })
+            .collect(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -10276,6 +10314,24 @@ mod tests {
             None,
             "one door is no 'every door'"
         );
+    }
+
+    #[test]
+    fn their_flowers_wilt_for_a_day_then_bloom_again() {
+        let memory = rich_memory();
+        let event = find("flowers_wilted").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let dead: Vec<_> = made.iter().filter(|(c, at)| *at == 0 && matches!(c, Command::SwapBlock { block, .. } if block == "minecraft:dead_bush")).collect();
+        let back: Vec<_> = made.iter().filter(|(c, at)| *at == WILTED_FOR && matches!(c, Command::SwapBlock { only, .. } if only == &vec!["minecraft:dead_bush".to_string()])).collect();
+        assert!(!dead.is_empty(), "{made:?}");
+        assert_eq!(dead.len(), back.len(), "each one back");
     }
 
     #[test]

@@ -64,7 +64,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 46 | `eats_at_their_chest` | 4 | **Built.** Coming in, a figure crouched at their chest eating their food, the sound of it; gone when looked at. | Coming home, food in their chest. | `figure` using a food item. | M |
 | 47 | `mirror_in_the_window` | 5 | **Built.** From outside, in their own window, a figure copies their every move. | Outdoors near the house, a window. | `figure` inside the pane with `mirror`. | S |
 | 48 | `every_door_opens` | 5 | **Built.** At night, inside, every door of the house opens at once. | Night, the target indoors, two doors or more. | `toggle_block` on each. | S |
-| 49 | `flowers_wilted` | 3 | The flowers they planted are dead bushes for a day, then flowers again. | Flowers of theirs. | `swap_block` and back. | S |
+| 49 | `flowers_wilted` | 3 | **Built.** The flowers they planted are dead bushes for a day, then flowers again. | Flowers of theirs. | `swap_block` and back. | S |
 | 50 | `camp_nearby` | 4 | At night, forty blocks off, a campfire with log seats and a figure sat by it; gone by morning. | Night, outdoors. | `place_blueprint`, a figure, the blocks taken away at dawn. | M |
 | 51 | `stone_circle` | 4 | Overnight, a ring of stone pillars stands in a clearing far off. | The target asleep or away. | `place_blueprint`. | S |
 | 52 | `slips_from_hand` | 4 | What they hold slips from their hand and lies at their feet. | Holding something. | The held stack dropped at their feet. | M |
