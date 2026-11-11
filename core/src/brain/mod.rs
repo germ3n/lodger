@@ -2771,6 +2771,7 @@ impl Brain {
                     && (pending.event == "return_taken"
                         || pending.event == "place_taken"
                         || pending.event == "villager_word"
+                        || pending.event == "chicken_lays"
                         || pending.event == "alcove")
                 {
                     memory.held = None;

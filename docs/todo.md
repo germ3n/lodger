@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **The chicken lays it** (`docs/events_todo.md`, 36): `chicken_lays`, stages 3 to 5, holding
+  something of theirs with a chicken near them: it lays the very thing, with an egg's sound
+  (`drop_item` of what it holds; done, it holds it no more). Tests: one in `act`. Was: no such
+  event.
 - [x] **A firework over its house** (`docs/events_todo.md`, 35): `firework_over_its_house`,
   stages 4 and 5, at night near its house: a firework from its roof bursting high as a pale face,
   the game's creeper shape (`firework`, ABI 54). Not their skin's colours, which the game never

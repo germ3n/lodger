@@ -361,6 +361,12 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             .map(|h| h.center)
             .filter(|c| distance(*c, block_of(memory.last.pos)) >= 32.0),
         Action::InALine => in_a_line(memory).first().copied(),
+        Action::ChickenLays => memory
+            .last
+            .creatures_near
+            .iter()
+            .find(|c| c.kind == "chicken")
+            .map(|c| block_of(c.pos)),
         // Where they came back: the portal, as the host said it, in this world.
         Action::WaitsAtThePortal => memory
             .milestones
@@ -5012,6 +5018,39 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // Where the chicken stands, with the sound of an egg laid: what it took, the very thing.
+        Action::ChickenLays => match (
+            memory
+                .last
+                .creatures_near
+                .iter()
+                .find(|c| c.kind == "chicken"),
+            &memory.held,
+        ) {
+            (Some(chicken), Some(held)) => vec![
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:entity.chicken.egg".to_string(),
+                        pos: chicken.pos,
+                        volume: 1.0,
+                        pitch: 0.8,
+                    },
+                    0,
+                ),
+                (
+                    Command::DropItem {
+                        id: ids(),
+                        pos: [chicken.pos[0], chicken.pos[1] + 0.3, chicken.pos[2]],
+                        item: held.item.clone(),
+                        kept: "held".to_string(),
+                    },
+                    1,
+                ),
+            ],
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7853,6 +7892,8 @@ mod tests {
                 // Back through a portal, which this memory never went: its own test.
                 || event.id == "waits_at_the_portal"
                 || event.id == "firework_over_its_house"
+                // What it took, which this memory holds not: its own test.
+                || event.id == "chicken_lays"
                 // The block comes from home and the enderman from the End: `elsewhere`'s tests.
                 || event.id == "ender_holds"
                 // Runs another event in its stead: the brain's test.
@@ -8799,6 +8840,43 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn a_chicken_lays_what_it_took_instead_of_an_egg() {
+        let mut memory = rich_memory();
+        memory.held = Some(crate::memory::Held {
+            item: ItemStack {
+                id: "minecraft:compass".to_string(),
+                count: 1,
+                slot: 0,
+            },
+            ..Default::default()
+        });
+        let chicken = memory
+            .last
+            .creatures_near
+            .iter()
+            .find(|c| c.kind == "chicken")
+            .expect("a chicken near them")
+            .pos;
+        let event = find("chicken_lays").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[0].0, Command::PlaySound { sound, .. } if sound.ends_with("chicken.egg"))
+        );
+        assert!(
+            matches!(&made[1].0, Command::DropItem { kept, item, pos, .. } if kept == "held" && item.id == "minecraft:compass" && pos[0] == chicken[0] && pos[2] == chicken[2]),
+            "{:?}",
+            made[1]
+        );
     }
 
     #[test]

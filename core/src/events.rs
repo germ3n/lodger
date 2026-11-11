@@ -950,6 +950,8 @@ pub enum Action {
     WaitsAtThePortal,
     /// At night a firework over its house, bursting as a face.
     FireworkOverItsHouse,
+    /// A chicken near them lays what it took instead of an egg.
+    ChickenLays,
 }
 
 /// Where a figure stands.
@@ -4264,6 +4266,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FireworkOverItsHouse,
         false,
     ),
+    // docs/events_todo.md, 36.
+    row(
+        "chicken_lays",
+        3,
+        5,
+        &[Held, Creature("chicken")],
+        4.0,
+        1,
+        Full,
+        Action::ChickenLays,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5093,6 +5107,7 @@ impl Event {
             | Action::HeldBreath
             | Action::AllFreeze
             | Action::FigureOnMap
+            | Action::ChickenLays
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5451,6 +5466,7 @@ impl Event {
             "figure_on_map" => "mark someone at their house on the map they hold",
             "waits_at_the_portal" => "stand the figure beside their portal as they come back",
             "firework_over_its_house" => "send a firework up over its house, bursting as a face",
+            "chicken_lays" => "have a chicken lay what it took instead of an egg",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
