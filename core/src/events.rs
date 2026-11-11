@@ -976,6 +976,8 @@ pub enum Action {
     StoneCircle,
     /// What they hold slips from their hand to their feet.
     SlipsFromHand,
+    /// Their pet stands facing a wall of the house, still, a minute.
+    PetStaresAtWall,
 }
 
 /// Where a figure stands.
@@ -4446,6 +4448,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SlipsFromHand,
         false,
     ),
+    // docs/events_todo.md, 56.
+    row(
+        "pet_stares_at_wall",
+        3,
+        5,
+        &[Pet, Home],
+        3.0,
+        3,
+        Full,
+        Action::PetStaresAtWall,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5372,6 +5386,7 @@ impl Event {
             | Action::EatsAtTheirChest
             | Action::MirrorInTheWindow
             | Action::SlipsFromHand
+            | Action::PetStaresAtWall
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5443,6 +5458,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "pet_stares_at_wall" => "stand their pet staring at a wall of the house",
             "glass_breaks" => "make the sound of a window breaking in the house",
             "slips_from_hand" => "make what they hold slip from their hand",
             "stone_circle" => "raise a ring of stone pillars far off",

@@ -1426,6 +1426,9 @@ The `[x]` lines above, summed up by day:
   four seconds: their experience bar drawn emptying from the right, then as it was; nothing lost
   (`XpSlip`). A screen glitch, off with `events.glitches`. Tests: `XpSlipTest`, the catalogue's
   own. Was: no such event.
+- [x] **The pet stares at the wall** (`docs/events_todo.md`, 56): `pet_stares_at_wall`, stages 3
+  to 5: their pet held a minute facing the wall of theirs nearest it (`hold`'s `at`). Tests: one in
+  `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

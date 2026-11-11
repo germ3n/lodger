@@ -348,6 +348,15 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // The wall block of theirs nearest their pet.
+        Action::PetStaresAtWall => memory.pets().next().and_then(|pet| {
+            let at = block_of(pet.pos);
+            memory
+                .walls
+                .iter()
+                .map(|(p, _)| *p)
+                .min_by(|a, b| distance(*a, at).total_cmp(&distance(*b, at)))
+        }),
         // Where they are, holding something, with no monster near.
         Action::SlipsFromHand => (!memory.last.main_hand.is_empty()
             && memory.last.hostiles_near.is_empty())
@@ -5514,6 +5523,25 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // Their pet held a minute where it stands, facing that wall.
+        Action::PetStaresAtWall => match (pos, memory.pets().next()) {
+            (Some(wall), Some(pet)) => vec![(
+                Command::Hold {
+                    id: ids(),
+                    entity: pet.id,
+                    player: target,
+                    seconds: 60.0,
+                    at: Some([
+                        wall[0] as f64 + 0.5,
+                        wall[1] as f64 + 0.5,
+                        wall[2] as f64 + 0.5,
+                    ]),
+                    creep: false,
+                },
+                0,
+            )],
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -10578,6 +10606,30 @@ mod tests {
         );
         assert!(made.iter().all(|(c, _)| matches!(c, Command::PlaySound { sound, .. } if sound == "minecraft:block.glass.break")), "a sound alone: {made:?}");
         assert!(!made.is_empty());
+    }
+
+    #[test]
+    fn their_pet_stares_at_a_wall_a_minute() {
+        let mut memory = rich_memory();
+        memory.walls = vec![
+            ([9, 65, 9], "minecraft:oak_planks".to_string()),
+            ([1, 65, 3], "minecraft:oak_planks".to_string()),
+        ];
+        let pet = memory.pets().next().expect("a pet").clone();
+        let event = find("pet_stares_at_wall").unwrap();
+        let wall = place(event, &memory, &mut Rng::new(1)).unwrap();
+        let made = commands(
+            event,
+            Some(wall),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Hold { entity, at: Some(at), seconds, .. }, 0)] if *entity == pet.id && at[0] == wall[0] as f64 + 0.5 && *seconds >= 30.0),
+            "{made:?}"
+        );
     }
 
     #[test]

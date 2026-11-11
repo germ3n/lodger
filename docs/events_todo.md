@@ -71,7 +71,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 53 | `glass_breaks` | 4 | **Built.** Inside, the sound of a window breaking; every pane is whole. | Indoors, a pane. | `play_sound`. | S |
 | 54 | `xp_slips` | 4 | **Built** (drawn over, nothing lost). Their experience bar drains to nothing on their screen, then is back. | Experience. | A client hint. | M |
 | 55 | `hearts_drop` | 5 | **Built** (drawn over, no harm). For a second their hearts show half empty, then whole. | Any time. | A client hint. | M |
-| 56 | `pet_stares_at_wall` | 3 | Their pet stands facing a blank wall of the house, still, for a minute. | A pet indoors. | `hold` facing a wall. | S |
+| 56 | `pet_stares_at_wall` | 3 | **Built.** Their pet stands facing a blank wall of the house, still, for a minute. | A pet indoors. | `hold` facing a wall. | S |
 | 57 | `bats_in_the_house` | 4 | At night bats flutter about inside the house for a minute, then are gone. | Night, the target indoors. | Bats for a while. | M |
 | 58 | `lost_hour` | 5 | A blink of black, and an hour of the day is gone. | Daytime. | The time moved on, a hint. | M |
 | 59 | `chest_wont_open` | 4 | Their chest will not open for a few seconds, and something knocks inside it. | Walking to the chest they use. | A container held shut, a sound. | M |
