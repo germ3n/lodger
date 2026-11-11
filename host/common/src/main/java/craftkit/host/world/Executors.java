@@ -739,6 +739,9 @@ public final class Executors {
 				command.has("swinging") && command.get("swinging").getAsBoolean(),
 				command.has("upside_down") && command.get("upside_down").getAsBoolean(),
 				command.has("crawls") && command.get("crawls").getAsBoolean());
+		if (command.has("walks") && command.get("walks").getAsBoolean()) {
+			context.figures().walk(skinOf, command.get("figure").getAsInt());
+		}
 		if (command.has("falls") && command.get("falls").getAsBoolean()) {
 			context.figures().fall(skinOf, command.get("figure").getAsInt());
 		}

@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Crossing ahead** (`docs/events_todo.md`, 26): `crossing_ahead`, stages 3 to 5, walking
+  outdoors: thirty blocks ahead a figure walks across their way from their left to their right,
+  twenty blocks, facing its way and never them, gone at the far side (`figure`'s `walks`, ABI 54,
+  a glide a point a block apart on the ground). Tests: one in `act`. Was: no such event.
 - [x] **The eye turns home** (`docs/events_todo.md`, 25): `eye_turns_home`, stage 5, once a
   stay, holding an eye of ender: the next one they throw within ten minutes flies toward their
   house instead of the stronghold (`eye_home`, ABI 54; the host's `Eyes` turns an eye in its

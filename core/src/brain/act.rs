@@ -352,6 +352,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::ItsLightsOn | Action::RespawnItsBed => memory.its_house().map(|h| h.site),
         Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
         Action::EyeTurnsHome => home.map(|h| h.center),
+        // Thirty blocks ahead of where they look: the middle of its crossing.
+        Action::CrossingAhead => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            Some([
+                at[0] + (-yaw.sin() * CROSSING_AHEAD).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * CROSSING_AHEAD).round() as i32,
+            ])
+        }
         // Nine blocks ahead of them, on the ground: near enough that their pet never strays far
         // enough from them for the game to bring it back at once (twelve).
         Action::PetFollows => {
@@ -1199,6 +1209,10 @@ pub fn shaft_top(memory: &Memory) -> Option<BlockPos> {
         .filter(|top| top[1] - at[1] >= 6)
 }
 
+/// How far ahead of them `crossing_ahead`'s figure crosses, and half its way across.
+const CROSSING_AHEAD: f64 = 30.0;
+const CROSSING_HALF: f64 = 10.0;
+
 /// How far ahead of them `pet_follows`' figure stands.
 const PET_TO: f64 = 9.0;
 
@@ -1260,6 +1274,7 @@ fn figure_shown(
         together: 0,
         lies: false,
         falls: false,
+        walks: false,
     }
 }
 
@@ -4659,6 +4674,37 @@ pub fn commands(
             }
             None => Vec::new(),
         },
+        // Across their way there, from their left to their right, twenty blocks, at a walk,
+        // facing its way and never them, empty-handed; gone at the far side.
+        Action::CrossingAhead => pos
+            .map(|middle| {
+                let yaw = (memory.last.yaw as f64).to_radians();
+                // Their right, facing yaw: the game's yaw turns clockwise, +x is east.
+                let right = [-yaw.cos(), -yaw.sin()];
+                let point = |side: f64| {
+                    [
+                        middle[0] as f64 + 0.5 + right[0] * side,
+                        -10_000.0,
+                        middle[2] as f64 + 0.5 + right[1] * side,
+                    ]
+                };
+                let mut shown = figure_shown(ids, memory, target, middle, 40.0, false);
+                if let Command::Figure {
+                    held,
+                    path,
+                    walks,
+                    pos,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *walks = true;
+                    *pos = point(-CROSSING_HALF);
+                    *path = vec![point(-CROSSING_HALF), point(CROSSING_HALF)];
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -5987,6 +6033,7 @@ pub fn commands(
                         together: 0,
                         lies: false,
                         falls: false,
+                        walks: false,
                     },
                     0,
                 )]
@@ -8436,6 +8483,38 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn far_ahead_a_figure_walks_across_their_way_left_to_right() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        // Facing south (+z): their left is east (+x), their right west (-x).
+        memory.last.yaw = 0.0;
+        let event = find("crossing_ahead").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some([0, -10_000, CROSSING_AHEAD as i32]));
+        let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
+        let [(
+            Command::Figure {
+                walks: true,
+                path,
+                pos,
+                ..
+            },
+            0,
+        )] = &made[..]
+        else {
+            panic!("{made:?}");
+        };
+        assert_eq!(path.first(), Some(pos));
+        let (from, to) = (path[0], path[1]);
+        assert!(
+            from[0] > to[0],
+            "from their left (east) to their right (west): {from:?} {to:?}"
+        );
+        assert!((from[2] - to[2]).abs() < 1e-9, "straight across their way");
+        assert!(from[1] < -1000.0 && to[1] < -1000.0, "on the ground");
     }
 
     #[test]

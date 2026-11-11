@@ -65,6 +65,8 @@ public final class Figures {
 		boolean lies;
 		/** Falling to its place, a heavy fall's sound as it lands (ABI 54). */
 		boolean falls;
+		/** Walking its path facing its way, never its player (ABI 54). */
+		boolean walks;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
 		int together;
 		/** The boat it sits in behind its player, on their client alone (ABI 54); null on foot. */
@@ -375,6 +377,39 @@ public final class Figures {
 		}
 	}
 
+	/** How fast a walking figure glides, blocks a tick: an unhurried walk. */
+	static final double WALK_PER_TICK = 0.12;
+
+	/**
+	 * The figure {@code number} shown to {@code player} walks its path at a walk, facing its way,
+	 * each point on the ground when its y is below -1000, and is gone at its end (ABI 54).
+	 */
+	public void walk(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure == null || !(player.level() instanceof ServerLevel level)) {
+			return;
+		}
+		// A point a block apart, each on the ground: two far apart would float over a hollow.
+		List<Vec3> grounded = new ArrayList<>();
+		for (int i = 0; i < figure.path.size(); i++) {
+			Vec3 point = figure.path.get(i);
+			if (i > 0) {
+				Vec3 from = figure.path.get(i - 1);
+				double flat = Math.sqrt((point.x - from.x) * (point.x - from.x) + (point.z - from.z) * (point.z - from.z));
+				for (int step = 1; step < (int) flat; step++) {
+					double t = step / flat;
+					grounded.add(ground(level, new Vec3(from.x + (point.x - from.x) * t, -10_000, from.z + (point.z - from.z) * t)));
+				}
+			}
+			grounded.add(point.y <= -1000 ? ground(level, point) : point);
+		}
+		figure.path = grounded;
+		figure.pathIndex = 0;
+		figure.glides = true;
+		figure.walks = true;
+		figure.speed = WALK_PER_TICK;
+	}
+
 	/** How high over its place a falling figure starts, and how fast it falls, blocks a tick. */
 	static final double FALL_FROM = 40;
 	static final double FALL_PER_TICK = 1.6;
@@ -486,12 +521,13 @@ public final class Figures {
 		if (figure.pathIndex >= figure.path.size()) {
 			figure.path = List.of();
 		}
-		// Facing them as it walks; a crawl faces the way it goes, head first.
-		Vec3 to = figure.crawls && figure.pathIndex < figure.path.size()
+		// Facing them as it walks; a crawl or a walk past faces the way it goes.
+		boolean way = figure.crawls || figure.walks;
+		Vec3 to = way && figure.pathIndex < figure.path.size()
 				? figure.path.get(figure.pathIndex).subtract(figure.at)
 				: figure.player.position().subtract(figure.at);
 		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
-		float pitch = figure.crawls ? 0 : (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
+		float pitch = way ? 0 : (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
 		figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
 				net.minecraft.world.entity.PositionPath.of(figure.at), yaw, pitch, true));
 		var head = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());

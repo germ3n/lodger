@@ -1198,6 +1198,11 @@ pub enum Command {
         /// sound, and gone there. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         falls: bool,
+        /// Walking `path` at a walk, gliding (eased by their client, its legs moving), facing the
+        /// way it goes and never them, each point on the ground when its y is below -1000; gone
+        /// at its end. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        walks: bool,
     },
     RemoveFigure {
         id: u64,
