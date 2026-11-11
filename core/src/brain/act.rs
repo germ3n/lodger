@@ -359,6 +359,13 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             .map(|h| h.center)
             .filter(|c| distance(*c, block_of(memory.last.pos)) >= 32.0),
         Action::InALine => in_a_line(memory).first().copied(),
+        // Where they came back: the portal, as the host said it, in this world.
+        Action::WaitsAtThePortal => memory
+            .milestones
+            .iter()
+            .rev()
+            .find(|m| m.kind == "crossed")
+            .and_then(|m| m.pos),
         Action::WearsYourFace => face_wearer(memory).map(|z| block_of(z.pos)),
         Action::AnimalFollows => memory
             .animals_near_target()
@@ -4954,6 +4961,36 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // Three blocks to the side of the portal, facing it, empty-handed: gone once seen and
+        // looked away from.
+        Action::WaitsAtThePortal => pos
+            .map(|portal| {
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [portal[0] + 3, -10_000, portal[2]],
+                    12.0,
+                    false,
+                );
+                if let Command::Figure {
+                    held,
+                    once_seen,
+                    faces,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *once_seen = true;
+                    *faces = Some([
+                        portal[0] as f64 + 0.5,
+                        portal[1] as f64 + 1.0,
+                        portal[2] as f64 + 0.5,
+                    ]);
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7792,6 +7829,8 @@ mod tests {
                 || event.id == "wears_your_face"
                 // Away from home, which this memory is not: its own test.
                 || event.id == "figure_on_map"
+                // Back through a portal, which this memory never went: its own test.
+                || event.id == "waits_at_the_portal"
                 // The block comes from home and the enderman from the End: `elsewhere`'s tests.
                 || event.id == "ender_holds"
                 // Runs another event in its stead: the brain's test.
@@ -8738,6 +8777,20 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn back_through_their_portal_a_figure_waits_beside_it() {
+        let mut memory = rich_memory();
+        memory.milestone("crossed", 2.0, Some([40, 64, 10]), "minecraft:overworld");
+        let event = find("waits_at_the_portal").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some([40, 64, 10]));
+        let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { faces: Some(f), pos, .. }, 0)] if f[0] == 40.5 && pos[0] == 43.5),
+            "beside it, facing it: {made:?}"
+        );
     }
 
     #[test]

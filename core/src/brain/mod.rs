@@ -276,6 +276,8 @@ pub const ECHO_CHANCE: f64 = 0.3;
 pub const BELL_CHANCE: f64 = 0.5;
 /// The chance the figure stands at the foot of the bed as they wake, its rules allowing.
 pub const WOKE_CHANCE: f64 = 0.35;
+/// How often coming back through a portal finds a figure beside it (`waits_at_the_portal`).
+pub const PORTAL_CHANCE: f64 = 0.3;
 /// How often a light placed underground shows a figure (`torch_flash`).
 pub const TORCH_FLASH_CHANCE: f64 = 0.15;
 /// The events a waking may start, one of those the stage offers picked.
@@ -881,6 +883,19 @@ impl Brain {
         if let Some(gone) = memory.back_after.take() {
             if gone >= AWAY_LEAST && !held_back {
                 self.consider_back(now, day, memory, arc, config, log);
+            }
+            // Perhaps a figure beside the portal they came back by, as if it had waited.
+            if !held_back {
+                self.consider_started(
+                    "waits_at_the_portal",
+                    PORTAL_CHANCE,
+                    now,
+                    day,
+                    memory,
+                    arc,
+                    config,
+                    log,
+                );
             }
         }
 
@@ -1599,6 +1614,7 @@ impl Brain {
                         n,
                         events::Need::JustWoke
                             | events::Need::LitUnderground
+                            | events::Need::CameBack
                             | events::Need::KilledNow
                             | events::Need::RangBell
                             | events::Need::CrouchedStill

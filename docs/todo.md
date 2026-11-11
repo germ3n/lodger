@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **It waits at the portal** (`docs/events_todo.md`, 34): `waits_at_the_portal`, stages 4
+  and 5, as they come back from another dimension (the brain, `PORTAL_CHANCE`, never from the
+  menu): a figure three blocks beside where they arrive, facing the portal, gone once seen and
+  looked away from. Tests: one in `act`. Was: no such event.
 - [x] **Someone on the map** (`docs/events_todo.md`, 33): `figure_on_map`, stages 4 and 5, away
   from home holding a map: a player's marker at their house on it, five minutes, for them alone
   (`map_mark`, ABI 54: the host's `MapMarks` sends the map's own markers again with it a few times

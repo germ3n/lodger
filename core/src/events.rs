@@ -946,6 +946,8 @@ pub enum Action {
     AllFreeze,
     /// On the map they hold, a player's marker at their house while they are away.
     FigureOnMap,
+    /// Back through their portal, a figure beside it facing it, as if it had waited.
+    WaitsAtThePortal,
 }
 
 /// Where a figure stands.
@@ -4236,6 +4238,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FigureOnMap,
         false,
     ),
+    // docs/events_todo.md, 34: never from the menu, as they come back.
+    row(
+        "waits_at_the_portal",
+        4,
+        5,
+        &[CameBack],
+        2.0,
+        3,
+        Full,
+        Action::WaitsAtThePortal,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5085,6 +5099,7 @@ impl Event {
             | Action::CrossingAhead
             | Action::InALine
             | Action::PeeksFromGround
+            | Action::WaitsAtThePortal
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -5419,6 +5434,7 @@ impl Event {
             "held_breath" => "make their air run out twice as fast under water",
             "all_freeze" => "stop every animal and mob around them at once",
             "figure_on_map" => "mark someone at their house on the map they hold",
+            "waits_at_the_portal" => "stand the figure beside their portal as they come back",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
