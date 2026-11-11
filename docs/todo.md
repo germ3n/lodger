@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A false death** (`docs/events_todo.md`, 22): `false_death`, stage 5, walking outdoors,
+  once a stay: a hint of a second and a fifth drawing the death screen over the game as the game
+  draws it (its wash, its title twice the size, their score), no buttons, nothing died. A screen
+  glitch, off with `events.glitches`. Tests: the catalogue's own. Was: no such event.
 - [x] **The inventory stare** (`docs/events_todo.md`, 21): `inventory_stare`, stages 4 and 5, a
   hint of ten minutes: in their inventory their own figure stares straight out at them, drawn as
   if the mouse were at its face (`InventoryScreenMixin`). A screen glitch, off with

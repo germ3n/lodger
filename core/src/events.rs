@@ -4598,6 +4598,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("red_rain", 150.0),
         false,
     ),
+    // docs/events_todo.md, 22: a second of the death screen, nothing died.
+    row(
+        "false_death",
+        5,
+        5,
+        &[TargetWalking, TargetOutdoors],
+        6.0,
+        1,
+        Full,
+        Action::Hint("false_death", 1.2),
+        false,
+    ),
     // docs/events_todo.md, 21: ten minutes, a few openings of their inventory.
     row(
         "inventory_stare",
@@ -5270,6 +5282,7 @@ impl Event {
             "sun_blink" => "make the sun blink out",
             "lightning_silent" => "flash lightning with no thunder",
             "red_rain" => "turn the rain red",
+            "false_death" => "show them the death screen for a second",
             "inventory_stare" => "make their figure in the inventory stare out at them",
             "crosshair_gone" => "take the crosshair away for a moment",
             "hotbar_slip" => "slip their hotbar to the favourite tool",

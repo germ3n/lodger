@@ -38,6 +38,8 @@ import java.util.Set;
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
+ *   <li>{@code false_death}: the death screen over the game while it lasts (a second), its red
+ *       wash, "You Died!" twice the size and their score, no buttons; then the game as it was.</li>
  *   <li>{@code inventory_stare}: in the inventory, their figure stares straight out instead of
  *       following the mouse, while it lasts ({@code InventoryScreenMixin}).</li>
  * </ul>
@@ -272,6 +274,20 @@ public final class Glitches {
 		for (Hints.Active active : Hints.active()) {
 			float progress = active.progress(now);
 			switch (active.hint().hint()) {
+				// The death screen as the game draws it: its wash, its title twice the size, the
+				// score; nothing died.
+				case "false_death" -> {
+					graphics.fillGradient(0, 0, width, height, 0x60500000, 0xA0803030);
+					var font = Minecraft.getInstance().font;
+					var pose = graphics.pose();
+					pose.pushMatrix();
+					pose.scale(2, 2);
+					graphics.centeredText(font, net.minecraft.network.chat.Component.translatable("deathScreen.title"), width / 4, 30, 0xFFFFFFFF);
+					pose.popMatrix();
+					int score = Minecraft.getInstance().player == null ? 0 : Minecraft.getInstance().player.getScore();
+					graphics.centeredText(font, net.minecraft.network.chat.Component.translatable("deathScreen.score.value",
+							net.minecraft.network.chat.Component.literal(Integer.toString(score)).withStyle(net.minecraft.ChatFormatting.YELLOW)), width / 2, 100, 0xFFFFFFFF);
+				}
 				case "flicker" -> {
 					// Dark for a few frames at a time, at an irregular beat.
 					long phase = (now / 40) % 7;
