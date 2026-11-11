@@ -1449,6 +1449,9 @@ The `[x]` lines above, summed up by day:
 - [x] **Their name in the snow** (`docs/events_todo.md`, 60): `name_in_the_snow`, stages 4 and 5,
   snow near the home: their name trodden in, letters three by five, the snow taken off only where
   they are (`act::snow_letter`). Tests: one in `act`. Was: no such event.
+- [x] **A ring of torches** (`docs/events_todo.md`, 61): `torch_ring`, stages 4 and 5, once a
+  stay: sixteen torches twelve blocks out round the house (`set_block` with `settle`). Tests: one in
+  `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

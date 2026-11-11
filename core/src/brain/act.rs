@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::TorchRing => home.map(|h| h.center),
         // Ten blocks south of the house's middle, on the ground there.
         Action::NameInTheSnow => home.map(|h| [h.center[0] - 8, -10_000, h.center[2] + 10]),
         Action::ChestWontOpen => memory.used_container().map(|c| c.pos),
@@ -5716,6 +5717,22 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // Sixteen torches twelve blocks out round the house's middle, each finding its footing
+        // within eight blocks up or down of the floor.
+        Action::TorchRing => match (pos, memory.home.as_ref()) {
+            (Some(center), Some(home)) => (0..16)
+                .map(|i| {
+                    let angle = std::f64::consts::TAU * i as f64 / 16.0;
+                    let spot = [
+                        center[0] + (angle.cos() * 12.0).round() as i32,
+                        home.floor_y,
+                        center[2] + (angle.sin() * 12.0).round() as i32,
+                    ];
+                    (torch(ids, spot, 8), i as u64 * 4)
+                })
+                .collect(),
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -10895,6 +10912,34 @@ mod tests {
             "the second letter four blocks on"
         );
         assert_eq!(snow_letter('?'), Vec::<[i32; 2]>::new());
+    }
+
+    #[test]
+    fn overnight_a_ring_of_torches_stands_round_the_house() {
+        let memory = rich_memory();
+        let center = memory.home.as_ref().unwrap().center;
+        let event = find("torch_ring").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 16);
+        for (c, _) in &made {
+            let Command::SetBlock {
+                pos, block, settle, ..
+            } = c
+            else {
+                panic!("{c:?}")
+            };
+            assert_eq!(block, "minecraft:torch");
+            assert!(*settle > 0);
+            let out = (((pos[0] - center[0]).pow(2) + (pos[2] - center[2]).pow(2)) as f64).sqrt();
+            assert!((11.0..=13.0).contains(&out), "{out}");
+        }
     }
 
     #[test]
