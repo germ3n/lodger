@@ -348,6 +348,14 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Their trapdoor nearest them.
+        Action::TrapdoorTaps => {
+            let at = block_of(memory.last.pos);
+            memory
+                .fixtures("trapdoor")
+                .map(|f| f.pos)
+                .min_by(|a, b| distance(*a, at).total_cmp(&distance(*b, at)))
+        }
         Action::ChestRattles => memory
             .used_container()
             .filter(|c| !c.is_furnace())
@@ -5966,6 +5974,23 @@ pub fn commands(
                     .collect()
             })
             .unwrap_or_default(),
+        // Open, shut, open, shut: eight taps a third of a second apart, ending as it was.
+        Action::TrapdoorTaps => pos
+            .map(|trapdoor| {
+                (0..8)
+                    .map(|i| {
+                        (
+                            Command::ToggleBlock {
+                                id: ids(),
+                                pos: trapdoor,
+                                to: None,
+                            },
+                            i * 7,
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -8812,6 +8837,8 @@ mod tests {
                 || event.id == "firework_over_its_house"
                 // What it took, which this memory holds not: its own test.
                 || event.id == "chicken_lays"
+                // A trapdoor of theirs, which this memory has not: its own test.
+                || event.id == "trapdoor_taps"
                 // Its house must stand first: its own test.
                 || event.id == "its_banner"
                 // Something held, monsters away: its own test.
@@ -11330,6 +11357,28 @@ mod tests {
                 .all(|(c, _)| matches!(c, Command::OpenLid { seconds, .. } if *seconds < 0.35)),
             "fast: {made:?}"
         );
+    }
+
+    #[test]
+    fn a_trapdoor_of_theirs_taps_open_and_shut_and_ends_as_it_was() {
+        let mut memory = rich_memory();
+        memory.fixtures.push(crate::memory::Fixture {
+            kind: "trapdoor".to_string(),
+            pos: [3, 64, 3],
+        });
+        let event = find("trapdoor_taps").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len() % 2, 0, "an even count: as it was");
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::ToggleBlock { to: None, .. })));
     }
 
     #[test]

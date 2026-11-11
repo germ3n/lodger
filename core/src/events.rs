@@ -1002,6 +1002,8 @@ pub enum Action {
     ItsBanner,
     /// Their chest's lid opens and shuts five times fast, then is still.
     ChestRattles,
+    /// A trapdoor of theirs taps open and shut, again and again.
+    TrapdoorTaps,
 }
 
 /// Where a figure stands.
@@ -4628,6 +4630,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ChestRattles,
         false,
     ),
+    // docs/events_todo.md, 69.
+    row(
+        "trapdoor_taps",
+        3,
+        5,
+        &[Fixture("trapdoor"), TargetOnline],
+        2.0,
+        3,
+        Full,
+        Action::TrapdoorTaps,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5567,6 +5581,7 @@ impl Event {
             | Action::SwimsBeneath
             | Action::StandsInTheRain
             | Action::ChestRattles
+            | Action::TrapdoorTaps
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5638,6 +5653,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "trapdoor_taps" => "tap a trapdoor of theirs open and shut",
             "chest_rattles" => "rattle their chest's lid open and shut",
             "its_banner" => "hang a black banner on its house",
             "stands_in_the_rain" => "stand the figure in the rain, its face to the sky",
