@@ -517,12 +517,13 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             Some([at[0] + way[0] * 30, -10_000, at[2] + way[1] * 30])
         }
         // Seven blocks past their light from them, on the ground: the edge of its reach.
-        Action::IntoTheDark | Action::Figure(FigureWhere::EdgeOfLight, _, _) => light_near(memory)
-            .map(|light| {
-                let at = block_of(memory.last.pos);
-                let away = step_toward(at, light);
-                [light[0] + away[0] * 7, -10_000, light[2] + away[1] * 7]
-            }),
+        Action::IntoTheDark
+        | Action::OneMoreEachNight
+        | Action::Figure(FigureWhere::EdgeOfLight, _, _) => light_near(memory).map(|light| {
+            let at = block_of(memory.last.pos);
+            let away = step_toward(at, light);
+            [light[0] + away[0] * 7, -10_000, light[2] + away[1] * 7]
+        }),
         Action::Build(event) => memory.next_build(event).map(|(site, _, _)| site),
         Action::CaveRoom => memory.unentered_cave().and_then(|c| c.first().copied()),
         Action::Figure(FigureWhere::Far, _, _) => {
@@ -1077,6 +1078,9 @@ fn bedside(
     })
     .unwrap_or_default()
 }
+
+/// The first of `one_more_each_night`'s figures' numbers.
+const ONE_MORE_FIRST: u32 = 31;
 
 /// The most windows `every_window` fills, and the first of their figures' numbers.
 const WINDOWS_MOST: usize = 8;
@@ -4037,6 +4041,46 @@ pub fn commands(
                             *held = ItemStack::default();
                             *once_seen = true;
                             *together = WINDOWS_FIRST;
+                        }
+                        (shown, 0)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        // At the edge of their light, one more than the nights it came before, side by side
+        // across the way out from them, still, empty-handed; gone together when one is seen and
+        // looked away from, or they come within six blocks.
+        Action::OneMoreEachNight => pos
+            .map(|edge| {
+                let count = (memory.times("one_more_each_night") as u32 + 1)
+                    .min(crate::events::ONE_MORE_MOST);
+                let at = block_of(memory.last.pos);
+                let out = step_toward(at, edge);
+                let across = [-out[1], out[0]];
+                (0..count)
+                    .map(|i| {
+                        // Side by side from the middle out: 0, +2, -2, +4, -4 ...
+                        let side = ((i as i32 + 1) / 2) * 2 * if i % 2 == 1 { 1 } else { -1 };
+                        let spot = [
+                            edge[0] + across[0] * side,
+                            -10_000,
+                            edge[2] + across[1] * side,
+                        ];
+                        let mut shown = figure_shown(ids, memory, target, spot, 40.0, false);
+                        if let Command::Figure {
+                            figure,
+                            held,
+                            once_seen,
+                            together,
+                            vanish_within,
+                            ..
+                        } = &mut shown
+                        {
+                            *figure = ONE_MORE_FIRST + i;
+                            *held = ItemStack::default();
+                            *once_seen = true;
+                            *together = ONE_MORE_FIRST;
+                            *vanish_within = 6.0;
                         }
                         (shown, 0)
                     })
@@ -7686,6 +7730,34 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn each_night_one_more_figure_stands_at_the_edge_of_their_light() {
+        let mut memory = rich_memory();
+        let event = find("one_more_each_night").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1));
+        assert!(p.is_some(), "a light near them");
+        let figures = |memory: &Memory| {
+            commands(event, p, memory, &mut ids(), &Now::default(), None)
+                .iter()
+                .filter(|(c, _)| matches!(c, Command::Figure { together, .. } if *together > 0))
+                .count()
+        };
+        assert_eq!(figures(&memory), 1, "the first night, one");
+        memory.record("one_more_each_night", p, 1.0, true, "");
+        assert_eq!(figures(&memory), 2, "the next, two");
+        memory.record("one_more_each_night", p, 2.0, true, "");
+        assert_eq!(figures(&memory), 3);
+        for day in 3..12 {
+            memory.record("one_more_each_night", p, day as f32, true, "");
+        }
+        assert_eq!(
+            figures(&memory),
+            crate::events::ONE_MORE_MOST as usize,
+            "never more than the most"
+        );
+        assert_eq!(event.most_per_stay, crate::events::ONE_MORE_MOST);
     }
 
     #[test]

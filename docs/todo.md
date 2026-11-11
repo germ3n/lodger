@@ -1201,6 +1201,11 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **One more each night** (`docs/events_todo.md`, 7): `one_more_each_night`, stages 4 and
+  5, at night with a light of theirs near: at the edge of the light one figure more than the
+  nights it came before (`Memory::times`), up to six, side by side, gone together when one is
+  seen and looked away from or they come within six blocks; a night apart. Tests: one in `act`.
+  Was: no such event.
 - [x] **A figure at every window** (`docs/events_todo.md`, 6): `every_window`, stage 5, at night
   with the target indoors and two windows or more (a window a run of panes): a figure outside
   each, a block out, its head at the glass, all gone together when one is seen and looked away

@@ -629,6 +629,7 @@ a dock or bridge), never over anything a player built (see the
 | `hunted` | 5 | At night, outdoors: thirty-six blocks ahead of where they look, a figure starts running at them, flat out (a sprint and a half), after them as they move, and is gone two blocks short with a hit's jolt and sound and no harm (`figure`'s `rushes`). | Night, the target outdoors. |
 | `boat_passenger` | 4 | Rowing alone, a figure sits in the seat behind them, empty-handed, on their client alone; gone once they have turned round to it and looked away, when they leave the boat, or when anyone else gets in (`figure`'s `rides_behind`). | The target in a boat or raft with a second seat (no chest boat). |
 | `every_window` | 5 | At night, while they are in the house, a figure stands outside every window at once (one for each run of panes, eight at most), a block out, its head at the glass, looking in; all gone together the moment one has been seen and looked away from (`figure`'s `together`). | Night, the target indoors, two windows or more. |
+| `one_more_each_night` | 4 | At night, at the edge of their light (seven blocks past it from them), one figure the first night it comes, two the next, three the next, up to six, side by side across the way out, still, empty-handed, never closer; all gone together when one is seen and looked away from, or when they come within six blocks. A night apart at least. | Night, a light of theirs near them. |
 
 ### The ending
 

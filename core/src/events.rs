@@ -864,6 +864,8 @@ pub enum Action {
     BoatPassenger,
     /// At night, a figure outside every window of the house at once, all gone together.
     EveryWindow,
+    /// At the edge of their light, one figure more each night it comes.
+    OneMoreEachNight,
 }
 
 /// Where a figure stands.
@@ -949,6 +951,9 @@ const fn row(
 }
 
 use Need::*;
+
+/// The most nights `one_more_each_night` comes, and so the most figures it stands.
+pub const ONE_MORE_MOST: u32 = 6;
 use Weight::{Full, Half};
 
 /// The events the mind can carry out with the host's commands today. The catalogue in the docs
@@ -3851,6 +3856,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EveryWindow,
         false,
     ),
+    // docs/events_todo.md, 7: a night apart, one more each time.
+    row(
+        "one_more_each_night",
+        4,
+        5,
+        &[Night, LightNear],
+        0.8,
+        ONE_MORE_MOST,
+        Full,
+        Action::OneMoreEachNight,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4653,6 +4670,7 @@ impl Event {
             | Action::Hunted
             | Action::BoatPassenger
             | Action::EveryWindow
+            | Action::OneMoreEachNight
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -4958,6 +4976,9 @@ impl Event {
             "hunted" => "have the figure run at them out of the dark",
             "boat_passenger" => "sit the figure in their boat behind them",
             "every_window" => "stand a figure outside every window of the house at once",
+            "one_more_each_night" => {
+                "stand one more figure at the edge of their light than last night"
+            }
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
