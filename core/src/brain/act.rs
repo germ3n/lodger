@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::PulledUnder => Some(block_of(memory.last.pos)),
         // The top of the shaft they are down; its highest ladder when they have climbed out
         // since it was offered.
         Action::TopOfTheLadder => shaft_top(memory).or_else(|| {
@@ -4350,6 +4351,42 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Pulled down twice, a moment apart, as if taken by the ankle: a whirl of water and a
+        // drowning gasp, no harm; then let go.
+        Action::PulledUnder => {
+            let at = memory.last.pos;
+            let sound = |ids: &mut dyn FnMut() -> u64, sound: &str| Command::PlaySound {
+                id: ids(),
+                player: target,
+                sound: sound.to_string(),
+                pos: at,
+                volume: 0.9,
+                pitch: 0.8,
+            };
+            vec![
+                (
+                    Command::PushPlayer {
+                        id: ids(),
+                        player: target,
+                        velocity: [0.0, -0.9, 0.0],
+                    },
+                    0,
+                ),
+                (
+                    sound(ids, "minecraft:block.bubble_column.whirlpool_inside"),
+                    0,
+                ),
+                (
+                    Command::PushPlayer {
+                        id: ids(),
+                        player: target,
+                        velocity: [0.0, -0.7, 0.0],
+                    },
+                    6,
+                ),
+                (sound(ids, "minecraft:entity.player.hurt_drown"), 8),
+            ]
+        }
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7996,6 +8033,42 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn swimming_they_are_pulled_under_a_moment() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.swimming = true;
+        assert!(crate::brain::offer::meets(
+            crate::events::Need::TargetSwimming,
+            &memory,
+            &Now::default()
+        ));
+        let under = find("pulled_under").unwrap();
+        let made = commands(
+            under,
+            place(under, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let pushes: Vec<f64> = made
+            .iter()
+            .filter_map(|(c, _)| match c {
+                Command::PushPlayer { velocity, .. } => Some(velocity[1]),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(pushes.len(), 2, "pulled twice");
+        assert!(
+            pushes.iter().all(|y| *y < 0.0 && *y >= -1.0),
+            "down, never more than a block a tick"
+        );
+        assert!(made.iter().any(
+            |(c, _)| matches!(c, Command::PlaySound { sound, .. } if sound.ends_with("hurt_drown"))
+        ));
     }
 
     #[test]

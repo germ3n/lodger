@@ -579,6 +579,13 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// Push `player` by `velocity`, blocks a tick, as a hit or a current would (each axis at
+    /// most one), once. ABI 54.
+    PushPlayer {
+        id: u64,
+        player: u32,
+        velocity: Pos,
+    },
     /// The door at `pos` (either half) will not open for `seconds` (ten at most), as if held
     /// from the other side: a player's use of it is refused, the door rattling shut on their
     /// screen, and each try heard as a blow on it. ABI 54.
@@ -1190,6 +1197,7 @@ impl Command {
             | Command::FigureSwing { id, .. }
             | Command::Choke { id, .. }
             | Command::HoldDoor { id, .. }
+            | Command::PushPlayer { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

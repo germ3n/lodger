@@ -145,6 +145,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::CameBack => false,
         Need::HoldsNothing => memory.held.is_none(),
         Need::LitUnderground => false,
+        Need::TargetSwimming => last.online && last.swimming,
         Need::DownTheShaft => last.online && crate::brain::act::shaft_top(memory).is_some(),
         Need::NearTheirDeath => memory.last_death().is_some_and(|died| {
             let at = [

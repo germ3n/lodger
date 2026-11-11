@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Pulled under** (`docs/events_todo.md`, 15): `pulled_under`, stages 4 and 5, swimming
+  (the memory keeps it now): pulled down twice a moment apart, a whirl of water and a drowning
+  gasp, no harm (`push_player`, ABI 54, a block a tick at most). Tests: one in `act`. Was: no
+  such event.
 - [x] **At the top of the ladder** (`docs/events_todo.md`, 14): `top_of_the_ladder`, stages 4
   and 5, down a shaft of their ladders six blocks or more below its top (`act::shaft_top`): a
   figure at its mouth looking down at them, gone when they climb within six blocks. Tests: one

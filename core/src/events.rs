@@ -241,6 +241,8 @@ pub enum Need {
     NearTheirDeath,
     /// Down a shaft of their ladders, six blocks or more below its top.
     DownTheShaft,
+    /// The target swimming.
+    TargetSwimming,
 }
 
 impl Need {
@@ -309,6 +311,7 @@ impl Need {
                 | Need::LitUnderground
                 | Need::NearTheirDeath
                 | Need::DownTheShaft
+                | Need::TargetSwimming
         )
     }
 
@@ -422,6 +425,7 @@ impl Need {
             Need::LitUnderground => "happens only as they place a light underground".to_string(),
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
+            Need::TargetSwimming => "the target is not swimming".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -893,6 +897,8 @@ pub enum Action {
     TheOffer,
     /// Down their shaft, a figure at its top looking down at them.
     TopOfTheLadder,
+    /// Swimming, they are pulled under a moment, a drowning gasp, and let go.
+    PulledUnder,
 }
 
 /// Where a figure stands.
@@ -3979,6 +3985,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TopOfTheLadder,
         false,
     ),
+    // docs/events_todo.md, 15.
+    row(
+        "pulled_under",
+        4,
+        5,
+        &[TargetSwimming],
+        4.0,
+        2,
+        Full,
+        Action::PulledUnder,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4772,6 +4790,7 @@ impl Event {
             | Action::GolemTurned
             | Action::DyeSheep
             | Action::DoorWontOpen
+            | Action::PulledUnder
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5104,6 +5123,7 @@ impl Event {
             "rubberband" => "set them back a few steps and stand a figure where they were",
             "the_offer" => "hold out what it took from their doorway, and give it if they come",
             "top_of_the_ladder" => "stand the figure at the top of their shaft looking down",
+            "pulled_under" => "pull them under the water a moment as they swim",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

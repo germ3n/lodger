@@ -408,6 +408,8 @@ pub struct Snapshot {
     pub walking: bool,
     /// What they ride, by entity id, empty on foot.
     pub riding: String,
+    /// Swimming, as the game says.
+    pub swimming: bool,
     pub main_hand: String,
     /// Animals and villagers within 32 blocks, from the last entity pass.
     pub creatures_near: Vec<Creature>,
@@ -2054,6 +2056,7 @@ impl Memory {
         }
         self.last.sleeping = player.sleeping;
         self.last.riding = player.riding.clone();
+        self.last.swimming = player.swimming;
         self.last.walking = player.movement.pace > 0.5;
         let crouched = player.sneaking && player.movement.still_seconds >= CROUCHED_STILL;
         if crouched && !self.last.crouched_still {

@@ -141,6 +141,7 @@ public final class Executors {
 				case "figure_swing" -> figureSwing(level, command, id, context);
 				case "choke" -> choke(level, command, id, context);
 				case "hold_door" -> holdDoor(level, command, id, context);
+				case "push_player" -> pushPlayer(level, command, id, context);
 				case "dig_in" -> digIn(level, command, id, context);
 				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
@@ -2076,6 +2077,26 @@ public final class Executors {
 	}
 
 	/** The figure shown to a player swings once, perhaps a hit, never below half a heart with spare (ABI 33). */
+	/** The most a push moves a player each tick on an axis. */
+	static final double MOST_PUSH = 1;
+
+	/** A player pushed, once, as a hit or a current would (ABI 54): each axis at most a block a tick. */
+	private static JsonObject pushPlayer(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		JsonArray v = command.getAsJsonArray("velocity");
+		double x = Math.clamp(v.get(0).getAsDouble(), -MOST_PUSH, MOST_PUSH);
+		double y = Math.clamp(v.get(1).getAsDouble(), -MOST_PUSH, MOST_PUSH);
+		double z = Math.clamp(v.get(2).getAsDouble(), -MOST_PUSH, MOST_PUSH);
+		player.push(x, y, z);
+		// The player moves itself: the push is sent them, as a knockback is.
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(player));
+
+		return report(id, true, "");
+	}
+
 	/** A door held shut for a while, as if from the other side (ABI 54). */
 	private static JsonObject holdDoor(ServerLevel level, JsonObject command, long id, Context context) {
 		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
