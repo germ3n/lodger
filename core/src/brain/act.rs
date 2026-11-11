@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::WavesFromInside => home.and_then(|h| windows(memory, h.center).first().copied()),
         // Thirty blocks ahead of where they look, a little aside, on the ground.
         Action::JumpingFar => {
             let at = block_of(memory.last.pos);
@@ -5119,6 +5120,39 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Just inside the window, a block in from the glass, its head at it, empty-handed: it
+        // raises its arm three times, as a wave; gone as they come within five blocks.
+        Action::WavesFromInside => match (pos, memory.home.as_ref()) {
+            (Some(pane), Some(home)) => {
+                let inward = step_toward(pane, home.center);
+                let spot = [pane[0] + inward[0], pane[1] - 2, pane[2] + inward[1]];
+                let mut shown = figure_shown(ids, memory, target, spot, 30.0, false);
+                if let Command::Figure {
+                    held,
+                    vanish_within,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *vanish_within = 5.0;
+                }
+                let mut made = vec![(shown, 0)];
+                for at in [20, 34, 48] {
+                    made.push((
+                        Command::FigureSwing {
+                            id: ids(),
+                            player: target,
+                            figure: 1,
+                            damage: 0.0,
+                            spare: true,
+                        },
+                        at,
+                    ));
+                }
+                made
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -9887,6 +9921,37 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Figure { jumps: true, pos, .. }, 0)] if pos[1] < -1000.0),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn coming_home_a_figure_waves_from_inside_a_window() {
+        let memory = rich_memory();
+        let event = find("waves_from_inside").unwrap();
+        let center = memory.home.as_ref().unwrap().center;
+        let pane = windows(&memory, center)[0];
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let Command::Figure { pos, .. } = &made[0].0 else {
+            panic!("{made:?}")
+        };
+        let inside = |p: f64, c: i32, q: i32| (p - 0.5 - c as f64).abs() < (q - c).abs() as f64;
+        assert!(
+            inside(pos[0], center[0], pane[0]) || inside(pos[2], center[2], pane[2]),
+            "inside the glass: {pos:?} {pane:?}"
+        );
+        assert_eq!(
+            made.iter()
+                .filter(|(c, _)| matches!(c, Command::FigureSwing { damage, .. } if *damage == 0.0))
+                .count(),
+            3,
+            "a wave, no harm"
         );
     }
 

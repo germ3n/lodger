@@ -956,6 +956,8 @@ pub enum Action {
     AtTheirTable,
     /// Far off in the open, a figure jumping in place, facing them.
     JumpingFar,
+    /// Coming home, a figure inside the house waves at them from a window.
+    WavesFromInside,
 }
 
 /// Where a figure stands.
@@ -4306,6 +4308,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::JumpingFar,
         false,
     ),
+    // docs/events_todo.md, 43.
+    row(
+        "waves_from_inside",
+        4,
+        5,
+        &[TargetApproachingDoor, Pane, Home],
+        3.0,
+        2,
+        Full,
+        Action::WavesFromInside,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5186,6 +5200,7 @@ impl Event {
             | Action::ChickenLays
             | Action::AtTheirTable
             | Action::JumpingFar
+            | Action::WavesFromInside
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5257,6 +5272,9 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "waves_from_inside" => {
+                "have the figure wave at them from inside a window as they come home"
+            }
             "jumping_far" => "have the figure jump in place far off",
             "at_their_table" => {
                 "stand the figure at their crafting table, working, as they come home"
