@@ -336,6 +336,7 @@ stood, 6 of what they built, 16 of a site of theirs, or the home's radius.
 | `scarecrow` | 3 | An armour stand in the field, wearing one piece of the target's armour (the very piece, from their chest), facing the house: their own stand moved there, or one from the chest set down. | A piece of armour and an armour stand (or one in a chest), and a field. |
 | `open_gate` | 2 | A pen's gate is open in the morning. The animals wandered. | A fence gate with animals behind it. |
 | `animal_indoors` | 3 | One of the target's animals is inside the house in the morning. Moved, not spawned; the gate is closed behind it. | A penned animal and a home with a door. |
+| `bats_in_the_house` | 4 | At night, while they are in the house, four bats flutter about inside it, two blocks over the floor round its middle, a minute; then gone, leaving nothing (`place_entity` of bats for a while). | Night, the target indoors. |
 | `animal_gone` | 3 | One animal is missing from the pen, and is at the end of the target's route, grazing. | A pen and a route. |
 | `sheep_dyed` | 2 | One of their sheep by the house is another colour (no dye spent: a sheep's wool is not an item). | A sheep of theirs by the house, out of their view. |
 | `horse_moved` | 2 | The horse is tied to a different post, within eight blocks of the first (`move_leash`, ABI 27). | A horse (or donkey, mule, llama, camel) on a lead. |
@@ -693,8 +694,11 @@ One thing leads to the next. An event can name follow-ups in `events.rs`: events
 has landed, are offered with extra weight, or offered *only* to the exclusion of the rest, for a
 few days, and sometimes a place or an item the follow-up inherits. The memory keeps the open
 chains (`Memory::chains`), the situation text says what is open (`It took the pickaxe three days
-ago and has not given it back.`), and the model chooses with that in front of it. A chain is
-never forced: `wait` is always offered, and a follow-up whose needs stopped being met falls out.
+ago and has not given it back.`), and the model chooses with that in front of it. An open
+chain's next step, while it may happen, always has a place on the menu as well as its weight,
+and the first step of a chain not yet begun in the stay is weighed up the same: with a hundred
+and more events, a weight alone left chains unopened and stalled. A chain is never forced:
+`wait` is always offered, and a follow-up whose needs stopped being met falls out.
 Some chains, with the stages they span:
 
 - **The thing.** `take` → (`place_taken` or `return_taken`, favoured for three days) → if placed,

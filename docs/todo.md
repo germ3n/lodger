@@ -1429,6 +1429,15 @@ The `[x]` lines above, summed up by day:
 - [x] **The pet stares at the wall** (`docs/events_todo.md`, 56): `pet_stares_at_wall`, stages 3
   to 5: their pet held a minute facing the wall of theirs nearest it (`hold`'s `at`). Tests: one in
   `act`. Was: no such event.
+- [x] **Bats in the house** (`docs/events_todo.md`, 57): `bats_in_the_house`, stages 4 and 5, at
+  night indoors: four bats inside the house a minute, then gone (`place_entity` may place a bat
+  now, ABI 54). Tests: one in `act`. Was: no such event.
+- [x] **Chains still begin and go on as the catalogue grows** (found as `bats_in_the_house` was
+  added: a stay test, "the place walked in 1 of three stays"): the first step of a chain not yet
+  begun in the stay is weighed up as an open chain's next step is (`Memory::chain_starts`), and
+  an open chain's next step, while it may happen, always has a place on the menu. Never forced:
+  the mind still chooses. Tests: one in `offer`; the stay test as it was. Was: with a hundred and
+  more events a chain's first step was one weight among them all, and chains often never opened.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

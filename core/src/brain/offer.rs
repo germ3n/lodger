@@ -409,6 +409,7 @@ pub fn offer<'a>(
 ) -> Vec<&'a Event> {
     let mut eligible: Vec<(&Event, f64)> = Vec::new();
     let chain_next = memory.chain_next();
+    let chain_starts = memory.chain_starts();
 
     for event in catalogue {
         if event.id == "wait" || !crate::temper::offered_in(event, stage, &memory.temper) {
@@ -440,7 +441,7 @@ pub fn offer<'a>(
         let times = memory.times(event.id);
         let mut weight = 1.0 / (1.0 + times as f64);
         // An open chain's next step (`chains.rs`): likelier, never forced.
-        if chain_next.contains(&event.id) {
+        if chain_next.contains(&event.id) || chain_starts.contains(&event.id) {
             weight *= crate::chains::WEIGHT;
         }
         eligible.push((event, weight));
@@ -452,6 +453,18 @@ pub fn offer<'a>(
     }
 
     let want = (config.events.offered as usize).saturating_sub(1);
+    // An open chain's next step, when it may happen, always has a place on the menu: its weight
+    // alone thinned as the catalogue grew (a hundred and more events), until a chain stalled in
+    // a stay for want of being offered. Still never forced: the mind chooses from the menu.
+    while let Some(at) = eligible
+        .iter()
+        .position(|(e, _)| chain_next.contains(&e.id))
+    {
+        if menu.len() > want {
+            break;
+        }
+        menu.push(eligible.remove(at).0);
+    }
     while menu.len() < want + 1 && !eligible.is_empty() {
         let total: f64 = eligible.iter().map(|(_, w)| *w).sum();
         let mut draw = rng.next_f64() * total;
@@ -497,6 +510,50 @@ mod tests {
             lights: vec![[1, 65, 1]],
         });
         memory
+    }
+
+    #[test]
+    fn an_open_chain_s_next_step_is_always_on_the_menu_and_a_chain_s_first_step_weighs_more() {
+        let memory = memory_at_home();
+        // No chain begun: every chain's first step is weighed up.
+        let starts = memory.chain_starts();
+        assert!(
+            starts.contains(&"light_path") && starts.contains(&"far_figure"),
+            "{starts:?}"
+        );
+        let mut begun = memory.clone();
+        begun.chains_done.push("the_place".to_string());
+        assert!(
+            !begun.chain_starts().contains(&"light_path"),
+            "a chain runs once a stay"
+        );
+
+        // An open chain whose next step may happen: on every menu drawn.
+        let mut open = memory_at_home();
+        open.chains.push(crate::chains::Open {
+            id: "the_place".to_string(),
+            landed: vec![0],
+            ..Default::default()
+        });
+        let next = open.chain_next();
+        let config = Config::default();
+        let mut rng = Rng::new(3);
+        for _ in 0..20 {
+            let menu = offer(CATALOGUE, 4, &open, &Now::default(), 2.0, &config, &mut rng);
+            for step in &next {
+                let eligible = crate::events::find(step).is_some_and(|e| {
+                    e.needs.iter().all(|n| meets(*n, &open, &Now::default()))
+                        && crate::rules::check(e, None, &open, 4, 2.0, &config).is_ok()
+                });
+                if eligible {
+                    assert!(
+                        menu.iter().any(|e| e.id == *step),
+                        "{step} not on {:?}",
+                        menu.iter().map(|e| e.id).collect::<Vec<_>>()
+                    );
+                }
+            }
+        }
     }
 
     #[test]

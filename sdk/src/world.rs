@@ -436,7 +436,8 @@ pub enum Command {
         pos: BlockPos,
         block: String,
     },
-    /// Place an entity of kind `of` at `pos` facing `yaw`: an armour stand, or a farm animal. With
+    /// Place an entity of kind `of` at `pos` facing `yaw`: an armour stand, a farm animal, or a
+    /// bat (ABI 54). With
     /// `seconds` above 0 it is there for that long only, then gone, and gone at once when its
     /// level saves or closes, or when next seen after a quit. ABI 27.
     PlaceEntity {

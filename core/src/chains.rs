@@ -1,5 +1,6 @@
 //! Chains (`docs/entity.md`, Chains): one thing leads to the next. A chain opens when its first
-//! event lands; its next step is then offered with more weight for a few days, and the situation
+//! event lands; its next step then always has a place on the menu while it may happen, and more
+//! weight in the mind's choosing, for a few days, and the situation
 //! says what is open. A chain is never forced: `wait` is always offered, every step still
 //! passes the rules, its cooldown, its cap and the day's budget, and a step whose moment passed
 //! falls out and closes the chain. Each chain runs once a stay.
@@ -286,6 +287,27 @@ impl Memory {
         }
 
         next
+    }
+
+    /// The first steps of the chains not yet begun in this stay: the menu weighs them up too,
+    /// so a chain still begins as the catalogue grows (its first step was one among a hundred
+    /// and more, and a chain often never opened).
+    pub fn chain_starts(&self) -> Vec<&'static str> {
+        CHAINS
+            .iter()
+            .filter(|c| {
+                !self.chains.iter().any(|o| o.id == c.id)
+                    && !self.chains_done.iter().any(|d| d == c.id)
+            })
+            .flat_map(|c| {
+                c.steps
+                    .first()
+                    .map(|s| s.events)
+                    .unwrap_or(&[])
+                    .iter()
+                    .copied()
+            })
+            .collect()
     }
 
     /// The situation's line for each open chain: what it began, and what may come.

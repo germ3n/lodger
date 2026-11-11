@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::BatsInTheHouse => home.map(|h| h.center),
         // The wall block of theirs nearest their pet.
         Action::PetStaresAtWall => memory.pets().next().and_then(|pet| {
             let at = block_of(pet.pos);
@@ -5542,6 +5543,31 @@ pub fn commands(
             )],
             _ => Vec::new(),
         },
+        // Four bats two blocks over the house's floor round its middle, a minute, then gone.
+        Action::BatsInTheHouse => match (pos, memory.home.as_ref()) {
+            (Some(center), Some(home)) => [[1, 1], [-1, 1], [1, -1], [-1, -1]]
+                .into_iter()
+                .map(|[dx, dz]| {
+                    (
+                        Command::PlaceEntity {
+                            id: ids(),
+                            of: "minecraft:bat".to_string(),
+                            pos: [
+                                center[0] as f64 + 0.5 + dx as f64,
+                                home.floor_y as f64 + 2.0,
+                                center[2] as f64 + 0.5 + dz as f64,
+                            ],
+                            yaw: 0.0,
+                            seconds: 60.0,
+                            kept: String::new(),
+                            face: None,
+                        },
+                        0,
+                    )
+                })
+                .collect(),
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -10630,6 +10656,22 @@ mod tests {
             matches!(&made[..], [(Command::Hold { entity, at: Some(at), seconds, .. }, 0)] if *entity == pet.id && at[0] == wall[0] as f64 + 0.5 && *seconds >= 30.0),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn at_night_bats_flutter_in_the_house_a_minute() {
+        let memory = rich_memory();
+        let event = find("bats_in_the_house").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 4);
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::PlaceEntity { of, seconds, .. } if of == "minecraft:bat" && *seconds > 0.0)), "for a while only: {made:?}");
     }
 
     #[test]

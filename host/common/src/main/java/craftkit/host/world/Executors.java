@@ -2047,10 +2047,10 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
-	/** What {@code place_entity} may place: an armour stand, or a farm animal. */
+	/** What {@code place_entity} may place: an armour stand, a farm animal, or a bat (`bats_in_the_house`, ABI 54). */
 	private static final List<String> PLACEABLE = List.of("minecraft:armor_stand", "minecraft:cow", "minecraft:pig", "minecraft:sheep",
 			"minecraft:chicken", "minecraft:goat", "minecraft:horse", "minecraft:donkey", "minecraft:mule", "minecraft:llama",
-			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel", "minecraft:squid");
+			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel", "minecraft:squid", "minecraft:bat");
 
 	/** An armour stand or a farm animal placed (ABI 27): for a while when seconds are given, wearing a kept stack when named. */
 	private static JsonObject placeEntity(ServerLevel level, JsonObject command, long id, Context context, WorldData data) {
