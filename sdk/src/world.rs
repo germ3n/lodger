@@ -1139,6 +1139,10 @@ pub enum Command {
         /// with a hit's jolt and sound, no harm. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         rushes: bool,
+        /// Sitting in the seat behind the player in the boat they ride, for their client alone;
+        /// gone when they leave the boat. Refused when they ride none with a seat to spare. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        rides_behind: bool,
     },
     RemoveFigure {
         id: u64,

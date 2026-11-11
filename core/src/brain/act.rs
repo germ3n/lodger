@@ -309,6 +309,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::RingOfFigures(_) => home.map(|h| h.center),
         Action::UpsideDown => home.and_then(|h| h.bed),
         Action::Crawl => memory.usual_door(),
+        // Where they are: the host seats it in their boat.
+        Action::BoatPassenger => Some(block_of(memory.last.pos)),
         // Ahead of them, where they look, far off on the ground: they see it start.
         Action::Hunted => {
             let at = block_of(memory.last.pos);
@@ -1120,6 +1122,7 @@ fn figure_shown(
         upside_down: false,
         crawls: false,
         rushes: false,
+        rides_behind: false,
     }
 }
 
@@ -3970,6 +3973,25 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // In the seat behind them, empty-handed, for as long as they do not turn round to it:
+        // gone once seen and looked away from, or with the boat left.
+        Action::BoatPassenger => pos
+            .map(|at| {
+                let mut shown = figure_shown(ids, memory, target, at, 60.0, false);
+                if let Command::Figure {
+                    held,
+                    rides_behind,
+                    once_seen,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *rides_behind = true;
+                    *once_seen = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -5292,6 +5314,7 @@ pub fn commands(
                         upside_down: false,
                         crawls: false,
                         rushes: false,
+                        rides_behind: false,
                     },
                     0,
                 )]
@@ -7608,6 +7631,46 @@ mod tests {
         assert!(
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
+        );
+    }
+
+    #[test]
+    fn rowing_alone_the_figure_sits_behind_them() {
+        let mut memory = rich_memory();
+        let boat = find("boat_passenger").unwrap();
+        memory.last.online = true;
+        memory.last.riding = "minecraft:oak_boat".to_string();
+        assert!(crate::brain::offer::meets(
+            crate::events::Need::TargetInBoat,
+            &memory,
+            &Now::default()
+        ));
+        memory.last.riding = "minecraft:oak_chest_boat".to_string();
+        assert!(
+            !crate::brain::offer::meets(
+                crate::events::Need::TargetInBoat,
+                &memory,
+                &Now::default()
+            ),
+            "a chest boat has no seat"
+        );
+        memory.last.riding = "minecraft:bamboo_raft".to_string();
+        assert!(crate::brain::offer::meets(
+            crate::events::Need::TargetInBoat,
+            &memory,
+            &Now::default()
+        ));
+        let made = commands(
+            boat,
+            place(boat, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { rides_behind: true, once_seen: true, held, .. }, 0)] if held.id.is_empty()),
+            "{made:?}"
         );
     }
 

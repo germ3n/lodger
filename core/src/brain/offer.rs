@@ -144,6 +144,12 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::InNether | Need::InEnd => false,
         Need::CameBack => false,
         Need::HoldsNothing => memory.held.is_none(),
+        Need::TargetInBoat => {
+            let riding = memory.last.riding.as_str();
+            memory.last.online
+                && (riding.ends_with("_boat") || riding.ends_with("_raft"))
+                && !riding.contains("chest")
+        }
         Need::FramesToShow => {
             memory.decor("item_frame").next().is_some()
                 && crate::brain::act::frame_shows(memory).is_some()
@@ -260,6 +266,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::UpsideDown
         | Action::Crawl
         | Action::Hunted
+        | Action::BoatPassenger
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
@@ -301,6 +308,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::UpsideDown
         | Action::Crawl
         | Action::Hunted
+        | Action::BoatPassenger
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)

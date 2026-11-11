@@ -1201,6 +1201,11 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A passenger in their boat** (`docs/events_todo.md`, 5): `boat_passenger`, stages 4 and
+  5, rowing alone in a boat or raft with a second seat (the memory keeps what they ride now):
+  a figure in the seat behind them, on their client alone (the boat's passengers sent them as
+  they and the figure), gone once seen and looked away from, with the boat left, or when anyone
+  else gets in (`figure`'s `rides_behind`, ABI 54). Tests: one in `act`. Was: no such event.
 - [x] **Hunted** (`docs/events_todo.md`, 4): `hunted`, stage 5, at night outdoors: thirty-six
   blocks ahead of where they look a figure runs at them flat out, after them as they move, and
   is gone two blocks short with a hit's jolt and sound and no harm (`figure`'s `rushes`, ABI

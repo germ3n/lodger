@@ -61,6 +61,8 @@ public final class Figures {
 		boolean crawls;
 		/** Running at its player, after them, gone just short with a jolt (ABI 54). */
 		boolean rushes;
+		/** The boat it sits in behind its player, on their client alone (ABI 54); null on foot. */
+		net.minecraft.world.entity.Entity seat;
 		int pathIndex;
 		long untilTick;
 		final double vanishWithin;
@@ -278,6 +280,16 @@ public final class Figures {
 				}
 			}
 
+			// In their boat: gone when they leave it, or anyone else gets in; where the boat is.
+			if (figure.seat != null) {
+				if (figure.player.getVehicle() != figure.seat || figure.seat.getPassengers().size() != 1 || figure.seat.isRemoved()) {
+					unsend(figure);
+					it.remove();
+					sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail("left")));
+					continue;
+				}
+				figure.at = figure.seat.position();
+			}
 			if (figure.rushes && figure.player.level() instanceof ServerLevel level) {
 				if (rush(level, figure)) {
 					unsend(figure);
@@ -317,6 +329,27 @@ public final class Figures {
 				sendEntity(figure);
 			}
 		}
+	}
+
+	/**
+	 * The figure {@code number} seated behind {@code player} in the boat they ride, alone in it,
+	 * for their client alone (ABI 54): the boat's passengers sent them as they and the figure.
+	 * False when they ride no boat, or not alone.
+	 */
+	public boolean seatBehind(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		net.minecraft.world.entity.Entity boat = player.getVehicle();
+		if (figure == null || !(boat instanceof net.minecraft.world.entity.vehicle.boat.AbstractBoat) || boat.getPassengers().size() != 1) {
+			return false;
+		}
+		figure.seat = boat;
+		figure.at = boat.position();
+		var buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+		buf.writeVarInt(boat.getId());
+		buf.writeVarIntArray(new int[] {player.getId(), figure.entityId});
+		player.connection.send(net.minecraft.network.protocol.game.ClientboundSetPassengersPacket.STREAM_CODEC.decode(buf));
+
+		return true;
 	}
 
 	/** How fast a rushing figure runs, blocks a tick: a sprint and a half. */

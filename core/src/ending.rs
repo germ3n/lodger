@@ -770,6 +770,7 @@ fn figure(
         upside_down: false,
         crawls: false,
         rushes: false,
+        rides_behind: false,
     }
 }
 

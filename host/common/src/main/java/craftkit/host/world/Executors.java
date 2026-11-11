@@ -715,6 +715,11 @@ public final class Executors {
 		if (command.has("rushes") && command.get("rushes").getAsBoolean()) {
 			context.figures().rushAt(skinOf, command.get("figure").getAsInt());
 		}
+		if (command.has("rides_behind") && command.get("rides_behind").getAsBoolean()
+				&& !context.figures().seatBehind(skinOf, command.get("figure").getAsInt())) {
+			context.figures().remove(skinOf, command.get("figure").getAsInt());
+			return report(id, false, "the player rides no boat with a seat to spare");
+		}
 
 		return report(id, true, "");
 	}

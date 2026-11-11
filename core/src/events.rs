@@ -233,6 +233,8 @@ pub enum Need {
     /// It holds nothing it took: one thing at a time (until now a second take lost the
     /// first).
     HoldsNothing,
+    /// The target in a boat or raft with a second seat (a chest boat has none).
+    TargetInBoat,
 }
 
 impl Need {
@@ -297,6 +299,7 @@ impl Need {
                 | Need::TargetAte
                 | Need::TargetApproachingDoor
                 | Need::TargetApproachingChest
+                | Need::TargetInBoat
         )
     }
 
@@ -406,6 +409,7 @@ impl Need {
             Need::InEnd => "happens only in the End, by an enderman".to_string(),
             Need::CameBack => "happens only as they come back from another dimension".to_string(),
             Need::HoldsNothing => "it holds something already".to_string(),
+            Need::TargetInBoat => "the target is not in a boat with a seat to spare".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -856,6 +860,8 @@ pub enum Action {
     Crawl,
     /// At night, outdoors: far ahead in the dark a figure runs at them, gone just short.
     Hunted,
+    /// In their boat, a figure in the seat behind them.
+    BoatPassenger,
 }
 
 /// Where a figure stands.
@@ -3819,6 +3825,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hunted,
         false,
     ),
+    // docs/events_todo.md, 5.
+    row(
+        "boat_passenger",
+        4,
+        5,
+        &[TargetInBoat],
+        4.0,
+        2,
+        Full,
+        Action::BoatPassenger,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4619,6 +4637,7 @@ impl Event {
             | Action::UpsideDown
             | Action::Crawl
             | Action::Hunted
+            | Action::BoatPassenger
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -4922,6 +4941,7 @@ impl Event {
             "upside_down" => "hang the figure from the ceiling over their bed as they wake",
             "the_crawl" => "have the figure crawl from their door to their bed while they are in",
             "hunted" => "have the figure run at them out of the dark",
+            "boat_passenger" => "sit the figure in their boat behind them",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
