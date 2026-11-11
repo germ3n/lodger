@@ -247,11 +247,16 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::ChestAnswers => config.events.sounds,
         // Their name in the ghasts' cries is a hint too: off with the glitches.
         Action::Hint(_, _) | Action::GhastName => config.events.glitches,
+        // The bedside figure too: with the figures off, none comes to the bed (until now the
+        // choke and the shot came whatever `events.figure` said).
         Action::Figure(_, _, _)
         | Action::FigureSwing(_)
         | Action::FigureWave
         | Action::DigInto(_)
         | Action::IntoTheDark
+        | Action::Choke(_)
+        | Action::ShotInBed(_)
+        | Action::RingOfFigures(_)
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
@@ -289,6 +294,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::FigureWave
         | Action::DigInto(_)
         | Action::IntoTheDark
+        | Action::RingOfFigures(_)
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)
@@ -412,6 +418,17 @@ mod tests {
             lights: vec![[1, 65, 1]],
         });
         memory
+    }
+
+    #[test]
+    fn with_the_figures_off_none_comes_to_the_bed_or_stands_round_the_house() {
+        let mut config = Config::default();
+        config.events.figure = false;
+        for id in ["choke", "shot_in_bed", "ring_of_figures", "far_figure"] {
+            let event = crate::events::find(id).unwrap();
+            assert!(!switched_on(event, &config), "{id} with the figures off");
+            assert!(switched_on(event, &Config::default()), "{id} with them on");
+        }
     }
 
     #[test]

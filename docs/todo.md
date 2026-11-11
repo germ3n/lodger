@@ -1201,6 +1201,14 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A ring of figures round the house** (owner: "can you add an event where while we are
+  inside our house, we get multiple figures standing in a circle around our home";
+  `docs/events_todo.md`, 1): `ring_of_figures`, stages 4 and 5, at night with the target
+  indoors: eight figures twenty blocks out round the home's middle, on the ground, empty-handed,
+  each gone once seen and looked away from, numbered apart from the one figure. With it, the
+  figures switch (`events.figure`) holds back the bedside figure too (`choke`, `shot_in_bed`),
+  which came whatever it said. Tests: one in `act`, one in `offer`. Was: no ring, and the
+  bedside figure with the figures off.
 - [x] **Forty events to come** (owner: "can you think of more potential events? come up with
   like 20 ... and also write it to docs/events_todo.md"; then "generate 20 more, just make sure
   there are no duplicates"): `docs/events_todo.md`, forty ideas not in the catalogue, in

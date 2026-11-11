@@ -305,6 +305,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::BedBreaks => home.and_then(|h| h.bed),
         // Their door: where the figure comes in from.
         Action::Choke(_) | Action::ShotInBed(_) => memory.usual_door(),
+        // The middle of the house: the ring stands round it.
+        Action::RingOfFigures(_) => home.map(|h| h.center),
         Action::Figure(FigureWhere::Roof, _, _) => {
             home.map(|h| [h.center[0], h.floor_y + 5, h.center[2]])
         }
@@ -1057,6 +1059,11 @@ fn bedside(
     })
     .unwrap_or_default()
 }
+
+/// How far out the ring of figures stands from the house's middle.
+const RING_BLOCKS: f64 = 20.0;
+/// The ring's figures are numbered from here, apart from the one figure (1).
+const RING_FIRST: u32 = 11;
 
 /// A figure shown to the target at a spot (the y one below where it stands, or below -1000 for
 /// the ground there), for a while.
@@ -3851,6 +3858,35 @@ pub fn commands(
             })
             .unwrap_or_default(),
         // The far figure, its name shown, raises its arm once and is gone.
+        // Round the house, twenty blocks out, on the ground, empty-handed and facing in: each
+        // gone once it has been seen and they look away; numbered apart from the one figure.
+        Action::RingOfFigures(count) => pos
+            .map(|center| {
+                (0..count)
+                    .map(|i| {
+                        let angle = std::f64::consts::TAU * i as f64 / count as f64;
+                        let spot = [
+                            center[0] + (RING_BLOCKS * angle.cos()).round() as i32,
+                            -10_000,
+                            center[2] + (RING_BLOCKS * angle.sin()).round() as i32,
+                        ];
+                        let mut shown = figure_shown(ids, memory, target, spot, 60.0, false);
+                        if let Command::Figure {
+                            figure,
+                            held,
+                            once_seen,
+                            ..
+                        } = &mut shown
+                        {
+                            *figure = RING_FIRST + i;
+                            *held = ItemStack::default();
+                            *once_seen = true;
+                        }
+                        (shown, 0)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7487,6 +7523,45 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn at_night_figures_stand_in_a_ring_round_the_house() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(3);
+        let ring = find("ring_of_figures").unwrap();
+        assert!(ring.needs.contains(&crate::events::Need::TargetIndoors));
+        let center = memory.home.as_ref().unwrap().center;
+        let p = place(ring, &memory, &mut rng);
+        assert_eq!(p, Some(center));
+        let made = commands(ring, p, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 8);
+        let mut numbers = Vec::new();
+        for (command, at) in &made {
+            let Command::Figure {
+                figure,
+                pos,
+                held,
+                once_seen,
+                seconds,
+                ..
+            } = command
+            else {
+                panic!("{command:?}");
+            };
+            assert_eq!(*at, 0, "all at once");
+            assert!(*once_seen && held.id.is_empty() && *seconds > 0.0);
+            assert!(pos[1] < -1000.0, "on the ground");
+            let out = ((pos[0] - 0.5 - center[0] as f64).powi(2)
+                + (pos[2] - 0.5 - center[2] as f64).powi(2))
+            .sqrt();
+            assert!((out - RING_BLOCKS).abs() <= 1.0, "{out} blocks out");
+            numbers.push(*figure);
+        }
+        numbers.sort_unstable();
+        numbers.dedup();
+        assert_eq!(numbers.len(), 8, "each its own figure");
+        assert!(!numbers.contains(&1), "apart from the one figure");
     }
 
     #[test]

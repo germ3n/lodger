@@ -623,6 +623,7 @@ a dock or bridge), never over anything a player built (see the
 | `figure_window` | 4 | At night, while they are inside, the figure stands outside a window of theirs, its head at the glass, looking in, half a minute, gone when they come within six. Owner's pick. | A pane, night, the target indoors. |
 | `figure_crowd` | 3 | In the village, the figure stands still among the villagers, facing them, and is not there once they look away from it (`figure`'s `once_seen`, ABI 33). Owner's pick. | A villager near, the target outdoors. |
 | `figure_waves` | 3 | The far figure, its name shown, raises its arm once and is gone. Owner's pick. | The target outdoors. |
+| `ring_of_figures` | 4 | At night, while they are in the house, eight figures in their skin stand in a ring round it, twenty blocks out, on the ground, empty-handed, facing in; each is gone once they have seen it and looked away. (The owner: "multiple figures standing in a circle around our home".) | The home known, night, the target indoors. |
 
 ### The ending
 

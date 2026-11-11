@@ -847,6 +847,9 @@ pub enum Action {
     /// The same walk to the bed, a crossbow loaded instead and a shot: this much harm, and they
     /// wake burning, never below half a heart.
     ShotInBed(f32),
+    /// At night, figures in a ring round the house, this many, each gone once seen and looked
+    /// away from.
+    RingOfFigures(u32),
 }
 
 /// Where a figure stands.
@@ -3761,6 +3764,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::ShotInBed(4.0),
         false,
     ),
+    // The owner: "while we are inside our house, we get multiple figures standing in a circle
+    // around our home" (docs/events_todo.md, 1).
+    row(
+        "ring_of_figures",
+        4,
+        5,
+        &[Home, Night, TargetIndoors],
+        5.0,
+        2,
+        Full,
+        Action::RingOfFigures(8),
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4557,6 +4573,7 @@ impl Event {
             | Action::Figure(..)
             | Action::FigureSwing(_)
             | Action::FigureWave
+            | Action::RingOfFigures(_)
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -4856,6 +4873,7 @@ impl Event {
             "bed_breaks" => "break the bed under them as they lie down",
             "choke" => "walk to their bed as they sleep and choke them with a lead",
             "shot_in_bed" => "walk to their bed as they sleep and shoot them with a burning bolt",
+            "ring_of_figures" => "stand figures in a ring round the house while they are inside",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

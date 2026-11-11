@@ -12,7 +12,7 @@
  "events.chat": "Whether the lodger may touch the target's chat and player list (a line in their own name, a whisper from themselves, their name twice in the list, the joined and left lines, the sleepers count). Default: true.",
  "events.cooldown_scale": "Multiplies every event's cooldown. 2.0 is a lodger that repeats itself half as often and so does less. Default: 1.0.",
  "events.disabled": "Event ids the brain never offers as choices. For servers that want, say, no take or no sign_word. See Events. Default: [].",
- "events.figure": "Whether the far presence and the replay figure are ever shown. Default: true.",
+ "events.figure": "Whether a figure is ever shown: the far presence, the replay, the ring round the house, and the one that comes to the bed (choke, shot_in_bed). Default: true.",
  "events.glitches": "Whether the client-rendered glitches (the flicker, the lights failing, the sun blinking, the red rain, the fog, the crosshair gone, the camera nudge, the field of view pulled, the music cut, the silence) may happen. Default: true.",
  "events.min_distance": "Blocks from the target within which nothing that changes a block happens while it is in view (calm 80, intense 48, relentless 32; 24 before, when the owner watched torches go up from farther off). Lowering it is the one way to make the lodger bolder, and it is still bounded by the rules. Default: 64.",
  "events.offered": "How many eligible events the brain is offered per plan. Fewer is a more predictable lodger; more is a longer prompt. Default: 8.",
