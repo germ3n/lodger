@@ -249,6 +249,8 @@ pub enum Need {
     LookingUp,
     /// Its house built whole.
     ItsHouse,
+    /// The target under water, their air going.
+    TargetUnderwater,
 }
 
 impl Need {
@@ -320,6 +322,7 @@ impl Need {
                 | Need::TargetSwimming
                 | Need::ItsHouseNear
                 | Need::LookingUp
+                | Need::TargetUnderwater
         )
     }
 
@@ -437,6 +440,7 @@ impl Need {
             Need::ItsHouseNear => "its house is not built, or they are not near it".to_string(),
             Need::LookingUp => "the target is not looking up at the sky".to_string(),
             Need::ItsHouse => "its house is not built".to_string(),
+            Need::TargetUnderwater => "the target is not under water".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -936,6 +940,8 @@ pub enum Action {
     WearsYourFace,
     /// One of their animals follows them at a distance all day, stopping when they stop.
     AnimalFollows,
+    /// Under water, their air runs out twice as fast, once.
+    HeldBreath,
 }
 
 /// Where a figure stands.
@@ -4190,6 +4196,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::AnimalFollows,
         false,
     ),
+    // docs/events_todo.md, 31.
+    row(
+        "held_breath",
+        4,
+        5,
+        &[TargetUnderwater],
+        4.0,
+        2,
+        Full,
+        Action::HeldBreath,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5015,6 +5033,7 @@ impl Event {
             | Action::EyeTurnsHome
             | Action::WearsYourFace
             | Action::AnimalFollows
+            | Action::HeldBreath
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5367,6 +5386,7 @@ impl Event {
             "peeks_from_ground" => "show the figure's head alone above the ground far off",
             "wears_your_face" => "put their own head on a zombie and walk it at them",
             "animal_follows" => "have one of their animals follow them all day",
+            "held_breath" => "make their air run out twice as fast under water",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

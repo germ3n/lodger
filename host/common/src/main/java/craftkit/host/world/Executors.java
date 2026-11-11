@@ -54,7 +54,7 @@ public final class Executors {
 	private static final long SCAN_LIMIT = 40_000;
 
 	/** What an executor needs beyond the level: the players by index, the senses to answer into, the hint sender. */
-	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves, Bobbers bobbers, FrameShows frameShows, Deaths deaths, Fights fights, OtherHouse otherHouse, Eyes eyes, Masks masks) {
+	public record Context(Senses senses, BiConsumer<ServerPlayer, HintPayload> sendHint, Looks looks, Later later, Poses poses, Figures figures, Holds holds, LootOffers loot, Hidden hidden, Warps warps, Temporaries temporaries, Charges charges, Gatherings gatherings, Footsteps footsteps, Approaches approaches, Shoves shoves, Bobbers bobbers, FrameShows frameShows, Deaths deaths, Fights fights, OtherHouse otherHouse, Eyes eyes, Masks masks, Breaths breaths) {
 	}
 
 	private Executors() {
@@ -144,6 +144,14 @@ public final class Executors {
 				case "push_player" -> pushPlayer(level, command, id, context);
 				case "set_respawn" -> setRespawn(level, command, id, context);
 				case "put_ender_chest" -> putEnderChest(level, command, id, context, data);
+				case "drain_air" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					context.breaths().drain(player, command.get("seconds").getAsFloat());
+					yield report(id, true, "");
+				}
 				case "wear_face" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					Entity entity = level.getEntity(command.get("entity").getAsInt());

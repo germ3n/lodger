@@ -1201,6 +1201,9 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Held breath** (`docs/events_todo.md`, 31): `held_breath`, stages 4 and 5, under water
+  (the memory keeps their air now): their air runs out twice as fast for twenty seconds
+  (`drain_air`, ABI 54, the host's `Breaths`). Tests: one in `act`. Was: no such event.
 - [x] **An animal follows** (`docs/events_todo.md`, 30): `animal_follows`, stages 3 to 5: the
   farm animal of theirs nearest them follows them a whole day, stopping six blocks off when they
   stop (an `approach` renewed every eighty seconds, a walk lasting ninety at most). Tests: one in

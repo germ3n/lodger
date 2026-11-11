@@ -227,7 +227,7 @@ group gone at once when any of it is), `lies` (on the ground on its side, as a b
 fast, a heavy fall's sound as it lands, gone there), `walks` (along its path at a walk, a point a
 block apart on the ground, facing its way, gone at its end), `faces` (facing a place, not them), `sunk` (its head alone above the ground, sinking out of sight
 once looked at); `approach`'s `to` (walking to a place instead, the ground there below -1000, then as it was); `set_respawn` (a bed made a player's respawn point, no message); `put_ender_chest` (a kept stack
-into a player's own ender chest, kept again when full); `wear_face` (a mob wearing a player's own head a while, never dropping it); `eye_home` (their next eye of ender
+into a player's own ender chest, kept again when full); `drain_air` (a player's air under water running out twice as fast a while); `wear_face` (a mob wearing a player's own head a while, never dropping it); `eye_home` (their next eye of ender
 thrown flies toward a place instead of the stronghold); `push_player` (a player pushed once, a block a tick at most on each axis); `hold_door` (a door that will not open for a while, each
 try refused, the door put back on their screen and a blow on it heard) and `upside_down` (hanging feet up from the first
 solid block over its place, as the game draws a player named Dinnerbone); and a figure wears its

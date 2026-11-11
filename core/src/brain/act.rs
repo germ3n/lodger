@@ -348,7 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
-        Action::PulledUnder => Some(block_of(memory.last.pos)),
+        Action::PulledUnder | Action::HeldBreath => Some(block_of(memory.last.pos)),
         Action::ItsLightsOn | Action::RespawnItsBed => memory.its_house().map(|h| h.site),
         Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
         Action::EyeTurnsHome => home.map(|h| h.center),
@@ -4894,6 +4894,15 @@ pub fn commands(
                     .collect()
             })
             .unwrap_or_default(),
+        // This dive, their air runs out twice as fast; nothing there.
+        Action::HeldBreath => vec![(
+            Command::DrainAir {
+                id: ids(),
+                player: target,
+                seconds: 20.0,
+            },
+            0,
+        )],
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -8676,6 +8685,40 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn under_water_their_air_runs_out_twice_as_fast() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.air = 300;
+        assert!(
+            !crate::brain::offer::meets(
+                crate::events::Need::TargetUnderwater,
+                &memory,
+                &Now::default()
+            ),
+            "full air"
+        );
+        memory.last.air = 200;
+        assert!(crate::brain::offer::meets(
+            crate::events::Need::TargetUnderwater,
+            &memory,
+            &Now::default()
+        ));
+        let event = find("held_breath").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::DrainAir { seconds, .. }, 0)] if *seconds <= 60.0),
+            "{made:?}"
+        );
     }
 
     #[test]

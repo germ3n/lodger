@@ -147,6 +147,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::LitUnderground => false,
         Need::TargetSwimming => last.online && last.swimming,
         Need::ItsHouse => memory.its_house().is_some(),
+        Need::TargetUnderwater => last.online && last.air < 280,
         Need::LookingUp => last.online && !last.indoors && !last.underground && last.pitch <= -35.0,
         Need::ItsHouseNear => memory.its_house().is_some_and(|house| {
             let at = [

@@ -580,6 +580,13 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// For `seconds` (a minute at most), `player`'s air runs out twice as fast under water; the
+    /// drowning itself is the game's. ABI 54.
+    DrainAir {
+        id: u64,
+        player: u32,
+        seconds: f32,
+    },
     /// The mob `entity` wears `player`'s own head for `seconds` (ten minutes at most), never
     /// dropping it; then what it wore before. ABI 54.
     WearFace {
@@ -1255,6 +1262,7 @@ impl Command {
             | Command::PutEnderChest { id, .. }
             | Command::EyeHome { id, .. }
             | Command::WearFace { id, .. }
+            | Command::DrainAir { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

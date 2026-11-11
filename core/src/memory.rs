@@ -412,6 +412,8 @@ pub struct Snapshot {
     pub riding: String,
     /// Swimming, as the game says.
     pub swimming: bool,
+    /// Their air, 300 full: less is under water.
+    pub air: i32,
     pub main_hand: String,
     /// Animals and villagers within 32 blocks, from the last entity pass.
     pub creatures_near: Vec<Creature>,
@@ -2067,6 +2069,7 @@ impl Memory {
         self.last.sleeping = player.sleeping;
         self.last.riding = player.riding.clone();
         self.last.swimming = player.swimming;
+        self.last.air = player.air;
         self.last.walking = player.movement.pace > 0.5;
         let crouched = player.sneaking && player.movement.still_seconds >= CROUCHED_STILL;
         if crouched && !self.last.crouched_still {
