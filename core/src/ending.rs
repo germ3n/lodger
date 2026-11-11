@@ -778,6 +778,7 @@ fn figure(
         faces: None,
         sunk: false,
         jumps: false,
+        rides: 0,
     }
 }
 

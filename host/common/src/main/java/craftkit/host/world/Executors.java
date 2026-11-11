@@ -792,6 +792,11 @@ public final class Executors {
 		if (command.has("rushes") && command.get("rushes").getAsBoolean()) {
 			context.figures().rushAt(skinOf, command.get("figure").getAsInt());
 		}
+		if (command.has("rides") && command.get("rides").getAsInt() != 0
+				&& !context.figures().ride(skinOf, command.get("figure").getAsInt(), command.get("rides").getAsInt())) {
+			context.figures().remove(skinOf, command.get("figure").getAsInt());
+			return report(id, false, "nothing to ride with that id, or someone rides it");
+		}
 		if (command.has("rides_behind") && command.get("rides_behind").getAsBoolean()
 				&& !context.figures().seatBehind(skinOf, command.get("figure").getAsInt())) {
 			context.figures().remove(skinOf, command.get("figure").getAsInt());

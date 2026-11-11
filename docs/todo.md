@@ -1390,6 +1390,9 @@ The `[x]` lines above, summed up by day:
 - [x] **Prints to the cave** (`docs/events_todo.md`, 44): `prints_to_the_cave`, stages 4 and 5,
   the target away or asleep with snow near: prints from their door toward the nearest cave,
   forty-eight blocks at most (`prints`). Tests: one in `act`. Was: no such event.
+- [x] **It rides their horse** (`docs/events_todo.md`, 45): `rides_their_horse`, stages 4 and 5:
+  their horse with a figure in its saddle for them alone, gone once seen and looked away from or as
+  anyone gets on (`figure`'s `rides`, ABI 54). Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

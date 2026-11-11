@@ -75,8 +75,10 @@ public final class Figures {
 		Vec3 jumpsFrom;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
 		int together;
-		/** The boat it sits in behind its player, on their client alone (ABI 54); null on foot. */
+		/** The boat it sits in behind its player, or the mount it rides, on their client alone (ABI 54); null on foot. */
 		net.minecraft.world.entity.Entity seat;
+		/** Its seat is a mount of its own (a horse, a cart), not the boat its player rows. */
+		boolean rides;
 		int pathIndex;
 		long untilTick;
 		final double vanishWithin;
@@ -335,7 +337,10 @@ public final class Figures {
 
 			// In their boat: gone when they leave it, or anyone else gets in; where the boat is.
 			if (figure.seat != null) {
-				if (figure.player.getVehicle() != figure.seat || figure.seat.getPassengers().size() != 1 || figure.seat.isRemoved()) {
+				boolean lost = figure.rides
+						? !figure.seat.getPassengers().isEmpty() || figure.seat.isRemoved()
+						: figure.player.getVehicle() != figure.seat || figure.seat.getPassengers().size() != 1 || figure.seat.isRemoved();
+				if (lost) {
 					unsend(figure);
 					it.remove();
 					sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail("left")));
@@ -521,6 +526,28 @@ public final class Figures {
 		var buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
 		buf.writeVarInt(boat.getId());
 		buf.writeVarIntArray(new int[] {player.getId(), figure.entityId});
+		player.connection.send(net.minecraft.network.protocol.game.ClientboundSetPassengersPacket.STREAM_CODEC.decode(buf));
+
+		return true;
+	}
+
+	/**
+	 * The figure {@code number} shown to {@code player} rides the entity {@code mountId} (ABI 54),
+	 * for their client alone: its passengers sent them as the figure. False when there is no such
+	 * entity or someone rides it.
+	 */
+	public boolean ride(ServerPlayer player, int number, int mountId) {
+		Figure figure = find(player, number);
+		net.minecraft.world.entity.Entity mount = player.level().getEntity(mountId);
+		if (figure == null || mount == null || !mount.getPassengers().isEmpty()) {
+			return false;
+		}
+		figure.seat = mount;
+		figure.rides = true;
+		figure.at = mount.position();
+		var buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+		buf.writeVarInt(mount.getId());
+		buf.writeVarIntArray(new int[] {figure.entityId});
 		player.connection.send(net.minecraft.network.protocol.game.ClientboundSetPassengersPacket.STREAM_CODEC.decode(buf));
 
 		return true;

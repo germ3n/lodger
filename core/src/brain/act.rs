@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::RidesTheirHorse => their_animal(memory, "horse", false).map(|h| block_of(h.pos)),
         // The cave nearest their door, its x and z, forty-eight blocks off at most along the way.
         Action::PrintsToTheCave => memory.usual_door().and_then(|door| {
             let cave = memory
@@ -1409,6 +1410,7 @@ fn figure_shown(
         faces: None,
         sunk: false,
         jumps: false,
+        rides: 0,
     }
 }
 
@@ -5180,6 +5182,25 @@ pub fn commands(
             )],
             _ => Vec::new(),
         },
+        // In their horse's saddle, for them alone; gone once seen and looked away from, or as
+        // anyone gets on it.
+        Action::RidesTheirHorse => their_animal(memory, "horse", false)
+            .map(|horse| {
+                let mut shown = figure_shown(ids, memory, target, block_of(horse.pos), 60.0, false);
+                if let Command::Figure {
+                    held,
+                    rides,
+                    once_seen,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *rides = horse.id;
+                    *once_seen = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -6512,6 +6533,7 @@ pub fn commands(
                         faces: None,
                         sunk: false,
                         jumps: false,
+                        rides: 0,
                     },
                     0,
                 )]
@@ -9999,6 +10021,34 @@ mod tests {
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Prints { from, .. }, 0)] if *from == door),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn their_horse_stands_with_a_figure_in_its_saddle() {
+        let mut memory = rich_memory();
+        memory.last.creatures_near.push(crate::memory::Creature {
+            id: 88,
+            kind: "horse".to_string(),
+            pos: [20.0, 64.0, 0.0],
+            pet: true,
+            ..Default::default()
+        });
+        let event = find("rides_their_horse").unwrap();
+        let horse = their_animal(&memory, "horse", false)
+            .expect("their horse")
+            .id;
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { rides, .. }, 0)] if *rides == horse),
             "{made:?}"
         );
     }

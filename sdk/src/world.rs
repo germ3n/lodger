@@ -1245,6 +1245,10 @@ pub enum Command {
         /// Jumping in place, again and again, as a player jumps. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         jumps: bool,
+        /// Riding the entity of this id (a horse, a minecart), for the player's client alone;
+        /// gone when anyone else gets on it or it is gone. 0 for none. ABI 54.
+        #[serde(default, skip_serializing_if = "is_zero_u32")]
+        rides: u32,
     },
     RemoveFigure {
         id: u64,

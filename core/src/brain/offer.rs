@@ -308,6 +308,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::AtTheirTable
         | Action::JumpingFar
         | Action::WavesFromInside
+        | Action::RidesTheirHorse
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
@@ -366,6 +367,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::AtTheirTable
         | Action::JumpingFar
         | Action::WavesFromInside
+        | Action::RidesTheirHorse
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)
