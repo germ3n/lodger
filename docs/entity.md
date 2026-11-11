@@ -639,6 +639,7 @@ a dock or bridge), never over anything a player built (see the
 | `top_of_the_ladder` | 4 | Down a shaft of their ladders, six blocks or more below its top, a figure stands at its mouth over the top ladder, looking down at them, empty-handed; gone when they climb within six blocks of it. | The target down a shaft of their ladders. |
 | `pulled_under` | 4 | Swimming, they are pulled down twice, a moment apart, as if taken by the ankle, a whirl of water and a drowning gasp, no harm, and let go (`push_player`, a block a tick at most). | The target swimming. |
 | `its_lights_on` | 4 | At night, eight to forty-eight blocks from the house it built (whole), its house goes dark (its wall torch taken away a while), then a lantern on its floor lights, and another, and another, three seconds apart, seen through its door and pane; half a minute on, all out again, its lanterns only, and its torch back. | Night, its house built, the target near it. |
+| `a_face_in_the_chest` | 3 | While they are away or asleep, their chest's grid is laid out as a face: what sits where the face goes moved aside into empty slots, then one item of their biggest stack into each of two eyes in the top row and a mouth of five along the third, nothing lost or added (`act::face_moves`). | The chest they use, a stack of seven or more in it and room to clear the face, the target away or asleep. |
 
 ### The ending
 

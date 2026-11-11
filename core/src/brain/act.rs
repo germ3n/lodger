@@ -350,6 +350,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::TheOffer => memory.usual_door(),
         Action::PulledUnder => Some(block_of(memory.last.pos)),
         Action::ItsLightsOn => memory.its_house().map(|h| h.site),
+        // The chest they use, when a face can be laid in it.
+        Action::FaceInTheChest => memory
+            .used_container()
+            .filter(|c| !c.is_furnace() && face_moves(&c.contents).is_some())
+            .map(|c| c.pos),
         // The top of the shaft they are down; its highest ladder when they have climbed out
         // since it was offered.
         Action::TopOfTheLadder => shaft_top(memory).or_else(|| {
@@ -1318,6 +1323,46 @@ pub fn texts(command: &Command) -> Vec<String> {
 /// A torch near `pos`, as a player would place one: on the ground within `settle` blocks down
 /// or up, else on a wall there, never floating. The mind knows positions, not terrain; the
 /// host finds the spot (`docs/sdk.md`, `set_block`).
+/// The face in a chest's grid of nine across: two eyes in the top row, a mouth of five along
+/// the bottom of the first three rows.
+pub const FACE: [u32; 7] = [2, 6, 19, 20, 21, 22, 23];
+
+/// The moves that lay a face in a chest (`a_face_in_the_chest`), `(from, to, count)` in order:
+/// each stack where the face goes moved whole to an empty slot elsewhere in the first three rows,
+/// then one item of their biggest stack into each slot of the face. None when there is no stack
+/// of seven or more to take from, or not room enough to clear the face.
+pub fn face_moves(contents: &[ItemStack]) -> Option<Vec<(u32, u32, u32)>> {
+    let in_grid = |slot: u32| slot < 27;
+    let mut occupied: std::collections::BTreeMap<u32, u32> = contents
+        .iter()
+        .filter(|s| in_grid(s.slot) && s.count > 0)
+        .map(|s| (s.slot, s.count))
+        .collect();
+    let mut source = contents
+        .iter()
+        .filter(|s| in_grid(s.slot) && s.count >= FACE.len() as u32)
+        .max_by_key(|s| (s.count, std::cmp::Reverse(s.slot)))?
+        .slot;
+    let mut moves = Vec::new();
+    for face in FACE {
+        let Some(count) = occupied.get(&face).copied() else {
+            continue;
+        };
+        let empty = (0..27).find(|s| !FACE.contains(s) && !occupied.contains_key(s))?;
+        moves.push((face, empty, count));
+        occupied.remove(&face);
+        occupied.insert(empty, count);
+        if source == face {
+            source = empty;
+        }
+    }
+    for face in FACE {
+        moves.push((source, face, 1));
+    }
+
+    Some(moves)
+}
+
 /// A block set on a floor spot, only into air or over one of `replace`: its lanterns and their
 /// going (`its_lights_on`).
 fn lantern(ids: &mut impl FnMut() -> u64, pos: BlockPos, block: &str, replace: &[&str]) -> Command {
@@ -4434,6 +4479,29 @@ pub fn commands(
                 made
             }
             None => Vec::new(),
+        },
+        // What sits where the face goes moved aside into empty slots, then one of their biggest
+        // stack into each of the face's slots: two eyes and a mouth, nothing lost or added.
+        Action::FaceInTheChest => match (pos, memory.used_container()) {
+            (Some(at), Some(chest)) => face_moves(&chest.contents)
+                .unwrap_or_default()
+                .into_iter()
+                .enumerate()
+                .map(|(i, (from_slot, to_slot, count))| {
+                    (
+                        Command::MoveItem {
+                            id: ids(),
+                            from: at,
+                            from_slot,
+                            to: at,
+                            to_slot,
+                            count,
+                        },
+                        i as u64 * 2,
+                    )
+                })
+                .collect(),
+            _ => Vec::new(),
         },
         Action::FigureWave => pos
             .map(|p| {
@@ -8082,6 +8150,46 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn a_face_is_laid_out_in_their_chest_with_nothing_lost() {
+        let stack = |slot, count| ItemStack {
+            id: "minecraft:cobblestone".to_string(),
+            count,
+            slot,
+        };
+        // A stack in an eye's slot, the biggest stack in the mouth.
+        let contents = vec![stack(2, 5), stack(21, 40), stack(0, 3)];
+        let moves = face_moves(&contents).unwrap();
+        // Replay the moves: every face slot holds one, nothing else is where the face goes.
+        let mut grid = [0u32; 27];
+        for s in &contents {
+            grid[s.slot as usize] = s.count;
+        }
+        let before: u32 = grid.iter().sum();
+        for (from, to, count) in &moves {
+            assert!(
+                grid[*from as usize] >= *count,
+                "a move from {from} of {count}: {grid:?}"
+            );
+            grid[*from as usize] -= count;
+            grid[*to as usize] += count;
+        }
+        assert_eq!(grid.iter().sum::<u32>(), before, "nothing lost or added");
+        for face in FACE {
+            assert_eq!(grid[face as usize], 1, "face slot {face}: {grid:?}");
+        }
+        // No stack of seven: no face.
+        assert!(face_moves(&[stack(0, 6), stack(1, 3)]).is_none());
+
+        let mut memory = rich_memory();
+        memory.containers[0].contents = contents.clone();
+        let event = find("a_face_in_the_chest").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some(memory.containers[0].pos));
+        let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), moves.len());
     }
 
     #[test]

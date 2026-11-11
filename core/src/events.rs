@@ -905,6 +905,8 @@ pub enum Action {
     PulledUnder,
     /// At night, its house goes dark, then its lights come on one by one, then out.
     ItsLightsOn,
+    /// Their chest's grid laid out as a face: two eyes and a mouth of single items.
+    FaceInTheChest,
 }
 
 /// Where a figure stands.
@@ -4015,6 +4017,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ItsLightsOn,
         false,
     ),
+    // docs/events_todo.md, 17.
+    row(
+        "a_face_in_the_chest",
+        3,
+        5,
+        &[UsedContainer, TargetAwayOrAsleep],
+        4.0,
+        2,
+        Full,
+        Action::FaceInTheChest,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4800,6 +4814,7 @@ impl Event {
             | Action::ReplantOther
             | Action::IcePath
             | Action::ItsLightsOn
+            | Action::FaceInTheChest
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5144,6 +5159,7 @@ impl Event {
             "top_of_the_ladder" => "stand the figure at the top of their shaft looking down",
             "pulled_under" => "pull them under the water a moment as they swim",
             "its_lights_on" => "light its house one light at a time, then put them out",
+            "a_face_in_the_chest" => "lay out a face in their chest's grid",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

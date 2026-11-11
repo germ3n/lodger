@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A face in the chest** (`docs/events_todo.md`, 17): `a_face_in_the_chest`, stages 3 to
+  5, the target away or asleep: their chest's grid laid out as two eyes and a mouth of single
+  items from their biggest stack, what sat there moved aside first, nothing lost or added
+  (`act::face_moves`). Tests: one in `act`. Was: no such event.
 - [x] **Its lights on** (`docs/events_todo.md`, 16): `its_lights_on`, stages 4 and 5, at night
   eight to forty-eight blocks from its house built whole (`Memory::its_house`): its wall torch
   taken away a while, three lanterns lit on its floor one by one, then all out, its lanterns
