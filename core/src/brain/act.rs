@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::ItsBanner => memory.its_house().map(|h| h.site),
         // Twenty-five blocks ahead of where they look, on the ground.
         Action::StandsInTheRain => {
             let at = block_of(memory.last.pos);
@@ -5924,6 +5925,26 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // On its house's front beside the door, outside, facing out: only into air.
+        Action::ItsBanner => match memory.its_house() {
+            Some(house) => vec![(
+                Command::PlaceBlueprint {
+                    id: ids(),
+                    at: house.site,
+                    parts: crate::building::house_banner(house.way)
+                        .into_iter()
+                        .map(|p| craftkit::world::BlueprintPart {
+                            at: p.at,
+                            block: p.block.to_string(),
+                            state: p.state,
+                        })
+                        .collect(),
+                    replace: Vec::new(),
+                },
+                0,
+            )],
+            None => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -8770,6 +8791,8 @@ mod tests {
                 || event.id == "firework_over_its_house"
                 // What it took, which this memory holds not: its own test.
                 || event.id == "chicken_lays"
+                // Its house must stand first: its own test.
+                || event.id == "its_banner"
                 // Something held, monsters away: its own test.
                 || event.id == "slips_from_hand"
                 // Their route, which this memory has not: its own test.
@@ -11236,6 +11259,35 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Figure { faces: Some(f), .. }, 0)] if f[1] >= 300.0),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_black_banner_hangs_on_its_house() {
+        let mut memory = rich_memory();
+        memory.builds.push(crate::building::Build {
+            kind: "house_near".to_string(),
+            site: [40, 63, 0],
+            way: [0, 1],
+            laid: crate::building::house([0, 1], false).len(),
+            ..Default::default()
+        });
+        let event = find("its_banner").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let [(Command::PlaceBlueprint { parts, .. }, 0)] = &made[..] else {
+            panic!("{made:?}")
+        };
+        assert_eq!(parts[0].block, "minecraft:black_wall_banner");
+        assert_eq!(
+            parts[0].state, "facing=south",
+            "facing out of the front, built facing south"
         );
     }
 

@@ -157,6 +157,15 @@ pub fn house_lights(site: BlockPos, way: [i32; 2]) -> (BlockPos, Vec<BlockPos>) 
     )
 }
 
+/// The black banner `its_banner` hangs on its house's front, beside the door, outside, as a
+/// blueprint part from its site.
+pub fn house_banner(way: [i32; 2]) -> Vec<Part> {
+    turned(
+        vec![with(1, 2, 3, "minecraft:black_wall_banner", "facing=south")],
+        way,
+    )
+}
+
 /// The bed `respawn_its_bed` lays in its house, along its left wall, the head toward the back,
 /// as blueprint parts from its site, and where the head stands.
 pub fn house_bed(site: BlockPos, way: [i32; 2]) -> (Vec<Part>, BlockPos) {
