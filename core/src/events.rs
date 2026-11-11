@@ -840,8 +840,9 @@ pub enum Action {
     WallSwap(&'static str),
     /// The bed breaks under them as they lie down; its item drops where it stood.
     BedBreaks,
-    /// Asleep, a figure walks in from their door to the bed's side, takes out a lead and chokes
-    /// them for a few seconds, this much harm a squeeze, never below half a heart.
+    /// Asleep, their door opens and is left open, and a figure walks in from it to the bed's
+    /// side, takes out a lead and chokes them for a few seconds, this much harm a squeeze, never
+    /// below half a heart.
     Choke(f32),
 }
 

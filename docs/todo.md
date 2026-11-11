@@ -1203,8 +1203,9 @@ The `[x]` lines above, summed up by day:
   link.
 - [x] **The figure chokes them in bed** (owner: "can you add an event where figure walks up to
   you while sleeping, then pulls out something and chokes you?"; a lead, held in bed): `choke`,
-  stages 4 and 5, as they sleep with a door and the bed known. The figure comes in at their
-  door; the host walks it slowly to the bed's side by the pillow (`ChokeWay`: the side nearer
+  stages 4 and 5, as they sleep with a door and the bed known. Their door opens, heard, and is
+  left open (owner: "will the door it came in through be left open after waking up"), and the
+  figure comes in at it; the host walks it slowly to the bed's side by the pillow (`ChokeWay`: the side nearer
   it with room to stand, then beside the foot, then past it) and holds them asleep meanwhile,
   the night not passing (their sleep timer kept at nothing); there it takes out a lead and
   squeezes once a second for five seconds, a heart each, never below half a heart, the harm taken
