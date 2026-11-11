@@ -308,6 +308,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         // The middle of the house: the ring stands round it.
         Action::RingOfFigures(_) => home.map(|h| h.center),
         Action::UpsideDown => home.and_then(|h| h.bed),
+        Action::Crawl => memory.usual_door(),
         Action::Figure(FigureWhere::Roof, _, _) => {
             home.map(|h| [h.center[0], h.floor_y + 5, h.center[2]])
         }
@@ -1104,6 +1105,7 @@ fn figure_shown(
         copy_crouch: false,
         swinging: false,
         upside_down: false,
+        crawls: false,
     }
 }
 
@@ -3915,6 +3917,33 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // From their doorway across the floor to the bed, on its belly, and gone there.
+        Action::Crawl => match (pos, memory.home.as_ref().and_then(|h| h.bed)) {
+            (Some(door), Some(bed)) => {
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [door[0], door[1] - 1, door[2]],
+                    40.0,
+                    false,
+                );
+                if let Command::Figure {
+                    held,
+                    path,
+                    crawls,
+                    pos,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *crawls = true;
+                    *path = vec![*pos, [bed[0] as f64 + 0.5, pos[1], bed[2] as f64 + 0.5]];
+                }
+                vec![(shown, 0)]
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -5235,6 +5264,7 @@ pub fn commands(
                         copy_crouch: matches!(where_, FigureWhere::FarCopying),
                         swinging: matches!(where_, FigureWhere::FarWorking),
                         upside_down: false,
+                        crawls: false,
                     },
                     0,
                 )]
@@ -7552,6 +7582,40 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn at_night_the_figure_crawls_from_their_door_to_their_bed() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(3);
+        let crawl = find("the_crawl").unwrap();
+        let door = memory.usual_door().unwrap();
+        let bed = memory.home.as_ref().unwrap().bed.unwrap();
+        let p = place(crawl, &memory, &mut rng);
+        assert_eq!(p, Some(door));
+        let made = commands(crawl, p, &memory, &mut ids(), &Now::default(), None);
+        let [(
+            Command::Figure {
+                crawls: true,
+                path,
+                pos,
+                held,
+                ..
+            },
+            0,
+        )] = &made[..]
+        else {
+            panic!("{made:?}");
+        };
+        assert!(held.id.is_empty());
+        assert_eq!(path.first(), Some(pos), "from the doorway");
+        let end = path.last().unwrap();
+        assert_eq!(
+            [end[0], end[2]],
+            [bed[0] as f64 + 0.5, bed[2] as f64 + 0.5],
+            "to the bed"
+        );
+        assert_eq!(end[1], door[1] as f64, "along the floor");
     }
 
     #[test]

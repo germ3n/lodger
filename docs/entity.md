@@ -625,6 +625,7 @@ a dock or bridge), never over anything a player built (see the
 | `figure_waves` | 3 | The far figure, its name shown, raises its arm once and is gone. Owner's pick. | The target outdoors. |
 | `ring_of_figures` | 4 | At night, while they are in the house, eight figures in their skin stand in a ring round it, twenty blocks out, on the ground, empty-handed, facing in; each is gone once they have seen it and looked away. (The owner: "multiple figures standing in a circle around our home".) | The home known, night, the target indoors. |
 | `upside_down` | 4 | As they wake, the figure hangs feet up from the ceiling over the bed, facing them, empty-handed (the host finds the ceiling, the first solid block above the bed; the game draws it so as it draws a player named Dinnerbone); gone once seen and looked away from. A waking starts it or `foot_of_bed`, one of those the stage offers. | The target waking, a bed. |
+| `the_crawl` | 4 | At night, while they are in the house, a figure crawls on its belly from their doorway across the floor to the bed, head first, slower than a walk, and is gone at the bed (`figure`'s `crawls`: the game's swimming pose on land, a glide eased by their client). | Night, the target indoors, a bed and a door known. |
 
 ### The ending
 

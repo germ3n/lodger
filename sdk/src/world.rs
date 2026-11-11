@@ -1131,6 +1131,10 @@ pub enum Command {
         /// game draws a player named Dinnerbone. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         upside_down: bool,
+        /// Crawling on its belly along `path`, gliding (eased by their client), slower than a
+        /// walk, and gone at its end. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        crawls: bool,
     },
     RemoveFigure {
         id: u64,

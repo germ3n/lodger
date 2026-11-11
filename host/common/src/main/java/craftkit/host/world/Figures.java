@@ -55,6 +55,10 @@ public final class Figures {
 		 * up close (the owner: "the walking up to the bed is very laggy").
 		 */
 		boolean glides;
+		/** How far it glides a tick. */
+		double speed = ChokeWay.PER_TICK;
+		/** On its belly, as the game draws a swimmer on land (ABI 54). */
+		boolean crawls;
 		int pathIndex;
 		long untilTick;
 		final double vanishWithin;
@@ -137,6 +141,14 @@ public final class Figures {
 	 * figure's profile takes that name (it shows no name) and its layers the cape's bit.
 	 */
 	public void show(ServerLevel level, ServerPlayer player, int number, ServerPlayer skinOf, Vec3 pos, List<Vec3> path, ItemStack held, boolean nameShown, float seconds, float vanishWithin, boolean mirror, boolean onceSeen, boolean copyCrouch, boolean swinging, boolean upsideDown) {
+		show(level, player, number, skinOf, pos, path, held, nameShown, seconds, vanishWithin, mirror, onceSeen, copyCrouch, swinging, upsideDown, false);
+	}
+
+	/** How far a crawling figure glides a tick: slower than a creeping walk. */
+	static final double CRAWL_PER_TICK = 0.035;
+
+	/** {@link #show} crawling on its belly along its path, gliding, and gone at its end (ABI 54). */
+	public void show(ServerLevel level, ServerPlayer player, int number, ServerPlayer skinOf, Vec3 pos, List<Vec3> path, ItemStack held, boolean nameShown, float seconds, float vanishWithin, boolean mirror, boolean onceSeen, boolean copyCrouch, boolean swinging, boolean upsideDown, boolean crawls) {
 		remove(player, number);
 
 		Vec3 at = upsideDown ? hanging(level, pos) : ground(level, pos);
@@ -151,6 +163,11 @@ public final class Figures {
 		figure.copyCrouch = copyCrouch;
 		figure.swinging = swinging;
 		figure.layers = (byte) (layers(skinOf) | (upsideDown ? net.minecraft.world.entity.player.PlayerModelPart.CAPE.getMask() : 0));
+		if (crawls) {
+			figure.crawls = true;
+			figure.glides = true;
+			figure.speed = CRAWL_PER_TICK;
+		}
 		active.add(figure);
 		send(level, figure, nameShown);
 	}
@@ -261,6 +278,12 @@ public final class Figures {
 
 			if (figure.glides && !figure.path.isEmpty()) {
 				glide(figure);
+				// A glide's end: one that stays stands there; the rest are gone (a crawl at the bed).
+				if (figure.path.isEmpty() && !figure.stays) {
+					unsend(figure);
+					it.remove();
+					sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail("walked")));
+				}
 				continue;
 			}
 			if (!figure.path.isEmpty() && tick % STEP_TICKS == 0 && figure.player.level() instanceof ServerLevel level) {
@@ -288,7 +311,7 @@ public final class Figures {
 
 	/** A gliding figure a tick along its path, its place and facing sent; it stops at the end. */
 	private static void glide(Figure figure) {
-		double left = ChokeWay.PER_TICK;
+		double left = figure.speed;
 		while (left > 1e-9 && figure.pathIndex < figure.path.size()) {
 			Vec3 next = figure.path.get(figure.pathIndex);
 			double gap = figure.at.distanceTo(next);
@@ -304,9 +327,12 @@ public final class Figures {
 		if (figure.pathIndex >= figure.path.size()) {
 			figure.path = List.of();
 		}
-		Vec3 to = figure.player.position().subtract(figure.at);
+		// Facing them as it walks; a crawl faces the way it goes, head first.
+		Vec3 to = figure.crawls && figure.pathIndex < figure.path.size()
+				? figure.path.get(figure.pathIndex).subtract(figure.at)
+				: figure.player.position().subtract(figure.at);
 		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
-		float pitch = (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
+		float pitch = figure.crawls ? 0 : (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
 		figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
 				net.minecraft.world.entity.PositionPath.of(figure.at), yaw, pitch, true));
 		var head = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
@@ -315,7 +341,7 @@ public final class Figures {
 		figure.player.connection.send(net.minecraft.network.protocol.game.ClientboundRotateHeadPacket.STREAM_CODEC.decode(head));
 	}
 
-	/** The figure's pose to its player: crouching or standing. */
+	/** The figure's pose to its player: crouching, standing, or on its belly. */
 	@SuppressWarnings("unchecked")
 	private static void pose(Figure figure, net.minecraft.world.entity.Pose pose) {
 		try {
@@ -917,6 +943,9 @@ public final class Figures {
 				.orElseThrow(() -> new IllegalStateException("no player entity type"));
 		figure.player.connection.send(new ClientboundAddEntityPacket(figure.entityId, figure.uuid, figure.at.x, figure.at.y, figure.at.z, pitch, yaw, playerType, 0, Vec3.ZERO, yaw));
 		sendLayers(figure);
+		if (figure.crawls) {
+			pose(figure, net.minecraft.world.entity.Pose.SWIMMING);
+		}
 		if (!figure.held.isEmpty()) {
 			figure.player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));
 		}

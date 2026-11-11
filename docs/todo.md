@@ -1201,6 +1201,11 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **The crawl** (`docs/events_todo.md`, 3): `the_crawl`, stages 4 and 5, at night with the
+  target indoors and a bed and door known: a figure crawls on its belly from their doorway to the
+  bed, head first, a glide slower than a walk, gone at the bed (`figure`'s `crawls`, ABI 54: the
+  swimming pose on land; a glide that does not stay now ends the figure). Tests: one in `act`.
+  Was: no such event.
 - [x] **The figure upside down over the bed** (`docs/events_todo.md`, 2): `upside_down`,
   stages 4 and 5, as they wake (a waking picks it or `foot_of_bed`, of those the stage offers,
   `brain::WOKE_EVENTS`): the figure hangs feet up from the ceiling over the bed, gone once seen
