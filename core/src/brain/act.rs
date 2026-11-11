@@ -303,6 +303,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             pick_ref(&candidates, rng)
         }
         Action::BedBreaks => home.and_then(|h| h.bed),
+        // Their door: where the figure comes in from.
+        Action::Choke(_) => memory.usual_door(),
         Action::Figure(FigureWhere::Roof, _, _) => {
             home.map(|h| [h.center[0], h.floor_y + 5, h.center[2]])
         }
@@ -5048,6 +5050,50 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // Asleep: the figure in their doorway walks slowly to the bed's side (the host finds it,
+        // by the pillow), takes out a lead and chokes them five seconds, never a kill; their
+        // eyes kept open to see it come, and the night held meanwhile.
+        Action::Choke(damage) => pos
+            .map(|door| {
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [door[0], door[1] - 1, door[2]],
+                    20.0,
+                    false,
+                );
+                if let Command::Figure { held, .. } = &mut shown {
+                    *held = ItemStack::default();
+                }
+                vec![
+                    (
+                        Command::Hint {
+                            id: ids(),
+                            player: target,
+                            hint: "eyes_open".to_string(),
+                            pos: None,
+                            seconds: 14.0,
+                            detail: String::new(),
+                        },
+                        0,
+                    ),
+                    (shown, 0),
+                    (
+                        Command::Choke {
+                            id: ids(),
+                            player: target,
+                            figure: 1,
+                            item: "minecraft:lead".to_string(),
+                            seconds: 5.0,
+                            damage,
+                            spare: true,
+                        },
+                        1,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         Action::BedBreaks => pos
             .map(|bed| {
                 vec![
@@ -7428,6 +7474,41 @@ mod tests {
         assert!(
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
+        );
+    }
+
+    #[test]
+    fn asleep_the_figure_comes_in_at_their_door_and_chokes_them_with_a_lead() {
+        let memory = rich_memory();
+        let mut rng = Rng::new(8);
+        let choke = find("choke").unwrap();
+        assert_eq!(choke.effect(), "night");
+        assert!(choke.needs.contains(&crate::events::Need::TargetInBed));
+        let door = memory.usual_door().expect("a door");
+        let p = place(choke, &memory, &mut rng);
+        assert_eq!(p, Some(door), "it comes in at their door");
+
+        let made = commands(choke, p, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 3, "{made:?}");
+        // Their eyes kept open to see it come, longer than its walk and its squeezing.
+        assert!(
+            matches!(&made[0], (Command::Hint { hint, seconds, .. }, 0) if hint == "eyes_open" && *seconds >= 12.0),
+            "{:?}",
+            made[0]
+        );
+        // In the doorway, standing on the door's own level, empty-handed until the bed.
+        assert!(
+            matches!(&made[1], (Command::Figure { pos, held, path, figure: 1, .. }, 0)
+                if pos[1] == door[1] as f64 && held.id.is_empty() && path.is_empty()),
+            "{:?}",
+            made[1]
+        );
+        // After the figure is shown: the lead, a heart a squeeze, never a kill.
+        assert!(
+            matches!(&made[2], (Command::Choke { item, damage, spare: true, figure: 1, seconds, .. }, 1)
+                if item == "minecraft:lead" && *damage == 2.0 && *seconds == 5.0),
+            "{:?}",
+            made[2]
         );
     }
 

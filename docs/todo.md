@@ -1201,6 +1201,17 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **The figure chokes them in bed** (owner: "can you add an event where figure walks up to
+  you while sleeping, then pulls out something and chokes you?"; a lead, held in bed): `choke`,
+  stages 4 and 5, as they sleep with a door and the bed known. The figure comes in at their
+  door; the host walks it slowly to the bed's side by the pillow (`ChokeWay`: the side nearer
+  it with room to stand, then beside the foot, then past it) and holds them asleep meanwhile,
+  the night not passing (their sleep timer kept at nothing); there it takes out a lead and
+  squeezes once a second for five seconds, a heart each, never below half a heart, the harm taken
+  without waking them, each a drowning gasp, the hurt's jolt, the dark closing in (`choke`, ABI
+  54). Their client keeps its own fade to sleep off (`eyes_open`), so they see it come. Leave Bed
+  breaks free and it is gone; otherwise they wake as it ends. In the sleep events' group, so
+  `calm` leaves it out. Tests: one in `act`, `ChokeWayTest` in JUnit. Was: no such event.
 - [x] **A long stay's memory is saved whole** (owner: "i left my world and rejoined and the
   stage reset"; "it seems like it dropped the whole memory"): the mind's bytes are saved as an
   NBT byte array (`SavedMemory`), as large as they grow, and an older save's base64 string is

@@ -551,6 +551,24 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_false")]
         spare: bool,
     },
+    /// `player`, asleep, is kept lying in bed, the night not passing meanwhile, while the figure
+    /// `figure` walks slowly from where it stands (seven blocks off at most) to their bed's
+    /// side by the pillow, the side nearer it with room to stand; there it takes `item` into its
+    /// hand and, for `seconds` (six at most), squeezes once a second: its arm moves, and
+    /// `damage` (half hearts) is taken without waking them, with a drowning gasp, the hurt's
+    /// jolt and the dark closing in; with `spare` never below half a heart. Leaving the bed ends
+    /// it at once, the figure gone; at its end they wake. Refused when they are not asleep.
+    /// ABI 54.
+    Choke {
+        id: u64,
+        player: u32,
+        figure: u32,
+        item: String,
+        seconds: f32,
+        damage: f32,
+        #[serde(default, skip_serializing_if = "is_false")]
+        spare: bool,
+    },
     /// Lay blocks relative to `at`: `parts`' each `at` an offset, `y` 0 the ground's own
     /// block. With `at`'s y below -1000 the host finds the ground there (the highest block
     /// that stops movement, leaves left out, water counting) and says it in its report
@@ -1129,6 +1147,7 @@ impl Command {
             | Command::OfferTrade { id, .. }
             | Command::LightPortal { id, .. }
             | Command::FigureSwing { id, .. }
+            | Command::Choke { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

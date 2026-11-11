@@ -139,7 +139,8 @@ As little as possible, because the mod is about not knowing:
   subtitles), `crosshair_gone`, `hotbar_slip` (the selected slot jumps to an item once),
   `camera_nudge` (two degrees toward the place, once), `fov_pull` (the field of view narrows
   over the hint's time and snaps back), `snow_indoors` and `rain_indoors` (snow or rain falls
-  around the player), `ripples` and `bobber` (on water at a place), `advancement_toast`;
+  around the player), `ripples` and `bobber` (on water at a place), `advancement_toast`,
+  `eyes_open` (lying in bed, the game's fade to sleep held off: `choke`);
 - whether this player is the target, so a witness's client drops sounds and figures aimed at
   someone else. The server never sends them to a witness anyway; the flag is a second guard.
 

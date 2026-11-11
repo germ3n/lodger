@@ -840,6 +840,9 @@ pub enum Action {
     WallSwap(&'static str),
     /// The bed breaks under them as they lie down; its item drops where it stood.
     BedBreaks,
+    /// Asleep, a figure walks in from their door to the bed's side, takes out a lead and chokes
+    /// them for a few seconds, this much harm a squeeze, never below half a heart.
+    Choke(f32),
 }
 
 /// Where a figure stands.
@@ -3729,6 +3732,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::BedBreaks,
         false,
     ),
+    // The owner: "a figure walks up to you while sleeping, then pulls out something and chokes
+    // you"; a lead, held in bed. By the harm stages: from 4, never a kill.
+    row(
+        "choke",
+        4,
+        5,
+        &[TargetInBed, Bed, Door, Night],
+        6.0,
+        2,
+        Full,
+        Action::Choke(2.0),
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4554,6 +4570,7 @@ impl Event {
             | Action::WokeElsewhere
             | Action::OtherHouse
             | Action::BedBreaks
+            | Action::Choke(_)
             | Action::BedOccupied => "night",
         }
     }
@@ -4820,6 +4837,7 @@ impl Event {
             "torch_blue" => "make one of their torches burn blue",
             "window_bars" => "turn a window pane to iron bars",
             "bed_breaks" => "break the bed under them as they lie down",
+            "choke" => "walk to their bed as they sleep and choke them with a lead",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

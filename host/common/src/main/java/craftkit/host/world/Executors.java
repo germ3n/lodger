@@ -139,6 +139,7 @@ public final class Executors {
 				case "light_portal" -> lightPortal(level, command, id);
 				case "place_blueprint" -> placeBlueprint(level, command, id);
 				case "figure_swing" -> figureSwing(level, command, id, context);
+				case "choke" -> choke(level, command, id, context);
 				case "dig_in" -> digIn(level, command, id, context);
 				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
@@ -2058,6 +2059,31 @@ public final class Executors {
 	}
 
 	/** The figure shown to a player swings once, perhaps a hit, never below half a heart with spare (ABI 33). */
+	/** A figure chokes them where they lie, held asleep meanwhile (ABI 54). */
+	private static JsonObject choke(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		if (!player.isSleeping()) {
+			return report(id, false, "the player is not asleep");
+		}
+		ItemStack item = ItemStack.EMPTY;
+		String itemId = command.has("item") ? command.get("item").getAsString() : "";
+		if (!itemId.isEmpty()) {
+			Optional<Holder.Reference<Item>> kind = BuiltInRegistries.ITEM.get(Identifier.parse(itemId));
+			if (kind.isEmpty()) {
+				return report(id, false, "no such item");
+			}
+			item = new ItemStack(kind.get().value(), 1);
+		}
+		boolean held = context.figures().choke(player, command.get("figure").getAsInt(), item,
+				command.get("seconds").getAsFloat(), command.get("damage").getAsFloat(),
+				command.has("spare") && command.get("spare").getAsBoolean());
+
+		return held ? report(id, true, "") : report(id, false, "no figure shown with that number");
+	}
+
 	private static JsonObject figureSwing(ServerLevel level, JsonObject command, long id, Context context) {
 		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 		if (player == null) {

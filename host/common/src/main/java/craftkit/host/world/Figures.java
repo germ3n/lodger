@@ -44,9 +44,11 @@ public final class Figures {
 		final int entityId;
 		final UUID uuid;
 		final GameProfile profile;
-		final ItemStack held;
+		ItemStack held;
 		Vec3 at;
-		final List<Vec3> path;
+		List<Vec3> path;
+		/** Stands where its path ends instead of going: a choke's figure at the bed (ABI 54). */
+		boolean stays;
 		int pathIndex;
 		long untilTick;
 		final double vanishWithin;
@@ -91,6 +93,7 @@ public final class Figures {
 		active.clear();
 		sightings.clear();
 		digs.clear();
+		chokes.clear();
 	}
 
 	/** The figures gone since the last ask, each with how it was looked at. */
@@ -149,10 +152,11 @@ public final class Figures {
 		return removed;
 	}
 
-	/** Once a tick: the paths walked, the vanishing, the time, the digs. */
+	/** Once a tick: the paths walked, the vanishing, the time, the digs, the chokes. */
 	public void tick() {
 		tick++;
 		tickDigs();
+		tickChokes();
 		Iterator<Figure> it = active.iterator();
 		while (it.hasNext()) {
 			Figure figure = it.next();
@@ -204,6 +208,10 @@ public final class Figures {
 			if (!figure.path.isEmpty() && tick % STEP_TICKS == 0 && figure.player.level() instanceof ServerLevel level) {
 				// The path's points in order, its first one first: the index used to move on before
 				// it was read, so the first point was skipped and a path of one ended at once.
+				if (figure.pathIndex >= figure.path.size() && figure.stays) {
+					figure.path = List.of();
+					continue;
+				}
 				if (figure.pathIndex >= figure.path.size()) {
 					unsend(figure);
 					it.remove();
@@ -402,6 +410,176 @@ public final class Figures {
 		}
 
 		return false;
+	}
+
+	/** A player held asleep while a figure chokes them (ABI 54). */
+	private static final class Choke {
+		final ServerPlayer player;
+		final int number;
+		final ItemStack item;
+		final long fromTick;
+		final long untilTick;
+		final float damage;
+		final boolean spare;
+		boolean began;
+
+		Choke(ServerPlayer player, int number, ItemStack item, long fromTick, long untilTick, float damage, boolean spare) {
+			this.player = player;
+			this.number = number;
+			this.item = item;
+			this.fromTick = fromTick;
+			this.untilTick = untilTick;
+			this.damage = damage;
+			this.spare = spare;
+		}
+	}
+
+	/** The longest a choke squeezes. */
+	static final float MOST_CHOKE_SECONDS = 6;
+
+	private final List<Choke> chokes = new ArrayList<>();
+
+	/**
+	 * Hold {@code player}, asleep, in bed while the figure {@code number} walks from where it
+	 * stands to their bed's side ({@link ChokeWay}), then for {@code seconds} let it squeeze
+	 * once a second (ABI 54). It stays where its walk ends. False when they are not asleep or
+	 * no such figure is shown.
+	 */
+	public boolean choke(ServerPlayer player, int number, ItemStack item, float seconds, float damage, boolean spare) {
+		if (!player.isSleeping() || !(player.level() instanceof ServerLevel level)) {
+			return false;
+		}
+		Figure figure = find(player, number);
+		if (figure == null) {
+			return false;
+		}
+		Vec3 to = bedside(level, player, figure.at);
+		List<Vec3> walk = new ArrayList<>();
+		for (double[] p : ChokeWay.walk(figure.at.x, figure.at.y, figure.at.z, to.x, to.y, to.z)) {
+			walk.add(new Vec3(p[0], p[1], p[2]));
+		}
+		figure.path = walk;
+		figure.pathIndex = 0;
+		figure.stays = true;
+		// A stride each half second from the next step on; it squeezes once at the bed.
+		long arrives = tick - tick % STEP_TICKS + (long) walk.size() * STEP_TICKS;
+		long squeezes = Math.round(Math.max(1, Math.min(seconds, MOST_CHOKE_SECONDS)) * 20);
+		figure.untilTick = Math.max(figure.untilTick, arrives + squeezes + 40);
+		chokes.removeIf(choke -> choke.player == player);
+		chokes.add(new Choke(player, number, item, arrives, arrives + squeezes, damage, spare));
+
+		return true;
+	}
+
+	/**
+	 * Where the figure stands at the bed they lie in: the first of {@link ChokeWay#bedside}
+	 * with room for it (nothing solid at its feet or head, the floor solid); where it is when
+	 * none has.
+	 */
+	private static Vec3 bedside(ServerLevel level, ServerPlayer player, Vec3 from) {
+		BlockPos head = player.getSleepingPos().orElse(null);
+		if (head == null) {
+			return from;
+		}
+		var state = level.getBlockState(head);
+		if (!state.hasProperty(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING)) {
+			return from;
+		}
+		var facing = state.getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+		for (int[] spot : ChokeWay.bedside(head.getX(), head.getZ(), facing.getStepX(), facing.getStepZ(), from.x, from.z)) {
+			BlockPos feet = new BlockPos(spot[0], head.getY(), spot[1]);
+			if (open(level, feet) && open(level, feet.above()) && !open(level, feet.below())) {
+				return new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+			}
+		}
+
+		return from;
+	}
+
+	private static boolean open(ServerLevel level, BlockPos pos) {
+		return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
+	}
+
+	private Figure find(ServerPlayer player, int number) {
+		for (Figure figure : active) {
+			if (figure.player == player && figure.number == number) {
+				return figure;
+			}
+		}
+
+		return null;
+	}
+
+	/** Each choke a tick on: their sleep held, the squeezes, its end when they leave the bed. */
+	private void tickChokes() {
+		Iterator<Choke> it = chokes.iterator();
+		while (it.hasNext()) {
+			Choke choke = it.next();
+			ServerPlayer player = choke.player;
+			// Out of bed, by Leave Bed or anything else: it lets go, and it is gone.
+			if (player.isRemoved() || !player.isSleeping() || !(player.level() instanceof ServerLevel level)) {
+				remove(player, choke.number);
+				it.remove();
+				continue;
+			}
+			if (tick >= choke.untilTick) {
+				remove(player, choke.number);
+				player.stopSleepInBed(true, true);
+				it.remove();
+				continue;
+			}
+			// The night does not pass under them: their sleep never grows deep enough.
+			holdSleep(player);
+			Figure figure = find(player, choke.number);
+			if (tick < choke.fromTick) {
+				continue;
+			}
+			// At the bed: it takes the item out.
+			if (!choke.began) {
+				choke.began = true;
+				if (figure != null) {
+					figure.held = choke.item;
+					player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));
+				}
+				player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DARKNESS,
+						(int) (choke.untilTick - tick) + 40, 0, false, false));
+			}
+			if ((tick - choke.fromTick) % 20 == 0) {
+				squeeze(level, player, figure, choke);
+			}
+		}
+	}
+
+	/** One squeeze: its arm, the harm without waking them, a drowning gasp and the jolt. */
+	private static void squeeze(ServerLevel level, ServerPlayer player, Figure figure, Choke choke) {
+		if (figure != null) {
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket(figure.entityId,
+					net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
+		}
+		float health = player.getHealth();
+		float harm = choke.spare ? Spare.harm(choke.damage, health, 1f) : choke.damage;
+		var drowning = level.damageSources().drown();
+		if (harm >= health) {
+			// Not spared and the last of them: a real death, which wakes them.
+			player.hurtServer(level, drowning, harm);
+			return;
+		}
+		if (harm > 0) {
+			player.setHealth(health - harm);
+		}
+		// The hurt's jolt and the drowning sound, without the hurt that would wake them.
+		level.broadcastDamageEvent(player, drowning);
+	}
+
+	/** Their sleep timer back to nothing, so the night waits (the game skips it at 100). */
+	private static void holdSleep(ServerPlayer player) {
+		try {
+			var field = net.minecraft.world.entity.player.Player.class.getDeclaredField("sleepCounter");
+			field.setAccessible(true);
+			field.setInt(player, 0);
+		} catch (ReflectiveOperationException ignored) {
+			// The field moved: the night may pass under them, nothing else lost.
+		}
 	}
 
 	private static Vec3 ground(ServerLevel level, Vec3 pos) {

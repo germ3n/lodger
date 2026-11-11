@@ -86,6 +86,7 @@ impl Preset {
                 config.events.disabled = [
                     "refuse_rest",
                     "bed_breaks",
+                    "choke",
                     "foot_of_bed",
                     "bed_occupied",
                     "wake",

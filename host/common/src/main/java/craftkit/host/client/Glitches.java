@@ -37,6 +37,7 @@ import java.util.Set;
  *   <li>{@code fov_pull}: the field of view narrows over the hint's time and snaps back.</li>
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
+ *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
  * </ul>
  */
 public final class Glitches {
@@ -94,6 +95,19 @@ public final class Glitches {
 						// The HUD moved its fields: no blink, nothing else lost.
 					}
 				});
+				// Lying in bed with their eyes open: the game's own fade to sleep kept at nothing,
+				// so they see what comes to the bed (the host holds the night meanwhile).
+				case "eyes_open" -> {
+					if (minecraft.player.isSleeping()) {
+						try {
+							var counter = net.minecraft.world.entity.player.Player.class.getDeclaredField("sleepCounter");
+							counter.setAccessible(true);
+							counter.setInt(minecraft.player, 0);
+						} catch (ReflectiveOperationException ignored) {
+							// The field moved: the screen fades as it would, nothing else lost.
+						}
+					}
+				}
 				// "Footsteps" in the subtitles, behind them, and no sound.
 				case "subtitle" -> once(active, () -> {
 					var events = minecraft.getSoundManager().getSoundEvent(net.minecraft.resources.Identifier.parse("minecraft:block.stone.step"));

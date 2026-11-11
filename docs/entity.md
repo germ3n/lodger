@@ -250,6 +250,7 @@ hardcoded, why only spruce"; it was a table at first.)
 | `torch_blue` | 3 | One of their torches or lanterns is another kind: a soul torch burning blue, a redstone torch's dim red, a soul lantern. | A placed torch or lantern. |
 | `window_bars` | 4 | A window pane is iron bars. | A placed glass pane. |
 | `bed_breaks` | 4 | As they lie down, the bed breaks under them and drops as its item where it stood. Once a stay. | The target in bed at night. |
+| `choke` | 4 | As they sleep, the figure comes in at their door and walks slowly to the bed's side by the pillow; there it takes out a lead and chokes them for five seconds, a heart a squeeze, never below half a heart: they stay lying, the night held, their eyes kept open (no fade to sleep), each squeeze a drowning gasp, the hurt's jolt and the dark closing in. Leave Bed breaks free and it is gone; otherwise they wake as it ends (`choke`, ABI 54; the `eyes_open` hint). Twice a stay at most. | The target in bed at night, the bed and a door known. |
 
 ### Lights and fire
 

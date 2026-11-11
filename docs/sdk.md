@@ -213,7 +213,10 @@ dropped at their feet, kept again if never), and the `bought` event (a sale of i
 `take_item`'s `expect`, the item it means by id: a slot holding something else now is not
 taken from, that item in another slot is, and with none the take is refused. ABI 53: an
 entity's `baby` (a baby villager cannot trade), and `put_book`'s `also`, the other lecterns the
-mod would use, the first without a book taken when the one asked holds one.
+mod would use, the first without a book taken when the one asked holds one. ABI 54: `choke`
+(the target held asleep in bed, the night not passing, while a figure walks to the bed's side by
+the pillow, found by the host, takes `item` out and squeezes once a second for `seconds`, the
+harm taken without waking them; Leave Bed ends it).
 
 ## Resources
 
