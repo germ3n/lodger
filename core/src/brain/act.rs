@@ -348,6 +348,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Ten blocks ahead of where they look and well to one side, on the ground.
+        Action::CrouchedBehindATree => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians() + 0.6;
+            Some([
+                at[0] + (-yaw.sin() * 10.0).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * 10.0).round() as i32,
+            ])
+        }
         // Forty blocks ahead of where they look: the middle of its walk.
         Action::LanternInTheWoods => {
             let at = block_of(memory.last.pos);
@@ -6221,6 +6231,28 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Crouched there, empty-handed, facing them, as if hiding; gone as they come within four
+        // blocks, or once seen and looked away from.
+        Action::CrouchedBehindATree => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 60.0, false);
+                if let Command::Figure {
+                    held,
+                    eats,
+                    vanish_within,
+                    once_seen,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    // Crouched: an empty hand eats nothing, and the crouch is all that shows.
+                    *eats = true;
+                    *vanish_within = 4.0;
+                    *once_seen = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11766,6 +11798,24 @@ mod tests {
         );
         assert!(
             matches!(&made[..], [(Command::Figure { held, walks: true, path, .. }, 0)] if held.id == "minecraft:lantern" && path.len() == 2),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_figure_crouches_near_them_as_if_hiding() {
+        let memory = rich_memory();
+        let event = find("crouched_behind_a_tree").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { eats: true, held, vanish_within, .. }, 0)] if held.id.is_empty() && *vanish_within > 0.0),
             "{made:?}"
         );
     }

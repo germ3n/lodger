@@ -1016,6 +1016,8 @@ pub enum Action {
     RidesTheCart,
     /// At night far off, a lantern moving, held by a figure walking.
     LanternInTheWoods,
+    /// A figure crouched near them, gone as they come round to it.
+    CrouchedBehindATree,
 }
 
 /// Where a figure stands.
@@ -4726,6 +4728,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LanternInTheWoods,
         false,
     ),
+    // docs/events_todo.md, 77.
+    row(
+        "crouched_behind_a_tree",
+        4,
+        5,
+        &[TargetOutdoors],
+        3.0,
+        3,
+        Full,
+        Action::CrouchedBehindATree,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5684,6 +5698,7 @@ impl Event {
             | Action::InTheTreetops
             | Action::RidesTheCart
             | Action::LanternInTheWoods
+            | Action::CrouchedBehindATree
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5755,6 +5770,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "crouched_behind_a_tree" => "crouch the figure near them, hiding",
             "lantern_in_the_woods" => "walk a figure with a lantern through the dark far off",
             "rides_the_cart" => "roll their minecart past with a figure in it",
             "path_through_the_trees" => "cut a straight line through the trees toward their house",

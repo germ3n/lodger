@@ -1499,6 +1499,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A lantern in the woods** (`docs/events_todo.md`, 76): `lantern_in_the_woods`, stages 4 and
   5, at night outdoors: forty blocks ahead a figure walks across with a lantern in hand (`walks`).
   Tests: one in `act`. Was: no such event.
+- [x] **Crouched near them** (`docs/events_todo.md`, 77): `crouched_behind_a_tree`, stages 4 and 5,
+  outdoors: a figure crouched ten blocks off to one side, gone within four blocks or once seen (the
+  crouch of `eats` with an empty hand). Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.
