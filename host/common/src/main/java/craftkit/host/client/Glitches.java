@@ -38,6 +38,8 @@ import java.util.Set;
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
+ *   <li>{@code in_the_screenshot}: the next screenshot they take while it lasts has a figure in
+ *       their skin far ahead in it ({@link ScreenshotFigure}), once.</li>
  *   <li>{@code handprints}: two hands of pale dust on the glass at the hint's place, facing
  *       them, renewed while it lasts ({@link HandPrint}).</li>
  *   <li>{@code false_death}: the death screen over the game while it lasts (a second), its red
@@ -56,6 +58,26 @@ public final class Glitches {
 	private static long lastSeen;
 
 	private Glitches() {
+	}
+
+	/** Whether their next screenshot is to have the figure in it (`in_the_screenshot`). */
+	public static boolean screenshotArmed() {
+		for (Hints.Active active : Hints.active()) {
+			if (active.hint().hint().equals("in_the_screenshot") && !DONE_ONCE.contains(active.id())) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/** The screenshot with the figure in it taken: once a hint. */
+	public static void screenshotTaken() {
+		for (Hints.Active active : Hints.active()) {
+			if (active.hint().hint().equals("in_the_screenshot")) {
+				DONE_ONCE.add(active.id());
+			}
+		}
 	}
 
 	/** Whether their figure in the inventory stares straight out (`inventory_stare`). */
@@ -84,6 +106,7 @@ public final class Glitches {
 			return;
 		}
 
+		ScreenshotFigure.tick(minecraft);
 		boolean pullingFov = false;
 		boolean shaking = false;
 		long now = System.currentTimeMillis();

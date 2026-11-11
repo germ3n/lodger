@@ -4801,6 +4801,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("red_rain", 150.0),
         false,
     ),
+    // docs/events_todo.md, 38: half an hour for them to take one.
+    row(
+        "in_the_screenshot",
+        5,
+        5,
+        &[TargetOnline],
+        6.0,
+        2,
+        Half,
+        Action::Hint("in_the_screenshot", 1800.0),
+        true,
+    ),
     // docs/events_todo.md, 37: as they come home, on a window of the house.
     row(
         "handprints",
@@ -5525,6 +5537,7 @@ impl Event {
             "sun_blink" => "make the sun blink out",
             "lightning_silent" => "flash lightning with no thunder",
             "red_rain" => "turn the rain red",
+            "in_the_screenshot" => "put the figure in the next screenshot they take",
             "handprints" => "press handprints on a window of the house from inside",
             "false_death" => "show them the death screen for a second",
             "inventory_stare" => "make their figure in the inventory stare out at them",

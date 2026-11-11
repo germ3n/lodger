@@ -1201,6 +1201,12 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **In the screenshot** (`docs/events_todo.md`, 38): `in_the_screenshot`, stage 5, a hint of
+  half an hour: their next screenshot is held back a tick, a figure in their skin set fourteen
+  blocks ahead in their view on their client alone (its own player entry, so their skin), the
+  picture taken with it in, and the figure gone; once (`ScreenshotFigure`, `ScreenshotMixin`).
+  A screen glitch, off with `events.glitches`. Ahead, not behind them: a first-person picture
+  never shows behind. Tests: the catalogue's own. Was: no such event.
 - [x] **Handprints** (`docs/events_todo.md`, 37): `handprints`, stages 4 and 5, coming home with a
   window known: a hint of a minute and a half drawing two hands of pale dust on a window's glass,
   across the way they look, renewed as it fades (`HandPrint`). A screen glitch, off with

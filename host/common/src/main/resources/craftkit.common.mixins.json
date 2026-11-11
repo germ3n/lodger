@@ -9,6 +9,7 @@
 		"LivingEntityRendererMixin",
 		"ModelFeatureRendererMixin",
 		"PaintingRendererMixin",
+		"ScreenshotMixin",
 		"SkyRendererMixin",
 		"SubtitleOverlayMixin",
 		"WeatherEffectRendererMixin"
