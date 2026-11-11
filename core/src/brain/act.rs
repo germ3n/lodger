@@ -348,7 +348,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
-        Action::PulledUnder | Action::HeldBreath => Some(block_of(memory.last.pos)),
+        Action::PulledUnder | Action::HeldBreath | Action::AllFreeze => {
+            Some(block_of(memory.last.pos))
+        }
         Action::ItsLightsOn | Action::RespawnItsBed => memory.its_house().map(|h| h.site),
         Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
         Action::EyeTurnsHome => home.map(|h| h.center),
@@ -4903,6 +4905,33 @@ pub fn commands(
             },
             0,
         )],
+        // Every animal, villager and mob within twenty-four blocks of them stops at once, three
+        // seconds, facing them; then as it was.
+        Action::AllFreeze => {
+            let at = memory.last.pos;
+            memory
+                .last
+                .creatures_near
+                .iter()
+                .chain(memory.last.hostiles_near.iter())
+                .filter(|c| {
+                    ((c.pos[0] - at[0]).powi(2) + (c.pos[2] - at[2]).powi(2)).sqrt() <= 24.0
+                })
+                .map(|c| {
+                    (
+                        Command::Hold {
+                            id: ids(),
+                            entity: c.id,
+                            player: target,
+                            seconds: 3.0,
+                            at: None,
+                            creep: false,
+                        },
+                        0,
+                    )
+                })
+                .collect()
+        }
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -8685,6 +8714,51 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn every_animal_and_mob_around_them_stops_at_once() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.creatures_near = vec![
+            crate::memory::Creature {
+                id: 1,
+                kind: "cow".to_string(),
+                pos: [5.0, 64.0, 0.0],
+                ..Default::default()
+            },
+            crate::memory::Creature {
+                id: 2,
+                kind: "sheep".to_string(),
+                pos: [60.0, 64.0, 0.0],
+                ..Default::default()
+            },
+        ];
+        memory.last.hostiles_near = vec![crate::memory::Creature {
+            id: 3,
+            kind: "zombie".to_string(),
+            pos: [0.0, 64.0, 10.0],
+            ..Default::default()
+        }];
+        let event = find("all_freeze").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let held: Vec<u32> = made
+            .iter()
+            .filter_map(|(c, at)| match c {
+                Command::Hold {
+                    entity, seconds, ..
+                } if *at == 0 && *seconds <= 5.0 => Some(*entity),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(held, vec![1, 3], "all at once, the far sheep left alone");
     }
 
     #[test]

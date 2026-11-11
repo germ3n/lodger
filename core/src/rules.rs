@@ -177,6 +177,7 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::WearsYourFace
             | crate::events::Action::AnimalFollows
             | crate::events::Action::HeldBreath
+            | crate::events::Action::AllFreeze
             | crate::events::Action::ItsLightsOn
             | crate::events::Action::FallsFromTheSky
             | crate::events::Action::PetFollows

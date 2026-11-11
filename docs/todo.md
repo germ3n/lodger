@@ -1201,6 +1201,9 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **All freeze** (`docs/events_todo.md`, 32): `all_freeze`, stages 4 and 5, animals near them
+  outdoors: every animal, villager and mob within twenty-four blocks stops at once three seconds,
+  facing them (`hold` on each). Tests: one in `act`. Was: no such event.
 - [x] **Held breath** (`docs/events_todo.md`, 31): `held_breath`, stages 4 and 5, under water
   (the memory keeps their air now): their air runs out twice as fast for twenty seconds
   (`drain_air`, ABI 54, the host's `Breaths`). Tests: one in `act`. Was: no such event.
