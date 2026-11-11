@@ -1895,6 +1895,16 @@ The `[x]` lines above, summed up by day:
   or more the trunks (`crate::trees`), the biome kept in the memory's snapshot. Tests: `trees`'s
   three, one in `act`. Was: the mind did not know where any tree was.
 
+- [x] **A warp that stretches and shakes** (owner, playing: "more like a stretching that makes sense
+  and like shaking"): a warped model stretches whole, tall and thin or low and wide with its volume
+  kept and its feet on the ground, grown in over two and a half seconds and breathing; every part
+  trembles; the head tilts over to an angle no neck holds and twitches every few seconds
+  (`client/Warp.java`). `warped_animal`'s height is the stretch's now (the hint's `id:height`), not
+  the server's scale as well. Tests: `WarpTest` rewritten for the new warp (the old one checked each
+  part's random bend, which is gone), one in `act`. Was: every part of the model was stretched,
+  squashed and turned its own random way at once, which read as a broken model, and the server's
+  1.8 times on top of the stretch made it twice as tall again, at once.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

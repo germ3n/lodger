@@ -7493,7 +7493,10 @@ pub fn commands(
                             entity: animal.id,
                             player: target,
                             seconds: 60.0,
-                            scale: w.scale,
+                            // Its height is the bent model's on their screen, grown in there with
+                            // the rest (the hint below): sized here at once as well, it stood at
+                            // twice that with the stretch, and jumped to it.
+                            scale: 1.0,
                             flip: w.flip,
                             creep: w.creep,
                             to: if w.doorway {
@@ -7504,7 +7507,8 @@ pub fn commands(
                         },
                         0,
                     ),
-                    // Its own model bent on their screen while it lasts, as the fight's are.
+                    // Its own model bent on their screen while it lasts, as the fight's are: to the
+                    // height chosen when it grows, else low and wide, its volume kept.
                     (
                         Command::Hint {
                             id: ids(),
@@ -7512,7 +7516,11 @@ pub fn commands(
                             hint: "warp_models".to_string(),
                             pos: None,
                             seconds: 60.0,
-                            detail: animal.id.to_string(),
+                            detail: format!(
+                                "{}:{}",
+                                animal.id,
+                                if w.scale > 1.0 { w.scale } else { 0.6 }
+                            ),
                         },
                         0,
                     ),
@@ -13330,5 +13338,48 @@ mod tests {
         // Out of the woods: nothing to peek from.
         memory.trunks.clear();
         assert_eq!(place(event, &memory, &mut Rng::new(1)), None);
+    }
+
+    #[test]
+    fn a_warped_animal_grows_on_their_screen_alone_to_the_height_chosen() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.creatures_near.push(crate::memory::Creature {
+            id: 77,
+            kind: "cow".to_string(),
+            pos: [20.5, 64.0, 0.5],
+            ..Default::default()
+        });
+        let event = find("warped_animal").unwrap();
+        for seed in 0..6 {
+            let mut memory = memory.clone();
+            for _ in 0..seed {
+                memory.record("warped_animal", None, 0.0, true, "");
+            }
+            let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+            let Some(Command::WarpMob { scale, .. }) = made.first().map(|(c, _)| c) else {
+                panic!("{made:?}");
+            };
+            assert_eq!(*scale, 1.0, "not sized on the server as well");
+            let detail = made
+                .iter()
+                .find_map(|(c, _)| match c {
+                    Command::Hint { hint, detail, .. } if hint == "warp_models" => Some(detail),
+                    _ => None,
+                })
+                .unwrap();
+            let (id, height) = detail.split_once(':').unwrap();
+            assert!(
+                memory
+                    .last
+                    .creatures_near
+                    .iter()
+                    .any(|c| c.id.to_string() == id),
+                "{detail}"
+            );
+            let height: f32 = height.parse().unwrap();
+            assert!(height == 0.6 || (1.5..=2.2).contains(&height), "{detail}");
+        }
     }
 }

@@ -3,17 +3,17 @@ package craftkit.host.client;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.ModelPart;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
- * The fight's warped animals, their own models bent (owner: "stretching the actual
- * model"): the server names them in a `warp_models` hint, and as each of their models is posed
- * for drawing every part is stretched or squashed and turned wrong, by its own fixed draw so it
- * never flickers, the whole body taller or lower. Nothing else is touched.
+ * Warped animals and villagers, their own models bent (owner: "stretching the actual model";
+ * then "more like a stretching that makes sense, and like shaking"): the server names them in a
+ * `warp_models` hint, and as each of their models is posed for drawing it goes wrong as {@link
+ * Warp} has it: the whole body stretched, its feet kept on the ground, every part trembling, the
+ * head tilted over and twitching. It grows in from the hint's start. Nothing else is touched.
  */
 public final class WarpedModels {
 	private WarpedModels() {
@@ -26,22 +26,32 @@ public final class WarpedModels {
 		IDS.put(state, id);
 	}
 
-	private static Set<Integer> cached = Set.of();
+	/** A warp as a hint names it: when it began, and the height it grows to (0: the entity's own way, {@link Warp#tall}). */
+	private record Named(long started, float height) {
+	}
+
+	private static Map<Integer, Named> cached = Map.of();
 	private static long cachedAt;
 
-	/** The ids the active `warp_models` hints name, read again a few times a second, not every model. */
-	private static Set<Integer> warped() {
+	/**
+	 * The ids the active `warp_models` hints name (`id` or `id:height`), each with when its hint
+	 * began, read again a few times a second, not every model.
+	 */
+	private static Map<Integer, Named> warped() {
 		long now = System.currentTimeMillis();
 		if (now - cachedAt < 250) {
 			return cached;
 		}
 		cachedAt = now;
-		Set<Integer> ids = new HashSet<>();
+		Map<Integer, Named> ids = new HashMap<>();
 		for (Hints.Active active : Hints.active()) {
 			if (active.hint().hint().equals("warp_models")) {
 				for (String id : active.hint().detail().split(",")) {
 					try {
-						ids.add(Integer.parseInt(id.trim()));
+						String[] parts = id.trim().split(":");
+						float height = parts.length > 1 ? Float.parseFloat(parts[1]) : 0;
+						ids.merge(Integer.parseInt(parts[0]), new Named(active.startedMillis(), height),
+								(a, b) -> a.started() <= b.started() ? a : b);
 					} catch (NumberFormatException ignored) {
 						// Not an id: skipped.
 					}
@@ -52,28 +62,35 @@ public final class WarpedModels {
 		return ids;
 	}
 
-	/** After the model is posed: a warped entity's parts bent. */
+	/** Model units from the root's pivot down to the feet: the game draws a body 24 of them tall. */
+	private static final float FEET = 24f;
+
+	/** After the model is posed: a warped entity bent. */
 	public static void warp(Model<?> model, Object state) {
 		Integer id = IDS.get(state);
-		if (id == null || !warped().contains(id)) {
+		Named named = id == null ? null : warped().get(id);
+		if (named == null) {
 			return;
 		}
+		long now = System.currentTimeMillis();
+		long since = now - named.started();
 		List<ModelPart> parts = model.allParts();
 		for (int i = 1; i < parts.size(); i++) {
-			float[] w = Warp.of(id, i);
+			float[] t = Warp.tremor(id, i, now, since);
 			ModelPart part = parts.get(i);
-			part.xScale *= w[0];
-			part.yScale *= w[1];
-			part.zScale *= w[2];
-			part.xRot += w[3];
-			part.yRot += w[4];
-			part.zRot += w[5];
+			part.xRot += t[0];
+			part.yRot += t[1];
+			part.zRot += t[2];
 		}
-		if (!parts.isEmpty()) {
-			float[] body = Warp.body(id);
-			parts.getFirst().xScale *= body[0];
-			parts.getFirst().yScale *= body[1];
-			parts.getFirst().zScale *= body[0];
+		ModelPart root = model.root();
+		if (root.hasChild("head")) {
+			root.getChild("head").zRot += Warp.headTilt(id, now, since);
 		}
+		float[] body = Warp.body(id, since, now, named.height());
+		root.xScale *= body[0];
+		root.yScale *= body[1];
+		root.zScale *= body[0];
+		// Stretched from the root's pivot, over the body: moved so the feet stay where they stood.
+		root.y += FEET * (1 - body[1]);
 	}
 }
