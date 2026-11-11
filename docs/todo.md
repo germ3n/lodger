@@ -1220,7 +1220,9 @@ The `[x]` lines above, summed up by day:
   `calm` leaves it out. The owner after a try: "the walking up to the bed is very laggy" (it was
   re-sent a point every half second; it glides now, a block a second, eased by the client, its
   legs moving), "its kinda hard to see the lead" (its rope is drawn from its hand to their neck,
-  tied to an unseen silverfish sent to them alone), and "verify the open/closed door logic":
+  tied to an unseen silverfish sent to them alone; "i still cant see the lead": tied where they
+  lay, at their eyes, the rope ran straight at the camera and was seen end on, so it is tied
+  two thirds of a block down the bed and a little lower, across their view), and "verify the open/closed door logic":
   the door is opened by the choke itself, so a door gone since is passed over (a toggle of its
   own that failed stopped the rest of the event, leaving the figure in the doorway). Tests: one in `act`, `ChokeWayTest` in JUnit. Was: no such event.
 - [x] **A long stay's memory is saved whole** (owner: "i left my world and rejoined and the

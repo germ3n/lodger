@@ -585,7 +585,7 @@ public final class Figures {
 					figure.held = choke.item;
 					player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));
 					choke.knot = nextId++;
-					tie(player, figure, choke.knot);
+					tie(level, player, figure, choke.knot);
 				}
 				player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DARKNESS,
 						(int) (choke.untilTick - tick) + 40, 0, false, false));
@@ -596,18 +596,30 @@ public final class Figures {
 		}
 	}
 
+	/** How far down the bed from their eyes the rope is tied, and how far below them. */
+	static final double ROPE_DOWN_THE_BED = 0.65;
+	static final double ROPE_BELOW = 0.15;
+
 	/**
-	 * The lead's rope from the figure's hand to their neck, as the game draws a leashed mob's: an
-	 * invisible, silent silverfish at their neck, sent to them alone, its lead held by the
-	 * figure. The held lead alone was hard to make out at the bedside (the owner).
+	 * The lead's rope from the figure's hand to their neck and chest, as the game draws a leashed
+	 * mob's: an invisible, silent silverfish sent to them alone, its lead held by the figure. The
+	 * held lead alone was hard to make out at the bedside (the owner). Tied down the bed from
+	 * their eyes: tied where they lie (at their eyes), the rope ran straight at the camera, seen
+	 * end on as a dot ("i still cant see the lead").
 	 */
 	@SuppressWarnings("unchecked")
-	private static void tie(ServerPlayer player, Figure figure, int knot) {
+	private static void tie(ServerLevel level, ServerPlayer player, Figure figure, int knot) {
 		var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(net.minecraft.resources.Identifier.parse("minecraft:silverfish"));
 		if (type.isEmpty()) {
 			return;
 		}
-		Vec3 neck = player.position();
+		Vec3 neck = player.position().add(0, -ROPE_BELOW, 0);
+		BlockPos head = player.getSleepingPos().orElse(null);
+		if (head != null && level.getBlockState(head).hasProperty(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING)) {
+			// The bed faces foot to head: down it is the other way.
+			var facing = level.getBlockState(head).getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+			neck = neck.add(-facing.getStepX() * ROPE_DOWN_THE_BED, 0, -facing.getStepZ() * ROPE_DOWN_THE_BED);
+		}
 		player.connection.send(new ClientboundAddEntityPacket(knot, UUID.randomUUID(), neck.x, neck.y, neck.z, 0, 0, type.get().value(), 0, Vec3.ZERO, 0));
 		try {
 			var flags = net.minecraft.world.entity.Entity.class.getDeclaredField("DATA_SHARED_FLAGS_ID");
