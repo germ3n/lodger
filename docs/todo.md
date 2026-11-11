@@ -1477,6 +1477,9 @@ The `[x]` lines above, summed up by day:
 - [x] **The trapdoor taps** (`docs/events_todo.md`, 69): `trapdoor_taps`, stages 3 to 5: their
   nearest trapdoor open and shut eight times, ending as it was. Tests: one in `act`. Was: no such
   event.
+- [x] **It climbs ahead** (`docs/events_todo.md`, 70): `climbs_ahead`, stages 4 and 5, down their
+  shaft: a figure climbs from three blocks over them to the top, gone there (`walks` up). Tests: one
+  in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

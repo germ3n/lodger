@@ -1004,6 +1004,8 @@ pub enum Action {
     ChestRattles,
     /// A trapdoor of theirs taps open and shut, again and again.
     TrapdoorTaps,
+    /// In their shaft, a figure climbs ahead of them, above, and is gone at the top.
+    ClimbsAhead,
 }
 
 /// Where a figure stands.
@@ -4642,6 +4644,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TrapdoorTaps,
         false,
     ),
+    // docs/events_todo.md, 70.
+    row(
+        "climbs_ahead",
+        4,
+        5,
+        &[DownTheShaft],
+        3.0,
+        2,
+        Full,
+        Action::ClimbsAhead,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5582,6 +5596,7 @@ impl Event {
             | Action::StandsInTheRain
             | Action::ChestRattles
             | Action::TrapdoorTaps
+            | Action::ClimbsAhead
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5653,6 +5668,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "climbs_ahead" => "have the figure climb their shaft above them",
             "trapdoor_taps" => "tap a trapdoor of theirs open and shut",
             "chest_rattles" => "rattle their chest's lid open and shut",
             "its_banner" => "hang a black banner on its house",

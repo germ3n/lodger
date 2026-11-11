@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::ClimbsAhead => shaft_top(memory),
         // Their trapdoor nearest them.
         Action::TrapdoorTaps => {
             let at = block_of(memory.last.pos);
@@ -5991,6 +5992,37 @@ pub fn commands(
                     .collect()
             })
             .unwrap_or_default(),
+        // Up their ladders from three blocks over them to the top, at a climb, empty-handed;
+        // gone at the top.
+        Action::ClimbsAhead => pos
+            .map(|top| {
+                let from = [
+                    top[0] as f64 + 0.5,
+                    memory.last.pos[1] + 3.0,
+                    top[2] as f64 + 0.5,
+                ];
+                let to = [
+                    top[0] as f64 + 0.5,
+                    top[1] as f64 + 1.0,
+                    top[2] as f64 + 0.5,
+                ];
+                let mut shown = figure_shown(ids, memory, target, top, 30.0, false);
+                if let Command::Figure {
+                    held,
+                    walks,
+                    pos,
+                    path,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *walks = true;
+                    *pos = from;
+                    *path = vec![from, to];
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -8837,6 +8869,8 @@ mod tests {
                 || event.id == "firework_over_its_house"
                 // What it took, which this memory holds not: its own test.
                 || event.id == "chicken_lays"
+                // Down a shaft, which this memory is not: its own test.
+                || event.id == "climbs_ahead"
                 // A trapdoor of theirs, which this memory has not: its own test.
                 || event.id == "trapdoor_taps"
                 // Its house must stand first: its own test.
@@ -11379,6 +11413,40 @@ mod tests {
         assert!(made
             .iter()
             .all(|(c, _)| matches!(c, Command::ToggleBlock { to: None, .. })));
+    }
+
+    #[test]
+    fn in_their_shaft_a_figure_climbs_ahead_of_them() {
+        let mut memory = rich_memory();
+        memory.fixtures.retain(|f| f.kind != "ladder");
+        for y in 50..=64 {
+            memory.fixtures.push(crate::memory::Fixture {
+                kind: "ladder".to_string(),
+                pos: [-6, y, 0],
+            });
+        }
+        memory.last.online = true;
+        memory.last.pos = [-5.5, 52.0, 0.5];
+        let event = find("climbs_ahead").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let [(
+            Command::Figure {
+                walks: true, path, ..
+            },
+            0,
+        )] = &made[..]
+        else {
+            panic!("{made:?}")
+        };
+        assert_eq!(path[0][1], 55.0, "three over them");
+        assert_eq!(path[1][1], 65.0, "to the top");
     }
 
     #[test]
