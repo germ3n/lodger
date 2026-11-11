@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **At the top of the ladder** (`docs/events_todo.md`, 14): `top_of_the_ladder`, stages 4
+  and 5, down a shaft of their ladders six blocks or more below its top (`act::shaft_top`): a
+  figure at its mouth looking down at them, gone when they climb within six blocks. Tests: one
+  in `act`. Was: no such event.
 - [x] **The offer** (`docs/events_todo.md`, 13): `the_offer`, stages 4 and 5, holding something
   of theirs, a door known, the target outdoors: a figure in their doorway holds it out; come
   within three blocks and it is gone and the very thing drops at their feet, given back (the

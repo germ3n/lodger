@@ -636,6 +636,7 @@ a dock or bridge), never over anything a player built (see the
 | `where_you_died` | 3 | Where they last died, a figure lies on the ground on its side as a body lies, empty-handed, seen from twelve to sixty-four blocks off; gone when they come within ten blocks (`figure`'s `lies`). | Where they last died, twelve to sixty-four blocks from them. |
 | `rubberband` | 4 | Walking outdoors, they are set back along their trail three blocks or more, as on a bad connection (`move_player`), and where they had been a figure stands facing them, empty-handed, gone once seen and looked away from. | The target walking outdoors. |
 | `the_offer` | 4 | In their doorway, as they are outside, a figure stands holding out what it took from them, facing them; come within three blocks and it is gone and the very thing lies at their feet, given back (the host's word that the figure was come to, then `drop_item` of what it keeps). Gone any other way, it keeps it. Once a stay. | It holds something of theirs, a door known, the target outdoors. |
+| `top_of_the_ladder` | 4 | Down a shaft of their ladders, six blocks or more below its top, a figure stands at its mouth over the top ladder, looking down at them, empty-handed; gone when they climb within six blocks of it. | The target down a shaft of their ladders. |
 
 ### The ending
 

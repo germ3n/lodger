@@ -348,6 +348,14 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // The top of the shaft they are down; its highest ladder when they have climbed out
+        // since it was offered.
+        Action::TopOfTheLadder => shaft_top(memory).or_else(|| {
+            memory
+                .fixtures("ladder")
+                .map(|f| f.pos)
+                .max_by_key(|p| p[1])
+        }),
         // The point of their trail three blocks or more back from where they stand; three
         // blocks behind them when the trail is short.
         Action::Rubberband => {
@@ -1147,6 +1155,18 @@ fn windows(memory: &Memory, center: BlockPos) -> Vec<BlockPos> {
         }
     }
     taken
+}
+
+/// The top ladder of the shaft they are down: the highest of the ladders in the column within
+/// two blocks of them across, when they are six blocks or more under it.
+pub fn shaft_top(memory: &Memory) -> Option<BlockPos> {
+    let at = block_of(memory.last.pos);
+    memory
+        .fixtures("ladder")
+        .map(|f| f.pos)
+        .filter(|p| (p[0] - at[0]).abs() <= 2 && (p[2] - at[2]).abs() <= 2)
+        .max_by_key(|p| p[1])
+        .filter(|top| top[1] - at[1] >= 6)
 }
 
 /// How far back `rubberband` sets them, at least.
@@ -4313,6 +4333,23 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // At the shaft's mouth, over its top ladder, facing down at them, empty-handed; gone
+        // when they climb within six blocks of it.
+        Action::TopOfTheLadder => pos
+            .map(|top| {
+                let mut shown = figure_shown(ids, memory, target, top, 30.0, false);
+                if let Command::Figure {
+                    held,
+                    vanish_within,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *vanish_within = 6.0;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7959,6 +7996,40 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn down_their_shaft_a_figure_looks_down_from_its_top() {
+        let mut memory = rich_memory();
+        memory.fixtures.retain(|f| f.kind != "ladder");
+        for y in 50..=64 {
+            memory.fixtures.push(crate::memory::Fixture {
+                kind: "ladder".to_string(),
+                pos: [-6, y, 0],
+            });
+        }
+        memory.last.online = true;
+        memory.last.pos = [-5.5, 52.0, 0.5];
+        let top = find("top_of_the_ladder").unwrap();
+        assert!(crate::brain::offer::meets(
+            crate::events::Need::DownTheShaft,
+            &memory,
+            &Now::default()
+        ));
+        let p = place(top, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some([-6, 64, 0]), "its top ladder");
+        let made = commands(top, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { pos, vanish_within, .. }, 0)] if pos[1] == 65.0 && *vanish_within > 0.0),
+            "{made:?}"
+        );
+        // Near the top: not down the shaft.
+        memory.last.pos = [-5.5, 61.0, 0.5];
+        assert!(!crate::brain::offer::meets(
+            crate::events::Need::DownTheShaft,
+            &memory,
+            &Now::default()
+        ));
     }
 
     #[test]

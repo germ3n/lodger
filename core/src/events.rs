@@ -239,6 +239,8 @@ pub enum Need {
     LitUnderground,
     /// Where they last died is in sight: twelve to sixty-four blocks from them.
     NearTheirDeath,
+    /// Down a shaft of their ladders, six blocks or more below its top.
+    DownTheShaft,
 }
 
 impl Need {
@@ -306,6 +308,7 @@ impl Need {
                 | Need::TargetInBoat
                 | Need::LitUnderground
                 | Need::NearTheirDeath
+                | Need::DownTheShaft
         )
     }
 
@@ -418,6 +421,7 @@ impl Need {
             Need::TargetInBoat => "the target is not in a boat with a seat to spare".to_string(),
             Need::LitUnderground => "happens only as they place a light underground".to_string(),
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
+            Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -887,6 +891,8 @@ pub enum Action {
     Rubberband,
     /// In their doorway, a figure holds out what it took; walk to it and it is at their feet.
     TheOffer,
+    /// Down their shaft, a figure at its top looking down at them.
+    TopOfTheLadder,
 }
 
 /// Where a figure stands.
@@ -3961,6 +3967,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TheOffer,
         false,
     ),
+    // docs/events_todo.md, 14.
+    row(
+        "top_of_the_ladder",
+        4,
+        5,
+        &[DownTheShaft],
+        3.0,
+        2,
+        Full,
+        Action::TopOfTheLadder,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4769,6 +4787,7 @@ impl Event {
             | Action::WhereYouDied
             | Action::Rubberband
             | Action::TheOffer
+            | Action::TopOfTheLadder
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -5084,6 +5103,7 @@ impl Event {
             "where_you_died" => "lay a figure where they last died",
             "rubberband" => "set them back a few steps and stand a figure where they were",
             "the_offer" => "hold out what it took from their doorway, and give it if they come",
+            "top_of_the_ladder" => "stand the figure at the top of their shaft looking down",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
