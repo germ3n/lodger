@@ -1406,6 +1406,10 @@ The `[x]` lines above, summed up by day:
 - [x] **Wilted flowers** (`docs/events_todo.md`, 49): `flowers_wilted`, stages 3 to 5, the target
   away or asleep: their flowers dead bushes for a day, then flowers again (`swap_block` and back).
   Tests: one in `act`. Was: no such event.
+- [x] **A camp nearby** (`docs/events_todo.md`, 50): `camp_nearby`, stages 4 and 5, at night
+  outdoors: on a point of their route twenty-four to sixty-four blocks off, a lit campfire with two
+  log seats and a figure crouched by it; at dawn its blocks taken away again. On their route, whose
+  ground is known, so the dawn's taking finds them. Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

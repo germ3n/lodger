@@ -348,6 +348,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // A point of their route twenty-four to sixty-four blocks from them: its ground known.
+        Action::CampNearby => {
+            let at = block_of(memory.last.pos);
+            memory.route().and_then(|r| {
+                r.points
+                    .iter()
+                    .copied()
+                    .find(|p| (24.0..=64.0).contains(&distance(*p, at)))
+            })
+        }
         Action::FlowersWilted => memory
             .plants
             .iter()
@@ -1347,6 +1357,26 @@ fn chest_food(chest: &crate::memory::Container) -> Option<String> {
 
 /// How long `flowers_wilted` keeps their flowers dead: a day of the game's.
 const WILTED_FOR: u64 = 24_000;
+
+/// A block set with a state, only into air: `camp_nearby`'s fire and seats.
+fn lantern_state(
+    ids: &mut impl FnMut() -> u64,
+    pos: BlockPos,
+    block: &str,
+    state: &str,
+) -> Command {
+    Command::SetBlock {
+        id: ids(),
+        pos,
+        block: block.to_string(),
+        state: state.to_string(),
+        replace: Vec::new(),
+        settle: 0,
+        wall: String::new(),
+        rest: true,
+        only: false,
+    }
+}
 
 /// How far ahead of them `peeks_from_ground`'s head shows.
 const PEEK_FROM: f64 = 24.0;
@@ -5373,6 +5403,58 @@ pub fn commands(
                 ]
             })
             .collect(),
+        // A lit campfire there with a log seat either side, a figure crouched by it facing the
+        // fire; at dawn every block of it gone again (only its own), and the figure long gone.
+        Action::CampNearby => pos
+            .map(|spot| {
+                let fire = [spot[0] + 2, spot[1], spot[2]];
+                let seats = [
+                    [spot[0] + 4, spot[1], spot[2]],
+                    [spot[0] + 2, spot[1], spot[2] + 2],
+                ];
+                let mut made = vec![(
+                    lantern_state(ids, fire, "minecraft:campfire", "lit=true"),
+                    0,
+                )];
+                for seat in seats {
+                    made.push((lantern_state(ids, seat, "minecraft:oak_log", "axis=z"), 1));
+                }
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [spot[0], spot[1] - 1, spot[2]],
+                    120.0,
+                    false,
+                );
+                if let Command::Figure {
+                    held,
+                    eats,
+                    once_seen,
+                    faces,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *eats = true;
+                    *once_seen = true;
+                    *faces = Some([fire[0] as f64 + 0.5, fire[1] as f64, fire[2] as f64 + 0.5]);
+                }
+                made.push((shown, 2));
+                let dawn = u64::from((24_000 - now.day_time.min(23_999) + 500).max(600));
+                made.push((
+                    lantern(ids, fire, "minecraft:air", &["minecraft:campfire"]),
+                    dawn,
+                ));
+                for seat in seats {
+                    made.push((
+                        lantern(ids, seat, "minecraft:air", &["minecraft:oak_log"]),
+                        dawn,
+                    ));
+                }
+                made
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -8219,6 +8301,8 @@ mod tests {
                 || event.id == "firework_over_its_house"
                 // What it took, which this memory holds not: its own test.
                 || event.id == "chicken_lays"
+                // Their route, which this memory has not: its own test.
+                || event.id == "camp_nearby"
                 // Two doors or more, which this memory has not: its own test.
                 || event.id == "every_door_opens"
                 // A cave known, which this memory has not: its own test.
@@ -10332,6 +10416,36 @@ mod tests {
         let back: Vec<_> = made.iter().filter(|(c, at)| *at == WILTED_FOR && matches!(c, Command::SwapBlock { only, .. } if only == &vec!["minecraft:dead_bush".to_string()])).collect();
         assert!(!dead.is_empty(), "{made:?}");
         assert_eq!(dead.len(), back.len(), "each one back");
+    }
+
+    #[test]
+    fn at_night_a_camp_stands_out_where_they_walk_and_is_gone_by_morning() {
+        let mut memory = rich_memory();
+        memory.routes = vec![crate::memory::Route {
+            points: (0..40).map(|i| [i * 2, 64, 0]).collect(),
+            walked: 3,
+            first_day: 0.0,
+        }];
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("camp_nearby").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1)).unwrap();
+        assert!(distance(p, [0, 64, 0]) >= 24.0);
+        let now = Now {
+            day_time: 14_000,
+            ..Now::default()
+        };
+        let made = commands(event, Some(p), &memory, &mut ids(), &now, None);
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { block, .. } if block == "minecraft:campfire")
+        );
+        let gone: Vec<u64> = made.iter().filter(|(c, _)| matches!(c, Command::SetBlock { block, only: true, .. } if block == "minecraft:air")).map(|(_, at)| *at).collect();
+        assert_eq!(gone.len(), 3, "the fire and both seats taken away");
+        assert!(gone.iter().all(|at| *at >= 10_000), "at dawn: {gone:?}");
+        assert!(
+            made.iter()
+                .any(|(c, _)| matches!(c, Command::Figure { eats: true, .. })),
+            "a figure by it"
+        );
     }
 
     #[test]
