@@ -1010,6 +1010,8 @@ pub enum Action {
     OnTheWater,
     /// Far off, a figure standing on top of the trees.
     InTheTreetops,
+    /// Overnight, a straight line cut through the leaves of a forest, pointing at their house.
+    PathThroughTheTrees,
 }
 
 /// Where a figure stands.
@@ -4684,6 +4686,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::InTheTreetops,
         false,
     ),
+    // docs/events_todo.md, 73.
+    row(
+        "path_through_the_trees",
+        5,
+        5,
+        &[TargetAwayOrAsleep, Home],
+        10.0,
+        1,
+        Full,
+        Action::PathThroughTheTrees,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5590,6 +5604,7 @@ impl Event {
             | Action::TorchRing
             | Action::Breadcrumbs
             | Action::ItsBanner
+            | Action::PathThroughTheTrees
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5698,6 +5713,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "path_through_the_trees" => "cut a straight line through the trees toward their house",
             "in_the_treetops" => "stand the figure on top of the trees far off",
             "on_the_water" => "stand the figure on the water far off",
             "climbs_ahead" => "have the figure climb their shaft above them",

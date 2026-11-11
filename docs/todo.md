@@ -1485,6 +1485,10 @@ The `[x]` lines above, summed up by day:
 - [x] **In the treetops** (`docs/events_todo.md`, 72): `in_the_treetops`, stages 4 and 5,
   outdoors: thirty blocks ahead a figure on top of the trees (`figure`'s `on_leaves`, ABI 54).
   Tests: one in `act`. Was: no such event.
+- [x] **A path through the trees** (`docs/events_todo.md`, 73): `path_through_the_trees`, stage 5,
+  once a stay: a line two wide cut through the leaves from forty-five blocks out to fifteen from the
+  house, pointing at it, leaves only (`place_blueprint` of air over leaves, a column at a time on its
+  own ground). Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

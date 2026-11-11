@@ -348,6 +348,15 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Forty-five blocks from the house, any way: where the line begins.
+        Action::PathThroughTheTrees => home.map(|h| {
+            let angle = rng.next_f64() * std::f64::consts::TAU;
+            [
+                h.center[0] + (angle.cos() * 45.0).round() as i32,
+                -10_000,
+                h.center[2] + (angle.sin() * 45.0).round() as i32,
+            ]
+        }),
         // Thirty blocks ahead of where they look, a little aside.
         Action::InTheTreetops => {
             let at = block_of(memory.last.pos);
@@ -1525,6 +1534,21 @@ fn crumb_stack(chest: &crate::memory::Container) -> Option<&ItemStack> {
         .filter(|s| s.count as usize >= CRUMBS && !crate::memory::family(&s.id).is_empty())
         .max_by_key(|s| s.count)
 }
+
+/// The leaves `path_through_the_trees` cuts, every kind the game has.
+const LEAVES: &[&str] = &[
+    "minecraft:oak_leaves",
+    "minecraft:spruce_leaves",
+    "minecraft:birch_leaves",
+    "minecraft:jungle_leaves",
+    "minecraft:acacia_leaves",
+    "minecraft:dark_oak_leaves",
+    "minecraft:mangrove_leaves",
+    "minecraft:cherry_leaves",
+    "minecraft:pale_oak_leaves",
+    "minecraft:azalea_leaves",
+    "minecraft:flowering_azalea_leaves",
+];
 
 /// How far ahead of them `peeks_from_ground`'s head shows.
 const PEEK_FROM: f64 = 24.0;
@@ -6072,6 +6096,45 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // From there to fifteen blocks from the house, two columns wide, every leaf from three
+        // to fourteen blocks over the ground cut away: leaves only, nothing else; all at once.
+        Action::PathThroughTheTrees => match (pos, memory.home.as_ref()) {
+            (Some(from), Some(home)) => {
+                let (dx, dz) = (
+                    (home.center[0] - from[0]) as f64,
+                    (home.center[2] - from[2]) as f64,
+                );
+                let length = (dx * dx + dz * dz).sqrt().max(1.0);
+                let (ux, uz) = (dx / length, dz / length);
+                let leaves: Vec<String> = LEAVES.iter().map(|l| l.to_string()).collect();
+                let mut made = Vec::new();
+                let mut step = 0.0;
+                while step <= length - 15.0 {
+                    for side in [0.0, 1.0] {
+                        let x = from[0] + (ux * step - uz * side).round() as i32;
+                        let z = from[2] + (uz * step + ux * side).round() as i32;
+                        made.push((
+                            Command::PlaceBlueprint {
+                                id: ids(),
+                                at: [x, -10_000, z],
+                                parts: (3..=14)
+                                    .map(|y| craftkit::world::BlueprintPart {
+                                        at: [0, y, 0],
+                                        block: "minecraft:air".to_string(),
+                                        state: String::new(),
+                                    })
+                                    .collect(),
+                                replace: leaves.clone(),
+                            },
+                            0,
+                        ));
+                    }
+                    step += 1.0;
+                }
+                made
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11538,6 +11601,22 @@ mod tests {
             matches!(&made[..], [(Command::Figure { on_leaves: true, pos, .. }, 0)] if pos[1] < -1000.0),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn overnight_a_line_is_cut_through_the_trees_toward_their_house() {
+        let memory = rich_memory();
+        let event = find("path_through_the_trees").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(made.len() >= 50, "thirty blocks, two wide: {}", made.len());
+        assert!(made.iter().all(|(c, at)| *at == 0 && matches!(c, Command::PlaceBlueprint { replace, parts, .. } if replace.iter().all(|r| r.ends_with("_leaves")) && parts.iter().all(|p| p.block == "minecraft:air"))), "leaves only, all at once");
     }
 
     #[test]
