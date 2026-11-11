@@ -69,8 +69,10 @@ that mattered, for good.
 
 The mind serializes the stay, memory included, as JSON (`serde_json`) behind a one-byte format
 version (3; 1 and 2 were `bincode` from development builds and only their
-counts are read), and the body stores the bytes as base64 in the world's saved data
-(`<world>/dimensions/<ns>/<dim>/data/craftkit/lodger.dat`). JSON because every struct carries
+counts are read), and the body stores the bytes as an NBT byte array in the world's saved data
+(`<world>/dimensions/<ns>/<dim>/data/craftkit/lodger.dat`, `memory`; `host/.../SavedMemory.java`). Not
+as a string: an NBT string holds 65535 bytes at most, which a memory passes within an hour, and
+the game then saved it empty. An older save's base64 string (`bytes`) is still read. JSON because every struct carries
 `#[serde(default)]`: a field added to the memory reads an older save with its default and
 costs no migration, which `bincode`'s positional layout could not give. A newer mind reads
 older formats and writes the newest; an older mind refuses a newer format, logs it, and runs

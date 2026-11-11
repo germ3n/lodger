@@ -10,7 +10,7 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 
 /**
  * One mod's bytes for one level, kept in the level's saved data under {@code craftkit_<mod id>},
- * as the base64 the ABI hands out, so the host never decodes them. The mod owns what they mean.
+ * as raw bytes ({@link SavedMemory}; the ABI hands them out as base64). The mod owns what they mean.
  * Beside them, the items the mod took and keeps ({@code take_item}'s {@code keep}), as the game
  * saves items, components and all, so what is given back is the very thing taken.
  */
@@ -30,7 +30,7 @@ public final class WorldData extends SavedData {
 	public static SavedDataType<WorldData> type(String modId) {
 		Codec<WorldData> codec = RecordCodecBuilder.create(instance -> instance
 				.group(
-						Codec.STRING.fieldOf("bytes").forGetter(data -> data.bytes),
+						SavedMemory.CODEC.forGetter(data -> data.bytes),
 						Codec.unboundedMap(Codec.STRING, ItemStack.CODEC).optionalFieldOf("kept", java.util.Map.of()).forGetter(data -> data.kept))
 				.apply(instance, WorldData::new));
 

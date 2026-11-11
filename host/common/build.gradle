@@ -36,6 +36,8 @@ dependencies {
 	// The same for the logger: slf4j is the game's; the tests need the API (no binding, so
 	// the host's lines are dropped in tests, which is fine).
 	testImplementation 'org.slf4j:slf4j-api:2.0.17'
+	// DataFixerUpper, the game's codecs: SavedMemoryTest encodes the saved memory as the game would.
+	testImplementation 'com.mojang:datafixerupper:10.0.21'
 }
 
 configurations {

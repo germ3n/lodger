@@ -117,7 +117,7 @@ because it can be built and tested without a game, and because the model layer i
 - [x] **The host's world loop.** Done: `host/common/.../world/Worlds.java` opens a
   world for each mod when a level loads (`ServerLevelEvents.LOAD` on Fabric, `LevelEvent.Load`
   on NeoForge), with its bytes from saved data (`WorldData`, a `SavedDataType` per mod holding
-  the ABI's base64, which the game writes to
+  the mod's bytes as an NBT byte array, which the game writes to
   `<world>/dimensions/<namespace>/<dimension>/data/craftkit/<mod>.dat`); each server tick it
   sends the level's players' basic state, ticks, carries out `log` and `system_message`
   (`Executors`, which reports an unknown command as not done rather than dropping it), reports,
@@ -1201,6 +1201,13 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A long stay's memory is saved whole** (owner: "i left my world and rejoined and the
+  stage reset"; "it seems like it dropped the whole memory"): the mind's bytes are saved as an
+  NBT byte array (`SavedMemory`), as large as they grow, and an older save's base64 string is
+  still read. Tests: `SavedMemoryTest` in JUnit. Was: they were one NBT string, which holds 65535
+  bytes at most; a memory of about 51 KB (68 KB as base64, half an hour into a world) failed every
+  save of the overworld ("Failed to write NBT String ... too long"), the game wrote it empty, and
+  the world opened at stage one with nothing remembered.
 - [x] **The debug panel in one's own singleplayer world** (owner: "i am in a singleplayer world"
   and it said operators only, in a launcher with an offline profile): a singleplayer world not
   open to LAN lets its one player in whatever the name check says, and a refusal is logged with
