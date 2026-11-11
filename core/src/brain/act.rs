@@ -348,6 +348,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Where they last fished; the water near them when they never have.
+        Action::FishingFigure => memory
+            .last_fished
+            .or_else(|| memory.feature("water").map(|w| w.pos)),
         Action::Breadcrumbs => memory
             .used_container()
             .and_then(crumb_stack)
@@ -5800,6 +5804,36 @@ pub fn commands(
             },
             _ => Vec::new(),
         },
+        // There, a rod in its hand, casting now and then, facing the water's way from them;
+        // gone once seen and looked away from.
+        Action::FishingFigure => pos
+            .map(|spot| {
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [spot[0], -10_000, spot[2]],
+                    60.0,
+                    false,
+                );
+                if let Command::Figure {
+                    held,
+                    swinging,
+                    once_seen,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack {
+                        id: "minecraft:fishing_rod".to_string(),
+                        count: 1,
+                        slot: 0,
+                    };
+                    *swinging = true;
+                    *once_seen = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11035,6 +11069,20 @@ mod tests {
         assert_eq!(takes, CRUMBS);
         assert_eq!(drops.len(), CRUMBS, "each one taken is the one dropped");
         assert!(drops.iter().all(|k| k.starts_with("crumb_")));
+    }
+
+    #[test]
+    fn where_they_fish_a_figure_fishes() {
+        let mut memory = rich_memory();
+        memory.last_fished = Some([30, 63, 5]);
+        let event = find("fishing_figure").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some([30, 63, 5]));
+        let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { held, swinging: true, .. }, 0)] if held.id == "minecraft:fishing_rod"),
+            "{made:?}"
+        );
     }
 
     #[test]

@@ -990,6 +990,8 @@ pub enum Action {
     TorchRing,
     /// A line of single blocks of theirs from their door off into the dark.
     Breadcrumbs,
+    /// Where they fish, a figure fishing.
+    FishingFigure,
 }
 
 /// Where a figure stands.
@@ -4544,6 +4546,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Breadcrumbs,
         false,
     ),
+    // docs/events_todo.md, 63.
+    row(
+        "fishing_figure",
+        3,
+        5,
+        &[TargetOutdoors, Around("water")],
+        3.0,
+        2,
+        Full,
+        Action::FishingFigure,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5477,6 +5491,7 @@ impl Event {
             | Action::BatsInTheHouse
             | Action::LostHour
             | Action::ChestWontOpen
+            | Action::FishingFigure
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5548,6 +5563,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "fishing_figure" => "have the figure fish where they fish",
             "breadcrumbs" => "lay a line of their blocks from their door off into the dark",
             "torch_ring" => "ring the house with torches",
             "name_in_the_snow" => "tread their name into the snow near the house",

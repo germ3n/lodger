@@ -1456,6 +1456,9 @@ The `[x]` lines above, summed up by day:
   they are away or asleep: six of their most plentiful block taken from their chest one at a time,
   each kept, and dropped three blocks apart from their door away from the house. Tests: one in
   `act`. Was: no such event.
+- [x] **A figure fishing** (`docs/events_todo.md`, 63): `fishing_figure`, stages 3 to 5: where they
+  last fished a figure with a rod, casting now and then, gone once seen. Tests: one in `act`. Was:
+  no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.
