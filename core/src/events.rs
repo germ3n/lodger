@@ -866,6 +866,8 @@ pub enum Action {
     EveryWindow,
     /// At the edge of their light, one figure more each night it comes.
     OneMoreEachNight,
+    /// The door they walk to will not open a few seconds, held from the other side; a knock.
+    DoorWontOpen,
 }
 
 /// Where a figure stands.
@@ -3868,6 +3870,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::OneMoreEachNight,
         false,
     ),
+    // docs/events_todo.md, 8: past `door_held` (shut again once open), it will not open at all.
+    row(
+        "door_wont_open",
+        4,
+        5,
+        &[TargetApproachingDoor, Door, Home],
+        3.0,
+        2,
+        Full,
+        Action::DoorWontOpen,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4660,6 +4674,7 @@ impl Event {
             | Action::MoveCreature(..)
             | Action::GolemTurned
             | Action::DyeSheep
+            | Action::DoorWontOpen
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -4979,6 +4994,7 @@ impl Event {
             "one_more_each_night" => {
                 "stand one more figure at the edge of their light than last night"
             }
+            "door_wont_open" => "hold their door shut as they come to it, and knock",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

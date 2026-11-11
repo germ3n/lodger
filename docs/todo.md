@@ -1201,6 +1201,12 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A door that will not open** (`docs/events_todo.md`, 8): `door_wont_open`, stages 4 and
+  5, as they walk to a door of the home: it will not open for six seconds, as if held from the
+  other side (`hold_door`, ABI 54: their use refused on both loaders, the door put back on their
+  screen, a blow on it heard each try), and three knocks come through it. Named apart from
+  `door_held` (stage 2), which shuts a door again once opened. Tests: one in `act`. Was: no such
+  event.
 - [x] **One more each night** (`docs/events_todo.md`, 7): `one_more_each_night`, stages 4 and
   5, at night with a light of theirs near: at the edge of the light one figure more than the
   nights it came before (`Memory::times`), up to six, side by side, gone together when one is

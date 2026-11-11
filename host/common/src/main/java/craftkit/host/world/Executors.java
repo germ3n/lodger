@@ -140,6 +140,7 @@ public final class Executors {
 				case "place_blueprint" -> placeBlueprint(level, command, id);
 				case "figure_swing" -> figureSwing(level, command, id, context);
 				case "choke" -> choke(level, command, id, context);
+				case "hold_door" -> holdDoor(level, command, id, context);
 				case "dig_in" -> digIn(level, command, id, context);
 				case "offer_trade" -> offerTrade(level, command, id, context, data);
 				case "move_player" -> movePlayer(level, command, id, context);
@@ -2072,6 +2073,19 @@ public final class Executors {
 	}
 
 	/** The figure shown to a player swings once, perhaps a hit, never below half a heart with spare (ABI 33). */
+	/** A door held shut for a while, as if from the other side (ABI 54). */
+	private static JsonObject holdDoor(ServerLevel level, JsonObject command, long id, Context context) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		BlockState state = level.getBlockState(pos);
+		if (!(state.getBlock() instanceof DoorBlock)) {
+			return report(id, false, Senses.blockId(state) + " is no door");
+		}
+		BlockPos lower = state.getValue(DoorBlock.HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER ? pos.below() : pos;
+		context.senses().holdDoor(lower, command.get("seconds").getAsFloat());
+
+		return report(id, true, "");
+	}
+
 	/** A figure chokes them where they lie, held asleep meanwhile (ABI 54). */
 	private static JsonObject choke(ServerLevel level, JsonObject command, long id, Context context) {
 		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());

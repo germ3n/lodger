@@ -579,6 +579,14 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// The door at `pos` (either half) will not open for `seconds` (ten at most), as if held
+    /// from the other side: a player's use of it is refused, the door rattling shut on their
+    /// screen, and each try heard as a blow on it. ABI 54.
+    HoldDoor {
+        id: u64,
+        pos: BlockPos,
+        seconds: f32,
+    },
     /// Lay blocks relative to `at`: `parts`' each `at` an offset, `y` 0 the ground's own
     /// block. With `at`'s y below -1000 the host finds the ground there (the highest block
     /// that stops movement, leaves left out, water counting) and says it in its report
@@ -1178,6 +1186,7 @@ impl Command {
             | Command::LightPortal { id, .. }
             | Command::FigureSwing { id, .. }
             | Command::Choke { id, .. }
+            | Command::HoldDoor { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

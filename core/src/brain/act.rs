@@ -313,6 +313,20 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::EveryWindow => home
             .filter(|h| windows(memory, h.center).len() >= 2)
             .map(|h| h.center),
+        // The door of the house they are walking to; their usual door when the moment has
+        // passed since it was offered.
+        Action::DoorWontOpen => home
+            .and_then(|h| {
+                h.doors
+                    .iter()
+                    .filter(|d| memory.approaching(**d, 6.0))
+                    .min_by(|a, b| {
+                        distance(block_of(memory.last.pos), **a)
+                            .total_cmp(&distance(block_of(memory.last.pos), **b))
+                    })
+                    .copied()
+            })
+            .or_else(|| memory.usual_door()),
         // Where they are: the host seats it in their boat.
         Action::BoatPassenger => Some(block_of(memory.last.pos)),
         // Ahead of them, where they look, far off on the ground: they see it start.
@@ -4087,6 +4101,38 @@ pub fn commands(
                     .collect()
             })
             .unwrap_or_default(),
+        // Held shut against them six seconds, each try a blow on it; and a knock from the other
+        // side as they stand there.
+        Action::DoorWontOpen => pos
+            .map(|door| {
+                let mut made = vec![(
+                    Command::HoldDoor {
+                        id: ids(),
+                        pos: door,
+                        seconds: 6.0,
+                    },
+                    0,
+                )];
+                for (i, at) in [40, 48, 56].into_iter().enumerate() {
+                    made.push((
+                        Command::PlaySound {
+                            id: ids(),
+                            player: target,
+                            sound: "minecraft:block.wooden_door.close".to_string(),
+                            pos: [
+                                door[0] as f64 + 0.5,
+                                door[1] as f64 + 1.0,
+                                door[2] as f64 + 0.5,
+                            ],
+                            volume: 0.7,
+                            pitch: 0.75 + 0.05 * i as f32,
+                        },
+                        at,
+                    ));
+                }
+                made
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7729,6 +7775,32 @@ mod tests {
         assert!(
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
+        );
+    }
+
+    #[test]
+    fn the_door_they_walk_to_will_not_open_and_is_knocked_on() {
+        let mut memory = rich_memory();
+        let door = memory.home.as_ref().unwrap().doors[0];
+        // Walking toward it, four blocks off, facing it.
+        memory.last.online = true;
+        memory.last.walking = true;
+        memory.last.pos = [door[0] as f64 - 3.5, door[1] as f64, door[2] as f64 + 0.5];
+        memory.last.yaw = -90.0;
+        let held = find("door_wont_open").unwrap();
+        let p = place(held, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some(door), "the door they walk to");
+        let made = commands(held, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0], (Command::HoldDoor { pos, seconds, .. }, 0) if *pos == door && *seconds >= 4.0),
+            "{made:?}"
+        );
+        assert_eq!(
+            made.iter()
+                .filter(|(c, at)| matches!(c, Command::PlaySound { .. }) && *at > 0)
+                .count(),
+            3,
+            "a knock"
         );
     }
 

@@ -222,7 +222,8 @@ begins and left open, passed over when it is no door; their eyes kept open by th
 they burn, spared through the fire); `figure`'s `crawls` (on its belly along its path, gliding, gone at its end), `rushes` (running
 at the player after them, gone two blocks short with a hit's jolt, no harm), `rides_behind` (in the
 seat behind them in their boat, on their client alone, gone with the boat left), `together` (a
-group gone at once when any of it is) and `upside_down` (hanging feet up from the first
+group gone at once when any of it is); `hold_door` (a door that will not open for a while, each
+try refused, the door put back on their screen and a blow on it heard) and `upside_down` (hanging feet up from the first
 solid block over its place, as the game draws a player named Dinnerbone); and a figure wears its
 player's skin layers (the hat, the jacket), where it wore the bare skin.
 

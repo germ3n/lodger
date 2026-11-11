@@ -115,6 +115,12 @@ public final class CraftkitNeoForge {
 		});
 		NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickBlock event) -> {
 			if (event.getEntity() instanceof ServerPlayer player) {
+				// A door held shut (`hold_door`): the use refused.
+				if (senses.refusedUse(player, event.getPos())) {
+					event.setCanceled(true);
+					event.setCancellationResult(net.minecraft.world.InteractionResult.FAIL);
+					return;
+				}
 				senses.noticedUsedBlock(player, event.getPos());
 			}
 		});

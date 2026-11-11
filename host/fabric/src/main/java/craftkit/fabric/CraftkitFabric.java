@@ -64,6 +64,10 @@ public final class CraftkitFabric implements ModInitializer {
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> senses.noticedLeft(handler.player));
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			if (player instanceof ServerPlayer serverPlayer) {
+				// A door held shut (`hold_door`): the use refused.
+				if (senses.refusedUse(serverPlayer, hit.getBlockPos())) {
+					return InteractionResult.FAIL;
+				}
 				senses.noticedUsedBlock(serverPlayer, hit.getBlockPos());
 			}
 			return InteractionResult.PASS;

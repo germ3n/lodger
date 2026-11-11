@@ -163,6 +163,49 @@ public final class Senses {
 	}
 
 	/** A block used: if it holds a container, that is a container opened, with its contents. */
+	/** The doors held shut (`hold_door`, ABI 54): each door's lower half, and the tick it lets go. */
+	private final Map<BlockPos, Long> heldDoors = new HashMap<>();
+	/** The longest a door is held. */
+	static final float MOST_HELD_SECONDS = 10;
+
+	/** The door at {@code pos} (its lower half) held shut for {@code seconds}. */
+	public void holdDoor(BlockPos lower, float seconds) {
+		heldDoors.put(lower.immutable(), tick + (long) (Math.min(seconds, MOST_HELD_SECONDS) * MovementTracker.TPS));
+	}
+
+	/**
+	 * Whether a player's use of the block at {@code pos} is refused, a door held shut: the
+	 * door put back on their screen (their client opened it ahead of the server), and a blow on
+	 * it heard. The loaders cancel the use when it is.
+	 */
+	public boolean refusedUse(ServerPlayer player, BlockPos pos) {
+		if (heldDoors.isEmpty()) {
+			return false;
+		}
+		BlockState state = player.level().getBlockState(pos);
+		if (!(state.getBlock() instanceof net.minecraft.world.level.block.DoorBlock)) {
+			return false;
+		}
+		BlockPos lower = state.getValue(net.minecraft.world.level.block.DoorBlock.HALF) == net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER ? pos.below() : pos;
+		Long until = heldDoors.get(lower);
+		if (until == null) {
+			return false;
+		}
+		if (tick > until) {
+			heldDoors.remove(lower);
+			return false;
+		}
+		if (player.level() instanceof ServerLevel level) {
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(level, lower));
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(level, lower.above()));
+		}
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+				net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR),
+				net.minecraft.sounds.SoundSource.BLOCKS, lower.getX() + 0.5, lower.getY() + 1, lower.getZ() + 0.5, 0.8f, 0.8f, player.getRandom().nextLong()));
+
+		return true;
+	}
+
 	public void noticedUsedBlock(ServerPlayer player, BlockPos pos) {
 		// A spectator opens nothing and never unpacks loot; one use is heard once, though the
 		// loaders ask for each hand (until now both happened).
