@@ -1876,6 +1876,18 @@ The `[x]` lines above, summed up by day:
   comments read against the code as it is: features, numbers, commands and paths that changed,
   dates that crept back in, promises the mod no longer keeps. After the last bug pass.
 
+- [x] **Out of the door, its place by the home, a held door only shuts** (owner, playing): a
+  scan tells each door's way out, the side of it the sky is over (`Scan::outs`, ABI 54), and every
+  event that stands or puts things before a door goes by it (`sleepwalk`, `kill_sign`,
+  `head_on_post`, `snowman`, `words_on_sign`, `arrow_in_the_door`, `door_cloud`, the trails and
+  the rest), the old guess kept for a door that does not tell; `move_player` looks one block down
+  too; its place is chosen again once the home moves more than 32 blocks from it; `door_held` only
+  shuts. Was: the way out was the side away from the home's middle, which is where they stand
+  still, and beside a door in a long wall it pointed along the wall: `sleepwalk` put them into
+  the planks beside the door and failed with no room to stand there. The place stayed by the
+  first home, a hundred blocks off at that floor's height, where a sign found nothing to stand on.
+  `door_held`, forced on a shut door, opened it.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

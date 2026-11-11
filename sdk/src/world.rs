@@ -256,6 +256,10 @@ pub struct Scan {
     pub counts: Vec<(String, u32)>,
     /// Positions of the kinds asked for by position.
     pub positions: Vec<(String, BlockPos)>,
+    /// For each door's lower half among `positions`, the way out of it as `[dx, dz]`: the side
+    /// along its facing open to the sky, the other roofed. A door with both sides or neither
+    /// open is left out. ABI 54.
+    pub outs: Vec<(BlockPos, [i32; 2])>,
 }
 
 /// The answer to `Command::Surroundings`: points of interest around a point, as features.

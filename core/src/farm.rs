@@ -403,6 +403,7 @@ mod tests {
             &Observations {
                 players: vec![Player::default()],
                 scans: vec![Scan {
+                    outs: Vec::new(),
                     id: 9,
                     counts: vec![],
                     positions: field(0, 0, 8, 6)

@@ -489,6 +489,7 @@ public final class Executors {
 
 		java.util.Map<String, Integer> counts = new java.util.TreeMap<>();
 		JsonArray positions = new JsonArray();
+		JsonArray outs = new JsonArray();
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 		for (int x : ScanBox.axis(lo[0], hi[0], step)) {
 			for (int y : ScanBox.axis(lo[1], hi[1], step)) {
@@ -507,6 +508,10 @@ public final class Executors {
 					entry.add(block);
 					entry.add(Senses.blockPos(pos.immutable()));
 					positions.add(entry);
+					JsonArray out = doorOut(level, pos.immutable());
+					if (out != null) {
+						outs.add(out);
+					}
 				}
 			}
 		}
@@ -522,9 +527,46 @@ public final class Executors {
 		});
 		answer.add("counts", countsArray);
 		answer.add("positions", positions);
+		answer.add("outs", outs);
 		context.senses().scanned(level, answer);
 
 		return report(id, true, "");
+	}
+
+	/**
+	 * A door's lower half: its position and the way out, {@code [pos, [dx, dz]]}, the side along
+	 * its facing with sky over it ({@link DoorOut}); null for anything else, or a door that does
+	 * not tell.
+	 */
+	private static JsonArray doorOut(ServerLevel level, BlockPos pos) {
+		BlockState state = level.getBlockState(pos);
+		if (!state.is(net.minecraft.tags.BlockTags.DOORS)
+				|| state.getValue(net.minecraft.world.level.block.DoorBlock.HALF) != net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER) {
+			return null;
+		}
+		Direction facing = state.getValue(net.minecraft.world.level.block.DoorBlock.FACING);
+		int side = DoorOut.side(skyBeside(level, pos, facing), skyBeside(level, pos, facing.getOpposite()));
+		if (side == 0) {
+			return null;
+		}
+		Direction out = side > 0 ? facing : facing.getOpposite();
+		JsonArray way = new JsonArray();
+		way.add(out.getStepX());
+		way.add(out.getStepZ());
+		JsonArray entry = new JsonArray();
+		entry.add(Senses.blockPos(pos));
+		entry.add(way);
+		return entry;
+	}
+
+	/** Whether the sky is over a head's height on this side of a door, within {@link DoorOut#LOOK} blocks. */
+	private static boolean skyBeside(ServerLevel level, BlockPos door, Direction side) {
+		for (int n = 1; n <= DoorOut.LOOK; n++) {
+			if (level.canSeeSky(door.relative(side, n).above())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static JsonObject toggleBlock(ServerLevel level, BlockPos pos, long id) {
@@ -2037,7 +2079,8 @@ public final class Executors {
 		if (target.distanceTo(player.position()) > MOST_MOVE) {
 			return report(id, false, "farther than " + (int) MOST_MOVE + " blocks");
 		}
-		for (int up = 0; up <= 2; up++) {
+		// Up to two up, and one down: the ground outside a door can be a step lower than its sill.
+		for (int up : new int[] {0, 1, -1, 2}) {
 			Vec3 at = target.add(0, up, 0);
 			// Ground under them and no water or lava where they stand: a bed by an edge or a
 			// shaft sent them off it, and that fall was no spared one.

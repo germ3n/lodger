@@ -232,6 +232,7 @@ mod tests {
         memory.observe(
             &craftkit::world::Observations {
                 scans: vec![craftkit::world::Scan {
+                    outs: Vec::new(),
                     id: 7,
                     counts: vec![],
                     positions,

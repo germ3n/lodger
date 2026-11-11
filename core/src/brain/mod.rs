@@ -3001,6 +3001,7 @@ mod tests {
             ..Memory::default()
         };
         memory.home = Some(Home {
+            outs: Vec::new(),
             bed: Some([0, 64, 0]),
             center: [0, 64, 0],
             floor_y: 64,
@@ -5197,6 +5198,7 @@ mod tests {
             ..Memory::default()
         };
         memory.home = Some(Home {
+            outs: Vec::new(),
             bed: Some([0, 64, 0]),
             center: [0, 64, 0],
             floor_y: 64,

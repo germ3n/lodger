@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 
 /// How far from the home's center the home reaches.
 pub const HOME_RADIUS: i32 = 16;
+/// Past this many blocks from a home moved to, its place is chosen again by the new home.
+pub const PLACE_FROM_HOME: f64 = 32.0;
 /// Within this many blocks of the target, nothing happens while in view.
 pub const CELL: i32 = 4;
 
@@ -21,6 +23,10 @@ pub struct Home {
     pub floor_y: i32,
     pub doors: Vec<BlockPos>,
     pub lights: Vec<BlockPos>,
+    /// The way out of each door the host could tell, `[dx, dz]` (`Scan::outs`): the house's
+    /// middle is where they stand still, so the side away from it was a guess that sent a
+    /// sleepwalker into the wall beside a door.
+    pub outs: Vec<(BlockPos, [i32; 2])>,
 }
 
 /// A house the target is in that is not their home, as the mind's scan found it.
@@ -1265,6 +1271,7 @@ impl Memory {
             if self.home_scan.0 != 0 && scan.id == self.home_scan.0 {
                 let (_, min, max) = self.home_scan;
                 self.read_home(&scan.positions, min, max);
+                self.read_outs(&scan.outs, min, max);
                 continue;
             }
             if self.here_scan != 0 && scan.id == self.here_scan {
@@ -2015,6 +2022,30 @@ impl Memory {
         }
     }
 
+    /// The ways out of the home's doors in the box read, as the host told them; a door with
+    /// none told keeps no way out.
+    pub fn read_outs(&mut self, outs: &[(BlockPos, [i32; 2])], min: BlockPos, max: BlockPos) {
+        let inside = |p: &BlockPos| (0..3).all(|i| p[i] >= min[i] && p[i] <= max[i]);
+        let Some(home) = self.home.as_mut() else {
+            return;
+        };
+        home.outs.retain(|(p, _)| !inside(p));
+        for (door, out) in outs {
+            if home.doors.contains(door) && out[0].abs() + out[1].abs() == 1 {
+                push_capped(&mut home.outs, (*door, *out), MOST_DOORS);
+            }
+        }
+    }
+
+    /// The way out of a door of the home, `[dx, dz]`, when the host told it.
+    pub fn door_out(&self, door: BlockPos) -> Option<[i32; 2]> {
+        let home = self.home.as_ref()?;
+        home.outs
+            .iter()
+            .find(|(d, _)| *d == door)
+            .map(|(_, out)| *out)
+    }
+
     /// The home moved by a bed (one slept in elsewhere, a house moved to): the old house's doors, lights
     /// and plants are let go, its chests are no longer the home's, and a site away from home the
     /// new home is at is the home now. Kept, a knock came at a
@@ -2036,6 +2067,16 @@ impl Memory {
             }
         }
         self.forget_sites_at_home();
+        // Its place was chosen by the home of then (`act::spot`: 8 to 12 blocks out, at that
+        // floor's height). A home moved a hundred blocks left it on the old hill, where a sign
+        // found nothing to stand on; it is chosen again by the new home.
+        if self
+            .place
+            .is_some_and(|p| distance(center, p) > PLACE_FROM_HOME)
+        {
+            self.place = None;
+            self.placed_at_place.clear();
+        }
     }
 
     /// Keeps a line it wrote, so it is not written again.
@@ -4001,6 +4042,7 @@ mod tests {
         let answer = |id: u64, found: &[(&str, BlockPos)]| {
             let mut seen = obs(vec![], vec![]);
             seen.scans = vec![craftkit::world::Scan {
+                outs: Vec::new(),
                 id,
                 counts: vec![],
                 positions: found.iter().map(|(k, p)| (k.to_string(), *p)).collect(),
@@ -4209,6 +4251,7 @@ mod tests {
     fn a_walk_repeated_becomes_a_route_and_the_lodger_knows_its_far_end() {
         let mut memory = Memory {
             home: Some(Home {
+                outs: Vec::new(),
                 bed: Some([0, 64, 0]),
                 center: [0, 64, 0],
                 floor_y: 64,
@@ -4829,5 +4872,61 @@ mod tests {
             "a mod only there is not listed"
         );
         assert_eq!(used.len(), 2);
+    }
+
+    #[test]
+    fn a_home_moved_far_lets_its_place_go_and_the_doors_ways_out_are_read() {
+        let mut memory = Memory::default();
+        memory.set_target(0, "razor", "u0");
+        let slept = |memory: &mut Memory, pos: BlockPos| {
+            memory.observe(
+                &Observations {
+                    players: vec![craftkit::world::Player {
+                        index: 0,
+                        uuid: "u0".to_string(),
+                        ..Default::default()
+                    }],
+                    events: vec![craftkit::world::Event {
+                        player: 0,
+                        kind: EventKind::SleptBegan,
+                        pos: Some(pos),
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                },
+                1.0,
+            )
+        };
+        slept(&mut memory, [0, 92, 0]);
+        memory.place = Some([10, 92, 0]);
+        memory.placed_at_place = vec![[10, 92, 1]];
+        slept(&mut memory, [300, 64, 0]);
+        assert_eq!(memory.place, None, "chosen again by the new home");
+        assert!(memory.placed_at_place.is_empty());
+
+        // A place already by the home moved to is kept.
+        slept(&mut memory, [0, 64, 0]);
+        memory.place = Some([310, 64, 0]);
+        slept(&mut memory, [300, 64, 0]);
+        assert_eq!(memory.place, Some([310, 64, 0]));
+
+        // The ways out, for the home's doors in the box read only.
+        let home = memory.home.as_mut().unwrap();
+        home.doors = vec![[303, 64, 0], [305, 64, 4]];
+        memory.read_outs(
+            &[
+                ([303, 64, 0], [0, 1]),
+                ([999, 64, 0], [1, 0]),
+                ([305, 64, 4], [1, 1]),
+            ],
+            [290, 60, -10],
+            [320, 70, 10],
+        );
+        assert_eq!(memory.door_out([303, 64, 0]), Some([0, 1]));
+        assert_eq!(memory.door_out([999, 64, 0]), None, "no door of the home");
+        assert_eq!(memory.door_out([305, 64, 4]), None, "no way at all");
+        // Read again with nothing told: let go.
+        memory.read_outs(&[], [290, 60, -10], [320, 70, 10]);
+        assert_eq!(memory.door_out([303, 64, 0]), None);
     }
 }

@@ -526,6 +526,7 @@ mod tests {
             0.0,
         );
         memory.home = Some(crate::memory::Home {
+            outs: Vec::new(),
             bed: Some([0, 64, 0]),
             center: [0, 64, 0],
             floor_y: 64,

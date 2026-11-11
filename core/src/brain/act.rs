@@ -330,7 +330,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         // Two blocks out of their usual door, away from the house's middle.
         Action::Sleepwalk => match (memory.usual_door(), home) {
             (Some(door), Some(h)) => {
-                let out = step_toward(h.center, door);
+                let out = out_of_door(memory, h.center, door);
                 Some([door[0] + out[0] * 2, door[1], door[2] + out[1] * 2])
             }
             _ => None,
@@ -692,7 +692,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         // Two blocks out from the door they use and one to the side, clear of the kill sign.
         Action::HeadOnPost => match (memory.usual_door(), home) {
             (Some(door), Some(h)) => {
-                let step = step_toward(h.center, door);
+                let step = out_of_door(memory, h.center, door);
                 Some([
                     door[0] + step[0] * 2 + step[1],
                     door[1],
@@ -722,7 +722,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         // Beside the door, two out, on the side away from the words on the sign.
         Action::Snowman => match (memory.usual_door(), home) {
             (Some(door), Some(h)) => {
-                let step = step_toward(h.center, door);
+                let step = out_of_door(memory, h.center, door);
                 Some([
                     door[0] + step[0] * 3 + step[1] * 2,
                     door[1],
@@ -745,7 +745,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         // Beside the door they use, two out, one to the other side from the head on the post.
         Action::WordsOnSign => match (memory.usual_door(), home) {
             (Some(door), Some(h)) => {
-                let step = step_toward(h.center, door);
+                let step = out_of_door(memory, h.center, door);
                 Some([
                     door[0] + step[0] * 2 - step[1],
                     door[1],
@@ -1204,7 +1204,7 @@ pub fn kill_sign_spot(memory: &Memory) -> Option<BlockPos> {
         .rev()
         .find(|l| l.event == "kill_sign")?
         .pos?;
-    let step = step_toward(home.center, door);
+    let step = out_of_door(memory, home.center, door);
 
     Some([door[0] + step[0] * 2, door[1], door[2] + step[1] * 2])
 }
@@ -1902,13 +1902,24 @@ fn step_toward(from: BlockPos, to: BlockPos) -> [i32; 2] {
     }
 }
 
+/// The way out of a door of the home, `[dx, dz]`: the side open to the sky as the host read
+/// it, else the side away from the house's middle. The middle is where they stand still, and
+/// beside a door in a long wall that guess pointed along the wall: the sleepwalker was put
+/// into it, and the sign and the head went in beside the door, not before it.
+fn out_of_door(memory: &Memory, center: BlockPos, door: BlockPos) -> [i32; 2] {
+    memory
+        .door_out(door)
+        .unwrap_or_else(|| step_toward(center, door))
+}
+
 /// Which way an event's toggle goes: open or lit, shut or out, or (none) the other way from now.
 /// `close_door` on a door left shut used to open it.
 fn toggle_to(event: &str) -> Option<bool> {
     match event {
         "open_door" | "open_gate" | "light_campfire" | "wake" | "door_opens_itself"
         | "village_doors" => Some(true),
-        "close_door" | "put_out_campfire" => Some(false),
+        // A door held shuts; forced on a shut door it opened it.
+        "close_door" | "put_out_campfire" | "door_held" => Some(false),
         _ => None,
     }
 }
@@ -3112,7 +3123,7 @@ pub fn commands(
                     return vec![];
                 };
                 // Two blocks out from the door, away from the house.
-                let step = step_toward(home.center, door);
+                let step = out_of_door(memory, home.center, door);
                 let p = [door[0] + step[0] * 2, door[1], door[2] + step[1] * 2];
                 sign_at(
                     ids,
@@ -3155,7 +3166,7 @@ pub fn commands(
                     home.center[2] + 10,
                 ]);
                 let mut p = [door[0], door[1] - 1, door[2]];
-                let step = step_toward(home.center, door);
+                let step = out_of_door(memory, home.center, door);
                 p = [p[0] + step[0], p[1], p[2] + step[1]];
                 let count = 6 + (seed % 5) as i32;
                 let mut made = Vec::new();
@@ -4126,7 +4137,7 @@ pub fn commands(
             };
             match (pos, memory.in_used_container(flower), memory.home.as_ref()) {
                 (Some(door), Some((chest, stack)), Some(home)) => {
-                    let step = step_toward(home.center, door);
+                    let step = out_of_door(memory, home.center, door);
                     let p = [
                         door[0] + step[0] * 2 + step[1],
                         door[1],
@@ -5876,7 +5887,7 @@ pub fn commands(
         ) {
             (Some(chest), Some(door), Some(home)) => match crumb_stack(chest) {
                 Some(stack) => {
-                    let away = step_toward(home.center, door);
+                    let away = out_of_door(memory, home.center, door);
                     let mut made = Vec::new();
                     for i in 0..CRUMBS {
                         let keep = format!("crumb_{i}");
@@ -6285,7 +6296,7 @@ pub fn commands(
         // From ten blocks out in front of their door, at its middle: it stays in the door.
         Action::ArrowInTheDoor => match (pos, memory.home.as_ref()) {
             (Some(door), Some(home)) => {
-                let out = step_toward(home.center, door);
+                let out = out_of_door(memory, home.center, door);
                 let from = [
                     (door[0] + out[0] * 10) as f64 + 0.5,
                     door[1] as f64 + 1.5,
@@ -6698,7 +6709,7 @@ pub fn commands(
         },
         Action::TrailIn => match (pos, memory.home.as_ref()) {
             (Some(door), Some(home)) => {
-                let step = step_toward(home.center, door);
+                let step = out_of_door(memory, home.center, door);
                 vec![(
                     Command::Prints {
                         id: ids(),
@@ -7848,7 +7859,7 @@ pub fn commands(
         // A cloud on the step outside the door they use, for the morning.
         Action::DoorCloud => match (memory.usual_door(), memory.home.as_ref()) {
             (Some(door), Some(home)) => {
-                let step = step_toward(home.center, door);
+                let step = out_of_door(memory, home.center, door);
                 vec![(
                     Command::EffectCloud {
                         id: ids(),
@@ -8277,6 +8288,7 @@ mod tests {
         };
         memory.last.online = false;
         memory.home = Some(Home {
+            outs: Vec::new(),
             bed: Some([0, 64, 0]),
             center: [0, 64, 0],
             floor_y: 64,
@@ -13166,5 +13178,45 @@ mod tests {
         let dark = made("into_the_dark", &mut rng);
         assert!(matches!(&dark[0].0, Command::Figure { path, .. } if path.len() == 2));
         assert!(matches!(&dark[1].0, Command::Hint { hint, .. } if hint == "flicker"));
+    }
+
+    #[test]
+    fn out_of_a_door_is_the_way_the_host_told_not_away_from_the_middle() {
+        let mut memory = rich_memory();
+        let door = memory.usual_door().unwrap();
+        let center = memory.home.as_ref().unwrap().center;
+        let guess = step_toward(center, door);
+        // Told the way out across the guess: a door in a long wall, the middle off to its side.
+        let told = [guess[1], guess[0]];
+        memory.home.as_mut().unwrap().outs = vec![(door, told)];
+        assert_eq!(out_of_door(&memory, center, door), told);
+        let walk = find("sleepwalk").unwrap();
+        let outside = place(walk, &memory, &mut Rng::new(1)).unwrap();
+        assert_eq!(
+            outside,
+            [door[0] + told[0] * 2, door[1], door[2] + told[1] * 2],
+            "out of the door, not into the wall beside it"
+        );
+        // Not told: the guess as before.
+        memory.home.as_mut().unwrap().outs.clear();
+        assert_eq!(out_of_door(&memory, center, door), guess);
+    }
+
+    #[test]
+    fn a_held_door_only_ever_shuts() {
+        let memory = rich_memory();
+        let door = memory.home.as_ref().unwrap().doors[0];
+        let made = commands(
+            find("door_held").unwrap(),
+            Some(door),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[0].0, Command::ToggleBlock { pos, to: Some(false), .. } if *pos == door),
+            "forced on a shut door it opened it"
+        );
     }
 }

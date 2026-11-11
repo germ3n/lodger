@@ -233,7 +233,11 @@ sky with it, for everyone); `snowball` (a real snowball thrown at a player, harm
 thrown flies toward a place instead of the stronghold); `push_player` (a player pushed once, a block a tick at most on each axis); `hold_container` (a container that will not open for a while, a locked chest's rattle each try); `hold_door` (a door that will not open for a while, each
 try refused, the door put back on their screen and a blow on it heard) and `upside_down` (hanging feet up from the first
 solid block over its place, as the game draws a player named Dinnerbone); and a figure wears its
-player's skin layers (the hat, the jacket), where it wore the bare skin.
+player's skin layers (the hat, the jacket), where it wore the bare skin; a scan's `outs` (for
+each door's lower half among its positions, the way out of it, the side along its facing with sky
+over it within three blocks, the other roofed; a door with both or neither open left out); and
+`move_player` looks for room one block down as well as up, the ground outside a door being a step
+below its sill at times.
 
 ## Resources
 
@@ -302,7 +306,7 @@ written from the lodger's needs and generalized as a second mod needs them:
     blocks with its kind, position, name if any, owner if tamed, whether it looks at the player,
     whether it is hostile; and on request (a `Scan` command, answered next tick) a summary of
     blocks in a box: counts by kind, the positions of named kinds (doors, chests, beds, torches,
-    ores), light levels, whether a position is in view of a player;
+    ores), the way out of each door found, light levels, whether a position is in view of a player;
   - *the surroundings,* once an in-game day within 160 blocks at most of a point the mod names
     (the lodger asks 96 around the home): surface water and how wide, lava, snow, sand, trees,
     crops, lights, beds, containers, doors, a bell, and the generated structures here by tag
