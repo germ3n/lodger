@@ -59,6 +59,8 @@ public final class Figures {
 		double speed = ChokeWay.PER_TICK;
 		/** On its belly, as the game draws a swimmer on land (ABI 54). */
 		boolean crawls;
+		/** Running at its player, after them, gone just short with a jolt (ABI 54). */
+		boolean rushes;
 		int pathIndex;
 		long untilTick;
 		final double vanishWithin;
@@ -276,6 +278,14 @@ public final class Figures {
 				}
 			}
 
+			if (figure.rushes && figure.player.level() instanceof ServerLevel level) {
+				if (rush(level, figure)) {
+					unsend(figure);
+					it.remove();
+					sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail("rushed")));
+				}
+				continue;
+			}
 			if (figure.glides && !figure.path.isEmpty()) {
 				glide(figure);
 				// A glide's end: one that stays stands there; the rest are gone (a crawl at the bed).
@@ -307,6 +317,46 @@ public final class Figures {
 				sendEntity(figure);
 			}
 		}
+	}
+
+	/** How fast a rushing figure runs, blocks a tick: a sprint and a half. */
+	static final double RUSH_PER_TICK = 0.42;
+	/** How far short of them it is gone. */
+	static final double RUSH_SHORT = 2;
+
+	/** The figure {@code number} shown to {@code player} runs at them from where it stands (ABI 54). */
+	public boolean rushAt(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure == null) {
+			return false;
+		}
+		figure.rushes = true;
+
+		return true;
+	}
+
+	/**
+	 * A rushing figure a tick nearer them, on the ground, facing them; true when it is near
+	 * enough to be gone, the hit's jolt and sound sent them, no harm.
+	 */
+	private static boolean rush(ServerLevel level, Figure figure) {
+		Vec3 to = figure.player.position().subtract(figure.at);
+		double away = Math.sqrt(to.x * to.x + to.z * to.z);
+		if (away <= RUSH_SHORT) {
+			figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundDamageEventPacket(figure.player, level.damageSources().generic()));
+			return true;
+		}
+		double step = Math.min(RUSH_PER_TICK, away - RUSH_SHORT) / away;
+		figure.at = ground(level, new Vec3(figure.at.x + to.x * step, -10_000, figure.at.z + to.z * step));
+		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+		figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
+				net.minecraft.world.entity.PositionPath.of(figure.at), yaw, 0, true));
+		var head = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+		head.writeVarInt(figure.entityId);
+		head.writeByte(net.minecraft.util.Mth.floor(yaw * 256f / 360f));
+		figure.player.connection.send(net.minecraft.network.protocol.game.ClientboundRotateHeadPacket.STREAM_CODEC.decode(head));
+
+		return false;
 	}
 
 	/** A gliding figure a tick along its path, its place and facing sent; it stops at the end. */

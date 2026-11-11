@@ -309,6 +309,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::RingOfFigures(_) => home.map(|h| h.center),
         Action::UpsideDown => home.and_then(|h| h.bed),
         Action::Crawl => memory.usual_door(),
+        // Ahead of them, where they look, far off on the ground: they see it start.
+        Action::Hunted => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            Some([
+                at[0] + (-yaw.sin() * HUNTED_FROM).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * HUNTED_FROM).round() as i32,
+            ])
+        }
         Action::Figure(FigureWhere::Roof, _, _) => {
             home.map(|h| [h.center[0], h.floor_y + 5, h.center[2]])
         }
@@ -1062,6 +1072,9 @@ fn bedside(
     .unwrap_or_default()
 }
 
+/// How far ahead of them `hunted`'s figure starts its run.
+const HUNTED_FROM: f64 = 36.0;
+
 /// How far out the ring of figures stands from the house's middle.
 const RING_BLOCKS: f64 = 20.0;
 /// The ring's figures are numbered from here, apart from the one figure (1).
@@ -1106,6 +1119,7 @@ fn figure_shown(
         swinging: false,
         upside_down: false,
         crawls: false,
+        rushes: false,
     }
 }
 
@@ -3944,6 +3958,18 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // It runs at them flat out from there, after them as they move, gone just short with a
+        // jolt (the host's `rushes`); empty-handed, its name hidden.
+        Action::Hunted => pos
+            .map(|from| {
+                let mut shown = figure_shown(ids, memory, target, from, 20.0, false);
+                if let Command::Figure { held, rushes, .. } = &mut shown {
+                    *held = ItemStack::default();
+                    *rushes = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -5265,6 +5291,7 @@ pub fn commands(
                         swinging: matches!(where_, FigureWhere::FarWorking),
                         upside_down: false,
                         crawls: false,
+                        rushes: false,
                     },
                     0,
                 )]
@@ -7581,6 +7608,27 @@ mod tests {
         assert!(
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
+        );
+    }
+
+    #[test]
+    fn in_the_dark_the_figure_runs_at_them_from_ahead() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.0, 64.0, 0.0];
+        // Facing south (+z).
+        memory.last.yaw = 0.0;
+        let mut rng = Rng::new(3);
+        let hunted = find("hunted").unwrap();
+        let p = place(hunted, &memory, &mut rng).unwrap();
+        assert_eq!(
+            p,
+            [0, -10_000, HUNTED_FROM as i32],
+            "ahead of them, on the ground"
+        );
+        let made = commands(hunted, Some(p), &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { rushes: true, held, name_shown: false, .. }, 0)] if held.id.is_empty()),
+            "{made:?}"
         );
     }
 

@@ -259,6 +259,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::RingOfFigures(_)
         | Action::UpsideDown
         | Action::Crawl
+        | Action::Hunted
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
@@ -299,6 +300,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::RingOfFigures(_)
         | Action::UpsideDown
         | Action::Crawl
+        | Action::Hunted
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)

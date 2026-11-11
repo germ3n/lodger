@@ -1135,6 +1135,10 @@ pub enum Command {
         /// walk, and gone at its end. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         crawls: bool,
+        /// Running at the player flat out, after them as they move, and gone two blocks short
+        /// with a hit's jolt and sound, no harm. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        rushes: bool,
     },
     RemoveFigure {
         id: u64,

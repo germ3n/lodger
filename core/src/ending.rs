@@ -769,6 +769,7 @@ fn figure(
         swinging: false,
         upside_down: false,
         crawls: false,
+        rushes: false,
     }
 }
 

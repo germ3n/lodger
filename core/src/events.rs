@@ -854,6 +854,8 @@ pub enum Action {
     UpsideDown,
     /// At night, a figure crawls on its belly from their door to their bed while they are in.
     Crawl,
+    /// At night, outdoors: far ahead in the dark a figure runs at them, gone just short.
+    Hunted,
 }
 
 /// Where a figure stands.
@@ -3805,6 +3807,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Crawl,
         false,
     ),
+    // docs/events_todo.md, 4.
+    row(
+        "hunted",
+        5,
+        5,
+        &[Night, TargetOutdoors],
+        4.0,
+        2,
+        Full,
+        Action::Hunted,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4604,6 +4618,7 @@ impl Event {
             | Action::RingOfFigures(_)
             | Action::UpsideDown
             | Action::Crawl
+            | Action::Hunted
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -4906,6 +4921,7 @@ impl Event {
             "ring_of_figures" => "stand figures in a ring round the house while they are inside",
             "upside_down" => "hang the figure from the ceiling over their bed as they wake",
             "the_crawl" => "have the figure crawl from their door to their bed while they are in",
+            "hunted" => "have the figure run at them out of the dark",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
