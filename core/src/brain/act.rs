@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::SnowballThrown => Some(block_of(memory.last.pos)),
         // Ten blocks ahead of where they look and well to one side, on the ground.
         Action::CrouchedBehindATree => {
             let at = block_of(memory.last.pos);
@@ -6253,6 +6254,23 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // From twelve blocks behind them, at their back; no one there.
+        Action::SnowballThrown => {
+            let yaw = (memory.last.yaw as f64).to_radians();
+            let from = [
+                memory.last.pos[0] + yaw.sin() * 12.0,
+                -10_000.0,
+                memory.last.pos[2] - yaw.cos() * 12.0,
+            ];
+            vec![(
+                Command::Snowball {
+                    id: ids(),
+                    player: target,
+                    from,
+                },
+                0,
+            )]
+        }
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11817,6 +11835,26 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Figure { eats: true, held, vanish_within, .. }, 0)] if held.id.is_empty() && *vanish_within > 0.0),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_snowball_hits_their_back_from_no_one() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("snowball_thrown").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Snowball { from, .. }, 0)] if from[2] < -10.0),
+            "from behind (they face south): {made:?}"
         );
     }
 

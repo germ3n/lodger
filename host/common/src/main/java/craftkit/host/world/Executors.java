@@ -153,6 +153,20 @@ public final class Executors {
 				case "set_respawn" -> setRespawn(level, command, id, context);
 				case "put_ender_chest" -> putEnderChest(level, command, id, context, data);
 				case "firework" -> firework(level, command, id);
+				case "snowball" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					Vec3 from = grounded(level, command.getAsJsonArray("from"));
+					var ball = new net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball(level, from.x, from.y, from.z,
+							new ItemStack(net.minecraft.world.item.Items.SNOWBALL));
+					Vec3 at = player.position().add(0, player.getBbHeight() * 0.6, 0).subtract(from);
+					// Thrown as a player throws, a little up for the fall.
+					ball.shoot(at.x, at.y + Math.sqrt(at.x * at.x + at.z * at.z) * 0.1, at.z, 1.4f, 0.5f);
+					level.addFreshEntity(ball);
+					yield report(id, true, "");
+				}
 				case "skip_time" -> {
 					// The overworld's clock moved on, as `/time add` does: the sky with it.
 					var clock = level.registryAccess().get(net.minecraft.world.clock.WorldClocks.OVERWORLD);

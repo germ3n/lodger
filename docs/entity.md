@@ -520,6 +520,7 @@ Heard by the target alone. Nothing in the world changes.
 | `page_turn` | 2 | Pages turning by the lectern. | A lectern. |
 | `arrow_hit` | 3 | An arrow hits the wall behind the target. Nothing is there. | The target indoors. |
 | `arrow_near` | 3 | At night in the open, the figure stands a moment in the dark behind them and to one side, a bow in its hand; then a real arrow flies past their head and sticks where it lands, harmless (`shoot`, ABI 42: no harm, never picked up, never gone). | Night, outdoors. |
+| `snowball_thrown` | 3 | Outdoors in the snow, a snowball thrown from twelve blocks behind them hits their back; no one is there, and it harms no one (`snowball`, a real one). | Snow near them, outdoors. |
 | `arrow_grazes` | 4 only | The same, at them: a heart, never below half a heart. | Night, outdoors. |
 | `arrow_hits` | 5 | The same: two hearts, never below half a heart. | Night, outdoors. |
 | `splash_dark` | 3 | A splash potion from the dark lands at their feet: darkness, slowness, blindness, nausea, or levitation for a moment and a half (a fall of no harm). Never damage, poison or wither: the host throws those five alone (`splash_potion`, ABI 42). | Night, outdoors. |

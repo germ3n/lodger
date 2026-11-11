@@ -581,6 +581,13 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// A snowball thrown at `player` from `from` (the ground there, a block and a half up, below
+    /// -1000): a real one, which harms no one. ABI 54.
+    Snowball {
+        id: u64,
+        player: u32,
+        from: Pos,
+    },
     /// The world's day moved on `ticks` (a quarter of a day at most), as `/time add` does, the
     /// sky with it, for everyone. ABI 54.
     SkipTime {
@@ -1319,6 +1326,7 @@ impl Command {
             | Command::DropHeld { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }
+            | Command::Snowball { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }
