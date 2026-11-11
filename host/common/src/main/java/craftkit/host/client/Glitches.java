@@ -38,6 +38,8 @@ import java.util.Set;
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
+ *   <li>{@code handprints}: two hands of pale dust on the glass at the hint's place, facing
+ *       them, renewed while it lasts ({@link HandPrint}).</li>
  *   <li>{@code false_death}: the death screen over the game while it lasts (a second), its red
  *       wash, "You Died!" twice the size and their score, no buttons; then the game as it was.</li>
  *   <li>{@code inventory_stare}: in the inventory, their figure stares straight out instead of
@@ -108,6 +110,19 @@ public final class Glitches {
 						blink.setLong(hud, ticks.getInt(hud) + 20L);
 					} catch (ReflectiveOperationException ignored) {
 						// The HUD moved its fields: no blink, nothing else lost.
+					}
+				});
+				// Two hands pressed on the glass from the house's side, renewed as the dust fades.
+				case "handprints" -> hint.pos().ifPresent(pos -> {
+					if (minecraft.level.getGameTime() % 6 != 0) {
+						return;
+					}
+					var eye = minecraft.player.getEyePosition();
+					double cx = pos.getX() + 0.5;
+					double cz = pos.getZ() + 0.5;
+					for (double[] p : HandPrint.points(cx - eye.x, cz - eye.z)) {
+						minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0xE6E2DA, 0.35f),
+								cx + p[0], pos.getY() + p[1], cz + p[2], 0, 0, 0);
 					}
 				});
 				// Lying in bed with their eyes open: the game's own fade to sleep kept at nothing,

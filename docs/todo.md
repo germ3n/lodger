@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Handprints** (`docs/events_todo.md`, 37): `handprints`, stages 4 and 5, coming home with a
+  window known: a hint of a minute and a half drawing two hands of pale dust on a window's glass,
+  across the way they look, renewed as it fades (`HandPrint`). A screen glitch, off with
+  `events.glitches`. Tests: one in `act`, `HandPrintTest`. Was: no such event.
 - [x] **The chicken lays it** (`docs/events_todo.md`, 36): `chicken_lays`, stages 3 to 5, holding
   something of theirs with a chicken near them: it lays the very thing, with an egg's sound
   (`drop_item` of what it holds; done, it holds it no more). Tests: one in `act`. Was: no such

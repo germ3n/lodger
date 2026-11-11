@@ -4801,6 +4801,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("red_rain", 150.0),
         false,
     ),
+    // docs/events_todo.md, 37: as they come home, on a window of the house.
+    row(
+        "handprints",
+        4,
+        5,
+        &[TargetApproachingDoor, Pane, Home],
+        4.0,
+        2,
+        Full,
+        Action::Hint("handprints", 90.0),
+        false,
+    ),
     // docs/events_todo.md, 22: a second of the death screen, nothing died.
     row(
         "false_death",
@@ -5513,6 +5525,7 @@ impl Event {
             "sun_blink" => "make the sun blink out",
             "lightning_silent" => "flash lightning with no thunder",
             "red_rain" => "turn the rain red",
+            "handprints" => "press handprints on a window of the house from inside",
             "false_death" => "show them the death screen for a second",
             "inventory_stare" => "make their figure in the inventory stare out at them",
             "crosshair_gone" => "take the crosshair away for a moment",

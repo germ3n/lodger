@@ -568,6 +568,7 @@ The target's own HUD and camera, for a moment. Off with `events.glitches`.
 | `fov_pull` | 4 | The field of view narrows over ten seconds and snaps back. | The target indoors. |
 | `tab_twice` | 3 | The target's own name appears twice in the player list for six seconds. | The target awake. |
 | `sleepers_wrong` | 3 | `1/2 players sleeping` on a server with one player, or one too many. | The target trying to sleep. |
+| `handprints` | 4 | As they come home, two handprints of pale dust show on a window of the house, on the glass as if pressed from inside while they were out, a minute and a half (a hint, `HandPrint`). | The target walking to a door of the home, a window. |
 | `false_death` | 5 | Walking outdoors, for a second the death screen over the game, its red wash, "You Died!" and their score, no buttons; then the game as it was, nothing lost (a hint). Once a stay. | The target walking outdoors. |
 | `inventory_stare` | 4 | For ten minutes, in their inventory, their own figure stares straight out at them instead of following the mouse (a hint, `InventoryScreenMixin`). | The target in the game. |
 | `crosshair_gone` | 3 | The crosshair is gone for a few seconds. | Any. |

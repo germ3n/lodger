@@ -2633,6 +2633,11 @@ pub fn commands(
                     .place
                     .or_else(|| memory.home.as_ref().map(|h| h.center)),
                 "ripples" | "painting_flip" | "compass_points" => pos,
+                // A window of the house: its first pane.
+                "handprints" => memory
+                    .home
+                    .as_ref()
+                    .and_then(|h| windows(memory, h.center).first().copied()),
                 // Four blocks behind them, where the subtitle's arrow points.
                 "name_called" => Some(behind(memory, 4.0)),
                 _ => None,
@@ -8840,6 +8845,25 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn coming_home_there_are_handprints_on_a_window() {
+        let memory = rich_memory();
+        let event = find("handprints").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let pane = windows(&memory, memory.home.as_ref().unwrap().center)[0];
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, pos: Some(p), .. }, _)] if hint == "handprints" && *p == pane),
+            "{made:?}"
+        );
     }
 
     #[test]

@@ -140,7 +140,8 @@ As little as possible, because the mod is about not knowing:
   `camera_nudge` (two degrees toward the place, once), `fov_pull` (the field of view narrows
   over the hint's time and snaps back), `snow_indoors` and `rain_indoors` (snow or rain falls
   around the player), `ripples` and `bobber` (on water at a place), `advancement_toast`,
-  `false_death` (a second of the death screen, nothing died), `inventory_stare` (their figure in the inventory staring out instead of following the mouse),
+  `false_death` (a second of the death screen, nothing died), `handprints` (two hands of dust on a
+  window's glass), `inventory_stare` (their figure in the inventory staring out instead of following the mouse),
   `eyes_open` (lying in bed, the game's fade to sleep held off: sent by the host with `choke`
   itself, not by the mind, so `events.glitches` never holds it back);
 - whether this player is the target, so a witness's client drops sounds and figures aimed at
