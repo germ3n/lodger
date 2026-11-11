@@ -96,9 +96,21 @@ impl Memory {
         self.sites.sort_by_key(|s| std::cmp::Reverse(s.samples));
     }
 
-    /// The sites they keep, most stayed at first.
+    /// The sites they keep, most stayed at first: away from the home as it is now, never one
+    /// the home has come to since (the owner saw "a second base 9 blocks west of the house",
+    /// a base from before the bed was moved to it).
     pub fn kept_sites(&self) -> impl Iterator<Item = &Site> {
-        self.sites.iter().filter(|s| s.samples >= SITE_SAMPLES)
+        let center = self.home.as_ref().map(|h| h.center);
+        self.sites.iter().filter(move |s| {
+            s.samples >= SITE_SAMPLES && center.is_none_or(|c| flat(c, s.pos) > SITE_FROM_HOME)
+        })
+    }
+
+    /// The home moved: the sites it is at now are the home, not places away from it.
+    pub(crate) fn forget_sites_at_home(&mut self) {
+        if let Some(center) = self.home.as_ref().map(|h| h.center) {
+            self.sites.retain(|s| flat(center, s.pos) > SITE_FROM_HOME);
+        }
     }
 
     /// The site of a kind they keep most, if any: `mine`, `base`, `spot`.
@@ -441,6 +453,31 @@ mod tests {
 
         assert!(memory.site("base").is_some());
         assert!(memory.place_lines()[0].contains("a second base 300 blocks west"));
+    }
+
+    #[test]
+    fn a_base_the_home_moves_to_is_the_home_and_no_longer_away_from_it() {
+        let mut memory = memory();
+        for x in 0..BASE_BLOCKS as i32 {
+            memory.placed.push([-300 + x % 8, 64, x / 8]);
+        }
+        for _ in 0..SITE_SAMPLES {
+            memory.sample_site([-298, 64, 2], 1.5);
+        }
+        assert!(memory.site("base").is_some());
+
+        // The bed moved to a house nine blocks from it: no "second base 9 blocks west".
+        memory.home.as_mut().unwrap().center = [-289, 64, 2];
+        assert!(
+            memory.place_lines().is_empty(),
+            "{:?}",
+            memory.place_lines()
+        );
+        assert!(memory.site("base").is_none());
+        assert_ne!(memory.where_words([-298, 64, 2]), "at their other base");
+        // And it is let go as the home moves.
+        memory.forget_sites_at_home();
+        assert!(memory.sites.is_empty(), "{:?}", memory.sites);
     }
 
     #[test]

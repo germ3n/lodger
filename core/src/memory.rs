@@ -1984,7 +1984,8 @@ impl Memory {
     }
 
     /// The home moved by a bed (one slept in elsewhere, a house moved to): the old house's doors, lights
-    /// and plants are let go, and its chests are no longer the home's. Kept, a knock came at a
+    /// and plants are let go, its chests are no longer the home's, and a site away from home the
+    /// new home is at is the home now. Kept, a knock came at a
     /// door three hundred blocks off, and the oldest plants crowded out the new house's.
     fn home_moved(&mut self) {
         let Some(center) = self.home.as_ref().map(|h| h.center) else {
@@ -2002,6 +2003,7 @@ impl Memory {
                 container.in_home = false;
             }
         }
+        self.forget_sites_at_home();
     }
 
     /// Keeps a line it wrote, so it is not written again.
