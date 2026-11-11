@@ -304,7 +304,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }
         Action::BedBreaks => home.and_then(|h| h.bed),
         // Their door: where the figure comes in from.
-        Action::Choke(_) => memory.usual_door(),
+        Action::Choke(_) | Action::ShotInBed(_) => memory.usual_door(),
         Action::Figure(FigureWhere::Roof, _, _) => {
             home.map(|h| [h.center[0], h.floor_y + 5, h.center[2]])
         }
@@ -1003,6 +1003,59 @@ fn find_far(memory: &Memory) -> Option<BlockPos> {
             at[2] + (dz / length * 50.0).round() as i32,
         ]
     })
+}
+
+/// Asleep: the figure in their doorway walks slowly to the bed's side (the host finds it, by the
+/// pillow) and, with a lead, chokes them five seconds, or with a crossbow (`shoot`) loads it,
+/// aims and shoots them once, and they wake burning; never a kill. Their eyes kept open to see
+/// it come (the host's own part of the command, whatever `events.glitches` says), and the night
+/// held meanwhile. Their door opens, heard, and is left open: by the
+/// command itself, as it begins, so a door gone since is passed over (a toggle of its own that
+/// failed stopped the rest of the event).
+fn bedside(
+    ids: &mut impl FnMut() -> u64,
+    memory: &Memory,
+    target: u32,
+    pos: Option<BlockPos>,
+    damage: f32,
+    shoot: bool,
+) -> Vec<(Command, u64)> {
+    pos.map(|door| {
+        let mut shown = figure_shown(
+            ids,
+            memory,
+            target,
+            [door[0], door[1] - 1, door[2]],
+            20.0,
+            false,
+        );
+        if let Command::Figure { held, .. } = &mut shown {
+            *held = ItemStack::default();
+        }
+        vec![
+            (shown, 0),
+            (
+                Command::Choke {
+                    id: ids(),
+                    player: target,
+                    figure: 1,
+                    item: if shoot {
+                        "minecraft:crossbow"
+                    } else {
+                        "minecraft:lead"
+                    }
+                    .to_string(),
+                    seconds: if shoot { 2.0 } else { 5.0 },
+                    damage,
+                    spare: true,
+                    door: Some(door),
+                    how: if shoot { "shoot" } else { "" }.to_string(),
+                },
+                1,
+            ),
+        ]
+    })
+    .unwrap_or_default()
 }
 
 /// A figure shown to the target at a spot (the y one below where it stands, or below -1000 for
@@ -5050,53 +5103,9 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
-        // Asleep: the figure in their doorway walks slowly to the bed's side (the host finds it,
-        // by the pillow), takes out a lead and chokes them five seconds, never a kill; their
-        // eyes kept open to see it come, and the night held meanwhile. Their door opens, heard,
-        // and is left open: by the choke itself, as it begins, so a door gone since is passed
-        // over (a toggle of its own that failed stopped the rest of the event).
-        Action::Choke(damage) => pos
-            .map(|door| {
-                let mut shown = figure_shown(
-                    ids,
-                    memory,
-                    target,
-                    [door[0], door[1] - 1, door[2]],
-                    20.0,
-                    false,
-                );
-                if let Command::Figure { held, .. } = &mut shown {
-                    *held = ItemStack::default();
-                }
-                vec![
-                    (
-                        Command::Hint {
-                            id: ids(),
-                            player: target,
-                            hint: "eyes_open".to_string(),
-                            pos: None,
-                            seconds: 18.0,
-                            detail: String::new(),
-                        },
-                        0,
-                    ),
-                    (shown, 0),
-                    (
-                        Command::Choke {
-                            id: ids(),
-                            player: target,
-                            figure: 1,
-                            item: "minecraft:lead".to_string(),
-                            seconds: 5.0,
-                            damage,
-                            spare: true,
-                            door: Some(door),
-                        },
-                        1,
-                    ),
-                ]
-            })
-            .unwrap_or_default(),
+        // Asleep, a figure comes to the bed (`bedside`): a lead, or a crossbow and a shot.
+        Action::ShotInBed(damage) => bedside(ids, memory, target, pos, damage, true),
+        Action::Choke(damage) => bedside(ids, memory, target, pos, damage, false),
         Action::BedBreaks => pos
             .map(|bed| {
                 vec![
@@ -7492,28 +7501,44 @@ mod tests {
         assert_eq!(p, Some(door), "it comes in at their door");
 
         let made = commands(choke, p, &memory, &mut ids(), &Now::default(), None);
-        assert_eq!(made.len(), 3, "{made:?}");
-        // Their eyes kept open to see it come, longer than its walk and its squeezing.
-        assert!(
-            matches!(&made[0], (Command::Hint { hint, seconds, .. }, 0) if hint == "eyes_open" && *seconds >= 12.0),
-            "{:?}",
-            made[0]
-        );
+        assert_eq!(made.len(), 2, "{made:?}");
+        // Their eyes are kept open by the host's part of the command: no hint of the mind's,
+        // which events.glitches would have kept back.
+        assert!(!made.iter().any(|(c, _)| matches!(c, Command::Hint { .. })));
         // In the doorway, standing on the door's own level, empty-handed until the bed.
         assert!(
-            matches!(&made[1], (Command::Figure { pos, held, path, figure: 1, .. }, 0)
+            matches!(&made[0], (Command::Figure { pos, held, path, figure: 1, .. }, 0)
                 if pos[1] == door[1] as f64 && held.id.is_empty() && path.is_empty()),
             "{:?}",
-            made[1]
+            made[0]
         );
         // After the figure is shown: the lead, a heart a squeeze, never a kill; the door it came
         // in by opened by the choke itself, so a door gone since never stops the rest (a toggle
         // of its own that failed would have).
         assert!(
-            matches!(&made[2], (Command::Choke { item, damage, spare: true, figure: 1, seconds, door: Some(d), .. }, 1)
+            matches!(&made[1], (Command::Choke { item, damage, spare: true, figure: 1, seconds, door: Some(d), .. }, 1)
                 if item == "minecraft:lead" && *damage == 2.0 && *seconds == 5.0 && *d == door),
             "{:?}",
-            made[2]
+            made[1]
+        );
+
+        // The variation: the same walk, a crossbow and one shot, two hearts, then a watch.
+        let shot = find("shot_in_bed").unwrap();
+        assert_eq!(shot.effect(), "night");
+        let made = commands(
+            shot,
+            place(shot, &memory, &mut rng),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 2, "{made:?}");
+        assert!(
+            matches!(&made[1], (Command::Choke { item, how, damage, spare: true, seconds, door: Some(d), .. }, 1)
+                if item == "minecraft:crossbow" && how == "shoot" && *damage == 4.0 && *seconds == 2.0 && *d == door),
+            "{:?}",
+            made[1]
         );
     }
 

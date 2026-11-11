@@ -134,7 +134,8 @@ operators, and you in your own singleplayer world) that shows what it knows, wha
   it, someone brings it to you. A letter in your chest. Its notes on your lectern. A page in
   your own book.
 - One night you wake in your house, and it is not your house.
-- One night you cannot sleep, because something is standing by your bed.
+- One night you cannot sleep, because something is standing by your bed. It has brought
+  something with it.
 - It has a temper. How you treat it changes how it treats you.
 - In the end, it leaves, it takes, or it stays, depending on how you treated it.
 

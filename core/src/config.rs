@@ -87,6 +87,7 @@ impl Preset {
                     "refuse_rest",
                     "bed_breaks",
                     "choke",
+                    "shot_in_bed",
                     "foot_of_bed",
                     "bed_occupied",
                     "wake",

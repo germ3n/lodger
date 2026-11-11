@@ -559,7 +559,11 @@ pub enum Command {
     /// without waking them, with a drowning gasp, the hurt's jolt and the dark closing in; with
     /// `spare` never below half a heart. Leaving the bed ends it at once, the figure gone; at its
     /// end they wake. `door`, when it is still a door, opens as it begins, with its sound, and is
-    /// left open (anything else there is left alone). Refused when they are not asleep. ABI 54.
+    /// left open (anything else there is left alone). With `how` `shoot` it takes out a crossbow
+    /// (`item`) instead, loads it looking down at it, aims it at them, and shoots once: `damage`,
+    /// which wakes them, and they burn a few seconds, `spare` keeping them above half a heart
+    /// through the fire too; it watches them `seconds` and is gone. Refused when they are not
+    /// asleep. ABI 54.
     Choke {
         id: u64,
         player: u32,
@@ -571,6 +575,9 @@ pub enum Command {
         spare: bool,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         door: Option<BlockPos>,
+        /// `choke` (empty) or `shoot`.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        how: String,
     },
     /// Lay blocks relative to `at`: `parts`' each `at` an offset, `y` 0 the ground's own
     /// block. With `at`'s y below -1000 the host finds the ground there (the highest block

@@ -2077,9 +2077,10 @@ public final class Executors {
 			}
 			item = new ItemStack(kind.get().value(), 1);
 		}
+		boolean shoot = command.has("how") && command.get("how").getAsString().equals("shoot");
 		boolean held = context.figures().choke(player, command.get("figure").getAsInt(), item,
 				command.get("seconds").getAsFloat(), command.get("damage").getAsFloat(),
-				command.has("spare") && command.get("spare").getAsBoolean());
+				command.has("spare") && command.get("spare").getAsBoolean(), shoot);
 
 		if (!held) {
 			return report(id, false, "no figure shown with that number");
@@ -2093,6 +2094,9 @@ public final class Executors {
 				block.setOpen(null, level, state, door, true);
 			}
 		}
+		// Their eyes kept open while it comes: the game's own fade to sleep held off on their
+		// client. Part of the scene, not a glitch: sent whatever events.glitches says.
+		context.sendHint().accept(player, new HintPayload("eyes_open", Optional.empty(), Figures.MOST_HOLD_SECONDS, ""));
 
 		return report(id, true, "");
 	}

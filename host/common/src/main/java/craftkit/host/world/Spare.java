@@ -14,6 +14,14 @@ public final class Spare {
 	}
 
 	/**
+	 * How long they may burn, spared: fire takes a point a second (more at the start of a
+	 * second), so a point more is kept off; at most {@code most}, nothing at two health or less.
+	 */
+	public static float fireSeconds(float health, float most) {
+		return (float) Math.max(0, Math.min(most, Math.floor(health - 2)));
+	}
+
+	/**
 	 * An arrow's harm, spared: the game rounds its hit up from its speed at impact times its
 	 * base, and an arrow falling from above can come in at a quarter over the 1.6 it was shot at,
 	 * so a quarter more and a whole point of rounding are kept off (a spared arrow could kill).

@@ -1201,6 +1201,15 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Shot in bed** (owner: "can you also add a variation of this where we get lit on fire,
+  maybe shot at with a crossbow"): `shot_in_bed`, as `choke` (stages 4 and 5, asleep, a door and
+  the bed known): the same walk, the door opened; at the bed a crossbow out and loaded as a player
+  loads one (its draw, the loading sounds), its head down at it, then raised at them, loaded,
+  and one shot: the crossbow's sound, two hearts (which wakes them) and up to four seconds
+  burning, spared through the fire (`Spare.fireSeconds`); it watches two seconds and goes
+  (`choke`'s `how`, ABI 54). Their eyes are kept open by the host with the command now, not a
+  hint of the mind's, which `events.glitches` off held back (a stay test caught it). Tests: one
+  in `act`, `SpareTest`. Was: the choke alone.
 - [x] **A site the home moves to is not away from home** (owner's screenshot: "Away from home
   they keep a second base 9 blocks west of the house"): the sites kept are only those more than
   48 blocks from the home as it is now, and a site the home moves to is let go with the old

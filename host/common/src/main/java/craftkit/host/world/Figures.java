@@ -465,7 +465,12 @@ public final class Figures {
 		/** The unseen thing the lead's rope is tied to, once it is out: in its other hand, then at their neck; -1 before. */
 		int knot = -1;
 
-		Choke(ServerPlayer player, int number, ItemStack item, long fromTick, long untilTick, float damage, boolean spare) {
+		/** A crossbow loaded and one shot, and they burn, instead of the squeezes (ABI 54). */
+		final boolean shoot;
+		boolean shot;
+
+		Choke(ServerPlayer player, int number, ItemStack item, long fromTick, long untilTick, float damage, boolean spare, boolean shoot) {
+			this.shoot = shoot;
 			this.player = player;
 			this.number = number;
 			this.item = item;
@@ -478,6 +483,8 @@ public final class Figures {
 
 	/** The longest a choke squeezes. */
 	static final float MOST_CHOKE_SECONDS = 6;
+	/** The longest they are held in bed, its walk, its beats and its squeezes together: their eyes kept open as long. */
+	public static final float MOST_HOLD_SECONDS = 18;
 
 	private final List<Choke> chokes = new ArrayList<>();
 
@@ -487,7 +494,7 @@ public final class Figures {
 	 * once a second (ABI 54). It stays where its walk ends. False when they are not asleep or
 	 * no such figure is shown.
 	 */
-	public boolean choke(ServerPlayer player, int number, ItemStack item, float seconds, float damage, boolean spare) {
+	public boolean choke(ServerPlayer player, int number, ItemStack item, float seconds, float damage, boolean spare, boolean shoot) {
 		if (!player.isSleeping() || !(player.level() instanceof ServerLevel level)) {
 			return false;
 		}
@@ -509,7 +516,7 @@ public final class Figures {
 		long squeezes = Math.round(Math.max(1, Math.min(seconds, MOST_CHOKE_SECONDS)) * 20) + ChokeWay.BEFORE_SQUEEZING;
 		figure.untilTick = Math.max(figure.untilTick, arrives + squeezes + 40);
 		chokes.removeIf(choke -> choke.player == player);
-		chokes.add(new Choke(player, number, item, arrives, arrives + squeezes, damage, spare));
+		chokes.add(new Choke(player, number, item, arrives, arrives + squeezes, damage, spare, shoot));
 
 		return true;
 	}
@@ -562,7 +569,11 @@ public final class Figures {
 			// Out of bed, by Leave Bed or anything else: it lets go, and it is gone.
 			if (player.isRemoved() || !player.isSleeping() || !(player.level() instanceof ServerLevel level)) {
 				untie(player, choke);
-				remove(player, choke.number);
+				// Shot, they woke: it stands and watches them burn its last seconds, then goes.
+				// Otherwise out of bed by Leave Bed or anything else: it lets go, and it is gone.
+				if (!(choke.shoot && choke.shot)) {
+					remove(player, choke.number);
+				}
 				it.remove();
 				continue;
 			}
@@ -588,12 +599,15 @@ public final class Figures {
 				if (figure != null) {
 					begin(level, player, figure, choke, beat);
 				}
-				if (beat == ChokeWay.Beat.CHOKES) {
+				if (beat == ChokeWay.Beat.CHOKES && !choke.shoot) {
 					player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DARKNESS,
 							(int) (choke.untilTick - tick) + 40, 0, false, false));
 				}
 			}
-			if (beat == ChokeWay.Beat.CHOKES && (since - ChokeWay.BEFORE_SQUEEZING) % 20 == 0) {
+			if (beat == ChokeWay.Beat.CHOKES && choke.shoot && !choke.shot) {
+				choke.shot = true;
+				shoot(level, player, figure, choke);
+			} else if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && (since - ChokeWay.BEFORE_SQUEEZING) % 20 == 0) {
 				squeeze(level, player, figure, choke);
 			}
 		}
@@ -607,6 +621,14 @@ public final class Figures {
 		switch (beat) {
 			case STANDS -> turn(player, figure, facing, facing, atThem);
 			case LOOKS_AT_IT -> {
+				if (choke.shoot) {
+					// The crossbow out, drawn as a player loads one, its head down at it.
+					hold(player, figure, choke.item);
+					using(player, figure, true);
+					sound(player, figure, net.minecraft.sounds.SoundEvents.CROSSBOW_LOADING_START.value());
+					turn(player, figure, facing, facing + 15, 55);
+					return;
+				}
 				// Out of nowhere into its hand, with a pull of its arm; the rope between its hands.
 				figure.held = choke.item;
 				player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));
@@ -618,7 +640,15 @@ public final class Figures {
 				// Its head down at what it holds, turned a little to its right hand.
 				turn(player, figure, facing, facing + 15, 55);
 			}
-			case LOOKS_AT_THEM -> turn(player, figure, facing, facing, atThem);
+			case LOOKS_AT_THEM -> {
+				if (choke.shoot) {
+					// Loaded, and raised at them.
+					using(player, figure, false);
+					hold(player, figure, charged(choke.item));
+					sound(player, figure, net.minecraft.sounds.SoundEvents.CROSSBOW_LOADING_END.value());
+				}
+				turn(player, figure, facing, facing, atThem);
+			}
 			case CHOKES -> {
 				// The rope's far end from its hand to their neck, eased there by their client.
 				if (choke.knot >= 0) {
@@ -628,6 +658,68 @@ public final class Figures {
 				}
 				turn(player, figure, facing, facing, atThem);
 			}
+		}
+	}
+
+	/** What the figure holds, shown to its player. */
+	private static void hold(ServerPlayer player, Figure figure, ItemStack item) {
+		figure.held = item;
+		player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, item))));
+	}
+
+	/** The figure drawing what it holds (a crossbow loading), or done. */
+	@SuppressWarnings("unchecked")
+	private static void using(ServerPlayer player, Figure figure, boolean using) {
+		try {
+			var field = net.minecraft.world.entity.LivingEntity.class.getDeclaredField("DATA_LIVING_ENTITY_FLAGS");
+			field.setAccessible(true);
+			var flags = (net.minecraft.network.syncher.EntityDataAccessor<Byte>) field.get(null);
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(figure.entityId,
+					List.of(net.minecraft.network.syncher.SynchedEntityData.DataValue.create(flags, (byte) (using ? 1 : 0)))));
+		} catch (ReflectiveOperationException ignored) {
+			// The field moved: it holds the crossbow without drawing it, nothing else lost.
+		}
+	}
+
+	/** A crossbow as it is loaded, an arrow in it: held so, it is raised and aimed. */
+	private static ItemStack charged(ItemStack crossbow) {
+		ItemStack loaded = crossbow.copy();
+		var arrow = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.Identifier.parse("minecraft:arrow"));
+		arrow.ifPresent(a -> loaded.set(net.minecraft.core.component.DataComponents.CHARGED_PROJECTILES,
+				net.minecraft.world.item.component.ChargedProjectiles.ofNonEmpty(List.of(new ItemStack(a.value())))));
+
+		return loaded;
+	}
+
+	/** A sound from the figure, to its player alone. */
+	private static void sound(ServerPlayer player, Figure figure, net.minecraft.sounds.SoundEvent sound) {
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.core.Holder.direct(sound),
+				net.minecraft.sounds.SoundSource.HOSTILE, figure.at.x, figure.at.y + 1.4, figure.at.z, 1f, 1f, player.getRandom().nextLong()));
+	}
+
+	/**
+	 * The shot: the crossbow's sound, its harm (which wakes them, the hurt itself), and they burn
+	 * a few seconds; spared, never below half a heart through the fire too ({@link Spare#fireSeconds}).
+	 */
+	private static void shoot(ServerLevel level, ServerPlayer player, Figure figure, Choke choke) {
+		if (figure != null) {
+			sound(player, figure, net.minecraft.sounds.SoundEvents.CROSSBOW_SHOOT);
+			hold(player, figure, choke.item);
+		}
+		float health = player.getHealth();
+		float harm = choke.spare ? Spare.harm(choke.damage, health, 1f) : choke.damage;
+		if (harm > 0) {
+			player.hurtServer(level, level.damageSources().generic(), harm);
+		} else {
+			// Nothing left to spare: woken all the same.
+			player.stopSleepInBed(true, true);
+		}
+		float burn = choke.spare ? Spare.fireSeconds(player.getHealth(), 4) : 4;
+		if (burn > 0) {
+			player.igniteForSeconds(burn);
+		}
+		if (figure != null) {
+			figure.untilTick = Math.min(figure.untilTick, Math.max(0, choke.untilTick - 1));
 		}
 	}
 

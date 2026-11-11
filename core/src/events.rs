@@ -844,6 +844,9 @@ pub enum Action {
     /// side, takes out a lead and chokes them for a few seconds, this much harm a squeeze, never
     /// below half a heart.
     Choke(f32),
+    /// The same walk to the bed, a crossbow loaded instead and a shot: this much harm, and they
+    /// wake burning, never below half a heart.
+    ShotInBed(f32),
 }
 
 /// Where a figure stands.
@@ -3746,6 +3749,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Choke(2.0),
         false,
     ),
+    // The owner: "a variation of this where we get lit on fire, maybe shot at with a crossbow".
+    row(
+        "shot_in_bed",
+        4,
+        5,
+        &[TargetInBed, Bed, Door, Night],
+        6.0,
+        2,
+        Full,
+        Action::ShotInBed(4.0),
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4572,6 +4587,7 @@ impl Event {
             | Action::OtherHouse
             | Action::BedBreaks
             | Action::Choke(_)
+            | Action::ShotInBed(_)
             | Action::BedOccupied => "night",
         }
     }
@@ -4839,6 +4855,7 @@ impl Event {
             "window_bars" => "turn a window pane to iron bars",
             "bed_breaks" => "break the bed under them as they lie down",
             "choke" => "walk to their bed as they sleep and choke them with a lead",
+            "shot_in_bed" => "walk to their bed as they sleep and shoot them with a burning bolt",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

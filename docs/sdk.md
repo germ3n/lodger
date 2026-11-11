@@ -217,7 +217,9 @@ mod would use, the first without a book taken when the one asked holds one. ABI 
 (the target held asleep in bed, the night not passing, while a figure glides to the bed's side by
 the pillow, found by the host, takes `item` out with a lead's rope to their neck and squeezes once
 a second for `seconds`, the harm taken without waking them; Leave Bed ends it; `door` opened as it
-begins and left open, passed over when it is no door).
+begins and left open, passed over when it is no door; their eyes kept open by the host itself, the
+`eyes_open` hint sent with it; `how` `shoot`: a crossbow loaded, aimed and shot once instead, and
+they burn, spared through the fire).
 
 ## Resources
 

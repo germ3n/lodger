@@ -17,6 +17,18 @@ class SpareTest {
 	}
 
 	@Test
+	void a_spared_burn_ends_before_the_fire_could_take_them_below_half_a_heart() {
+		assertEquals(4, Spare.fireSeconds(20, 4), "plenty of health: as asked");
+		assertEquals(2, Spare.fireSeconds(4.5f, 4));
+		assertEquals(0, Spare.fireSeconds(2, 4), "two health: no fire");
+		for (float health = 0.5f; health <= 20; health += 0.5f) {
+			// A point a second, and one more at the start of the first.
+			float burn = Spare.fireSeconds(health, 4);
+			assertTrue(burn == 0 || health - (burn + 1) >= 1 - 1e-6, "at " + health);
+		}
+	}
+
+	@Test
 	void a_spared_arrow_falling_in_fast_and_rounded_up_still_leaves_them_alive() {
 		// The game's arrow: its speed at impact times its base, rounded up; shot at 1.6, a
 		// fall can bring it in near 2.0.
