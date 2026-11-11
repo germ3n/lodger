@@ -1378,6 +1378,9 @@ The `[x]` lines above, summed up by day:
   figures switch (`events.figure`) holds back the bedside figure too (`choke`, `shot_in_bed`),
   which came whatever it said. Tests: one in `act`, one in `offer`. Was: no ring, and the
   bedside figure with the figures off.
+- [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
+  `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
+  first forty (three that `ideas.md` had were replaced). Was: forty.
 - [x] **Forty events to come** (owner: "can you think of more potential events? come up with
   like 20 ... and also write it to docs/events_todo.md"; then "generate 20 more, just make sure
   there are no duplicates"): `docs/events_todo.md`, forty ideas not in the catalogue, in

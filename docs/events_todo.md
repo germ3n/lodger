@@ -1,6 +1,6 @@
 # Events to come
 
-Forty event ideas not yet in the catalogue (`core/src/events.rs`, `docs/entity.md`), none of
+Eighty event ideas not yet in the catalogue (forty at first, forty more after) (`core/src/events.rs`, `docs/entity.md`), none of
 them a copy of one there or of a line in `docs/ideas.md`. Each says the stage it fits, what the
 target must be doing, what it would take (the commands there are today, or what the host would
 need), and a rough size: **S** (the mind alone, today's commands), **M** (a small host change),
@@ -48,3 +48,52 @@ need), and a rough size: **S** (the mind alone, today's commands), **M** (a smal
 | 38 | `in_the_screenshot` | 5 | **Built** (ahead in their view, not behind: a first-person picture never shows behind). A screenshot they take (F2) shows the figure behind them, though it was never on their screen. | The target taking a screenshot. | A client hook drawing the figure into the screenshot's frame alone. | M |
 | 39 | `only_in_third_person` | 4 | **Built.** In third person (F5) a figure stands right behind them; in first person there is nothing. | The target switching to third person. | A figure drawn only while the camera is detached. | M |
 | 40 | `f3_line` | 5 | **Built.** The debug screen (F3) has one more line among the others: "Lodger: watching". | The target opening F3. | A client hook on the debug screen's lines. | M |
+
+## The next forty
+
+The owner, once the first forty were built: "do another 40". Checked against the catalogue,
+`docs/ideas.md` and the first forty; three that `ideas.md` already had were replaced.
+
+| # | Event | Stage | What happens | Needs | Takes | Size |
+| --- | --- | --- | --- | --- | --- | --- |
+| 41 | `at_their_table` | 4 | Coming home, through the window: a figure at their crafting table, working at it; gone as they reach the door. | Coming home, a crafting table in the house. | `figure` swinging, `vanish_within`. | S |
+| 42 | `jumping_far` | 4 | Far off in the open a figure jumps, again and again, in place, facing them. | Outdoors. | A figure gliding up and down. | M |
+| 43 | `waves_from_inside` | 4 | As they come home, a figure inside the house at a window waves at them; gone when they open the door. | Coming home, a window. | `figure` inside the pane, `figure_swing`. | S |
+| 44 | `prints_to_the_cave` | 4 | In the snow, prints from their door to the mouth of the nearest cave. | Snow, a cave known. | `prints`. | S |
+| 45 | `rides_their_horse` | 4 | Far off, their horse stands with a figure in its saddle, on their client alone. | Their horse in sight. | The figure set as the horse's passenger for them. | M |
+| 46 | `eats_at_their_chest` | 4 | Coming in, a figure crouched at their chest eating their food, the sound of it; gone when looked at. | Coming home, food in their chest. | `figure` using a food item. | M |
+| 47 | `mirror_in_the_window` | 5 | From outside, in their own window, a figure copies their every move. | Outdoors near the house, a window. | `figure` inside the pane with `mirror`. | S |
+| 48 | `every_door_opens` | 5 | At night, inside, every door of the house opens at once. | Night, the target indoors, two doors or more. | `toggle_block` on each. | S |
+| 49 | `flowers_wilted` | 3 | The flowers they planted are dead bushes for a day, then flowers again. | Flowers of theirs. | `swap_block` and back. | S |
+| 50 | `camp_nearby` | 4 | At night, forty blocks off, a campfire with log seats and a figure sat by it; gone by morning. | Night, outdoors. | `place_blueprint`, a figure, the blocks taken away at dawn. | M |
+| 51 | `stone_circle` | 4 | Overnight, a ring of stone pillars stands in a clearing far off. | The target asleep or away. | `place_blueprint`. | S |
+| 52 | `slips_from_hand` | 4 | What they hold slips from their hand and lies at their feet. | Holding something. | The held stack dropped at their feet. | M |
+| 53 | `glass_breaks` | 4 | Inside, the sound of a window breaking; every pane is whole. | Indoors, a pane. | `play_sound`. | S |
+| 54 | `xp_slips` | 4 | Their experience bar drains to nothing on their screen, then is back. | Experience. | A client hint. | M |
+| 55 | `hearts_drop` | 5 | For a second their hearts show half empty, then whole. | Any time. | A client hint. | M |
+| 56 | `pet_stares_at_wall` | 3 | Their pet stands facing a blank wall of the house, still, for a minute. | A pet indoors. | `hold` facing a wall. | S |
+| 57 | `bats_in_the_house` | 4 | At night bats flutter about inside the house for a minute, then are gone. | Night, the target indoors. | Bats for a while. | M |
+| 58 | `lost_hour` | 5 | A blink of black, and an hour of the day is gone. | Daytime. | The time moved on, a hint. | M |
+| 59 | `chest_wont_open` | 4 | Their chest will not open for a few seconds, and something knocks inside it. | Walking to the chest they use. | A container held shut, a sound. | M |
+| 60 | `name_in_the_snow` | 4 | Near the house, their name trodden into the snow. | Snow near the home. | Snow layers taken away in letters. | M |
+| 61 | `torch_ring` | 4 | Overnight, a ring of torches round the house, twelve blocks out. | The target asleep or away. | `set_block` torches. | S |
+| 62 | `breadcrumbs` | 4 | A line of single blocks of theirs leads from their door off into the dark. | A stack of theirs in the chest. | `take_item`, `drop_item` one at a time. | S |
+| 63 | `fishing_figure` | 3 | Where they fish, a figure sits fishing, its line in the water. | Where they fished known. | `figure` holding a rod, swinging. | S |
+| 64 | `by_the_bed` | 4 | Coming in at night, a figure stands beside their bed, facing it; gone when looked at. | Night, coming home, a bed. | `figure` beside the bed, `once_seen`. | S |
+| 65 | `swims_beneath` | 4 | Swimming, a figure swims past beneath them. | Swimming in deep water. | A figure crawling (swimming) along under them. | S |
+| 66 | `stands_in_the_rain` | 3 | In the rain, a figure stands in the open with its face to the sky. | Raining, outdoors. | `figure`, facing up. | M |
+| 67 | `its_banner` | 4 | A banner of its own hangs on its house's door, black, a skull on it. | Its house built. | `set_block` a banner with patterns. | M |
+| 68 | `chest_rattles` | 3 | Their chest's lid opens and shuts five times fast, then is still. | A chest of theirs near them. | `open_lid` in a row. | S |
+| 69 | `trapdoor_taps` | 3 | A trapdoor of theirs taps open and shut, again and again. | A trapdoor of theirs. | `toggle_block` in a row. | S |
+| 70 | `climbs_ahead` | 4 | Climbing their shaft, a figure climbs ahead of them, above, and is gone at the top. | On a ladder of theirs. | A figure gliding up the shaft. | S |
+| 71 | `on_the_water` | 4 | Far off, a figure stands on the surface of the water. | Water near them. | `figure` on the water's top. | S |
+| 72 | `in_the_treetops` | 4 | Far off, a figure stands on top of the trees. | Outdoors, trees near. | `figure` on the canopy. | S |
+| 73 | `path_through_the_trees` | 5 | Overnight, a straight line cut through the leaves of a forest, pointing at their house. | Trees near the home. | `set_block` air over leaves. | M |
+| 74 | `rides_the_cart` | 4 | A minecart of theirs rolls past with a figure sitting in it. | A minecart of theirs. | The figure the cart's passenger for them, a push. | M |
+| 75 | `eyes_in_the_dark` | 4 | In a dark cave, two small lights at eye height ahead, blinking; gone when they come near. | Underground, dark. | A client hint of particles. | M |
+| 76 | `lantern_in_the_woods` | 4 | At night, far off in the trees, a lantern moving, held by a figure walking. | Night, outdoors. | `figure` walking, holding a lantern. | S |
+| 77 | `crouched_behind_a_tree` | 4 | A figure crouched behind a tree near them; gone when they come round it. | Outdoors near trees. | `figure` crouching, `vanish_within`. | S |
+| 78 | `snowball_thrown` | 3 | A snowball hits their back; no one is there. | Snow, outdoors. | A snowball thrown at them from behind. | M |
+| 79 | `arrow_in_the_door` | 4 | While they were out, an arrow struck in their front door. | Away, a door. | `shoot` at the door. | S |
+| 80 | `raises_their_sword` | 4 | Far off, a figure holds their own sword up high, still. | Their weapon known. | `figure` holding it, arm up. | S |
+
