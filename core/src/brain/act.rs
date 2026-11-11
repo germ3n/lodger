@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::ChestWontOpen => memory.used_container().map(|c| c.pos),
         Action::LostHour => Some(block_of(memory.last.pos)),
         Action::BatsInTheHouse => home.map(|h| h.center),
         // The wall block of theirs nearest their pet.
@@ -5591,6 +5592,38 @@ pub fn commands(
                 8,
             ),
         ],
+        // Held shut five seconds, each try a locked chest's rattle; two knocks from inside it.
+        Action::ChestWontOpen => pos
+            .map(|chest| {
+                let at = [
+                    chest[0] as f64 + 0.5,
+                    chest[1] as f64 + 0.5,
+                    chest[2] as f64 + 0.5,
+                ];
+                let mut made = vec![(
+                    Command::HoldContainer {
+                        id: ids(),
+                        pos: chest,
+                        seconds: 5.0,
+                    },
+                    0,
+                )];
+                for tick in [30, 40] {
+                    made.push((
+                        Command::PlaySound {
+                            id: ids(),
+                            player: target,
+                            sound: "minecraft:block.wooden_trapdoor.close".to_string(),
+                            pos: at,
+                            volume: 0.6,
+                            pitch: 0.6,
+                        },
+                        tick,
+                    ));
+                }
+                made
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -10713,6 +10746,32 @@ mod tests {
         assert!(
             matches!(&made[1], (Command::SkipTime { ticks: 1_000, .. }, at) if *at > 0),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn the_chest_they_walk_to_will_not_open_and_knocks_inside() {
+        let memory = rich_memory();
+        let chest = memory.used_container().unwrap().pos;
+        let event = find("chest_wont_open").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[0], (Command::HoldContainer { pos, .. }, 0) if *pos == chest),
+            "{made:?}"
+        );
+        assert_eq!(
+            made.iter()
+                .filter(|(c, _)| matches!(c, Command::PlaySound { .. }))
+                .count(),
+            2,
+            "two knocks"
         );
     }
 

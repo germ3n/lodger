@@ -165,6 +165,19 @@ public final class Senses {
 	/** A block used: if it holds a container, that is a container opened, with its contents. */
 	/** The doors held shut (`hold_door`, ABI 54): each door's lower half, and the tick it lets go. */
 	private final Map<BlockPos, Long> heldDoors = new HashMap<>();
+	/** The containers held shut (`hold_container`, ABI 54), each block, and the tick it lets go. */
+	private final Map<BlockPos, Long> heldContainers = new HashMap<>();
+
+	/** The container at {@code pos}, and a double chest's other half, held shut for {@code seconds}. */
+	public void holdContainer(net.minecraft.world.level.Level level, BlockPos pos, float seconds) {
+		long until = tick + (long) (Math.min(seconds, MOST_HELD_SECONDS) * MovementTracker.TPS);
+		heldContainers.put(pos.immutable(), until);
+		BlockState state = level.getBlockState(pos);
+		if (state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock
+				&& state.getValue(net.minecraft.world.level.block.ChestBlock.TYPE) != net.minecraft.world.level.block.state.properties.ChestType.SINGLE) {
+			heldContainers.put(pos.relative(net.minecraft.world.level.block.ChestBlock.getConnectedDirection(state)).immutable(), until);
+		}
+	}
 	/** The longest a door is held. */
 	static final float MOST_HELD_SECONDS = 10;
 
@@ -179,6 +192,18 @@ public final class Senses {
 	 * it heard. The loaders cancel the use when it is.
 	 */
 	public boolean refusedUse(ServerPlayer player, BlockPos pos) {
+		// A container held shut: it will not open, rattling as a locked chest does.
+		Long shut = heldContainers.get(pos);
+		if (shut != null) {
+			if (tick > shut) {
+				heldContainers.remove(pos);
+			} else {
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+						net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.CHEST_LOCKED),
+						net.minecraft.sounds.SoundSource.BLOCKS, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1f, 0.8f, player.getRandom().nextLong()));
+				return true;
+			}
+		}
 		if (heldDoors.isEmpty()) {
 			return false;
 		}

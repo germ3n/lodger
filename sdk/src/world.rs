@@ -655,6 +655,13 @@ pub enum Command {
         player: u32,
         velocity: Pos,
     },
+    /// The container at `pos` (a double chest both halves) will not open for `seconds` (ten
+    /// at most): a player's use of it refused, a locked chest's rattle heard each try. ABI 54.
+    HoldContainer {
+        id: u64,
+        pos: BlockPos,
+        seconds: f32,
+    },
     /// The door at `pos` (either half) will not open for `seconds` (ten at most), as if held
     /// from the other side: a player's use of it is refused, the door rattling shut on their
     /// screen, and each try heard as a blow on it. ABI 54.
@@ -1307,6 +1314,7 @@ impl Command {
             | Command::Firework { id, .. }
             | Command::DropHeld { id, .. }
             | Command::SkipTime { id, .. }
+            | Command::HoldContainer { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

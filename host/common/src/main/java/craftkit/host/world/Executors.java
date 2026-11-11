@@ -141,6 +141,14 @@ public final class Executors {
 				case "figure_swing" -> figureSwing(level, command, id, context);
 				case "choke" -> choke(level, command, id, context);
 				case "hold_door" -> holdDoor(level, command, id, context);
+				case "hold_container" -> {
+					BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+					if (container(level, pos) == null) {
+						yield report(id, false, Senses.blockId(level.getBlockState(pos)) + " is no container");
+					}
+					context.senses().holdContainer(level, pos, command.get("seconds").getAsFloat());
+					yield report(id, true, "");
+				}
 				case "push_player" -> pushPlayer(level, command, id, context);
 				case "set_respawn" -> setRespawn(level, command, id, context);
 				case "put_ender_chest" -> putEnderChest(level, command, id, context, data);
