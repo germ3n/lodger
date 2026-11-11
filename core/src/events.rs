@@ -1006,6 +1006,8 @@ pub enum Action {
     TrapdoorTaps,
     /// In their shaft, a figure climbs ahead of them, above, and is gone at the top.
     ClimbsAhead,
+    /// Far off, a figure standing on the water's surface.
+    OnTheWater,
 }
 
 /// Where a figure stands.
@@ -4656,6 +4658,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ClimbsAhead,
         false,
     ),
+    // docs/events_todo.md, 71.
+    row(
+        "on_the_water",
+        4,
+        5,
+        &[Around("water"), TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::OnTheWater,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5597,6 +5611,7 @@ impl Event {
             | Action::ChestRattles
             | Action::TrapdoorTaps
             | Action::ClimbsAhead
+            | Action::OnTheWater
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5668,6 +5683,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "on_the_water" => "stand the figure on the water far off",
             "climbs_ahead" => "have the figure climb their shaft above them",
             "trapdoor_taps" => "tap a trapdoor of theirs open and shut",
             "chest_rattles" => "rattle their chest's lid open and shut",

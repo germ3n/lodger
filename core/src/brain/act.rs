@@ -348,6 +348,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // The water near them: its middle, on its top (the host's ground counts water).
+        Action::OnTheWater => memory
+            .feature("water")
+            .map(|w| [w.pos[0], -10_000, w.pos[2]]),
         Action::ClimbsAhead => shaft_top(memory),
         // Their trapdoor nearest them.
         Action::TrapdoorTaps => {
@@ -6023,6 +6027,21 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // On the water's surface there, still, facing them, empty-handed; gone once seen and
+        // looked away from.
+        Action::OnTheWater => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 60.0, false);
+                if let Command::Figure {
+                    held, once_seen, ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *once_seen = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11447,6 +11466,29 @@ mod tests {
         };
         assert_eq!(path[0][1], 55.0, "three over them");
         assert_eq!(path[1][1], 65.0, "to the top");
+    }
+
+    #[test]
+    fn far_off_a_figure_stands_on_the_water() {
+        let memory = rich_memory();
+        let event = find("on_the_water").unwrap();
+        let water = memory.feature("water").expect("water near").pos;
+        let p = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some([water[0], -10_000, water[2]]));
+        let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(
+                &made[..],
+                [(
+                    Command::Figure {
+                        once_seen: true,
+                        ..
+                    },
+                    0
+                )]
+            ),
+            "{made:?}"
+        );
     }
 
     #[test]

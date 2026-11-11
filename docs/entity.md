@@ -651,6 +651,7 @@ a dock or bridge), never over anything a player built (see the
 | `behind_you` | 3 | When the target looks back along their route, the figure is 60 blocks behind, standing. The next time, 50. It is never nearer than 32. | The target travelling a route. |
 | `on_the_roof` | 3 | At dawn, from outside, the figure stands on the target's roof, and is gone when they look away. | A home with a roof and the target outdoors at dawn. |
 | `across_water` | 3 | The figure stands on the far shore, or sits in a boat in the middle of the water. | Water of 32 or more blocks across. |
+| `on_the_water` | 4 | Far off, a figure stands on the surface of the water near them, still, facing them, empty-handed; gone once seen and looked away from. | Water near them, outdoors. |
 | `in_doorway` | 4 | As the target turns, the figure is in the doorway or at the window for less than half a second, then not. No sound. | The target indoors, facing away from a door or window. |
 | `at_the_chest` | 4 | Coming into the room, the target sees the figure at their chest, back to them. It closes the lid and is around the corner before they reach it. | A used container in a room with two ways out. |
 | `in_your_bed` | 4 | Coming home late at night, the target sees the figure lying in their bed through the door, and the bed is empty when the door opens. | A bed in view of the door, night. |

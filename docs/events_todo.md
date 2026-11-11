@@ -86,7 +86,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 68 | `chest_rattles` | 3 | **Built.** Their chest's lid opens and shuts five times fast, then is still. | A chest of theirs near them. | `open_lid` in a row. | S |
 | 69 | `trapdoor_taps` | 3 | **Built.** A trapdoor of theirs taps open and shut, again and again. | A trapdoor of theirs. | `toggle_block` in a row. | S |
 | 70 | `climbs_ahead` | 4 | **Built.** Climbing their shaft, a figure climbs ahead of them, above, and is gone at the top. | On a ladder of theirs. | A figure gliding up the shaft. | S |
-| 71 | `on_the_water` | 4 | Far off, a figure stands on the surface of the water. | Water near them. | `figure` on the water's top. | S |
+| 71 | `on_the_water` | 4 | **Built.** Far off, a figure stands on the surface of the water. | Water near them. | `figure` on the water's top. | S |
 | 72 | `in_the_treetops` | 4 | Far off, a figure stands on top of the trees. | Outdoors, trees near. | `figure` on the canopy. | S |
 | 73 | `path_through_the_trees` | 5 | Overnight, a straight line cut through the leaves of a forest, pointing at their house. | Trees near the home. | `set_block` air over leaves. | M |
 | 74 | `rides_the_cart` | 4 | A minecart of theirs rolls past with a figure sitting in it. | A minecart of theirs. | The figure the cart's passenger for them, a push. | M |
