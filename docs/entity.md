@@ -208,6 +208,7 @@ Blocks the target placed, moved within reach, never broken for good.
 | `one_room_dark` | 3 | Every torch within five blocks of one of the home's lights is gone in the morning, six at most, and they are in their chest, every one. | Lights in the home, a chest of theirs. |
 | `door_held` | 2 | A door they open shuts again a moment later, as if held, one time in four; never from the menu. | The target opening a door. |
 | `door_wont_open` | 4 | Past `door_held`: the door of the house they walk to will not open at all for six seconds, as if held from the other side; each try rattles it shut on their screen with a blow on it, and three knocks come through it as they stand there (`hold_door`, ABI 54). | The target walking to a door of the home. |
+| `every_door_opens` | 5 | At night, while they are in the house, every door of it opens at once, each with its sound (`toggle_block` on each, left open). | Night, the target indoors, two doors or more. |
 | `bed_turned` | 3 | Their bed is turned round where it stands, the head where the foot was. | A bed. |
 | `door_hinge` | 3 | A door of the house they are in, theirs first, hangs on the other side of its frame (`set_state`, both halves). | A door. |
 | `window_tap` | 2 | Three taps on a window pane from outside, at night. | A window and night. |

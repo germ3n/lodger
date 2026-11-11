@@ -348,6 +348,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // The house, with two doors or more.
+        Action::EveryDoorOpens => home.filter(|h| h.doors.len() >= 2).map(|h| h.center),
         // A window of the house within twenty blocks of them; its first, when none is.
         Action::MirrorInTheWindow => home.and_then(|h| {
             let at = block_of(memory.last.pos);
@@ -5315,6 +5317,24 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // Every door of the house open at once, with their sounds.
+        Action::EveryDoorOpens => match (pos, memory.home.as_ref()) {
+            (Some(_), Some(home)) => home
+                .doors
+                .iter()
+                .map(|door| {
+                    (
+                        Command::ToggleBlock {
+                            id: ids(),
+                            pos: *door,
+                            to: Some(true),
+                        },
+                        0,
+                    )
+                })
+                .collect(),
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -8161,6 +8181,8 @@ mod tests {
                 || event.id == "firework_over_its_house"
                 // What it took, which this memory holds not: its own test.
                 || event.id == "chicken_lays"
+                // Two doors or more, which this memory has not: its own test.
+                || event.id == "every_door_opens"
                 // A cave known, which this memory has not: its own test.
                 || event.id == "prints_to_the_cave"
                 // The block comes from home and the enderman from the End: `elsewhere`'s tests.
@@ -10230,6 +10252,29 @@ mod tests {
                 )]
             ),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn at_night_every_door_of_the_house_opens_at_once() {
+        let mut memory = rich_memory();
+        memory.home.as_mut().unwrap().doors = vec![[4, 64, 0], [-4, 64, 0], [0, 64, 4]];
+        let event = find("every_door_opens").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 3);
+        assert!(made.iter().all(|(c, at)| *at == 0 && matches!(c, Command::ToggleBlock { to: Some(true), .. })), "{made:?}");
+        memory.home.as_mut().unwrap().doors.truncate(1);
+        assert_eq!(
+            place(event, &memory, &mut Rng::new(1)),
+            None,
+            "one door is no 'every door'"
         );
     }
 
