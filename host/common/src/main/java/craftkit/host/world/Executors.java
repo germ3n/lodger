@@ -177,6 +177,20 @@ public final class Executors {
 								command.has("pace") && !command.get("pace").isJsonNull() ? command.get("pace").getAsFloat() : 1f, give, data, kept);
 						yield report(id, true, "bringing it");
 					}
+					// To a place instead of at them (ABI 54): the ground there when its y is below -1000.
+					if (command.has("to") && !command.get("to").isJsonNull()) {
+						Vec3 to = grounded(level, command.getAsJsonArray("to"));
+						int going = 0;
+						for (var each : command.getAsJsonArray("entities")) {
+							Entity entity = level.getEntity(each.getAsInt());
+							Mob mob = entity == null ? null : Senses.mob(entity);
+							if (mob != null && !mob.entityTags().contains(Holds.TAG) && !mob.entityTags().contains(Warps.TAG)) {
+								context.approaches().addTo(mob, player, to, command.get("seconds").getAsFloat());
+								going++;
+							}
+						}
+						yield report(id, going > 0, going > 0 ? "going " + going : "none of them here");
+					}
 					int walking = 0;
 					for (var each : command.getAsJsonArray("entities")) {
 						Entity entity = level.getEntity(each.getAsInt());

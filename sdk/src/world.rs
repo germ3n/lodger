@@ -1066,6 +1066,11 @@ pub enum Command {
         /// ABI 51.
         #[serde(default, skip_serializing_if = "String::is_empty")]
         kept: String,
+        /// Walk to this place instead (the ground there when its y is below -1000), and once
+        /// there (or after twenty seconds) be as it was: a pet goes back to its owner of itself.
+        /// ABI 54.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        to: Option<Pos>,
     },
     /// For `seconds`, the first moment `player` stands at an edge (a drop of two to `most_drop`
     /// blocks to solid ground just past it) or on a ladder with ground that near below, not

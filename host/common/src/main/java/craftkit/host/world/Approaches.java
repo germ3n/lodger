@@ -70,6 +70,17 @@ public final class Approaches {
 		approach.kept = kept;
 	}
 
+	/**
+	 * One walking to a place instead of at them, and once there (or after twenty seconds) as it
+	 * was (ABI 54): a pet goes back to its owner of itself.
+	 */
+	public void addTo(Mob mob, ServerPlayer player, net.minecraft.world.phys.Vec3 to, float seconds) {
+		add(mob, player, 1.5f, seconds, 1, "", 0);
+		Approach approach = active.get(active.size() - 1);
+		approach.away = to;
+		approach.arrived = tick;
+	}
+
 	/** What it carried back where it was kept: it never got there. */
 	private static void keepAgain(Approach approach) {
 		if (!approach.give.isEmpty() && approach.data != null) {

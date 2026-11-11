@@ -350,6 +350,17 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::TheOffer => memory.usual_door(),
         Action::PulledUnder => Some(block_of(memory.last.pos)),
         Action::ItsLightsOn => memory.its_house().map(|h| h.site),
+        // Nine blocks ahead of them, on the ground: near enough that their pet never strays far
+        // enough from them for the game to bring it back at once (twelve).
+        Action::PetFollows => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            Some([
+                at[0] + (-yaw.sin() * PET_TO).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * PET_TO).round() as i32,
+            ])
+        }
         // Forty blocks ahead of where they look, on the ground: it falls into their sky there.
         Action::FallsFromTheSky => {
             let at = block_of(memory.last.pos);
@@ -1185,6 +1196,9 @@ pub fn shaft_top(memory: &Memory) -> Option<BlockPos> {
         .max_by_key(|p| p[1])
         .filter(|top| top[1] - at[1] >= 6)
 }
+
+/// How far ahead of them `pet_follows`' figure stands.
+const PET_TO: f64 = 9.0;
 
 /// How far ahead of them `falls_from_the_sky`'s figure lands.
 const FALLS_AHEAD: f64 = 40.0;
@@ -3194,6 +3208,7 @@ pub fn commands(
                             then: "give".to_string(),
                             damage: 0.0,
                             kept,
+                            to: None,
                         },
                         1,
                     ),
@@ -4529,6 +4544,41 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // A figure there, empty-handed; their pet gets up and walks
+        // to it; the figure is gone as the pet gets there, and the pet comes back to them.
+        Action::PetFollows => match (pos, memory.pets().next()) {
+            (Some(spot), Some(pet)) => {
+                let mut shown = figure_shown(ids, memory, target, spot, 7.0, false);
+                let mut to = [
+                    spot[0] as f64 + 0.5,
+                    memory.last.pos[1],
+                    spot[2] as f64 + 0.5,
+                ];
+                if let Command::Figure { held, pos, .. } = &mut shown {
+                    *held = ItemStack::default();
+                    to = *pos;
+                }
+                vec![
+                    (shown, 0),
+                    (
+                        Command::Approach {
+                            id: ids(),
+                            entities: vec![pet.id],
+                            player: target,
+                            stop: 1.5,
+                            seconds: 20.0,
+                            pace: Some(1.0),
+                            then: String::new(),
+                            damage: 0.0,
+                            kept: String::new(),
+                            to: Some(to),
+                        },
+                        10,
+                    ),
+                ]
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -6114,6 +6164,7 @@ pub fn commands(
                     // A nip, half a heart: these run from stage three, the owner's nip stage.
                     damage: if then == "hit" { 1.0 } else { 0.0 },
                     kept: String::new(),
+                    to: None,
                 },
                 0,
             )];
@@ -6154,6 +6205,7 @@ pub fn commands(
                     then: String::new(),
                     damage: 0.0,
                     kept: String::new(),
+                    to: None,
                 },
                 0,
             )]
@@ -8177,6 +8229,33 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn their_pet_walks_off_to_a_figure_ahead_of_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.last.creatures_near.push(crate::memory::Creature {
+            id: 77,
+            kind: "wolf".to_string(),
+            pos: [2.0, 64.0, 0.0],
+            pet: true,
+            ..Default::default()
+        });
+        let follows = find("pet_follows").unwrap();
+        let p = place(follows, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some([0, -10_000, PET_TO as i32]));
+        let made = commands(follows, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(matches!(&made[0].0, Command::Figure { .. }));
+        assert!(
+            matches!(&made[1].0, Command::Approach { entities, to: Some(to), .. }
+                if entities == &vec![memory.pets().next().unwrap().id] && to[2] == PET_TO + 0.5 && to[1] < -1000.0),
+            "{:?}",
+            made[1]
+        );
+        // Never far enough for the game to bring the pet back at once.
+        const { assert!(PET_TO < 12.0) };
     }
 
     #[test]

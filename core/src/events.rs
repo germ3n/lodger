@@ -913,6 +913,8 @@ pub enum Action {
     FaceInTheChest,
     /// Looking up at night, a figure falls from high above and lands far off, gone there.
     FallsFromTheSky,
+    /// Their pet walks off to a figure ahead of them; the figure is gone, the pet comes back.
+    PetFollows,
 }
 
 /// Where a figure stands.
@@ -4047,6 +4049,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FallsFromTheSky,
         false,
     ),
+    // docs/events_todo.md, 19.
+    row(
+        "pet_follows",
+        4,
+        5,
+        &[Pet, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::PetFollows,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4860,6 +4874,7 @@ impl Event {
             | Action::TheOffer
             | Action::TopOfTheLadder
             | Action::FallsFromTheSky
+            | Action::PetFollows
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -5180,6 +5195,7 @@ impl Event {
             "its_lights_on" => "light its house one light at a time, then put them out",
             "a_face_in_the_chest" => "lay out a face in their chest's grid",
             "falls_from_the_sky" => "drop the figure from the sky far off as they look up",
+            "pet_follows" => "walk their pet off to a figure ahead of them",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

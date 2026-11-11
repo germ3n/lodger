@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **The pet follows** (`docs/events_todo.md`, 19): `pet_follows`, stages 4 and 5, a pet near
+  them outdoors: a figure nine blocks ahead, their pet walks to it, the figure gone and the pet
+  back to them of itself (`approach`'s `to`, ABI 54; nine blocks, short of the twelve at which
+  the game brings a pet back). Tests: one in `act`. Was: no such event.
 - [x] **Falls from the sky** (`docs/events_todo.md`, 18): `falls_from_the_sky`, stage 5, at
   night outdoors looking up (the memory keeps their pitch now): a figure falls from forty blocks
   over the ground forty blocks ahead, lands with a heavy fall's thud and is gone there
