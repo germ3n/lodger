@@ -348,6 +348,15 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // A window of the house within twenty blocks of them; its first, when none is.
+        Action::MirrorInTheWindow => home.and_then(|h| {
+            let at = block_of(memory.last.pos);
+            let all = windows(memory, h.center);
+            all.iter()
+                .find(|w| distance(**w, at) <= 20.0)
+                .or(all.first())
+                .copied()
+        }),
         Action::EatsAtTheirChest => memory
             .used_container()
             .filter(|c| chest_food(c).is_some())
@@ -5284,6 +5293,28 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // Just inside that window, its head at the glass, moving as they move from where both
+        // stood; twenty seconds, or gone once seen and looked away from.
+        Action::MirrorInTheWindow => match (pos, memory.home.as_ref()) {
+            (Some(pane), Some(home)) => {
+                let inward = step_toward(pane, home.center);
+                let spot = [pane[0] + inward[0], pane[1] - 2, pane[2] + inward[1]];
+                let mut shown = figure_shown(ids, memory, target, spot, 20.0, false);
+                if let Command::Figure {
+                    held,
+                    mirror,
+                    once_seen,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *mirror = true;
+                    *once_seen = true;
+                }
+                vec![(shown, 0)]
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -10169,6 +10200,36 @@ mod tests {
                 )
                 .count()
                 >= 3
+        );
+    }
+
+    #[test]
+    fn in_their_window_a_figure_copies_their_every_move() {
+        let mut memory = rich_memory();
+        let center = memory.home.as_ref().unwrap().center;
+        memory.last.pos = [center[0] as f64 + 8.5, 64.0, center[2] as f64 + 0.5];
+        let event = find("mirror_in_the_window").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(
+                &made[..],
+                [(
+                    Command::Figure {
+                        mirror: true,
+                        once_seen: true,
+                        ..
+                    },
+                    0
+                )]
+            ),
+            "{made:?}"
         );
     }
 

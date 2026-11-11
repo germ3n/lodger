@@ -964,6 +964,8 @@ pub enum Action {
     RidesTheirHorse,
     /// Coming home, a figure crouched at their chest, eating their food.
     EatsAtTheirChest,
+    /// In their own window, a figure copying their every move.
+    MirrorInTheWindow,
 }
 
 /// Where a figure stands.
@@ -4362,6 +4364,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EatsAtTheirChest,
         false,
     ),
+    // docs/events_todo.md, 47.
+    row(
+        "mirror_in_the_window",
+        5,
+        5,
+        &[TargetOutdoors, Pane, Home],
+        4.0,
+        2,
+        Full,
+        Action::MirrorInTheWindow,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5246,6 +5260,7 @@ impl Event {
             | Action::WavesFromInside
             | Action::RidesTheirHorse
             | Action::EatsAtTheirChest
+            | Action::MirrorInTheWindow
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5317,6 +5332,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "mirror_in_the_window" => "have a figure in their window copy their every move",
             "eats_at_their_chest" => {
                 "have the figure eat their food at their chest as they come home"
             }

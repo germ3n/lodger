@@ -62,7 +62,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 44 | `prints_to_the_cave` | 4 | **Built.** In the snow, prints from their door to the mouth of the nearest cave. | Snow, a cave known. | `prints`. | S |
 | 45 | `rides_their_horse` | 4 | **Built.** Far off, their horse stands with a figure in its saddle, on their client alone. | Their horse in sight. | The figure set as the horse's passenger for them. | M |
 | 46 | `eats_at_their_chest` | 4 | **Built.** Coming in, a figure crouched at their chest eating their food, the sound of it; gone when looked at. | Coming home, food in their chest. | `figure` using a food item. | M |
-| 47 | `mirror_in_the_window` | 5 | From outside, in their own window, a figure copies their every move. | Outdoors near the house, a window. | `figure` inside the pane with `mirror`. | S |
+| 47 | `mirror_in_the_window` | 5 | **Built.** From outside, in their own window, a figure copies their every move. | Outdoors near the house, a window. | `figure` inside the pane with `mirror`. | S |
 | 48 | `every_door_opens` | 5 | At night, inside, every door of the house opens at once. | Night, the target indoors, two doors or more. | `toggle_block` on each. | S |
 | 49 | `flowers_wilted` | 3 | The flowers they planted are dead bushes for a day, then flowers again. | Flowers of theirs. | `swap_block` and back. | S |
 | 50 | `camp_nearby` | 4 | At night, forty blocks off, a campfire with log seats and a figure sat by it; gone by morning. | Night, outdoors. | `place_blueprint`, a figure, the blocks taken away at dawn. | M |

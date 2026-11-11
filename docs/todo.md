@@ -1397,6 +1397,9 @@ The `[x]` lines above, summed up by day:
   5, coming home with food in the chest they use: a figure crouched there eating it, its sound, gone
   once seen and looked away from; nothing eaten (`figure`'s `eats`, ABI 54). Tests: one in `act`.
   Was: no such event.
+- [x] **A mirror in the window** (`docs/events_todo.md`, 47): `mirror_in_the_window`, stage 5,
+  outdoors near a window: a figure just inside it copies their every move (`figure`'s `mirror`),
+  twenty seconds or once seen. Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.
