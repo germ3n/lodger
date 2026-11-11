@@ -90,7 +90,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 72 | `in_the_treetops` | 4 | **Built.** Far off, a figure stands on top of the trees. | Outdoors, trees near. | `figure` on the canopy. | S |
 | 73 | `path_through_the_trees` | 5 | **Built.** Overnight, a straight line cut through the leaves of a forest, pointing at their house. | Trees near the home. | `set_block` air over leaves. | M |
 | 74 | `rides_the_cart` | 4 | **Built.** A minecart of theirs rolls past with a figure sitting in it. | A minecart of theirs. | The figure the cart's passenger for them, a push. | M |
-| 75 | `eyes_in_the_dark` | 4 | In a dark cave, two small lights at eye height ahead, blinking; gone when they come near. | Underground, dark. | A client hint of particles. | M |
+| 75 | `eyes_in_the_dark` | 4 | **Built.** In a dark cave, two small lights at eye height ahead, blinking; gone when they come near. | Underground, dark. | A client hint of particles. | M |
 | 76 | `lantern_in_the_woods` | 4 | At night, far off in the trees, a lantern moving, held by a figure walking. | Night, outdoors. | `figure` walking, holding a lantern. | S |
 | 77 | `crouched_behind_a_tree` | 4 | A figure crouched behind a tree near them; gone when they come round it. | Outdoors near trees. | `figure` crouching, `vanish_within`. | S |
 | 78 | `snowball_thrown` | 3 | A snowball hits their back; no one is there. | Snow, outdoors. | A snowball thrown at them from behind. | M |

@@ -38,6 +38,8 @@ import java.util.Set;
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
+ *   <li>{@code eyes_in_the_dark}: two small lights side by side at the hint's place, blinking, at
+ *       eye height; gone for good once they come within five blocks.</li>
  *   <li>{@code hearts_drop}: the right half of their hearts drawn empty while it lasts, then as
  *       they are; no harm.</li>
  *   <li>{@code xp_slips}: their experience bar empties from the right over the first half of the
@@ -159,6 +161,30 @@ public final class Glitches {
 					behind = true;
 					BehindFigure.tick(minecraft);
 				}
+				// Two glowing points a hand apart across the way they look, blinking now and then;
+				// gone once they come close.
+				case "eyes_in_the_dark" -> hint.pos().ifPresent(pos -> {
+					var eye = minecraft.player.getEyePosition();
+					double cx = pos.getX() + 0.5;
+					double cy = pos.getY() + 0.6;
+					double cz = pos.getZ() + 0.5;
+					if (DONE_ONCE.contains(active.id()) || eye.distanceToSqr(cx, cy, cz) < 25) {
+						DONE_ONCE.add(active.id());
+						return;
+					}
+					long t = minecraft.level.getGameTime();
+					if (t % 3 != 0 || t % 50 < 5) {
+						return;
+					}
+					double dx = cx - eye.x;
+					double dz = cz - eye.z;
+					double length = Math.max(1e-6, Math.sqrt(dx * dx + dz * dz));
+					double ax = -dz / length * 0.13;
+					double az = dx / length * 0.13;
+					for (int side = -1; side <= 1; side += 2) {
+						minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.GLOW, cx + ax * side, cy, cz + az * side, 0, 0, 0);
+					}
+				});
 				// Two hands pressed on the glass from the house's side, renewed as the dust fades.
 				case "handprints" -> hint.pos().ifPresent(pos -> {
 					if (minecraft.level.getGameTime() % 6 != 0) {

@@ -2927,6 +2927,16 @@ pub fn commands(
                     .place
                     .or_else(|| memory.home.as_ref().map(|h| h.center)),
                 "ripples" | "painting_flip" | "compass_points" => pos,
+                // Twelve blocks ahead of where they look, at their eye's height.
+                "eyes_in_the_dark" => {
+                    let at = block_of(memory.last.pos);
+                    let yaw = (memory.last.yaw as f64).to_radians();
+                    Some([
+                        at[0] + (-yaw.sin() * 12.0).round() as i32,
+                        at[1] + 1,
+                        at[2] + (yaw.cos() * 12.0).round() as i32,
+                    ])
+                }
                 // A window of the house: its first pane.
                 "handprints" => memory
                     .home
@@ -11676,6 +11686,26 @@ mod tests {
             "{made:?}"
         );
         assert!(matches!(&made[1].0, Command::PushEntity { entity: 61, .. }));
+    }
+
+    #[test]
+    fn in_the_dark_two_eyes_ahead_of_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 20.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("eyes_in_the_dark").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, pos: Some(p), .. }, _)] if hint == "eyes_in_the_dark" && *p == [0, 21, 12]),
+            "{made:?}"
+        );
     }
 
     #[test]

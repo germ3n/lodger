@@ -1419,6 +1419,10 @@ The `[x]` lines above, summed up by day:
 - [x] **Glass breaks** (`docs/events_todo.md`, 53): `glass_breaks`, stages 4 and 5, indoors: the
   sound of a window breaking at one of their panes, every pane whole (`SoundAtFixture`). Tests: one
   in `act`. Was: no such event.
+- [x] **Eyes in the dark** (`docs/events_todo.md`, 75): `eyes_in_the_dark`, stages 4 and 5,
+  underground: twelve blocks ahead at eye height two glowing points a hand apart, blinking, gone
+  for good within five blocks (a hint; the game's glow particles, lit in the dark). A screen
+  glitch, off with `events.glitches`. Tests: one in `act`. Was: no such event.
 - [x] **Hearts drop** (`docs/events_todo.md`, 55): `hearts_drop`, stage 5, a hint of a second and a
   half: the right five of their hearts drawn as empty containers over them, no harm. A screen
   glitch, off with `events.glitches`. Tests: the catalogue's own. Was: no such event.

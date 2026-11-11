@@ -5247,6 +5247,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("red_rain", 150.0),
         false,
     ),
+    // docs/events_todo.md, 75: ahead in the dark, gone as they come near.
+    row(
+        "eyes_in_the_dark",
+        4,
+        5,
+        &[TargetUnderground],
+        3.0,
+        3,
+        Full,
+        Action::Hint("eyes_in_the_dark", 60.0),
+        false,
+    ),
     // docs/events_todo.md, 55: a second and a half, no harm.
     row(
         "hearts_drop",
@@ -6100,6 +6112,7 @@ impl Event {
             "sun_blink" => "make the sun blink out",
             "lightning_silent" => "flash lightning with no thunder",
             "red_rain" => "turn the rain red",
+            "eyes_in_the_dark" => "show two eyes ahead of them in the dark",
             "hearts_drop" => "show half their hearts empty a moment",
             "xp_slips" => "empty their experience bar on their screen a moment",
             "f3_line" => "write one more line on their debug screen",

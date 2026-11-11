@@ -144,7 +144,7 @@ As little as possible, because the mod is about not knowing:
   window's glass), `in_the_screenshot` (a figure in their next screenshot, a frame on their screen),
   `only_in_third_person` (a figure right behind them in F5 alone), `f3_line` (one more line on the
   debug screen), `xp_slips` (their experience bar drawn emptying, nothing lost), `hearts_drop` (half their hearts
-  drawn empty a moment), `inventory_stare` (their figure in the inventory staring out instead of following the mouse),
+  drawn empty a moment), `eyes_in_the_dark` (two glowing points ahead, gone when near), `inventory_stare` (their figure in the inventory staring out instead of following the mouse),
   `eyes_open` (lying in bed, the game's fade to sleep held off: sent by the host with `choke`
   itself, not by the mind, so `events.glitches` never holds it back);
 - whether this player is the target, so a witness's client drops sounds and figures aimed at

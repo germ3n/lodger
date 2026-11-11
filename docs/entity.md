@@ -585,6 +585,7 @@ The target's own HUD and camera, for a moment. Off with `events.glitches`.
 | `fov_pull` | 4 | The field of view narrows over ten seconds and snaps back. | The target indoors. |
 | `tab_twice` | 3 | The target's own name appears twice in the player list for six seconds. | The target awake. |
 | `sleepers_wrong` | 3 | `1/2 players sleeping` on a server with one player, or one too many. | The target trying to sleep. |
+| `eyes_in_the_dark` | 4 | Underground, twelve blocks ahead of where they look at the height of their eyes, two small glowing lights a hand apart, blinking now and then; gone for good once they come within five blocks (a hint, the game's glow). | The target underground. |
 | `hearts_drop` | 5 | For a second and a half the right five of their hearts show empty, drawn as empty containers over them; then as they are, no harm (a hint). | The target in the game. |
 | `xp_slips` | 4 | Their experience bar empties from the right over two seconds, stays empty two more, then is as it was: the empty bar drawn over it on their screen, their experience untouched (a hint, `XpSlip`). | The target in the game. |
 | `f3_line` | 5 | For half an hour, their debug screen (F3) has one more line among its own, after where they stand: "Lodger: watching" (a hint, `DebugEntryPositionMixin`). | The target in the game. |
