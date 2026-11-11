@@ -4981,6 +4981,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("red_rain", 150.0),
         false,
     ),
+    // docs/events_todo.md, 55: a second and a half, no harm.
+    row(
+        "hearts_drop",
+        5,
+        5,
+        &[TargetOnline],
+        3.0,
+        3,
+        Half,
+        Action::Hint("hearts_drop", 1.5),
+        true,
+    ),
     // docs/events_todo.md, 54: four seconds, nothing lost.
     row(
         "xp_slips",
@@ -5784,6 +5796,7 @@ impl Event {
             "sun_blink" => "make the sun blink out",
             "lightning_silent" => "flash lightning with no thunder",
             "red_rain" => "turn the rain red",
+            "hearts_drop" => "show half their hearts empty a moment",
             "xp_slips" => "empty their experience bar on their screen a moment",
             "f3_line" => "write one more line on their debug screen",
             "only_in_third_person" => {

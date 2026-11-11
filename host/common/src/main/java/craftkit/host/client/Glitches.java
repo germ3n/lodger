@@ -38,6 +38,8 @@ import java.util.Set;
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
+ *   <li>{@code hearts_drop}: the right half of their hearts drawn empty while it lasts, then as
+ *       they are; no harm.</li>
  *   <li>{@code xp_slips}: their experience bar empties from the right over the first half of the
  *       hint, stays empty, then is as it was: the empty bar drawn over it, nothing lost.</li>
  *   <li>{@code f3_line}: one more line on the debug screen while it lasts, "Lodger: watching"
@@ -337,6 +339,19 @@ public final class Glitches {
 		for (Hints.Active active : Hints.active()) {
 			float progress = active.progress(now);
 			switch (active.hint().hint()) {
+				// The right five of their hearts drawn as empty containers over them; no harm.
+				case "hearts_drop" -> {
+					var player = Minecraft.getInstance().player;
+					if (player == null || player.isCreative() || player.isSpectator()) {
+						break;
+					}
+					int x = width / 2 - 91;
+					int y = height - 39;
+					for (int heart = 5; heart < 10; heart++) {
+						graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+								net.minecraft.resources.Identifier.withDefaultNamespace("hud/heart/container"), x + heart * 8, y, 9, 9);
+					}
+				}
 				// Their experience bar emptied on their screen: the empty bar over the right of it,
 				// spreading left; their experience is untouched.
 				case "xp_slips" -> {

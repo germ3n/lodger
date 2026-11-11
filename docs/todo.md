@@ -1419,6 +1419,9 @@ The `[x]` lines above, summed up by day:
 - [x] **Glass breaks** (`docs/events_todo.md`, 53): `glass_breaks`, stages 4 and 5, indoors: the
   sound of a window breaking at one of their panes, every pane whole (`SoundAtFixture`). Tests: one
   in `act`. Was: no such event.
+- [x] **Hearts drop** (`docs/events_todo.md`, 55): `hearts_drop`, stage 5, a hint of a second and a
+  half: the right five of their hearts drawn as empty containers over them, no harm. A screen
+  glitch, off with `events.glitches`. Tests: the catalogue's own. Was: no such event.
 - [x] **The experience slips** (`docs/events_todo.md`, 54): `xp_slips`, stages 4 and 5, a hint of
   four seconds: their experience bar drawn emptying from the right, then as it was; nothing lost
   (`XpSlip`). A screen glitch, off with `events.glitches`. Tests: `XpSlipTest`, the catalogue's
