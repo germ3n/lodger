@@ -1,6 +1,6 @@
 # Events to come
 
-Eighty event ideas not yet in the catalogue (forty at first, forty more after) (`core/src/events.rs`, `docs/entity.md`), none of
+A hundred event ideas not yet in the catalogue (forty at first, forty more after, then twenty-two) (`core/src/events.rs`, `docs/entity.md`), none of
 them a copy of one there or of a line in `docs/ideas.md`. Each says the stage it fits, what the
 target must be doing, what it would take (the commands there are today, or what the host would
 need), and a rough size: **S** (the mind alone, today's commands), **M** (a small host change),
@@ -96,4 +96,40 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 78 | `snowball_thrown` | 3 | **Built.** A snowball hits their back; no one is there. | Snow, outdoors. | A snowball thrown at them from behind. | M |
 | 79 | `arrow_in_the_door` | 4 | **Built.** While they were out, an arrow struck in their front door. | Away, a door. | `shoot` at the door. | S |
 | 80 | `raises_their_sword` | 4 | **Built (raising it again and again: a player's arm holds no pose up).** Far off, a figure holds their own sword up high, still. | Their weapon known. | `figure` holding it, arm up. | S |
+
+## The forest, the villagers, and what attacks
+
+The owner: figures peeking out from behind trees in a forest, "and multiple such events"; then
+villagers behaving erratically, and things that attack or spook the target; then one that moves
+only while unseen, and one that notices them running about at night with a light. Checked against the
+catalogue, `docs/ideas.md` and the eighty above. Most of the forest ones need the trunks near the
+target, which the mind does not know today: a scan of logs around them (`scan` exists; a trunk is
+a column of logs with leaves over it), which would also let `crouched_behind_a_tree` hide behind
+a real tree. In a forest is the biome the host already reports (a forest, taiga, jungle, birch or
+dark forest).
+
+| # | Event | Stage | What happens | Needs | Takes | Size |
+| --- | --- | --- | --- | --- | --- | --- |
+| 81 | `peeks_from_the_trees` | 4 | Walking through a forest, a figure leans out from behind a trunk ahead, half of it showing, and pulls back behind it once looked at; over a minute three or four times, a different trunk each time, always a little ahead. (Asked for by the owner.) | In a forest, walking. | The trunk scan; `figure` with a new `peeks`: set to a trunk's side, leaning out, gone into it when seen. | M |
+| 82 | `tree_to_tree` | 4 | In a forest, each time they look back a figure stands behind a trunk one tree nearer; at the nearest trunk, looked at, it is gone and a branch cracks. (`slow_approach` is an animal in the open.) | In a forest. | The trunk scan; `figure` `once_seen`, placed again on each look back. | M |
+| 83 | `knocks_on_wood` | 3 | Knocks on a trunk ahead, three at a time, then on one farther in, leading them deeper; at the last tree, a strip of its bark gone at eye height. | In a forest. | The trunk scan; `sound` at a trunk; `set_block` a stripped log. | S |
+| 84 | `blazed_trees` | 3 | Along their way through a forest, a trunk every ten blocks has a strip of bark gone at eye height, a trail of blazes leading off their path to its place. | In a forest, its place. | The trunk scan; `set_block` stripped logs. | S |
+| 85 | `branch_snaps` | 3 | A crack of breaking wood right behind them and leaves torn from the tree they just passed, falling; no one there. | In a forest. | The trunk scan; `sound`; a few leaf blocks broken with their particles. | S |
+| 86 | `the_tree_line` | 5 | Leaving a forest, they look back: a figure stands between every two trunks along its edge, all facing them; all gone at once on the next look. | Leaving a forest. | The trunk scan; `figure` `together`, `once_seen`. | M |
+| 87 | `trees_close_behind` | 4 | Deep in a forest, they turn round: the gap they came in through is shut, a full-grown tree standing in it where there was none. | In a forest, walking. | A tree grown at a spot on their way back (the host growing a sapling at once). | M |
+| 88 | `tree_comes_down` | 4 | A tree beside them falls: its logs come down across their path with a crash, harming no one, the stump left. | In a forest. | The trunk scan; the logs as falling blocks, landing as dropped logs. | M |
+| 89 | `animals_flee_the_woods` | 4 | Wild animals run out of the trees past them, as from something; far back among the trunks, a figure walking. | In a forest, animals near. | `approach` each animal away from a spot behind them, at a run; `figure` `walks`. | S |
+| 90 | `circles_a_tree` | 3 | In a snowy forest, footprints go round and round one trunk a dozen times, leading from nowhere and going nowhere. | A snowy forest. | The trunk scan; `prints` in a ring. | S |
+| 91 | `villagers_flee_you` | 4 | Coming into the village, every villager runs from them as from a zombie, into the houses, the doors shut, the bell rung; by morning it is as it was. | In a village. | Villagers' panic set off by the host, the bell rung. | M |
+| 92 | `trades_refused` | 3 | For a day, every villager they open shows each trade crossed out, and shakes its head with a no. | A villager near. | A host hold on trades for a player (locked offers on their screen). | M |
+| 93 | `villager_spins` | 4 | A villager turns round and round where it stands, fast and silent, and stops facing them when they come near; then it is a villager again. | A villager near. | The villager's turn set each tick by the host, then `hold`. | M |
+| 94 | `villagers_walk_out` | 4 | At dusk the villagers walk out of the village single file into the dark, toward its place, and are back in their beds by morning. (`in_a_line` is figures standing.) | A village, dusk. | `approach` `to` its place, in a line; each sent home before dawn. | M |
+| 95 | `villager_collapses` | 4 | A villager drops as if dead, the death's fall and sound, and lies there; a minute later, when no one looks, it is up and at work. No villager dies. | A villager near. | The villager's death look on their screen alone, then back. | M |
+| 96 | `wall_bursts` | 4 | A block of their house's wall breaks and silverfish pour out, four or five, real but weak; the block is put back by morning. (`silverfish_sound` in `ideas.md` is a sound only.) | The target indoors. | `place_entity` silverfish; the block broken and later set again. | S |
+| 97 | `daylight_phantom` | 4 | At noon, in the open, a phantom swoops at them once out of the sun and is gone; a nip at most. | Noon, outdoors. | `place_entity` a phantom set at them, gone after its pass. | M |
+| 98 | `drops_from_the_ceiling` | 4 | In their tunnel, a cave spider drops from the ceiling right in front of their face. | Underground, in their tunnel. | `place_entity` a cave spider on the ceiling ahead. | S |
+| 99 | `wolves_circle` | 4 | At night in the open, wild wolves circle them, growling, nearer each round; then all run off into the dark at once. | Night, outdoors. | `place_entity` wolves, walked in a ring by the host; gone when they leave view. | M |
+| 100 | `zombie_in_your_gear` | 5 | At night a zombie walks at them wearing armour like theirs and holding a tool like theirs; killed, it drops nothing of it. (`wears_your_face` is a mob in their head.) | Night, their armour known. | `place_entity` a zombie dressed in copies that never drop. | M |
+| 101 | `while_unseen` | 4 | A figure that moves only while no one looks at it: each time they look back it stands nearer, never seen moving, still while watched. Looked at for long it waits; once it reaches them, a hit and it is gone. A few minutes at most, then it is gone where it stands. (Asked for by the owner; `hostiles_close` is the mobs, `tree_to_tree` the forest's.) | Outdoors at night, or in the house. | `figure` moved by the host each tick it is out of their view (the view test the figures have), a step at a time, toward them; a nip at the end by the stage's harm rules. | M |
+| 102 | `drawn_to_the_light` | 4 | Running about at night with a torch or a lantern in hand draws it: far off, a figure turns to them and walks toward the light. Put the light away and it no longer sees them at all: it stops, turns about as if it lost them, and is gone, however they move after, until they hold a light again; standing still in the dark does the same; keep running lit and it comes on, and at twenty blocks it runs at them as in `hunted`. Not from the menu: noticed. (Asked for by the owner.) | Night, outdoors, a light held while running a while. | The mind noticing a light held (their main or off hand) while sprinting; `figure` `walks` at them, stopped and lost the moment no light is held; `rushes` at the end. | M |
 
