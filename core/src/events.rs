@@ -994,6 +994,8 @@ pub enum Action {
     FishingFigure,
     /// Coming in at night, a figure beside their bed, facing it.
     ByTheBed,
+    /// Swimming, a figure swims past beneath them.
+    SwimsBeneath,
 }
 
 /// Where a figure stands.
@@ -4572,6 +4574,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ByTheBed,
         false,
     ),
+    // docs/events_todo.md, 65.
+    row(
+        "swims_beneath",
+        4,
+        5,
+        &[TargetSwimming],
+        3.0,
+        2,
+        Full,
+        Action::SwimsBeneath,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5507,6 +5521,7 @@ impl Event {
             | Action::ChestWontOpen
             | Action::FishingFigure
             | Action::ByTheBed
+            | Action::SwimsBeneath
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5578,6 +5593,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "swims_beneath" => "have the figure swim past beneath them",
             "by_the_bed" => "stand the figure beside their bed as they come in",
             "fishing_figure" => "have the figure fish where they fish",
             "breadcrumbs" => "lay a line of their blocks from their door off into the dark",

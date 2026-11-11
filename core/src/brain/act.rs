@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::SwimsBeneath => Some(block_of(memory.last.pos)),
         Action::ByTheBed => home.and_then(|h| h.bed),
         // Where they last fished; the water near them when they never have.
         Action::FishingFigure => memory
@@ -5861,6 +5862,38 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // Three blocks under them, from eight blocks to one side to eight to the other, across
+        // the way they face, swimming (the crawl, which in water is a swim); gone at the far end.
+        Action::SwimsBeneath => pos
+            .map(|at| {
+                let yaw = (memory.last.yaw as f64).to_radians();
+                let right = [-yaw.cos(), -yaw.sin()];
+                let y = memory.last.pos[1] - 3.0;
+                let point = |side: f64| {
+                    [
+                        memory.last.pos[0] + right[0] * side,
+                        y,
+                        memory.last.pos[2] + right[1] * side,
+                    ]
+                };
+                let mut shown =
+                    figure_shown(ids, memory, target, [at[0], at[1] - 4, at[2]], 40.0, false);
+                if let Command::Figure {
+                    held,
+                    crawls,
+                    path,
+                    pos,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *crawls = true;
+                    *pos = point(-8.0);
+                    *path = vec![point(-8.0), point(8.0)];
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11129,6 +11162,33 @@ mod tests {
             matches!(&made[..], [(Command::Figure { faces: Some(f), once_seen: true, pos, .. }, 0)] if f[0] == bed[0] as f64 + 0.5 && pos[1] == bed[1] as f64),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn swimming_a_figure_swims_past_beneath_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 60.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("swims_beneath").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let [(
+            Command::Figure {
+                crawls: true, path, ..
+            },
+            0,
+        )] = &made[..]
+        else {
+            panic!("{made:?}")
+        };
+        assert!(path.iter().all(|p| p[1] == 57.0), "under them");
+        assert!((path[0][0] - path[1][0]).abs() >= 15.0, "past them, across");
     }
 
     #[test]

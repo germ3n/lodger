@@ -1461,6 +1461,9 @@ The `[x]` lines above, summed up by day:
   no such event.
 - [x] **By the bed** (`docs/events_todo.md`, 64): `by_the_bed`, stages 4 and 5, coming in at night:
   a figure beside their bed facing it, gone once seen. Tests: one in `act`. Was: no such event.
+- [x] **It swims beneath** (`docs/events_todo.md`, 65): `swims_beneath`, stages 4 and 5, swimming:
+  a figure swims past three blocks under them, side to side (`crawls` in water). Tests: one in
+  `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.
