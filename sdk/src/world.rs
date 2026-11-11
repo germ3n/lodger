@@ -1272,6 +1272,10 @@ pub enum Command {
         /// Crouched, eating what it holds, as a player eats. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         eats: bool,
+        /// Standing on the treetops at its place (its y below -1000): leaves count as ground.
+        /// ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        on_leaves: bool,
     },
     RemoveFigure {
         id: u64,

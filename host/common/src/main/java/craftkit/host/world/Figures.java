@@ -409,6 +409,22 @@ public final class Figures {
 	/** A jump each this many ticks. */
 	static final long JUMP_EVERY = 20;
 
+	/** The figure {@code number} shown to {@code player} stands on the treetops over it (ABI 54). */
+	public void onLeaves(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure == null || !(player.level() instanceof ServerLevel level)) {
+			return;
+		}
+		BlockPos column = BlockPos.containing(figure.at.x, 0, figure.at.z);
+		if (!level.isLoaded(column)) {
+			return;
+		}
+		int top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, column).getY();
+		figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
+		figure.at = new Vec3(figure.at.x, top, figure.at.z);
+		sendEntity(figure);
+	}
+
 	/** The figure {@code number} shown to {@code player} crouches, eating what it holds (ABI 54). */
 	public void eat(ServerPlayer player, int number) {
 		Figure figure = find(player, number);

@@ -1482,6 +1482,9 @@ The `[x]` lines above, summed up by day:
   in `act`. Was: no such event.
 - [x] **On the water** (`docs/events_todo.md`, 71): `on_the_water`, stages 4 and 5: a figure on the
   surface of the water near them, gone once seen. Tests: one in `act`. Was: no such event.
+- [x] **In the treetops** (`docs/events_todo.md`, 72): `in_the_treetops`, stages 4 and 5,
+  outdoors: thirty blocks ahead a figure on top of the trees (`figure`'s `on_leaves`, ABI 54).
+  Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

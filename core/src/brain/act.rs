@@ -348,6 +348,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Thirty blocks ahead of where they look, a little aside.
+        Action::InTheTreetops => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians() + 0.3;
+            Some([
+                at[0] + (-yaw.sin() * 30.0).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * 30.0).round() as i32,
+            ])
+        }
         // The water near them: its middle, on its top (the host's ground counts water).
         Action::OnTheWater => memory
             .feature("water")
@@ -1629,6 +1639,7 @@ fn figure_shown(
         jumps: false,
         rides: 0,
         eats: false,
+        on_leaves: false,
     }
 }
 
@@ -6042,6 +6053,25 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // On the treetops there (the leaves its ground; the ground where there are none),
+        // facing them, empty-handed; gone once seen and looked away from.
+        Action::InTheTreetops => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 60.0, false);
+                if let Command::Figure {
+                    held,
+                    once_seen,
+                    on_leaves,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *once_seen = true;
+                    *on_leaves = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7376,6 +7406,7 @@ pub fn commands(
                         jumps: false,
                         rides: 0,
                         eats: false,
+                        on_leaves: false,
                     },
                     0,
                 )]
@@ -11487,6 +11518,24 @@ mod tests {
                     0
                 )]
             ),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn far_off_a_figure_stands_on_the_treetops() {
+        let memory = rich_memory();
+        let event = find("in_the_treetops").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { on_leaves: true, pos, .. }, 0)] if pos[1] < -1000.0),
             "{made:?}"
         );
     }
