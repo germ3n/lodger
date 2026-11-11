@@ -4446,6 +4446,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SlipsFromHand,
         false,
     ),
+    // docs/events_todo.md, 53: heard inside, every pane whole.
+    row(
+        "glass_breaks",
+        4,
+        5,
+        &[TargetIndoors, Fixture("glass_pane")],
+        3.0,
+        2,
+        Half,
+        Action::SoundAtFixture("glass_pane", "minecraft:block.glass.break"),
+        true,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5407,6 +5419,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "glass_breaks" => "make the sound of a window breaking in the house",
             "slips_from_hand" => "make what they hold slip from their hand",
             "stone_circle" => "raise a ring of stone pillars far off",
             "camp_nearby" => "make a camp out where they walk, a figure sitting by its fire",

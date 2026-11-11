@@ -189,6 +189,7 @@ never a witness's container.
 | `item_on_table` | 2 | An item is laid on the crafting table as a dropped item that does not despawn: the held item, or one of the favourites from a chest. | A crafting table, a held item or a chest. |
 | `lectern_page` | 2 | The book on a lectern is open to another page (`turn_page`, ABI 29). | A lectern with a book. |
 | `anvil_sound` | 2 | An anvil's sound from the workshop, at night, while the target is in bed. | An anvil and the target asleep. |
+| `glass_breaks` | 4 | While they are in the house, the sound of a window breaking, at one of its panes; every pane is whole (a sound). | The target indoors, a pane. |
 | `brewing_done` | 3 | A brewing stand that had potions brews one of their ingredients into them, the game's own brewing: one ingredient from their chest into the stand, and a blaze powder too when the stand has no fuel (`brew`, ABI 29: refused unless the stand holds potions and its ingredient slot is empty). | A brewing stand and an ingredient in the chest they use. |
 | `armor_stand_turn` | 3 | An armour stand's head is turned toward the door, or toward where the target sleeps. | An armour stand in the home. |
 | `armor_stand_dress` | 3 | One piece of armour from a chest is on the stand. | An armour stand and a chest with armour. |

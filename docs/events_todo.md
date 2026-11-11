@@ -68,7 +68,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 50 | `camp_nearby` | 4 | **Built.** At night, forty blocks off, a campfire with log seats and a figure sat by it; gone by morning. | Night, outdoors. | `place_blueprint`, a figure, the blocks taken away at dawn. | M |
 | 51 | `stone_circle` | 4 | **Built.** Overnight, a ring of stone pillars stands in a clearing far off. | The target asleep or away. | `place_blueprint`. | S |
 | 52 | `slips_from_hand` | 4 | **Built.** What they hold slips from their hand and lies at their feet. | Holding something. | The held stack dropped at their feet. | M |
-| 53 | `glass_breaks` | 4 | Inside, the sound of a window breaking; every pane is whole. | Indoors, a pane. | `play_sound`. | S |
+| 53 | `glass_breaks` | 4 | **Built.** Inside, the sound of a window breaking; every pane is whole. | Indoors, a pane. | `play_sound`. | S |
 | 54 | `xp_slips` | 4 | Their experience bar drains to nothing on their screen, then is back. | Experience. | A client hint. | M |
 | 55 | `hearts_drop` | 5 | For a second their hearts show half empty, then whole. | Any time. | A client hint. | M |
 | 56 | `pet_stares_at_wall` | 3 | Their pet stands facing a blank wall of the house, still, for a minute. | A pet indoors. | `hold` facing a wall. | S |

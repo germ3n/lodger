@@ -1416,6 +1416,9 @@ The `[x]` lines above, summed up by day:
 - [x] **It slips from their hand** (`docs/events_todo.md`, 52): `slips_from_hand`, stages 4 and 5,
   walking with something held and no monster near: it slips to their feet, picked up again
   (`drop_held`, ABI 54). Tests: one in `act`. Was: no such event.
+- [x] **Glass breaks** (`docs/events_todo.md`, 53): `glass_breaks`, stages 4 and 5, indoors: the
+  sound of a window breaking at one of their panes, every pane whole (`SoundAtFixture`). Tests: one
+  in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

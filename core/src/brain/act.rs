@@ -10565,6 +10565,22 @@ mod tests {
     }
 
     #[test]
+    fn inside_a_window_is_heard_breaking_and_every_pane_is_whole() {
+        let memory = rich_memory();
+        let event = find("glass_breaks").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::PlaySound { sound, .. } if sound == "minecraft:block.glass.break")), "a sound alone: {made:?}");
+        assert!(!made.is_empty());
+    }
+
+    #[test]
     fn asleep_the_figure_comes_in_at_their_door_and_chokes_them_with_a_lead() {
         let memory = rich_memory();
         let mut rng = Rng::new(8);
