@@ -327,6 +327,14 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                     .copied()
             })
             .or_else(|| memory.usual_door()),
+        // Two blocks out of their usual door, away from the house's middle.
+        Action::Sleepwalk => match (memory.usual_door(), home) {
+            (Some(door), Some(h)) => {
+                let out = step_toward(h.center, door);
+                Some([door[0] + out[0] * 2, door[1], door[2] + out[1] * 2])
+            }
+            _ => None,
+        },
         // Where they are: the host seats it in their boat.
         Action::BoatPassenger => Some(block_of(memory.last.pos)),
         // Ahead of them, where they look, far off on the ground: they see it start.
@@ -4133,6 +4141,53 @@ pub fn commands(
                 made
             })
             .unwrap_or_default(),
+        // Woken and stood outside, the door open behind them, their prints from the bed where
+        // there is snow. The door last, so a door gone since loses only itself.
+        Action::Sleepwalk => match (
+            pos,
+            memory.usual_door(),
+            memory.home.as_ref().and_then(|h| h.bed),
+        ) {
+            (Some(outside), Some(door), Some(bed)) => vec![
+                (
+                    Command::CancelSleep {
+                        id: ids(),
+                        player: target,
+                        seconds: 0.0,
+                    },
+                    0,
+                ),
+                (
+                    Command::MovePlayer {
+                        id: ids(),
+                        player: target,
+                        to: [
+                            outside[0] as f64 + 0.5,
+                            outside[1] as f64,
+                            outside[2] as f64 + 0.5,
+                        ],
+                    },
+                    2,
+                ),
+                (
+                    Command::Prints {
+                        id: ids(),
+                        from: bed,
+                        to: outside,
+                    },
+                    3,
+                ),
+                (
+                    Command::ToggleBlock {
+                        id: ids(),
+                        pos: door,
+                        to: Some(true),
+                    },
+                    4,
+                ),
+            ],
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7775,6 +7830,40 @@ mod tests {
         assert!(
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
+        );
+    }
+
+    #[test]
+    fn asleep_they_wake_outside_their_door_with_it_open_behind_them() {
+        let memory = rich_memory();
+        let walk = find("sleepwalk").unwrap();
+        assert!(walk.needs.contains(&crate::events::Need::TargetInBed));
+        let door = memory.usual_door().unwrap();
+        let center = memory.home.as_ref().unwrap().center;
+        let outside = place(walk, &memory, &mut Rng::new(1)).unwrap();
+        assert!(
+            distance(outside, center) > distance(door, center),
+            "out of the door"
+        );
+        let made = commands(
+            walk,
+            Some(outside),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(made[0].0, Command::CancelSleep { .. }),
+            "woken first"
+        );
+        assert!(
+            matches!(&made[1].0, Command::MovePlayer { to, .. } if to[0] == outside[0] as f64 + 0.5)
+        );
+        assert!(matches!(&made[2].0, Command::Prints { to, .. } if *to == outside));
+        assert!(
+            matches!(&made.last().unwrap().0, Command::ToggleBlock { pos, to: Some(true), .. } if *pos == door),
+            "the door open behind them, last"
         );
     }
 

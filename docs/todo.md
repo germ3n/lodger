@@ -1201,6 +1201,11 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Sleepwalking** (`docs/events_todo.md`, 9): `sleepwalk`, stage 5, asleep at night with
+  the bed and a door known: they wake standing two blocks out of their front door, the door open
+  behind them (set last, so a door gone since loses only itself), their prints in the snow from
+  the bed; in the sleep events' group, so `calm` leaves it out. Tests: one in `act`. Was: no such
+  event.
 - [x] **A door that will not open** (`docs/events_todo.md`, 8): `door_wont_open`, stages 4 and
   5, as they walk to a door of the home: it will not open for six seconds, as if held from the
   other side (`hold_door`, ABI 54: their use refused on both loaders, the door put back on their

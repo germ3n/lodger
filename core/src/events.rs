@@ -868,6 +868,9 @@ pub enum Action {
     OneMoreEachNight,
     /// The door they walk to will not open a few seconds, held from the other side; a knock.
     DoorWontOpen,
+    /// Asleep: they wake standing outside their front door, the door open behind them, their
+    /// prints in the snow from the bed.
+    Sleepwalk,
 }
 
 /// Where a figure stands.
@@ -3882,6 +3885,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::DoorWontOpen,
         false,
     ),
+    // docs/events_todo.md, 9.
+    row(
+        "sleepwalk",
+        5,
+        5,
+        &[TargetInBed, Night, Bed, Door, Home],
+        5.0,
+        1,
+        Full,
+        Action::Sleepwalk,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4717,6 +4732,7 @@ impl Event {
             | Action::BedBreaks
             | Action::Choke(_)
             | Action::ShotInBed(_)
+            | Action::Sleepwalk
             | Action::BedOccupied => "night",
         }
     }
@@ -4995,6 +5011,7 @@ impl Event {
                 "stand one more figure at the edge of their light than last night"
             }
             "door_wont_open" => "hold their door shut as they come to it, and knock",
+            "sleepwalk" => "wake them outside their front door, the door open behind them",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
