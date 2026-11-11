@@ -348,6 +348,13 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Their crafting table in the house.
+        Action::AtTheirTable => memory.fixtures("crafting_table").map(|f| f.pos).find(|p| {
+            memory
+                .home
+                .as_ref()
+                .is_some_and(|h| distance(h.center, *p) <= 12.0)
+        }),
         Action::PulledUnder | Action::HeldBreath | Action::AllFreeze => {
             Some(block_of(memory.last.pos))
         }
@@ -5054,6 +5061,32 @@ pub fn commands(
                     1,
                 ),
             ],
+            _ => Vec::new(),
+        },
+        // Beside it, toward the house's middle, facing it, working at it with their own tool;
+        // gone as they come within five blocks.
+        Action::AtTheirTable => match (pos, memory.home.as_ref()) {
+            (Some(table), Some(home)) => {
+                let back = step_toward(table, home.center);
+                let spot = [table[0] + back[0], table[1] - 1, table[2] + back[1]];
+                let mut shown = figure_shown(ids, memory, target, spot, 60.0, false);
+                if let Command::Figure {
+                    swinging,
+                    vanish_within,
+                    faces,
+                    ..
+                } = &mut shown
+                {
+                    *swinging = true;
+                    *vanish_within = 5.0;
+                    *faces = Some([
+                        table[0] as f64 + 0.5,
+                        table[1] as f64 + 0.5,
+                        table[2] as f64 + 0.5,
+                    ]);
+                }
+                vec![(shown, 0)]
+            }
             _ => Vec::new(),
         },
         Action::FigureWave => pos
@@ -9788,6 +9821,24 @@ mod tests {
         numbers.dedup();
         assert_eq!(numbers.len(), 8, "each its own figure");
         assert!(!numbers.contains(&1), "apart from the one figure");
+    }
+
+    #[test]
+    fn coming_home_a_figure_works_at_their_table() {
+        let memory = rich_memory();
+        let event = find("at_their_table").unwrap();
+        let table = memory
+            .fixtures("crafting_table")
+            .next()
+            .expect("a table")
+            .pos;
+        let p = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(p, Some(table));
+        let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { swinging: true, faces: Some(f), vanish_within, .. }, 0)] if f[0] == table[0] as f64 + 0.5 && *vanish_within > 0.0),
+            "{made:?}"
+        );
     }
 
     #[test]

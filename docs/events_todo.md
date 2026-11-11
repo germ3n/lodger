@@ -56,7 +56,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 
 | # | Event | Stage | What happens | Needs | Takes | Size |
 | --- | --- | --- | --- | --- | --- | --- |
-| 41 | `at_their_table` | 4 | Coming home, through the window: a figure at their crafting table, working at it; gone as they reach the door. | Coming home, a crafting table in the house. | `figure` swinging, `vanish_within`. | S |
+| 41 | `at_their_table` | 4 | **Built.** Coming home, through the window: a figure at their crafting table, working at it; gone as they reach the door. | Coming home, a crafting table in the house. | `figure` swinging, `vanish_within`. | S |
 | 42 | `jumping_far` | 4 | Far off in the open a figure jumps, again and again, in place, facing them. | Outdoors. | A figure gliding up and down. | M |
 | 43 | `waves_from_inside` | 4 | As they come home, a figure inside the house at a window waves at them; gone when they open the door. | Coming home, a window. | `figure` inside the pane, `figure_swing`. | S |
 | 44 | `prints_to_the_cave` | 4 | In the snow, prints from their door to the mouth of the nearest cave. | Snow, a cave known. | `prints`. | S |

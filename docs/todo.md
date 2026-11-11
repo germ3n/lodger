@@ -1378,6 +1378,9 @@ The `[x]` lines above, summed up by day:
   figures switch (`events.figure`) holds back the bedside figure too (`choke`, `shot_in_bed`),
   which came whatever it said. Tests: one in `act`, one in `offer`. Was: no ring, and the
   bedside figure with the figures off.
+- [x] **At their table** (`docs/events_todo.md`, 41): `at_their_table`, stages 4 and 5, coming
+  home: a figure at their crafting table facing it, working at it with their tool, gone within
+  five blocks. Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

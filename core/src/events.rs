@@ -952,6 +952,8 @@ pub enum Action {
     FireworkOverItsHouse,
     /// A chicken near them lays what it took instead of an egg.
     ChickenLays,
+    /// Coming home, a figure at their crafting table, working at it.
+    AtTheirTable,
 }
 
 /// Where a figure stands.
@@ -4278,6 +4280,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ChickenLays,
         false,
     ),
+    // docs/events_todo.md, 41.
+    row(
+        "at_their_table",
+        4,
+        5,
+        &[TargetApproachingDoor, Fixture("crafting_table"), Home],
+        3.0,
+        2,
+        Full,
+        Action::AtTheirTable,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5156,6 +5170,7 @@ impl Event {
             | Action::AllFreeze
             | Action::FigureOnMap
             | Action::ChickenLays
+            | Action::AtTheirTable
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5227,6 +5242,9 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "at_their_table" => {
+                "stand the figure at their crafting table, working, as they come home"
+            }
             "wait" => "nothing",
             "open_chest" => "open the chest for a moment",
             "shuffle_chest" => "move things around in the chest",
