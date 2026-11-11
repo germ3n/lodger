@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **Set back** (`docs/events_todo.md`, 12): `rubberband`, stages 4 and 5, walking outdoors:
+  set back along their trail three blocks or more, as on a bad connection, and a figure stands
+  where they had been, gone once seen and looked away from. Tests: one in `act`. Was: no such
+  event.
 - [x] **Where they died** (`docs/events_todo.md`, 11): `where_you_died`, stages 3 to 5, where
   they last died twelve to sixty-four blocks from them: a figure lies on its side there as a
   body lies, gone when they come within ten blocks (`figure`'s `lies`, ABI 54: the sleeping pose

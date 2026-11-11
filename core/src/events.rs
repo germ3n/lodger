@@ -883,6 +883,8 @@ pub enum Action {
     TorchFlash,
     /// Where they last died, a figure lies as a body would.
     WhereYouDied,
+    /// Walking, they are set back a few blocks, and a figure stands where they were.
+    Rubberband,
 }
 
 /// Where a figure stands.
@@ -3933,6 +3935,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::WhereYouDied,
         false,
     ),
+    // docs/events_todo.md, 12.
+    row(
+        "rubberband",
+        4,
+        5,
+        &[TargetWalking, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::Rubberband,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4739,6 +4753,7 @@ impl Event {
             | Action::OneMoreEachNight
             | Action::TorchFlash
             | Action::WhereYouDied
+            | Action::Rubberband
             | Action::DigInto(_)
             | Action::IntoTheDark
             | Action::WarpAnimal
@@ -5052,6 +5067,7 @@ impl Event {
             "sleepwalk" => "wake them outside their front door, the door open behind them",
             "torch_flash" => "show a figure in the light they just placed underground",
             "where_you_died" => "lay a figure where they last died",
+            "rubberband" => "set them back a few steps and stand a figure where they were",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

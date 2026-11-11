@@ -347,6 +347,22 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             [light[0] + away[0] * 2, floor - 1, light[2] + away[1] * 2]
         }),
         Action::WhereYouDied => memory.last_death(),
+        // The point of their trail three blocks or more back from where they stand; three
+        // blocks behind them when the trail is short.
+        Action::Rubberband => {
+            let at = block_of(memory.last.pos);
+            memory
+                .trail
+                .iter()
+                .rev()
+                .find(|p| distance(**p, at) >= RUBBERBAND_BACK)
+                .copied()
+                .or_else(|| {
+                    let way = facing_way(memory.last.yaw);
+                    let back = RUBBERBAND_BACK as i32;
+                    Some([at[0] - way[0] * back, at[1], at[2] - way[1] * back])
+                })
+        }
         // Where they are: the host seats it in their boat.
         Action::BoatPassenger => Some(block_of(memory.last.pos)),
         // Ahead of them, where they look, far off on the ground: they see it start.
@@ -1131,6 +1147,9 @@ fn windows(memory: &Memory, center: BlockPos) -> Vec<BlockPos> {
     }
     taken
 }
+
+/// How far back `rubberband` sets them, at least.
+const RUBBERBAND_BACK: f64 = 3.0;
 
 /// How far ahead of them `hunted`'s figure starts its run.
 const HUNTED_FROM: f64 = 36.0;
@@ -4235,6 +4254,33 @@ pub fn commands(
                     *vanish_within = 10.0;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Set back there as on a bad connection, and where they had been a figure stands, facing
+        // them, empty-handed: gone once seen and looked away from.
+        Action::Rubberband => pos
+            .map(|back| {
+                let was = block_of(memory.last.pos);
+                let mut shown =
+                    figure_shown(ids, memory, target, [was[0], -10_000, was[2]], 6.0, false);
+                if let Command::Figure {
+                    held, once_seen, ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *once_seen = true;
+                }
+                vec![
+                    (
+                        Command::MovePlayer {
+                            id: ids(),
+                            player: target,
+                            to: [back[0] as f64 + 0.5, back[1] as f64, back[2] as f64 + 0.5],
+                        },
+                        0,
+                    ),
+                    (shown, 1),
+                ]
             })
             .unwrap_or_default(),
         Action::FigureWave => pos
@@ -7880,6 +7926,32 @@ mod tests {
         assert!(
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
+        );
+    }
+
+    #[test]
+    fn walking_they_are_set_back_and_a_figure_stands_where_they_were() {
+        let mut memory = rich_memory();
+        memory.trail = vec![[0, 64, 0], [2, 64, 0], [4, 64, 0], [6, 64, 0]];
+        memory.last.pos = [6.5, 64.0, 0.5];
+        let band = find("rubberband").unwrap();
+        let back = place(band, &memory, &mut Rng::new(1));
+        assert_eq!(
+            back,
+            Some([2, 64, 0]),
+            "the trail three blocks back or more"
+        );
+        let made = commands(band, back, &memory, &mut ids(), &Now::default(), None);
+        assert!(matches!(&made[0], (Command::MovePlayer { to, .. }, 0) if to[0] == 2.5));
+
+        // A trail too short: behind them, the way they face (south) the other way.
+        memory.trail.clear();
+        memory.last.yaw = 0.0;
+        assert_eq!(place(band, &memory, &mut Rng::new(1)), Some([6, 64, -3]));
+        assert!(
+            matches!(&made[1], (Command::Figure { pos, once_seen: true, .. }, 1) if pos[0] == 6.5 && pos[2] == 0.5),
+            "where they had been: {:?}",
+            made[1]
         );
     }
 

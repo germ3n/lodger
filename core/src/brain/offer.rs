@@ -281,6 +281,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::OneMoreEachNight
         | Action::TorchFlash
         | Action::WhereYouDied
+        | Action::Rubberband
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
@@ -327,6 +328,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::OneMoreEachNight
         | Action::TorchFlash
         | Action::WhereYouDied
+        | Action::Rubberband
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)
