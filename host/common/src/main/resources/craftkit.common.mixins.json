@@ -5,6 +5,7 @@
 	"client": [
 		"CompassAngleStateMixin",
 		"FogRendererMixin",
+		"InventoryScreenMixin",
 		"LivingEntityRendererMixin",
 		"ModelFeatureRendererMixin",
 		"PaintingRendererMixin",

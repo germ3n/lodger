@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **The inventory stare** (`docs/events_todo.md`, 21): `inventory_stare`, stages 4 and 5, a
+  hint of ten minutes: in their inventory their own figure stares straight out at them, drawn as
+  if the mouse were at its face (`InventoryScreenMixin`). A screen glitch, off with
+  `events.glitches`. Tests: the catalogue's own. Was: no such event.
 - [x] **It lies beside the bed** (`docs/events_todo.md`, 20): `lies_beside`, stage 5, asleep at
   night: the bedside walk of `choke`, then it lies down on the floor beside the bed on its side,
   facing them, nothing more, until they wake as it ends (`choke`'s `how` `lie`, ABI 54); in the

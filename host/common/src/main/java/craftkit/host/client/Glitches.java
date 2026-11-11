@@ -38,6 +38,8 @@ import java.util.Set;
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
+ *   <li>{@code inventory_stare}: in the inventory, their figure stares straight out instead of
+ *       following the mouse, while it lasts ({@code InventoryScreenMixin}).</li>
  * </ul>
  */
 public final class Glitches {
@@ -50,6 +52,17 @@ public final class Glitches {
 	private static long lastSeen;
 
 	private Glitches() {
+	}
+
+	/** Whether their figure in the inventory stares straight out (`inventory_stare`). */
+	public static boolean inventoryStare() {
+		for (Hints.Active active : Hints.active()) {
+			if (active.hint().hint().equals("inventory_stare")) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/** Once a client tick, in a world. */
