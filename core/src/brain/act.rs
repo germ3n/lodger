@@ -335,6 +335,17 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             }
             _ => None,
         },
+        // Two blocks past their newest light from them, on its floor: a wall light hangs a block
+        // over the floor, a standing one on it.
+        Action::TorchFlash => memory.habits.last_light.as_ref().map(|(light, kind)| {
+            let away = step_toward(block_of(memory.last.pos), *light);
+            let floor = if kind.contains("wall") {
+                light[1] - 1
+            } else {
+                light[1]
+            };
+            [light[0] + away[0] * 2, floor - 1, light[2] + away[1] * 2]
+        }),
         // Where they are: the host seats it in their boat.
         Action::BoatPassenger => Some(block_of(memory.last.pos)),
         // Ahead of them, where they look, far off on the ground: they see it start.
@@ -4188,6 +4199,16 @@ pub fn commands(
             ],
             _ => Vec::new(),
         },
+        // In the light, facing them, for a blink.
+        Action::TorchFlash => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 0.2, false);
+                if let Command::Figure { held, .. } = &mut shown {
+                    *held = ItemStack::default();
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7831,6 +7852,38 @@ mod tests {
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
         );
+    }
+
+    #[test]
+    fn the_light_they_place_underground_shows_a_figure_for_a_blink() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 20.0, 0.5];
+        memory.habits.last_light = Some(([4, 21, 0], "minecraft:wall_torch".to_string()));
+        let flash = find("torch_flash").unwrap();
+        let spot = place(flash, &memory, &mut Rng::new(1)).unwrap();
+        assert_eq!(
+            spot,
+            [6, 19, 0],
+            "two blocks past it, on the floor under the wall torch"
+        );
+        let made = commands(
+            flash,
+            Some(spot),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { seconds, pos, .. }, 0)] if *seconds <= 0.25 && pos[1] == 20.0),
+            "{made:?}"
+        );
+        // The trigger is the light placed underground, never the menu.
+        assert!(!crate::brain::offer::meets(
+            crate::events::Need::LitUnderground,
+            &memory,
+            &Now::default()
+        ));
     }
 
     #[test]

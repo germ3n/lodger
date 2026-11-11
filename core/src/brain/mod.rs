@@ -276,6 +276,8 @@ pub const ECHO_CHANCE: f64 = 0.3;
 pub const BELL_CHANCE: f64 = 0.5;
 /// The chance the figure stands at the foot of the bed as they wake, its rules allowing.
 pub const WOKE_CHANCE: f64 = 0.35;
+/// How often a light placed underground shows a figure (`torch_flash`).
+pub const TORCH_FLASH_CHANCE: f64 = 0.15;
 /// The events a waking may start, one of those the stage offers picked.
 pub const WOKE_EVENTS: &[&str] = &["foot_of_bed", "upside_down"];
 /// The chance crouching still ten seconds brings the breathing at their ear (`breath`).
@@ -921,6 +923,20 @@ impl Brain {
             self.consider_started(pick, WOKE_CHANCE, now, day, memory, arc, config, log);
         }
 
+        // A light placed underground: perhaps a figure in its light, for a blink.
+        if memory.lit_underground_now.take().is_some() && !held_back {
+            self.consider_started(
+                "torch_flash",
+                TORCH_FLASH_CHANCE,
+                now,
+                day,
+                memory,
+                arc,
+                config,
+                log,
+            );
+        }
+
         // A chest of theirs opened: perhaps another closes in the house at the same moment.
         if memory.opened_now.is_some() && !held_back {
             commands.extend(self.consider_echo(now, day, memory, arc, config, log));
@@ -1556,6 +1572,7 @@ impl Brain {
                     !matches!(
                         n,
                         events::Need::JustWoke
+                            | events::Need::LitUnderground
                             | events::Need::KilledNow
                             | events::Need::RangBell
                             | events::Need::CrouchedStill

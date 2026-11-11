@@ -543,6 +543,10 @@ pub struct Memory {
     /// The target just woke, taken by the brain on its next tick (`foot_of_bed`). Not saved.
     #[serde(skip)]
     pub woke_now: bool,
+    /// A light they just placed underground, taken by the brain on its next tick
+    /// (`torch_flash`, which finds it as `habits.last_light`). Not saved.
+    #[serde(skip)]
+    pub lit_underground_now: Option<BlockPos>,
     /// The target has just been crouched still ten seconds, taken by the brain on its next
     /// tick (`breath`). Not saved.
     #[serde(skip)]
@@ -1624,6 +1628,7 @@ impl Memory {
                             self.habits.lights_placed += 1;
                             self.habits.last_light = Some((pos, event.detail.clone()));
                             if self.last.underground {
+                                self.lit_underground_now = Some(pos);
                                 self.habits.cave_lights.push(pos);
                                 if self.habits.cave_lights.len() > 32 {
                                     self.habits.cave_lights.remove(0);
@@ -4033,6 +4038,34 @@ mod tests {
             vec![([3, 63, 0], "minecraft:grass_block".to_string())],
             "theirs, natural, near: one"
         );
+    }
+
+    #[test]
+    fn a_light_placed_underground_is_noticed_the_moment_it_is_placed() {
+        let mut memory = Memory::default();
+        let mut deep = player(0, [5.0, 30.0, 5.0], 0.0);
+        deep.sky_light = 0;
+        let torch = |pos| Event {
+            player: 0,
+            kind: EventKind::PlacedBlock,
+            pos: Some(pos),
+            detail: "minecraft:torch".to_string(),
+            ..Event::default()
+        };
+        memory.observe(&obs(vec![deep.clone()], vec![]), 0.0);
+        memory.observe(&obs(vec![deep], vec![torch([6, 30, 5])]), 0.0);
+        assert_eq!(memory.lit_underground_now, Some([6, 30, 5]));
+
+        // In the open, nothing.
+        let mut memory = Memory::default();
+        memory.observe(
+            &obs(
+                vec![player(0, [5.0, 64.0, 5.0], 0.0)],
+                vec![torch([6, 64, 5])],
+            ),
+            0.0,
+        );
+        assert_eq!(memory.lit_underground_now, None);
     }
 
     #[test]

@@ -144,6 +144,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::InNether | Need::InEnd => false,
         Need::CameBack => false,
         Need::HoldsNothing => memory.held.is_none(),
+        Need::LitUnderground => false,
         Need::TargetInBoat => {
             let riding = memory.last.riding.as_str();
             memory.last.online
@@ -269,6 +270,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::BoatPassenger
         | Action::EveryWindow
         | Action::OneMoreEachNight
+        | Action::TorchFlash
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
@@ -313,6 +315,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::BoatPassenger
         | Action::EveryWindow
         | Action::OneMoreEachNight
+        | Action::TorchFlash
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)

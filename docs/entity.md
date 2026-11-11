@@ -632,6 +632,7 @@ a dock or bridge), never over anything a player built (see the
 | `boat_passenger` | 4 | Rowing alone, a figure sits in the seat behind them, empty-handed, on their client alone; gone once they have turned round to it and looked away, when they leave the boat, or when anyone else gets in (`figure`'s `rides_behind`). | The target in a boat or raft with a second seat (no chest boat). |
 | `every_window` | 5 | At night, while they are in the house, a figure stands outside every window at once (one for each run of panes, eight at most), a block out, its head at the glass, looking in; all gone together the moment one has been seen and looked away from (`figure`'s `together`). | Night, the target indoors, two windows or more. |
 | `one_more_each_night` | 4 | At night, at the edge of their light (seven blocks past it from them), one figure the first night it comes, two the next, three the next, up to six, side by side across the way out, still, empty-handed, never closer; all gone together when one is seen and looked away from, or when they come within six blocks. A night apart at least. | Night, a light of theirs near them. |
+| `torch_flash` | 4 | Underground, as they place a light (one time in seven or so; never from the menu), a figure stands two blocks past it in its light, facing them, for a blink (a fifth of a second). | A light placed underground, that moment. |
 
 ### The ending
 
