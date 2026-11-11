@@ -1242,6 +1242,9 @@ pub enum Command {
         /// looked at it, sinking slowly out of sight and gone. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         sunk: bool,
+        /// Jumping in place, again and again, as a player jumps. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        jumps: bool,
     },
     RemoveFigure {
         id: u64,

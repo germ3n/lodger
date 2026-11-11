@@ -71,6 +71,8 @@ public final class Figures {
 		Vec3 faces;
 		/** Its head alone above the ground, sinking once looked at (ABI 54). */
 		boolean sunk;
+		/** Jumping in place, from where it stands (ABI 54); null for none. */
+		Vec3 jumpsFrom;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
 		int together;
 		/** The boat it sits in behind its player, on their client alone (ABI 54); null on foot. */
@@ -291,6 +293,16 @@ public final class Figures {
 				continue;
 			}
 
+			// Jumping in place: a player's jump, a second apart, facing them.
+			if (figure.jumpsFrom != null) {
+				long t = (tick + figure.entityId) % JUMP_EVERY;
+				figure.at = figure.jumpsFrom.add(0, JumpArc.height(t), 0);
+				Vec3 to = figure.player.position().subtract(figure.at);
+				float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+				figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
+						net.minecraft.world.entity.PositionPath.of(figure.at), yaw, 0, t == 0 || t > JumpArc.AIRBORNE));
+			}
+
 			// Sunk to its head: looked at, it sinks out of sight, slowly, and is gone.
 			if (figure.sunk && figure.seen && figure.path.isEmpty() && !figure.glides) {
 				figure.path = List.of(figure.at.add(0, -SINK, 0));
@@ -386,6 +398,17 @@ public final class Figures {
 		if (figure != null) {
 			figure.lies = true;
 			pose(figure, net.minecraft.world.entity.Pose.SLEEPING);
+		}
+	}
+
+	/** A jump each this many ticks. */
+	static final long JUMP_EVERY = 20;
+
+	/** The figure {@code number} shown to {@code player} jumps in place, again and again (ABI 54). */
+	public void jump(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure != null) {
+			figure.jumpsFrom = figure.at;
 		}
 	}
 

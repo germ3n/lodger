@@ -777,6 +777,7 @@ fn figure(
         walks: false,
         faces: None,
         sunk: false,
+        jumps: false,
     }
 }
 

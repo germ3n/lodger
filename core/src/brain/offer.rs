@@ -306,6 +306,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::PeeksFromGround
         | Action::WaitsAtThePortal
         | Action::AtTheirTable
+        | Action::JumpingFar
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
         | Action::Message(_)
@@ -362,6 +363,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::PeeksFromGround
         | Action::WaitsAtThePortal
         | Action::AtTheirTable
+        | Action::JumpingFar
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry
         | Action::Message(_)

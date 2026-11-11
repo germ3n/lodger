@@ -954,6 +954,8 @@ pub enum Action {
     ChickenLays,
     /// Coming home, a figure at their crafting table, working at it.
     AtTheirTable,
+    /// Far off in the open, a figure jumping in place, facing them.
+    JumpingFar,
 }
 
 /// Where a figure stands.
@@ -4292,6 +4294,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::AtTheirTable,
         false,
     ),
+    // docs/events_todo.md, 42.
+    row(
+        "jumping_far",
+        4,
+        5,
+        &[TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::JumpingFar,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5171,6 +5185,7 @@ impl Event {
             | Action::FigureOnMap
             | Action::ChickenLays
             | Action::AtTheirTable
+            | Action::JumpingFar
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5242,6 +5257,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "jumping_far" => "have the figure jump in place far off",
             "at_their_table" => {
                 "stand the figure at their crafting table, working, as they come home"
             }

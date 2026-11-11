@@ -348,6 +348,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Thirty blocks ahead of where they look, a little aside, on the ground.
+        Action::JumpingFar => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians() - 0.25;
+            Some([
+                at[0] + (-yaw.sin() * 30.0).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * 30.0).round() as i32,
+            ])
+        }
         // Their crafting table in the house.
         Action::AtTheirTable => memory.fixtures("crafting_table").map(|f| f.pos).find(|p| {
             memory
@@ -1382,6 +1392,7 @@ fn figure_shown(
         walks: false,
         faces: None,
         sunk: false,
+        jumps: false,
     }
 }
 
@@ -5089,6 +5100,25 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // Jumping in place there, again and again, empty-handed; gone once seen and looked
+        // away from.
+        Action::JumpingFar => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 30.0, false);
+                if let Command::Figure {
+                    held,
+                    jumps,
+                    once_seen,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *jumps = true;
+                    *once_seen = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -6420,6 +6450,7 @@ pub fn commands(
                         walks: false,
                         faces: None,
                         sunk: false,
+                        jumps: false,
                     },
                     0,
                 )]
@@ -9837,6 +9868,24 @@ mod tests {
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Figure { swinging: true, faces: Some(f), vanish_within, .. }, 0)] if f[0] == table[0] as f64 + 0.5 && *vanish_within > 0.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn far_off_a_figure_jumps_in_place() {
+        let memory = rich_memory();
+        let event = find("jumping_far").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { jumps: true, pos, .. }, 0)] if pos[1] < -1000.0),
             "{made:?}"
         );
     }

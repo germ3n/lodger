@@ -1381,6 +1381,9 @@ The `[x]` lines above, summed up by day:
 - [x] **At their table** (`docs/events_todo.md`, 41): `at_their_table`, stages 4 and 5, coming
   home: a figure at their crafting table facing it, working at it with their tool, gone within
   five blocks. Tests: one in `act`. Was: no such event.
+- [x] **Jumping far off** (`docs/events_todo.md`, 42): `jumping_far`, stages 4 and 5, outdoors:
+  thirty blocks ahead a figure jumps in place, a player's jump a second apart, facing them
+  (`figure`'s `jumps`, ABI 54, `JumpArc`). Tests: one in `act`, `JumpArcTest`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.
