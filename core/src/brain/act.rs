@@ -348,6 +348,15 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Fifty blocks from the house, any way, on the ground there.
+        Action::StoneCircle => home.map(|h| {
+            let angle = rng.next_f64() * std::f64::consts::TAU;
+            [
+                h.center[0] + (angle.cos() * 50.0).round() as i32,
+                -10_000,
+                h.center[2] + (angle.sin() * 50.0).round() as i32,
+            ]
+        }),
         // A point of their route twenty-four to sixty-four blocks from them: its ground known.
         Action::CampNearby => {
             let at = block_of(memory.last.pos);
@@ -5455,6 +5464,41 @@ pub fn commands(
                 made
             })
             .unwrap_or_default(),
+        // Eight pillars of stone bricks, three high, in a ring five blocks out, each on the
+        // ground's own block; only into air.
+        Action::StoneCircle => pos
+            .map(|middle| {
+                let mut parts = Vec::new();
+                for i in 0..8 {
+                    let angle = std::f64::consts::TAU * i as f64 / 8.0;
+                    let (x, z) = (
+                        (angle.cos() * 5.0).round() as i32,
+                        (angle.sin() * 5.0).round() as i32,
+                    );
+                    for y in 1..=3 {
+                        parts.push(craftkit::world::BlueprintPart {
+                            at: [x, y, z],
+                            block: if y == 3 {
+                                "minecraft:chiseled_stone_bricks"
+                            } else {
+                                "minecraft:stone_bricks"
+                            }
+                            .to_string(),
+                            state: String::new(),
+                        });
+                    }
+                }
+                vec![(
+                    Command::PlaceBlueprint {
+                        id: ids(),
+                        at: middle,
+                        parts,
+                        replace: Vec::new(),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -10446,6 +10490,24 @@ mod tests {
                 .any(|(c, _)| matches!(c, Command::Figure { eats: true, .. })),
             "a figure by it"
         );
+    }
+
+    #[test]
+    fn overnight_a_ring_of_stone_pillars_stands_far_off() {
+        let memory = rich_memory();
+        let event = find("stone_circle").unwrap();
+        let p = place(event, &memory, &mut Rng::new(1)).unwrap();
+        assert_eq!(p[1], -10_000, "on the ground");
+        let made = commands(event, Some(p), &memory, &mut ids(), &Now::default(), None);
+        let [(Command::PlaceBlueprint { parts, .. }, 0)] = &made[..] else {
+            panic!("{made:?}")
+        };
+        assert_eq!(parts.len(), 24, "eight pillars three high");
+        // Five out, as near as whole blocks go (the diagonals round to five and a half).
+        assert!(parts.iter().all(|p| {
+            let out = ((p.at[0] * p.at[0] + p.at[2] * p.at[2]) as f64).sqrt();
+            p.at[1] >= 1 && (4.0..=6.0).contains(&out)
+        }));
     }
 
     #[test]

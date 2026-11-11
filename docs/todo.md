@@ -1410,6 +1410,9 @@ The `[x]` lines above, summed up by day:
   outdoors: on a point of their route twenty-four to sixty-four blocks off, a lit campfire with two
   log seats and a figure crouched by it; at dawn its blocks taken away again. On their route, whose
   ground is known, so the dawn's taking finds them. Tests: one in `act`. Was: no such event.
+- [x] **A stone circle** (`docs/events_todo.md`, 51): `stone_circle`, stages 4 and 5, once a
+  stay: fifty blocks from the house a ring of eight stone-brick pillars, three high, five out
+  (`place_blueprint`). Tests: one in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.
