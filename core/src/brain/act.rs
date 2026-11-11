@@ -354,6 +354,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::EyeTurnsHome => home.map(|h| h.center),
         Action::InALine => in_a_line(memory).first().copied(),
         Action::WearsYourFace => face_wearer(memory).map(|z| block_of(z.pos)),
+        Action::AnimalFollows => memory
+            .animals_near_target()
+            .first()
+            .map(|a| block_of(a.pos)),
         // Twenty-four blocks ahead of where they look, a little to the side, on the ground.
         Action::PeeksFromGround => {
             let at = block_of(memory.last.pos);
@@ -1220,6 +1224,10 @@ pub fn shaft_top(memory: &Memory) -> Option<BlockPos> {
         .max_by_key(|p| p[1])
         .filter(|top| top[1] - at[1] >= 6)
 }
+
+/// `animal_follows`: a walk after them every eighty seconds, for a day of the game's.
+const FOLLOW_EVERY: u64 = 80 * 20;
+const FOLLOW_WALKS: u64 = 24_000 / FOLLOW_EVERY;
 
 /// The zombie (a husk or a drowned too) nearest them, for `wears_your_face`.
 fn face_wearer(memory: &Memory) -> Option<&crate::memory::Creature> {
@@ -4857,6 +4865,33 @@ pub fn commands(
                         2,
                     ),
                 ]
+            })
+            .unwrap_or_default(),
+        // The animal nearest them walks after them, stopping six blocks off when they stop, a
+        // walk renewed every eighty seconds (a walk lasts ninety at most) for a whole day.
+        Action::AnimalFollows => memory
+            .animals_near_target()
+            .first()
+            .map(|animal| {
+                (0..FOLLOW_WALKS)
+                    .map(|i| {
+                        (
+                            Command::Approach {
+                                id: ids(),
+                                entities: vec![animal.id],
+                                player: target,
+                                stop: 6.0,
+                                seconds: 90.0,
+                                pace: Some(1.0),
+                                then: String::new(),
+                                damage: 0.0,
+                                kept: String::new(),
+                                to: None,
+                            },
+                            i * FOLLOW_EVERY,
+                        )
+                    })
+                    .collect()
             })
             .unwrap_or_default(),
         Action::FigureWave => pos
@@ -8641,6 +8676,33 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn one_of_their_animals_follows_them_all_day() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.creatures_near.push(crate::memory::Creature {
+            id: 31,
+            kind: "cow".to_string(),
+            pos: [4.0, 64.0, 0.0],
+            ..Default::default()
+        });
+        let event = find("animal_follows").unwrap();
+        let animal = memory.animals_near_target()[0].id;
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(made.len() >= 14, "a day of walks: {}", made.len());
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::Approach { entities, stop, seconds, .. } if entities == &vec![animal] && *stop >= 4.0 && *seconds <= 90.0)));
+        let last = made.last().unwrap().1;
+        assert!(last + 90 * 20 >= 24_000, "it lasts the day: {last}");
     }
 
     #[test]

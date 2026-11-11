@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **An animal follows** (`docs/events_todo.md`, 30): `animal_follows`, stages 3 to 5: the
+  farm animal of theirs nearest them follows them a whole day, stopping six blocks off when they
+  stop (an `approach` renewed every eighty seconds, a walk lasting ninety at most). Tests: one in
+  `act`. Was: no such event.
 - [x] **It wears your face** (`docs/events_todo.md`, 29): `wears_your_face`, stages 4 and 5, at
   night outdoors: the zombie nearest them wears their own head five minutes, never dropping it,
   and walks at them (`wear_face`, ABI 54: the host's `Masks`, what it wore put back after, and
