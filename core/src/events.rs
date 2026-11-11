@@ -251,6 +251,9 @@ pub enum Need {
     ItsHouse,
     /// The target under water, their air going.
     TargetUnderwater,
+    /// The target outdoors among trees: trunks of the tree read around them
+    /// (`Memory::in_the_woods`).
+    InTheWoods,
 }
 
 impl Need {
@@ -323,6 +326,7 @@ impl Need {
                 | Need::ItsHouseNear
                 | Need::LookingUp
                 | Need::TargetUnderwater
+                | Need::InTheWoods
         )
     }
 
@@ -441,6 +445,7 @@ impl Need {
             Need::LookingUp => "the target is not looking up at the sky".to_string(),
             Need::ItsHouse => "its house is not built".to_string(),
             Need::TargetUnderwater => "the target is not under water".to_string(),
+            Need::InTheWoods => "the target is not among trees".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -1018,6 +1023,8 @@ pub enum Action {
     LanternInTheWoods,
     /// A figure crouched near them, gone as they come round to it.
     CrouchedBehindATree,
+    /// In the woods, a figure peeking out from behind a trunk ahead, slipping back once seen.
+    PeeksFromTheTrees,
     /// A snowball hits their back; no one is there.
     SnowballThrown,
     /// While they are out, an arrow struck in their front door.
@@ -4734,6 +4741,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LanternInTheWoods,
         false,
     ),
+    // docs/events_todo.md, 81 (owner's).
+    row(
+        "peeks_from_the_trees",
+        4,
+        5,
+        &[InTheWoods, TargetWalking],
+        1.0,
+        4,
+        Full,
+        Action::PeeksFromTheTrees,
+        false,
+    ),
     // docs/events_todo.md, 77.
     row(
         "crouched_behind_a_tree",
@@ -5742,6 +5761,7 @@ impl Event {
             | Action::RidesTheCart
             | Action::LanternInTheWoods
             | Action::CrouchedBehindATree
+            | Action::PeeksFromTheTrees
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -5819,6 +5839,9 @@ impl Event {
             "arrow_in_the_door" => "shoot an arrow into their front door",
             "snowball_thrown" => "throw a snowball at their back",
             "crouched_behind_a_tree" => "crouch the figure near them, hiding",
+            "peeks_from_the_trees" => {
+                "have the figure peek out at them from behind the trees ahead"
+            }
             "lantern_in_the_woods" => "walk a figure with a lantern through the dark far off",
             "rides_the_cart" => "roll their minecart past with a figure in it",
             "path_through_the_trees" => "cut a straight line through the trees toward their house",

@@ -421,6 +421,12 @@ pub struct Snapshot {
     /// Their air, 300 full: less is under water.
     pub air: i32,
     pub main_hand: String,
+    /// What they hold in the other hand, by id.
+    pub off_hand: String,
+    /// The biome they stand in, by id.
+    pub biome: String,
+    /// Sprint starts in the last minute.
+    pub sprint_bursts: u32,
     /// Animals and villagers within 32 blocks, from the last entity pass.
     pub creatures_near: Vec<Creature>,
     /// Hostile mobs within 48 blocks, from the last entity pass: zombies, skeletons, spiders.
@@ -664,6 +670,10 @@ pub struct Memory {
     /// The dark places of the last cave read: air with no light, below the surface, around
     /// the target near home (`crate::caves`).
     pub caves: Vec<BlockPos>,
+    /// The trunks of the last tree read around them, each at its lowest log (`crate::trees`).
+    /// Not saved: read again as they walk.
+    #[serde(skip)]
+    pub trunks: Vec<BlockPos>,
     /// The crop blocks of the last field read, around the crops by the home (`crate::farm`).
     pub field: Vec<BlockPos>,
     /// Their tunnels, what they dug underground grouped as it was dug (`crate::tunnels`).
@@ -1304,6 +1314,16 @@ impl Memory {
                     .take(crate::farm::MOST_FIELD)
                     .map(|(_, pos)| *pos)
                     .collect();
+                continue;
+            }
+            if by.as_deref() == Some("tree_read") {
+                let logs: Vec<BlockPos> = scan
+                    .positions
+                    .iter()
+                    .take(crate::trees::MOST_LOGS)
+                    .map(|(_, pos)| *pos)
+                    .collect();
+                self.trunks = crate::trees::trunks_of(&logs, &self.placed);
                 continue;
             }
             if by.as_deref() == Some("cave_read") {
@@ -2123,6 +2143,9 @@ impl Memory {
         // house's door sound 55 blocks down).
         self.last.indoors = player.sky_light < 8 && !self.last.underground;
         self.last.main_hand = player.main_hand.id.clone();
+        self.last.off_hand = player.off_hand.id.clone();
+        self.last.biome = player.biome.clone();
+        self.last.sprint_bursts = player.movement.sprint_bursts;
         self.last.look_backs = player.movement.look_backs;
         self.last.turns = player.movement.turns;
 

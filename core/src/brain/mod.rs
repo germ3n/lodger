@@ -187,6 +187,9 @@ pub struct Brain {
     /// The tick of the last field read.
     #[serde(skip)]
     pub last_field_read: u64,
+    /// The tick of the last tree read.
+    #[serde(skip)]
+    pub last_tree_read: u64,
     pub next_command_id: u64,
     pub rng: Rng,
     /// Decisions made, for the status line.
@@ -759,6 +762,37 @@ impl Brain {
                 memory.scans_out.push((id, "cave_read".to_string()));
                 self.last_cave_read = now.tick.max(1);
             }
+        }
+
+        // The trees around them, read every twenty seconds while they are outdoors in a wooded
+        // biome: the logs within twenty blocks, for the forest's events (`crate::trees`).
+        if memory.last.online
+            && !memory.last.indoors
+            && !memory.last.underground
+            && crate::trees::wooded(&memory.last.biome)
+            && (self.last_tree_read == 0
+                || now.tick.saturating_sub(self.last_tree_read)
+                    >= crate::trees::READ_EVERY_SECONDS * TPS)
+        {
+            use crate::trees::{READ_ABOVE, READ_BELOW, READ_WIDE};
+            let at = memory.last.pos;
+            let c = [
+                at[0].floor() as i32,
+                at[1].floor() as i32,
+                at[2].floor() as i32,
+            ];
+            let id = self.id();
+            commands.push(Command::Scan {
+                id,
+                min: [c[0] - READ_WIDE, c[1] - READ_BELOW, c[2] - READ_WIDE],
+                max: [c[0] + READ_WIDE, c[1] + READ_ABOVE, c[2] + READ_WIDE],
+                kinds: vec!["*_log".to_string()],
+                step: 0,
+                dark: false,
+                most: crate::trees::MOST_LOGS as u32,
+            });
+            memory.scans_out.push((id, "tree_read".to_string()));
+            self.last_tree_read = now.tick.max(1);
         }
 
         // The field by the home, read every ten minutes while they are within 64 blocks of it:

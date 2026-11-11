@@ -781,6 +781,7 @@ fn figure(
         rides: 0,
         eats: false,
         on_leaves: false,
+        peeks: None,
     }
 }
 

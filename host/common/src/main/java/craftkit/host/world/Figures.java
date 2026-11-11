@@ -71,6 +71,8 @@ public final class Figures {
 		Vec3 faces;
 		/** Its head alone above the ground, sinking once looked at (ABI 54). */
 		boolean sunk;
+		/** Where it slips to once looked at, behind a trunk, and is gone (ABI 54); null for none. */
+		Vec3 hidesAt;
 		/** Jumping in place, from where it stands (ABI 54); null for none. */
 		Vec3 jumpsFrom;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
@@ -313,6 +315,14 @@ public final class Figures {
 				figure.speed = SINK_PER_TICK;
 			}
 
+			// Peeking from behind a trunk: looked at, it slips back behind it, quickly, and is gone.
+			if (figure.hidesAt != null && figure.seen && !figure.glides) {
+				figure.path = List.of(figure.hidesAt);
+				figure.pathIndex = 0;
+				figure.glides = true;
+				figure.speed = PEEK_PER_TICK;
+			}
+
 			// Crouching as they crouch; swinging at the rock now and then.
 			if (figure.copyCrouch && figure.player.isShiftKeyDown() != figure.crouched) {
 				figure.crouched = figure.player.isShiftKeyDown();
@@ -457,6 +467,17 @@ public final class Figures {
 		figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
 		figure.at = figure.at.add(0, -SUNK, 0);
 		sendEntity(figure);
+	}
+
+	/** How fast a peeking figure slips back behind its trunk, blocks a tick. */
+	static final double PEEK_PER_TICK = 0.15;
+
+	/** The figure {@code number} shown to {@code player} peeks out, and hides at {@code behind} once looked at (ABI 54). */
+	public void peek(ServerPlayer player, int number, Vec3 behind) {
+		Figure figure = find(player, number);
+		if (figure != null) {
+			figure.hidesAt = behind;
+		}
 	}
 
 	/** The figure {@code number} shown to {@code player} faces {@code place} instead of them (ABI 54). */

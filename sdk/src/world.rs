@@ -1287,6 +1287,10 @@ pub enum Command {
         /// ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         on_leaves: bool,
+        /// Peeking out from behind a tree: once they have looked at it, it slips to this place
+        /// (behind the trunk), quickly, and is gone there. ABI 54.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        peeks: Option<Pos>,
     },
     RemoveFigure {
         id: u64,

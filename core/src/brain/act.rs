@@ -360,6 +360,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::ArrowInTheDoor => memory.usual_door(),
         Action::SnowballThrown => Some(block_of(memory.last.pos)),
+        // The nearest trunk ahead of where they look, ten blocks off or more.
+        Action::PeeksFromTheTrees => memory.trunks_ahead(10.0, 22.0).first().copied(),
         // Ten blocks ahead of where they look and well to one side, on the ground.
         Action::CrouchedBehindATree => {
             let at = block_of(memory.last.pos);
@@ -1649,6 +1651,9 @@ const HUNTED_FROM: f64 = 36.0;
 const RING_BLOCKS: f64 = 20.0;
 /// The ring's figures are numbered from here, apart from the one figure (1).
 const RING_FIRST: u32 = 11;
+/// The peeking figures' numbers (`peeks_from_the_trees`), and the ticks between them.
+const PEEK_FIRST: u32 = 51;
+const PEEK_AGAIN_TICKS: u64 = 100;
 
 /// A figure shown to the target at a spot (the y one below where it stands, or below -1000 for
 /// the ground there), for a while.
@@ -1701,6 +1706,7 @@ fn figure_shown(
         rides: 0,
         eats: false,
         on_leaves: false,
+        peeks: None,
     }
 }
 
@@ -6254,6 +6260,52 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Leaning out from behind the trunk, half of it showing, empty-handed, facing them; once
+        // looked at it slips back behind the trunk and is gone. Then again five seconds on, from
+        // a trunk farther in, when there is one.
+        Action::PeeksFromTheTrees => pos
+            .map(|first| {
+                let at = memory.last.pos;
+                let mut trunks = vec![first];
+                let from = distance(first, block_of(at));
+                if let Some(next) = memory
+                    .trunks_ahead(from + 4.0, 30.0)
+                    .into_iter()
+                    .find(|t| distance(*t, first) >= 5.0)
+                {
+                    trunks.push(next);
+                }
+                trunks
+                    .iter()
+                    .enumerate()
+                    .map(|(i, trunk)| {
+                        let side = if (trunk[0] + trunk[2]).rem_euclid(2) == 0 {
+                            1.0
+                        } else {
+                            -1.0
+                        };
+                        let (peek, hide) = crate::trees::peek_spots(*trunk, at, side);
+                        let mut shown = figure_shown(ids, memory, target, *trunk, 12.0, false);
+                        if let Command::Figure {
+                            figure,
+                            pos,
+                            held,
+                            vanish_within,
+                            peeks,
+                            ..
+                        } = &mut shown
+                        {
+                            *figure = PEEK_FIRST + i as u32;
+                            *pos = peek;
+                            *held = ItemStack::default();
+                            *vanish_within = 4.0;
+                            *peeks = Some(hide);
+                        }
+                        (shown, i as u64 * PEEK_AGAIN_TICKS)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
         // Crouched there, empty-handed, facing them, as if hiding; gone as they come within four
         // blocks, or once seen and looked away from.
         Action::CrouchedBehindATree => pos
@@ -7678,6 +7730,7 @@ pub fn commands(
                         rides: 0,
                         eats: false,
                         on_leaves: false,
+                        peeks: None,
                     },
                     0,
                 )]
@@ -8446,6 +8499,19 @@ mod tests {
         memory
             .holes
             .push(([7, 63, 0], "minecraft:dirt".to_string()));
+        // Trees all round, two rings of them, for the forest's events.
+        memory.trunks = (0..16)
+            .flat_map(|i| {
+                let angle = std::f64::consts::TAU * i as f64 / 16.0;
+                [14.0, 24.0].map(|r| {
+                    [
+                        (r * angle.cos()).round() as i32,
+                        64,
+                        (r * angle.sin()).round() as i32,
+                    ]
+                })
+            })
+            .collect();
         memory.containers.push(Container {
             pos: [-2, 64, 0],
             kind: "minecraft:chest".to_string(),
@@ -13218,5 +13284,51 @@ mod tests {
             matches!(&made[0].0, Command::ToggleBlock { pos, to: Some(false), .. } if *pos == door),
             "forced on a shut door it opened it"
         );
+    }
+
+    #[test]
+    fn a_figure_peeks_from_behind_a_trunk_ahead_and_again_farther_in() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.walking = true;
+        let event = find("peeks_from_the_trees").unwrap();
+        let first = place(event, &memory, &mut Rng::new(1)).unwrap();
+        assert!(memory.trunks.contains(&first), "at a trunk: {first:?}");
+        let made = commands(
+            event,
+            Some(first),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 2, "{made:?}");
+        let mut numbers = Vec::new();
+        for (i, (command, later)) in made.iter().enumerate() {
+            let Command::Figure {
+                figure,
+                pos,
+                peeks: Some(hide),
+                held,
+                ..
+            } = command
+            else {
+                panic!("{command:?}");
+            };
+            assert!(held.id.is_empty());
+            assert_eq!(*later, i as u64 * PEEK_AGAIN_TICKS);
+            let side = ((pos[0] - hide[0]).powi(2) + (pos[2] - hide[2]).powi(2)).sqrt();
+            assert!(
+                (side - crate::trees::PEEK_SIDE).abs() < 1e-6,
+                "half out to the side of where it hides"
+            );
+            numbers.push(*figure);
+        }
+        assert_ne!(numbers[0], numbers[1], "two figures, not one moved");
+
+        // Out of the woods: nothing to peek from.
+        memory.trunks.clear();
+        assert_eq!(place(event, &memory, &mut Rng::new(1)), None);
     }
 }

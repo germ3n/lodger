@@ -30,6 +30,7 @@ pub mod places;
 pub mod rules;
 pub mod stay;
 pub mod temper;
+pub mod trees;
 pub mod tunnels;
 pub mod village;
 pub mod warped;

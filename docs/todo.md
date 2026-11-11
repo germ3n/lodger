@@ -1888,6 +1888,13 @@ The `[x]` lines above, summed up by day:
   first home, a hundred blocks off at that floor's height, where a sign found nothing to stand on.
   `door_held`, forced on a shut door, opened it.
 
+- [x] **Peeking from behind the trees** (`docs/events_todo.md`, 81, owner's): `peeks_from_the_trees`,
+  stages 4 and 5, in the woods and walking: a figure half out from behind a trunk ahead, slipping
+  back behind it once looked at (`figure`'s `peeks`, ABI 54), a second farther in five seconds on.
+  The tree read: logs scanned around them every twenty seconds in a wooded biome, columns of three
+  or more the trunks (`crate::trees`), the biome kept in the memory's snapshot. Tests: `trees`'s
+  three, one in `act`. Was: the mind did not know where any tree was.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
