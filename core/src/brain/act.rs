@@ -348,6 +348,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::Breadcrumbs => memory
+            .used_container()
+            .and_then(crumb_stack)
+            .and(memory.usual_door()),
         Action::TorchRing => home.map(|h| h.center),
         // Ten blocks south of the house's middle, on the ground there.
         Action::NameInTheSnow => home.map(|h| [h.center[0] - 8, -10_000, h.center[2] + 10]),
@@ -1463,6 +1467,19 @@ pub fn snow_letter(letter: char) -> Vec<[i32; 2]> {
                 .collect()
         })
         .unwrap_or_default()
+}
+
+/// How many `breadcrumbs` lays.
+const CRUMBS: usize = 6;
+
+/// The most plentiful stack in a chest of something that is a block, with enough for the
+/// crumbs: `breadcrumbs`' line.
+fn crumb_stack(chest: &crate::memory::Container) -> Option<&ItemStack> {
+    chest
+        .contents
+        .iter()
+        .filter(|s| s.count as usize >= CRUMBS && !crate::memory::family(&s.id).is_empty())
+        .max_by_key(|s| s.count)
 }
 
 /// How far ahead of them `peeks_from_ground`'s head shows.
@@ -5731,6 +5748,56 @@ pub fn commands(
                     (torch(ids, spot, 8), i as u64 * 4)
                 })
                 .collect(),
+            _ => Vec::new(),
+        },
+        // Six of their most plentiful block taken from their chest one at a time, each kept,
+        // and dropped one by one, three blocks apart, from their door away from the house: a
+        // line to follow. Theirs still, there to pick up.
+        Action::Breadcrumbs => match (
+            memory.used_container(),
+            memory.usual_door(),
+            memory.home.as_ref(),
+        ) {
+            (Some(chest), Some(door), Some(home)) => match crumb_stack(chest) {
+                Some(stack) => {
+                    let away = step_toward(home.center, door);
+                    let mut made = Vec::new();
+                    for i in 0..CRUMBS {
+                        let keep = format!("crumb_{i}");
+                        made.push((
+                            Command::TakeItem {
+                                id: ids(),
+                                from: chest.pos,
+                                slot: stack.slot,
+                                count: 1,
+                                keep: keep.clone(),
+                                expect: stack.id.clone(),
+                            },
+                            i as u64 * 2,
+                        ));
+                        let out = (i as i32 + 1) * 3;
+                        made.push((
+                            Command::DropItem {
+                                id: ids(),
+                                pos: [
+                                    (door[0] + away[0] * out) as f64 + 0.5,
+                                    door[1] as f64 + 0.5,
+                                    (door[2] + away[1] * out) as f64 + 0.5,
+                                ],
+                                item: ItemStack {
+                                    id: stack.id.clone(),
+                                    count: 1,
+                                    slot: 0,
+                                },
+                                kept: keep,
+                            },
+                            i as u64 * 2 + 1,
+                        ));
+                    }
+                    made
+                }
+                None => Vec::new(),
+            },
             _ => Vec::new(),
         },
         Action::FigureWave => pos
@@ -10940,6 +11007,34 @@ mod tests {
             let out = (((pos[0] - center[0]).pow(2) + (pos[2] - center[2]).pow(2)) as f64).sqrt();
             assert!((11.0..=13.0).contains(&out), "{out}");
         }
+    }
+
+    #[test]
+    fn a_line_of_their_blocks_leads_from_their_door() {
+        let mut memory = rich_memory();
+        memory.containers[0]
+            .contents
+            .push(stack("minecraft:cobblestone", 40, 23));
+        let event = find("breadcrumbs").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let takes = made.iter().filter(|(c, _)| matches!(c, Command::TakeItem { count: 1, keep, .. } if keep.starts_with("crumb_"))).count();
+        let drops: Vec<&String> = made
+            .iter()
+            .filter_map(|(c, _)| match c {
+                Command::DropItem { kept, .. } => Some(kept),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(takes, CRUMBS);
+        assert_eq!(drops.len(), CRUMBS, "each one taken is the one dropped");
+        assert!(drops.iter().all(|k| k.starts_with("crumb_")));
     }
 
     #[test]

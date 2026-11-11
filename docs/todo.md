@@ -1452,6 +1452,10 @@ The `[x]` lines above, summed up by day:
 - [x] **A ring of torches** (`docs/events_todo.md`, 61): `torch_ring`, stages 4 and 5, once a
   stay: sixteen torches twelve blocks out round the house (`set_block` with `settle`). Tests: one in
   `act`. Was: no such event.
+- [x] **Breadcrumbs** (`docs/events_todo.md`, 62): `breadcrumbs`, stages 4 and 5, at night while
+  they are away or asleep: six of their most plentiful block taken from their chest one at a time,
+  each kept, and dropped three blocks apart from their door away from the house. Tests: one in
+  `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

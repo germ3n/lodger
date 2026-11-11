@@ -988,6 +988,8 @@ pub enum Action {
     NameInTheSnow,
     /// Overnight, a ring of torches round the house.
     TorchRing,
+    /// A line of single blocks of theirs from their door off into the dark.
+    Breadcrumbs,
 }
 
 /// Where a figure stands.
@@ -4530,6 +4532,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TorchRing,
         false,
     ),
+    // docs/events_todo.md, 62.
+    row(
+        "breadcrumbs",
+        4,
+        5,
+        &[UsedContainer, Door, Home, Night, TargetAwayOrAsleep],
+        5.0,
+        1,
+        Full,
+        Action::Breadcrumbs,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5434,6 +5448,7 @@ impl Event {
             | Action::StoneCircle
             | Action::NameInTheSnow
             | Action::TorchRing
+            | Action::Breadcrumbs
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5533,6 +5548,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "breadcrumbs" => "lay a line of their blocks from their door off into the dark",
             "torch_ring" => "ring the house with torches",
             "name_in_the_snow" => "tread their name into the snow near the house",
             "chest_wont_open" => "hold their chest shut as they come to it, and knock inside",

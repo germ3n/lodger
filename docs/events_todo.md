@@ -77,7 +77,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 59 | `chest_wont_open` | 4 | **Built.** Their chest will not open for a few seconds, and something knocks inside it. | Walking to the chest they use. | A container held shut, a sound. | M |
 | 60 | `name_in_the_snow` | 4 | **Built.** Near the house, their name trodden into the snow. | Snow near the home. | Snow layers taken away in letters. | M |
 | 61 | `torch_ring` | 4 | **Built.** Overnight, a ring of torches round the house, twelve blocks out. | The target asleep or away. | `set_block` torches. | S |
-| 62 | `breadcrumbs` | 4 | A line of single blocks of theirs leads from their door off into the dark. | A stack of theirs in the chest. | `take_item`, `drop_item` one at a time. | S |
+| 62 | `breadcrumbs` | 4 | **Built.** A line of single blocks of theirs leads from their door off into the dark. | A stack of theirs in the chest. | `take_item`, `drop_item` one at a time. | S |
 | 63 | `fishing_figure` | 3 | Where they fish, a figure sits fishing, its line in the water. | Where they fished known. | `figure` holding a rod, swinging. | S |
 | 64 | `by_the_bed` | 4 | Coming in at night, a figure stands beside their bed, facing it; gone when looked at. | Night, coming home, a bed. | `figure` beside the bed, `once_seen`. | S |
 | 65 | `swims_beneath` | 4 | Swimming, a figure swims past beneath them. | Swimming in deep water. | A figure crawling (swimming) along under them. | S |
