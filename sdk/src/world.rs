@@ -580,6 +580,14 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// For `seconds` (half an hour at most), the next eye of ender `player` throws flies toward
+    /// `to` instead of the stronghold, once. ABI 54.
+    EyeHome {
+        id: u64,
+        player: u32,
+        to: Pos,
+        seconds: f32,
+    },
     /// The stack kept under `kept` (`write_book`, `take_item`'s `keep`) into `player`'s own
     /// ender chest, the inventory every ender chest of theirs opens on; kept again when it is
     /// full. ABI 54.
@@ -1225,6 +1233,7 @@ impl Command {
             | Command::PushPlayer { id, .. }
             | Command::SetRespawn { id, .. }
             | Command::PutEnderChest { id, .. }
+            | Command::EyeHome { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }

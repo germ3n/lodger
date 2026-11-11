@@ -351,6 +351,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::PulledUnder => Some(block_of(memory.last.pos)),
         Action::ItsLightsOn | Action::RespawnItsBed => memory.its_house().map(|h| h.site),
         Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
+        Action::EyeTurnsHome => home.map(|h| h.center),
         // Nine blocks ahead of them, on the ground: near enough that their pet never strays far
         // enough from them for the game to bring it back at once (twelve).
         Action::PetFollows => {
@@ -3243,6 +3244,24 @@ pub fn commands(
                 ),
             ]
         }
+        // The next eye they throw, within ten minutes, flies toward their house.
+        Action::EyeTurnsHome => pos
+            .map(|home| {
+                vec![(
+                    Command::EyeHome {
+                        id: ids(),
+                        player: target,
+                        to: [
+                            home[0] as f64 + 0.5,
+                            home[1] as f64 + 1.0,
+                            home[2] as f64 + 0.5,
+                        ],
+                        seconds: 600.0,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         // A letter for them in their chest, in its words.
         Action::LetterInChest => match memory.used_container() {
             Some(chest) if !chest.empty_slots().is_empty() => {
@@ -8417,6 +8436,28 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn holding_an_eye_of_ender_the_next_throw_flies_home() {
+        let memory = rich_memory();
+        let event = find("eye_turns_home").unwrap();
+        assert!(event
+            .needs
+            .contains(&crate::events::Need::Holding("minecraft:ender_eye")));
+        let center = memory.home.as_ref().unwrap().center;
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::EyeHome { to, seconds, .. }, 0)] if to[0] == center[0] as f64 + 0.5 && *seconds > 0.0),
+            "{made:?}"
+        );
     }
 
     #[test]

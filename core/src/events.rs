@@ -924,6 +924,8 @@ pub enum Action {
     RespawnItsBed,
     /// A note of its own in their ender chest.
     EnderChestNote,
+    /// The next eye of ender they throw flies toward their house.
+    EyeTurnsHome,
 }
 
 /// Where a figure stands.
@@ -4106,6 +4108,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EnderChestNote,
         false,
     ),
+    // docs/events_todo.md, 25: armed as they hold one.
+    row(
+        "eye_turns_home",
+        5,
+        5,
+        &[Holding("minecraft:ender_eye"), Home],
+        10.0,
+        1,
+        Full,
+        Action::EyeTurnsHome,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4928,6 +4942,7 @@ impl Event {
             | Action::DyeSheep
             | Action::DoorWontOpen
             | Action::PulledUnder
+            | Action::EyeTurnsHome
             | Action::HostilesStare
             | Action::Figure(..)
             | Action::FigureSwing(_)
@@ -5271,6 +5286,7 @@ impl Event {
             "lies_beside" => "lay the figure on the floor beside their bed as they sleep",
             "respawn_its_bed" => "make the bed in its house their respawn point",
             "ender_chest_note" => "leave a note in their ender chest",
+            "eye_turns_home" => "turn the next eye of ender they throw toward their house",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",
