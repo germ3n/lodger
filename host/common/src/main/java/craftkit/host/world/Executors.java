@@ -144,6 +144,7 @@ public final class Executors {
 				case "push_player" -> pushPlayer(level, command, id, context);
 				case "set_respawn" -> setRespawn(level, command, id, context);
 				case "put_ender_chest" -> putEnderChest(level, command, id, context, data);
+				case "firework" -> firework(level, command, id);
 				case "map_mark" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -2142,6 +2143,34 @@ public final class Executors {
 	}
 
 	/** The figure shown to a player swings once, perhaps a hit, never below half a heart with spare (ABI 33). */
+	/** A firework launched, its burst's shape and colours as asked (ABI 54). */
+	private static JsonObject firework(ServerLevel level, JsonObject command, long id) {
+		JsonArray pos = command.getAsJsonArray("pos");
+		var shape = switch (command.get("shape").getAsString()) {
+			case "small_ball" -> net.minecraft.world.item.component.FireworkExplosion.Shape.SMALL_BALL;
+			case "large_ball" -> net.minecraft.world.item.component.FireworkExplosion.Shape.LARGE_BALL;
+			case "star" -> net.minecraft.world.item.component.FireworkExplosion.Shape.STAR;
+			case "creeper" -> net.minecraft.world.item.component.FireworkExplosion.Shape.CREEPER;
+			case "burst" -> net.minecraft.world.item.component.FireworkExplosion.Shape.BURST;
+			default -> null;
+		};
+		if (shape == null) {
+			return report(id, false, "no such shape");
+		}
+		var colors = new it.unimi.dsi.fastutil.ints.IntArrayList();
+		command.getAsJsonArray("colors").forEach(c -> colors.add(c.getAsInt() & 0xFFFFFF));
+		if (colors.isEmpty()) {
+			colors.add(0xFFFFFF);
+		}
+		ItemStack rocket = new ItemStack(net.minecraft.world.item.Items.FIREWORK_ROCKET);
+		rocket.set(net.minecraft.core.component.DataComponents.FIREWORKS, new net.minecraft.world.item.component.Fireworks(
+				Math.max(1, Math.min(3, command.get("flight").getAsInt())),
+				List.of(new net.minecraft.world.item.component.FireworkExplosion(shape, colors, new it.unimi.dsi.fastutil.ints.IntArrayList(), false, false))));
+		level.addFreshEntity(new net.minecraft.world.entity.projectile.FireworkRocketEntity(level, pos.get(0).getAsDouble(), pos.get(1).getAsDouble(), pos.get(2).getAsDouble(), rocket));
+
+		return report(id, true, "");
+	}
+
 	/** A kept stack into a player's own ender chest, kept again when it is full (ABI 54). */
 	private static JsonObject putEnderChest(ServerLevel level, JsonObject command, long id, Context context, WorldData data) {
 		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());

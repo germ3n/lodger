@@ -656,6 +656,7 @@ a dock or bridge), never over anything a player built (see the
 | `held_breath` | 4 | Under water, their air runs out twice as fast this dive (twenty seconds), and nothing is there; the drowning, if it comes, is the game's (`drain_air`). | The target under water. |
 | `its_lights_on` | 4 | At night, eight to forty-eight blocks from the house it built (whole), its house goes dark (its wall torch taken away a while), then a lantern on its floor lights, and another, and another, three seconds apart, seen through its door and pane; half a minute on, all out again, its lanterns only, and its torch back. | Night, its house built, the target near it. |
 | `respawn_its_bed` | 5 | A red bed laid along the left wall of the house it built, then quietly made their respawn point (no message): their next death wakes them in its house (`place_blueprint`, `set_respawn`). Once a stay. | Its house built. |
+| `firework_over_its_house` | 4 | At night, near the house it built, a firework goes up from its roof and bursts high as a pale face (the game's creeper shape) (`firework`). | Night, its house built, the target near it. |
 | `a_face_in_the_chest` | 3 | While they are away or asleep, their chest's grid is laid out as a face: what sits where the face goes moved aside into empty slots, then one item of their biggest stack into each of two eyes in the top row and a mouth of five along the third, nothing lost or added (`act::face_moves`). | The chest they use, a stack of seven or more in it and room to clear the face, the target away or asleep. |
 
 ### The ending

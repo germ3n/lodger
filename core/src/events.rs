@@ -948,6 +948,8 @@ pub enum Action {
     FigureOnMap,
     /// Back through their portal, a figure beside it facing it, as if it had waited.
     WaitsAtThePortal,
+    /// At night a firework over its house, bursting as a face.
+    FireworkOverItsHouse,
 }
 
 /// Where a figure stands.
@@ -4250,6 +4252,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::WaitsAtThePortal,
         false,
     ),
+    // docs/events_todo.md, 35: a face, not their skin's colours, which the game never says.
+    row(
+        "firework_over_its_house",
+        4,
+        5,
+        &[Night, ItsHouseNear],
+        3.0,
+        3,
+        Full,
+        Action::FireworkOverItsHouse,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -5062,6 +5076,7 @@ impl Event {
             | Action::FaceInTheChest
             | Action::RespawnItsBed
             | Action::EnderChestNote
+            | Action::FireworkOverItsHouse
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5435,6 +5450,7 @@ impl Event {
             "all_freeze" => "stop every animal and mob around them at once",
             "figure_on_map" => "mark someone at their house on the map they hold",
             "waits_at_the_portal" => "stand the figure beside their portal as they come back",
+            "firework_over_its_house" => "send a firework up over its house, bursting as a face",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

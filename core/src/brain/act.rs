@@ -351,7 +351,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::PulledUnder | Action::HeldBreath | Action::AllFreeze => {
             Some(block_of(memory.last.pos))
         }
-        Action::ItsLightsOn | Action::RespawnItsBed => memory.its_house().map(|h| h.site),
+        Action::ItsLightsOn | Action::RespawnItsBed | Action::FireworkOverItsHouse => {
+            memory.its_house().map(|h| h.site)
+        }
         Action::EnderChestNote => memory.fixtures("ender_chest").next().map(|f| f.pos),
         Action::EyeTurnsHome => home.map(|h| h.center),
         // Their house, when they are away from it: thirty-two blocks or more.
@@ -4991,6 +4993,25 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // From its roof, high, a pale face in the dark.
+        Action::FireworkOverItsHouse => pos
+            .map(|site| {
+                vec![(
+                    Command::Firework {
+                        id: ids(),
+                        pos: [
+                            site[0] as f64 + 0.5,
+                            site[1] as f64 + 6.0,
+                            site[2] as f64 + 0.5,
+                        ],
+                        shape: "creeper".to_string(),
+                        colors: vec![0xE8E8E0],
+                        flight: 2,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -7831,6 +7852,7 @@ mod tests {
                 || event.id == "figure_on_map"
                 // Back through a portal, which this memory never went: its own test.
                 || event.id == "waits_at_the_portal"
+                || event.id == "firework_over_its_house"
                 // The block comes from home and the enderman from the End: `elsewhere`'s tests.
                 || event.id == "ender_holds"
                 // Runs another event in its stead: the brain's test.
@@ -8777,6 +8799,31 @@ mod tests {
         assert_eq!(p, Some(memory.containers[0].pos));
         let made = commands(event, p, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), moves.len());
+    }
+
+    #[test]
+    fn at_night_a_firework_bursts_as_a_face_over_its_house() {
+        let mut memory = rich_memory();
+        memory.builds.push(crate::building::Build {
+            kind: "house_near".to_string(),
+            site: [40, 63, 0],
+            way: [0, 1],
+            laid: crate::building::house([0, 1], false).len(),
+            ..Default::default()
+        });
+        let event = find("firework_over_its_house").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Firework { shape, pos, flight, .. }, 0)] if shape == "creeper" && pos[1] > 64.0 && *flight >= 1),
+            "{made:?}"
+        );
     }
 
     #[test]

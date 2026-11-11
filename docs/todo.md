@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **A firework over its house** (`docs/events_todo.md`, 35): `firework_over_its_house`,
+  stages 4 and 5, at night near its house: a firework from its roof bursting high as a pale face,
+  the game's creeper shape (`firework`, ABI 54). Not their skin's colours, which the game never
+  says. Tests: one in `act`. Was: no such event.
 - [x] **It waits at the portal** (`docs/events_todo.md`, 34): `waits_at_the_portal`, stages 4
   and 5, as they come back from another dimension (the brain, `PORTAL_CHANCE`, never from the
   menu): a figure three blocks beside where they arrive, facing the portal, gone once seen and

@@ -580,6 +580,15 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },
+    /// A firework launched from `pos`: `flight` (1 to 3) how high, bursting as `shape`
+    /// (`small_ball`, `large_ball`, `star`, `creeper`, `burst`) in `colors` (RGB). ABI 54.
+    Firework {
+        id: u64,
+        pos: Pos,
+        shape: String,
+        colors: Vec<u32>,
+        flight: u8,
+    },
     /// For `seconds` (ten minutes at most), a player's marker at `at` on every map `player`
     /// holds, for them alone; nothing in the map changes. ABI 54.
     MapMark {
@@ -1272,6 +1281,7 @@ impl Command {
             | Command::WearFace { id, .. }
             | Command::DrainAir { id, .. }
             | Command::MapMark { id, .. }
+            | Command::Firework { id, .. }
             | Command::PlaceBlueprint { id, .. }
             | Command::DigIn { id, .. }
             | Command::Footsteps { id, .. }
