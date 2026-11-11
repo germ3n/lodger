@@ -927,6 +927,10 @@ public final class Figures {
 		/** The unseen thing the lead's rope is tied to, once it is out: in its other hand, then at their neck; -1 before. */
 		int knot = -1;
 
+		/** Its spot by the pillow, walked to from the bed's foot once it has looked; and that walk's ticks (0: it went straight to the pillow). */
+		Vec3 side;
+		long toBed;
+
 		/** A crossbow loaded and one shot, and they burn, instead of the squeezes (ABI 54). */
 		final boolean shoot;
 		/** It lies down on the floor beside the bed, facing them, and does nothing else (ABI 54). */
@@ -949,7 +953,7 @@ public final class Figures {
 	/** The longest a choke squeezes. */
 	static final float MOST_CHOKE_SECONDS = 6;
 	/** The longest they are held in bed, its walk, its beats and its squeezes together: their eyes kept open as long. */
-	public static final float MOST_HOLD_SECONDS = 18;
+	public static final float MOST_HOLD_SECONDS = 22;
 
 	private final List<Choke> chokes = new ArrayList<>();
 
@@ -967,23 +971,58 @@ public final class Figures {
 		if (figure == null) {
 			return false;
 		}
-		Vec3 to = bedside(level, player, figure.at);
-		List<Vec3> walk = new ArrayList<>();
-		for (double[] p : ChokeWay.walk(figure.at.x, figure.at.y, figure.at.z, to.x, to.y, to.z)) {
-			walk.add(new Vec3(p[0], p[1], p[2]));
-		}
-		figure.path = walk;
+		// To the bed's foot first, where it looks at what it holds and at them, in their sight down
+		// the bed; then round to the pillow (owner: it walked straight to the bedside, and the
+		// looking could not be seen). Lying down, or no room at the foot: straight to the side.
+		Vec3 side = bedside(level, player, figure.at);
+		Vec3 foot = how.equals("lie") ? null : foot(level, player);
+		Vec3 first = foot != null ? foot : side;
+		figure.path = walkOf(figure.at, first);
 		figure.pathIndex = 0;
 		figure.stays = true;
 		figure.glides = true;
-		// It glides from the next tick on; it squeezes once at the bed.
-		long arrives = tick + 1 + ChokeWay.ticks(ChokeWay.walk(figure.at.x, figure.at.y, figure.at.z, to.x, to.y, to.z));
-		long squeezes = Math.round(Math.max(1, Math.min(seconds, MOST_CHOKE_SECONDS)) * 20) + ChokeWay.BEFORE_SQUEEZING;
+		// It glides from the next tick on; it looks once at the foot, walks round, and squeezes.
+		long arrives = tick + 1 + ChokeWay.ticks(ChokeWay.walk(figure.at.x, figure.at.y, figure.at.z, first.x, first.y, first.z));
+		long toBed = foot == null ? 0 : ChokeWay.ticks(ChokeWay.walk(foot.x, foot.y, foot.z, side.x, side.y, side.z));
+		long squeezes = Math.round(Math.max(1, Math.min(seconds, MOST_CHOKE_SECONDS)) * 20) + ChokeWay.BEFORE_SQUEEZING + toBed;
 		figure.untilTick = Math.max(figure.untilTick, arrives + squeezes + 40);
 		chokes.removeIf(choke -> choke.player == player);
-		chokes.add(new Choke(player, number, item, arrives, arrives + squeezes, damage, spare, how));
+		Choke choke = new Choke(player, number, item, arrives, arrives + squeezes, damage, spare, how);
+		choke.side = side;
+		choke.toBed = toBed;
+		chokes.add(choke);
 
 		return true;
+	}
+
+	/** {@link ChokeWay#walk} as the game's points. */
+	private static List<Vec3> walkOf(Vec3 from, Vec3 to) {
+		List<Vec3> walk = new ArrayList<>();
+		for (double[] p : ChokeWay.walk(from.x, from.y, from.z, to.x, to.y, to.z)) {
+			walk.add(new Vec3(p[0], p[1], p[2]));
+		}
+
+		return walk;
+	}
+
+	/** The spot past the foot of the bed they lie in ({@link ChokeWay#foot}), when it has room to stand; null else. */
+	private static Vec3 foot(ServerLevel level, ServerPlayer player) {
+		BlockPos head = player.getSleepingPos().orElse(null);
+		if (head == null) {
+			return null;
+		}
+		var state = level.getBlockState(head);
+		if (!state.hasProperty(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING)) {
+			return null;
+		}
+		var facing = state.getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+		int[] spot = ChokeWay.foot(head.getX(), head.getZ(), facing.getStepX(), facing.getStepZ());
+		BlockPos feet = new BlockPos(spot[0], head.getY(), spot[1]);
+		if (open(level, feet) && open(level, feet.above()) && !open(level, feet.below())) {
+			return new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+		}
+
+		return null;
 	}
 
 	/**
@@ -1058,7 +1097,7 @@ public final class Figures {
 			// At the bed, beat by beat: it stands; takes the lead out and looks at it, its rope
 			// between its hands; looks at them; and chokes them, the rope at their neck.
 			long since = tick - choke.fromTick;
-			ChokeWay.Beat beat = ChokeWay.beat(since);
+			ChokeWay.Beat beat = ChokeWay.beat(since, choke.toBed);
 			if (beat != choke.beat) {
 				choke.beat = beat;
 				if (figure != null) {
@@ -1069,10 +1108,18 @@ public final class Figures {
 							(int) (choke.untilTick - tick) + 40, 0, false, false));
 				}
 			}
+			// Walking round to the pillow: the rope's far end kept in its other hand as it goes.
+			if (beat == ChokeWay.Beat.TO_THE_BED && figure != null && choke.knot >= 0) {
+				Vec3 to = player.getEyePosition().subtract(figure.at.add(0, 1.62, 0));
+				float facing = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+				double[] hand = ChokeWay.otherHand(figure.at.x, figure.at.y, figure.at.z, facing);
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(choke.knot,
+						net.minecraft.world.entity.PositionPath.of(new Vec3(hand[0], hand[1], hand[2])), 0, 0, false));
+			}
 			if (beat == ChokeWay.Beat.CHOKES && choke.shoot && !choke.shot) {
 				choke.shot = true;
 				shoot(level, player, figure, choke);
-			} else if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && !choke.lies && (since - ChokeWay.BEFORE_SQUEEZING) % 20 == 0) {
+			} else if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && !choke.lies && (since - ChokeWay.BEFORE_SQUEEZING - choke.toBed) % 20 == 0) {
 				squeeze(level, player, figure, choke);
 			}
 		}
@@ -1123,6 +1170,13 @@ public final class Figures {
 					sound(player, figure, net.minecraft.sounds.SoundEvents.CROSSBOW_LOADING_END.value());
 				}
 				turn(player, figure, facing, facing, atThem);
+			}
+			case TO_THE_BED -> {
+				// Round from the foot to the pillow, a slow glide, what it holds kept in its hands.
+				figure.path = walkOf(figure.at, choke.side);
+				figure.pathIndex = 0;
+				figure.glides = true;
+				figure.stays = true;
 			}
 			case CHOKES -> {
 				// The rope's far end from its hand to their neck, eased there by their client.

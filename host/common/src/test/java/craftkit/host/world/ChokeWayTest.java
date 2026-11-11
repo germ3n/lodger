@@ -74,4 +74,20 @@ class ChokeWayTest {
 		double[] west = ChokeWay.otherHand(0, 64, 0, 90);
 		assertTrue(west[2] > 0.2 && west[0] < -0.1, west[0] + ", " + west[2]);
 	}
+
+	@Test
+	void it_looks_from_the_foot_of_the_bed_then_walks_round_to_the_pillow_and_then_chokes() {
+		// The bed facing north (z -1) from its head at 0,0: the foot at 0,1, past it 0,2.
+		assertArrayEquals(new int[] {0, 2}, ChokeWay.foot(0, 0, 0, -1));
+		assertArrayEquals(ChokeWay.bedside(0, 0, 0, -1, 0.5, 6.5).get(4), ChokeWay.foot(0, 0, 0, -1), "past the foot");
+		long toBed = 40;
+		assertEquals(ChokeWay.Beat.STANDS, ChokeWay.beat(0, toBed));
+		assertEquals(ChokeWay.Beat.LOOKS_AT_IT, ChokeWay.beat(ChokeWay.STANDS, toBed));
+		assertEquals(ChokeWay.Beat.LOOKS_AT_THEM, ChokeWay.beat(ChokeWay.BEFORE_SQUEEZING - 1, toBed));
+		assertEquals(ChokeWay.Beat.TO_THE_BED, ChokeWay.beat(ChokeWay.BEFORE_SQUEEZING, toBed), "the looking done at the foot, then the walk");
+		assertEquals(ChokeWay.Beat.TO_THE_BED, ChokeWay.beat(ChokeWay.BEFORE_SQUEEZING + toBed - 1, toBed));
+		assertEquals(ChokeWay.Beat.CHOKES, ChokeWay.beat(ChokeWay.BEFORE_SQUEEZING + toBed, toBed), "only then at the pillow");
+		assertEquals(ChokeWay.Beat.CHOKES, ChokeWay.beat(ChokeWay.BEFORE_SQUEEZING, 0), "no walk: at once");
+	}
 }
+

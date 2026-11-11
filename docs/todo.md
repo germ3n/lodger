@@ -1912,6 +1912,16 @@ The `[x]` lines above, summed up by day:
   (`figure`'s `while_unseen`, ABI 54; `Unseen.java`). Tests: `UnseenTest`'s two, one in `act`.
   Was: no such event.
 
+- [x] **The choke's looking seen from the bed** (owner, playing: "they should stand in front of the
+  bed and look at the lead, then at the player, walk over to bedside, then do the thing"): the
+  figure walks to the foot of the bed first, and there, in their sight down the bed, stands, takes
+  the lead (or the crossbow) out and looks at it, then at them; then it walks round to the pillow,
+  the rope kept between its hands, and chokes or shoots (`ChokeWay.Beat.TO_THE_BED`,
+  `ChokeWay.foot`); no room at the foot, straight to the side as before. Their eyes are held open
+  up to 22 seconds now, the walk round counted. Tests: one more in `ChokeWayTest`. Was: it walked
+  straight to the bedside and did its looking there, beside their head, where it could not be
+  seen.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

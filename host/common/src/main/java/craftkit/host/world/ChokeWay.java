@@ -17,7 +17,10 @@ public final class ChokeWay {
 	/** How far it glides a tick: a slow creep, a block a second. */
 	public static final double PER_TICK = 0.05;
 
-	/** At the bed, before it squeezes: it stands, looks at the lead in its hands, then at them. */
+	/**
+	 * Before it squeezes: at the bed's foot it stands, looks at the lead in its hands, then at
+	 * them; then it walks round to the pillow ({@link Beat#TO_THE_BED}) and squeezes there.
+	 */
 	public static final int STANDS = 20;
 	public static final int LOOKS_AT_IT = 40;
 	public static final int LOOKS_AT_THEM = 25;
@@ -34,6 +37,8 @@ public final class ChokeWay {
 		LOOKS_AT_IT,
 		/** Its head up again, at them. */
 		LOOKS_AT_THEM,
+		/** From the bed's foot round to its side by the pillow, what it holds still in its hands (owner: "stand in front of the bed and look ... then walk over to bedside"). */
+		TO_THE_BED,
 		/** The rope at their neck, a squeeze a second. */
 		CHOKES
 	}
@@ -41,8 +46,19 @@ public final class ChokeWay {
 	private ChokeWay() {
 	}
 
-	/** The beat this many ticks after it reached the bed. */
+	/** The beat this many ticks after it reached the bed, with no walk round it: at its side already. */
 	public static Beat beat(long since) {
+		return beat(since, 0);
+	}
+
+	/**
+	 * The beat this many ticks after it reached the bed's foot, its walk from there round to the
+	 * pillow taking {@code toBed} ticks.
+	 */
+	public static Beat beat(long since, long toBed) {
+		if (since >= BEFORE_SQUEEZING && since < BEFORE_SQUEEZING + toBed) {
+			return Beat.TO_THE_BED;
+		}
 		if (since < STANDS) {
 			return Beat.STANDS;
 		}
@@ -54,6 +70,14 @@ public final class ChokeWay {
 		}
 
 		return Beat.CHOKES;
+	}
+
+	/**
+	 * The spot at the bed's foot it looks from, facing the pillow down the bed's length: a block
+	 * past its foot ({@link #bedside}'s last). {x, z}.
+	 */
+	public static int[] foot(int headX, int headZ, int faceX, int faceZ) {
+		return new int[] {headX - 2 * faceX, headZ - 2 * faceZ};
 	}
 
 	/**

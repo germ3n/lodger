@@ -214,8 +214,9 @@ dropped at their feet, kept again if never), and the `bought` event (a sale of i
 taken from, that item in another slot is, and with none the take is refused. ABI 53: an
 entity's `baby` (a baby villager cannot trade), and `put_book`'s `also`, the other lecterns the
 mod would use, the first without a book taken when the one asked holds one. ABI 54: `choke`
-(the target held asleep in bed, the night not passing, while a figure glides to the bed's side by
-the pillow, found by the host, takes `item` out with a lead's rope to their neck and squeezes once
+(the target held asleep in bed, the night not passing, while a figure glides to the bed's foot,
+takes `item` out and looks at it and at them there, walks round to the bed's side by the pillow (both
+found by the host; straight to the side when the foot has no room), the lead's rope to their neck, and squeezes once
 a second for `seconds`, the harm taken without waking them; Leave Bed ends it; `door` opened as it
 begins and left open, passed over when it is no door; their eyes kept open by the host itself, the
 `eyes_open` hint sent with it; `how` `shoot`: a crossbow loaded, aimed and shot once instead, and
