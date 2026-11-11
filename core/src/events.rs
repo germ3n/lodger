@@ -915,6 +915,8 @@ pub enum Action {
     FallsFromTheSky,
     /// Their pet walks off to a figure ahead of them; the figure is gone, the pet comes back.
     PetFollows,
+    /// Asleep, a figure comes to the bed and lies down on the floor beside it, facing them.
+    LiesBeside,
 }
 
 /// Where a figure stands.
@@ -4061,6 +4063,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PetFollows,
         false,
     ),
+    // docs/events_todo.md, 20.
+    row(
+        "lies_beside",
+        5,
+        5,
+        &[TargetInBed, Bed, Door, Night],
+        5.0,
+        2,
+        Full,
+        Action::LiesBeside,
+        false,
+    ),
     // The figures
     row(
         "far_figure",
@@ -4907,6 +4921,7 @@ impl Event {
             | Action::Choke(_)
             | Action::ShotInBed(_)
             | Action::Sleepwalk
+            | Action::LiesBeside
             | Action::BedOccupied => "night",
         }
     }
@@ -5196,6 +5211,7 @@ impl Event {
             "a_face_in_the_chest" => "lay out a face in their chest's grid",
             "falls_from_the_sky" => "drop the figure from the sky far off as they look up",
             "pet_follows" => "walk their pet off to a figure ahead of them",
+            "lies_beside" => "lay the figure on the floor beside their bed as they sleep",
             "far_figure" => "stand far off where they can see it",
             "behind_you" => "stand far behind them on their path",
             "on_the_roof" => "stand on their roof at dawn",

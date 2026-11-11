@@ -700,10 +700,13 @@ public final class Figures {
 
 		/** A crossbow loaded and one shot, and they burn, instead of the squeezes (ABI 54). */
 		final boolean shoot;
+		/** It lies down on the floor beside the bed, facing them, and does nothing else (ABI 54). */
+		final boolean lies;
 		boolean shot;
 
-		Choke(ServerPlayer player, int number, ItemStack item, long fromTick, long untilTick, float damage, boolean spare, boolean shoot) {
-			this.shoot = shoot;
+		Choke(ServerPlayer player, int number, ItemStack item, long fromTick, long untilTick, float damage, boolean spare, String how) {
+			this.shoot = how.equals("shoot");
+			this.lies = how.equals("lie");
 			this.player = player;
 			this.number = number;
 			this.item = item;
@@ -727,7 +730,7 @@ public final class Figures {
 	 * once a second (ABI 54). It stays where its walk ends. False when they are not asleep or
 	 * no such figure is shown.
 	 */
-	public boolean choke(ServerPlayer player, int number, ItemStack item, float seconds, float damage, boolean spare, boolean shoot) {
+	public boolean choke(ServerPlayer player, int number, ItemStack item, float seconds, float damage, boolean spare, String how) {
 		if (!player.isSleeping() || !(player.level() instanceof ServerLevel level)) {
 			return false;
 		}
@@ -749,7 +752,7 @@ public final class Figures {
 		long squeezes = Math.round(Math.max(1, Math.min(seconds, MOST_CHOKE_SECONDS)) * 20) + ChokeWay.BEFORE_SQUEEZING;
 		figure.untilTick = Math.max(figure.untilTick, arrives + squeezes + 40);
 		chokes.removeIf(choke -> choke.player == player);
-		chokes.add(new Choke(player, number, item, arrives, arrives + squeezes, damage, spare, shoot));
+		chokes.add(new Choke(player, number, item, arrives, arrives + squeezes, damage, spare, how));
 
 		return true;
 	}
@@ -832,7 +835,7 @@ public final class Figures {
 				if (figure != null) {
 					begin(level, player, figure, choke, beat);
 				}
-				if (beat == ChokeWay.Beat.CHOKES && !choke.shoot) {
+				if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && !choke.lies) {
 					player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DARKNESS,
 							(int) (choke.untilTick - tick) + 40, 0, false, false));
 				}
@@ -840,7 +843,7 @@ public final class Figures {
 			if (beat == ChokeWay.Beat.CHOKES && choke.shoot && !choke.shot) {
 				choke.shot = true;
 				shoot(level, player, figure, choke);
-			} else if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && (since - ChokeWay.BEFORE_SQUEEZING) % 20 == 0) {
+			} else if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && !choke.lies && (since - ChokeWay.BEFORE_SQUEEZING) % 20 == 0) {
 				squeeze(level, player, figure, choke);
 			}
 		}
@@ -851,6 +854,16 @@ public final class Figures {
 		Vec3 to = player.getEyePosition().subtract(figure.at.add(0, 1.62, 0));
 		float facing = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
 		float atThem = (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
+		// Lying beside them: down on the floor at once, facing them, and nothing more until they
+		// get up or its time is out.
+		if (choke.lies) {
+			if (beat == ChokeWay.Beat.STANDS) {
+				turn(player, figure, facing, facing, 0);
+				figure.lies = true;
+				pose(figure, net.minecraft.world.entity.Pose.SLEEPING);
+			}
+			return;
+		}
 		switch (beat) {
 			case STANDS -> turn(player, figure, facing, facing, atThem);
 			case LOOKS_AT_IT -> {

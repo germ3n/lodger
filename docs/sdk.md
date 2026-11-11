@@ -219,7 +219,8 @@ the pillow, found by the host, takes `item` out with a lead's rope to their neck
 a second for `seconds`, the harm taken without waking them; Leave Bed ends it; `door` opened as it
 begins and left open, passed over when it is no door; their eyes kept open by the host itself, the
 `eyes_open` hint sent with it; `how` `shoot`: a crossbow loaded, aimed and shot once instead, and
-they burn, spared through the fire); `figure`'s `crawls` (on its belly along its path, gliding, gone at its end), `rushes` (running
+they burn, spared through the fire; `how` `lie`: it lies down on the floor beside the bed facing
+them, nothing more); `figure`'s `crawls` (on its belly along its path, gliding, gone at its end), `rushes` (running
 at the player after them, gone two blocks short with a hit's jolt, no harm), `rides_behind` (in the
 seat behind them in their boat, on their client alone, gone with the boat left), `together` (a
 group gone at once when any of it is), `lies` (on the ground on its side, as a body), `falls` (from forty blocks over its place to it,

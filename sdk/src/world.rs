@@ -575,7 +575,8 @@ pub enum Command {
         spare: bool,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         door: Option<BlockPos>,
-        /// `choke` (empty) or `shoot`.
+        /// `choke` (empty), `shoot`, or `lie`: it lies down on the floor beside the bed facing
+        /// them, and does nothing more until they wake as it ends.
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,
     },

@@ -1201,6 +1201,10 @@ The `[x]` lines above, summed up by day:
   `RUSTFLAGS`, which stands in for the config's, where a per-target variable was merged with it). Tests: one
   in `brain`. Was: one torch over water stopped a path of seven, and the Windows checks failed to
   link.
+- [x] **It lies beside the bed** (`docs/events_todo.md`, 20): `lies_beside`, stage 5, asleep at
+  night: the bedside walk of `choke`, then it lies down on the floor beside the bed on its side,
+  facing them, nothing more, until they wake as it ends (`choke`'s `how` `lie`, ABI 54); in the
+  sleep events, so `calm` leaves it out. Tests: one in `act`. Was: no such event.
 - [x] **The pet follows** (`docs/events_todo.md`, 19): `pet_follows`, stages 4 and 5, a pet near
   them outdoors: a figure nine blocks ahead, their pet walks to it, the figure gone and the pet
   back to them of itself (`approach`'s `to`, ABI 54; nine blocks, short of the twelve at which

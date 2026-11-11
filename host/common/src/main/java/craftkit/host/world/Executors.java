@@ -2145,10 +2145,10 @@ public final class Executors {
 			}
 			item = new ItemStack(kind.get().value(), 1);
 		}
-		boolean shoot = command.has("how") && command.get("how").getAsString().equals("shoot");
+		String how = command.has("how") ? command.get("how").getAsString() : "";
 		boolean held = context.figures().choke(player, command.get("figure").getAsInt(), item,
 				command.get("seconds").getAsFloat(), command.get("damage").getAsFloat(),
-				command.has("spare") && command.get("spare").getAsBoolean(), shoot);
+				command.has("spare") && command.get("spare").getAsBoolean(), how);
 
 		if (!held) {
 			return report(id, false, "no figure shown with that number");

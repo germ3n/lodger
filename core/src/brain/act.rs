@@ -304,7 +304,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }
         Action::BedBreaks => home.and_then(|h| h.bed),
         // Their door: where the figure comes in from.
-        Action::Choke(_) | Action::ShotInBed(_) => memory.usual_door(),
+        Action::Choke(_) | Action::ShotInBed(_) | Action::LiesBeside => memory.usual_door(),
         // The middle of the house: the ring stands round it.
         Action::RingOfFigures(_) => home.map(|h| h.center),
         Action::UpsideDown => home.and_then(|h| h.bed),
@@ -1126,7 +1126,7 @@ fn bedside(
     target: u32,
     pos: Option<BlockPos>,
     damage: f32,
-    shoot: bool,
+    how: &str,
 ) -> Vec<(Command, u64)> {
     pos.map(|door| {
         let mut shown = figure_shown(
@@ -1147,17 +1147,17 @@ fn bedside(
                     id: ids(),
                     player: target,
                     figure: 1,
-                    item: if shoot {
-                        "minecraft:crossbow"
-                    } else {
-                        "minecraft:lead"
+                    item: match how {
+                        "shoot" => "minecraft:crossbow",
+                        "lie" => "",
+                        _ => "minecraft:lead",
                     }
                     .to_string(),
-                    seconds: if shoot { 2.0 } else { 5.0 },
+                    seconds: if how == "shoot" { 2.0 } else { 5.0 },
                     damage,
                     spare: true,
                     door: Some(door),
-                    how: if shoot { "shoot" } else { "" }.to_string(),
+                    how: how.to_string(),
                 },
                 1,
             ),
@@ -5832,8 +5832,10 @@ pub fn commands(
             })
             .unwrap_or_default(),
         // Asleep, a figure comes to the bed (`bedside`): a lead, or a crossbow and a shot.
-        Action::ShotInBed(damage) => bedside(ids, memory, target, pos, damage, true),
-        Action::Choke(damage) => bedside(ids, memory, target, pos, damage, false),
+        Action::ShotInBed(damage) => bedside(ids, memory, target, pos, damage, "shoot"),
+        Action::Choke(damage) => bedside(ids, memory, target, pos, damage, ""),
+        // The same walk; it lies down on the floor beside the bed, facing them, until they wake.
+        Action::LiesBeside => bedside(ids, memory, target, pos, 0.0, "lie"),
         Action::BedBreaks => pos
             .map(|bed| {
                 vec![
@@ -8228,6 +8230,30 @@ mod tests {
         assert!(
             !crate::rules::hidden_from_view(stare.action),
             "it is about being seen"
+        );
+    }
+
+    #[test]
+    fn asleep_a_figure_lies_down_beside_their_bed() {
+        let memory = rich_memory();
+        let lies = find("lies_beside").unwrap();
+        assert_eq!(lies.effect(), "night");
+        let mut no_figures = crate::config::Config::default();
+        no_figures.events.figure = false;
+        assert!(!crate::brain::offer::switched_on(lies, &no_figures));
+        let door = memory.usual_door().unwrap();
+        let made = commands(
+            lies,
+            place(lies, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[1].0, Command::Choke { how, item, damage, door: Some(d), .. } if how == "lie" && item.is_empty() && *damage == 0.0 && *d == door),
+            "{:?}",
+            made[1]
         );
     }
 

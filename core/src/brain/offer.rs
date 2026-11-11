@@ -284,6 +284,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::IntoTheDark
         | Action::Choke(_)
         | Action::ShotInBed(_)
+        | Action::LiesBeside
         | Action::RingOfFigures(_)
         | Action::UpsideDown
         | Action::Crawl
