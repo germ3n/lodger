@@ -17,7 +17,60 @@ public final class ChokeWay {
 	/** How far it glides a tick: a slow creep, a block a second. */
 	public static final double PER_TICK = 0.05;
 
+	/** At the bed, before it squeezes: it stands, looks at the lead in its hands, then at them. */
+	public static final int STANDS = 20;
+	public static final int LOOKS_AT_IT = 40;
+	public static final int LOOKS_AT_THEM = 25;
+	public static final int BEFORE_SQUEEZING = STANDS + LOOKS_AT_IT + LOOKS_AT_THEM;
+
+	/**
+	 * Its beats at the bed (the owner: "make it so we see it like pulling it out and looking at
+	 * it and then us and then choking us").
+	 */
+	public enum Beat {
+		/** Arrived, empty-handed, facing them. */
+		STANDS,
+		/** The lead out, its rope between its hands, its head down at it. */
+		LOOKS_AT_IT,
+		/** Its head up again, at them. */
+		LOOKS_AT_THEM,
+		/** The rope at their neck, a squeeze a second. */
+		CHOKES
+	}
+
 	private ChokeWay() {
+	}
+
+	/** The beat this many ticks after it reached the bed. */
+	public static Beat beat(long since) {
+		if (since < STANDS) {
+			return Beat.STANDS;
+		}
+		if (since < STANDS + LOOKS_AT_IT) {
+			return Beat.LOOKS_AT_IT;
+		}
+		if (since < BEFORE_SQUEEZING) {
+			return Beat.LOOKS_AT_THEM;
+		}
+
+		return Beat.CHOKES;
+	}
+
+	/**
+	 * Where its other hand holds the rope's far end, standing at {@code x, y, z} facing {@code
+	 * yaw} (degrees, as the game's): a little out and in front of its left side, the lead in its
+	 * right, as the game puts a player's held rope (right is the game's local -x). {x, y, z}.
+	 */
+	public static double[] otherHand(double x, double y, double z, float yaw) {
+		double localX = 0.35;
+		double localY = 0.85;
+		double localZ = 0.3;
+		// The game's Vec3.yRot(-yaw): a quarter turn is yaw 90, facing west.
+		double a = -Math.toRadians(yaw);
+		double cos = Math.cos(a);
+		double sin = Math.sin(a);
+
+		return new double[] {x + localX * cos + localZ * sin, y + localY, z + localZ * cos - localX * sin};
 	}
 
 	/**

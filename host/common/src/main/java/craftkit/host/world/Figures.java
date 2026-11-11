@@ -460,8 +460,9 @@ public final class Figures {
 		final long untilTick;
 		final float damage;
 		final boolean spare;
-		boolean began;
-		/** The unseen thing at their neck the lead's rope is tied to, once it is out; -1 before. */
+		/** The beat it is at, at the bed; null before it gets there. */
+		ChokeWay.Beat beat;
+		/** The unseen thing the lead's rope is tied to, once it is out: in its other hand, then at their neck; -1 before. */
 		int knot = -1;
 
 		Choke(ServerPlayer player, int number, ItemStack item, long fromTick, long untilTick, float damage, boolean spare) {
@@ -505,7 +506,7 @@ public final class Figures {
 		figure.glides = true;
 		// It glides from the next tick on; it squeezes once at the bed.
 		long arrives = tick + 1 + ChokeWay.ticks(ChokeWay.walk(figure.at.x, figure.at.y, figure.at.z, to.x, to.y, to.z));
-		long squeezes = Math.round(Math.max(1, Math.min(seconds, MOST_CHOKE_SECONDS)) * 20);
+		long squeezes = Math.round(Math.max(1, Math.min(seconds, MOST_CHOKE_SECONDS)) * 20) + ChokeWay.BEFORE_SQUEEZING;
 		figure.untilTick = Math.max(figure.untilTick, arrives + squeezes + 40);
 		chokes.removeIf(choke -> choke.player == player);
 		chokes.add(new Choke(player, number, item, arrives, arrives + squeezes, damage, spare));
@@ -578,41 +579,74 @@ public final class Figures {
 			if (tick < choke.fromTick) {
 				continue;
 			}
-			// At the bed: it takes the item out.
-			if (!choke.began) {
-				choke.began = true;
+			// At the bed, beat by beat: it stands; takes the lead out and looks at it, its rope
+			// between its hands; looks at them; and chokes them, the rope at their neck.
+			long since = tick - choke.fromTick;
+			ChokeWay.Beat beat = ChokeWay.beat(since);
+			if (beat != choke.beat) {
+				choke.beat = beat;
 				if (figure != null) {
-					figure.held = choke.item;
-					player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));
-					choke.knot = nextId++;
-					tie(level, player, figure, choke.knot);
+					begin(level, player, figure, choke, beat);
 				}
-				player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DARKNESS,
-						(int) (choke.untilTick - tick) + 40, 0, false, false));
+				if (beat == ChokeWay.Beat.CHOKES) {
+					player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DARKNESS,
+							(int) (choke.untilTick - tick) + 40, 0, false, false));
+				}
 			}
-			if ((tick - choke.fromTick) % 20 == 0) {
+			if (beat == ChokeWay.Beat.CHOKES && (since - ChokeWay.BEFORE_SQUEEZING) % 20 == 0) {
 				squeeze(level, player, figure, choke);
 			}
 		}
+	}
+
+	/** A beat at the bed begun: what the figure does as it comes. */
+	private void begin(ServerLevel level, ServerPlayer player, Figure figure, Choke choke, ChokeWay.Beat beat) {
+		Vec3 to = player.getEyePosition().subtract(figure.at.add(0, 1.62, 0));
+		float facing = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+		float atThem = (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
+		switch (beat) {
+			case STANDS -> turn(player, figure, facing, facing, atThem);
+			case LOOKS_AT_IT -> {
+				// Out of nowhere into its hand, with a pull of its arm; the rope between its hands.
+				figure.held = choke.item;
+				player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket(figure.entityId,
+						net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
+				double[] hand = ChokeWay.otherHand(figure.at.x, figure.at.y, figure.at.z, facing);
+				choke.knot = nextId++;
+				tie(player, figure, choke.knot, new Vec3(hand[0], hand[1], hand[2]));
+				// Its head down at what it holds, turned a little to its right hand.
+				turn(player, figure, facing, facing + 15, 55);
+			}
+			case LOOKS_AT_THEM -> turn(player, figure, facing, facing, atThem);
+			case CHOKES -> {
+				// The rope's far end from its hand to their neck, eased there by their client.
+				if (choke.knot >= 0) {
+					Vec3 neck = knotAt(neck(level, player));
+					player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(choke.knot,
+							net.minecraft.world.entity.PositionPath.of(neck), 0, 0, false));
+				}
+				turn(player, figure, facing, facing, atThem);
+			}
+		}
+	}
+
+	/** The figure's body, head and gaze turned, standing where it is. */
+	private static void turn(ServerPlayer player, Figure figure, float body, float head, float pitch) {
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
+				net.minecraft.world.entity.PositionPath.of(figure.at), body, pitch, true));
+		var buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+		buf.writeVarInt(figure.entityId);
+		buf.writeByte(net.minecraft.util.Mth.floor(head * 256f / 360f));
+		player.connection.send(net.minecraft.network.protocol.game.ClientboundRotateHeadPacket.STREAM_CODEC.decode(buf));
 	}
 
 	/** How far down the bed from their eyes the rope is tied, and how far below them. */
 	static final double ROPE_DOWN_THE_BED = 0.65;
 	static final double ROPE_BELOW = 0.15;
 
-	/**
-	 * The lead's rope from the figure's hand to their neck and chest, as the game draws a leashed
-	 * mob's: an invisible, silent silverfish sent to them alone, its lead held by the figure. The
-	 * held lead alone was hard to make out at the bedside (the owner). Tied down the bed from
-	 * their eyes: tied where they lie (at their eyes), the rope ran straight at the camera, seen
-	 * end on as a dot ("i still cant see the lead").
-	 */
-	@SuppressWarnings("unchecked")
-	private static void tie(ServerLevel level, ServerPlayer player, Figure figure, int knot) {
-		var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(net.minecraft.resources.Identifier.parse("minecraft:silverfish"));
-		if (type.isEmpty()) {
-			return;
-		}
+	/** Where on them the rope's far end goes: down the bed from their eyes, a little lower. */
+	private static Vec3 neck(ServerLevel level, ServerPlayer player) {
 		Vec3 neck = player.position().add(0, -ROPE_BELOW, 0);
 		BlockPos head = player.getSleepingPos().orElse(null);
 		if (head != null && level.getBlockState(head).hasProperty(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING)) {
@@ -620,7 +654,31 @@ public final class Figures {
 			var facing = level.getBlockState(head).getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
 			neck = neck.add(-facing.getStepX() * ROPE_DOWN_THE_BED, 0, -facing.getStepZ() * ROPE_DOWN_THE_BED);
 		}
-		player.connection.send(new ClientboundAddEntityPacket(knot, UUID.randomUUID(), neck.x, neck.y, neck.z, 0, 0, type.get().value(), 0, Vec3.ZERO, 0));
+
+		return neck;
+	}
+
+	/** Where the silverfish stands for the rope to end at a point: the game ties a mob's rope at its eyes and a little ahead. */
+	private static Vec3 knotAt(Vec3 point) {
+		return point.subtract(0, 0.13, 0.16);
+	}
+
+	/**
+	 * The lead's rope from the figure's hand to {@code end}, as the game draws a leashed mob's: an
+	 * invisible, silent silverfish sent to them alone, its lead held by the figure; first in its
+	 * other hand, then moved to their neck ({@link #neck}). The held lead alone was hard to make
+	 * out at the bedside (the owner). Down the bed from their eyes: tied where they lie (at their
+	 * eyes), the rope ran straight at the camera, seen end on as a dot ("i still cant see the
+	 * lead").
+	 */
+	@SuppressWarnings("unchecked")
+	private static void tie(ServerPlayer player, Figure figure, int knot, Vec3 end) {
+		var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(net.minecraft.resources.Identifier.parse("minecraft:silverfish"));
+		if (type.isEmpty()) {
+			return;
+		}
+		Vec3 at = knotAt(end);
+		player.connection.send(new ClientboundAddEntityPacket(knot, UUID.randomUUID(), at.x, at.y, at.z, 0, 0, type.get().value(), 0, Vec3.ZERO, 0));
 		try {
 			var flags = net.minecraft.world.entity.Entity.class.getDeclaredField("DATA_SHARED_FLAGS_ID");
 			var silent = net.minecraft.world.entity.Entity.class.getDeclaredField("DATA_SILENT");

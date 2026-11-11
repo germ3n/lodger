@@ -54,4 +54,24 @@ class ChokeWayTest {
 		assertEquals(140, ChokeWay.ticks(ChokeWay.walk(0, 64, 0, 20, 64, 0)), "begun seven blocks off");
 		assertEquals(0, ChokeWay.ticks(ChokeWay.walk(2, 64, 2, 2, 64, 2)));
 	}
+
+	@Test
+	void at_the_bed_it_stands_looks_at_the_lead_then_at_them_then_chokes() {
+		assertEquals(ChokeWay.Beat.STANDS, ChokeWay.beat(0));
+		assertEquals(ChokeWay.Beat.LOOKS_AT_IT, ChokeWay.beat(ChokeWay.STANDS));
+		assertEquals(ChokeWay.Beat.LOOKS_AT_THEM, ChokeWay.beat(ChokeWay.STANDS + ChokeWay.LOOKS_AT_IT));
+		assertEquals(ChokeWay.Beat.CHOKES, ChokeWay.beat(ChokeWay.BEFORE_SQUEEZING));
+		assertTrue(ChokeWay.LOOKS_AT_IT >= 30, "long enough to see it look at the lead");
+	}
+
+	@Test
+	void the_rope_s_far_end_is_in_its_left_hand_whichever_way_it_faces() {
+		// Facing south (yaw 0, +z): its left is east (+x), the rope a little in front.
+		double[] south = ChokeWay.otherHand(0, 64, 0, 0);
+		assertTrue(south[0] > 0.2 && south[2] > 0.1, south[0] + ", " + south[2]);
+		assertEquals(64.85, south[1], 1e-9);
+		// Facing west (yaw 90, -x): its left is south (+z), in front is west.
+		double[] west = ChokeWay.otherHand(0, 64, 0, 90);
+		assertTrue(west[2] > 0.2 && west[0] < -0.1, west[0] + ", " + west[2]);
+	}
 }

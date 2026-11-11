@@ -1222,7 +1222,11 @@ The `[x]` lines above, summed up by day:
   legs moving), "its kinda hard to see the lead" (its rope is drawn from its hand to their neck,
   tied to an unseen silverfish sent to them alone; "i still cant see the lead": tied where they
   lay, at their eyes, the rope ran straight at the camera and was seen end on, so it is tied
-  two thirds of a block down the bed and a little lower, across their view), and "verify the open/closed door logic":
+  two thirds of a block down the bed and a little lower, across their view; "make it so we see
+  it like pulling it out and looking at it and then us and then choking us": at the bed it stands
+  a second, pulls the lead out with a swing of its arm, the rope between its hands, looks down at
+  it two seconds, then up at them, and the rope's end goes to their chest as it chokes them,
+  `ChokeWay.beat`; their eyes kept open eighteen seconds for it), and "verify the open/closed door logic":
   the door is opened by the choke itself, so a door gone since is passed over (a toggle of its
   own that failed stopped the rest of the event, leaving the figure in the doorway). Tests: one in `act`, `ChokeWayTest` in JUnit. Was: no such event.
 - [x] **A long stay's memory is saved whole** (owner: "i left my world and rejoined and the

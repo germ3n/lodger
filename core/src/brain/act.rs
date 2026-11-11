@@ -5075,7 +5075,7 @@ pub fn commands(
                             player: target,
                             hint: "eyes_open".to_string(),
                             pos: None,
-                            seconds: 14.0,
+                            seconds: 18.0,
                             detail: String::new(),
                         },
                         0,
