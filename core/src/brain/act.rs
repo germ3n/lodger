@@ -348,6 +348,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        // Twenty-five blocks ahead of where they look, on the ground.
+        Action::StandsInTheRain => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians() + 0.35;
+            Some([
+                at[0] + (-yaw.sin() * 25.0).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * 25.0).round() as i32,
+            ])
+        }
         Action::SwimsBeneath => Some(block_of(memory.last.pos)),
         Action::ByTheBed => home.and_then(|h| h.bed),
         // Where they last fished; the water near them when they never have.
@@ -5894,6 +5904,26 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // There, still, empty-handed, its face turned up to the sky (facing a place high over
+        // it); gone once seen and looked away from.
+        Action::StandsInTheRain => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 60.0, false);
+                if let Command::Figure {
+                    held,
+                    once_seen,
+                    faces,
+                    pos,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *once_seen = true;
+                    *faces = Some([pos[0] + 0.01, 400.0, pos[2]]);
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11189,6 +11219,24 @@ mod tests {
         };
         assert!(path.iter().all(|p| p[1] == 57.0), "under them");
         assert!((path[0][0] - path[1][0]).abs() >= 15.0, "past them, across");
+    }
+
+    #[test]
+    fn in_the_rain_a_figure_turns_its_face_to_the_sky() {
+        let memory = rich_memory();
+        let event = find("stands_in_the_rain").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { faces: Some(f), .. }, 0)] if f[1] >= 300.0),
+            "{made:?}"
+        );
     }
 
     #[test]

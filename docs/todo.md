@@ -1464,6 +1464,9 @@ The `[x]` lines above, summed up by day:
 - [x] **It swims beneath** (`docs/events_todo.md`, 65): `swims_beneath`, stages 4 and 5, swimming:
   a figure swims past three blocks under them, side to side (`crawls` in water). Tests: one in
   `act`. Was: no such event.
+- [x] **It stands in the rain** (`docs/events_todo.md`, 66): `stands_in_the_rain`, stages 3 to 5,
+  raining outdoors: a figure in the open, its face to the sky (`faces` high over it). Tests: one in
+  `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

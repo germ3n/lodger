@@ -645,6 +645,7 @@ a dock or bridge), never over anything a player built (see the
 | `all_freeze` | 4 | Outdoors, every animal, villager and mob within twenty-four blocks of them stops at once for three seconds, facing them, then carries on (`hold` on each). | Animals near them outdoors. |
 | `figure_on_map` | 4 | Away from home (thirty-two blocks or more) with a map in hand: a player's marker stands at their house on it, five minutes, for them alone, the map itself unchanged (`map_mark`). | The target holding a map, away from home. |
 | `far_figure` | 3 | The far presence: a figure in the target's skin, name shown, 48 to 80 blocks away, standing, facing the target, for ten to forty seconds. Approached within 32 blocks, it is gone. | A line of sight from the route or home. |
+| `stands_in_the_rain` | 3 | In the rain, twenty-five blocks ahead of them, a figure stands still in the open, empty-handed, its face turned up to the sky; gone once seen and looked away from (`figure`'s `faces` high over it). | Raining, the target outdoors. |
 | `behind_you` | 3 | When the target looks back along their route, the figure is 60 blocks behind, standing. The next time, 50. It is never nearer than 32. | The target travelling a route. |
 | `on_the_roof` | 3 | At dawn, from outside, the figure stands on the target's roof, and is gone when they look away. | A home with a roof and the target outdoors at dawn. |
 | `across_water` | 3 | The figure stands on the far shore, or sits in a boat in the middle of the water. | Water of 32 or more blocks across. |

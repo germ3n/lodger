@@ -81,7 +81,7 @@ The owner, once the first forty were built: "do another 40". Checked against the
 | 63 | `fishing_figure` | 3 | **Built.** Where they fish, a figure sits fishing, its line in the water. | Where they fished known. | `figure` holding a rod, swinging. | S |
 | 64 | `by_the_bed` | 4 | **Built.** Coming in at night, a figure stands beside their bed, facing it; gone when looked at. | Night, coming home, a bed. | `figure` beside the bed, `once_seen`. | S |
 | 65 | `swims_beneath` | 4 | **Built.** Swimming, a figure swims past beneath them. | Swimming in deep water. | A figure crawling (swimming) along under them. | S |
-| 66 | `stands_in_the_rain` | 3 | In the rain, a figure stands in the open with its face to the sky. | Raining, outdoors. | `figure`, facing up. | M |
+| 66 | `stands_in_the_rain` | 3 | **Built.** In the rain, a figure stands in the open with its face to the sky. | Raining, outdoors. | `figure`, facing up. | M |
 | 67 | `its_banner` | 4 | A banner of its own hangs on its house's door, black, a skull on it. | Its house built. | `set_block` a banner with patterns. | M |
 | 68 | `chest_rattles` | 3 | Their chest's lid opens and shuts five times fast, then is still. | A chest of theirs near them. | `open_lid` in a row. | S |
 | 69 | `trapdoor_taps` | 3 | A trapdoor of theirs taps open and shut, again and again. | A trapdoor of theirs. | `toggle_block` in a row. | S |
