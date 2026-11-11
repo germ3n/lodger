@@ -1505,6 +1505,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A snowball thrown** (`docs/events_todo.md`, 78): `snowball_thrown`, stages 3 to 5, outdoors
   in the snow: a snowball from twelve blocks behind them at their back, no one there (`snowball`, ABI
   54). Tests: one in `act`. Was: no such event.
+- [x] **An arrow in the door** (`docs/events_todo.md`, 79): `arrow_in_the_door`, stages 4 and 5,
+  while they are out: an arrow from ten blocks out struck in their front door (`shoot`). Tests: one
+  in `act`. Was: no such event.
 - [x] **Forty events more** (owner: "once youre done w current 40, commit, then do another 40"):
   `docs/events_todo.md`, The next forty: forty more ideas, none in the catalogue, `ideas.md` or the
   first forty (three that `ideas.md` had were replaced). Was: forty.

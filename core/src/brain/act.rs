@@ -348,6 +348,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::WhereYouDied => memory.last_death(),
         Action::TheOffer => memory.usual_door(),
+        Action::ArrowInTheDoor => memory.usual_door(),
         Action::SnowballThrown => Some(block_of(memory.last.pos)),
         // Ten blocks ahead of where they look and well to one side, on the ground.
         Action::CrouchedBehindATree => {
@@ -6271,6 +6272,32 @@ pub fn commands(
                 0,
             )]
         }
+        // From ten blocks out in front of their door, at its middle: it stays in the door.
+        Action::ArrowInTheDoor => match (pos, memory.home.as_ref()) {
+            (Some(door), Some(home)) => {
+                let out = step_toward(home.center, door);
+                let from = [
+                    (door[0] + out[0] * 10) as f64 + 0.5,
+                    door[1] as f64 + 1.5,
+                    (door[2] + out[1] * 10) as f64 + 0.5,
+                ];
+                vec![(
+                    Command::Shoot {
+                        id: ids(),
+                        player: target,
+                        from,
+                        at: [
+                            door[0] as f64 + 0.5,
+                            door[1] as f64 + 1.2,
+                            door[2] as f64 + 0.5,
+                        ],
+                        damage: 0.0,
+                    },
+                    0,
+                )]
+            }
+            _ => Vec::new(),
+        },
         Action::FigureWave => pos
             .map(|p| {
                 vec![
@@ -11855,6 +11882,25 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Snowball { from, .. }, 0)] if from[2] < -10.0),
             "from behind (they face south): {made:?}"
+        );
+    }
+
+    #[test]
+    fn while_they_are_out_an_arrow_strikes_their_door() {
+        let memory = rich_memory();
+        let door = memory.usual_door().unwrap();
+        let event = find("arrow_in_the_door").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Shoot { at, damage, .. }, 0)] if at[0] == door[0] as f64 + 0.5 && *damage == 0.0),
+            "{made:?}"
         );
     }
 

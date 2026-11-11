@@ -1020,6 +1020,8 @@ pub enum Action {
     CrouchedBehindATree,
     /// A snowball hits their back; no one is there.
     SnowballThrown,
+    /// While they are out, an arrow struck in their front door.
+    ArrowInTheDoor,
 }
 
 /// Where a figure stands.
@@ -4754,6 +4756,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SnowballThrown,
         false,
     ),
+    // docs/events_todo.md, 79.
+    row(
+        "arrow_in_the_door",
+        4,
+        5,
+        &[TargetAwayOrAsleep, Door, Home],
+        5.0,
+        1,
+        Full,
+        Action::ArrowInTheDoor,
+        false,
+    ),
     // docs/events_todo.md, 53: heard inside, every pane whole.
     row(
         "glass_breaks",
@@ -5673,6 +5687,7 @@ impl Event {
             | Action::Breadcrumbs
             | Action::ItsBanner
             | Action::PathThroughTheTrees
+            | Action::ArrowInTheDoor
             | Action::WallSwap(..) => "house",
             Action::TabTwice => "words",
             Action::Stare
@@ -5785,6 +5800,7 @@ impl Event {
     /// The words the model sees for this event in the `What should it do?` menu.
     pub fn menu_words(&self) -> &'static str {
         match self.id {
+            "arrow_in_the_door" => "shoot an arrow into their front door",
             "snowball_thrown" => "throw a snowball at their back",
             "crouched_behind_a_tree" => "crouch the figure near them, hiding",
             "lantern_in_the_woods" => "walk a figure with a lantern through the dark far off",
