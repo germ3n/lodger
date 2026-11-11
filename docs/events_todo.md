@@ -1,6 +1,6 @@
 # Events to come
 
-A hundred event ideas not yet in the catalogue (forty at first, forty more after, then twenty-eight) (`core/src/events.rs`, `docs/entity.md`), none of
+A hundred event ideas not yet in the catalogue (forty at first, forty more after, then thirty) (`core/src/events.rs`, `docs/entity.md`), none of
 them a copy of one there or of a line in `docs/ideas.md`. Each says the stage it fits, what the
 target must be doing, what it would take (the commands there are today, or what the host would
 need), and a rough size: **S** (the mind alone, today's commands), **M** (a small host change),
@@ -103,7 +103,8 @@ The owner: figures peeking out from behind trees in a forest, "and multiple such
 villagers behaving erratically, and things that attack or spook the target; then one that moves
 only while unseen, and one that notices them running about at night with a light; then one that takes their most
 valuable things up into the sky; then a creeper that always goes off and harms no one; then a villager that comes to their
-door from nowhere; then the sound itself going wrong; then their redstone going dead; then prints round the house that stay. Checked against the
+door from nowhere; then the sound itself going wrong; then their redstone going dead; then prints round the house that stay; then the caves: their torches flickering, and things
+that do not belong down there. Checked against the
 catalogue, `docs/ideas.md` and the eighty above. Most of the forest ones need the trunks near the
 target, which the mind does not know today: a scan of logs around them (`scan` exists; a trunk is
 a column of logs with leaves over it), which would also let `crouched_behind_a_tree` hide behind
@@ -140,4 +141,6 @@ dark forest).
 | 106 | `sound_warp` | 3 | For half a minute to a minute every sound they hear goes wrong, one way of four: slowed and deep, as a tape dragging; a long echo, as in a hall far too big; muffled, as through a wall; or crunched and broken. Then it is as it was. A layer the other events can use too: the choke, `while_unseen`, `creeper_behind`. (Asked for by the owner: "sound distortion effects, like DSP".) | The target online. | A client hint driving OpenAL's effects (EFX: pitch, reverb and echo, a low-pass filter, distortion) on every sound source, for a time. | L |
 | 107 | `dead_redstone` | 3 | For a minute or two their redstone by the house is dead: a pressure plate stepped on clicks down and nothing opens, a button clicks and the door stays shut, a lever flips and the lamp stays dark, the piston still. Then it works again, as if it always had. (Asked for by the owner; `torch_redstone_off` in `ideas.md` is one redstone torch out.) | A home, a pressure plate, button or lever of theirs in it. | A host hold on redstone power in a box for a time (no signal from inside it reaches anything), the plates' and buttons' clicks still played. | M |
 | 108 | `prints_around_the_house` | 3 | Footprints round their house that stay and grow: a few the first night, from the trees to a window, and more each night after, circling the walls, stopping under each window, standing in pairs at the door as if someone waited there; they never fade. Any ground: grass, sand, stone, snow. (Asked for by the owner; `trail` is snow only and gone with the next fall, `footprint_decals` in `ideas.md` a bare line.) | A home, the target away or asleep. | Decals drawn on the ground as the handprints are (`HandPrint`'s way, a client hint), kept by the memory and sent again whenever they come near, so they persist; a few more each night. | M |
+| 109 | `cave_torches_flicker` | 3 | Underground, the torches they placed along their way flicker, one after another down the line toward them, as if something were passing each; the nearest goes dark a moment last of all, then all are steady. (Asked for by the owner; `flicker` is one light indoors.) | Underground, three lights of theirs or more near. | The flicker `flicker` uses (the light hidden and shown again on their client), on each of their underground lights in turn. | S |
+| 110 | `out_of_place` | 3 | Exploring a cave, they come on something that does not belong there, set out on the cave floor as if in a room: a made bed; a table laid with a cake and a lit candle; a flower in a pot; a chair facing the wall; a painting on the rock; a jukebox still playing; one of their own things on a carpet. Never the same twice. (Asked for by the owner: "random items that don't belong somewhere, like when exploring a cave".) | Underground, in a cave they have not entered (the cave read), a floor ahead of them. | `set_block` and `place_entity` (a painting, a dropped item that does not despawn) on the cave floor ahead, out of view; from its stores, never their chests' but for their own item. | M |
 
