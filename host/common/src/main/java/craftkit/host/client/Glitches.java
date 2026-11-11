@@ -38,6 +38,8 @@ import java.util.Set;
  *   <li>{@code fog_close}: mist rolling in, the real fog, (it was a dark ring).</li>
  *   <li>{@code snow_indoors}, {@code rain_indoors}: snow or rain particles fall around the player.</li>
  *   <li>{@code eyes_open}: lying in bed, the game's fade to sleep held off while it lasts.</li>
+ *   <li>{@code xp_slips}: their experience bar empties from the right over the first half of the
+ *       hint, stays empty, then is as it was: the empty bar drawn over it, nothing lost.</li>
  *   <li>{@code f3_line}: one more line on the debug screen while it lasts, "Lodger: watching"
  *       ({@code DebugEntryPositionMixin}).</li>
  *   <li>{@code only_in_third_person}: in third person (F5) a figure in their skin right behind
@@ -335,6 +337,20 @@ public final class Glitches {
 		for (Hints.Active active : Hints.active()) {
 			float progress = active.progress(now);
 			switch (active.hint().hint()) {
+				// Their experience bar emptied on their screen: the empty bar over the right of it,
+				// spreading left; their experience is untouched.
+				case "xp_slips" -> {
+					var player = Minecraft.getInstance().player;
+					if (player == null || player.isCreative() || player.isSpectator()) {
+						break;
+					}
+					int kept = XpSlip.kept(progress);
+					int x = width / 2 - 91;
+					int y = height - 29;
+					graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+							net.minecraft.resources.Identifier.withDefaultNamespace("hud/experience_bar_background"),
+							XpSlip.WIDTH, 5, kept, 0, x + kept, y, XpSlip.WIDTH - kept, 5);
+				}
 				// The death screen as the game draws it: its wash, its title twice the size, the
 				// score; nothing died.
 				case "false_death" -> {
