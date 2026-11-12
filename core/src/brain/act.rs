@@ -909,6 +909,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PotionAtTheWindow
         | Action::LightningBelow
         | Action::ShulkersOpen
+        | Action::GatewayFlashes
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10468,6 +10469,14 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 296.
+        Action::GatewayFlashes => vec![(
+            Command::GatewayFlash {
+                id: ids(),
+                player: target,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14350,6 +14359,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "gateway_flashes"
                 || event.id == "shulkers_open"
                 || event.id == "lightning_below"
                 || event.id == "splash_in_the_nether"
@@ -22839,6 +22849,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::ShulkersPeek { seconds, .. }, 0)] if *seconds == 3.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn gateway_flashes_the_nearest() {
+        let memory = rich_memory();
+        let event = find("gateway_flashes").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GatewayFlash { .. }, 0)]),
             "{made:?}"
         );
     }

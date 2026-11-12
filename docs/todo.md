@@ -3120,6 +3120,10 @@ The `[x]` lines above, summed up by day:
   with shulkers near: every shulker within twenty-four blocks opened at once, shut three seconds on
   (`shulkers_peek`, ABI 56). Tests: one in `act`. Was: no such event.
 
+- [x] **The gateway flashes** (`docs/events_todo.md`, 296): `gateway_flashes`, stages 3 to 5, in the
+  End: the end gateway nearest them within forty-eight blocks flashes its beam as if used
+  (`gateway_flash`, ABI 56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

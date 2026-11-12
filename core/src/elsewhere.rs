@@ -47,6 +47,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("lightning_below", "minecraft:the_nether"),
     ("lightning_below", "minecraft:the_end"),
     ("shulkers_open", "minecraft:the_end"),
+    ("gateway_flashes", "minecraft:the_end"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
@@ -423,6 +424,8 @@ mod tests {
         home.share(&Now::default(), &config, &mut shared);
         assert!(shared.allowed.contains(&"ender_holds"));
         assert_eq!(shared.block.as_deref(), Some("minecraft:cobblestone"));
+        // The enderman's block alone, among the End's many.
+        shared.allowed = vec!["ender_holds"];
 
         let mut end = stay("minecraft:the_end");
         let mut seen = player_at([0.0, 64.0, 0.0]);

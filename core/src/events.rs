@@ -1326,6 +1326,8 @@ pub enum Action {
     LightningBelow,
     /// At an end city, every shulker near them opening its shell at once, and shutting it at once.
     ShulkersOpen,
+    /// In the End, the gateway near them flashing its beam as if someone went through; no one is near.
+    GatewayFlashes,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8369,6 +8371,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ShulkersOpen,
         false,
     ),
+    // docs/events_todo.md, 296: the end gateway near them flashes as if someone went through.
+    row(
+        "gateway_flashes",
+        3,
+        5,
+        &[InEnd],
+        1.0,
+        3,
+        Half,
+        Action::GatewayFlashes,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9032,6 +9046,7 @@ impl Event {
             | Action::RuinedPortalGlows
             | Action::LightningBelow
             | Action::ShulkersOpen
+            | Action::GatewayFlashes
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9654,6 +9669,7 @@ impl Event {
             "came_back_wrong_hour" => "show them the wrong hour's sky as they come back",
             "lightning_below" => "strike lightning beside them where there is no weather",
             "shulkers_open" => "open every shulker near them at once",
+            "gateway_flashes" => "flash the end gateway near them as if used",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
