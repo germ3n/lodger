@@ -3198,6 +3198,11 @@ The `[x]` lines above, summed up by day:
   it): the figure in the exit portal's basin beside the pillar, twelve seconds (the owner's call:
   the figure in the End). Tests: one in `act`, one in `elsewhere`. Was: no such event.
 
+- [x] **The poem knows** (`docs/events_todo.md`, 315): `the_poem_knows`, stage 5, in the End: armed
+  on their client, the next end poem read ends with three lines of its own, about them by name and
+  their house, once (the `the_poem_knows` hint, `WinScreenMixin`; off with the glitches). Tests: one
+  in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -154,6 +154,16 @@ public final class Glitches {
 	 */
 	private static volatile String splashArmed;
 
+	/** The end poem armed to know them (`the_poem_knows`, ABI 56): the client's memory alone, once. */
+	private static volatile boolean poemArmed;
+
+	/** Whether the end poem now read is the one armed, taking it. */
+	public static boolean takePoem() {
+		boolean armed = poemArmed;
+		poemArmed = false;
+		return armed;
+	}
+
 	/** The splash armed, taken: null when none is. */
 	public static String takeSplash() {
 		String line = splashArmed;
@@ -426,6 +436,8 @@ public final class Glitches {
 				}
 				// Armed: the next title screen's splash reads about them (ABI 56).
 				case "title_splash" -> once(active, () -> splashArmed = "we watched you sleep");
+				// Armed: the next end poem read has three lines of its own about them (ABI 56).
+				case "the_poem_knows" -> once(active, () -> poemArmed = true);
 				case "silence" -> {
 					minecraft.getSoundManager().stop(null, SoundSource.AMBIENT);
 					minecraft.getSoundManager().stop(null, SoundSource.WEATHER);

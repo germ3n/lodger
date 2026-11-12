@@ -8593,6 +8593,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::OnTheExitPortal,
         false,
     ),
+    // docs/events_todo.md, 315: armed in the end, the next time the end poem is read on their screen it ends with three lines of its own in its two voices: another in the dream, one the player did not dream.
+    row(
+        "the_poem_knows",
+        5,
+        5,
+        &[InEnd],
+        30.0,
+        1,
+        Half,
+        Action::Hint("the_poem_knows", 1.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9908,6 +9920,7 @@ impl Event {
             "barter_from_home" => "give a piglin near them one thing from their chest at home",
             "elytra_at_home" => "take the ship's elytra and hang it at their home",
             "on_the_exit_portal" => "stand the figure on the exit portal as the dragon dies",
+            "the_poem_knows" => "arm the end poem to know them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

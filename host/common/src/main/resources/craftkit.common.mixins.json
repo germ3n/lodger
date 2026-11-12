@@ -30,7 +30,8 @@
 		"SkyRendererMixin",
 		"SplashManagerMixin",
 		"SubtitleOverlayMixin",
-		"WeatherEffectRendererMixin"
+		"WeatherEffectRendererMixin",
+		"WinScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

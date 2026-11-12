@@ -59,6 +59,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("barter_from_home", "minecraft:the_nether"),
     ("elytra_at_home", "minecraft:the_end"),
     ("on_the_exit_portal", "minecraft:the_end"),
+    ("the_poem_knows", "minecraft:the_end"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.

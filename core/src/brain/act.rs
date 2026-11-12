@@ -14771,6 +14771,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "the_poem_knows"
                 || event.id == "on_the_exit_portal"
                 || event.id == "elytra_at_home"
                 || event.id == "barter_from_home"
@@ -23537,6 +23538,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Figure { pos, seconds, .. }, 0)] if pos[0] == 3.5 && pos[1] <= -1000.0 && *seconds == 12.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn the_poem_knows_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("the_poem_knows").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "the_poem_knows" && *seconds == 1.0),
             "{made:?}"
         );
     }

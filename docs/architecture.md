@@ -157,6 +157,7 @@ As little as possible, because the mod is about not knowing:
   `false_glint` (what is in their main hand drawn shimmering as if enchanted),
   `compass_spins` (a compass spinning as in the Nether),
   `enchant_six` (an enchanting table's offers drawn costing 6, the server's costs untouched),
+  `the_poem_knows` (armed: the next end poem read ends with three lines of its own about them, by name),
   `title_splash` (armed: the next title screen's splash reads `we watched you sleep`, once),
   `held_name_wrong` (the held item's name over the hotbar reading `its`),
   `slot_barred` (a barrier drawn in one empty slot whenever the inventory is open),
