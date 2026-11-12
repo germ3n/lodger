@@ -170,14 +170,31 @@ impl Preset {
 /// `q4_k_m` GGUF comes from unsloth's repository, Qwen publishing none of its own that a
 /// download can reach. The 0.5B is the file `~/engine` runs. Sizes and SHA-256 sums are the
 /// files' own as Hugging Face's servers give them (`x-linked-size`, `x-linked-etag`),
-/// so the bar is right from the start and the host checks the file it fetched.
+/// so the bar is right from the start and the host checks the file it fetched. And for large
+/// GPUs (owner: "please add the 7b and 8b models"): Qwen2.5-7B-Instruct, Qwen's own `q4_k_m`,
+/// which Qwen publishes in two parts, both fetched and loaded together; and Qwen3-8B, Qwen's own
+/// `Q4_K_M`, one file.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ModelSize {
     Small,
     Medium,
     Large,
-    /// Qwen3-4B-Instruct-2507: newer, a better reader, the biggest file.
+    /// Qwen3-4B-Instruct-2507: newer, a better reader.
     Qwen3,
+    /// Qwen2.5-7B-Instruct, in two parts.
+    Seven,
+    /// Qwen3-8B, the largest.
+    Eight,
+}
+
+/// A part of a model after its first, for a model published in several files: where it is, what
+/// it is saved as beside the first (the split's own names, which llama.cpp loads from the first),
+/// its length and its SHA-256.
+pub struct ModelPart {
+    pub url: &'static str,
+    pub file_name: &'static str,
+    pub bytes: u64,
+    pub sha256: &'static str,
 }
 
 /// A model's license as the preparing screen shows it before the download.
@@ -209,13 +226,22 @@ the lodger runs, and kept on this computer. Nothing is sent anywhere; the model 
 Copyright 2025 Alibaba Cloud. Licensed under the Apache License, Version 2.0; the full text is \
 at the link below. By continuing you accept those terms for your use of the model.";
 
+const QWEN3_8B_TEXT: &str = "The lodger thinks with Qwen3-8B, a language model made by Alibaba \
+Cloud's Qwen team and released under the Apache License 2.0. It will be downloaded once from \
+Hugging Face, from Qwen's own repository, and kept on this computer. Nothing is sent anywhere; \
+the model runs here. Copyright 2025 Alibaba Cloud. Licensed under the Apache License, Version \
+2.0; the full text is at the link below. By continuing you accept those terms for your use of \
+the model.";
+
 impl ModelSize {
     /// Every model, smallest first: the preparing screen's choices.
-    pub const ALL: [ModelSize; 4] = [
+    pub const ALL: [ModelSize; 6] = [
         ModelSize::Small,
         ModelSize::Medium,
         ModelSize::Large,
         ModelSize::Qwen3,
+        ModelSize::Seven,
+        ModelSize::Eight,
     ];
 
     pub fn named(name: &str) -> Option<Self> {
@@ -228,6 +254,8 @@ impl ModelSize {
             Self::Medium => "1.5b",
             Self::Large => "3b",
             Self::Qwen3 => "4b",
+            Self::Seven => "7b",
+            Self::Eight => "8b",
         }
     }
 
@@ -238,7 +266,9 @@ impl ModelSize {
             Self::Small => "The smallest and quickest: plainer choices and plainer words. Wants about 0.6 GB of VRAM.",
             Self::Medium => "The default: sharper judgment and better words. Wants about 1.3 GB of VRAM.",
             Self::Large => "Better again, and slower; Qwen's research license, not for commercial use. Wants about 2.4 GB of VRAM.",
-            Self::Qwen3 => "The best reader of the four, the newest. Wants about 2.9 GB of VRAM.",
+            Self::Qwen3 => "A much better reader, and newer. Wants about 2.9 GB of VRAM.",
+            Self::Seven => "Larger again, for a big GPU: two files, fetched together. Wants about 5.2 GB of VRAM.",
+            Self::Eight => "The largest and best reader, for a big GPU. Wants about 5.6 GB of VRAM.",
         }
     }
 
@@ -249,6 +279,8 @@ impl ModelSize {
             Self::Medium => "Qwen2.5 1.5B",
             Self::Large => "Qwen2.5 3B",
             Self::Qwen3 => "Qwen3 4B",
+            Self::Seven => "Qwen2.5 7B",
+            Self::Eight => "Qwen3 8B",
         }
     }
 
@@ -258,6 +290,8 @@ impl ModelSize {
             Self::Medium => "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
             Self::Large => "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
             Self::Qwen3 => "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+            Self::Seven => "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+            Self::Eight => "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf",
         }
     }
 
@@ -265,8 +299,8 @@ impl ModelSize {
     pub fn layers(self) -> u32 {
         match self {
             Self::Small => 24,
-            Self::Medium => 28,
-            Self::Large | Self::Qwen3 => 36,
+            Self::Medium | Self::Seven => 28,
+            Self::Large | Self::Qwen3 | Self::Eight => 36,
         }
     }
 
@@ -277,17 +311,40 @@ impl ModelSize {
             Self::Medium => "qwen2.5-1.5b-q4_k_m.gguf",
             Self::Large => "qwen2.5-3b-q4_k_m.gguf",
             Self::Qwen3 => "qwen3-4b-instruct-2507-q4_k_m.gguf",
+            // A split's own names: llama.cpp finds the second part from the first's.
+            Self::Seven => "qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+            Self::Eight => "qwen3-8b-q4_k_m.gguf",
         }
     }
 
-    /// The file's length in bytes, for the bar.
+    /// The (first) file's length in bytes, for the bar.
     pub fn size_hint(self) -> u64 {
         match self {
             Self::Small => 491_400_032,
             Self::Medium => 1_117_320_736,
             Self::Large => 2_104_932_768,
             Self::Qwen3 => 2_497_281_120,
+            Self::Seven => 3_993_201_344,
+            Self::Eight => 5_027_783_488,
         }
+    }
+
+    /// The parts after the first, for a model in several files; none for the rest.
+    pub fn more_parts(self) -> &'static [ModelPart] {
+        match self {
+            Self::Seven => &[ModelPart {
+                url: "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf",
+                file_name: "qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf",
+                bytes: 689_872_288,
+                sha256: "539cf93f78e887edea1c04e2d7d8cdaca9d01dae9c9025bcb8accbe29df3d72a",
+            }],
+            _ => &[],
+        }
+    }
+
+    /// Every file's length together: what the download is.
+    pub fn total_bytes(self) -> u64 {
+        self.size_hint() + self.more_parts().iter().map(|p| p.bytes).sum::<u64>()
     }
 
     /// The file's SHA-256, which the host checks after the download.
@@ -297,6 +354,8 @@ impl ModelSize {
             Self::Medium => "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
             Self::Large => "626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d",
             Self::Qwen3 => "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+            Self::Seven => "dfce12e3862a5283ccfb88221b48480e58745165de856439950d0f22590580db",
+            Self::Eight => "d98cdcbd03e17ce47681435b5150e34c1417f50b5c0019dd560e4882c5745785",
         }
     }
 
@@ -323,12 +382,22 @@ impl ModelSize {
                 url: "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507/blob/main/LICENSE",
                 text: QWEN3_TEXT,
             },
+            Self::Seven => ModelLicense {
+                name: "Apache License 2.0",
+                url: "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/blob/main/LICENSE",
+                text: APACHE_TEXT,
+            },
+            Self::Eight => ModelLicense {
+                name: "Apache License 2.0",
+                url: "https://huggingface.co/Qwen/Qwen3-8B-GGUF/blob/main/LICENSE",
+                text: QWEN3_8B_TEXT,
+            },
         }
     }
 
-    /// For the screen: `Downloading the lodger's model (491 MB)`.
+    /// For the screen: `Downloading the lodger's model (491 MB)`; every part together.
     pub fn megabytes(self) -> u64 {
-        self.size_hint() / 1_000_000
+        self.total_bytes() / 1_000_000
     }
 }
 
@@ -372,7 +441,8 @@ pub struct Model {
     /// Whether the model is used at all: off, nothing is downloaded and the rule brain decides
     /// (the download screen's "Play without it", or the settings; owner).
     pub enabled: bool,
-    /// `0.5b`, `1.5b` or `3b`, a Qwen2.5-Instruct, or `4b`, Qwen3-4B-Instruct-2507: which model
+    /// `0.5b`, `1.5b`, `3b` or `7b`, a Qwen2.5-Instruct, `4b`, Qwen3-4B-Instruct-2507, or `8b`,
+    /// Qwen3-8B: which model
     /// to run. See `docs/model.md`.
     pub size: String,
     /// Where to fetch from. Empty means Qwen's own file for `size`.
@@ -898,7 +968,7 @@ impl Config {
         }
 
         if ModelSize::named(&self.model.size).is_none() {
-            return Err("model.size must be 0.5b, 1.5b, 3b or 4b".to_string());
+            return Err("model.size must be 0.5b, 1.5b, 3b, 4b, 7b or 8b".to_string());
         }
 
         if !(0.0..=2.0).contains(&self.brain.temperature) {
@@ -1120,7 +1190,7 @@ mod tests {
             (r#"{ "model": { "context": 64 } }"#, "model.context"),
             (r#"{ "model": { "threads": 0 } }"#, "model.threads"),
             (r#"{ "model": { "pause_ms": 500 } }"#, "model.pause_ms"),
-            (r#"{ "model": { "size": "7b" } }"#, "model.size"),
+            (r#"{ "model": { "size": "14b" } }"#, "model.size"),
             (r#"{ "brain": { "temperature": 3 } }"#, "brain.temperature"),
             (
                 r#"{ "brain": { "event_threshold": 1.5 } }"#,
@@ -1230,10 +1300,42 @@ mod tests {
         assert!(ModelSize::Qwen3
             .url()
             .ends_with("Qwen3-4B-Instruct-2507-Q4_K_M.gguf"));
-        assert_eq!(ModelSize::named("7b"), None);
+        // The large ones (owner: "please add the 7b and 8b models"), Qwen's own repositories.
+        assert_eq!(ModelSize::named("7b"), Some(ModelSize::Seven));
+        assert_eq!(ModelSize::named("8b"), Some(ModelSize::Eight));
+        assert_eq!(ModelSize::named("14b"), None);
+        for size in [ModelSize::Seven, ModelSize::Eight] {
+            assert!(
+                size.url().starts_with("https://huggingface.co/Qwen/"),
+                "{}",
+                size.url()
+            );
+            assert_eq!(size.license().name, "Apache License 2.0");
+        }
+        // The 7B's two parts: the split's own names, so llama.cpp loads the second from the first.
+        let parts = ModelSize::Seven.more_parts();
+        assert_eq!(parts.len(), 1);
+        assert!(ModelSize::Seven
+            .file_name()
+            .ends_with("-00001-of-00002.gguf"));
+        assert!(parts[0].file_name.ends_with("-00002-of-00002.gguf"));
+        assert_eq!(
+            ModelSize::Seven.file_name().replace("00001-of", "00002-of"),
+            parts[0].file_name
+        );
+        assert!(parts[0].url.ends_with(parts[0].file_name));
+        assert_eq!(parts[0].sha256.len(), 64);
+        assert_eq!(ModelSize::Seven.megabytes(), 4683, "both parts");
+        assert!(ModelSize::ALL
+            .iter()
+            .filter(|s| **s != ModelSize::Seven)
+            .all(|s| s.more_parts().is_empty()));
 
         for pair in ModelSize::ALL.windows(2) {
-            assert!(pair[0].size_hint() < pair[1].size_hint(), "smallest first");
+            assert!(
+                pair[0].total_bytes() < pair[1].total_bytes(),
+                "smallest first"
+            );
         }
         for size in ModelSize::ALL {
             assert_eq!(size.sha256().len(), 64, "{}", size.name());

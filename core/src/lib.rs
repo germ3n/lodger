@@ -257,6 +257,51 @@ fn model_url(config: &Config) -> String {
     }
 }
 
+/// Whether the model is the size's own file, fetched from its url, not one the player named
+/// (`model.url` or `model.path`): only then are its other parts fetched beside it.
+fn own_file(config: &Config) -> bool {
+    config.model.url.is_empty() && config.model.path.is_empty()
+}
+
+/// The model's resources: its first (or only) file, and for a model in parts each part after
+/// it, saved beside the first under the split's own names, checked by its own sum, required as
+/// the first is; the terms and the size choices are the first's alone.
+fn model_resources(
+    config: &Config,
+    size: ModelSize,
+    first: &std::path::Path,
+    mut resources: Vec<Resource>,
+) -> Vec<Resource> {
+    if !own_file(config) {
+        return resources;
+    }
+    let count = size.more_parts().len() + 1;
+    for (i, part) in size.more_parts().iter().enumerate() {
+        resources.push(Resource {
+            id: format!("model_part_{}", i + 2),
+            title: format!(
+                "Downloading the lodger's model, {}, part {} of {count} ({} MB)",
+                size.title(),
+                i + 2,
+                part.bytes / 1_000_000
+            ),
+            url: part.url.to_string(),
+            path: first
+                .with_file_name(part.file_name)
+                .to_string_lossy()
+                .into_owned(),
+            size_hint: part.bytes,
+            magic: "GGUF".to_string(),
+            required: config.model.enabled,
+            without: serde_json::json!({ "model": { "enabled": false } }),
+            sha256: part.sha256.to_string(),
+            license: License::default(),
+            choices: vec![],
+        });
+    }
+    resources
+}
+
 /// A seed that differs per start, so two starts do not pick the same way. The world's seed joins
 /// it when a world opens.
 fn start_seed(init: &Init) -> u64 {
@@ -299,43 +344,57 @@ impl Mod for Lodger {
                     rebased.as_deref().unwrap_or(&init.config),
                     &serde_json::to_value(&config).map_err(|err| err.to_string())?,
                 ),
-            resources: vec![Resource {
-                id: "model".to_string(),
-                title: format!(
-                    "Downloading the lodger's model, {} ({} MB)",
-                    size.title(),
-                    size.megabytes()
-                ),
-                url: model_url(&config),
-                path: path.to_string_lossy().into_owned(),
-                size_hint: size.size_hint(),
-                magic: "GGUF".to_string(),
-                // Played without, it is not needed, and the rule brain decides.
-                required: config.model.enabled,
-                without: serde_json::json!({ "model": { "enabled": false } }),
-                // A file from `model.url` is the player's own, unchecked.
-                sha256: if config.model.url.is_empty() {
-                    size.sha256().to_string()
-                } else {
-                    String::new()
-                },
-                license: License {
-                    name: size.license().name.to_string(),
-                    url: size.license().url.to_string(),
-                    text: size.license().text.to_string(),
-                },
-                // The other sizes, to pick on the preparing screen before the download
-                // (owner: "I want to be able to change the model on that screen").
-                choices: ModelSize::ALL
-                    .iter()
-                    .map(|other| craftkit::Choice {
-                        label: format!("{}, {} MB", other.title(), other.megabytes()),
-                        config: serde_json::json!({ "model": { "size": other.name() } }),
-                        chosen: *other == size,
-                        note: other.note().to_string(),
-                    })
-                    .collect(),
-            }],
+            resources: model_resources(
+                &config,
+                size,
+                &path,
+                vec![Resource {
+                    id: "model".to_string(),
+                    title: if size.more_parts().is_empty() || !own_file(&config) {
+                        format!(
+                            "Downloading the lodger's model, {} ({} MB)",
+                            size.title(),
+                            size.megabytes()
+                        )
+                    } else {
+                        format!(
+                            "Downloading the lodger's model, {}, part 1 of {} ({} MB)",
+                            size.title(),
+                            size.more_parts().len() + 1,
+                            size.size_hint() / 1_000_000
+                        )
+                    },
+                    url: model_url(&config),
+                    path: path.to_string_lossy().into_owned(),
+                    size_hint: size.size_hint(),
+                    magic: "GGUF".to_string(),
+                    // Played without, it is not needed, and the rule brain decides.
+                    required: config.model.enabled,
+                    without: serde_json::json!({ "model": { "enabled": false } }),
+                    // A file from `model.url` is the player's own, unchecked.
+                    sha256: if config.model.url.is_empty() {
+                        size.sha256().to_string()
+                    } else {
+                        String::new()
+                    },
+                    license: License {
+                        name: size.license().name.to_string(),
+                        url: size.license().url.to_string(),
+                        text: size.license().text.to_string(),
+                    },
+                    // The other sizes, to pick on the preparing screen before the download
+                    // (owner: "I want to be able to change the model on that screen").
+                    choices: ModelSize::ALL
+                        .iter()
+                        .map(|other| craftkit::Choice {
+                            label: format!("{}, {} MB", other.title(), other.megabytes()),
+                            config: serde_json::json!({ "model": { "size": other.name() } }),
+                            chosen: *other == size,
+                            note: other.note().to_string(),
+                        })
+                        .collect(),
+                }],
+            ),
         };
 
         let model = Model::new(Settings {
@@ -537,7 +596,7 @@ mod tests {
         let find = |key: &str| settings.iter().find(|s| s["key"] == key).unwrap().clone();
         assert_eq!(find("preset")["value"], "calm");
         assert_eq!(find("model.gpu_share")["value"], 0.3);
-        assert_eq!(find("model.size")["options"].as_array().unwrap().len(), 4);
+        assert_eq!(find("model.size")["options"].as_array().unwrap().len(), 6);
         assert_eq!(find("events.chat")["value"], false, "calm turns chat off");
         let groups: std::collections::BTreeSet<&str> = settings
             .iter()
@@ -565,7 +624,7 @@ mod tests {
         };
         let reply = harness().init_with(&init(""));
         let choices = reply["resources"][0]["choices"].as_array().unwrap().clone();
-        assert_eq!(choices.len(), 4);
+        assert_eq!(choices.len(), 6, "0.5B, 1.5B, 3B, 4B, 7B, 8B");
         let chosen: Vec<&serde_json::Value> =
             choices.iter().filter(|c| c["chosen"] == true).collect();
         assert_eq!(chosen.len(), 1);
@@ -631,8 +690,92 @@ mod tests {
             .iter()
             .map(|c| c["label"].as_str().unwrap())
             .collect();
-        assert_eq!(labels.len(), 4);
+        assert_eq!(labels.len(), 6);
         assert_eq!(labels[3], "Qwen3 4B, 2497 MB");
+        assert_eq!(labels[4], "Qwen2.5 7B, 4683 MB", "both parts together");
+        assert_eq!(labels[5], "Qwen3 8B, 5027 MB");
+        assert_eq!(
+            reply["resources"].as_array().unwrap().len(),
+            1,
+            "the 1.5B is one file"
+        );
+    }
+
+    #[test]
+    fn the_7b_comes_in_two_parts_fetched_side_by_side_and_the_8b_in_one() {
+        let _turn = turn();
+        let init = |config: &str| Init {
+            config: config.to_string(),
+            game_dir: "/game".to_string(),
+            config_dir: "/game/config".to_string(),
+            id: "lodger".to_string(),
+            ..Init::default()
+        };
+        let reply = harness().init_with(&init(r#"{ "model": { "size": "7b" } }"#));
+        let resources = reply["resources"].as_array().unwrap();
+        assert_eq!(resources.len(), 2);
+        let (first, second) = (&resources[0], &resources[1]);
+        assert!(first["path"]
+            .as_str()
+            .unwrap()
+            .ends_with("qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf"));
+        assert!(first["title"]
+            .as_str()
+            .unwrap()
+            .contains("Qwen2.5 7B, part 1 of 2 (3993 MB)"));
+        assert_eq!(first["sha256"], ModelSize::Seven.sha256());
+        assert_eq!(first["license"]["name"], "Apache License 2.0");
+        // The second beside the first under the split's own name, its own sum, no terms again,
+        // no choices, required as the first is.
+        assert_eq!(
+            PathBuf::from(second["path"].as_str().unwrap()),
+            PathBuf::from(
+                "/game/config/lodger/models/qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf"
+            )
+        );
+        assert!(second["title"]
+            .as_str()
+            .unwrap()
+            .contains("part 2 of 2 (689 MB)"));
+        assert_eq!(second["sha256"], ModelSize::Seven.more_parts()[0].sha256);
+        assert_eq!(second["size_hint"], 689_872_288u64);
+        assert_eq!(second["magic"], "GGUF");
+        assert_eq!(second["required"], true);
+        assert!(second
+            .get("choices")
+            .is_none_or(|c| c.as_array().is_none_or(|c| c.is_empty())));
+        assert!(second["license"]["name"].as_str().unwrap_or("").is_empty());
+        assert!(second["url"]
+            .as_str()
+            .unwrap()
+            .starts_with("https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/"));
+
+        // Played without, the parts are not needed either.
+        let without =
+            harness().init_with(&init(r#"{ "model": { "size": "7b", "enabled": false } }"#));
+        assert!(without["resources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|r| r["required"] == false));
+        // A file of their own: no parts fetched beside it.
+        let own = harness().init_with(&init(
+            r#"{ "model": { "size": "7b", "url": "https://example.com/m.gguf" } }"#,
+        ));
+        assert_eq!(own["resources"].as_array().unwrap().len(), 1);
+
+        let eight = harness().init_with(&init(r#"{ "model": { "size": "8b" } }"#));
+        let resources = eight["resources"].as_array().unwrap();
+        assert_eq!(resources.len(), 1);
+        assert!(resources[0]["path"]
+            .as_str()
+            .unwrap()
+            .ends_with("qwen3-8b-q4_k_m.gguf"));
+        assert_eq!(resources[0]["size_hint"], 5_027_783_488u64);
+        assert!(resources[0]["url"]
+            .as_str()
+            .unwrap()
+            .starts_with("https://huggingface.co/Qwen/Qwen3-8B-GGUF/"));
     }
 
     #[test]

@@ -1102,7 +1102,7 @@ impl Brain {
                     ];
                     let sender = self.replies().0.clone();
                     if let Ok(id) = model.ask_async(
-                        &situation::situation(&lines),
+                        &situation::situation(&lines, arc.stage),
                         questions,
                         Some("react".to_string()),
                         sender,
@@ -1153,7 +1153,7 @@ impl Brain {
             if asks {
                 let lines = memory
                     .describe_within(day, crate::memory::describe_chars(config.model.context));
-                self.ask_for_words(event, &lines, memory, config, model);
+                self.ask_for_words(event, &lines, arc.stage, memory, config, model);
             }
             if let Some(plan) = self.plans.iter_mut().find(|p| p.id == id) {
                 plan.words_asked = true;
@@ -1194,6 +1194,7 @@ impl Brain {
         &mut self,
         chosen: &Event,
         lines: &[String],
+        stage: u8,
         memory: &Memory,
         config: &Config,
         model: Option<&Model>,
@@ -1213,7 +1214,7 @@ impl Brain {
             let sender = self.replies().0.clone();
             let asked = if config.brain.text == "generate" {
                 let refs: Vec<&str> = examples.iter().map(String::as_str).collect();
-                let prompt = situation::writing_prompt(lines, kind.purpose(), &refs);
+                let prompt = situation::writing_prompt(lines, stage, kind.purpose(), &refs);
                 model.generate_async(
                     &prompt,
                     crate::model::Leash {
@@ -1227,7 +1228,7 @@ impl Brain {
                 // `bank`: the model picks among eight of the kind's lines.
                 let choices: Vec<String> = examples.iter().take(8).cloned().collect();
                 model.ask_async(
-                    &situation::situation(lines),
+                    &situation::situation(lines, stage),
                     vec![Question {
                         text: format!("{} {}", kind.purpose(), SIGN_SAYS),
                         choices,
@@ -1904,7 +1905,7 @@ impl Brain {
             lines.push(format!("They just typed: {heard}"));
             let kind = Kind::Reply;
             let examples = kind.examples();
-            let prompt = situation::writing_prompt(&lines, kind.purpose(), examples);
+            let prompt = situation::writing_prompt(&lines, arc.stage, kind.purpose(), examples);
             let sender = self.replies().0.clone();
             if let Ok(id) = model.generate_async(
                 &prompt,
@@ -2041,7 +2042,7 @@ impl Brain {
             }
             let sender = self.replies().0.clone();
             match model.ask_async(
-                &situation::situation(&lines),
+                &situation::situation(&lines, arc.stage),
                 questions,
                 Some("plan".to_string()),
                 sender,
@@ -2102,7 +2103,7 @@ impl Brain {
         };
         let sender = self.replies().0.clone();
         match model.ask_async(
-            &situation::situation(&lines),
+            &situation::situation(&lines, stage),
             vec![Question {
                 text: question.to_string(),
                 choices,
@@ -2511,7 +2512,7 @@ impl Brain {
             return;
         }
 
-        self.ask_for_words(chosen, &lines, memory, config, model);
+        self.ask_for_words(chosen, &lines, arc.stage, memory, config, model);
 
         // The day's budget counts the plans already held: they spend when they run, and three
         // held at once would all pass a check that saw only what was spent.
@@ -3309,7 +3310,7 @@ mod tests {
             seen.lock()
                 .unwrap()
                 .iter()
-                .filter(|s| s.contains("What you know"))
+                .filter(|s| s.contains("What it knows"))
                 .count()
                 >= 2
         );

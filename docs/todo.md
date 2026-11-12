@@ -2390,6 +2390,29 @@ The `[x]` lines above, summed up by day:
   `scripts/sync_craftkit.sh` does all three, with lodger's last SDK or host commit's subject,
   cloning craftkit first where there is no clone, and committing nothing when nothing changed.
 
+- [x] **The 7B and 8B models** (owner: "please add the 7b and 8b models? also wire it up to the
+  model selection, download screen, all that"). Was: four sizes, the largest the 4B. Now
+  `model.size` `7b`, Qwen2.5-7B-Instruct (Qwen's own `q4_k_m`, which Qwen publishes in two
+  parts: two resources, saved side by side under the split's names, each checked by its own
+  length and SHA-256, the license asked once), and `8b`, Qwen3-8B (Qwen's own `Q4_K_M`, one file),
+  both Apache-2.0, in the preparing screen's choices with their notes, the settings page, the
+  config's checks and the docs. Tests: in `config` and the crate's. Tests changed (owner told):
+  the counts of sizes, 4 to 6; the unknown size refused is `14b` (it was `7b`); the sizes are
+  ordered by every part together.
+
+- [x] **The model reads the situation: the frame and the scoring** (owner: "should this mention
+  the never chase, never hurt thing?", "maybe theres a better prompt here", "do look into the
+  menu wording and scoring", "you should calibrate for both 4b and 1.5b"). Was: the frame told
+  the model, as "you", that it never chased or hurt and acted only while they were away or
+  asleep, beside lines that say "it"; and the question ended `The answer is: ` with the choices
+  read without their space, so the 1.5B and the 4B both answered "while they are away" to a
+  player asleep in bed. Now the frame is told of "it", with a sentence for its stage
+  (`situation::frame`), and choices are read as Qwen's tokens carry them (`spaced`), which got
+  every obvious answer right on both models; four ways of scoring were measured
+  (`core/tests/frames.rs`, `MODEL`, `ONLY`, `GPU=1` with `--features metal`), the table in
+  [Model](model.md#scoring). Left: the menu's words (one to fifteen words; short, common ones
+  win). Tests changed (owner told): the situation's frame text and the brain's "What it knows".
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

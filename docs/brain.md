@@ -65,16 +65,33 @@ and decides once; the memory is the context.
 ## The situation text
 
 Built by `brain/situation.rs` from `Memory::describe` (see [Describing](memory.md#describing))
-with a fixed frame around it:
+with a frame around it, the same but for one sentence that says where the stay is:
 
 ```
-You are a quiet presence living unseen in a player's house in a game. You never chase, never
-hurt, and never hurry. You learn the player's habits and act on them when they are away or
-asleep, to make them feel known. You want one thing from them.
+This is a story about a lodger in a game: a presence that has moved into a player's world
+uninvited. It learns the player's habits and uses them, so the player feels known. <the stage's
+sentence> It wants one thing from them.
 
-What you know:
+What it knows:
 <the memory's lines>
 ```
+
+| Stage | Its sentence |
+| --- | --- |
+| 1 (and before it moves in) | It has only just arrived, and nothing it does yet could not be explained away. |
+| 2 | It stays unseen; what it does could still be chance. |
+| 3 | It no longer minds being noticed. |
+| 4 | It shows itself now, and wants the player afraid. |
+| 5 | It has stopped hiding. It comes for the player. |
+
+It said "You are a quiet presence... You never chase, never hurt, and never hurry... act on them
+when they are away or asleep" until the owner asked whether it should. It should not: the model
+only scores the menu it is given, so those words never kept a harm away, they only weighed the
+model against the very events stages four and five offer (the choke, the stab, the vexes, the
+figures that rush them), and against every event meant to be seen; when it acts is the `When?`
+question's. And it spoke to the model as "you" beside lines and questions that all say "it". The
+rules, not the frame, keep what may happen (`rules.rs`, `events.kills`). `core/tests/frames.rs`
+scores late-stage menus under both frames against the real model (ignored by default).
 
 Then, per question, appended and scored, then rewound:
 

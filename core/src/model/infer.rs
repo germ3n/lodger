@@ -35,6 +35,9 @@ struct Engine {
     /// Per token id, whether its text is letters and spaces alone (`[0]`), or letters, digits
     /// and spaces (`[1]`): the only tokens generation may pick. Built once, on the first write.
     plain_tokens: Option<[Vec<bool>; 2]>,
+    /// Each (question, choice)'s score with no situation, for `calibrated` scoring: worked out
+    /// once and kept, the questions and menus being the mod's own fixed words.
+    baselines: std::collections::HashMap<(String, String), f32>,
 }
 
 // The engine lives on the worker thread alone; the raw model pointer never crosses threads.
@@ -103,6 +106,7 @@ fn load_engine(settings: &Settings, rng: Arc<Mutex<Rng>>) -> Result<Engine, Stri
         temperature: settings.temperature,
         rng,
         plain_tokens: None,
+        baselines: std::collections::HashMap::new(),
     })
 }
 
@@ -354,6 +358,15 @@ fn mean_logprob(
     Ok(total / choice.len() as f32)
 }
 
+/// A situation's frame: up to and through its "What it knows:" line, the memory's lines left out;
+/// all of it when it has none.
+fn frame_of(situation: &str) -> &str {
+    ["What it knows:\n", "What you know:\n"]
+        .iter()
+        .find_map(|mark| situation.find(mark).map(|at| &situation[..at + mark.len()]))
+        .unwrap_or(situation)
+}
+
 fn decode_questions(
     engine: &mut Engine,
     situation: &str,
@@ -361,6 +374,42 @@ fn decode_questions(
 ) -> Result<Vec<Answer>, String> {
     // The context keeps its model private in this version; the engine holds the same model.
     let vocab = unsafe { &*engine.model }.vocab();
+    let mode = super::SCORING.load(std::sync::atomic::Ordering::Relaxed);
+    let spaced = mode >= 1;
+    // Calibrated: each choice's score with the frame alone before the question (the situation
+    // up to its "What it knows:" line, no memory), once, before the situation is decoded (working
+    // it out clears the cache). With nothing at all before the question, the first try, a
+    // choice's baseline was far from how the model reads it, and the calibration misread the
+    // obvious.
+    let neutral = frame_of(situation);
+    if mode == 2 || mode == 4 {
+        for question in questions {
+            let key = |choice: &str| (format!("{neutral}{}", question.text), choice.to_string());
+            let missing: Vec<String> = question
+                .choices
+                .iter()
+                .filter(|c| !engine.baselines.contains_key(&key(c)))
+                .cloned()
+                .collect();
+            if missing.is_empty() {
+                continue;
+            }
+            engine.ctx.clear_kv_cache();
+            let mut batch = LlamaBatch::new(engine.n_ctx as usize, 1);
+            let prompt = format!("{neutral}\n{}\nThe answer is:", question.text);
+            let prompt_tokens = tokenize(&vocab, &prompt, true);
+            decode_tokens(&mut engine.ctx, &mut batch, &prompt_tokens, 0, true)?;
+            let q_end = i32::try_from(prompt_tokens.len()).unwrap_or(i32::MAX);
+            let prefix_logits = logits_row(&engine.ctx, batch.n_tokens() - 1);
+            for choice in missing {
+                rewind(&mut engine.ctx, q_end)?;
+                let tokens = tokenize(&vocab, &format!(" {choice}"), false);
+                let score =
+                    mean_logprob(&mut engine.ctx, &mut batch, &prefix_logits, &tokens, q_end)?;
+                engine.baselines.insert(key(&choice), score);
+            }
+        }
+    }
     engine.ctx.clear_kv_cache();
     let situation_tokens = tokenize(&vocab, situation, true);
 
@@ -378,7 +427,17 @@ fn decode_questions(
             rewind(&mut engine.ctx, sit_end)?;
         }
 
-        let suffix = format!("\n{}\nThe answer is: ", question.text);
+        let suffix = if mode >= 3 {
+            format!(
+                "\n{}\nIts choices: {}.\nThe answer is:",
+                question.text,
+                question.choices.join("; ")
+            )
+        } else if spaced {
+            format!("\n{}\nThe answer is:", question.text)
+        } else {
+            format!("\n{}\nThe answer is: ", question.text)
+        };
         let suffix_tokens = tokenize(&vocab, &suffix, false);
 
         if suffix_tokens.is_empty() {
@@ -397,7 +456,11 @@ fn decode_questions(
                 extended = false;
             }
 
-            let choice_tokens = tokenize(&vocab, choice, false);
+            let choice_tokens = if spaced {
+                tokenize(&vocab, &format!(" {choice}"), false)
+            } else {
+                tokenize(&vocab, choice, false)
+            };
 
             if choice_tokens.is_empty() {
                 return Err(format!("choice {choice} produced no tokens"));
@@ -415,7 +478,22 @@ fn decode_questions(
                 extended = true;
             }
 
-            scores.push(score);
+            // Half-calibrated (4): half the baseline taken off.
+            let baseline = if mode == 2 || mode == 4 {
+                let full = engine
+                    .baselines
+                    .get(&(format!("{neutral}{}", question.text), choice.clone()))
+                    .copied()
+                    .unwrap_or(0.0);
+                if mode == 4 {
+                    full / 2.0
+                } else {
+                    full
+                }
+            } else {
+                0.0
+            };
+            scores.push(score - baseline);
         }
 
         let answer = {
@@ -600,7 +678,7 @@ mod real {
                 .map(|e| text::fill(e, "sheep", 4))
                 .collect();
             let refs: Vec<&str> = examples.iter().map(String::as_str).collect();
-            let prompt = crate::brain::situation::writing_prompt(&lines, kind.purpose(), &refs);
+            let prompt = crate::brain::situation::writing_prompt(&lines, 3, kind.purpose(), &refs);
             let written = model.generate(&prompt, kind.leash()).unwrap();
             let checked = text::check(kind, &written);
             eprintln!("{kind:?}: {written:?} -> {checked:?}");
