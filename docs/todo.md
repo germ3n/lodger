@@ -2499,6 +2499,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A creaking behind them** (`docs/events_todo.md`, 178): `creaking_behind`, stages 4 to 5: in the woods, a creaking's groan and steps behind them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Bulbs clicking** (`docs/events_todo.md`, 179): `bulbs_clicking`, stages 3 to 5: indoors, copper bulbs clicking on and off round the room. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -1220,6 +1220,42 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 179.
+        "bulbs_clicking" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.copper_bulb.turn_on", 0),
+                        ("minecraft:block.copper_bulb.turn_off", 10),
+                        ("minecraft:block.copper_bulb.turn_on", 20),
+                    ],
+                    (0.9, 1.0),
+                    0.7,
+                    Above,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.copper_bulb.turn_off", 0),
+                        ("minecraft:block.copper_bulb.turn_on", 14),
+                    ],
+                    (0.85, 0.95),
+                    0.7,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.copper_bulb.turn_on", 0),
+                        ("minecraft:block.copper_bulb.turn_off", 8),
+                        ("minecraft:block.copper_bulb.turn_on", 16),
+                        ("minecraft:block.copper_bulb.turn_off", 24),
+                    ],
+                    (0.9, 1.0),
+                    0.6,
+                    Above,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2201,6 +2237,7 @@ mod tests {
             "ominous_hum",
             "vault_opens_by_the_bed",
             "creaking_behind",
+            "bulbs_clicking",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

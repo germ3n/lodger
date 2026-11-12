@@ -5808,6 +5808,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.creaking.step"),
         false,
     ),
+    // docs/events_todo.md, 179.
+    row(
+        "bulbs_clicking",
+        3,
+        5,
+        &[TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:block.copper_bulb.turn_on"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7315,6 +7327,7 @@ impl Event {
             "ominous_hum" => "hum like a trial spawner under the floor",
             "vault_opens_by_the_bed" => "unlock a vault beside their bed",
             "creaking_behind" => "creak and step behind them in the woods",
+            "bulbs_clicking" => "click copper bulbs on and off in the room",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
