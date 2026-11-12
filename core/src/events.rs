@@ -1155,6 +1155,8 @@ pub enum Action {
     SignWithCoords,
     /// A trident upright in the ground at its place, as if thrown from the sky, never theirs, gone in a day.
     TridentPlanted,
+    /// A mace's smash booming near the house at night, and a small bowl dug in the ground there.
+    SlamCrater,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7097,6 +7099,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TridentPlanted,
         false,
     ),
+    // docs/events_todo.md, 213: a mace's smash at night near the house, a bowl in the ground there by morning.
+    row(
+        "slam_crater",
+        5,
+        5,
+        &[Home, Night, TargetIndoors],
+        3.0,
+        2,
+        Full,
+        Action::SlamCrater,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7691,6 +7705,7 @@ impl Event {
             | Action::WitherRoseInPot
             | Action::ShulkerLidPeeks
             | Action::TridentPlanted
+            | Action::SlamCrater
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8217,6 +8232,7 @@ impl Event {
             "shulker_lid_peeks" => "open their shulker box a crack by itself",
             "sign_with_coords" => "put a sign by their door saying where they sleep",
             "trident_planted" => "plant a trident upright in the ground at its place",
+            "slam_crater" => "boom a mace's smash near the house and leave a crater",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

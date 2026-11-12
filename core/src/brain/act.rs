@@ -484,6 +484,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "trident_planted" {
         return spot(memory, rng);
     }
+    // The mace comes down where it digs, away from what they built.
+    if event.id == "slam_crater" {
+        return dig_spot(memory, rng);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -505,6 +509,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ShulkerLidPeeks
         | Action::SignWithCoords
         | Action::TridentPlanted
+        | Action::SlamCrater
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7949,6 +7954,34 @@ pub fn commands(
                     },
                     0,
                 )]
+            })
+            .unwrap_or_default(),
+        // docs/events_todo.md, 213.
+        Action::SlamCrater => pos
+            .map(grounded)
+            .map(|p| {
+                let mut made = vec![(
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:item.mace.smash_ground_heavy",
+                        at(guessed(memory, p)),
+                        3.0,
+                    ),
+                    0,
+                )];
+                // The middle two deep, the under block first so the ground there is still the
+                // top; the eight round it one.
+                made.push((set(ids, [p[0], p[1] - 1, p[2]], "minecraft:air", GROUND), 2));
+                for dx in -1..=1 {
+                    for dz in -1..=1 {
+                        made.push((
+                            set(ids, [p[0] + dx, p[1], p[2] + dz], "minecraft:air", GROUND),
+                            2,
+                        ));
+                    }
+                }
+                made
             })
             .unwrap_or_default(),
         Action::SculkCreeps => {
@@ -18872,5 +18905,31 @@ mod tests {
             matches!(&made[..], [(Command::PlaceEntity { of, pos, seconds, .. }, 0)] if of == "minecraft:trident" && pos[0] == 20.5 && pos[2] == -13.5 && *seconds == 1200.0),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn slam_crater_booms_and_digs_a_bowl_of_natural_ground() {
+        let memory = rich_memory();
+        let event = find("slam_crater").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::PlaySound { sound, .. } if sound.contains("mace")),
+            "{made:?}"
+        );
+        let dug: Vec<BlockPos> = made
+            .iter()
+            .filter_map(|(c, _)| match c {
+                Command::SetBlock {
+                    pos,
+                    block,
+                    replace,
+                    ..
+                } if block == "minecraft:air" && !replace.is_empty() => Some(*pos),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(dug.len(), 10, "{made:?}");
+        assert_eq!(dug[0][1], GROUND_Y - 1, "the middle's under block first");
     }
 }
