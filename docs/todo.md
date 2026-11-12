@@ -2830,6 +2830,11 @@ The `[x]` lines above, summed up by day:
   (the `title_splash` hint, `SplashManagerMixin`; off with the glitches). Tests: one in `act`. Was:
   no such event.
 
+- [x] **Six, six, six** (`docs/events_todo.md`, 240): `enchant_six`, stages 4 and 5, awake: ten
+  minutes in which an enchanting table's offers are drawn costing 6 each on their client, the
+  server's own costs untouched (the `enchant_six` hint; off with the glitches). Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

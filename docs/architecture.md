@@ -148,6 +148,7 @@ As little as possible, because the mod is about not knowing:
   `menu_freaks` (armed: the next time the pause menu opens its buttons shake and settle, the first reading `stay` a moment),
   `footprints` (the prints round the house, `x,y,z,yaw` each, `;` between, dark dust on the ground under each within 24 blocks),
   `sound_warp` (every sound slowed, in a hall's echo, muffled or broken a while, through OpenAL's effects; `slow`, `hall`, `muffled`, `broken`),
+  `enchant_six` (an enchanting table's offers drawn costing 6, the server's costs untouched),
   `title_splash` (armed: the next title screen's splash reads `we watched you sleep`, once),
   `held_name_wrong` (the held item's name over the hotbar reading `its`),
   `slot_barred` (a barrier drawn in one empty slot whenever the inventory is open),

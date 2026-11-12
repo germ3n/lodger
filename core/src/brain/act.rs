@@ -20210,4 +20210,15 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn enchant_six_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("enchant_six").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "enchant_six" && *seconds == 600.0),
+            "{made:?}"
+        );
+    }
 }

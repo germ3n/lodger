@@ -402,6 +402,18 @@ public final class Glitches {
 							new net.minecraft.world.item.crafting.display.SlotDisplay.ItemSlotDisplay(net.minecraft.world.item.Items.CRAFTING_TABLE));
 					net.minecraft.client.gui.components.toasts.RecipeToast.addOrUpdate(minecraft.gui.toastManager(), display);
 				});
+				// At an enchanting table, every offer drawn costing 6 (ABI 56): their client's copy of
+				// the costs alone, the server's own untouched, so what they pay is the game's.
+				case "enchant_six" -> {
+					if (minecraft.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.EnchantmentScreen screen) {
+						int[] costs = screen.getMenu().costs;
+						for (int i = 0; i < costs.length; i++) {
+							if (costs[i] > 0) {
+								costs[i] = 6;
+							}
+						}
+					}
+				}
 				// Armed: the next title screen's splash reads about them (ABI 56).
 				case "title_splash" -> once(active, () -> splashArmed = "we watched you sleep");
 				case "silence" -> {
