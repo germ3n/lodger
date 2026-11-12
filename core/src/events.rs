@@ -1135,6 +1135,8 @@ pub enum Action {
     WindowTinted,
     /// The big dripleaves near them tipped one after another, as if walked across.
     DripleafSteps,
+    /// Every axolotl near them floating still at once, playing dead.
+    AxolotlsPlayDead,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -6957,6 +6959,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::DripleafSteps,
         true,
     ),
+    // docs/events_todo.md, 203: every axolotl near them floats still at once, a while.
+    row(
+        "axolotls_play_dead",
+        3,
+        5,
+        &[Creature("axolotl")],
+        2.0,
+        3,
+        Half,
+        Action::AxolotlsPlayDead,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7341,6 +7355,7 @@ impl Event {
             | Action::PaleMossCreeps
             | Action::WindowTinted
             | Action::DripleafSteps
+            | Action::AxolotlsPlayDead
             | Action::KeepIn(_)
             | Action::FaceInTheCanopy
             | Action::BootsAtTheDoor
@@ -8059,6 +8074,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "axolotls_play_dead" => "make every axolotl near them play dead",
             "dripleaf_steps" => "tip the dripleaves near them as if walked across",
             "prints_on_the_ceiling" => "walk dark footprints across their ceiling to the bed",
             "window_tinted" => "tint one of their windows black for a day",

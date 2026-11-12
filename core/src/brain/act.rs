@@ -453,6 +453,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::Hint(_, _)
         | Action::BossBarIt
         | Action::DripleafSteps
+        | Action::AxolotlsPlayDead
         | Action::RefuseRest
         | Action::Stare
         | Action::SoundAtTarget(_)
@@ -7641,6 +7642,26 @@ pub fn commands(
             }
             None => vec![],
         },
+        // Every axolotl near them held still where it floats, twenty seconds, all at once, as
+        // axolotls play dead; then as they were.
+        Action::AxolotlsPlayDead => memory
+            .creatures("axolotl")
+            .take(8)
+            .map(|axolotl| {
+                (
+                    Command::Hold {
+                        id: ids(),
+                        entity: axolotl.id,
+                        player: target,
+                        seconds: 20.0,
+                        at: None,
+                        creep: false,
+                        spin: false,
+                    },
+                    0,
+                )
+            })
+            .collect(),
         // The dripleaves near them, the host finds them: tipped toward them one after another.
         Action::DripleafSteps => vec![(
             Command::TipDripleaves {
@@ -10759,6 +10780,7 @@ mod tests {
             ("villager", 204, false, false),
             ("iron_golem", 205, false, false),
             ("wolf", 206, true, true),
+            ("axolotl", 207, false, false),
         ] {
             memory.last.creatures_near.push(Creature {
                 id,
@@ -18264,5 +18286,36 @@ mod tests {
             matches!(&made[..], [(Command::TipDripleaves { .. }, 0)]),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn every_axolotl_near_them_floats_still_at_once() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        for (id, x) in [(301, 4.0), (302, 6.0)] {
+            memory.last.creatures_near.push(crate::memory::Creature {
+                id,
+                kind: "axolotl".to_string(),
+                pos: [x, 62.0, 4.0],
+                ..Default::default()
+            });
+        }
+        let event = find("axolotls_play_dead").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let held: Vec<u32> = made
+            .iter()
+            .filter_map(|(c, d)| match c {
+                Command::Hold { entity, .. } if *d == 0 => Some(*entity),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(held, vec![207, 301, 302], "all at once: {made:?}");
     }
 }
