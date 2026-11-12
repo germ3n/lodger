@@ -2776,6 +2776,11 @@ The `[x]` lines above, summed up by day:
   out, to their client alone three minutes, into air alone (`ghost_block`: none made, none to grow).
   Tests: one in `act`. Was: no such event.
 
+- [x] **The eyeblossoms open** (`docs/events_todo.md`, 229): `eyeblossoms_open`, stages 3 to 5,
+  outdoors by day: every closed eyeblossom within twelve blocks shown open to their client alone a
+  minute, with the sound of them opening (`ghost_near`, ABI 56: each block of a kind near a player
+  shown to them as another a while; refused with none). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

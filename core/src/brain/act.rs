@@ -718,6 +718,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::HeadOnThePillow
         | Action::EmptyLead
         | Action::DriedGhastOnDoorstep
+        | Action::EyeblossomsOpen
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8662,6 +8663,30 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // docs/events_todo.md, 229.
+        Action::EyeblossomsOpen => vec![
+            (
+                Command::GhostNear {
+                    id: ids(),
+                    player: target,
+                    radius: 12,
+                    of: "minecraft:closed_eyeblossom".to_string(),
+                    block: "minecraft:open_eyeblossom".to_string(),
+                    seconds: 60.0,
+                },
+                0,
+            ),
+            (
+                sound_at(
+                    ids,
+                    target,
+                    "minecraft:block.eyeblossom.open_long",
+                    memory.last.pos,
+                    0.8,
+                ),
+                0,
+            ),
+        ],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -19905,5 +19930,18 @@ mod tests {
             matches!(&made[0].0, Command::GhostBlock { block, pos, only_air: true, .. } if block == "minecraft:dried_ghast" && *pos == [door[0] + step[0], door[1], door[2] + step[1]]),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn eyeblossoms_open_near_them_where_they_see_it() {
+        let memory = rich_memory();
+        let event = find("eyeblossoms_open").unwrap();
+        assert!(!crate::rules::hidden_from_view(event.action));
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::GhostNear { of, block, .. } if of == "minecraft:closed_eyeblossom" && block == "minecraft:open_eyeblossom"),
+            "{made:?}"
+        );
+        assert!(matches!(&made[1].0, Command::PlaySound { .. }));
     }
 }

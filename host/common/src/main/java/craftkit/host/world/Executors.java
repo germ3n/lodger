@@ -162,6 +162,7 @@ public final class Executors {
 					yield report(id, true, "");
 				}
 				case "ghost_block" -> ghostBlock(level, command, id, context);
+				case "ghost_near" -> ghostNear(level, command, id, context);
 				case "drop_block" -> dropBlock(level, command, id);
 				case "guardian_beam" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
@@ -3114,6 +3115,49 @@ public final class Executors {
 			level.setBlock(pos, state.setValue(tilt, to), Block.UPDATE_CLIENTS);
 			level.playSound(null, pos, sound, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 0.9f);
 		}
+	}
+
+	/** The most `ghost_near` looks round a player, blocks. */
+	private static final int GHOST_NEAR_MOST = 12;
+
+	/**
+	 * Every block of a kind near a player shown to them alone as another (ABI 56), each keeping
+	 * the properties the two share, for a while; then each as it really is. Refused with none.
+	 */
+	private static JsonObject ghostNear(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		Optional<Holder.Reference<Block>> to = BuiltInRegistries.BLOCK.get(Identifier.parse(command.get("block").getAsString()));
+		if (to.isEmpty()) {
+			return report(id, false, "no such block");
+		}
+		String of = command.get("of").getAsString();
+		int radius = Math.min(GHOST_NEAR_MOST, command.get("radius").getAsInt());
+		BlockPos at = player.blockPosition();
+		List<BlockPos> found = new ArrayList<>();
+		for (BlockPos p : BlockPos.betweenClosed(at.offset(-radius, -radius, -radius), at.offset(radius, radius, radius))) {
+			if (Senses.blockId(level.getBlockState(p)).equals(of)) {
+				found.add(p.immutable());
+			}
+		}
+		if (found.isEmpty()) {
+			return report(id, false, "no " + of + " near them");
+		}
+		for (BlockPos p : found) {
+			BlockState shown = to.get().value().withPropertiesOf(level.getBlockState(p));
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(p, shown));
+		}
+		context.later().at(command.get("seconds").getAsFloat(), () -> {
+			if (!player.isRemoved() && player.level() == level) {
+				for (BlockPos p : found) {
+					player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(level, p));
+				}
+			}
+		});
+
+		return report(id, true, "shown " + found.size());
 	}
 
 	/**

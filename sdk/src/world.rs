@@ -723,6 +723,17 @@ pub enum Command {
         player: u32,
         from: Pos,
     },
+    /// Every `of` within `radius` of `player` (twelve at most) shown to them alone as `block`,
+    /// keeping what properties the two share, for `seconds`; then each as it really is. The
+    /// world's own blocks are untouched; refused with none near. ABI 56.
+    GhostNear {
+        id: u64,
+        player: u32,
+        radius: u8,
+        of: String,
+        block: String,
+        seconds: f32,
+    },
     /// A block shown at `pos` to `player` alone, `block` with `state` (`charges=4`), the world's
     /// own block untouched under it; `block` empty shows them what is really there again. Their
     /// client forgets it when the chunk is sent afresh, so a quit never leaves it. A y below
@@ -1628,6 +1639,7 @@ impl Command {
             | Command::TipDripleaves { id, .. }
             | Command::CrackBlock { id, .. }
             | Command::GhostBlock { id, .. }
+            | Command::GhostNear { id, .. }
             | Command::DropBlock { id, .. }
             | Command::Fangs { id, .. }
             | Command::GuardianBeam { id, .. }

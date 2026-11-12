@@ -1190,6 +1190,8 @@ pub enum Action {
     EmptyLead,
     /// A dried ghast on their doorstep as they come home, on their screen alone a while.
     DriedGhastOnDoorstep,
+    /// By day, every eyeblossom near them opening its eyes at once, looking, a minute.
+    EyeblossomsOpen,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7333,6 +7335,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::DriedGhastOnDoorstep,
         false,
     ),
+    // docs/events_todo.md, 229: by day, the eyeblossoms near them open all at once.
+    row(
+        "eyeblossoms_open",
+        3,
+        5,
+        &[Day, TargetOutdoors],
+        1.0,
+        3,
+        Half,
+        Action::EyeblossomsOpen,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7940,6 +7954,7 @@ impl Event {
             | Action::HeadOnThePillow
             | Action::EmptyLead
             | Action::DriedGhastOnDoorstep
+            | Action::EyeblossomsOpen
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8486,6 +8501,7 @@ impl Event {
             "head_on_the_pillow" => "lay a head with their own face on their pillow",
             "empty_lead" => "knot a lead on a post at its place with nothing on it",
             "dried_ghast_on_doorstep" => "sit a dried ghast on their doorstep",
+            "eyeblossoms_open" => "open every eyeblossom near them by day",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
