@@ -5724,6 +5724,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.bell.use"),
         false,
     ),
+    // docs/events_todo.md, 172.
+    row(
+        "bark_from_home",
+        3,
+        5,
+        &[Pet, TargetOutdoors, Home],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.wolf.ambient"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7224,6 +7236,7 @@ impl Event {
             "cart_overhead" => "roll a minecart through the rock over them",
             "ram_on_the_wall" => "ram the outside of their wall three times",
             "bell_underwater" => "ring a bell under the water below them",
+            "bark_from_home" => "bark from inside their empty house",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

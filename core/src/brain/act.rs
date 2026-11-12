@@ -384,6 +384,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "breath" {
         return Some(block_of(memory.last.pos));
     }
+    // Their dog barks from the house, though it is with them.
+    if event.id == "bark_from_home" {
+        return home.map(|h| h.center);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -17196,6 +17200,29 @@ mod tests {
         memory.last.online = true;
         memory.last.pos = [0.5, 64.0, 0.5];
         let event = find("bell_underwater").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(!made.is_empty(), "{made:?}");
+        assert!(
+            made.iter()
+                .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn out_with_their_dog_a_dog_barks_inside_their_house() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("bark_from_home").unwrap();
         assert_eq!(event.effect(), "sounds");
         let made = commands(
             event,

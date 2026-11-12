@@ -714,6 +714,7 @@ a dock or bridge), never over anything a player built (see the
 | `cart_overhead` | 3 | Underground, a minecart rolls across the rock over their head and away; there are no rails. | The target underground. |
 | `ram_on_the_wall` | 4 | At night, three heavy thuds against a wall of the house, as of a goat ramming it, then nothing. | Night, a home, the target indoors. |
 | `bell_underwater` | 4 | Swimming, a bell rings once below them, muffled by the water. | The target swimming. |
+| `bark_from_home` | 3 | Out with their dog, a dog barks from inside their house, where no dog is. | A pet of theirs, a home, the target outdoors. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

@@ -1027,6 +1027,37 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 172.
+        "bark_from_home" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.wolf.ambient", 0),
+                        ("minecraft:entity.wolf.ambient", 12),
+                    ],
+                    (0.9, 1.0),
+                    1.4,
+                    Still,
+                ),
+                v(
+                    &[("minecraft:entity.wolf.ambient", 0)],
+                    (0.85, 0.95),
+                    1.5,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.wolf.ambient", 0),
+                        ("minecraft:entity.wolf.ambient", 10),
+                        ("minecraft:entity.wolf.ambient", 24),
+                    ],
+                    (0.8, 0.9),
+                    1.3,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2002,6 +2033,7 @@ mod tests {
             "cart_overhead",
             "ram_on_the_wall",
             "bell_underwater",
+            "bark_from_home",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",
