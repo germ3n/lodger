@@ -332,6 +332,33 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 123.
+        "gasp_when_turning" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:entity.player.breath", 0)],
+                    (1.5, 1.7),
+                    0.8,
+                    Behind,
+                ),
+                v(
+                    &[("minecraft:entity.player.breath", 0)],
+                    (1.6, 1.8),
+                    0.6,
+                    Ear,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 3),
+                    ],
+                    (1.5, 1.6),
+                    0.7,
+                    Behind,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1295,6 +1322,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "gasp_when_turning",
             "sniffing",
             "rain_on_the_roof",
             "breath_in_the_chest",

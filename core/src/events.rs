@@ -5402,6 +5402,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.sniffer.sniffing"),
         false,
     ),
+    // docs/events_todo.md, 123.
+    row(
+        "gasp_when_turning",
+        4,
+        5,
+        &[TargetWalking, Night],
+        2.0,
+        3,
+        Full,
+        Action::SoundAtTarget("minecraft:entity.player.breath"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6558,6 +6570,7 @@ impl Event {
             "breath_in_the_chest" => "breathe from inside the chest they use",
             "rain_on_the_roof" => "drum rain on their roof under a clear sky",
             "sniffing" => "sniff after them in the dark",
+            "gasp_when_turning" => "gasp behind them, as if startled",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
