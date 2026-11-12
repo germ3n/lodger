@@ -9,6 +9,9 @@ use serde::{Deserialize, Serialize};
 pub const HOME_RADIUS: i32 = 16;
 /// Past this many blocks from a home moved to, its place is chosen again by the new home.
 pub const PLACE_FROM_HOME: f64 = 32.0;
+/// Past this many blocks from a home moved to, a build of its is let go (its house stands 56
+/// blocks from the home; its pillar and copies by its place).
+pub const BUILDS_FROM_HOME: f64 = 96.0;
 /// Within this many blocks of the target, nothing happens while in view.
 pub const CELL: i32 = 4;
 
@@ -2132,6 +2135,16 @@ impl Memory {
             self.place = None;
             self.placed_at_place.clear();
         }
+        // Its builds by the old home (its pillar, its house, its copies) are let go too, far from
+        // the new one: kept, its pillar went on rising a block a night three hundred blocks off,
+        // by a house they had left (owner: "the pillar only generated 1 block").
+        self.builds.retain(|b| {
+            let (dx, dz) = (
+                (b.site[0] - center[0]) as f64,
+                (b.site[2] - center[2]) as f64,
+            );
+            (dx * dx + dz * dz).sqrt() <= BUILDS_FROM_HOME
+        });
     }
 
     /// Keeps a line it wrote, so it is not written again.
@@ -4993,5 +5006,50 @@ mod tests {
         // Read again with nothing told: let go.
         memory.read_outs(&[], [290, 60, -10], [320, 70, 10]);
         assert_eq!(memory.door_out([303, 64, 0]), None);
+    }
+
+    #[test]
+    fn a_home_moved_far_lets_its_builds_by_the_old_one_go() {
+        let mut memory = Memory::default();
+        memory.set_target(0, "razor", "u0");
+        let slept = |memory: &mut Memory, pos: BlockPos| {
+            memory.observe(
+                &Observations {
+                    players: vec![craftkit::world::Player {
+                        index: 0,
+                        uuid: "u0".to_string(),
+                        ..Default::default()
+                    }],
+                    events: vec![craftkit::world::Event {
+                        player: 0,
+                        kind: EventKind::SleptBegan,
+                        pos: Some(pos),
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                },
+                1.0,
+            )
+        };
+        slept(&mut memory, [0, 64, 0]);
+        let build = |kind: &str, site: BlockPos| crate::building::Build {
+            kind: kind.to_string(),
+            site,
+            way: [0, 1],
+            laid: 1,
+            grown: false,
+            last_day: 1.0,
+        };
+        memory.builds = vec![
+            build("pillar", [10, -10_000, 10]),
+            build("hut", [290, 70, 40]),
+        ];
+        slept(&mut memory, [300, 64, 0]);
+        let kinds: Vec<&str> = memory.builds.iter().map(|b| b.kind.as_str()).collect();
+        assert_eq!(
+            kinds,
+            vec!["hut"],
+            "the old pillar let go, one by the new home kept"
+        );
     }
 }

@@ -2183,6 +2183,12 @@ The `[x]` lines above, summed up by day:
 - [x] **Rain on the roof** (`docs/events_todo.md`, 121): `rain_on_the_roof`, stages 3 to 5, indoors with no rain: rain heard on the roof over them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Its builds follow the home** (owner: "the pillar only generated 1 block"): when the home moves,
+  every build of its more than 96 blocks from the new home is let go (`Memory::home_moved`), so the
+  pillar, its house and its copies begin again by the new home. Was: a build kept its first site
+  for good; the pillar went on rising, a block a night as it should, three hundred blocks off by the
+  old home, and the one by the new home never began. Tests: one in `memory`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
