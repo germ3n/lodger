@@ -20188,4 +20188,15 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn held_name_wrong_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("held_name_wrong").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "held_name_wrong" && *seconds == 60.0),
+            "{made:?}"
+        );
+    }
 }

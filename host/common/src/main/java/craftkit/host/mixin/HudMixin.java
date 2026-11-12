@@ -10,7 +10,10 @@ import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-/** The hotbar drawn wrong a moment, on their screen alone: every stack's count a 0 (`count_shows_zero`). */
+/**
+ * The hotbar drawn wrong a moment, on their screen alone: every stack's count a 0
+ * (`count_shows_zero`), the held item's name over it reading "its" (`held_name_wrong`).
+ */
 @Mixin(Hud.class)
 public abstract class HudMixin {
 	@WrapOperation(method = "extractSlot", at = @At(value = "INVOKE",
@@ -21,5 +24,11 @@ public abstract class HudMixin {
 			return;
 		}
 		original.call(graphics, font, stack, x, y);
+	}
+
+	@WrapOperation(method = "extractSelectedItemName", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/world/item/ItemStack;getHoverName()Lnet/minecraft/network/chat/Component;"))
+	private net.minecraft.network.chat.Component craftkit$heldName(ItemStack stack, Operation<net.minecraft.network.chat.Component> original) {
+		return Glitches.heldNameWrong() ? net.minecraft.network.chat.Component.literal("its") : original.call(stack);
 	}
 }

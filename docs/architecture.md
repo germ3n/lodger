@@ -148,6 +148,7 @@ As little as possible, because the mod is about not knowing:
   `menu_freaks` (armed: the next time the pause menu opens its buttons shake and settle, the first reading `stay` a moment),
   `footprints` (the prints round the house, `x,y,z,yaw` each, `;` between, dark dust on the ground under each within 24 blocks),
   `sound_warp` (every sound slowed, in a hall's echo, muffled or broken a while, through OpenAL's effects; `slow`, `hall`, `muffled`, `broken`),
+  `held_name_wrong` (the held item's name over the hotbar reading `its`),
   `slot_barred` (a barrier drawn in one empty slot whenever the inventory is open),
   `count_shows_zero` (every hotbar stack drawn with a count of 0),
   `recipe_toast` (the game's recipe toast, the thing unlocked their own head named `you`),

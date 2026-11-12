@@ -2820,6 +2820,11 @@ The `[x]` lines above, summed up by day:
   time (the `slot_barred` hint, drawn where `phantom_item` is; off with the glitches). Tests: one in
   `act`. Was: no such event.
 
+- [x] **The held item's name wrong** (`docs/events_todo.md`, 238): `held_name_wrong`, stages 3 to 5,
+  awake: a minute in which the held item's name over the hotbar, shown as they switch item, reads
+  "its" (the `held_name_wrong` hint, `HudMixin` on the selected item's name; off with the glitches).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

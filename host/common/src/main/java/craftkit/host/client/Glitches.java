@@ -159,6 +159,17 @@ public final class Glitches {
 		return false;
 	}
 
+	/** Whether the held item's name over the hotbar reads "its" (`held_name_wrong`, ABI 56). */
+	public static boolean heldNameWrong() {
+		for (Hints.Active active : Hints.active()) {
+			if (active.hint().hint().equals("held_name_wrong")) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	/** Whether their figure in the inventory stares straight out (`inventory_stare`). */
 	public static boolean inventoryStare() {
 		for (Hints.Active active : Hints.active()) {
