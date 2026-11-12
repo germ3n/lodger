@@ -15627,4 +15627,27 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn at_night_far_off_every_door_slams_at_once() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("doors_slam_far").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(!made.is_empty(), "{made:?}");
+        assert!(
+            made.iter()
+                .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
+            "{made:?}"
+        );
+    }
 }

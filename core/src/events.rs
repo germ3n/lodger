@@ -5426,6 +5426,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.player.swim"),
         true,
     ),
+    // docs/events_todo.md, 125.
+    row(
+        "doors_slam_far",
+        4,
+        5,
+        &[Night, Around("village")],
+        3.0,
+        2,
+        Full,
+        Action::SoundFar("minecraft:block.wooden_door.close"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6584,6 +6596,7 @@ impl Event {
             "sniffing" => "sniff after them in the dark",
             "gasp_when_turning" => "gasp behind them, as if startled",
             "water_where_none" => "splash water in a dry corner of their house",
+            "doors_slam_far" => "slam every door far off at once",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

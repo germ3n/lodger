@@ -391,6 +391,48 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 125.
+        "doors_slam_far" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.wooden_door.close", 0),
+                        ("minecraft:block.wooden_door.close", 1),
+                        ("minecraft:block.wooden_door.close", 2),
+                        ("minecraft:block.wooden_door.close", 3),
+                        ("minecraft:block.wooden_door.close", 4),
+                    ],
+                    (0.8, 0.9),
+                    2.0,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.wooden_door.close", 0),
+                        ("minecraft:block.iron_door.close", 1),
+                        ("minecraft:block.wooden_door.close", 2),
+                        ("minecraft:block.wooden_door.close", 2),
+                    ],
+                    (0.8, 0.9),
+                    2.0,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.wooden_door.close", 0),
+                        ("minecraft:block.wooden_door.close", 1),
+                        ("minecraft:block.wooden_door.close", 2),
+                        ("minecraft:block.wooden_door.close", 3),
+                        ("minecraft:block.wooden_door.close", 4),
+                        ("minecraft:block.wooden_door.close", 5),
+                    ],
+                    (0.7, 0.8),
+                    2.0,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1354,6 +1396,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "doors_slam_far",
             "water_where_none",
             "gasp_when_turning",
             "sniffing",
