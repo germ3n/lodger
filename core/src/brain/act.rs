@@ -910,6 +910,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LightningBelow
         | Action::ShulkersOpen
         | Action::GatewayFlashes
+        | Action::BlazeRing
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10477,6 +10478,42 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 286.
+        Action::BlazeRing => {
+            let me = memory.last.pos;
+            let blazes: Vec<&crate::memory::Creature> =
+                mobs_near(memory, "blaze").take(8).collect();
+            let n = blazes.len().max(1) as f64;
+            let mut made = Vec::new();
+            for (i, blaze) in blazes.iter().enumerate() {
+                let angle = i as f64 / n * std::f64::consts::TAU;
+                made.push((
+                    Command::MoveEntity {
+                        id: ids(),
+                        entity: blaze.id,
+                        to: [
+                            me[0] + angle.cos() * 5.0,
+                            me[1] + 1.5,
+                            me[2] + angle.sin() * 5.0,
+                        ],
+                    },
+                    0,
+                ));
+                made.push((
+                    Command::Hold {
+                        id: ids(),
+                        entity: blaze.id,
+                        player: target,
+                        seconds: 6.0,
+                        at: None,
+                        creep: false,
+                        spin: false,
+                    },
+                    1,
+                ));
+            }
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14359,6 +14396,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "blaze_ring"
                 || event.id == "gateway_flashes"
                 || event.id == "shulkers_open"
                 || event.id == "lightning_below"
@@ -22862,5 +22900,26 @@ mod tests {
             matches!(&made[..], [(Command::GatewayFlash { .. }, 0)]),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn blaze_ring_rings_them_and_holds() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.0, 70.0, 0.0];
+        for id in [420, 421] {
+            memory.last.hostiles_near.push(Creature {
+                id,
+                kind: "blaze".to_string(),
+                pos: [9.0, 70.0, 0.0],
+                ..Creature::default()
+            });
+        }
+        let event = find("blaze_ring").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 4, "{made:?}");
+        assert!(
+            matches!(&made[0].0, Command::MoveEntity { entity: 420, to, .. } if (to[0] - 5.0).abs() < 1e-9)
+        );
+        assert!(matches!(&made[3].0, Command::Hold { entity: 421, .. }));
     }
 }

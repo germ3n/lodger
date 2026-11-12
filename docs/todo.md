@@ -3124,6 +3124,10 @@ The `[x]` lines above, summed up by day:
   End: the end gateway nearest them within forty-eight blocks flashes its beam as if used
   (`gateway_flash`, ABI 56). Tests: one in `act`. Was: no such event.
 
+- [x] **The blaze ring** (`docs/events_todo.md`, 286): `blaze_ring`, stages 4 and 5, in the Nether
+  with blazes near: up to eight moved into a ring five blocks round them a block and a half up, held
+  six seconds facing them (`move_entity`, `hold`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

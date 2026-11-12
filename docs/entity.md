@@ -491,6 +491,7 @@ caves, from before.
 | `lightning_below` | 4 to 5 | In the Nether or the End, where there is no weather, lightning strikes six blocks ahead of them and three to the side, its flash and its thunder; nothing burns and no one is hurt (`lightning`, ABI 56, the game's bolt that only shows). Owner: "maybe also do a lighting strike event in end/nether?". | In the Nether or the End. |
 | `shulkers_open` | 3 to 5 | At an end city, every shulker within twenty-four blocks of them opens its shell at once, three seconds, and shuts it at once (`shulkers_peek`, ABI 56). | In the End, a shulker near them. |
 | `gateway_flashes` | 3 to 5 | In the End, the end gateway nearest them (forty-eight blocks) flashes its beam and sounds, as if someone just went through it; no one is near (`gateway_flash`, ABI 56; with none near, nothing). | In the End. |
+| `blaze_ring` | 4 to 5 | In a Nether fortress, the blazes near them (eight at most) are suddenly in a ring round them, five blocks out and a block and a half up, and hang there facing them, firing nothing, six seconds; then they are themselves again (`move_entity`, `hold`). | In the Nether, a blaze near them. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

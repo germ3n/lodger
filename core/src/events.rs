@@ -1328,6 +1328,8 @@ pub enum Action {
     ShulkersOpen,
     /// In the End, the gateway near them flashing its beam as if someone went through; no one is near.
     GatewayFlashes,
+    /// In a fortress, the blazes near them drifting into a ring round them and hanging there, firing nothing.
+    BlazeRing,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8383,6 +8385,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::GatewayFlashes,
         false,
     ),
+    // docs/events_todo.md, 286: the blazes near them ring them round and fire nothing.
+    row(
+        "blaze_ring",
+        4,
+        5,
+        &[InNether, MobNear("blaze")],
+        1.5,
+        2,
+        Full,
+        Action::BlazeRing,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9047,6 +9061,7 @@ impl Event {
             | Action::LightningBelow
             | Action::ShulkersOpen
             | Action::GatewayFlashes
+            | Action::BlazeRing
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9670,6 +9685,7 @@ impl Event {
             "lightning_below" => "strike lightning beside them where there is no weather",
             "shulkers_open" => "open every shulker near them at once",
             "gateway_flashes" => "flash the end gateway near them as if used",
+            "blaze_ring" => "ring them round with the blazes near them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
