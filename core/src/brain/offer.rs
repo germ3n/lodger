@@ -145,6 +145,10 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::CameBack => false,
         Need::HoldsNothing => memory.held.is_none(),
         Need::LitUnderground => false,
+        Need::Copper => memory
+            .walls
+            .iter()
+            .any(|(_, id)| crate::brain::act::weathered(id).is_some()),
         Need::TargetSwimming => last.online && last.swimming,
         Need::ItsHouse => memory.its_house().is_some(),
         Need::TargetUnderwater => last.online && last.air < 280,

@@ -248,6 +248,35 @@ fn tunnel_skull(memory: &Memory) -> Option<(BlockPos, u8)> {
     Some(([far[0] + way[1], far[1] + 1, far[2] + way[0]], rotation))
 }
 
+/// How many of their copper blocks `copper_ages` weathers in a night.
+const COPPER_AGED_MOST: usize = 48;
+
+/// A copper block's next stage of weathering, by id: plain to exposed, exposed to weathered,
+/// weathered to oxidized. None for one waxed, one green through, or copper that never
+/// weathers (ore, raw copper, a torch).
+pub fn weathered(id: &str) -> Option<String> {
+    let name = id.strip_prefix("minecraft:")?;
+    if !name.contains("copper")
+        || name.starts_with("waxed_")
+        || name.starts_with("oxidized_")
+        || ["ore", "raw_", "torch", "nugget", "ingot"]
+            .iter()
+            .any(|n| name.contains(n))
+    {
+        return None;
+    }
+    let next = if let Some(rest) = name.strip_prefix("exposed_") {
+        format!("weathered_{rest}")
+    } else if let Some(rest) = name.strip_prefix("weathered_") {
+        format!("oxidized_{rest}")
+    } else if name == "copper_block" {
+        "exposed_copper".to_string()
+    } else {
+        format!("exposed_{name}")
+    };
+    Some(format!("minecraft:{next}"))
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -661,6 +690,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ToolsLaidOut
         | Action::DripstoneInTunnel
         | Action::SkullInTheTunnel
+        | Action::CopperAges
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8384,6 +8414,24 @@ pub fn commands(
             ],
             None => vec![],
         },
+        // docs/events_todo.md, 221.
+        Action::CopperAges => memory
+            .walls
+            .iter()
+            .filter_map(|(p, id)| weathered(id).map(|next| (*p, id, next)))
+            .take(COPPER_AGED_MOST)
+            .map(|(p, id, next)| {
+                (
+                    Command::SwapBlock {
+                        id: ids(),
+                        pos: p,
+                        block: next,
+                        only: vec![id.clone()],
+                    },
+                    0,
+                )
+            })
+            .collect(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -11690,6 +11738,10 @@ mod tests {
         memory
             .walls
             .push(([0, 65, 1], "minecraft:candle".to_string()));
+        // Copper of theirs on the roof, for `copper_ages`.
+        memory
+            .walls
+            .push(([5, 69, 5], "minecraft:cut_copper".to_string()));
         memory.routes.push(crate::memory::Route {
             points: (0..20).map(|i| [3 + i * 2, 64, 0]).collect(),
             walked: 3,
@@ -19487,6 +19539,46 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::GhostBlock { block, state, .. }, 0), (_, SKULL_SHOWN_TICKS)] if block == "minecraft:skeleton_skull" && state == "rotation=4"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn copper_ages_a_stage_and_never_waxed_or_green_through() {
+        assert_eq!(
+            weathered("minecraft:copper_block").as_deref(),
+            Some("minecraft:exposed_copper")
+        );
+        assert_eq!(
+            weathered("minecraft:cut_copper_stairs").as_deref(),
+            Some("minecraft:exposed_cut_copper_stairs")
+        );
+        assert_eq!(
+            weathered("minecraft:exposed_copper_door").as_deref(),
+            Some("minecraft:weathered_copper_door")
+        );
+        assert_eq!(
+            weathered("minecraft:weathered_copper_bulb").as_deref(),
+            Some("minecraft:oxidized_copper_bulb")
+        );
+        for never in [
+            "minecraft:oxidized_copper",
+            "minecraft:waxed_copper_block",
+            "minecraft:copper_ore",
+            "minecraft:raw_copper_block",
+            "minecraft:copper_torch",
+            "minecraft:oak_planks",
+        ] {
+            assert_eq!(weathered(never), None, "{never}");
+        }
+        let mut memory = rich_memory();
+        memory
+            .walls
+            .push(([3, 66, -3], "minecraft:cut_copper".to_string()));
+        let event = find("copper_ages").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            made.iter().any(|(c, _)| matches!(c, Command::SwapBlock { pos, block, only, .. } if *pos == [3, 66, -3] && block == "minecraft:exposed_cut_copper" && only == &vec!["minecraft:cut_copper".to_string()])),
             "{made:?}"
         );
     }

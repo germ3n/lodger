@@ -237,6 +237,8 @@ pub enum Need {
     TargetInBoat,
     /// A light they have just placed underground: met only then.
     LitUnderground,
+    /// Copper of theirs that weathers and is not yet green through (`copper_ages`).
+    Copper,
     /// Where they last died is in sight: twelve to sixty-four blocks from them.
     NearTheirDeath,
     /// Down a shaft of their ladders, six blocks or more below its top.
@@ -472,6 +474,7 @@ impl Need {
             Need::HoldsNothing => "it holds something already".to_string(),
             Need::TargetInBoat => "the target is not in a boat with a seat to spare".to_string(),
             Need::LitUnderground => "happens only as they place a light underground".to_string(),
+            Need::Copper => "no copper of theirs left to weather".to_string(),
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetSwimming => "the target is not swimming".to_string(),
@@ -1171,6 +1174,8 @@ pub enum Action {
     DripstoneInTunnel,
     /// A skeleton skull set into the wall at the far end of the tunnel they are in, facing back along it at them, on their screen alone a while.
     SkullInTheTunnel,
+    /// Their copper blocks a stage more weathered overnight, as if years had passed.
+    CopperAges,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7209,6 +7214,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkullInTheTunnel,
         false,
     ),
+    // docs/events_todo.md, 221: their copper a stage more weathered in the morning.
+    row(
+        "copper_ages",
+        3,
+        5,
+        &[Copper, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Half,
+        Action::CopperAges,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7816,6 +7833,7 @@ impl Event {
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
+            | Action::CopperAges
             | Action::BedFenced
             | Action::TrapdoorToNothing
             | Action::MushroomsInCorners => "house",
@@ -8346,6 +8364,7 @@ impl Event {
             "tools_laid_out" => "lay their tools out on the floor in a row",
             "dripstone_in_tunnel" => "grow a column of dripstone across their tunnel",
             "skull_in_the_tunnel" => "set a skull into their tunnel's wall facing them",
+            "copper_ages" => "weather their copper a stage overnight",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

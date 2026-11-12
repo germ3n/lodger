@@ -2734,6 +2734,11 @@ The `[x]` lines above, summed up by day:
   them, facing back along it, to their client alone three minutes (`ghost_block`; the wall
   untouched). Tests: one in `act`. Was: no such event.
 
+- [x] **Their copper ages** (`docs/events_todo.md`, 221): `copper_ages`, stages 3 to 5, the target
+  away or asleep: each copper block they placed (48 at most) swapped to its next stage of
+  weathering, every shared property kept; never waxed copper, nor oxidized (a new need, `Copper`).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
