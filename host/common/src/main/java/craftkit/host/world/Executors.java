@@ -661,6 +661,13 @@ public final class Executors {
 		BlockState state = level.getBlockState(pos);
 		Block block = state.getBlock();
 
+		// A crafter crafts once, as a redstone pulse would make it (ABI 55, `crafter_clicks`):
+		// its own tick, which crafts what its grid makes and drops it out of its face.
+		if (block instanceof net.minecraft.world.level.block.CrafterBlock) {
+			state.tick(level, pos, level.getRandom());
+			return report(id, true, "");
+		}
+
 		if (block instanceof DoorBlock door) {
 			boolean open = to == null ? !door.isOpen(state) : to;
 			if (open == door.isOpen(state)) {

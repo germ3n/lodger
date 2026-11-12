@@ -363,7 +363,8 @@ pub enum Command {
         player: u32,
         text: String,
     },
-    /// Open or close a door, trapdoor or gate, flip a lever, press a button.
+    /// Open or close a door, trapdoor or gate, flip a lever, press a button; a crafter crafts
+    /// once, as a pulse would make it (ABI 55).
     ToggleBlock {
         id: u64,
         pos: BlockPos,

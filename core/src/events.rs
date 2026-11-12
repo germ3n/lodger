@@ -6891,6 +6891,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::KeepIn("minecraft:decorated_pot"),
         false,
     ),
+    // docs/events_todo.md, 198: their crafter clicks and crafts once by itself.
+    row(
+        "crafter_clicks",
+        3,
+        5,
+        &[Fixture("crafter")],
+        2.0,
+        3,
+        Half,
+        Action::ToggleFixture("crafter"),
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7990,6 +8002,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "crafter_clicks" => "make their crafter craft once by itself",
             "sand_gives_back" => "bury what it took in a patch of sand by the house",
             "pot_of_returns" => "leave what it took in a pot at its place",
             "pale_moss_creeps" => "creep pale moss across their floor",

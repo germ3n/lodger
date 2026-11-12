@@ -797,6 +797,8 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "brewing_stand",
         "grindstone",
         "ender_chest",
+        // A crafter (`crafter_clicks`).
+        "crafter",
     ];
     if is_mod_furniture(id) {
         return Some("furniture");

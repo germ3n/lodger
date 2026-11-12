@@ -10661,6 +10661,7 @@ mod tests {
             ("note_block", [0, 64, -4]),
             ("lever", [2, 65, -2]),
             ("candle", [0, 65, 1]),
+            ("crafter", [3, 64, -3]),
         ] {
             memory.fixtures.push(Fixture {
                 kind: kind.to_string(),
@@ -18070,6 +18071,37 @@ mod tests {
             )
             .is_empty(),
             "nothing held, nothing to give"
+        );
+    }
+
+    #[test]
+    fn their_crafter_crafts_once_by_itself() {
+        let mut memory = rich_memory();
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:crafter"),
+            Some("crafter")
+        );
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:crafting_table"),
+            Some("crafting_table"),
+            "not a crafter"
+        );
+        memory.fixtures.push(crate::memory::Fixture {
+            kind: "crafter".to_string(),
+            pos: [3, 64, 3],
+        });
+        let event = find("crafter_clicks").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::ToggleBlock { pos, .. }, _)] if *pos == [3, 64, 3]),
+            "{made:?}"
         );
     }
 }

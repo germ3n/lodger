@@ -2567,6 +2567,10 @@ The `[x]` lines above, summed up by day:
   (`keep_in`, ABI 55: the kept stack in the block, kept still when nothing can go there; held no
   more once it lands). Tests: in `act`. Was: no such events.
 
+- [x] **The crafter clicks** (`docs/events_todo.md`, 198): `crafter_clicks`, stages 3 to 5, a
+  crafter of theirs (now a fixture the memory keeps): it crafts once by itself (`toggle_block` on a
+  crafter runs its own tick, ABI 55). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
