@@ -1114,6 +1114,9 @@ public final class Executors {
 		if (command.has("eats") && command.get("eats").getAsBoolean()) {
 			context.figures().eat(skinOf, command.get("figure").getAsInt());
 		}
+		if (command.has("wears_theirs") && command.get("wears_theirs").getAsBoolean()) {
+			context.figures().wearTheirs(skinOf, command.get("figure").getAsInt());
+		}
 		if (command.has("bows") && command.get("bows").getAsBoolean()) {
 			context.figures().bow(skinOf, command.get("figure").getAsInt());
 		}

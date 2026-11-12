@@ -711,6 +711,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "figure_bows" {
         return far_spot(memory, rng);
     }
+    // Far off, where they would see the figure.
+    if event.id == "figure_in_your_armour" {
+        return far_spot(memory, rng);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -758,6 +762,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FigureBows
         | Action::ClimbingTheHouse
         | Action::FigureAtTheLectern
+        | Action::FigureInYourArmour
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2563,6 +2568,7 @@ fn figure_shown(
         finds: String::new(),
         mount: String::new(),
         bows: false,
+        wears_theirs: false,
     }
 }
 
@@ -8976,6 +8982,22 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // docs/events_todo.md, 246.
+        Action::FigureInYourArmour => pos
+            .map(|p| {
+                let mut shown = figure_shown(ids, memory, target, p, 20.0, false);
+                if let Command::Figure {
+                    wears_theirs,
+                    once_seen,
+                    ..
+                } = &mut shown
+                {
+                    *wears_theirs = true;
+                    *once_seen = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -11243,6 +11265,7 @@ pub fn commands(
                         finds: String::new(),
                         mount: String::new(),
                         bows: false,
+                        wears_theirs: false,
                     },
                     0,
                 )]
@@ -20450,6 +20473,28 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Figure { faces: Some(f), vanish_within, .. }, 0)] if *f == block_center(lectern) && *vanish_within == 8.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn figure_in_your_armour_wears_theirs() {
+        let memory = rich_memory();
+        let event = find("figure_in_your_armour").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(
+                &made[..],
+                [(
+                    Command::Figure {
+                        wears_theirs: true,
+                        once_seen: true,
+                        ..
+                    },
+                    0
+                )]
+            ),
             "{made:?}"
         );
     }

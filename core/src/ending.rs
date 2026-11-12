@@ -796,6 +796,7 @@ fn figure(
         finds: String::new(),
         mount: String::new(),
         bows: false,
+        wears_theirs: false,
     }
 }
 

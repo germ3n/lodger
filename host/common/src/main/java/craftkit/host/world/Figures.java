@@ -83,6 +83,8 @@ public final class Figures {
 		long lostAt = -1;
 		/** Jumping in place, from where it stands (ABI 54); null for none. */
 		Vec3 jumpsFrom;
+		/** Wearing what its player wears, the very pieces as they are now (ABI 56). */
+		boolean wearsTheirs;
 		/** The tick it bows at, crouching two seconds and standing again (ABI 56); -1 none. */
 		long bowsAt = -1;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
@@ -502,6 +504,24 @@ public final class Figures {
 			pose(figure, net.minecraft.world.entity.Pose.CROUCHING);
 			using(player, figure, true);
 		}
+	}
+
+	/** The figure {@code number} shown to {@code player} wears what they wear, as they wear it now (ABI 56). */
+	public void wearTheirs(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure != null) {
+			figure.wearsTheirs = true;
+			dress(figure);
+		}
+	}
+
+	/** Its player's armour on the figure, copies, on their screen alone: nothing of theirs moves. */
+	private static void dress(Figure figure) {
+		List<com.mojang.datafixers.util.Pair<EquipmentSlot, ItemStack>> worn = new java.util.ArrayList<>();
+		for (EquipmentSlot slot : List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)) {
+			worn.add(com.mojang.datafixers.util.Pair.of(slot, figure.player.getItemBySlot(slot).copy()));
+		}
+		figure.player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, worn));
 	}
 
 	/** The figure {@code number} shown to {@code player} bows to them once, slowly, a moment on (ABI 56). */
@@ -1839,6 +1859,9 @@ public final class Figures {
 		}
 		if (figure.lies) {
 			pose(figure, net.minecraft.world.entity.Pose.SLEEPING);
+		}
+		if (figure.wearsTheirs) {
+			dress(figure);
 		}
 		if (!figure.held.isEmpty()) {
 			figure.player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));

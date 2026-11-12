@@ -1613,6 +1613,10 @@ pub enum Command {
         /// again. ABI 56.
         #[serde(default, skip_serializing_if = "is_false")]
         bows: bool,
+        /// Wearing what its player wears, the very pieces as they are now, enchantments' shimmer
+        /// and all; copies on their screen alone. ABI 56.
+        #[serde(default, skip_serializing_if = "is_false")]
+        wears_theirs: bool,
     },
     RemoveFigure {
         id: u64,

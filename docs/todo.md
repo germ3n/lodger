@@ -2858,6 +2858,11 @@ The `[x]` lines above, summed up by day:
   outdoors: the figure beside their lectern on the side toward the house's middle, facing it, two
   minutes or until they come within eight blocks. Tests: one in `act`. Was: no such event.
 
+- [x] **The figure in their armour** (`docs/events_todo.md`, 246): `figure_in_your_armour`, stages 4
+  and 5, outdoors: the figure far off wearing copies of the armour they have on as it is now, on
+  their screen alone, twenty seconds or until seen and looked away from (the figure's
+  `wears_theirs`, ABI 56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
