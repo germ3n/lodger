@@ -2907,7 +2907,7 @@ The `[x]` lines above, summed up by day:
 
 - [x] **The bundle gains a pebble** (`docs/events_todo.md`, 256): `bundle_gains`, stages 3 to 5, the
   target away or asleep: one cobblestone of its own digging put into the bundle in the chest they
-  use, the store spent when it is sent (`put_in_bundle`, ABI 56). Tests: one in `act`. Was: no such
+  use, the store spent when it is sent (`put_in_bundle`, ABI 56). Tests: one in `act`, one in the brain (the store spent). Was: no such
   event.
 
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or

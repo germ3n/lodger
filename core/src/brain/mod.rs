@@ -4748,6 +4748,56 @@ mod tests {
     }
 
     #[test]
+    fn a_pebble_put_in_their_bundle_comes_out_of_what_it_dug() {
+        let mut memory = home_memory();
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        memory.store("minecraft:cobblestone", 2);
+        memory.containers.push(crate::memory::Container {
+            pos: [2, 64, 0],
+            kind: "minecraft:chest".to_string(),
+            placed: true,
+            opens: 9,
+            contents: vec![craftkit::world::ItemStack {
+                id: "minecraft:bundle".to_string(),
+                count: 1,
+                slot: 4,
+            }],
+            ..Default::default()
+        });
+        let id = brain.next_plan_id();
+        brain.plans.push(Plan {
+            id,
+            event: "bundle_gains".to_string(),
+            until_tick: 24_000,
+            forced: true,
+            ..Plan::default()
+        });
+        let mut arc = Arc {
+            stage: 3,
+            ..Arc::default()
+        };
+        let sent = brain.tick(
+            &Now {
+                tick: 20,
+                ..Now::default()
+            },
+            0.0,
+            &mut memory,
+            &mut arc,
+            &Config::default(),
+            &mut log,
+            None,
+        );
+        assert!(
+            sent.iter()
+                .any(|c| matches!(c, Command::PutInBundle { slot: 4, .. })),
+            "{sent:?}"
+        );
+        assert_eq!(memory.stored("minecraft:cobblestone"), 1, "one spent");
+    }
+
+    #[test]
     fn the_home_is_read_when_they_come_home_after_they_build_and_not_every_tick() {
         let config = Config::default();
         let mut memory = home_memory();
