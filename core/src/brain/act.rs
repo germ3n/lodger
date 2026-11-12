@@ -928,6 +928,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PortalGoesOut
         | Action::BarterFromHome
         | Action::ElytraAtHome
+        | Action::OnTheExitPortal
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10878,6 +10879,15 @@ pub fn commands(
                 None => vec![],
             }
         }
+        // docs/events_todo.md, 307.
+        Action::OnTheExitPortal => {
+            // The exit portal's basin, beside its pillar at the End's middle, on whatever is there.
+            let mut shown = figure_shown(ids, memory, target, [3, GROUND_Y, 0], 12.0, false);
+            if let Command::Figure { held, .. } = &mut shown {
+                *held = ItemStack::default();
+            }
+            vec![(shown, 0)]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14761,6 +14771,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "on_the_exit_portal"
                 || event.id == "elytra_at_home"
                 || event.id == "barter_from_home"
                 || event.id == "end_sky_face"
@@ -23517,5 +23528,16 @@ mod tests {
             matches!(&made[2].0, Command::InWorld { command, .. } if matches!(command.as_ref(), Command::DropItem { kept, .. } if kept == "elytra_at_home"))
         );
         assert!(commands(event, None, &memory, &mut ids(), &Now::default(), None).is_empty());
+    }
+
+    #[test]
+    fn on_the_exit_portal_stands_in_the_basin() {
+        let memory = rich_memory();
+        let event = find("on_the_exit_portal").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { pos, seconds, .. }, 0)] if pos[0] == 3.5 && pos[1] <= -1000.0 && *seconds == 12.0),
+            "{made:?}"
+        );
     }
 }

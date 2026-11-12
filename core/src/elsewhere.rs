@@ -58,6 +58,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("end_sky_face", "minecraft:the_end"),
     ("barter_from_home", "minecraft:the_nether"),
     ("elytra_at_home", "minecraft:the_end"),
+    ("on_the_exit_portal", "minecraft:the_end"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
@@ -183,6 +184,16 @@ impl Stay {
             return out;
         }
         let world = self.world.clone();
+        // The dragon they killed this moment: the exit portal's figure, if the overworld allows
+        // it, at once and for certain; the kill is the moment, never waited for.
+        let dragon = self
+            .memory
+            .killed_now
+            .take()
+            .is_some_and(|k| k == "ender_dragon");
+        if dragon && shared.allowed.contains(&"on_the_exit_portal") {
+            return self.do_elsewhere("on_the_exit_portal", now, shared, out);
+        }
         let ready: Vec<&'static str> = ROWS
             .iter()
             .filter(|(id, w)| {
@@ -194,6 +205,19 @@ impl Stay {
             return out;
         }
         let id = ready[(self.brain.rng.next_u64() % ready.len() as u64) as usize];
+        self.do_elsewhere(id, now, shared, out)
+    }
+
+    /// One of the other world's events done now: its commands sent, its waits kept, the
+    /// overworld told.
+    fn do_elsewhere(
+        &mut self,
+        id: &'static str,
+        now: &Now,
+        shared: &mut Elsewhere,
+        mut out: Vec<Command>,
+    ) -> Vec<Command> {
+        let world = self.world.clone();
         let Some(event) = events::find(id) else {
             return out;
         };
@@ -248,6 +272,10 @@ impl Stay {
         let Some(event) = events::find(id) else {
             return false;
         };
+        // The exit portal's figure only at the dragon's death (`tick_elsewhere`), never by chance.
+        if id == "on_the_exit_portal" {
+            return false;
+        }
         let enderman = id != "ender_holds"
             || self
                 .memory
@@ -497,6 +525,42 @@ mod tests {
             "the take at home first, the drop a moment on: {sent:?}"
         );
         assert_eq!(nether.waiting.len(), 1, "the drop waits");
+    }
+
+    #[test]
+    fn the_dragon_killed_shows_the_figure_on_the_exit_portal_at_once_and_never_by_chance() {
+        let mut shared = Elsewhere {
+            target: Some(0),
+            allowed: vec!["on_the_exit_portal"],
+            ..Elsewhere::default()
+        };
+        let mut end = stay("minecraft:the_end");
+        end.memory.set_target(0, "", "");
+        let seen = player_at([10.0, 64.0, 0.0]);
+        for i in 0..2_000u64 {
+            end.observe(&seen, 0.0);
+            let sent = end.tick_elsewhere(
+                &Now {
+                    tick: 20 + i * 20,
+                    ..Now::default()
+                },
+                &mut shared,
+            );
+            assert!(sent.is_empty(), "never by chance: {sent:?}");
+        }
+        end.memory.killed_now = Some("ender_dragon".to_string());
+        let sent = end.tick_elsewhere(
+            &Now {
+                tick: 100_000,
+                ..Now::default()
+            },
+            &mut shared,
+        );
+        assert!(matches!(&sent[..], [Command::Figure { .. }]), "{sent:?}");
+        assert_eq!(
+            shared.done,
+            vec![("on_the_exit_portal", "minecraft:the_end".to_string())]
+        );
     }
 
     #[test]

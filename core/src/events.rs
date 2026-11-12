@@ -1356,6 +1356,8 @@ pub enum Action {
     BarterFromHome,
     /// The end ship's elytra gone from its frame, hung instead in an item frame of theirs at home.
     ElytraAtHome,
+    /// As the dragon dies, the figure standing on the exit portal's bedrock, facing them; gone as the portal opens.
+    OnTheExitPortal,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8579,6 +8581,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ElytraAtHome,
         false,
     ),
+    // docs/events_todo.md, 307: as the dragon dies, the figure stands on the exit portal, facing them.
+    row(
+        "on_the_exit_portal",
+        5,
+        5,
+        &[InEnd, KilledNow],
+        30.0,
+        1,
+        Full,
+        Action::OnTheExitPortal,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9254,6 +9268,7 @@ impl Event {
             | Action::TheirOwnPotion
             | Action::VinesReach
             | Action::PortalGoesOut
+            | Action::OnTheExitPortal
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9892,6 +9907,7 @@ impl Event {
             "end_sky_face" => "make a face in the End's sky",
             "barter_from_home" => "give a piglin near them one thing from their chest at home",
             "elytra_at_home" => "take the ship's elytra and hang it at their home",
+            "on_the_exit_portal" => "stand the figure on the exit portal as the dragon dies",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
