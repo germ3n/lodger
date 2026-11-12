@@ -378,6 +378,9 @@ fn hold_kind(
 /// The most letters of their name `name_in_netherrack` cuts.
 const NAME_CUT_MOST: usize = 8;
 
+/// How long after `vines_reach`'s first growing its second, ticks.
+const VINE_AGAIN_TICKS: u64 = 300;
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -918,6 +921,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ChorusLandsHome
         | Action::PearlTurned
         | Action::TheirOwnPotion
+        | Action::VinesReach
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10691,6 +10695,23 @@ pub fn commands(
             }
             None => vec![],
         },
+        // docs/events_todo.md, 283.
+        Action::VinesReach => vec![
+            (
+                Command::GrowVines {
+                    id: ids(),
+                    player: target,
+                },
+                0,
+            ),
+            (
+                Command::GrowVines {
+                    id: ids(),
+                    player: target,
+                },
+                VINE_AGAIN_TICKS,
+            ),
+        ],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14573,6 +14594,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "vines_reach"
                 // A dragon egg of theirs, which this memory has not: its own test.
                 || event.id == "egg_on_the_pillow"
                 || event.id == "chorus_blooms"
@@ -23206,6 +23228,23 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::TakeItem { expect, .. }, 0), (Command::SplashPotion { .. }, 20)] if expect == "minecraft:potion"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn vines_reach_grows_them_twice() {
+        let memory = rich_memory();
+        let event = find("vines_reach").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(
+                &made[..],
+                [
+                    (Command::GrowVines { .. }, 0),
+                    (Command::GrowVines { .. }, VINE_AGAIN_TICKS)
+                ]
+            ),
             "{made:?}"
         );
     }

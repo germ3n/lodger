@@ -1348,6 +1348,8 @@ pub enum Action {
     PearlTurned,
     /// From the dark, one of their own potions from the chest at home thrown at their feet; the chest is one short.
     TheirOwnPotion,
+    /// In the Nether, the vines near them a block longer each time they look back, reaching toward them.
+    VinesReach,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8499,6 +8501,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TheirOwnPotion,
         false,
     ),
+    // docs/events_todo.md, 283: the vines near them grow a block longer each time they look back.
+    row(
+        "vines_reach",
+        3,
+        5,
+        &[InNether],
+        1.0,
+        3,
+        Half,
+        Action::VinesReach,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9170,6 +9184,7 @@ impl Event {
             | Action::ChorusLandsHome
             | Action::PearlTurned
             | Action::TheirOwnPotion
+            | Action::VinesReach
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9802,6 +9817,7 @@ impl Event {
             "chorus_lands_home" => "set them down on their doorstep as they eat a chorus fruit",
             "pearl_turned" => "turn them round where their next pearl lands them",
             "their_own_potion" => "throw one of their own potions at their feet from the dark",
+            "vines_reach" => "grow the vines near them toward them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

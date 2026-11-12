@@ -794,6 +794,12 @@ pub enum Command {
         id: u64,
         player: u32,
     },
+    /// Every weeping vine within twelve blocks of `player` a block longer down, every twisting
+    /// vine a block up, into air alone, as they grow on their own; refused with none. ABI 56.
+    GrowVines {
+        id: u64,
+        player: u32,
+    },
     /// Every armadillo within sixteen blocks of `player` rolled up at once, as if something it
     /// feared passed; each unrolls on its own, as after any fright. Refused with none. ABI 56.
     CurlUp {
@@ -1749,6 +1755,7 @@ impl Command {
             | Command::GhostNear { id, .. }
             | Command::RotateSlots { id, .. }
             | Command::CurlUp { id, .. }
+            | Command::GrowVines { id, .. }
             | Command::Lightning { id, .. }
             | Command::ShulkersPeek { id, .. }
             | Command::GatewayFlash { id, .. }

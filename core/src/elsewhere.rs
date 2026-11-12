@@ -52,6 +52,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("endermen_at_the_edge", "minecraft:the_end"),
     ("end_goes_quiet", "minecraft:the_end"),
     ("chorus_blooms", "minecraft:the_end"),
+    ("vines_reach", "minecraft:the_nether"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.

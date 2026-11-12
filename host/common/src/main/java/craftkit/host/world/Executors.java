@@ -297,6 +297,34 @@ public final class Executors {
 							(net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity) level.getBlockEntity(found));
 					yield report(id, true, "");
 				}
+				case "grow_vines" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					// Every weeping vine's tip within twelve a block longer down, every twisting vine's up,
+					// into air alone, as they grow on their own (ABI 56).
+					BlockPos at = player.blockPosition();
+					List<BlockPos> tips = new ArrayList<>();
+					for (BlockPos p : BlockPos.betweenClosed(at.offset(-12, -12, -12), at.offset(12, 12, 12))) {
+						BlockState state = level.getBlockState(p);
+						if (state.is(Blocks.WEEPING_VINES) || state.is(Blocks.TWISTING_VINES)) {
+							tips.add(p.immutable());
+						}
+					}
+					int grown = 0;
+					for (BlockPos tip : tips) {
+						boolean weeping = level.getBlockState(tip).is(Blocks.WEEPING_VINES);
+						BlockPos next = weeping ? tip.below() : tip.above();
+						if (!level.getBlockState(next).isAir()) {
+							continue;
+						}
+						level.setBlock(tip, (weeping ? Blocks.WEEPING_VINES_PLANT : Blocks.TWISTING_VINES_PLANT).defaultBlockState(), Block.UPDATE_ALL);
+						level.setBlock(next, (weeping ? Blocks.WEEPING_VINES : Blocks.TWISTING_VINES).defaultBlockState(), Block.UPDATE_ALL);
+						grown++;
+					}
+					yield report(id, grown > 0, grown > 0 ? "grown " + grown : "no vine near them to grow");
+				}
 				case "curl_up" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
