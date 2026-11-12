@@ -93,6 +93,34 @@ pub(crate) fn spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     ])
 }
 
+/// A y the host counts from the ground in its column (ABI 55): `GROUND_Y` the ground's own block,
+/// `GROUND_Y + 1` the air on it, `GROUND_Y - 1` the block under it. Other commands take any y below
+/// -1000 as "on the ground there".
+pub const GROUND_Y: i32 = -10_000;
+
+/// Its spot's column, counted from the ground there: the spot's y is the home's floor height,
+/// and its place can be lower or higher ground (the hole went into the air and left its torch
+/// on the grass, the sign found nothing to stand on).
+fn grounded(p: BlockPos) -> BlockPos {
+    [p[0], GROUND_Y, p[2]]
+}
+
+/// A block of a command as near as the mind can tell: one counted from the ground (a y below
+/// -1000) is taken as counted from the home's floor, or from under the target with no home.
+/// For the view rule and the distance from what they built, which the true ground changes
+/// little.
+pub fn guessed(memory: &Memory, p: BlockPos) -> BlockPos {
+    if p[1] > -1_000 {
+        return p;
+    }
+    let ground = memory
+        .home
+        .as_ref()
+        .map(|h| h.floor_y - 1)
+        .unwrap_or_else(|| block_of(memory.last.pos)[1] - 1);
+    [p[0], ground + (p[1] - GROUND_Y), p[2]]
+}
+
 /// How far from anything the target placed the lodger digs: never nearer
 /// (`docs/good-to-know.md`, What it never does).
 pub const DIG_CLEAR: f64 = 8.0;
@@ -3417,6 +3445,7 @@ pub fn commands(
             })
             .collect(),
         Action::Hole => pos
+            .map(grounded)
             .map(|p| {
                 let mut made: Vec<(Command, u64)> = (0..3)
                     .map(|depth| {
@@ -3431,6 +3460,7 @@ pub fn commands(
             })
             .unwrap_or_default(),
         Action::Cairn => pos
+            .map(grounded)
             .map(|p| {
                 (0..3)
                     .map(|height| {
@@ -3446,7 +3476,10 @@ pub fn commands(
                     .collect()
             })
             .unwrap_or_default(),
-        Action::Sapling => match (pos, memory.in_used_container(|id| id.ends_with("sapling"))) {
+        Action::Sapling => match (
+            pos.map(grounded),
+            memory.in_used_container(|id| id.ends_with("sapling")),
+        ) {
             // Planted first, on the ground within three blocks, and only then taken from the
             // chest: a planting that fails drops the take, so no sapling of theirs is lost.
             (Some(p), Some((container, stack))) => vec![
@@ -3479,6 +3512,7 @@ pub fn commands(
             _ => vec![],
         },
         Action::Sign => pos
+            .map(grounded)
             .map(|p| {
                 let word = words(Kind::SignWord, "", 0);
                 sign_at(ids, [p[0], p[1] + 1, p[2]], vec![String::new(), word])
@@ -3500,7 +3534,7 @@ pub fn commands(
             }
             _ => vec![],
         },
-        Action::Grave => match (pos, memory.most_killed()) {
+        Action::Grave => match (pos.map(grounded), memory.most_killed()) {
             (Some(p), Some(tally)) => {
                 let mut made = vec![
                     (
@@ -8362,6 +8396,7 @@ pub fn commands(
         // A row of graves at its place, two blocks apart: a stone each and a sign with the kind
         // and the count, up to five kinds, most killed first.
         Action::GraveEach => pos
+            .map(grounded)
             .map(|p| {
                 memory
                     .tally
@@ -10727,6 +10762,62 @@ mod tests {
                 && matches!(sapling[1].0, Command::TakeItem { .. })
                 && sapling[1].1 > sapling[0].1,
             "planted before it is taken: {sapling:?}"
+        );
+    }
+
+    #[test]
+    fn what_it_builds_at_its_place_is_counted_from_the_ground_there() {
+        // The dev client: its place on lower ground than the home's floor, the hole dug the
+        // air above it and left its torch on the grass, and the sign found nothing to stand on.
+        let mut memory = rich_memory();
+        memory.place = Some([30, 64, 30]);
+        let now = Now::default();
+        let made_by = |id: &str, memory: &Memory| {
+            let event = find(id).unwrap();
+            let pos = place(event, memory, &mut Rng::new(1));
+            commands(event, pos, memory, &mut ids(), &now, None)
+        };
+        let ys = |made: &[(Command, u64)]| -> Vec<i32> {
+            made.iter()
+                .filter_map(|(c, _)| match c {
+                    Command::SetBlock { pos, .. } | Command::SetSign { pos, .. } => Some(pos[1]),
+                    _ => None,
+                })
+                .collect()
+        };
+
+        // Three down into the ground, the torch at the bottom.
+        let hole = made_by("hole", &memory);
+        assert_eq!(
+            ys(&hole),
+            vec![GROUND_Y, GROUND_Y - 1, GROUND_Y - 2, GROUND_Y - 2]
+        );
+        assert_eq!(
+            ys(&made_by("cairn", &memory)),
+            vec![GROUND_Y + 1, GROUND_Y + 2, GROUND_Y + 3]
+        );
+        assert_eq!(
+            ys(&made_by("sign", &memory)),
+            vec![GROUND_Y + 1, GROUND_Y + 1]
+        );
+        for (command, _) in hole.iter().chain(made_by("sign", &memory).iter()) {
+            assert!(
+                matches!(command, Command::SetBlock { pos, .. } | Command::SetSign { pos, .. } if pos[0] == 30 && pos[2] == 30),
+                "at its place's column: {command:?}"
+            );
+        }
+
+        // The view rule and the distance from their building take it at the home's floor.
+        let floor = memory.home.as_ref().unwrap().floor_y;
+        assert_eq!(guessed(&memory, [30, GROUND_Y, 30]), [30, floor - 1, 30]);
+        assert_eq!(
+            guessed(&memory, [30, GROUND_Y + 2, 30]),
+            [30, floor + 1, 30]
+        );
+        assert_eq!(
+            guessed(&memory, [30, 70, 30]),
+            [30, 70, 30],
+            "a real height is kept"
         );
     }
 

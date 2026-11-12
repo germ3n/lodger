@@ -388,7 +388,9 @@ pub enum Command {
     /// it can (the nearest first, the ground before a wall); `wall` names the block to put
     /// against a wall when the block itself stands nowhere near (`minecraft:wall_torch` for a
     /// torch), facing out from whichever side holds it. The mod knows positions, not terrain;
-    /// the host knows the terrain.
+    /// the host knows the terrain. A `pos` with its y below -1000 is counted from the ground in
+    /// its column (ABI 55): -10000 the ground's own block (the highest that stops movement,
+    /// leaves left out), -9999 the one on it, -10001 the one under it.
     SetBlock {
         id: u64,
         pos: BlockPos,
@@ -1139,7 +1141,8 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         kept: String,
     },
-    /// Write a sign's lines.
+    /// Write a sign's lines. A `pos` with its y below -1000 is counted from the ground, as
+    /// `set_block`'s is (ABI 55).
     SetSign {
         id: u64,
         pos: BlockPos,

@@ -17,4 +17,13 @@ class SettleTest {
 		assertEquals(Settle.MOST * 2 + 1, Settle.order(200).length);
 		assertArrayEquals(new int[] {0}, Settle.order(-4));
 	}
+
+	@Test
+	void a_y_below_minus_a_thousand_counts_from_the_ground() {
+		// The ground's own block, the air on it, the block under it, on ground at 61 and at 80.
+		assertEquals(61, Settle.fromGround(61, Settle.GROUND));
+		assertEquals(62, Settle.fromGround(61, Settle.GROUND + 1));
+		assertEquals(59, Settle.fromGround(61, Settle.GROUND - 2));
+		assertEquals(83, Settle.fromGround(80, Settle.GROUND + 3));
+	}
 }

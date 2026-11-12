@@ -1320,7 +1320,9 @@ impl Brain {
         // `alcove` alone digs beside what they built: one block of natural stone (owner), the host refusing anything else.
         let digs_near = event.id != "alcove";
         if let Some(dug) = made.iter().find_map(|(command, _)| {
-            act::dug(command).filter(|p| digs_near && !act::clear_of_built(memory, *p))
+            act::dug(command)
+                .map(|p| act::guessed(memory, p))
+                .filter(|p| digs_near && !act::clear_of_built(memory, *p))
         }) {
             let why = "too near what they built";
             log.note(&format!(
@@ -1340,7 +1342,10 @@ impl Brain {
                     && rules::hidden_from_view(event.action)
                     && made.iter().any(|(command, _)| {
                         act::spots(command).iter().any(|spot| {
-                            memory.in_view(*spot, crate::temper::min_distance(config, memory))
+                            memory.in_view(
+                                act::guessed(memory, *spot),
+                                crate::temper::min_distance(config, memory),
+                            )
                         })
                     })));
         if seen {
@@ -1351,7 +1356,11 @@ impl Brain {
         let witnessed = (!plan.forced || plan.out_of_sight)
             && matches!(event.effect(), "house" | "things" | "words")
             && {
-                let spots: Vec<BlockPos> = made.iter().flat_map(|(c, _)| act::spots(c)).collect();
+                let spots: Vec<BlockPos> = made
+                    .iter()
+                    .flat_map(|(c, _)| act::spots(c))
+                    .map(|s| act::guessed(memory, s))
+                    .collect();
                 // No block to change (frames turned, a stand dressed): where it would be.
                 if spots.is_empty() {
                     memory.witness_near(config, plan.pos)

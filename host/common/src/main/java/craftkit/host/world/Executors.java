@@ -1530,8 +1530,29 @@ public final class Executors {
 		return wakes ? Block.UPDATE_ALL | Block.UPDATE_SKIP_ON_PLACE : Block.UPDATE_ALL;
 	}
 
+	/**
+	 * A block's place from a command: as given, or, with its y below -1000, counted from the
+	 * ground in its column ({@link Settle#GROUND} the ground's own block, a block more each one up);
+	 * null when that column is not loaded. The mind knows its place's x and z, not the ground's
+	 * height there: a hole dug at the home's floor height went into the air on lower ground.
+	 */
+	static BlockPos onGround(ServerLevel level, BlockPos pos) {
+		if (pos.getY() > -1000) {
+			return pos;
+		}
+		BlockPos column = new BlockPos(pos.getX(), 0, pos.getZ());
+		if (!level.isLoaded(column)) {
+			return null;
+		}
+		int top = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column).getY() - 1;
+		return new BlockPos(pos.getX(), Settle.fromGround(top, pos.getY()), pos.getZ());
+	}
+
 	private static JsonObject setBlock(ServerLevel level, JsonObject command, long id) {
-		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		BlockPos pos = onGround(level, blockPos(command.getAsJsonArray("pos")));
+		if (pos == null) {
+			return report(id, false, "the place is not loaded");
+		}
 		List<String> replace = replaceable(command);
 		int settle = command.has("settle") ? command.get("settle").getAsInt() : 0;
 		String wallId = command.has("wall") ? command.get("wall").getAsString() : "";
@@ -2224,7 +2245,10 @@ public final class Executors {
 	}
 
 	private static JsonObject setSign(ServerLevel level, JsonObject command, long id) {
-		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		BlockPos pos = onGround(level, blockPos(command.getAsJsonArray("pos")));
+		if (pos == null) {
+			return report(id, false, "the place is not loaded");
+		}
 		int settle = command.has("settle") ? command.get("settle").getAsInt() : 0;
 		SignBlockEntity sign = null;
 		for (int dy : Settle.order(settle)) {

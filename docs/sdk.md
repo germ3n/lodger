@@ -239,7 +239,9 @@ player's skin layers (the hat, the jacket), where it wore the bare skin; `dead_r
 each door's lower half among its positions, the way out of it, the side along its facing with sky
 over it within three blocks, the other roofed; a door with both or neither open left out); and
 `move_player` looks for room one block down as well as up, the ground outside a door being a step
-below its sill at times.
+below its sill at times. ABI 55: `set_block`'s and `set_sign`'s `pos` with a y below -1000 is
+counted from the ground in its column, -10000 the ground's own block, a block more each one up (a
+hole at its place was dug at the home's floor height, into the air on lower ground).
 
 ## Resources
 

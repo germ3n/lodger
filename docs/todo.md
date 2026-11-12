@@ -2292,6 +2292,15 @@ The `[x]` lines above, summed up by day:
   red rain's weight is read once in 30 ms, and a dead redstone box is no bigger than a scan. The
   host does not need Rust for speed.
 
+- [x] **What it builds at its place stands on the ground there** (owner: "when i teleported to
+  'hole', there was just a torch on the ground"; "sign not done, nothing holds it there"). Was:
+  its place's height was the home's floor, and on lower ground the hole dug the air over the grass
+  and left only its torch, the sign found nothing to stand on within three blocks, and a cairn or
+  grave on a hill went into it. Now `hole`, `cairn`, `sign`, `grave`, `grave_each` and `sapling`
+  send their blocks counted from the ground in their column (ABI 55: `set_block` and `set_sign`
+  with a y below -1000), the host finding the ground; the view rule and the distance from what
+  they built take those blocks at the home's floor.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
