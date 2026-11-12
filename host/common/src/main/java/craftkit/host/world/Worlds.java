@@ -238,6 +238,7 @@ public final class Worlds {
 		later.tick();
 		poses.tick();
 		figures.tick();
+		BossBars.tick();
 		for (Gatherings.Bought sale : gatherings.takeBought()) {
 			if (open.containsKey(sale.level())) {
 				senses.noticedBought(sale.level(), sale.player(), sale.at(), sale.item());

@@ -1123,6 +1123,8 @@ pub enum Action {
     CreeperBehind,
     /// Every wall torch of the house turned on its block to point at their bed.
     TorchesTurn,
+    /// A boss bar named for it at the top of their screen, filling a minute.
+    BossBarIt,
     /// A grave at its place with their own name on it and a day not come yet.
     YourGrave,
     /// Cobwebs in the upper corners of their house, gone in a day.
@@ -6807,6 +6809,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("recovery_compass_lies", 120.0),
         true,
     ),
+    // docs/events_todo.md, 192: a boss bar reading "it", filling slowly over a minute.
+    row(
+        "boss_bar_it",
+        5,
+        5,
+        &[TargetAwake],
+        2.0,
+        2,
+        Full,
+        Action::BossBarIt,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7387,7 +7401,7 @@ impl Event {
             | Action::SplashDark
             | Action::DoorCloud
             | Action::Charge(..) => "seen",
-            Action::Hint(_, _) | Action::GhastName => "sky",
+            Action::Hint(_, _) | Action::GhastName | Action::BossBarIt => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway => "house",
             Action::HandOnShoulder => "seen",
@@ -7902,6 +7916,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "boss_bar_it" => "fill a boss bar named for it over their screen",
             "recovery_compass_lies" => "turn their recovery compass to its place",
             "spyglass_figure" => "stand far off where they look through a spyglass",
             "red_trail" => "leave red specks from their door to their bed",

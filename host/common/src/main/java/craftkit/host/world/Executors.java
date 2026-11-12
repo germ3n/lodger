@@ -148,6 +148,14 @@ public final class Executors {
 					yield report(id, placed, placed ? "" : "no villager could be made");
 				}
 				case "turn_torches" -> turnTorches(level, command, id);
+				case "boss_bar" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					BossBars.show(player, command.get("name").getAsString(), command.get("seconds").getAsFloat());
+					yield report(id, true, "");
+				}
 				case "spare" -> {
 					Spare.set(command.get("on").getAsBoolean());
 					yield report(id, true, "");

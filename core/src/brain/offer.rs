@@ -301,6 +301,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         // The sound gone wrong and the creeper only they see (its bang muffles their hearing):
         // on their client alone, glitches too.
         Action::Hint(_, _)
+        | Action::BossBarIt
         | Action::GhastName
         | Action::LostHour
         | Action::SoundWarp
@@ -397,6 +398,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::Footsteps
         | Action::HandOnShoulder => Some("sound"),
         Action::Hint(_, _)
+        | Action::BossBarIt
         | Action::SoundWarp
         | Action::CreeperBehind
         | Action::PrintsAroundTheHouse => Some("screen"),

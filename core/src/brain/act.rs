@@ -434,6 +434,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::Wait
         | Action::LootGift
         | Action::Hint(_, _)
+        | Action::BossBarIt
         | Action::RefuseRest
         | Action::Stare
         | Action::SoundAtTarget(_)
@@ -7476,6 +7477,16 @@ pub fn commands(
             }
             made
         }
+        // At the top of their screen, a boss bar reading only "it", filling over a minute.
+        Action::BossBarIt => vec![(
+            Command::BossBar {
+                id: ids(),
+                player: target,
+                name: "it".to_string(),
+                seconds: 60.0,
+            },
+            0,
+        )],
         // Every wall torch of theirs at home pointed at the bed: the host turns each onto the
         // side of its block that points most nearly at it and has a wall to hold it.
         Action::TorchesTurn => match memory.home.as_ref() {
@@ -17802,6 +17813,30 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Hint { hint, pos: Some(p), .. }, 0)] if hint == "recovery_compass_lies" && *p == [40, 64, -12]),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_boss_bar_named_it_fills_over_a_minute() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("boss_bar_it").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::BossBar { name, seconds, .. }, 0)] if name == "it" && *seconds == 60.0),
+            "{made:?}"
+        );
+        assert_eq!(
+            event.effect(),
+            "sky",
+            "a screen thing, off with the glitches"
         );
     }
 }

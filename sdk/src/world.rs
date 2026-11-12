@@ -668,6 +668,14 @@ pub enum Command {
         id: u64,
         on: bool,
     },
+    /// A boss bar named `name` at the top of `player`'s screen alone, filling from empty over
+    /// `seconds` (ninety at most), then gone. ABI 55.
+    BossBar {
+        id: u64,
+        player: u32,
+        name: String,
+        seconds: f32,
+    },
     /// Every wall torch among `torches` turned on its block to point as nearly at `toward` as a
     /// wall there lets it, lit or not as it was; anything else among them left as it is. Reports
     /// `turned <n>`. ABI 55.
@@ -1533,6 +1541,7 @@ impl Command {
             | Command::Circle { id, .. }
             | Command::FakeCreeper { id, .. }
             | Command::TurnTorches { id, .. }
+            | Command::BossBar { id, .. }
             | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }

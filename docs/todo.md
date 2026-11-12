@@ -2544,6 +2544,10 @@ The `[x]` lines above, summed up by day:
   3 to 5, holding a recovery compass: it points at its place two minutes (`Atmosphere.pointsAway`,
   a recovery compass alone). Tests: one in `act`, `AtmosphereTest`. Was: no such event.
 
+- [x] **A boss bar named "it"** (`docs/events_todo.md`, 192): `boss_bar_it`, stage 5: a boss bar
+  reading "it" fills over a minute on their screen alone (`boss_bar`, ABI 55, `BossBars`). Tests:
+  one in `act`, `BarFillTest`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
