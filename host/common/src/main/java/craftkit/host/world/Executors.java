@@ -3175,11 +3175,22 @@ public final class Executors {
 		if (found.isEmpty()) {
 			return report(id, false, "no " + of + " near them");
 		}
-		for (BlockPos p : found) {
-			BlockState shown = to.get().value().withPropertiesOf(level.getBlockState(p));
-			player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(p, shown));
+		// In turn (`in_turn`): the farthest first, a quarter second apart, coming toward them.
+		boolean inTurn = command.has("in_turn") && command.get("in_turn").getAsBoolean();
+		if (inTurn) {
+			found.sort(java.util.Comparator.comparingDouble((BlockPos p) -> p.distSqr(at)).reversed());
 		}
-		context.later().at(command.get("seconds").getAsFloat(), () -> {
+		for (int i = 0; i < found.size(); i++) {
+			BlockPos p = found.get(i);
+			BlockState shown = to.get().value().withPropertiesOf(level.getBlockState(p));
+			if (inTurn && i > 0) {
+				context.later().at(i * 0.25f, () -> player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(p, shown)));
+			} else {
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(p, shown));
+			}
+		}
+		float seconds = command.get("seconds").getAsFloat() + (inTurn ? found.size() * 0.25f : 0);
+		context.later().at(seconds, () -> {
 			if (!player.isRemoved() && player.level() == level) {
 				for (BlockPos p : found) {
 					player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(level, p));

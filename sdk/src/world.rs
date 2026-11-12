@@ -740,6 +740,10 @@ pub enum Command {
         of: String,
         block: String,
         seconds: f32,
+        /// One after another, the farthest first, a quarter second apart, coming toward them;
+        /// each shown its `seconds` after the last.
+        #[serde(default, skip_serializing_if = "is_false")]
+        in_turn: bool,
     },
     /// A block shown at `pos` to `player` alone, `block` with `state` (`charges=4`), the world's
     /// own block untouched under it; `block` empty shows them what is really there again. Their

@@ -2791,6 +2791,11 @@ The `[x]` lines above, summed up by day:
   the last to the first (`rotate_slots`, ABI 56, refused with fewer than two things on it). Tests:
   one in `act`. Was: no such event.
 
+- [x] **The fireflies go out** (`docs/events_todo.md`, 232): `fireflies_go_out`, stages 3 to 5,
+  outdoors at night: the firefly bushes within twelve blocks shown to their client alone as plain
+  bushes, the farthest first a quarter second apart, twenty seconds (`ghost_near`'s `in_turn`, ABI
+  56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

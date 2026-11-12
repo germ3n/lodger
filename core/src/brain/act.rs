@@ -737,6 +737,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::EyeblossomsOpen
         | Action::GolemStatueTurns
         | Action::ShelfShuffled
+        | Action::FirefliesGoOut
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8705,6 +8706,7 @@ pub fn commands(
                     of: "minecraft:closed_eyeblossom".to_string(),
                     block: "minecraft:open_eyeblossom".to_string(),
                     seconds: 60.0,
+                    in_turn: false,
                 },
                 0,
             ),
@@ -8772,6 +8774,19 @@ pub fn commands(
         Action::ShelfShuffled => pos
             .map(|p| vec![(Command::RotateSlots { id: ids(), pos: p }, 0)])
             .unwrap_or_default(),
+        // docs/events_todo.md, 232.
+        Action::FirefliesGoOut => vec![(
+            Command::GhostNear {
+                id: ids(),
+                player: target,
+                radius: 12,
+                of: "minecraft:firefly_bush".to_string(),
+                block: "minecraft:bush".to_string(),
+                seconds: 20.0,
+                in_turn: true,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20064,6 +20079,17 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::RotateSlots { pos, .. }, 0)] if *pos == [-3, 66, 3]),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn fireflies_go_out_one_by_one_toward_them() {
+        let memory = rich_memory();
+        let event = find("fireflies_go_out").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostNear { of, block, in_turn: true, .. }, 0)] if of == "minecraft:firefly_bush" && block == "minecraft:bush"),
             "{made:?}"
         );
     }

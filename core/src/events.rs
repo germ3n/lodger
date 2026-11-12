@@ -1196,6 +1196,8 @@ pub enum Action {
     GolemStatueTurns,
     /// The things on a shelf of theirs in another order by morning.
     ShelfShuffled,
+    /// At night, the firefly bushes near them going dark one by one toward them, as if something passed.
+    FirefliesGoOut,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7375,6 +7377,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ShelfShuffled,
         false,
     ),
+    // docs/events_todo.md, 232: at night the firefly bushes near them go dark one by one toward them.
+    row(
+        "fireflies_go_out",
+        3,
+        5,
+        &[Night, TargetOutdoors],
+        1.0,
+        3,
+        Half,
+        Action::FirefliesGoOut,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7985,6 +7999,7 @@ impl Event {
             | Action::DriedGhastOnDoorstep
             | Action::EyeblossomsOpen
             | Action::GolemStatueTurns
+            | Action::FirefliesGoOut
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8534,6 +8549,7 @@ impl Event {
             "eyeblossoms_open" => "open every eyeblossom near them by day",
             "golem_statue_turns" => "stand a copper golem statue by their door that turns to them",
             "shelf_shuffled" => "shuffle the things on their shelf",
+            "fireflies_go_out" => "put out the fireflies near them one by one",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
