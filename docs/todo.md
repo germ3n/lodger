@@ -3277,6 +3277,9 @@ The `[x]` lines above, summed up by day:
   (`take`, `light_path`, `far_figure`, `open_door`, `diary_sold`, `knock`) still open that one.
   Tests: the chains' own, counts 189 and 37. Was: 119.
 
+- [x] **Version 0.1.3** (owner: "bump the version to 0.1.3"): the mind, the SDK, the host and the
+  content jar, and the least host the manifests ask for (`craftkit >= 0.1.3`). Was: 0.1.2.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
