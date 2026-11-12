@@ -585,6 +585,63 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 135.
+        "bones_underfoot" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.bone_block.step", 0),
+                        ("minecraft:block.bone_block.step", 7),
+                        ("minecraft:block.bone_block.step", 14),
+                        ("minecraft:block.bone_block.step", 21),
+                        ("minecraft:block.bone_block.step", 28),
+                        ("minecraft:block.bone_block.step", 35),
+                        ("minecraft:block.bone_block.step", 42),
+                        ("minecraft:block.bone_block.step", 49),
+                        ("minecraft:block.bone_block.step", 56),
+                        ("minecraft:block.bone_block.step", 63),
+                    ],
+                    (0.9, 1.0),
+                    0.6,
+                    Ear,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.bone_block.step", 0),
+                        ("minecraft:block.bone_block.step", 8),
+                        ("minecraft:block.bone_block.step", 16),
+                        ("minecraft:block.bone_block.step", 24),
+                        ("minecraft:block.bone_block.step", 32),
+                        ("minecraft:block.bone_block.step", 40),
+                        ("minecraft:block.bone_block.step", 48),
+                        ("minecraft:block.bone_block.step", 56),
+                    ],
+                    (0.8, 0.9),
+                    0.6,
+                    Ear,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.bone_block.step", 0),
+                        ("minecraft:block.bone_block.step", 6),
+                        ("minecraft:block.bone_block.step", 12),
+                        ("minecraft:block.bone_block.step", 18),
+                        ("minecraft:block.bone_block.step", 24),
+                        ("minecraft:block.bone_block.step", 30),
+                        ("minecraft:block.bone_block.step", 36),
+                        ("minecraft:block.bone_block.step", 42),
+                        ("minecraft:block.bone_block.step", 48),
+                        ("minecraft:block.bone_block.step", 54),
+                        ("minecraft:block.bone_block.step", 60),
+                        ("minecraft:block.bone_block.step", 66),
+                    ],
+                    (0.95, 1.05),
+                    0.5,
+                    Ear,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1549,6 +1606,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "bones_underfoot",
             "glass_rubbed",
             "witch_laughs",
             "shriek_below",

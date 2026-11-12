@@ -5524,6 +5524,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Sound("minecraft:block.glass.step"),
         false,
     ),
+    // docs/events_todo.md, 135.
+    row(
+        "bones_underfoot",
+        4,
+        5,
+        &[TargetIndoors, TargetWalking],
+        2.0,
+        3,
+        Full,
+        Action::SoundAtTarget("minecraft:block.bone_block.step"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6690,6 +6702,7 @@ impl Event {
             "witch_laughs" => "laugh like a witch far off in the dark",
             "pet_whines_at_door" => "set their dog whining at the door all night",
             "glass_rubbed" => "drag a finger slowly across their window",
+            "bones_underfoot" => "crunch bone under their steps",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

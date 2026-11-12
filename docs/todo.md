@@ -2230,6 +2230,9 @@ The `[x]` lines above, summed up by day:
 - [x] **Glass rubbed** (`docs/events_todo.md`, 134): `glass_rubbed`, stages 3 to 5, indoors at night: a slow squeak across a window (a house sound, from a pane). Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Bone underfoot** (`docs/events_todo.md`, 135): `bones_underfoot`, stages 4 and 5, walking indoors: bone's crunch with their steps a few seconds. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
