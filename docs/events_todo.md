@@ -229,7 +229,7 @@ things, and on the screen. Not built yet.
 | 170 | `ram_on_the_wall` | 4 | **Built.** At night, three heavy thuds against an outside wall, as of a goat ramming it, then nothing. | Indoors at night, a home. | `sound` (goat ram impact) at a wall of theirs, three times, spaced. | S |
 | 171 | `bell_underwater` | 4 | **Built.** Swimming, a bell rings once below them, muffled by the water. | The target swimming. | `sound` (bell, low, quiet) under them. | S |
 | 172 | `bark_from_home` | 3 | **Built.** Out with their dog, a dog barks from inside their empty house. | A tamed wolf with them, near home, the target outdoors. | `sound` (wolf bark) inside the house. | S |
-| 173 | `hoofbeats_circling` | 4 | At night, hoofbeats gallop a loop around the house and away; no horse. | Indoors at night, a home. | `sound` (horse gallop steps) at points round the walls in turn. | S |
+| 173 | `hoofbeats_circling` | 4 | **Built.** At night, hoofbeats gallop a loop around the house and away; no horse. | Indoors at night, a home. | `sound` (horse gallop steps) at points round the walls in turn. | S |
 | 174 | `snipping_in_the_dark` | 3 | Near their sheep at night, the snip of shears, again and again; the sheep keep their wool. | Sheep of theirs near, night. | `sound` (shears) beside the sheep. | S |
 | 175 | `eating_in_the_wall` | 4 | Chewing, wet and slow, from inside a wall of the house. | Indoors. | `sound` (eating, pitched low) at their nearest wall block. | S |
 | 176 | `ominous_hum` | 4 | From under the floor, the low hum of a trial spawner turning ominous; there is no spawner. | A home, the target at home. | `sound` (trial spawner ominous activate) below the floor. | S |

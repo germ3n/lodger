@@ -2480,6 +2480,10 @@ The `[x]` lines above, summed up by day:
 - [x] **A bark from home** (`docs/events_todo.md`, 172): `bark_from_home`, stages 3 to 5: out with their dog, a dog barking inside their house. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Hoofbeats round the house** (`docs/events_todo.md`, 173): `hoofbeats_circling`, stages 4
+  and 5, at night indoors: a horse's gallop once round the walls and away, on the bones' way round
+  (`round_the_house`, now shared). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

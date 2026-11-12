@@ -108,6 +108,32 @@ const SNOW_BODY: &[[i32; 2]] = &[[0, 0], [0, 1], [0, 2], [-1, 1], [1, 1], [-1, 3
 /// The notes `steps_counted` counts in: a major scale up an octave, from the harp's lowest.
 const STEPS_COUNTED: [f32; 8] = [0.5, 0.561, 0.63, 0.667, 0.749, 0.841, 0.944, 1.0];
 
+/// A way round the outside of the house, a block and a half out from its walls, four points a
+/// side, from its north-west corner: the bones' walk and the hoofbeats. None with no house read.
+fn round_the_house(memory: &Memory) -> Option<Vec<Pos>> {
+    let ([x0, z0, x1, z1], floor) = crate::prints::house_box(memory)?;
+    let (a, b, c, d) = (
+        x0 as f64 - 1.5,
+        z0 as f64 - 1.5,
+        x1 as f64 + 2.5,
+        z1 as f64 + 2.5,
+    );
+    let y = floor as f64;
+    let corners = [[a, b], [c, b], [c, d], [a, d], [a, b]];
+    let mut round = Vec::new();
+    for side in corners.windows(2) {
+        for k in 0..4 {
+            let f = k as f64 / 4.0;
+            round.push([
+                side[0][0] + (side[1][0] - side[0][0]) * f,
+                y,
+                side[0][1] + (side[1][1] - side[0][1]) * f,
+            ]);
+        }
+    }
+    Some(round)
+}
+
 /// A Minecraft day, in ticks: what it hangs in their house for a day stays this long.
 const DAY_TICKS: u64 = 24_000;
 
@@ -2566,34 +2592,19 @@ pub fn commands(
     // Bones round the house (`rattling_round_the_house`): a skeleton's steps round the walls,
     // a block and a half out, and a rattle at the last corner.
     if event.id == "rattling_round_the_house" {
-        let Some(([x0, z0, x1, z1], floor)) = crate::prints::house_box(memory) else {
+        let Some(round) = round_the_house(memory) else {
             return Vec::new();
         };
-        let (a, b, c, d) = (
-            x0 as f64 - 1.5,
-            z0 as f64 - 1.5,
-            x1 as f64 + 2.5,
-            z1 as f64 + 2.5,
-        );
-        let y = floor as f64;
-        let corners = [[a, b], [c, b], [c, d], [a, d], [a, b]];
         let mut made = Vec::new();
         let mut t = 0u64;
-        for side in corners.windows(2) {
-            for k in 0..4 {
-                let f = k as f64 / 4.0;
-                let p = [
-                    side[0][0] + (side[1][0] - side[0][0]) * f,
-                    y,
-                    side[0][1] + (side[1][1] - side[0][1]) * f,
-                ];
-                made.push((
-                    sound_at(ids, target, "minecraft:entity.skeleton.step", p, 0.7),
-                    t,
-                ));
-                t += 9;
-            }
+        for p in &round {
+            made.push((
+                sound_at(ids, target, "minecraft:entity.skeleton.step", *p, 0.7),
+                t,
+            ));
+            t += 9;
         }
+        let [a, y, b] = round[0];
         made.push((
             sound_at(
                 ids,
@@ -2603,6 +2614,35 @@ pub fn commands(
                 0.6,
             ),
             t,
+        ));
+        return made;
+    }
+    // Hoofbeats round the house (`hoofbeats_circling`): a horse's gallop the same way round the
+    // walls, twice as fast as the bones walk, and away from the last corner.
+    if event.id == "hoofbeats_circling" {
+        let Some(round) = round_the_house(memory) else {
+            return Vec::new();
+        };
+        let mut made: Vec<(Command, u64)> = round
+            .iter()
+            .enumerate()
+            .map(|(i, p)| {
+                (
+                    sound_at(ids, target, "minecraft:entity.horse.gallop", *p, 0.9),
+                    i as u64 * 4,
+                )
+            })
+            .collect();
+        let [a, y, b] = round[0];
+        made.push((
+            sound_at(
+                ids,
+                target,
+                "minecraft:entity.horse.gallop",
+                [a - 8.0, y, b - 8.0],
+                0.6,
+            ),
+            round.len() as u64 * 4 + 4,
         ));
         return made;
     }
@@ -17238,5 +17278,38 @@ mod tests {
                 .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn at_night_hoofbeats_gallop_round_the_house_and_away() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("hoofbeats_circling").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let round = round_the_house(&memory).expect("the house read");
+        assert_eq!(made.len(), round.len() + 1, "round once, then away");
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::PlaySound { sound, .. } if sound == "minecraft:entity.horse.gallop")));
+        assert!(
+            made.windows(2).all(|w| w[0].1 < w[1].1),
+            "one after another"
+        );
+        // Twice as fast as the bones walk the same way.
+        let bones = commands(
+            find("rattling_round_the_house").unwrap(),
+            None,
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(made[1].1 < bones[1].1);
     }
 }

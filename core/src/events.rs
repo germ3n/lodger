@@ -5736,6 +5736,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.wolf.ambient"),
         false,
     ),
+    // docs/events_todo.md, 173: hoofbeats gallop a loop round the house at night, and away.
+    row(
+        "hoofbeats_circling",
+        4,
+        5,
+        &[TargetIndoors, Night, Home],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.horse.gallop"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7237,6 +7249,7 @@ impl Event {
             "ram_on_the_wall" => "ram the outside of their wall three times",
             "bell_underwater" => "ring a bell under the water below them",
             "bark_from_home" => "bark from inside their empty house",
+            "hoofbeats_circling" => "gallop hoofbeats round the outside of their house",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
