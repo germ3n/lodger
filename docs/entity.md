@@ -729,6 +729,7 @@ a dock or bridge), never over anything a player built (see the
 | `lava_in_the_wall` | 4 | Indoors, from inside the wall beside them, the pop and gloop of lava; the wall is cold. | The target indoors. |
 | `crossbow_click` | 4 | The click of a crossbow being loaded right behind them; nothing follows. | The target awake. |
 | `teleport_beside` | 4 | Twice, the warp of a chorus fruit right beside them, the second nearer, as if something kept stepping closer. | The target awake. |
+| `sweeping_next_room` | 3 | In the house, from the next room, the soft strokes of a brush sweeping, as at a dig; then quiet. | A home, the target indoors. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

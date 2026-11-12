@@ -1416,6 +1416,42 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 188.
+        "sweeping_next_room" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:item.brush.brushing.generic", 0),
+                        ("minecraft:item.brush.brushing.generic", 8),
+                        ("minecraft:item.brush.brushing.generic", 16),
+                    ],
+                    (0.8, 0.9),
+                    0.6,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:item.brush.brushing.generic", 0),
+                        ("minecraft:item.brush.brushing.generic", 12),
+                    ],
+                    (0.75, 0.85),
+                    0.6,
+                    Above,
+                ),
+                v(
+                    &[
+                        ("minecraft:item.brush.brushing.generic", 0),
+                        ("minecraft:item.brush.brushing.generic", 6),
+                        ("minecraft:item.brush.brushing.generic", 12),
+                        ("minecraft:item.brush.brushing.generic", 18),
+                    ],
+                    (0.8, 0.9),
+                    0.5,
+                    Beside,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2403,6 +2439,7 @@ mod tests {
             "lava_in_the_wall",
             "crossbow_click",
             "teleport_beside",
+            "sweeping_next_room",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

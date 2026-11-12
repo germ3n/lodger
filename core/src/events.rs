@@ -5904,6 +5904,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:item.chorus_fruit.teleport"),
         false,
     ),
+    // docs/events_todo.md, 188.
+    row(
+        "sweeping_next_room",
+        3,
+        5,
+        &[Home, TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:item.brush.brushing.generic"),
+        true,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7419,6 +7431,7 @@ impl Event {
             "lava_in_the_wall" => "pop lava inside the wall beside them",
             "crossbow_click" => "load a crossbow right behind them",
             "teleport_beside" => "warp twice beside them, nearer each time",
+            "sweeping_next_room" => "sweep with a brush in the next room",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
