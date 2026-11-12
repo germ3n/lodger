@@ -2070,6 +2070,13 @@ The `[x]` lines above, summed up by day:
   it in and kills it with no killer, so no gossip and no drops). Tests: one in `act`. Was: no such
   event.
 
+- [x] **The sound goes wrong** (`docs/events_todo.md`, 106, owner's): `sound_warp`, stages 3 to 5:
+  every sound on their client slowed, in a hall's long echo, muffled or crunched a while, a way of
+  four in turn (the `sound_warp` hint; `ChannelMixin` sets each sound's pitch and its source's
+  OpenAL effects as it starts, `SoundWarps`, a reverb, a distortion and a low-pass filter; a device
+  without EFX keeps the slowed way). `creeper_behind` muffles their hearing after its bang. Tests:
+  `SoundWarpTest`, one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

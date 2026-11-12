@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // At them.
+        Action::SoundWarp => Some(block_of(memory.last.pos)),
         // The door they use.
         Action::VillagerFleesIn => memory.usual_door(),
         // Right behind them.
@@ -6488,6 +6490,22 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Every sound they hear wrong half a minute to a minute, a way of four, by the time.
+        Action::SoundWarp => {
+            const WAYS: &[&str] = &["slow", "hall", "muffled", "broken"];
+            let times = memory.times(event.id);
+            vec![(
+                Command::Hint {
+                    id: ids(),
+                    player: target,
+                    hint: "sound_warp".to_string(),
+                    pos: None,
+                    seconds: 30.0 + (times % 3) as f32 * 15.0,
+                    detail: WAYS[times % WAYS.len()].to_string(),
+                },
+                0,
+            )]
+        }
         // Two blocks out from the door it bangs, then runs in, and two blocks in it drops dead.
         Action::VillagerFleesIn => match (pos, memory.home.as_ref()) {
             (Some(door), Some(home)) => {
@@ -6516,14 +6534,28 @@ pub fn commands(
         Action::CreeperBehind => {
             let at = memory.last.pos;
             let yaw = (memory.last.yaw as f64).to_radians();
-            vec![(
-                Command::FakeCreeper {
-                    id: ids(),
-                    player: target,
-                    pos: [at[0] + yaw.sin() * 2.0, at[1], at[2] - yaw.cos() * 2.0],
-                },
-                0,
-            )]
+            vec![
+                (
+                    Command::FakeCreeper {
+                        id: ids(),
+                        player: target,
+                        pos: [at[0] + yaw.sin() * 2.0, at[1], at[2] - yaw.cos() * 2.0],
+                    },
+                    0,
+                ),
+                // Their hearing dulled after the bang, a while (`sound_warp`).
+                (
+                    Command::Hint {
+                        id: ids(),
+                        player: target,
+                        hint: "sound_warp".to_string(),
+                        pos: None,
+                        seconds: 8.0,
+                        detail: "muffled".to_string(),
+                    },
+                    31,
+                ),
+            ]
         }
         // Out of nowhere round them, a few blocks up and behind, at them half a minute: each hit
         // the harm asked, never a kill; killed they leave nothing.
@@ -14981,7 +15013,12 @@ mod tests {
             None,
         );
         assert!(
-            matches!(&made[..], [(Command::FakeCreeper { pos, .. }, 0)] if pos[2] < 0.0 && pos[2] > -2.0)
+            matches!(&made[0], (Command::FakeCreeper { pos, .. }, 0) if pos[2] < 0.0 && pos[2] > -2.0),
+            "{made:?}"
+        );
+        assert!(
+            matches!(&made[1].0, Command::Hint { hint, detail, .. } if hint == "sound_warp" && detail == "muffled"),
+            "and their hearing muffled after the bang"
         );
     }
 
@@ -15018,5 +15055,35 @@ mod tests {
         );
         assert!(inside[0] < door[0] as f64, "in the house: {inside:?}");
         assert!(event.needs.contains(&crate::events::Need::NoVillageNear));
+    }
+
+    #[test]
+    fn every_sound_goes_wrong_a_while_a_way_of_four() {
+        let mut memory = rich_memory();
+        let event = find("sound_warp").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let mut ways = Vec::new();
+        for _ in 0..4 {
+            let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+            let [(
+                Command::Hint {
+                    hint,
+                    detail,
+                    seconds,
+                    ..
+                },
+                0,
+            )] = &made[..]
+            else {
+                panic!("{made:?}");
+            };
+            assert_eq!(hint, "sound_warp");
+            assert!((30.0..=60.0).contains(seconds));
+            ways.push(detail.clone());
+            memory.record("sound_warp", None, 0.0, true, "");
+        }
+        ways.sort();
+        ways.dedup();
+        assert_eq!(ways.len(), 4, "each way in turn: {ways:?}");
     }
 }

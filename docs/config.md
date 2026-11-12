@@ -113,7 +113,7 @@ the end whatever the difficulty. The settings page picks the preset; the file wr
 | `events.sounds` | `true` | Whether the sounds (the door and chest sounds, the knocks, the late steps, the mining sounds, the pet's growl) may happen. Off, nothing in the group is offered or forced. |
 | `events.figure` | `true` | Whether a figure is ever shown: the far presence, the replay, the ring round the house, and the one that comes to the bed (`choke`, `shot_in_bed`, `burned_in_bed`). |
 | `events.chat` | `true` | Whether the lodger may touch the target's chat and player list (a line in their own name, a whisper from themselves, their name twice in the list, the joined and left lines, the sleepers count). |
-| `events.glitches` | `true` | Whether the client-rendered glitches (the flicker, the lights failing, the sun blinking, the red rain, the fog, the crosshair gone, the camera nudge, the field of view pulled, the music cut, the silence) may happen. |
+| `events.glitches` | `true` | Whether the client-rendered glitches (the flicker, the lights failing, the sun blinking, the red rain, the fog, the crosshair gone, the camera nudge, the field of view pulled, the music cut, the silence, every sound gone wrong, the creeper only they see) may happen. |
 
 ## Multiplayer
 

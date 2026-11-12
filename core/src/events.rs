@@ -1105,6 +1105,8 @@ pub enum Action {
     CreeperBehind,
     /// Far from any village, a villager bangs on their door, runs in and drops dead.
     VillagerFleesIn,
+    /// Every sound they hear goes wrong a while, one way of four.
+    SoundWarp,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4902,6 +4904,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 106 (owner's): "sound distortion effects, like DSP".
+    row(
+        "sound_warp",
+        3,
+        5,
+        &[TargetAwake],
+        1.5,
+        4,
+        Full,
+        Action::SoundWarp,
+        false,
+    ),
     // docs/events_todo.md, 105 (owner's): "a villager appear in front of their house (away from a
     // village), then it bangs on the door, runs in and dies".
     row(
@@ -6033,6 +6047,7 @@ impl Event {
             | Action::SoundPair(..)
             | Action::ChestAnswers
             | Action::KnocksOnWood
+            | Action::SoundWarp
             | Action::BranchSnaps
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
@@ -6335,6 +6350,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "sound_warp" => "make every sound they hear go wrong a while",
             "villager_flees_in" => "send a villager banging at their door, to run in and die",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
