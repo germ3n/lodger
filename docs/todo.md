@@ -2109,6 +2109,12 @@ The `[x]` lines above, summed up by day:
   dark a moment last (`hide_block` a few ticks at a time; `Memory::cave_lights_near`). Tests: one in
   `act`. Was: `flicker` was a light indoors alone.
 
+- [x] **Things out of place** (`docs/events_todo.md`, 110, owner's: "not just limited to caves"):
+  `out_of_place`, stages 3 to 5: a small scene by turns (a bed, a table laid with a candle cake, a
+  chair, a potted flower, a carpet and a lantern) on a cave floor they have not entered or on their
+  way back, taken away ten minutes on, each of its own blocks alone (`crate::out_of_place`). Tests:
+  one in `out_of_place`, one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

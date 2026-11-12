@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // A cave floor they have not been to, or their way back.
+        Action::OutOfPlace => memory.out_of_place_spot(),
         // The nearest of their lights underground.
         Action::CaveTorchesFlicker => memory.cave_lights_near().last().copied(),
         // Round the house.
@@ -6546,6 +6548,42 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // The scene set out on its floor, a scene by turns; ten minutes on, each block of it taken
+        // away again, the very block alone (gone already, it is let be).
+        Action::OutOfPlace => pos
+            .map(|floor| {
+                let (_, parts) = crate::out_of_place::scene(memory.times(event.id));
+                let mut made = vec![(
+                    Command::PlaceBlueprint {
+                        id: ids(),
+                        at: floor,
+                        parts: parts.clone(),
+                        replace: vec![
+                            "minecraft:short_grass".to_string(),
+                            "minecraft:snow".to_string(),
+                            "minecraft:cave_air".to_string(),
+                        ],
+                    },
+                    0,
+                )];
+                for part in parts.iter().rev() {
+                    made.push((
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: [
+                                floor[0] + part.at[0],
+                                floor[1] + part.at[1],
+                                floor[2] + part.at[2],
+                            ],
+                            block: "minecraft:air".to_string(),
+                            only: vec![part.block.clone()],
+                        },
+                        crate::out_of_place::STANDS_TICKS,
+                    ));
+                }
+                made
             })
             .unwrap_or_default(),
         // Down the line of their lights toward them, farthest first: each flickers three times, a
@@ -15283,5 +15321,25 @@ mod tests {
             ([0, 31, 4], 1.5),
             "the nearest dark a moment, last"
         );
+    }
+
+    #[test]
+    fn something_out_of_place_on_their_way_back_and_gone_ten_minutes_on() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.underground = false;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.trail = vec![[0, 64, -20]];
+        let event = find("out_of_place").unwrap();
+        let floor = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(floor, Some([0, 63, -20]));
+        let made = commands(event, floor, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0], (Command::PlaceBlueprint { at, parts, .. }, 0) if *at == [0, 63, -20] && parts.len() == 2)
+        );
+        assert!(made[1..].iter().all(
+            |(c, later)| matches!(c, Command::SwapBlock { block, .. } if block == "minecraft:air")
+                && *later == crate::out_of_place::STANDS_TICKS
+        ));
     }
 }

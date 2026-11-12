@@ -25,6 +25,7 @@ pub mod lights;
 pub mod memory;
 pub mod model;
 pub mod multiplayer;
+pub mod out_of_place;
 pub mod people;
 pub mod places;
 pub mod prints;

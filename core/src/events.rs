@@ -1123,6 +1123,8 @@ pub enum Action {
     PrintsAroundTheHouse,
     /// Underground, their torches flicker one after another down the line toward them.
     CaveTorchesFlicker,
+    /// A small scene that does not belong, set out where they will come on it.
+    OutOfPlace,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4920,6 +4922,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 110 (owner's).
+    row(
+        "out_of_place",
+        3,
+        5,
+        &[TargetOnline],
+        1.5,
+        4,
+        Full,
+        Action::OutOfPlace,
+        false,
+    ),
     // docs/events_todo.md, 109 (owner's): "in a cave their torches flicker".
     row(
         "cave_torches_flicker",
@@ -6258,6 +6272,7 @@ impl Event {
             | Action::BlazedTrees
             | Action::TreesCloseBehind
             | Action::DeadRedstone
+            | Action::OutOfPlace
             | Action::CaveTorchesFlicker
             | Action::PrintsAroundTheHouse
             | Action::TreeComesDown
@@ -6407,6 +6422,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "out_of_place" => "set out something that does not belong where they will come on it",
             "cave_torches_flicker" => {
                 "flicker their torches in the cave, one after another toward them"
             }
