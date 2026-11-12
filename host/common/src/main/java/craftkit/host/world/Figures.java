@@ -75,6 +75,9 @@ public final class Figures {
 		Vec3 hidesAt;
 		/** Coming at its player only while unseen, striking for this when it reaches them, spared (ABI 54); below 0 for none. */
 		float unseenStrike = -1;
+		/** Drawn to the light its player carries ({@link Drawn}, ABI 54); and the tick it lost them, -1 before. */
+		boolean drawn;
+		long lostAt = -1;
 		/** Jumping in place, from where it stands (ABI 54); null for none. */
 		Vec3 jumpsFrom;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
@@ -360,6 +363,14 @@ public final class Figures {
 				}
 				figure.at = figure.seat.position();
 			}
+			if (figure.drawn && !figure.rushes && figure.player.level() instanceof ServerLevel level) {
+				if (drawnOn(level, figure)) {
+					unsend(figure);
+					it.remove();
+					sightings.add(new Sighting(figure.player, figure.level, net.minecraft.core.BlockPos.containing(figure.at), figure.gaze.detail("lost")));
+				}
+				continue;
+			}
 			if (figure.unseenStrike >= 0 && figure.player.level() instanceof ServerLevel level) {
 				if (creepUnseen(level, figure)) {
 					unsend(figure);
@@ -607,6 +618,67 @@ public final class Figures {
 		player.connection.send(net.minecraft.network.protocol.game.ClientboundSetPassengersPacket.STREAM_CODEC.decode(buf));
 
 		return true;
+	}
+
+	/** The figure {@code number} shown to {@code player} is drawn to the light they carry (ABI 54). */
+	public void drawnToLight(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure != null) {
+			figure.drawn = true;
+		}
+	}
+
+	/** Whether a player holds anything that gives light, in either hand. */
+	private static boolean holdsLight(ServerPlayer player) {
+		for (ItemStack held : List.of(player.getMainHandItem(), player.getOffhandItem())) {
+			if (held.getItem() instanceof net.minecraft.world.item.BlockItem block && block.getBlock().defaultBlockState().getLightEmission() > 0) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * A figure drawn to their light, a tick on ({@link Drawn}): toward them while they hold one,
+	 * facing them; near enough it runs at them; with none in their hands it stops, turns this way
+	 * and that, and is gone. True when it is gone.
+	 */
+	private boolean drawnOn(ServerLevel level, Figure figure) {
+		ServerPlayer player = figure.player;
+		Vec3 to = player.position().subtract(figure.at);
+		double away = Math.sqrt(to.x * to.x + to.z * to.z);
+		switch (Drawn.next(holdsLight(player), away, figure.lostAt >= 0)) {
+			case RUSHES -> figure.rushes = true;
+			case COMES -> {
+				double step = Math.min(Drawn.PER_TICK, away) / Math.max(away, 1e-6);
+				figure.at = ground(level, new Vec3(figure.at.x + to.x * step, -10_000, figure.at.z + to.z * step));
+				float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
+						net.minecraft.world.entity.PositionPath.of(figure.at), yaw, 0, true));
+				var head = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+				head.writeVarInt(figure.entityId);
+				head.writeByte(net.minecraft.util.Mth.floor(yaw * 256f / 360f));
+				player.connection.send(net.minecraft.network.protocol.game.ClientboundRotateHeadPacket.STREAM_CODEC.decode(head));
+			}
+			case LOST -> {
+				if (figure.lostAt < 0) {
+					figure.lostAt = tick;
+				}
+				long since = tick - figure.lostAt;
+				// Looking about for what it followed: its head this way, then that.
+				if (since % 10 == 0) {
+					float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z)) + (since / 10 % 2 == 0 ? 70 : -70);
+					var head = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+					head.writeVarInt(figure.entityId);
+					head.writeByte(net.minecraft.util.Mth.floor(yaw * 256f / 360f));
+					player.connection.send(net.minecraft.network.protocol.game.ClientboundRotateHeadPacket.STREAM_CODEC.decode(head));
+				}
+				return since >= Drawn.LOST_TICKS;
+			}
+		}
+
+		return false;
 	}
 
 	/** The figure {@code number} shown to {@code player} comes at them only while unseen, striking for {@code damage} at the end (ABI 54). */

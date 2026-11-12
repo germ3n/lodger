@@ -783,6 +783,7 @@ fn figure(
         on_leaves: false,
         peeks: None,
         while_unseen: None,
+        drawn_to_light: false,
     }
 }
 

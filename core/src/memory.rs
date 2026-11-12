@@ -427,6 +427,8 @@ pub struct Snapshot {
     pub biome: String,
     /// Sprint starts in the last minute.
     pub sprint_bursts: u32,
+    /// Blocks a second over the last five seconds.
+    pub pace: f32,
     /// Animals and villagers within 32 blocks, from the last entity pass.
     pub creatures_near: Vec<Creature>,
     /// Hostile mobs within 48 blocks, from the last entity pass: zombies, skeletons, spiders.
@@ -1003,6 +1005,27 @@ fn is_light(id: &str) -> bool {
             || id.ends_with("lantern")
             || id.contains("candle")
             || is_mod_lamp(id))
+}
+
+/// How fast running is, blocks a second: past a walk's four and a third, short of a sprint's
+/// five and a half.
+pub const RUNNING_PACE: f32 = 4.8;
+
+impl Memory {
+    /// Whether they hold a light in either hand: a torch, a lantern, a candle, another mod's lamp.
+    pub fn holds_light(&self) -> bool {
+        is_light(&self.last.main_hand) || is_light(&self.last.off_hand)
+    }
+
+    /// Whether they run outdoors with a light in hand, awake.
+    pub fn running_lit(&self) -> bool {
+        self.last.online
+            && !self.last.indoors
+            && !self.last.underground
+            && !self.last.sleeping
+            && self.last.pace >= RUNNING_PACE
+            && self.holds_light()
+    }
 }
 
 /// A lamp of another mod's (their light, as a torch is), never the game's redstone lamp.
@@ -2146,6 +2169,7 @@ impl Memory {
         self.last.off_hand = player.off_hand.id.clone();
         self.last.biome = player.biome.clone();
         self.last.sprint_bursts = player.movement.sprint_bursts;
+        self.last.pace = player.movement.pace;
         self.last.look_backs = player.movement.look_backs;
         self.last.turns = player.movement.turns;
 

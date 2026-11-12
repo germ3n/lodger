@@ -1931,6 +1931,14 @@ The `[x]` lines above, summed up by day:
   the figures switch's test names it. Was: one fire-and-crossbow event, the crossbow's bolt setting
   them burning, shot from the pillow.
 
+- [x] **Drawn to the light** (`docs/events_todo.md`, 102, owner's): `drawn_to_the_light`, stages 4
+  and 5, never from the menu: five seconds of running at night in the open with a light in either
+  hand (`Memory::running_lit`; their pace kept in the snapshot now), once a run and a chance in
+  three, a figure far off walks at their light; the light put away, it has lost them for good
+  (owner: "when putting torch away it no longer sees you"); at twenty blocks it rushes them
+  (`figure`'s `drawn_to_light`, ABI 54; `Drawn.java`). Tests: `DrawnTest`'s two, one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

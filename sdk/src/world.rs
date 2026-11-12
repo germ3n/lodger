@@ -1301,6 +1301,12 @@ pub enum Command {
         /// gone. ABI 54.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         while_unseen: Option<f32>,
+        /// Drawn to the light the player carries: walking at them while they hold a light in
+        /// either hand (a torch, a lantern, anything that gives light), lost for good the moment
+        /// they hold none (it stops, looks about, and is gone); at twenty blocks it runs at them as
+        /// `rushes` does. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        drawn_to_light: bool,
     },
     RemoveFigure {
         id: u64,

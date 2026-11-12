@@ -190,6 +190,12 @@ pub struct Brain {
     /// The tick of the last tree read.
     #[serde(skip)]
     pub last_tree_read: u64,
+    /// The tick they began running lit at night (`drawn_to_the_light`), 0 when they are not;
+    /// and whether this run has been answered.
+    #[serde(skip)]
+    pub running_lit_since: u64,
+    #[serde(skip)]
+    pub running_lit_answered: bool,
     pub next_command_id: u64,
     pub rng: Rng,
     /// Decisions made, for the status line.
@@ -283,6 +289,9 @@ pub const WOKE_CHANCE: f64 = 0.35;
 pub const PORTAL_CHANCE: f64 = 0.3;
 /// How often a light placed underground shows a figure (`torch_flash`).
 pub const TORCH_FLASH_CHANCE: f64 = 0.15;
+/// How long they run lit at night before it may notice them, and how likely it is to then.
+pub const RUN_LIT_TICKS: u64 = 5 * TPS;
+pub const DRAWN_CHANCE: f64 = 0.35;
 /// The events a waking may start, one of those the stage offers picked.
 pub const WOKE_EVENTS: &[&str] = &["foot_of_bed", "upside_down"];
 /// The chance crouching still ten seconds brings the breathing at their ear (`breath`).
@@ -1008,6 +1017,34 @@ impl Brain {
             );
         }
 
+        // Running about at night with a light in hand, five seconds of it: perhaps it notices,
+        // once a run; the run over (no light, no running, indoors), it may again next time.
+        let night = now.day_time >= 13_000 && now.day_time <= 23_000;
+        if night && memory.running_lit() {
+            if self.running_lit_since == 0 {
+                self.running_lit_since = now.tick.max(1);
+            } else if !self.running_lit_answered
+                && now.tick.saturating_sub(self.running_lit_since) >= RUN_LIT_TICKS
+            {
+                self.running_lit_answered = true;
+                if !held_back {
+                    self.consider_started(
+                        "drawn_to_the_light",
+                        DRAWN_CHANCE,
+                        now,
+                        day,
+                        memory,
+                        arc,
+                        config,
+                        log,
+                    );
+                }
+            }
+        } else {
+            self.running_lit_since = 0;
+            self.running_lit_answered = false;
+        }
+
         // A chest of theirs opened: perhaps another closes in the house at the same moment.
         if memory.opened_now.is_some() && !held_back {
             commands.extend(self.consider_echo(now, day, memory, arc, config, log));
@@ -1648,6 +1685,7 @@ impl Brain {
                         n,
                         events::Need::JustWoke
                             | events::Need::LitUnderground
+                            | events::Need::RanLit
                             | events::Need::CameBack
                             | events::Need::KilledNow
                             | events::Need::RangBell

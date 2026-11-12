@@ -149,6 +149,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::ItsHouse => memory.its_house().is_some(),
         Need::TargetUnderwater => last.online && last.air < 280,
         Need::InTheWoods => memory.in_the_woods(),
+        // `drawn_to_the_light` starts from their running lit (`Brain::tick`), never the menu.
+        Need::RanLit => false,
         Need::LookingUp => last.online && !last.indoors && !last.underground && last.pitch <= -35.0,
         Need::ItsHouseNear => memory.its_house().is_some_and(|house| {
             let at = [
@@ -327,6 +329,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::CrouchedBehindATree
         | Action::PeeksFromTheTrees
         | Action::WhileUnseen(_)
+        | Action::DrawnToTheLight
         | Action::RaisesTheirSword
         | Action::Shoot(_) => config.events.figure,
         Action::TabEntry
@@ -402,6 +405,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::CrouchedBehindATree
         | Action::PeeksFromTheTrees
         | Action::WhileUnseen(_)
+        | Action::DrawnToTheLight
         | Action::RaisesTheirSword
         | Action::Shoot(_) => Some("figure"),
         Action::TabEntry

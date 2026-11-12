@@ -362,6 +362,22 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }),
         Action::ArrowInTheDoor => memory.usual_door(),
         Action::SnowballThrown => Some(block_of(memory.last.pos)),
+        // Forty-five blocks off, well to one side of where they look, on the ground: at the edge
+        // of their light's reach and beyond it, in the dark.
+        Action::DrawnToTheLight => {
+            let at = block_of(memory.last.pos);
+            let side = if rng.next_u64().is_multiple_of(2) {
+                1.2
+            } else {
+                -1.2
+            };
+            let yaw = (memory.last.yaw as f64).to_radians() + side;
+            Some([
+                at[0] + (-yaw.sin() * DRAWN_FROM).round() as i32,
+                -10_000,
+                at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
+            ])
+        }
         // Eighteen blocks behind them, on the ground: out of their view.
         Action::WhileUnseen(_) => {
             let at = block_of(memory.last.pos);
@@ -1668,6 +1684,9 @@ const HUNTED_FROM: f64 = 36.0;
 const RING_BLOCKS: f64 = 20.0;
 /// The ring's figures are numbered from here, apart from the one figure (1).
 const RING_FIRST: u32 = 11;
+/// The figure drawn to their light (`drawn_to_the_light`), and how far off it starts.
+const DRAWN_FIGURE: u32 = 62;
+const DRAWN_FROM: f64 = 45.0;
 /// The figure that comes on while unseen (`while_unseen`), and how far behind them it starts.
 const UNSEEN_FIGURE: u32 = 61;
 const UNSEEN_BEHIND: f64 = 18.0;
@@ -1728,6 +1747,7 @@ fn figure_shown(
         on_leaves: false,
         peeks: None,
         while_unseen: None,
+        drawn_to_light: false,
     }
 }
 
@@ -6281,6 +6301,25 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Out of the dark, empty-handed, its eyes on them: it walks at their light while they hold
+        // one, and is lost the moment they do not; near enough, it runs at them.
+        Action::DrawnToTheLight => pos
+            .map(|spot| {
+                let mut shown = figure_shown(ids, memory, target, spot, 90.0, false);
+                if let Command::Figure {
+                    figure,
+                    held,
+                    drawn_to_light,
+                    ..
+                } = &mut shown
+                {
+                    *figure = DRAWN_FIGURE;
+                    *held = ItemStack::default();
+                    *drawn_to_light = true;
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         // Behind them, empty-handed, facing them: still while they look, a step nearer each moment
         // they do not, and at arm's length it strikes and is gone. Three minutes at most.
         Action::WhileUnseen(damage) => pos
@@ -7781,6 +7820,7 @@ pub fn commands(
                         on_leaves: false,
                         peeks: None,
                         while_unseen: None,
+                        drawn_to_light: false,
                     },
                     0,
                 )]
@@ -13474,6 +13514,51 @@ mod tests {
                 if item == "minecraft:flint_and_steel" && how == "light" && *d == door),
             "{:?}",
             made[1]
+        );
+    }
+
+    #[test]
+    fn running_lit_at_night_a_figure_far_off_is_drawn_to_their_light() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.indoors = false;
+        memory.last.underground = false;
+        memory.last.sleeping = false;
+        memory.last.main_hand = "minecraft:torch".to_string();
+        memory.last.pace = 5.5;
+        assert!(memory.running_lit());
+        memory.last.main_hand = "minecraft:stone".to_string();
+        memory.last.off_hand = "minecraft:lantern".to_string();
+        assert!(memory.running_lit(), "a lantern in the other hand too");
+        memory.last.pace = 4.3;
+        assert!(!memory.running_lit(), "walking is not running");
+        memory.last.pace = 5.5;
+        memory.last.off_hand = "minecraft:redstone_torch".to_string();
+        assert!(
+            !memory.running_lit(),
+            "no light: a redstone torch is a circuit's"
+        );
+
+        let event = find("drawn_to_the_light").unwrap();
+        assert!(
+            event.needs.contains(&crate::events::Need::RanLit),
+            "never from the menu"
+        );
+        let spot = place(event, &memory, &mut Rng::new(4)).unwrap();
+        let far = ((spot[0] as f64).powi(2) + (spot[2] as f64).powi(2)).sqrt();
+        assert!((40.0..50.0).contains(&far), "far off: {spot:?}");
+        let made = commands(
+            event,
+            Some(spot),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { drawn_to_light: true, held, .. }, 0)] if held.id.is_empty()),
+            "{made:?}"
         );
     }
 }

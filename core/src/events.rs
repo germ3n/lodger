@@ -254,6 +254,8 @@ pub enum Need {
     /// The target outdoors among trees: trunks of the tree read around them
     /// (`Memory::in_the_woods`).
     InTheWoods,
+    /// They have run a while at night with a light in hand: met only then.
+    RanLit,
 }
 
 impl Need {
@@ -327,6 +329,7 @@ impl Need {
                 | Need::LookingUp
                 | Need::TargetUnderwater
                 | Need::InTheWoods
+                | Need::RanLit
         )
     }
 
@@ -446,6 +449,7 @@ impl Need {
             Need::ItsHouse => "its house is not built".to_string(),
             Need::TargetUnderwater => "the target is not under water".to_string(),
             Need::InTheWoods => "the target is not among trees".to_string(),
+            Need::RanLit => "happens only as they run about at night with a light".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -1030,6 +1034,8 @@ pub enum Action {
     PeeksFromTheTrees,
     /// A figure behind them that comes on only while unseen, and strikes for this at the end.
     WhileUnseen(f32),
+    /// Far off, a figure drawn to the light they run with, lost when they hold none.
+    DrawnToTheLight,
     /// A snowball hits their back; no one is there.
     SnowballThrown,
     /// While they are out, an arrow struck in their front door.
@@ -4772,6 +4778,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::WhileUnseen(4.0),
         false,
     ),
+    // docs/events_todo.md, 102 (owner's): never from the menu, on their running lit a while.
+    row(
+        "drawn_to_the_light",
+        4,
+        5,
+        &[RanLit, Night, TargetOutdoors],
+        1.0,
+        3,
+        Full,
+        Action::DrawnToTheLight,
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -5794,6 +5812,7 @@ impl Event {
             | Action::CrouchedBehindATree
             | Action::PeeksFromTheTrees
             | Action::WhileUnseen(_)
+            | Action::DrawnToTheLight
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -5876,6 +5895,7 @@ impl Event {
                 "have the figure peek out at them from behind the trees ahead"
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
+            "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
             "lantern_in_the_woods" => "walk a figure with a lantern through the dark far off",
             "rides_the_cart" => "roll their minecart past with a figure in it",
             "path_through_the_trees" => "cut a straight line through the trees toward their house",
