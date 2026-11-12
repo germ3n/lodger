@@ -2329,6 +2329,49 @@ pub fn commands(
             })
             .unwrap_or_default();
     }
+    // Bones round the house (`rattling_round_the_house`): a skeleton's steps round the walls,
+    // a block and a half out, and a rattle at the last corner.
+    if event.id == "rattling_round_the_house" {
+        let Some(([x0, z0, x1, z1], floor)) = crate::prints::house_box(memory) else {
+            return Vec::new();
+        };
+        let (a, b, c, d) = (
+            x0 as f64 - 1.5,
+            z0 as f64 - 1.5,
+            x1 as f64 + 2.5,
+            z1 as f64 + 2.5,
+        );
+        let y = floor as f64;
+        let corners = [[a, b], [c, b], [c, d], [a, d], [a, b]];
+        let mut made = Vec::new();
+        let mut t = 0u64;
+        for side in corners.windows(2) {
+            for k in 0..4 {
+                let f = k as f64 / 4.0;
+                let p = [
+                    side[0][0] + (side[1][0] - side[0][0]) * f,
+                    y,
+                    side[0][1] + (side[1][1] - side[0][1]) * f,
+                ];
+                made.push((
+                    sound_at(ids, target, "minecraft:entity.skeleton.step", p, 0.7),
+                    t,
+                ));
+                t += 9;
+            }
+        }
+        made.push((
+            sound_at(
+                ids,
+                target,
+                "minecraft:entity.skeleton.ambient",
+                [a, y + 1.0, b],
+                0.6,
+            ),
+            t,
+        ));
+        return made;
+    }
     // A sound event plays one of its ways to sound, the next after the last: from the house's
     // door or chest, from far off, or around the target as it moves.
     if let Some(ways) = super::sounds::variants(event.id) {
@@ -15750,5 +15793,32 @@ mod tests {
                 "never on their porch"
             );
         }
+    }
+
+    #[test]
+    fn at_night_bones_rattle_all_round_the_house() {
+        let memory = rich_memory();
+        let event = find("rattling_round_the_house").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(made.len() >= 16, "{made:?}");
+        let xs: Vec<f64> = made
+            .iter()
+            .filter_map(|(c, _)| match c {
+                Command::PlaySound { pos, .. } => Some(pos[0]),
+                _ => None,
+            })
+            .collect();
+        let (low, high) = (
+            xs.iter().cloned().fold(f64::MAX, f64::min),
+            xs.iter().cloned().fold(f64::MIN, f64::max),
+        );
+        assert!(high - low > 4.0, "round the walls, both sides");
     }
 }

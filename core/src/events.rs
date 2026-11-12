@@ -5452,6 +5452,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Sound("minecraft:block.bell.use"),
         false,
     ),
+    // docs/events_todo.md, 128.
+    row(
+        "rattling_round_the_house",
+        4,
+        5,
+        &[TargetIndoors, Night, Home],
+        2.0,
+        3,
+        Full,
+        Action::SoundAtTarget("minecraft:entity.skeleton.step"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6612,6 +6624,7 @@ impl Event {
             "water_where_none" => "splash water in a dry corner of their house",
             "doors_slam_far" => "slam every door far off at once",
             "the_count" => "ring the bell at their house once more than last time",
+            "rattling_round_the_house" => "rattle bones round the outside of their house",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

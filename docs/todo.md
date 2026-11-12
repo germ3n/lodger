@@ -2212,6 +2212,9 @@ The `[x]` lines above, summed up by day:
   and its going once seen too; one more for the path. Was: the face a second long, gone before it
   was found; the path stopped at their porch.
 
+- [x] **Bones round the house** (`docs/events_todo.md`, 128): `rattling_round_the_house`, stages 4 and 5, indoors at night: skeleton steps all round the outside walls. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
