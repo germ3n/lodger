@@ -1324,6 +1324,8 @@ pub enum Action {
     PotionAtTheWindow,
     /// In the Nether or the End, where there is no weather, lightning striking a few blocks from them; nothing burns.
     LightningBelow,
+    /// At an end city, every shulker near them opening its shell at once, and shutting it at once.
+    ShulkersOpen,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8355,6 +8357,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LightningBelow,
         false,
     ),
+    // docs/events_todo.md, 291: every shulker near them opens at once and shuts at once.
+    row(
+        "shulkers_open",
+        3,
+        5,
+        &[InEnd, MobNear("shulker")],
+        1.0,
+        3,
+        Half,
+        Action::ShulkersOpen,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9017,6 +9031,7 @@ impl Event {
             | Action::SplashInTheNether
             | Action::RuinedPortalGlows
             | Action::LightningBelow
+            | Action::ShulkersOpen
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9638,6 +9653,7 @@ impl Event {
             "potion_at_the_window" => "shatter a splash potion against their window",
             "came_back_wrong_hour" => "show them the wrong hour's sky as they come back",
             "lightning_below" => "strike lightning beside them where there is no weather",
+            "shulkers_open" => "open every shulker near them at once",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

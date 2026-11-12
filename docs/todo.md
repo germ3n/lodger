@@ -3116,6 +3116,10 @@ The `[x]` lines above, summed up by day:
   nothing burnt or hurt (`lightning`, ABI 56). Owner's ask: in the Nether and the End both, a row
   for each world. Tests: one in `act`. Was: no such event.
 
+- [x] **The shulkers open** (`docs/events_todo.md`, 291): `shulkers_open`, stages 3 to 5, in the End
+  with shulkers near: every shulker within twenty-four blocks opened at once, shut three seconds on
+  (`shulkers_peek`, ABI 56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -908,6 +908,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::RuinedPortalGlows
         | Action::PotionAtTheWindow
         | Action::LightningBelow
+        | Action::ShulkersOpen
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10458,6 +10459,15 @@ pub fn commands(
                 0,
             )]
         }
+        // docs/events_todo.md, 291.
+        Action::ShulkersOpen => vec![(
+            Command::ShulkersPeek {
+                id: ids(),
+                player: target,
+                seconds: 3.0,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14340,6 +14350,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "shulkers_open"
                 || event.id == "lightning_below"
                 || event.id == "splash_in_the_nether"
                 || event.id == "standing_on_the_void"
@@ -22817,6 +22828,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Lightning { pos, .. }, 0)] if pos[2] == 6.5 && pos[1] == 70.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn shulkers_open_all_at_once_a_moment() {
+        let memory = rich_memory();
+        let event = find("shulkers_open").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::ShulkersPeek { seconds, .. }, 0)] if *seconds == 3.0),
             "{made:?}"
         );
     }
