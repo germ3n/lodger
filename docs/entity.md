@@ -795,14 +795,34 @@ Some chains, with the stages they span:
 - **The visitor.** `villager_flees_in` → `prints_around_the_house` → `wall_bursts`. [4 to 5]
 - **The glitches.** `dead_redstone` → `sound_warp`, once they noticed the redstone → `menu_freaks`.
   [3 to 5]
+- **The knock.** `knock` → `door_scratch` → `knock_heavy` → `door_wont_open`.
+- **The bed.** `egg_on_bed` → `sheets_changed` → `under_the_bed` → `foot_of_bed` → `lies_beside`.
+- **The hands.** `by_the_bed` → `choke` → `burned_in_bed` or `shot_in_bed`.
+- **The voice.** `says_back` → `repeats_you` → `says_first` → `whisper_from_you`.
+- **The lights.** `flicker` → `lights_fail` → `candles_lit` → `lights_out`.
+- **The sky wrong.** `thunder_clear` → `moon_wrong` → `stars_out` → `red_rain` → `night_early`.
+- **The screen.** `hotbar_slip` → `crosshair_gone` → `inventory_stare` → `f3_line`.
+- **The village.** `villager_at_door` → `golem_turned` → `village_doors` → `village_abandoned`.
+- **The kills.** `kill_sign` → `count_up` → `head_on_post` → `grave_each`.
+- **The water.** `ripples` → `boat_waiting` → `on_the_water` → `swims_beneath` → `pulled_under`.
+- **The cave.** `lantern_ahead` → `cave_lit` → `cave_torches_flicker` → `drops_from_the_ceiling`.
+- **The figures.** `crossing_ahead` → `in_a_line` → `ring_of_figures` → `every_window`.
+- **The mirror.** `figure_mirror` → `reflection` → `wears_your_face` → `mirror_in_the_window`.
+- **The death.** `death_light` → `where_you_died` → `death_message` → `false_death`.
+- **The animals.** `stare` → `slow_approach` → `warped_animal` → `animals_turn`.
+- **The field.** `scarecrow` → `row_withered` → `field_word` → `face_the_house`.
+- **The chest.** `shuffle_chest` → `tidy_chest` → `chest_answers` → `chest_rattles` → `chest_wont_open`.
+- **The steps.** `late_steps` → `footsteps_follow` → `breath` → `hand_on_shoulder` → `breath_close`.
+- **The bow.** `arrow_near` → `arrow_in_the_door` → `arrow_grazes` → `arrow_hits`.
 
 A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
 menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
 tests check that a stay with the rule brain walks at least two chains end to end and that no
 follow-up is ever offered with its needs unmet.
 
-**As coded (`core/src/chains.rs`).** Sixteen: the seven of the newer events as listed above, and
-the nine of the design, with the catalogue's events: the thing (`take`,
+**As coded (`core/src/chains.rs`).** Thirty-five, no event in two: the seven of the newer events
+and the nineteen over the rest of the catalogue, as listed above, and the nine of the design, with
+the catalogue's events: the thing (`take`,
 `place_taken` or `return_taken`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
 `mined_out`), the tunnel (`mining_sounds`, `mine_beside`, `tunnel_toward`, `cave_room`), the
 place (`light_path`, `hole`, `pillar`, `sign`, `house_near`; its house grows in the ending's

@@ -2131,6 +2131,14 @@ The `[x]` lines above, summed up by day:
   counts sixteen now (it counted nine) and checks each id is its own. Was: none of the newer events
   led to another.
 
+- [x] **Chains over the whole catalogue** (owner: "make new chains out of all the events where it
+  make sense ... where it doesnt conflict/duplicate another chain"): nineteen more in `chains.rs`,
+  the knock, the bed, the hands, the voice, the lights, the sky wrong, the screen, the village, the
+  kills, the water, the cave, the figures, the mirror, the death, the animals, the field, the chest,
+  the steps and the bow (docs/entity.md, Chains); `knocks_on_wood` left to the woods alone. Tests:
+  the chains test counts thirty-five and checks no event is in two chains. Was: sixteen chains,
+  `knocks_on_wood` in two of them.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

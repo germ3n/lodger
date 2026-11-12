@@ -42,8 +42,9 @@ const fn step(events: &'static [&'static str], within_days: f32, when: When) -> 
 
 use When::*;
 
-/// The nine chains of the design, with the catalogue's events, and seven of the newer events'
-/// (owner: "remember the chain functionality, so chain events, where possible").
+/// The nine chains of the design, with the catalogue's events, seven of the newer events', and
+/// nineteen more over the rest of the catalogue (owner: "make new chains out of all the events
+/// where it makes sense ... where it doesnt conflict/duplicate another chain"): no event is in two.
 pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_thing",
@@ -191,6 +192,200 @@ pub const CHAINS: &[Chain] = &[
             step(&["dead_redstone"], 0.0, Always),
             step(&["sound_warp"], 3.0, Noticed),
             step(&["menu_freaks"], 3.0, Always),
+        ],
+    },
+    // At the door, softly, then scratching, then heavy, then it will not open.
+    Chain {
+        id: "the_knock",
+        steps: &[
+            step(&["knock"], 0.0, Always),
+            step(&["door_scratch"], 3.0, Always),
+            step(&["knock_heavy"], 3.0, Always),
+            step(&["door_wont_open"], 3.0, Always),
+        ],
+    },
+    // Their bed, nearer each time: an egg on it, the sheets, under it, its foot, beside them.
+    Chain {
+        id: "the_bed",
+        steps: &[
+            step(&["egg_on_bed"], 0.0, Always),
+            step(&["sheets_changed"], 3.0, Always),
+            step(&["under_the_bed"], 3.0, Always),
+            step(&["foot_of_bed"], 3.0, Always),
+            step(&["lies_beside"], 3.0, Always),
+        ],
+    },
+    // At their bed: standing by it, then its hands on them.
+    Chain {
+        id: "the_hands",
+        steps: &[
+            step(&["by_the_bed"], 0.0, Always),
+            step(&["choke"], 3.0, Always),
+            step(&["burned_in_bed", "shot_in_bed"], 3.0, Always),
+        ],
+    },
+    // What they say, said back, then repeated, then said first, then whispered in their own voice.
+    Chain {
+        id: "the_voice",
+        steps: &[
+            step(&["says_back"], 0.0, Always),
+            step(&["repeats_you"], 3.0, Always),
+            step(&["says_first"], 3.0, Always),
+            step(&["whisper_from_you"], 3.0, Always),
+        ],
+    },
+    // The lights: a flicker, a failing, candles, then all out.
+    Chain {
+        id: "the_lights",
+        steps: &[
+            step(&["flicker"], 0.0, Always),
+            step(&["lights_fail"], 3.0, Always),
+            step(&["candles_lit"], 3.0, Always),
+            step(&["lights_out"], 3.0, Always),
+        ],
+    },
+    // The sky going wrong, night by night.
+    Chain {
+        id: "the_sky_wrong",
+        steps: &[
+            step(&["thunder_clear"], 0.0, Always),
+            step(&["moon_wrong"], 3.0, Always),
+            step(&["stars_out"], 3.0, Always),
+            step(&["red_rain"], 3.0, Always),
+            step(&["night_early"], 3.0, Always),
+        ],
+    },
+    // Their own screen: the hotbar, the crosshair, the inventory, the debug lines.
+    Chain {
+        id: "the_screen",
+        steps: &[
+            step(&["hotbar_slip"], 0.0, Always),
+            step(&["crosshair_gone"], 3.0, Always),
+            step(&["inventory_stare"], 3.0, Always),
+            step(&["f3_line"], 3.0, Always),
+        ],
+    },
+    // The village turned toward them, then emptied.
+    Chain {
+        id: "the_village",
+        steps: &[
+            step(&["villager_at_door"], 0.0, Always),
+            step(&["golem_turned"], 3.0, Always),
+            step(&["village_doors"], 3.0, Always),
+            step(&["village_abandoned"], 3.0, Always),
+        ],
+    },
+    // What they kill, counted, then shown, then buried.
+    Chain {
+        id: "the_kills",
+        steps: &[
+            step(&["kill_sign"], 0.0, Always),
+            step(&["count_up"], 3.0, Always),
+            step(&["head_on_post"], 3.0, Always),
+            step(&["grave_each"], 3.0, Always),
+        ],
+    },
+    // The water: ripples, a boat waiting, something standing on it, under it, then taking them.
+    Chain {
+        id: "the_water",
+        steps: &[
+            step(&["ripples"], 0.0, Always),
+            step(&["boat_waiting"], 3.0, Always),
+            step(&["on_the_water"], 3.0, Always),
+            step(&["swims_beneath"], 3.0, Always),
+            step(&["pulled_under"], 3.0, Always),
+        ],
+    },
+    // A cave of theirs lit for them, their torches flickering in it, then something in its ceiling.
+    Chain {
+        id: "the_cave",
+        steps: &[
+            step(&["lantern_ahead"], 0.0, Always),
+            step(&["cave_lit"], 3.0, Always),
+            step(&["cave_torches_flicker"], 3.0, Always),
+            step(&["drops_from_the_ceiling"], 3.0, Always),
+        ],
+    },
+    // Figures nearer and more: across their way, in a line, round the house, in every window.
+    Chain {
+        id: "the_figures",
+        steps: &[
+            step(&["crossing_ahead"], 0.0, Always),
+            step(&["in_a_line"], 3.0, Always),
+            step(&["ring_of_figures"], 3.0, Always),
+            step(&["every_window"], 3.0, Always),
+        ],
+    },
+    // It becomes them: a mirror, a reflection, their own face, the window.
+    Chain {
+        id: "the_mirror",
+        steps: &[
+            step(&["figure_mirror"], 0.0, Always),
+            step(&["reflection"], 3.0, Always),
+            step(&["wears_your_face"], 3.0, Always),
+            step(&["mirror_in_the_window"], 3.0, Always),
+        ],
+    },
+    // Where they died: a light, a body, the game's own line, a death that was not.
+    Chain {
+        id: "the_death",
+        steps: &[
+            step(&["death_light"], 0.0, Always),
+            step(&["where_you_died"], 3.0, Always),
+            step(&["death_message"], 3.0, Always),
+            step(&["false_death"], 3.0, Always),
+        ],
+    },
+    // The animals: staring, coming slowly, going wrong, turning on them.
+    Chain {
+        id: "the_animals",
+        steps: &[
+            step(&["stare"], 0.0, Always),
+            step(&["slow_approach"], 3.0, Always),
+            step(&["warped_animal"], 3.0, Always),
+            step(&["animals_turn"], 3.0, Always),
+        ],
+    },
+    // Their field: a scarecrow, a row withered, a word in it, every animal facing the house.
+    Chain {
+        id: "the_field",
+        steps: &[
+            step(&["scarecrow"], 0.0, Always),
+            step(&["row_withered"], 3.0, Always),
+            step(&["field_word"], 3.0, Always),
+            step(&["face_the_house"], 3.0, Always),
+        ],
+    },
+    // Their chest: moved about, tidied, answering, rattling, and shut to them.
+    Chain {
+        id: "the_chest",
+        steps: &[
+            step(&["shuffle_chest"], 0.0, Always),
+            step(&["tidy_chest"], 3.0, Always),
+            step(&["chest_answers"], 3.0, Always),
+            step(&["chest_rattles"], 3.0, Always),
+            step(&["chest_wont_open"], 3.0, Always),
+        ],
+    },
+    // Steps behind them, then breath, then a hand, then breath at the ear.
+    Chain {
+        id: "the_steps",
+        steps: &[
+            step(&["late_steps"], 0.0, Always),
+            step(&["footsteps_follow"], 3.0, Always),
+            step(&["breath"], 3.0, Always),
+            step(&["hand_on_shoulder"], 3.0, Always),
+            step(&["breath_close"], 3.0, Always),
+        ],
+    },
+    // A bow somewhere: an arrow near, one in the door, one grazing, one that hits.
+    Chain {
+        id: "the_bow",
+        steps: &[
+            step(&["arrow_near"], 0.0, Always),
+            step(&["arrow_in_the_door"], 3.0, Always),
+            step(&["arrow_grazes"], 3.0, Always),
+            step(&["arrow_hits"], 3.0, Always),
         ],
     },
 ];
@@ -425,9 +620,18 @@ mod tests {
                 }
             }
         }
-        // The design's eight, the diary (sold, then brought if not bought), and the newer
-        // events' seven.
-        assert_eq!(CHAINS.len(), 16);
+        // The design's eight, the diary (sold, then brought if not bought), the newer events'
+        // seven and the rest of the catalogue's nineteen.
+        assert_eq!(CHAINS.len(), 35);
+        let mut seen: Vec<&str> = Vec::new();
+        for chain in CHAINS {
+            for step in chain.steps {
+                for event in step.events {
+                    assert!(!seen.contains(event), "{event} is in two chains");
+                    seen.push(event);
+                }
+            }
+        }
         let ids: std::collections::HashSet<&str> = CHAINS.iter().map(|c| c.id).collect();
         assert_eq!(ids.len(), CHAINS.len(), "each chain its own id");
     }
