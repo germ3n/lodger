@@ -70,6 +70,18 @@ public final class Executors {
 					Log.LOGGER.info("{}: {}", mod.id(), command.get("text").getAsString());
 					yield report(id, true, "");
 				}
+				case "in_world" -> {
+					// Another command done in another dimension (ABI 56): the Nether's stay taking from
+					// the chest at home. What it keeps is kept here, with the world that asked.
+					var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,
+							Identifier.parse(command.get("dimension").getAsString()));
+					ServerLevel other = level.getServer().getLevel(key);
+					if (other == null) {
+						yield report(id, false, "no such dimension");
+					}
+					JsonObject done = run(mod, other, command.getAsJsonObject("command"), context, data);
+					yield report(id, done.has("done") && done.get("done").getAsBoolean(), done.has("reason") ? done.get("reason").getAsString() : "");
+				}
 				case "system_message" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

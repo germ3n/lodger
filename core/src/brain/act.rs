@@ -926,6 +926,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TheirOwnPotion
         | Action::VinesReach
         | Action::PortalGoesOut
+        | Action::BarterFromHome
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10758,6 +10759,57 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // docs/events_todo.md, 267.
+        Action::BarterFromHome => {
+            // The chest's thing, as the overworld told it: x,y,z,slot,item.
+            let told: Vec<&str> = written.unwrap_or_default().splitn(5, ',').collect();
+            let parsed = (told.len() == 5)
+                .then(|| {
+                    Some((
+                        [
+                            told[0].parse().ok()?,
+                            told[1].parse().ok()?,
+                            told[2].parse().ok()?,
+                        ],
+                        told[3].parse::<u32>().ok()?,
+                        told[4].to_string(),
+                    ))
+                })
+                .flatten();
+            match (parsed, mobs_near(memory, "piglin").next()) {
+                (Some((chest, slot, item)), Some(piglin)) => vec![
+                    (
+                        Command::InWorld {
+                            id: ids(),
+                            dimension: "minecraft:overworld".to_string(),
+                            command: Box::new(Command::TakeItem {
+                                id: ids(),
+                                from: chest,
+                                slot,
+                                expect: item.clone(),
+                                count: 1,
+                                keep: "barter_from_home".to_string(),
+                            }),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::DropItem {
+                            id: ids(),
+                            pos: [piglin.pos[0], piglin.pos[1] + 0.5, piglin.pos[2]],
+                            item: ItemStack {
+                                id: item,
+                                count: 1,
+                                slot: 0,
+                            },
+                            kept: "barter_from_home".to_string(),
+                        },
+                        30,
+                    ),
+                ],
+                _ => vec![],
+            }
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14640,6 +14692,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "barter_from_home"
                 || event.id == "end_sky_face"
                 || event.id == "lava_goes_still"
                 || event.id == "portal_goes_out"
@@ -23337,6 +23390,37 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "end_sky_face" && *seconds == 8.0),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn barter_from_home_takes_from_the_chest_at_home_and_drops_at_the_piglin() {
+        let mut memory = rich_memory();
+        memory.last.hostiles_near.push(Creature {
+            id: 440,
+            kind: "piglin".to_string(),
+            pos: [6.0, 70.0, 2.0],
+            ..Creature::default()
+        });
+        let event = find("barter_from_home").unwrap();
+        let made = commands(
+            event,
+            None,
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            Some("2,64,0,5,minecraft:apple"),
+        );
+        assert!(
+            matches!(&made[0].0, Command::InWorld { dimension, command, .. } if dimension == "minecraft:overworld" && matches!(command.as_ref(), Command::TakeItem { from: [2, 64, 0], slot: 5, expect, keep, .. } if expect == "minecraft:apple" && keep == "barter_from_home")),
+            "{made:?}"
+        );
+        assert!(
+            matches!(&made[1].0, Command::DropItem { kept, pos, .. } if kept == "barter_from_home" && pos[0] == 6.0)
+        );
+        assert!(
+            commands(event, None, &memory, &mut ids(), &Now::default(), None).is_empty(),
+            "nothing told: nothing"
         );
     }
 }

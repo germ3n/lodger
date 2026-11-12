@@ -800,6 +800,14 @@ pub enum Command {
         id: u64,
         player: u32,
     },
+    /// `command` done in `dimension` (`minecraft:overworld`) instead of the world that sends it,
+    /// reported as this one: another world's stay taking from the chest at home. What it keeps
+    /// (`take_item`'s `keep`) is kept with the world that sent it. ABI 56.
+    InWorld {
+        id: u64,
+        dimension: String,
+        command: Box<Command>,
+    },
     /// Every armadillo within sixteen blocks of `player` rolled up at once, as if something it
     /// feared passed; each unrolls on its own, as after any fright. Refused with none. ABI 56.
     CurlUp {
@@ -1755,6 +1763,7 @@ impl Command {
             | Command::GhostNear { id, .. }
             | Command::RotateSlots { id, .. }
             | Command::CurlUp { id, .. }
+            | Command::InWorld { id, .. }
             | Command::GrowVines { id, .. }
             | Command::Lightning { id, .. }
             | Command::ShulkersPeek { id, .. }

@@ -3181,6 +3181,12 @@ The `[x]` lines above, summed up by day:
   and fades over their screen (the `end_sky_face` hint; off with the glitches). Tests: one in `act`.
   Was: no such event.
 
+- [x] **A barter from home** (`docs/events_todo.md`, 267): `barter_from_home`, stages 4 and 5, in
+  the Nether with a piglin near: one of a stack in the chest they use at home (never a favourite,
+  the overworld telling the Nether which) taken there and dropped at the piglin's feet, the very
+  thing (`in_world`, ABI 56: a command done in another dimension, what it keeps kept with the world
+  that sent it). Tests: one in `act`, one in `elsewhere`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

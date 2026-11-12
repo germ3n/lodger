@@ -1352,6 +1352,8 @@ pub enum Action {
     VinesReach,
     /// In the Nether, their portal going out as they reach it, and lit again ten seconds on; they are never left there.
     PortalGoesOut,
+    /// In the Nether, a piglin near them dropping one thing of theirs from their chest at home; the chest is one short.
+    BarterFromHome,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8551,6 +8553,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("end_sky_face", 8.0),
         false,
     ),
+    // docs/events_todo.md, 267: a piglin near them drops one thing of theirs from their chest at home.
+    row(
+        "barter_from_home",
+        4,
+        5,
+        &[InNether, MobNear("piglin")],
+        3.0,
+        2,
+        Full,
+        Action::BarterFromHome,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8932,6 +8946,7 @@ impl Event {
             | Action::BundleGains
             | Action::LeatherDyed
             | Action::EggOnThePillow
+            | Action::BarterFromHome
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -9860,6 +9875,7 @@ impl Event {
             "portal_goes_out" => "put out their portal as they reach it, and light it again",
             "lava_goes_still" => "still the lava round them a moment",
             "end_sky_face" => "make a face in the End's sky",
+            "barter_from_home" => "give a piglin near them one thing from their chest at home",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

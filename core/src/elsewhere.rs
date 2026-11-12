@@ -56,6 +56,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("portal_goes_out", "minecraft:the_nether"),
     ("lava_goes_still", "minecraft:the_nether"),
     ("end_sky_face", "minecraft:the_end"),
+    ("barter_from_home", "minecraft:the_nether"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
@@ -83,6 +84,11 @@ pub struct Elsewhere {
     pub block: Option<String>,
     /// The home's middle in the overworld, for what the other worlds do toward it.
     pub home: Option<BlockPos>,
+    /// One thing in the chest they use at home, none of their favourites: where, its slot and
+    /// what it is, for `barter_from_home`.
+    pub chest: Option<(BlockPos, u32, String)>,
+    /// An item frame of theirs at home, for `elytra_at_home`.
+    pub frame: Option<u32>,
     /// Of [`ROWS`], what the overworld's rules allow at this moment.
     pub allowed: Vec<&'static str>,
     /// Done in another dimension since the overworld last looked, with where.
@@ -110,6 +116,13 @@ impl Stay {
         shared.target_uuid = self.memory.target_uuid.clone();
         shared.name = self.memory.target_name.clone();
         shared.home = self.memory.home.as_ref().map(|h| h.center);
+        shared.chest = self.memory.used_container().and_then(|c| {
+            c.contents
+                .iter()
+                .find(|s| !self.memory.favourites.iter().any(|(f, _)| *f == s.id))
+                .map(|s| (c.pos, s.slot, s.id.clone()))
+        });
+        shared.frame = self.memory.decor("item_frame").next().map(|d| d.id);
         // The block they build with most, when it has one of its own (from its digging) to
         // give: until now it was made from nothing.
         shared.block = self
@@ -129,6 +142,8 @@ impl Stay {
                     .is_ok()
                 && self.arc.affords(event.cost_in(config), now.day, config)
                 && (*id != "ender_holds" || shared.block.is_some())
+                && (*id != "barter_from_home" || shared.chest.is_some())
+                && (*id != "elytra_at_home" || shared.frame.is_some())
             {
                 shared.allowed.push(id);
             }
@@ -191,13 +206,22 @@ impl Stay {
         // in the Nether, as a portal's way is.
         let pos = crate::brain::act::place(event, &self.memory, &mut self.brain.rng)
             .or_else(|| shared.home.map(|h| home_here(&world, h)));
+        // What the event needs from home, as text: the chest's thing, the frame, else the block.
+        let from_home = match id {
+            "barter_from_home" => shared
+                .chest
+                .as_ref()
+                .map(|(p, slot, item)| format!("{},{},{},{slot},{item}", p[0], p[1], p[2])),
+            "elytra_at_home" => shared.frame.map(|f| f.to_string()),
+            _ => shared.block.clone(),
+        };
         let made = crate::brain::act::commands(
             event,
             pos,
             &self.memory,
             &mut ids,
             now,
-            shared.block.as_deref(),
+            from_home.as_deref(),
         );
         if made.is_empty() {
             return out;
@@ -400,6 +424,75 @@ mod tests {
             shared.done,
             vec![("piglins_stare", "minecraft:the_nether".to_string())]
         );
+    }
+
+    #[test]
+    fn the_overworld_tells_the_nether_a_thing_from_their_chest_never_a_favourite() {
+        let mut config = Config::default();
+        config.events.cooldown_scale = 0.0;
+        let mut home = stay("minecraft:overworld");
+        home.memory.target = Some(0);
+        home.arc.stage = 4;
+        home.memory
+            .favourites
+            .push(("minecraft:diamond".to_string(), 9));
+        home.memory.containers.push(crate::memory::Container {
+            pos: [2, 64, 0],
+            kind: "minecraft:chest".to_string(),
+            placed: true,
+            opens: 5,
+            contents: vec![
+                craftkit::world::ItemStack {
+                    id: "minecraft:diamond".to_string(),
+                    count: 3,
+                    slot: 0,
+                },
+                craftkit::world::ItemStack {
+                    id: "minecraft:apple".to_string(),
+                    count: 2,
+                    slot: 4,
+                },
+            ],
+            ..Default::default()
+        });
+        let mut shared = Elsewhere::default();
+        home.share(&Now::default(), &config, &mut shared);
+        assert_eq!(
+            shared.chest,
+            Some(([2, 64, 0], 4, "minecraft:apple".to_string())),
+            "never their diamonds"
+        );
+        assert!(shared.allowed.contains(&"barter_from_home"));
+        shared.allowed = vec!["barter_from_home"];
+
+        let mut nether = stay("minecraft:the_nether");
+        let mut seen = player_at([0.0, 70.0, 0.0]);
+        seen.entities = vec![Entity {
+            id: 902,
+            kind: "minecraft:piglin".to_string(),
+            pos: [5.0, 70.0, 0.0],
+            hostile: true,
+            ..Entity::default()
+        }];
+        let mut sent = Vec::new();
+        for i in 0..20_000u64 {
+            nether.observe(&seen, 0.0);
+            sent = nether.tick_elsewhere(
+                &Now {
+                    tick: 20 + i * 20,
+                    ..Now::default()
+                },
+                &mut shared,
+            );
+            if !sent.is_empty() {
+                break;
+            }
+        }
+        assert!(
+            matches!(&sent[..], [Command::InWorld { dimension, .. }] if dimension == "minecraft:overworld"),
+            "the take at home first, the drop a moment on: {sent:?}"
+        );
+        assert_eq!(nether.waiting.len(), 1, "the drop waits");
     }
 
     #[test]
