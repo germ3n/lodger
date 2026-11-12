@@ -876,6 +876,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ZombifiedFollow
         | Action::RainInTheNether
         | Action::TheirDoorBehind
+        | Action::NetherRoofSteps
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9704,6 +9705,133 @@ pub fn commands(
                 ),
             ]
         }
+        // docs/events_todo.md, 281.
+        Action::NetherRoofSteps => {
+            let b = memory.last.pos;
+            let way = facing_way(memory.last.yaw);
+            vec![
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.netherrack.step".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * -6.0 - way[1] as f64 * 0.0,
+                            b[1] + 6.0,
+                            b[2] + way[1] as f64 * -6.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.7,
+                        pitch: 0.8,
+                    },
+                    0,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.netherrack.step".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * -4.5 - way[1] as f64 * 0.0,
+                            b[1] + 6.0,
+                            b[2] + way[1] as f64 * -4.5 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.7,
+                        pitch: 0.8,
+                    },
+                    12,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.netherrack.step".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * -3.0 - way[1] as f64 * 0.0,
+                            b[1] + 6.0,
+                            b[2] + way[1] as f64 * -3.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.7,
+                        pitch: 0.8,
+                    },
+                    24,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.netherrack.step".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * -1.5 - way[1] as f64 * 0.0,
+                            b[1] + 6.0,
+                            b[2] + way[1] as f64 * -1.5 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.7,
+                        pitch: 0.8,
+                    },
+                    36,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.netherrack.step".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 6.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.7,
+                        pitch: 0.8,
+                    },
+                    48,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.netherrack.step".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 1.5 - way[1] as f64 * 0.0,
+                            b[1] + 6.0,
+                            b[2] + way[1] as f64 * 1.5 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.7,
+                        pitch: 0.8,
+                    },
+                    60,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.netherrack.step".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 3.0 - way[1] as f64 * 0.0,
+                            b[1] + 6.0,
+                            b[2] + way[1] as f64 * 3.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.7,
+                        pitch: 0.8,
+                    },
+                    72,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.netherrack.step".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 4.5 - way[1] as f64 * 0.0,
+                            b[1] + 6.0,
+                            b[2] + way[1] as f64 * 4.5 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.7,
+                        pitch: 0.8,
+                    },
+                    84,
+                ),
+            ]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13586,6 +13714,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "nether_roof_steps"
                 || event.id == "their_door_behind"
                 || event.id == "rain_in_the_nether"
                 || event.id == "zombified_follow"
@@ -21713,6 +21842,19 @@ mod tests {
         assert_eq!(event.effect(), "sounds");
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 2, "{made:?}");
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
+    }
+
+    #[test]
+    fn nether_roof_steps_is_heard_and_nothing_else() {
+        let mut memory = rich_memory();
+        memory.arrived_at = Some([3, 64, 3]);
+        let event = find("nether_roof_steps").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 8, "{made:?}");
         assert!(made
             .iter()
             .all(|(c, _)| matches!(c, Command::PlaySound { .. })));

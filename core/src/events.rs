@@ -1282,6 +1282,8 @@ pub enum Action {
     RainInTheNether,
     /// In the Nether, behind them, the sound of a door like theirs opening and shutting.
     TheirDoorBehind,
+    /// In the Nether, steps on the rock overhead, slow, crossing over them and stopping right above.
+    NetherRoofSteps,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8001,6 +8003,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TheirDoorBehind,
         true,
     ),
+    // docs/events_todo.md, 281: in the nether, slow steps on the rock six blocks over their heads, crossing from behind them to right above, and stopping there.
+    row(
+        "nether_roof_steps",
+        4,
+        5,
+        &[InNether],
+        1.0,
+        3,
+        Half,
+        Action::NetherRoofSteps,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8303,6 +8317,7 @@ impl Event {
             | Action::OreCounted
             | Action::RainInTheNether
             | Action::TheirDoorBehind
+            | Action::NetherRoofSteps
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -9237,6 +9252,7 @@ impl Event {
             "zombified_follow" => "make the zombified piglins near them follow when unwatched",
             "rain_in_the_nether" => "rain on them in the Nether, the sound alone",
             "their_door_behind" => "open and shut a door behind them in the Nether",
+            "nether_roof_steps" => "walk steps across the rock over them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -2996,6 +2996,10 @@ The `[x]` lines above, summed up by day:
   in the Nether: a wooden door's opening and, a second and a half on, its shutting, four blocks
   behind them, to them alone. Tests: one in `act`. Was: no such event.
 
+- [x] **Steps on the roof** (`docs/events_todo.md`, 281): `nether_roof_steps`, stages 4 and 5, in
+  the Nether: eight netherrack steps six blocks over them, from behind to over them, three fifths of
+  a second apart, to them alone. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
