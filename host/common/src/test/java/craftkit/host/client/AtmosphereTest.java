@@ -67,6 +67,8 @@ class AtmosphereTest {
 		assertTrue(Atmosphere.pointsAway("recovery_compass_lies", true));
 		assertFalse(Atmosphere.pointsAway("recovery_compass_lies", false), "a plain compass is left alone");
 		assertTrue(Atmosphere.pointsAway("compass_points", false));
+		assertTrue(Atmosphere.pointsAway("compass_steadies", false), "a plain compass held on the portal");
+		assertFalse(Atmosphere.pointsAway("compass_steadies", true), "a recovery compass left alone");
 		assertTrue(Atmosphere.pointsAway("compass_points", true));
 		assertFalse(Atmosphere.pointsAway("mist", true));
 	}

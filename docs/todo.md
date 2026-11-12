@@ -3056,6 +3056,11 @@ The `[x]` lines above, summed up by day:
   `waits_at_the_portal`): footprints from where they came out to the door they use, on their client
   (the `footprints` hint). Tests: one in `act`. Was: no such event.
 
+- [x] **The portal weeps** (`docs/events_todo.md`, 276): `portal_weeps`, stages 4 and 5, in the
+  Nether within ten blocks of where they came in: the obsidian within eight of them shown as crying
+  obsidian to their client, the farthest first, a minute and a half (`ghost_near`). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

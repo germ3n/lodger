@@ -30,7 +30,8 @@ public final class Atmosphere {
 	 * `recovery_compass_lies` a recovery compass alone, which then points not at where they died.
 	 */
 	public static boolean pointsAway(String hint, boolean recovery) {
-		return hint.equals("compass_points") || (recovery && hint.equals("recovery_compass_lies"));
+		// `compass_steadies` (ABI 56): a compass held still on a place in the Nether, as if it worked there.
+		return hint.equals("compass_points") || (!recovery && hint.equals("compass_steadies")) || (recovery && hint.equals("recovery_compass_lies"));
 	}
 
 	/** The fog an atmosphere's hint stands for, or null for none. The old `fog_close` is mist now. */

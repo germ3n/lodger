@@ -890,6 +890,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PrintsInSoulSand
         | Action::PrintsOffTheEdge
         | Action::PrintsFromThePortal
+        | Action::PortalWeeps
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -4164,7 +4165,11 @@ pub fn commands(
                 "camera_nudge" => memory
                     .place
                     .or_else(|| memory.home.as_ref().map(|h| h.center)),
-                "ripples" | "painting_flip" | "compass_points" | "recovery_compass_lies" => pos,
+                "ripples"
+                | "painting_flip"
+                | "compass_points"
+                | "compass_steadies"
+                | "recovery_compass_lies" => pos,
                 // Twelve blocks ahead of where they look, at their eye's height.
                 "eyes_in_the_dark" => {
                     let at = block_of(memory.last.pos);
@@ -10220,6 +10225,22 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // docs/events_todo.md, 276.
+        Action::PortalWeeps => match memory.arrived_at {
+            Some(portal) if distance(portal, block_of(memory.last.pos)) <= 10.0 => vec![(
+                Command::GhostNear {
+                    id: ids(),
+                    player: target,
+                    radius: 8,
+                    of: "minecraft:obsidian".to_string(),
+                    block: "minecraft:crying_obsidian".to_string(),
+                    seconds: 90.0,
+                    in_turn: true,
+                },
+                0,
+            )],
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14102,6 +14123,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "portal_weeps"
                 || event.id == "prints_from_the_portal"
                 || event.id == "prints_off_the_edge"
                 || event.id == "prints_in_soul_sand"
@@ -22408,5 +22430,19 @@ mod tests {
             matches!(&made[..], [(Command::Hint { hint, detail, .. }, 0)] if hint == "footprints" && !detail.is_empty()),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn portal_weeps_only_near_where_they_came_in() {
+        let mut memory = rich_memory();
+        let event = find("portal_weeps").unwrap();
+        memory.arrived_at = Some(block_of(memory.last.pos));
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostNear { of, block, .. }, 0)] if of == "minecraft:obsidian" && block == "minecraft:crying_obsidian"),
+            "{made:?}"
+        );
+        memory.arrived_at = Some([500, 64, 500]);
+        assert!(commands(event, None, &memory, &mut ids(), &Now::default(), None).is_empty());
     }
 }
