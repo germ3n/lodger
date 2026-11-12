@@ -511,6 +511,33 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 131.
+        "witch_laughs" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:entity.witch.celebrate", 0)],
+                    (0.9, 1.0),
+                    2.5,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.witch.ambient", 0),
+                        ("minecraft:entity.witch.ambient", 30),
+                    ],
+                    (0.8, 0.9),
+                    2.0,
+                    Still,
+                ),
+                v(
+                    &[("minecraft:entity.witch.celebrate", 0)],
+                    (0.7, 0.8),
+                    3.0,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1474,6 +1501,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "witch_laughs",
             "shriek_below",
             "chains_dragging",
             "doors_slam_far",

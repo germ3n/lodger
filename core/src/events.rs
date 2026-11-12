@@ -5488,6 +5488,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.sculk_shrieker.shriek"),
         false,
     ),
+    // docs/events_todo.md, 131.
+    row(
+        "witch_laughs",
+        3,
+        5,
+        &[Night, TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundFar("minecraft:entity.witch.celebrate"),
+        true,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6651,6 +6663,7 @@ impl Event {
             "rattling_round_the_house" => "rattle bones round the outside of their house",
             "chains_dragging" => "drag chains along the stone behind them",
             "shriek_below" => "shriek from deep under their house",
+            "witch_laughs" => "laugh like a witch far off in the dark",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
