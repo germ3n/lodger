@@ -59,6 +59,22 @@ import java.util.Set;
  * </ul>
  */
 public final class Glitches {
+	/** Each `footprints` hint's prints, read once. */
+	private static final java.util.Map<Long, java.util.List<FootPrint.Print>> PRINTS = new java.util.HashMap<>();
+
+	/** The top of the ground at a column near {@code y}: the highest block with something to stand on and air over it, three up to four down; NaN for none. */
+	private static double groundAt(net.minecraft.client.multiplayer.ClientLevel level, double x, double y, double z) {
+		int bx = net.minecraft.util.Mth.floor(x);
+		int bz = net.minecraft.util.Mth.floor(z);
+		for (int by = net.minecraft.util.Mth.floor(y) + 3; by >= net.minecraft.util.Mth.floor(y) - 4; by--) {
+			net.minecraft.core.BlockPos at = new net.minecraft.core.BlockPos(bx, by, bz);
+			if (!level.getBlockState(at).getCollisionShape(level, at).isEmpty() && level.getBlockState(at.above()).getCollisionShape(level, at.above()).isEmpty()) {
+				return level.getBlockState(at).getCollisionShape(level, at).max(net.minecraft.core.Direction.Axis.Y) + by;
+			}
+		}
+		return Double.NaN;
+	}
+
 	private static final Set<Long> DONE_ONCE = new HashSet<>();
 	/** Ticks each `painting_flip` has been looked at straight. */
 	private static final java.util.Map<Long, Integer> LOOKED = new java.util.HashMap<>();
@@ -185,6 +201,29 @@ public final class Glitches {
 						minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.GLOW, cx + ax * side, cy, cz + az * side, 0, 0, 0);
 					}
 				});
+				// Footprints round the house, dark on the ground, renewed as the dust fades: those
+				// within twenty-four blocks, each on the ground found under it.
+				case "footprints" -> {
+					if (minecraft.level.getGameTime() % 8 != 0) {
+						return;
+					}
+					var eye = minecraft.player.position();
+					for (FootPrint.Print print : PRINTS.computeIfAbsent(active.id(), id -> FootPrint.read(hint.detail()))) {
+						double dx = print.x() - eye.x;
+						double dz = print.z() - eye.z;
+						if (dx * dx + dz * dz > 24 * 24) {
+							continue;
+						}
+						double ground = groundAt(minecraft.level, print.x(), print.y(), print.z());
+						if (Double.isNaN(ground)) {
+							continue;
+						}
+						for (double[] d : FootPrint.dots(print.yaw())) {
+							minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x2E2218, 0.4f),
+									print.x() + d[0], ground + 0.02, print.z() + d[1], 0, 0, 0);
+						}
+					}
+				}
 				// Two hands pressed on the glass from the house's side, renewed as the dust fades.
 				case "handprints" -> hint.pos().ifPresent(pos -> {
 					if (minecraft.level.getGameTime() % 6 != 0) {

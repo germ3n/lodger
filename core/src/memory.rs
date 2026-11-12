@@ -471,6 +471,9 @@ pub struct Memory {
     /// The day it first took their things up into the sky (`taken_up`), while any are up there;
     /// none once they fell back (`sky_gives_back`, or an ending, or a reset).
     pub taken_up_day: Option<f32>,
+    /// The footprints round their house (`prints_around_the_house`), kept and sent again so they
+    /// stay; the oldest let go past `prints::MOST`.
+    pub prints: Vec<crate::prints::Print>,
     pub done: Vec<Done>,
     pub last: Snapshot,
     /// Coarse cells the target stood still in, and for how many ticks: the home's center comes

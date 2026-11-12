@@ -294,7 +294,8 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::GhastName
         | Action::LostHour
         | Action::SoundWarp
-        | Action::CreeperBehind => config.events.glitches,
+        | Action::CreeperBehind
+        | Action::PrintsAroundTheHouse => config.events.glitches,
         // The bedside figure too: with the figures off, none comes to the bed (until now the
         // choke and the shot came whatever `events.figure` said).
         Action::Figure(_, _, _)
@@ -379,7 +380,10 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::PetGrowl
         | Action::Footsteps
         | Action::HandOnShoulder => Some("sound"),
-        Action::Hint(_, _) | Action::SoundWarp | Action::CreeperBehind => Some("screen"),
+        Action::Hint(_, _)
+        | Action::SoundWarp
+        | Action::CreeperBehind
+        | Action::PrintsAroundTheHouse => Some("screen"),
         Action::Figure(_, _, _)
         | Action::FigureSwing(_)
         | Action::FigureWave

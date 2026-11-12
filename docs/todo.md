@@ -2088,6 +2088,14 @@ The `[x]` lines above, summed up by day:
   (`DebugPause`, kept in `config/craftkit/debug.properties`). Tests: `DebugPauseTest`. Was: the
   panel never paused.
 
+- [x] **Prints round the house that stay** (`docs/events_todo.md`, 108, owner's):
+  `prints_around_the_house`, stages 3 to 5, away or asleep: a few more footprints each night, by
+  turns in to a window, round the walls, waiting before the door (`crate::prints`); kept in the
+  memory and drawn on their client as the handprints are, dark dust on any ground, sent again near
+  home every nine minutes (the `footprints` hint; `FootPrint.java`). Off with the glitches. Decals
+  of dust rather than a block, so nothing is left in the world. Tests: `prints`'s two,
+  `FootPrintTest`, one in `act`. Was: prints were snow's alone, gone with the next fall.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

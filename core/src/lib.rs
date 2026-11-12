@@ -27,6 +27,7 @@ pub mod model;
 pub mod multiplayer;
 pub mod people;
 pub mod places;
+pub mod prints;
 pub mod rules;
 pub mod stay;
 pub mod taken_up;

@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // Round the house.
+        Action::PrintsAroundTheHouse => memory.home.as_ref().map(|h| h.center),
         // A plate, button or lever of theirs at the home.
         Action::DeadRedstone => redstone_at_home(memory),
         // At them.
@@ -1557,6 +1559,15 @@ const WINDOWS_FIRST: u32 = 21;
 
 /// The house's windows: its panes within twelve blocks of its middle, one for each run of
 /// panes (a pane two blocks or less from one already taken is the same window).
+/// The home's windows ([`windows`] round its middle), for the prints.
+pub(crate) fn windows_of(memory: &Memory) -> Vec<BlockPos> {
+    memory
+        .home
+        .as_ref()
+        .map(|h| windows(memory, h.center))
+        .unwrap_or_default()
+}
+
 fn windows(memory: &Memory, center: BlockPos) -> Vec<BlockPos> {
     let mut taken: Vec<BlockPos> = Vec::new();
     for pane in memory.fixtures("glass_pane").map(|f| f.pos) {
@@ -1805,6 +1816,22 @@ const TREE_FIGURE: u32 = 63;
 /// The figure drawn to their light (`drawn_to_the_light`), and how far off it starts.
 const DRAWN_FIGURE: u32 = 62;
 const DRAWN_FROM: f64 = 45.0;
+/// The footprints round the house as the hint that draws them, for its time.
+pub(crate) fn prints_hint(
+    ids: &mut impl FnMut() -> u64,
+    target: u32,
+    prints: &[crate::prints::Print],
+) -> Command {
+    Command::Hint {
+        id: ids(),
+        player: target,
+        hint: "footprints".to_string(),
+        pos: None,
+        seconds: crate::prints::SHOWN_SECONDS,
+        detail: crate::prints::encode(prints),
+    }
+}
+
 /// A pressure plate, button or lever they placed at the home (`dead_redstone`), within sixteen
 /// blocks of its middle.
 pub(crate) fn redstone_at_home(memory: &Memory) -> Option<BlockPos> {
@@ -6506,6 +6533,16 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // The night's prints with every one before, on their screen when they are near: the
+        // memory keeps the night's as it lands.
+        Action::PrintsAroundTheHouse => {
+            let mut all = memory.prints.clone();
+            all.extend(crate::prints::night(memory, memory.times(event.id)));
+            if all.is_empty() {
+                return Vec::new();
+            }
+            vec![(prints_hint(ids, target, &all), 0)]
+        }
         // Every plate, button and lever of the house dead a minute and a half: they press, click
         // and flip, and nothing opens, lights or moves.
         Action::DeadRedstone => memory
@@ -15143,6 +15180,38 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::DeadRedstone { min, max, seconds, .. }, 0)]
             if min[0] <= 2 && max[0] >= 2 && *seconds > 0.0)
+        );
+    }
+
+    #[test]
+    fn footprints_round_the_house_grow_each_night_and_are_all_sent() {
+        let mut memory = rich_memory();
+        let event = find("prints_around_the_house").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        let [(
+            Command::Hint {
+                hint,
+                detail,
+                seconds,
+                ..
+            },
+            0,
+        )] = &made[..]
+        else {
+            panic!("{made:?}");
+        };
+        assert_eq!(hint, "footprints");
+        assert!(*seconds >= 300.0);
+        let first = detail.split(';').count();
+        memory.keep_prints(crate::prints::night(&memory, 0));
+        memory.record("prints_around_the_house", None, 0.0, true, "");
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        let [(Command::Hint { detail, .. }, 0)] = &made[..] else {
+            panic!("{made:?}");
+        };
+        assert!(
+            detail.split(';').count() > first,
+            "the night's added to those before"
         );
     }
 }

@@ -1113,6 +1113,8 @@ pub enum Action {
     SoundWarp,
     /// Their redstone by the house dead a while: plates, buttons and levers power nothing.
     DeadRedstone,
+    /// Footprints round the house, more each night, that stay.
+    PrintsAroundTheHouse,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4910,6 +4912,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 108 (owner's): "persistent footsteps around the house that appear over
+    // time".
+    row(
+        "prints_around_the_house",
+        3,
+        5,
+        &[Home, TargetAwayOrAsleep],
+        0.8,
+        9,
+        Full,
+        Action::PrintsAroundTheHouse,
+        false,
+    ),
     // docs/events_todo.md, 107 (owner's): "their pressure plates dont work, or like redstone
     // doesnt fire".
     row(
@@ -6223,6 +6238,7 @@ impl Event {
             | Action::BlazedTrees
             | Action::TreesCloseBehind
             | Action::DeadRedstone
+            | Action::PrintsAroundTheHouse
             | Action::TreeComesDown
             | Action::CirclesATree
             | Action::PathThroughTheTrees
@@ -6370,6 +6386,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "prints_around_the_house" => "leave more footprints round their house, that stay",
             "dead_redstone" => "make their redstone by the house dead a while",
             "sound_warp" => "make every sound they hear go wrong a while",
             "villager_flees_in" => "send a villager banging at their door, to run in and die",

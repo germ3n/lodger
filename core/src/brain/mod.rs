@@ -190,6 +190,9 @@ pub struct Brain {
     /// The tick of the last tree read.
     #[serde(skip)]
     pub last_tree_read: u64,
+    /// The tick the footprints round the house were last sent (`prints_around_the_house`).
+    #[serde(skip)]
+    pub last_prints_sent: u64,
     /// The tick they began running lit at night (`drawn_to_the_light`), 0 when they are not;
     /// and whether this run has been answered.
     #[serde(skip)]
@@ -770,6 +773,26 @@ impl Brain {
                 });
                 memory.scans_out.push((id, "cave_read".to_string()));
                 self.last_cave_read = now.tick.max(1);
+            }
+        }
+
+        // The footprints round the house, sent again while they are near home every nine
+        // minutes, so the prints stay on their screen (with the glitches on).
+        if config.events.glitches && !memory.prints.is_empty() && memory.last.online {
+            let near = memory.home.as_ref().is_some_and(|h| {
+                let at = memory.last.pos;
+                let (dx, dz) = (at[0] - h.center[0] as f64, at[2] - h.center[2] as f64);
+                (dx * dx + dz * dz).sqrt() <= crate::prints::NEAR_HOME
+            });
+            if near
+                && (self.last_prints_sent == 0
+                    || now.tick.saturating_sub(self.last_prints_sent)
+                        >= crate::prints::RESEND_TICKS)
+            {
+                let target = memory.target.unwrap_or(0);
+                let mut ids = || self.id();
+                commands.push(act::prints_hint(&mut ids, target, &memory.prints));
+                self.last_prints_sent = now.tick.max(1);
             }
         }
 
@@ -2831,6 +2854,12 @@ impl Brain {
                 }
                 if report.done && pending.puts_held {
                     memory.held = None;
+                }
+                // The night's prints kept, the ones the command drew.
+                if report.done && pending.event == "prints_around_the_house" {
+                    let n = memory.times("prints_around_the_house").saturating_sub(1);
+                    let new = crate::prints::night(memory, n);
+                    memory.keep_prints(new);
                 }
                 // Up there from now, as far as it knows; fallen back, no longer.
                 if report.done && pending.event == "taken_up" && memory.taken_up_day.is_none() {
