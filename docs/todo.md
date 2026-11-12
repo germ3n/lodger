@@ -3222,6 +3222,18 @@ The `[x]` lines above, summed up by day:
   is picked from by stage as waking is. Tests: one in the brain, every event behind such a moment
   named by its trigger. Was: never happening.
 
+- [x] **Seventy-six chains more** (owner: "generate quite a bit more chains ... an additional
+  50-100 ... no duplicate chains, but an event that makes sense to be a step in a chain if it
+  already exists in another one is fine"): a hundred and thirty-four now, over the whole
+  catalogue (the kitchen, the garden, the boat, the fog, the compass, the books, the names, the
+  name everywhere, the portal, the ghasts and the rest, listed in `docs/entity.md`). An event may
+  be in several chains: one landing opens or moves each it is in. The rule test is now that no
+  two chains hold the same events (it was that no event is in two, from the owner's earlier "where
+  it doesnt conflict/duplicate another chain"). An open chain's next steps take at most half the
+  menu's places, as many may be open at once now. Tests: the chains' own (the count 134, none
+  alike), one in `offer` (many open, the menu still holds others). Was: fifty-eight, an event in
+  one alone.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

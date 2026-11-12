@@ -1077,13 +1077,96 @@ four times in five when one is ready:
 - **The crossing.** `prints_from_the_portal` or `came_back_wrong_hour` or `chorus_lands_home` → `someone_went_through` or `lodestone_wrong` or `ruined_portal_glows`.
 - **The potion.** `potion_at_the_window` → `their_own_potion` → `pearl_turned`.
 
+Seventy-six more over the whole catalogue (owner: "an additional 50-100 ... no duplicate chains,
+but an event that makes sense to be a step in a chain if it already exists in another one is
+fine"): an event may be in several chains now, so one landing opens or moves each it is in; no
+two chains hold the same events. With many open at once, their next steps take at most half
+the menu's places, the rest still coming by their weight.
+
+- **The kitchen.** `cook_one` → `take_output` → `plate_laid` → `at_their_table` → `eats_at_their_chest`.
+- **The table.** `item_on_table` → `crafted_for_you` → `tools_laid_out` → `at_their_table`.
+- **The garden.** `plant_flower` → `flowers_potted` → `replant_other` → `flowers_wilted`.
+- **The harvest.** `harvest_one` → `row_withered` → `trample` → `scarecrow` → `field_word`.
+- **The flock.** `sheep_dyed` → `snipping_in_the_dark` → `named_animal` → `animal_gone` → `animal_indoors`.
+- **The horse.** `horse_moved` → `rides_their_horse` → `horse_balks` → `pale_horse_in_your_pen`.
+- **The coop.** `eggs_to_door` → `chicken_lays` → `egg_on_bed` → `late_eating`.
+- **The boat.** `boat_moved` → `boat_adrift` or `boat_drifts` → `boat_in_house` → `boat_passenger`.
+- **The fisher.** `fish_on_line` → `fishing_line` → `fishing_figure` → `bucket_fish_changed` → `swims_beneath`.
+- **The rain.** `rain_on_the_roof` → `stands_in_the_rain` → `rain_indoors` → `red_rain`.
+- **The cold.** `frost_on_the_glass` → `snow_indoors` → `cold_house` → `ice_path` → `snowman`.
+- **The fog.** `mist` → `fog_close` → `red_mist` → `darkness`.
+- **The day wrong.** `dusk_noon` → `lamps_noon` → `sun_blink` → `night_early` → `lost_hour`.
+- **The compass.** `compass_points` → `recovery_compass_lies` → `compass_spins` → `lodestone_wrong` → `eye_turns_home`.
+- **The map.** `map_marked` → `figure_on_map` → `breadcrumbs` → `prints_to_the_cave`.
+- **The books.** `lectern_page` → `book_word` → `lectern_notes` → `page_in_your_book` → `letter_in_chest`.
+- **The signs.** `sign_word` → `words_on_sign` → `sign_with_coords` → `sign_deep`.
+- **The names.** `named_animal` → `renamed_item` → `villager_named` → `name_called` → `title_your_name`.
+- **The name everywhere.** `name_in_the_snow` → `ghast_name` → `name_in_netherrack` → `name_from_the_void` → `the_poem_knows`.
+- **The list.** `tab_entry` → `tab_twice` → `joined` → `tab_entry_stays` → `left`.
+- **The messages.** `sleep_message` → `empty_message` → `death_message` → `advancement` → `false_death`.
+- **The body.** `hunger_shake` → `heart_skip` → `hearts_drop` → `xp_slips` → `count_shows_zero`.
+- **The camera.** `camera_nudge` → `fov_pull` → `only_in_third_person` → `in_the_screenshot`.
+- **The music.** `disc_phantom` → `jukebox` → `note_tune` → `cut_music` → `silence`.
+- **The redstone.** `lever_click` → `piston_once` → `lamps_blink` → `dead_redstone` → `bulbs_clicking`.
+- **The furnace.** `cold_crackle` → `swap_fuel` → `cook_one` → `cold_furnace`.
+- **The brewing.** `brewing_done` → `potion_changed` → `brew_left` → `their_own_potion` → `splash_dark`.
+- **The frames.** `frame_rotate` → `frames_turn` → `item_frames_face` → `frame_swap` → `painting_flip`.
+- **The stand.** `armor_stand_turn` → `stand_watch` → `armor_stand_dress` → `armour_behind`.
+- **The doorway.** `door_sound` → `close_door` → `door_opens_itself` → `every_door_opens` → `open_on_enter`.
+- **The floor above.** `steps_above` → `scratching` → `trapdoor_taps` → `digging_under_the_floor` → `under_the_bed`.
+- **The ladder.** `ladder_gap` → `ladder_climb` → `ladder_down` → `top_of_the_ladder` → `climbs_ahead`.
+- **The mine lights.** `torches_far_end` → `light_taken` → `cave_torches_flicker` → `lights_out` → `in_the_lava`.
+- **The deep.** `cave_air` → `echo_steps` → `bones_underfoot` → `ominous_hum` → `shriek_below`.
+- **The ore.** `scan_ore` or `ore_counted` → `ore_marked` → `late_drop` → `mined_out` → `dripstone_falls`.
+- **The trees.** `tree_grown` → `sapling` → `circles_a_tree` → `tree_comes_down` → `bare_trees`.
+- **The forest edge.** `animals_flee_the_woods` → `face_in_the_canopy` → `crouched_behind_a_tree` → `in_the_treetops` → `path_through_the_trees`.
+- **The hunted.** `hostiles_stare` → `hostiles_close` → `quick_approach` → `hunted`.
+- **The arrow.** `arrow_hit` → `arrow_in_the_door` → `arrow_returned` → `crossbow_click` → `arrow_grazes`.
+- **The strikes.** `figure_nip` → `animals_nip` → `figure_swing` → `shove` → `shove_far`.
+- **The night creatures.** `daylight_phantom` → `bats_in_the_house` → `the_killer_rabbit` → `wolves_circle`.
+- **The village night.** `village_lantern` → `villager_word` → `villager_at_door` → `villager_flees_in` → `villagers_walk_out`.
+- **The bed moved.** `bed_turned` → `shift_bed` → `bed_fenced` → `bed_occupied` → `bed_breaks`.
+- **The sleep.** `refuse_rest` → `sleepers_wrong` → `wake` → `woke_elsewhere` → `sleepwalk`.
+- **The lantern.** `drawn_to_the_light` → `lantern_in_the_woods` → `torch_ring` → `stone_circle`.
+- **The campfire.** `put_out_campfire` → `light_campfire` → `camp_nearby` → `fireflies_go_out`.
+- **The candles.** `candles_lit` → `move_light` → `torch_blue` → `soul_swap` → `torches_turn`.
+- **The windows.** `window_tap` → `glass_rubbed` → `handprints` → `waves_from_inside` → `figure_window`.
+- **The glass.** `glass_breaks` → `window_bars` → `window_tinted` → `potion_at_the_window`.
+- **The impostor.** `wears_your_face` → `figure_in_your_armour` → `zombie_in_your_gear` → `rides_their_horse`.
+- **The far figure.** `on_the_peak` → `rider_on_the_ridge` → `across_water` → `figure_bows` → `jumping_far`.
+- **The house rearranged.** `furniture_shifted` → `carpet_shift` → `stairs_turned` → `banner_turned` → `alcove`.
+- **The corners.** `mushrooms_in_corners` → `cobwebs` → `bats_in_the_house` → `pet_stares_at_wall` → `breathing_in_the_wall`.
+- **The portal.** `portal_sound` → `portal_lit` → `someone_went_through` → `standing_in_the_portal` → `portal_goes_out`.
+- **The return.** `waits_at_the_portal` or `prints_from_the_portal` → `ruined_portal_glows` → `firework_over_its_house`.
+- **The ender.** `ender_chest_note` → `eye_turns_home` → `endermen_turn_away` → `ender_holds`.
+- **The sky things.** `lightning_silent` → `thunder_clear` → `boom_far` → `falls_from_the_sky`.
+- **The ghasts.** `happy_ghast_overhead` → `dried_ghast_on_doorstep` → `ghast_name` → `ghast_watches`.
+- **The heads.** `head_on_post` → `skull_in_the_tunnel` → `kill_line` → `grave`.
+- **The way back.** `way_back_closes` → `tunnel_sealed` → `dripstone_in_tunnel` → `tunnel_goes_on`.
+- **The water below.** `wet_steps` → `under_the_water` → `water_where_none` → `bubbling_under` → `pulled_under`.
+- **The copper.** `copper_golem_at_door` → `copper_ages` → `golem_statue_turns` → `bulbs_clicking`.
+- **The containers.** `chest_full_of_one` → `hopper_emptied` → `shulker_moved` → `shulker_lid_peeks` → `a_face_in_the_chest`.
+- **The dead again.** `where_you_died` → `death_light` → `your_grave` → `respawn_its_bed`.
+- **The trail.** `trail` → `trail_in` → `prints_around_the_house` → `red_trail` → `sculk_trail`.
+- **The one more.** `one_more` → `one_more_each_night` → `ring_of_figures` → `every_window`.
+- **The out of place.** `out_of_place` → `pumpkin_face` → `empty_lead` → `trident_planted`.
+- **The floor.** `trapdoor_to_nothing` → `hole` → `backfill` → `digging_under_the_floor`.
+- **The pets.** `pet_stares_at_wall` → `pet_follows` → `cat_gift` → `pet_whines_at_door`.
+- **The young.** `warped_animal` → `the_child_stares` → `armadillos_curl` → `cattle_turn_away` → `refuses_food`.
+- **The snowballs.** `snowball_thrown` → `snowball_comes_back` → `name_in_the_snow` → `snow_shape`.
+- **The sand.** `sand_gives_back` → `pot_of_returns` → `pot_shatters` → `sweeping_next_room`.
+- **The nether deep.** `nether_roof_steps` → `zombified_follow` → `lava_goes_still` → `name_in_netherrack`.
+- **The void.** `second_wings` → `end_sky_face` → `prints_off_the_edge` → `standing_on_the_void`.
+- **The screen dark.** `static` → `elder_face` → `rumble` → `border_closes`.
+- **The eyes.** `eyes_in_the_dark` → `peeks_from_ground` → `while_unseen` → `gasp_when_turning`.
+
 A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
 menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
 tests check that a stay with the rule brain walks at least two chains end to end and that no
 follow-up is ever offered with its needs unmet.
 
-**As coded (`core/src/chains.rs`).** Fifty-eight, no event in two: the seven of the newer events,
-the nineteen over the rest of the catalogue, the thirteen over 116 to 205 and the ten over 206 to 320, as listed above, and the nine of the design, with
+**As coded (`core/src/chains.rs`).** A hundred and thirty-four, no two alike, an event in several where it fits: the seven of the newer events,
+the nineteen over the rest of the catalogue, the thirteen over 116 to 205, the ten over 206 to 320 and the seventy-six over the whole, as listed above, and the nine of the design, with
 the catalogue's events: the thing (`take`,
 `place_taken`, `return_taken`, `sand_gives_back` or `pot_of_returns`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
 `mined_out`), the tunnel (`mining_sounds`, `mine_beside` or `cart_overhead`, `tunnel_toward` or `iron_door_below`, `cave_room`), the

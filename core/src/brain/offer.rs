@@ -608,17 +608,22 @@ pub fn offer<'a>(
     }
 
     let want = (config.events.offered as usize).saturating_sub(1);
-    // An open chain's next step, when it may happen, always has a place on the menu: its weight
+    // An open chain's next step, when it may happen, has a place on the menu: its weight
     // alone thinned as the catalogue grew (a hundred and more events), until a chain stalled in
     // a stay for want of being offered. Still never forced: the mind chooses from the menu.
+    // At most half the menu, though: with an event in several chains, many may be open at once,
+    // and their steps alone would fill it; the rest still come by their weight.
+    let placed_most = want.div_ceil(2).max(1);
+    let mut placed = 0;
     while let Some(at) = eligible
         .iter()
         .position(|(e, _)| chain_next.contains(&e.id))
     {
-        if menu.len() > want {
+        if menu.len() > want || placed >= placed_most {
             break;
         }
         menu.push(eligible.remove(at).0);
+        placed += 1;
     }
     while menu.len() < want + 1 && !eligible.is_empty() {
         let total: f64 = eligible.iter().map(|(_, w)| *w).sum();
@@ -710,6 +715,31 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn with_many_chains_open_their_steps_leave_room_on_the_menu() {
+        // An event in several chains opens them all; their steps once filled every menu.
+        let mut open = memory_at_home();
+        for chain in crate::chains::CHAINS {
+            open.chains.push(crate::chains::Open {
+                id: chain.id.to_string(),
+                landed: vec![0],
+                ..Default::default()
+            });
+        }
+        let next = open.chain_next();
+        let config = Config::default();
+        let mut rng = Rng::new(5);
+        let mut others = 0;
+        for _ in 0..20 {
+            let menu = offer(CATALOGUE, 4, &open, &Now::default(), 2.0, &config, &mut rng);
+            others += menu
+                .iter()
+                .filter(|e| e.id != "wait" && !next.contains(&e.id))
+                .count();
+        }
+        assert!(others > 0, "some menu held something besides the chains");
     }
 
     #[test]

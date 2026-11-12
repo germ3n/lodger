@@ -46,8 +46,10 @@ use When::*;
 /// nineteen more over the rest of the catalogue, thirteen over 116 to 205 (owner: "make new chains out of all the events
 /// where it makes sense ... where it doesnt conflict/duplicate another chain"), and ten over 206
 /// to 320, the Nether's and the End's among them, their other events beside the steps they fit
-/// (owner: "tie the new events into existing ones where appropriate and add more"): no event is
-/// in two.
+/// (owner: "tie the new events into existing ones where appropriate and add more"), and
+/// seventy-six more over the whole catalogue (owner: "no duplicate chains, but an event that
+/// makes sense to be a step in a chain if it already exists in another one is fine"): an event
+/// may be in several, no two chains the same.
 pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_thing",
@@ -736,6 +738,733 @@ pub const CHAINS: &[Chain] = &[
             step(&["pearl_turned"], 3.0, Always),
         ],
     },
+    Chain {
+        id: "the_kitchen",
+        steps: &[
+            step(&["cook_one"], 0.0, Always),
+            step(&["take_output"], 3.0, Always),
+            step(&["plate_laid"], 3.0, Always),
+            step(&["at_their_table"], 3.0, Always),
+            step(&["eats_at_their_chest"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_table",
+        steps: &[
+            step(&["item_on_table"], 0.0, Always),
+            step(&["crafted_for_you"], 3.0, Always),
+            step(&["tools_laid_out"], 3.0, Always),
+            step(&["at_their_table"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_garden",
+        steps: &[
+            step(&["plant_flower"], 0.0, Always),
+            step(&["flowers_potted"], 3.0, Always),
+            step(&["replant_other"], 3.0, Always),
+            step(&["flowers_wilted"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_harvest",
+        steps: &[
+            step(&["harvest_one"], 0.0, Always),
+            step(&["row_withered"], 3.0, Always),
+            step(&["trample"], 3.0, Always),
+            step(&["scarecrow"], 3.0, Always),
+            step(&["field_word"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_flock",
+        steps: &[
+            step(&["sheep_dyed"], 0.0, Always),
+            step(&["snipping_in_the_dark"], 3.0, Always),
+            step(&["named_animal"], 3.0, Always),
+            step(&["animal_gone"], 3.0, Always),
+            step(&["animal_indoors"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_horse",
+        steps: &[
+            step(&["horse_moved"], 0.0, Always),
+            step(&["rides_their_horse"], 3.0, Always),
+            step(&["horse_balks"], 3.0, Always),
+            step(&["pale_horse_in_your_pen"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_coop",
+        steps: &[
+            step(&["eggs_to_door"], 0.0, Always),
+            step(&["chicken_lays"], 3.0, Always),
+            step(&["egg_on_bed"], 3.0, Always),
+            step(&["late_eating"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_boat",
+        steps: &[
+            step(&["boat_moved"], 0.0, Always),
+            step(&["boat_adrift", "boat_drifts"], 3.0, Always),
+            step(&["boat_in_house"], 3.0, Always),
+            step(&["boat_passenger"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_fisher",
+        steps: &[
+            step(&["fish_on_line"], 0.0, Always),
+            step(&["fishing_line"], 3.0, Always),
+            step(&["fishing_figure"], 3.0, Always),
+            step(&["bucket_fish_changed"], 3.0, Always),
+            step(&["swims_beneath"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_rain",
+        steps: &[
+            step(&["rain_on_the_roof"], 0.0, Always),
+            step(&["stands_in_the_rain"], 3.0, Always),
+            step(&["rain_indoors"], 3.0, Always),
+            step(&["red_rain"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_cold",
+        steps: &[
+            step(&["frost_on_the_glass"], 0.0, Always),
+            step(&["snow_indoors"], 3.0, Always),
+            step(&["cold_house"], 3.0, Always),
+            step(&["ice_path"], 3.0, Always),
+            step(&["snowman"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_fog",
+        steps: &[
+            step(&["mist"], 0.0, Always),
+            step(&["fog_close"], 3.0, Always),
+            step(&["red_mist"], 3.0, Always),
+            step(&["darkness"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_day_wrong",
+        steps: &[
+            step(&["dusk_noon"], 0.0, Always),
+            step(&["lamps_noon"], 3.0, Always),
+            step(&["sun_blink"], 3.0, Always),
+            step(&["night_early"], 3.0, Always),
+            step(&["lost_hour"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_compass",
+        steps: &[
+            step(&["compass_points"], 0.0, Always),
+            step(&["recovery_compass_lies"], 3.0, Always),
+            step(&["compass_spins"], 3.0, Always),
+            step(&["lodestone_wrong"], 3.0, Always),
+            step(&["eye_turns_home"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_map",
+        steps: &[
+            step(&["map_marked"], 0.0, Always),
+            step(&["figure_on_map"], 3.0, Always),
+            step(&["breadcrumbs"], 3.0, Always),
+            step(&["prints_to_the_cave"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_books",
+        steps: &[
+            step(&["lectern_page"], 0.0, Always),
+            step(&["book_word"], 3.0, Always),
+            step(&["lectern_notes"], 3.0, Always),
+            step(&["page_in_your_book"], 3.0, Always),
+            step(&["letter_in_chest"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_signs",
+        steps: &[
+            step(&["sign_word"], 0.0, Always),
+            step(&["words_on_sign"], 3.0, Always),
+            step(&["sign_with_coords"], 3.0, Always),
+            step(&["sign_deep"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_names",
+        steps: &[
+            step(&["named_animal"], 0.0, Always),
+            step(&["renamed_item"], 3.0, Always),
+            step(&["villager_named"], 3.0, Always),
+            step(&["name_called"], 3.0, Always),
+            step(&["title_your_name"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_name_everywhere",
+        steps: &[
+            step(&["name_in_the_snow"], 0.0, Always),
+            step(&["ghast_name"], 3.0, Always),
+            step(&["name_in_netherrack"], 3.0, Always),
+            step(&["name_from_the_void"], 3.0, Always),
+            step(&["the_poem_knows"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_list",
+        steps: &[
+            step(&["tab_entry"], 0.0, Always),
+            step(&["tab_twice"], 3.0, Always),
+            step(&["joined"], 3.0, Always),
+            step(&["tab_entry_stays"], 3.0, Always),
+            step(&["left"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_messages",
+        steps: &[
+            step(&["sleep_message"], 0.0, Always),
+            step(&["empty_message"], 3.0, Always),
+            step(&["death_message"], 3.0, Always),
+            step(&["advancement"], 3.0, Always),
+            step(&["false_death"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_body",
+        steps: &[
+            step(&["hunger_shake"], 0.0, Always),
+            step(&["heart_skip"], 3.0, Always),
+            step(&["hearts_drop"], 3.0, Always),
+            step(&["xp_slips"], 3.0, Always),
+            step(&["count_shows_zero"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_camera",
+        steps: &[
+            step(&["camera_nudge"], 0.0, Always),
+            step(&["fov_pull"], 3.0, Always),
+            step(&["only_in_third_person"], 3.0, Always),
+            step(&["in_the_screenshot"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_music",
+        steps: &[
+            step(&["disc_phantom"], 0.0, Always),
+            step(&["jukebox"], 3.0, Always),
+            step(&["note_tune"], 3.0, Always),
+            step(&["cut_music"], 3.0, Always),
+            step(&["silence"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_redstone",
+        steps: &[
+            step(&["lever_click"], 0.0, Always),
+            step(&["piston_once"], 3.0, Always),
+            step(&["lamps_blink"], 3.0, Always),
+            step(&["dead_redstone"], 3.0, Always),
+            step(&["bulbs_clicking"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_furnace",
+        steps: &[
+            step(&["cold_crackle"], 0.0, Always),
+            step(&["swap_fuel"], 3.0, Always),
+            step(&["cook_one"], 3.0, Always),
+            step(&["cold_furnace"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_brewing",
+        steps: &[
+            step(&["brewing_done"], 0.0, Always),
+            step(&["potion_changed"], 3.0, Always),
+            step(&["brew_left"], 3.0, Always),
+            step(&["their_own_potion"], 3.0, Always),
+            step(&["splash_dark"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_frames",
+        steps: &[
+            step(&["frame_rotate"], 0.0, Always),
+            step(&["frames_turn"], 3.0, Always),
+            step(&["item_frames_face"], 3.0, Always),
+            step(&["frame_swap"], 3.0, Always),
+            step(&["painting_flip"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_stand",
+        steps: &[
+            step(&["armor_stand_turn"], 0.0, Always),
+            step(&["stand_watch"], 3.0, Always),
+            step(&["armor_stand_dress"], 3.0, Always),
+            step(&["armour_behind"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_doorway",
+        steps: &[
+            step(&["door_sound"], 0.0, Always),
+            step(&["close_door"], 3.0, Always),
+            step(&["door_opens_itself"], 3.0, Always),
+            step(&["every_door_opens"], 3.0, Always),
+            step(&["open_on_enter"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_floor_above",
+        steps: &[
+            step(&["steps_above"], 0.0, Always),
+            step(&["scratching"], 3.0, Always),
+            step(&["trapdoor_taps"], 3.0, Always),
+            step(&["digging_under_the_floor"], 3.0, Always),
+            step(&["under_the_bed"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_ladder",
+        steps: &[
+            step(&["ladder_gap"], 0.0, Always),
+            step(&["ladder_climb"], 3.0, Always),
+            step(&["ladder_down"], 3.0, Always),
+            step(&["top_of_the_ladder"], 3.0, Always),
+            step(&["climbs_ahead"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_mine_lights",
+        steps: &[
+            step(&["torches_far_end"], 0.0, Always),
+            step(&["light_taken"], 3.0, Always),
+            step(&["cave_torches_flicker"], 3.0, Always),
+            step(&["lights_out"], 3.0, Always),
+            step(&["in_the_lava"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_deep",
+        steps: &[
+            step(&["cave_air"], 0.0, Always),
+            step(&["echo_steps"], 3.0, Always),
+            step(&["bones_underfoot"], 3.0, Always),
+            step(&["ominous_hum"], 3.0, Always),
+            step(&["shriek_below"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_ore",
+        steps: &[
+            step(&["scan_ore", "ore_counted"], 0.0, Always),
+            step(&["ore_marked"], 3.0, Always),
+            step(&["late_drop"], 3.0, Always),
+            step(&["mined_out"], 3.0, Always),
+            step(&["dripstone_falls"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_trees",
+        steps: &[
+            step(&["tree_grown"], 0.0, Always),
+            step(&["sapling"], 3.0, Always),
+            step(&["circles_a_tree"], 3.0, Always),
+            step(&["tree_comes_down"], 3.0, Always),
+            step(&["bare_trees"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_forest_edge",
+        steps: &[
+            step(&["animals_flee_the_woods"], 0.0, Always),
+            step(&["face_in_the_canopy"], 3.0, Always),
+            step(&["crouched_behind_a_tree"], 3.0, Always),
+            step(&["in_the_treetops"], 3.0, Always),
+            step(&["path_through_the_trees"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_hunted",
+        steps: &[
+            step(&["hostiles_stare"], 0.0, Always),
+            step(&["hostiles_close"], 3.0, Always),
+            step(&["quick_approach"], 3.0, Always),
+            step(&["hunted"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_arrow",
+        steps: &[
+            step(&["arrow_hit"], 0.0, Always),
+            step(&["arrow_in_the_door"], 3.0, Always),
+            step(&["arrow_returned"], 3.0, Always),
+            step(&["crossbow_click"], 3.0, Always),
+            step(&["arrow_grazes"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_strikes",
+        steps: &[
+            step(&["figure_nip"], 0.0, Always),
+            step(&["animals_nip"], 3.0, Always),
+            step(&["figure_swing"], 3.0, Always),
+            step(&["shove"], 3.0, Always),
+            step(&["shove_far"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_night_creatures",
+        steps: &[
+            step(&["daylight_phantom"], 0.0, Always),
+            step(&["bats_in_the_house"], 3.0, Always),
+            step(&["the_killer_rabbit"], 3.0, Always),
+            step(&["wolves_circle"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_village_night",
+        steps: &[
+            step(&["village_lantern"], 0.0, Always),
+            step(&["villager_word"], 3.0, Always),
+            step(&["villager_at_door"], 3.0, Always),
+            step(&["villager_flees_in"], 3.0, Always),
+            step(&["villagers_walk_out"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_bed_moved",
+        steps: &[
+            step(&["bed_turned"], 0.0, Always),
+            step(&["shift_bed"], 3.0, Always),
+            step(&["bed_fenced"], 3.0, Always),
+            step(&["bed_occupied"], 3.0, Always),
+            step(&["bed_breaks"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_sleep",
+        steps: &[
+            step(&["refuse_rest"], 0.0, Always),
+            step(&["sleepers_wrong"], 3.0, Always),
+            step(&["wake"], 3.0, Always),
+            step(&["woke_elsewhere"], 3.0, Always),
+            step(&["sleepwalk"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_lantern",
+        steps: &[
+            step(&["drawn_to_the_light"], 0.0, Always),
+            step(&["lantern_in_the_woods"], 3.0, Always),
+            step(&["torch_ring"], 3.0, Always),
+            step(&["stone_circle"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_campfire",
+        steps: &[
+            step(&["put_out_campfire"], 0.0, Always),
+            step(&["light_campfire"], 3.0, Always),
+            step(&["camp_nearby"], 3.0, Always),
+            step(&["fireflies_go_out"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_candles",
+        steps: &[
+            step(&["candles_lit"], 0.0, Always),
+            step(&["move_light"], 3.0, Always),
+            step(&["torch_blue"], 3.0, Always),
+            step(&["soul_swap"], 3.0, Always),
+            step(&["torches_turn"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_windows",
+        steps: &[
+            step(&["window_tap"], 0.0, Always),
+            step(&["glass_rubbed"], 3.0, Always),
+            step(&["handprints"], 3.0, Always),
+            step(&["waves_from_inside"], 3.0, Always),
+            step(&["figure_window"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_glass",
+        steps: &[
+            step(&["glass_breaks"], 0.0, Always),
+            step(&["window_bars"], 3.0, Always),
+            step(&["window_tinted"], 3.0, Always),
+            step(&["potion_at_the_window"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_impostor",
+        steps: &[
+            step(&["wears_your_face"], 0.0, Always),
+            step(&["figure_in_your_armour"], 3.0, Always),
+            step(&["zombie_in_your_gear"], 3.0, Always),
+            step(&["rides_their_horse"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_far_figure",
+        steps: &[
+            step(&["on_the_peak"], 0.0, Always),
+            step(&["rider_on_the_ridge"], 3.0, Always),
+            step(&["across_water"], 3.0, Always),
+            step(&["figure_bows"], 3.0, Always),
+            step(&["jumping_far"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_house_rearranged",
+        steps: &[
+            step(&["furniture_shifted"], 0.0, Always),
+            step(&["carpet_shift"], 3.0, Always),
+            step(&["stairs_turned"], 3.0, Always),
+            step(&["banner_turned"], 3.0, Always),
+            step(&["alcove"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_corners",
+        steps: &[
+            step(&["mushrooms_in_corners"], 0.0, Always),
+            step(&["cobwebs"], 3.0, Always),
+            step(&["bats_in_the_house"], 3.0, Always),
+            step(&["pet_stares_at_wall"], 3.0, Always),
+            step(&["breathing_in_the_wall"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_portal",
+        steps: &[
+            step(&["portal_sound"], 0.0, Always),
+            step(&["portal_lit"], 3.0, Always),
+            step(&["someone_went_through"], 3.0, Always),
+            step(&["standing_in_the_portal"], 3.0, Always),
+            step(&["portal_goes_out"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_return",
+        steps: &[
+            step(
+                &["waits_at_the_portal", "prints_from_the_portal"],
+                0.0,
+                Always,
+            ),
+            step(&["ruined_portal_glows"], 3.0, Always),
+            step(&["firework_over_its_house"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_ender",
+        steps: &[
+            step(&["ender_chest_note"], 0.0, Always),
+            step(&["eye_turns_home"], 3.0, Always),
+            step(&["endermen_turn_away"], 3.0, Always),
+            step(&["ender_holds"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_sky_things",
+        steps: &[
+            step(&["lightning_silent"], 0.0, Always),
+            step(&["thunder_clear"], 3.0, Always),
+            step(&["boom_far"], 3.0, Always),
+            step(&["falls_from_the_sky"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_ghasts",
+        steps: &[
+            step(&["happy_ghast_overhead"], 0.0, Always),
+            step(&["dried_ghast_on_doorstep"], 3.0, Always),
+            step(&["ghast_name"], 3.0, Always),
+            step(&["ghast_watches"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_heads",
+        steps: &[
+            step(&["head_on_post"], 0.0, Always),
+            step(&["skull_in_the_tunnel"], 3.0, Always),
+            step(&["kill_line"], 3.0, Always),
+            step(&["grave"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_way_back",
+        steps: &[
+            step(&["way_back_closes"], 0.0, Always),
+            step(&["tunnel_sealed"], 3.0, Always),
+            step(&["dripstone_in_tunnel"], 3.0, Always),
+            step(&["tunnel_goes_on"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_water_below",
+        steps: &[
+            step(&["wet_steps"], 0.0, Always),
+            step(&["under_the_water"], 3.0, Always),
+            step(&["water_where_none"], 3.0, Always),
+            step(&["bubbling_under"], 3.0, Always),
+            step(&["pulled_under"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_copper",
+        steps: &[
+            step(&["copper_golem_at_door"], 0.0, Always),
+            step(&["copper_ages"], 3.0, Always),
+            step(&["golem_statue_turns"], 3.0, Always),
+            step(&["bulbs_clicking"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_containers",
+        steps: &[
+            step(&["chest_full_of_one"], 0.0, Always),
+            step(&["hopper_emptied"], 3.0, Always),
+            step(&["shulker_moved"], 3.0, Always),
+            step(&["shulker_lid_peeks"], 3.0, Always),
+            step(&["a_face_in_the_chest"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_dead_again",
+        steps: &[
+            step(&["where_you_died"], 0.0, Always),
+            step(&["death_light"], 3.0, Always),
+            step(&["your_grave"], 3.0, Always),
+            step(&["respawn_its_bed"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_trail",
+        steps: &[
+            step(&["trail"], 0.0, Always),
+            step(&["trail_in"], 3.0, Always),
+            step(&["prints_around_the_house"], 3.0, Always),
+            step(&["red_trail"], 3.0, Always),
+            step(&["sculk_trail"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_one_more",
+        steps: &[
+            step(&["one_more"], 0.0, Always),
+            step(&["one_more_each_night"], 3.0, Always),
+            step(&["ring_of_figures"], 3.0, Always),
+            step(&["every_window"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_out_of_place",
+        steps: &[
+            step(&["out_of_place"], 0.0, Always),
+            step(&["pumpkin_face"], 3.0, Always),
+            step(&["empty_lead"], 3.0, Always),
+            step(&["trident_planted"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_floor",
+        steps: &[
+            step(&["trapdoor_to_nothing"], 0.0, Always),
+            step(&["hole"], 3.0, Always),
+            step(&["backfill"], 3.0, Always),
+            step(&["digging_under_the_floor"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_pets",
+        steps: &[
+            step(&["pet_stares_at_wall"], 0.0, Always),
+            step(&["pet_follows"], 3.0, Always),
+            step(&["cat_gift"], 3.0, Always),
+            step(&["pet_whines_at_door"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_young",
+        steps: &[
+            step(&["warped_animal"], 0.0, Always),
+            step(&["the_child_stares"], 3.0, Always),
+            step(&["armadillos_curl"], 3.0, Always),
+            step(&["cattle_turn_away"], 3.0, Always),
+            step(&["refuses_food"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_snowballs",
+        steps: &[
+            step(&["snowball_thrown"], 0.0, Always),
+            step(&["snowball_comes_back"], 3.0, Always),
+            step(&["name_in_the_snow"], 3.0, Always),
+            step(&["snow_shape"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_sand",
+        steps: &[
+            step(&["sand_gives_back"], 0.0, Always),
+            step(&["pot_of_returns"], 3.0, Always),
+            step(&["pot_shatters"], 3.0, Always),
+            step(&["sweeping_next_room"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_nether_deep",
+        steps: &[
+            step(&["nether_roof_steps"], 0.0, Always),
+            step(&["zombified_follow"], 3.0, Always),
+            step(&["lava_goes_still"], 3.0, Always),
+            step(&["name_in_netherrack"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_void",
+        steps: &[
+            step(&["second_wings"], 0.0, Always),
+            step(&["end_sky_face"], 3.0, Always),
+            step(&["prints_off_the_edge"], 3.0, Always),
+            step(&["standing_on_the_void"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_screen_dark",
+        steps: &[
+            step(&["static"], 0.0, Always),
+            step(&["elder_face"], 3.0, Always),
+            step(&["rumble"], 3.0, Always),
+            step(&["border_closes"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_eyes",
+        steps: &[
+            step(&["eyes_in_the_dark"], 0.0, Always),
+            step(&["peeks_from_ground"], 3.0, Always),
+            step(&["while_unseen"], 3.0, Always),
+            step(&["gasp_when_turning"], 3.0, Always),
+        ],
+    },
 ];
 
 /// How much likelier an open chain's next step is on the menu.
@@ -969,17 +1698,26 @@ mod tests {
             }
         }
         // The design's eight, the diary (sold, then brought if not bought), the newer events'
-        // seven, the rest of the catalogue's nineteen, thirteen over 116 to 205 and ten over 206
-        // to 320 (the Nether's and the End's among them).
-        assert_eq!(CHAINS.len(), 58);
-        let mut seen: Vec<&str> = Vec::new();
+        // seven, the rest of the catalogue's nineteen, thirteen over 116 to 205, ten over 206 to
+        // 320, and seventy-six more over the whole catalogue (owner: "an additional 50-100").
+        assert_eq!(CHAINS.len(), 134);
+        // No two chains alike (owner: "no duplicate chains, but an event that makes sense to be a
+        // step in a chain if it already exists in another one is fine"): an event may be in
+        // several, never two chains of the same events.
+        let mut seen: Vec<Vec<&str>> = Vec::new();
         for chain in CHAINS {
-            for step in chain.steps {
-                for event in step.events {
-                    assert!(!seen.contains(event), "{event} is in two chains");
-                    seen.push(event);
-                }
-            }
+            let mut events: Vec<&str> = chain
+                .steps
+                .iter()
+                .flat_map(|s| s.events.iter().copied())
+                .collect();
+            events.sort_unstable();
+            assert!(
+                !seen.contains(&events),
+                "{} is another chain again",
+                chain.id
+            );
+            seen.push(events);
         }
         let ids: std::collections::HashSet<&str> = CHAINS.iter().map(|c| c.id).collect();
         assert_eq!(ids.len(), CHAINS.len(), "each chain its own id");
