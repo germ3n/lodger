@@ -5318,6 +5318,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TreeToTree,
         false,
     ),
+    // docs/events_todo.md, 116.
+    row(
+        "breathing_in_the_wall",
+        3,
+        5,
+        &[TargetIndoors],
+        1.5,
+        3,
+        Full,
+        Action::SoundAtTarget("minecraft:entity.player.breath"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6467,6 +6479,7 @@ impl Event {
             "dead_redstone" => "make their redstone by the house dead a while",
             "sound_warp" => "make every sound they hear go wrong a while",
             "villager_flees_in" => "send a villager banging at their door, to run in and die",
+            "breathing_in_the_wall" => "breathe slowly inside the wall beside them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

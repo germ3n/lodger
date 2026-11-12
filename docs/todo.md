@@ -2165,6 +2165,9 @@ The `[x]` lines above, summed up by day:
 - [x] **The handprints shorter** (owner: "the handprints dont seem to stop"): `handprints` shows half a
   minute. Was: a minute and a half, still on the glass long after they had looked at them.
 
+- [x] **Breathing in the wall** (`docs/events_todo.md`, 116): `breathing_in_the_wall`, stages 3 to 5, indoors: slow breaths from inside the wall beside them. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

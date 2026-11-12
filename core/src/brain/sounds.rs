@@ -64,6 +64,42 @@ const DOOR_CLOSE: &str = "minecraft:block.wooden_door.close";
 /// The variants of a sound event, or none for an event that is not one.
 pub fn variants(event: &str) -> Option<&'static [Variant]> {
     Some(match event {
+        // docs/events_todo.md, 116.
+        "breathing_in_the_wall" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 45),
+                        ("minecraft:entity.player.breath", 90),
+                    ],
+                    (0.5, 0.6),
+                    0.5,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 60),
+                    ],
+                    (0.42, 0.5),
+                    0.6,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 40),
+                        ("minecraft:entity.player.breath", 80),
+                        ("minecraft:entity.player.breath", 120),
+                    ],
+                    (0.55, 0.65),
+                    0.45,
+                    Beside,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1026,6 +1062,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "breathing_in_the_wall",
         ] {
             let n = variants(id)
                 .unwrap_or_else(|| panic!("{id} has none"))
