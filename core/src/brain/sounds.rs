@@ -948,6 +948,33 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 169.
+        "cart_overhead" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:entity.minecart.riding", 0)],
+                    (0.8, 0.9),
+                    1.2,
+                    Above,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.minecart.riding", 0),
+                        ("minecraft:entity.minecart.riding", 30),
+                    ],
+                    (0.7, 0.8),
+                    1.0,
+                    Above,
+                ),
+                v(
+                    &[("minecraft:entity.minecart.riding", 0)],
+                    (0.6, 0.7),
+                    1.4,
+                    Above,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1920,6 +1947,7 @@ mod tests {
             "snoring_beside",
             "sigh_at_the_door",
             "humming_ahead",
+            "cart_overhead",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

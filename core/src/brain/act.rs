@@ -17143,4 +17143,27 @@ mod tests {
         );
         assert!(made.windows(2).all(|w| w[0].1 < w[1].1), "a step apart");
     }
+
+    #[test]
+    fn underground_a_minecart_rolls_through_the_rock_above() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("cart_overhead").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(!made.is_empty(), "{made:?}");
+        assert!(
+            made.iter()
+                .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
+            "{made:?}"
+        );
+    }
 }

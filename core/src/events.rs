@@ -5688,6 +5688,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.note_block.harp"),
         false,
     ),
+    // docs/events_todo.md, 169.
+    row(
+        "cart_overhead",
+        3,
+        5,
+        &[TargetUnderground],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.minecart.riding"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7185,6 +7197,7 @@ impl Event {
             "sigh_at_the_door" => "sigh just outside their door",
             "humming_ahead" => "hum a few notes in the tunnel ahead",
             "steps_counted" => "count their steps in notes, one higher each",
+            "cart_overhead" => "roll a minecart through the rock over them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
