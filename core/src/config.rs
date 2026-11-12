@@ -185,6 +185,13 @@ pub enum ModelSize {
     Seven,
     /// Qwen3-8B, the largest.
     Eight,
+    /// Microsoft's Phi-4-mini-instruct, 3.8B, MIT (owner: "can you add these 2").
+    Phi4Mini,
+    /// IBM's Granite 4.0 Micro, 3B, Apache-2.0.
+    GraniteMicro,
+    /// IBM's Granite 4.0 H Tiny: 7B in all, about 1B at work for each word, so quick for its
+    /// size (owner: "can u also add 7 or 8b variants of those"; Phi-4 has none at that size).
+    GraniteTiny,
 }
 
 /// A part of a model after its first, for a model published in several files: where it is, what
@@ -233,13 +240,35 @@ the model runs here. Copyright 2025 Alibaba Cloud. Licensed under the Apache Lic
 2.0; the full text is at the link below. By continuing you accept those terms for your use of \
 the model.";
 
+const PHI_TEXT: &str = "The lodger thinks with Phi-4-mini-instruct, a language model made by \
+Microsoft and released under the MIT License. It will be downloaded once from Hugging Face, from \
+unsloth's repository, which offers Microsoft's model in the GGUF form the lodger runs (Microsoft \
+publishes none), and kept on this computer. Nothing is sent anywhere; the model runs here. \
+Copyright (c) Microsoft Corporation. Licensed under the MIT License; the full text is at the link \
+below. By continuing you accept those terms for your use of the model.";
+
+const GRANITE_TEXT: &str = "The lodger thinks with Granite 4.0 Micro, a language model made by \
+IBM and released under the Apache License 2.0. It will be downloaded once from Hugging Face, from \
+IBM's own repository, and kept on this computer. Nothing is sent anywhere; the model runs here. \
+Copyright IBM Corp. Licensed under the Apache License, Version 2.0; the model's card at the link \
+below names it. By continuing you accept those terms for your use of the model.";
+
+const GRANITE_TINY_TEXT: &str = "The lodger thinks with Granite 4.0 H Tiny, a language model \
+made by IBM and released under the Apache License 2.0. It will be downloaded once from Hugging \
+Face, from IBM's own repository, and kept on this computer. Nothing is sent anywhere; the model \
+runs here. Copyright IBM Corp. Licensed under the Apache License, Version 2.0; the model's card at \
+the link below names it. By continuing you accept those terms for your use of the model.";
+
 impl ModelSize {
     /// Every model, smallest first: the preparing screen's choices.
-    pub const ALL: [ModelSize; 6] = [
+    pub const ALL: [ModelSize; 9] = [
         ModelSize::Small,
         ModelSize::Medium,
+        ModelSize::GraniteMicro,
         ModelSize::Large,
+        ModelSize::Phi4Mini,
         ModelSize::Qwen3,
+        ModelSize::GraniteTiny,
         ModelSize::Seven,
         ModelSize::Eight,
     ];
@@ -256,6 +285,9 @@ impl ModelSize {
             Self::Qwen3 => "4b",
             Self::Seven => "7b",
             Self::Eight => "8b",
+            Self::Phi4Mini => "phi4-mini",
+            Self::GraniteMicro => "granite4-micro",
+            Self::GraniteTiny => "granite4-tiny",
         }
     }
 
@@ -269,6 +301,9 @@ impl ModelSize {
             Self::Qwen3 => "A much better reader, and newer. Wants about 2.9 GB of VRAM.",
             Self::Seven => "Larger again, for a big GPU: two files, fetched together. Wants about 5.2 GB of VRAM.",
             Self::Eight => "The largest and best reader, for a big GPU. Wants about 5.6 GB of VRAM.",
+            Self::Phi4Mini => "Microsoft's, not Qwen's: strong at following what it is asked. Wants about 2.9 GB of VRAM.",
+            Self::GraniteMicro => "IBM's, not Qwen's: made for picking from a list. Wants about 2.4 GB of VRAM.",
+            Self::GraniteTiny => "IBM's larger one, quick for its size. Wants about 4.6 GB of VRAM.",
         }
     }
 
@@ -281,6 +316,9 @@ impl ModelSize {
             Self::Qwen3 => "Qwen3 4B",
             Self::Seven => "Qwen2.5 7B",
             Self::Eight => "Qwen3 8B",
+            Self::Phi4Mini => "Phi-4 mini 3.8B",
+            Self::GraniteMicro => "Granite 4.0 Micro 3B",
+            Self::GraniteTiny => "Granite 4.0 H Tiny 7B",
         }
     }
 
@@ -292,6 +330,9 @@ impl ModelSize {
             Self::Qwen3 => "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
             Self::Seven => "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
             Self::Eight => "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf",
+            Self::Phi4Mini => "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q4_K_M.gguf",
+            Self::GraniteMicro => "https://huggingface.co/ibm-granite/granite-4.0-micro-GGUF/resolve/main/granite-4.0-micro-Q4_K_M.gguf",
+            Self::GraniteTiny => "https://huggingface.co/ibm-granite/granite-4.0-h-tiny-GGUF/resolve/main/granite-4.0-h-tiny-Q4_K_M.gguf",
         }
     }
 
@@ -301,6 +342,8 @@ impl ModelSize {
             Self::Small => 24,
             Self::Medium | Self::Seven => 28,
             Self::Large | Self::Qwen3 | Self::Eight => 36,
+            Self::Phi4Mini => 32,
+            Self::GraniteMicro | Self::GraniteTiny => 40,
         }
     }
 
@@ -314,6 +357,9 @@ impl ModelSize {
             // A split's own names: llama.cpp finds the second part from the first's.
             Self::Seven => "qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
             Self::Eight => "qwen3-8b-q4_k_m.gguf",
+            Self::Phi4Mini => "phi-4-mini-instruct-q4_k_m.gguf",
+            Self::GraniteMicro => "granite-4.0-micro-q4_k_m.gguf",
+            Self::GraniteTiny => "granite-4.0-h-tiny-q4_k_m.gguf",
         }
     }
 
@@ -326,6 +372,9 @@ impl ModelSize {
             Self::Qwen3 => 2_497_281_120,
             Self::Seven => 3_993_201_344,
             Self::Eight => 5_027_783_488,
+            Self::Phi4Mini => 2_491_874_272,
+            Self::GraniteMicro => 2_099_502_528,
+            Self::GraniteTiny => 4_230_976_352,
         }
     }
 
@@ -356,6 +405,11 @@ impl ModelSize {
             Self::Qwen3 => "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
             Self::Seven => "dfce12e3862a5283ccfb88221b48480e58745165de856439950d0f22590580db",
             Self::Eight => "d98cdcbd03e17ce47681435b5150e34c1417f50b5c0019dd560e4882c5745785",
+            Self::Phi4Mini => "88c00229914083cd112853aab84ed51b87bdf6b9ce42f532d8c85c7c63b1730a",
+            Self::GraniteMicro => {
+                "97c417dcc0534b0737c74016fb2af083cb17c3b51eaac621192d23961b7024eb"
+            }
+            Self::GraniteTiny => "5a38b08c441ae1adbafb1d2b8a7167e0d48734d83af68b268cefea1eec553dcd",
         }
     }
 
@@ -391,6 +445,22 @@ impl ModelSize {
                 name: "Apache License 2.0",
                 url: "https://huggingface.co/Qwen/Qwen3-8B-GGUF/blob/main/LICENSE",
                 text: QWEN3_8B_TEXT,
+            },
+            Self::Phi4Mini => ModelLicense {
+                name: "MIT License",
+                url: "https://huggingface.co/microsoft/Phi-4-mini-instruct/blob/main/LICENSE",
+                text: PHI_TEXT,
+            },
+            // IBM's GGUF repository holds no license file; the model's card names Apache-2.0.
+            Self::GraniteMicro => ModelLicense {
+                name: "Apache License 2.0",
+                url: "https://huggingface.co/ibm-granite/granite-4.0-micro",
+                text: GRANITE_TEXT,
+            },
+            Self::GraniteTiny => ModelLicense {
+                name: "Apache License 2.0",
+                url: "https://huggingface.co/ibm-granite/granite-4.0-h-tiny",
+                text: GRANITE_TINY_TEXT,
             },
         }
     }
@@ -441,8 +511,9 @@ pub struct Model {
     /// Whether the model is used at all: off, nothing is downloaded and the rule brain decides
     /// (the download screen's "Play without it", or the settings; owner).
     pub enabled: bool,
-    /// `0.5b`, `1.5b`, `3b` or `7b`, a Qwen2.5-Instruct, `4b`, Qwen3-4B-Instruct-2507, or `8b`,
-    /// Qwen3-8B: which model
+    /// `0.5b`, `1.5b`, `3b` or `7b`, a Qwen2.5-Instruct, `4b`, Qwen3-4B-Instruct-2507, `8b`,
+    /// Qwen3-8B, `phi4-mini`, Microsoft's Phi-4-mini-instruct, `granite4-micro`, IBM's Granite 4.0
+    /// Micro, or `granite4-tiny`, IBM's Granite 4.0 H Tiny: which model
     /// to run. See `docs/model.md`.
     pub size: String,
     /// Where to fetch from. Empty means Qwen's own file for `size`.
@@ -968,7 +1039,10 @@ impl Config {
         }
 
         if ModelSize::named(&self.model.size).is_none() {
-            return Err("model.size must be 0.5b, 1.5b, 3b, 4b, 7b or 8b".to_string());
+            return Err(
+                "model.size must be 0.5b, 1.5b, 3b, 4b, 7b, 8b, phi4-mini, granite4-micro or granite4-tiny"
+                    .to_string(),
+            );
         }
 
         if !(0.0..=2.0).contains(&self.brain.temperature) {
@@ -1330,6 +1404,37 @@ mod tests {
             .iter()
             .filter(|s| **s != ModelSize::Seven)
             .all(|s| s.more_parts().is_empty()));
+        // Beyond Qwen (owner: "can you add these 2", "7 or 8b variants of those"): Phi-4 mini
+        // from unsloth (Microsoft publishes no GGUF), the Granites from IBM's own repositories.
+        for (name, size, from) in [
+            (
+                "phi4-mini",
+                ModelSize::Phi4Mini,
+                "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/",
+            ),
+            (
+                "granite4-micro",
+                ModelSize::GraniteMicro,
+                "https://huggingface.co/ibm-granite/",
+            ),
+            (
+                "granite4-tiny",
+                ModelSize::GraniteTiny,
+                "https://huggingface.co/ibm-granite/",
+            ),
+        ] {
+            assert_eq!(ModelSize::named(name), Some(size));
+            assert!(size.url().starts_with(from), "{}", size.url());
+            assert!(
+                size.url().to_lowercase().ends_with(size.file_name()),
+                "{}",
+                size.url()
+            );
+        }
+        assert_eq!(ModelSize::Phi4Mini.license().name, "MIT License");
+        assert!(ModelSize::Phi4Mini.license().text.contains("unsloth"));
+        assert_eq!(ModelSize::GraniteMicro.license().name, "Apache License 2.0");
+        assert_eq!(ModelSize::GraniteTiny.license().name, "Apache License 2.0");
 
         for pair in ModelSize::ALL.windows(2) {
             assert!(

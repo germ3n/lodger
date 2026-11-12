@@ -131,6 +131,9 @@ no GPU it all runs on the CPU.
 | `4b` | Qwen3 4B Instruct 2507 | 2.5 GB | about 3.2 GB | about 2.9 GB | Apache 2.0 |
 | `7b` | Qwen2.5 7B Instruct | 4.7 GB (two files, fetched together) | about 5.5 GB | about 5.2 GB | Apache 2.0 |
 | `8b` | Qwen3 8B | 5.0 GB | about 6 GB | about 5.6 GB | Apache 2.0 |
+| `phi4-mini` | Microsoft Phi-4 mini Instruct | 2.5 GB | about 3.2 GB | about 2.9 GB | MIT |
+| `granite4-micro` | IBM Granite 4.0 Micro | 2.1 GB | about 2.6 GB | about 2.4 GB | Apache 2.0 |
+| `granite4-tiny` | IBM Granite 4.0 H Tiny | 4.2 GB | about 5 GB | about 4.6 GB | Apache 2.0 |
 
 "Memory in all" is RAM and VRAM together. At the default nearly all of it is VRAM; with
 `model.gpu_share` at `0`, or no GPU, all of it is RAM. The figures are estimates and vary with your system. The model

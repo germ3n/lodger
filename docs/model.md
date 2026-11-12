@@ -6,7 +6,7 @@ scoring, the same queue, the same download, behind the mind's C ABI instead of a
 
 ## Which model
 
-**Qwen2.5-Instruct or Qwen3, a `q4_k_m` GGUF, in the size `model.size` picks** (owner: "players can choose between the 0.5b, 1.5b or 3b model"; "please add the 7b and 8b models"):
+**Qwen2.5-Instruct or Qwen3, a `q4_k_m` GGUF, in the size `model.size` picks** (owner: "players can choose between the 0.5b, 1.5b or 3b model"; "please add the 7b and 8b models"), **or one of two other makers'** (owner: "can you add these 2"; "can u also add 7 or 8b variants of those"):
 
 | `model.size` | File | RAM while loaded | A question of four choices on two threads | For |
 | --- | --- | --- | --- | --- |
@@ -16,8 +16,11 @@ scoring, the same queue, the same download, behind the mind's C ABI instead of a
 | `4b` | `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` from unsloth's repository, 2.5 GB | about 3.2 GB | about the 3B's | the newest and best reader (owner: "how about we offer this too?"); Apache-2.0; non-thinking only, so no `<think>` block gets in the way of scoring; the vendored llama.cpp (llama-cpp-sys-2 0.1.161) knows its `qwen3` architecture |
 | `7b` | Qwen's own `qwen2.5-7b-instruct-q4_k_m`, in two parts (`-00001-of-00002.gguf`, 3.99 GB, and `-00002-of-00002.gguf`, 0.69 GB), 4.7 GB in all | about 5.5 GB | slower again; on a GPU a second or so | a big GPU; Apache-2.0; the two parts are two downloads, saved side by side under the split's own names, and llama.cpp loads the second from the first |
 | `8b` | Qwen's own `Qwen3-8B-Q4_K_M.gguf`, 5.0 GB | about 6 GB | the slowest | the largest and best reader, for a big GPU; Apache-2.0; Qwen3-8B can think before it answers in a chat, but the lodger reads no chat template and its writing allows letters and spaces alone, so no `<think>` block ever comes |
+| `phi4-mini` | `Phi-4-mini-instruct-Q4_K_M.gguf` from unsloth's repository (Microsoft publishes no GGUF), 2.5 GB | about 3.2 GB | about the 4B's | Microsoft's, MIT; strong at following what it is asked; llama.cpp's `phi3` architecture, 32 layers |
+| `granite4-micro` | IBM's own `granite-4.0-micro-Q4_K_M.gguf`, 2.1 GB | about 2.6 GB | about the 3B's | IBM's, Apache-2.0; made for following instructions and picking from a list, which is what the lodger asks; 40 layers |
+| `granite4-tiny` | IBM's own `granite-4.0-h-tiny-Q4_K_M.gguf`, 4.2 GB | about 5 GB | quicker than its size: about 1B of its 7B at work for each word | IBM's, Apache-2.0; its hybrid architecture (`granitehybrid`, part Mamba) is in the vendored llama.cpp. Phi-4 has nothing between the mini and 14B, so no larger Phi |
 
-The 0.5B, 1.5B, 4B, 7B and 8B are Apache-2.0; the 3B is under Qwen's research license, which the
+The 0.5B, 1.5B, 4B, 7B and 8B are Apache-2.0, as are the two Granites; Phi-4 mini is MIT; the 3B is under Qwen's research license, which the
 preparing screen names and links before the download. Qwen's own GGUF repository for the 4B answers 401 to a plain download, so its file
 comes from unsloth's, which repackages Qwen's model under the same license. Each file's exact
 length and SHA-256 are in `ModelSize` (from Hugging Face's `x-linked-size` and `x-linked-etag`),
@@ -49,7 +52,7 @@ measure item in the todo replaces them with numbers.
 
 **Picking the size on the screen** (owner): the preparing screen shows a button
 with the size it is about to fetch (`Qwen2.5 1.5B, 1117 MB (click for another)`); each press
-picks the next of the six, writes `model.size` into the config and starts that download
+picks the next of the nine, writes `model.size` into the config and starts that download
 instead. A model already there skips the screen; the settings page changes it then.
 
 The model is not in the jar. A gigabyte is too much to ship with a mod and Hugging Face serves it

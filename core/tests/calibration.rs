@@ -181,7 +181,12 @@ fn three_days_against_the_real_model_print_every_decision() {
     let mut stay = Stay::new(&info);
     let mut tick = 0u64;
     let mut printed = 0;
-    while tick < 3 * 24_000 {
+    // DAYS=<n> for a longer stay than three days (each stage a day here, so five reach the last).
+    let days: u64 = std::env::var("DAYS")
+        .ok()
+        .and_then(|d| d.parse().ok())
+        .unwrap_or(3);
+    while tick < days * 24_000 {
         let now = Now {
             tick,
             day: tick / 24_000,

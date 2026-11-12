@@ -596,7 +596,7 @@ mod tests {
         let find = |key: &str| settings.iter().find(|s| s["key"] == key).unwrap().clone();
         assert_eq!(find("preset")["value"], "calm");
         assert_eq!(find("model.gpu_share")["value"], 0.3);
-        assert_eq!(find("model.size")["options"].as_array().unwrap().len(), 6);
+        assert_eq!(find("model.size")["options"].as_array().unwrap().len(), 9);
         assert_eq!(find("events.chat")["value"], false, "calm turns chat off");
         let groups: std::collections::BTreeSet<&str> = settings
             .iter()
@@ -624,7 +624,11 @@ mod tests {
         };
         let reply = harness().init_with(&init(""));
         let choices = reply["resources"][0]["choices"].as_array().unwrap().clone();
-        assert_eq!(choices.len(), 6, "0.5B, 1.5B, 3B, 4B, 7B, 8B");
+        assert_eq!(
+            choices.len(),
+            9,
+            "0.5B, 1.5B, Granite Micro, 3B, Phi-4 mini, 4B, Granite Tiny, 7B, 8B"
+        );
         let chosen: Vec<&serde_json::Value> =
             choices.iter().filter(|c| c["chosen"] == true).collect();
         assert_eq!(chosen.len(), 1);
@@ -690,10 +694,17 @@ mod tests {
             .iter()
             .map(|c| c["label"].as_str().unwrap())
             .collect();
-        assert_eq!(labels.len(), 6);
-        assert_eq!(labels[3], "Qwen3 4B, 2497 MB");
-        assert_eq!(labels[4], "Qwen2.5 7B, 4683 MB", "both parts together");
-        assert_eq!(labels[5], "Qwen3 8B, 5027 MB");
+        assert_eq!(labels.len(), 9);
+        for label in [
+            "Qwen3 4B, 2497 MB",
+            "Qwen2.5 7B, 4683 MB",
+            "Qwen3 8B, 5027 MB",
+            "Phi-4 mini 3.8B, 2491 MB",
+            "Granite 4.0 Micro 3B, 2099 MB",
+            "Granite 4.0 H Tiny 7B, 4230 MB",
+        ] {
+            assert!(labels.contains(&label), "{label} in {labels:?}");
+        }
         assert_eq!(
             reply["resources"].as_array().unwrap().len(),
             1,

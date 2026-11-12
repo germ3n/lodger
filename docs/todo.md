@@ -2423,6 +2423,16 @@ The `[x]` lines above, summed up by day:
   4B, every obvious `When?` right on both, and a three-day stay waits when waiting fits. Numbers in
   [Model](model.md#scoring); the half mode measured, correctly named (it was also listed).
 
+- [x] **Phi-4 mini and the Granites** (owner: "can you add these 2"; "can u also add 7 or 8b
+  variants of those"). Was: Qwen alone. Now `model.size` `phi4-mini` (Microsoft's
+  Phi-4-mini-instruct, MIT, from unsloth's repository as Microsoft publishes no GGUF),
+  `granite4-micro` (IBM's Granite 4.0 Micro) and `granite4-tiny` (IBM's Granite 4.0 H Tiny, 7B,
+  about 1B at work a word), both from IBM's own repositories, Apache-2.0; each file's length and
+  SHA-256 from Hugging Face, each architecture checked in the vendored llama.cpp. Phi-4 has no
+  7-8B. In the preparing screen's choices, smallest first, the settings, the docs. Not measured on
+  the harness yet (each is a download). Tests: in `config` and the crate's; the counts of sizes, 6
+  to 9, and the labels looked up by name, not place (owner told).
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
