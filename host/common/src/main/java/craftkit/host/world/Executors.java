@@ -2698,6 +2698,32 @@ public final class Executors {
 			context.temporaries().add(trident, wanted);
 			return report(id, true, "");
 		}
+		// A lead's knot on a fence post, nothing on its other end (ABI 56): for a while only, on the
+		// fence found in the column within three blocks of the place.
+		if (of.equals("minecraft:leash_knot")) {
+			if (wanted <= 0) {
+				return report(id, false, "a knot is only ever placed for a while");
+			}
+			JsonArray k = command.getAsJsonArray("pos");
+			// A y below -1000 counted from the ground, as `set_block`'s.
+			BlockPos column = onGround(level, BlockPos.containing(k.get(0).getAsDouble(), k.get(1).getAsDouble(), k.get(2).getAsDouble()));
+			if (column == null) {
+				return report(id, false, "the place is not loaded");
+			}
+			BlockPos post = null;
+			for (int dy : Settle.order(3)) {
+				if (level.getBlockState(column.above(dy)).is(net.minecraft.tags.BlockTags.FENCES)) {
+					post = column.above(dy);
+					break;
+				}
+			}
+			if (post == null) {
+				return report(id, false, "no fence post there");
+			}
+			var knot = net.minecraft.world.entity.decoration.LeashFenceKnotEntity.getOrCreateKnot(level, post);
+			context.temporaries().add(knot, wanted);
+			return report(id, true, "");
+		}
 		// The killer bunny is the game's own rabbit of its evil kind (ABI 55).
 		boolean killer = of.equals("minecraft:killer_bunny");
 		Optional<Holder.Reference<net.minecraft.world.entity.EntityType<?>>> type = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(killer ? "minecraft:rabbit" : of));

@@ -255,7 +255,8 @@ ABI 56: `ghost_block` (a block shown to one player alone, the world's own untouc
 dropping nothing, from under the ceiling beside a place when asked; one that cannot stand where it
 lands breaks there), and `open_lid` on a shulker box as on a chest; `fangs` (evoker fangs on one player's screen alone, a line from a place snapping
 up toward them, the last short of them, nothing in the world to bite); `guardian_beam` (a guardian's beam charging from water at one player, on their screen
-alone, gone before it would fire); `place_entity`'s `minecraft:skeleton_horse` and `minecraft:trident`, for a while only, the trident thrown straight down
+alone, gone before it would fire); `place_entity`'s `minecraft:skeleton_horse`, `minecraft:leash_knot` (on the fence post in the
+place's column, nothing tied to it) and `minecraft:trident`, for a while only, the trident thrown straight down
 into the ground, never to be picked up.
 
 ## Resources

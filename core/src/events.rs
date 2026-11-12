@@ -1186,6 +1186,8 @@ pub enum Action {
     BucketFishChanged,
     /// A head with their own face on their pillow as they wake, on their screen alone a while.
     HeadOnThePillow,
+    /// A lead knotted on a fence post at its place, nothing on the other end.
+    EmptyLead,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7305,6 +7307,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::HeadOnThePillow,
         false,
     ),
+    // docs/events_todo.md, 227: a lead knotted on a fence post at its place, nothing on its end.
+    row(
+        "empty_lead",
+        3,
+        5,
+        &[Home, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::EmptyLead,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7910,6 +7924,7 @@ impl Event {
             | Action::FangsInALine
             | Action::BeamFromTheWater
             | Action::HeadOnThePillow
+            | Action::EmptyLead
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8454,6 +8469,7 @@ impl Event {
             "beam_from_the_water" => "charge a guardian's beam at them from the water",
             "bucket_fish_changed" => "change the fish in their bucket to another kind",
             "head_on_the_pillow" => "lay a head with their own face on their pillow",
+            "empty_lead" => "knot a lead on a post at its place with nothing on it",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

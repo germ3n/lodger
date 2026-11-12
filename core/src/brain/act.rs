@@ -677,6 +677,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             })
         };
     }
+    // The empty lead is tied at its place.
+    if event.id == "empty_lead" {
+        return spot(memory, rng);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -712,6 +716,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BeamFromTheWater
         | Action::BucketFishChanged
         | Action::HeadOnThePillow
+        | Action::EmptyLead
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8591,6 +8596,31 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // docs/events_todo.md, 227.
+        Action::EmptyLead => pos
+            .map(grounded)
+            .map(|p| {
+                let post = [p[0], p[1] + 1, p[2]];
+                vec![
+                    (on_ground(ids, post, "minecraft:oak_fence"), 0),
+                    (
+                        Command::PlaceEntity {
+                            id: ids(),
+                            of: "minecraft:leash_knot".to_string(),
+                            pos: [post[0] as f64 + 0.5, post[1] as f64, post[2] as f64 + 0.5],
+                            yaw: 0.0,
+                            seconds: 600.0,
+                            kept: String::new(),
+                            face: None,
+                            targets: None,
+                            harm: 0.0,
+                            wears: Vec::new(),
+                        },
+                        5,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -19808,5 +19838,18 @@ mod tests {
             "{made:?}"
         );
         assert_eq!(made[1].1, ROSE_SHOWN_TICKS);
+    }
+
+    #[test]
+    fn empty_lead_ties_a_knot_on_a_post_at_its_place() {
+        let mut memory = rich_memory();
+        memory.place = Some([18, 63, 9]);
+        let event = find("empty_lead").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::SetBlock { block, .. }, 0), (Command::PlaceEntity { of, pos, .. }, 5)] if block == "minecraft:oak_fence" && of == "minecraft:leash_knot" && pos[1] == (GROUND_Y + 1) as f64 && pos[0] == 18.5),
+            "{made:?}"
+        );
     }
 }

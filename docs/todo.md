@@ -2766,6 +2766,11 @@ The `[x]` lines above, summed up by day:
   client alone ten minutes (`ghost_block`'s `head_of`, ABI 56: the skull's profile sent with it).
   Tests: one in `act`. Was: no such event.
 
+- [x] **An empty lead** (`docs/events_todo.md`, 227): `empty_lead`, stages 3 to 5, outdoors: an oak
+  fence post on the ground at its place and a bare lead's knot on it for ten minutes
+  (`place_entity`'s `minecraft:leash_knot`, ABI 56, its y counted from the ground). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
