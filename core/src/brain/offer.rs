@@ -151,6 +151,10 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::InTheWoods => memory.in_the_woods(),
         // `drawn_to_the_light` starts from their running lit (`Brain::tick`), never the menu.
         Need::RanLit => false,
+        Need::HoldsShield => {
+            last.online
+                && (last.main_hand == "minecraft:shield" || last.off_hand == "minecraft:shield")
+        }
         Need::TakenUpDue => memory.taken_up_due(),
         Need::LeavingTheWoods => memory.leaving_the_woods(),
         Need::SnowyHere => last.online && crate::trees::snowy(&last.biome),

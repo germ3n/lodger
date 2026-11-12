@@ -256,6 +256,8 @@ pub enum Need {
     InTheWoods,
     /// They have run a while at night with a light in hand: met only then.
     RanLit,
+    /// A shield in either hand (`blow_on_the_shield`).
+    HoldsShield,
     /// Its things taken up have been up there half a day or more (`Memory::taken_up_due`).
     TakenUpDue,
     /// Walking out of the woods (`Memory::leaving_the_woods`).
@@ -320,6 +322,7 @@ impl Need {
                 | Need::TargetAwake
                 | Need::WaterNear(_)
                 | Need::Holding(_)
+                | Need::HoldsShield
                 | Need::FarFromVillage(_)
                 | Need::RangBell
                 | Need::InTunnel
@@ -478,6 +481,7 @@ impl Need {
             Need::TargetUnderwater => "the target is not under water".to_string(),
             Need::InTheWoods => "the target is not among trees".to_string(),
             Need::RanLit => "happens only as they run about at night with a light".to_string(),
+            Need::HoldsShield => "no shield in hand".to_string(),
             Need::TakenUpDue => "nothing of theirs up there long enough".to_string(),
             Need::LeavingTheWoods => "the target is not walking out of the woods".to_string(),
             Need::SnowyHere => "no snow where they are".to_string(),
@@ -5928,6 +5932,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.decorated_pot.shatter"),
         false,
     ),
+    // docs/events_todo.md, 186: a blow lands on their shield from nothing, and shoves them back.
+    row(
+        "blow_on_the_shield",
+        4,
+        5,
+        &[HoldsShield],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:item.shield.block"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7445,6 +7461,7 @@ impl Event {
             "teleport_beside" => "warp twice beside them, nearer each time",
             "sweeping_next_room" => "sweep with a brush in the next room",
             "pot_shatters" => "shatter a pot somewhere in the house",
+            "blow_on_the_shield" => "strike their shield from nothing",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

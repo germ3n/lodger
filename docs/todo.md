@@ -2531,6 +2531,10 @@ The `[x]` lines above, summed up by day:
 - [x] **A pot shatters** (`docs/events_todo.md`, 189): `pot_shatters`, stages 3 to 5: in the house, the crash of a decorated pot shattering, nothing broken. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **A blow on the shield** (`docs/events_todo.md`, 186): `blow_on_the_shield`, stages 4 and 5,
+  a shield in either hand (`HoldsShield`): the block's sound in front of them and a shove back.
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

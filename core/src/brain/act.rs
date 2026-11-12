@@ -2573,6 +2573,27 @@ pub fn commands(
             })
             .unwrap_or_default();
     }
+    // A blow on their shield (`blow_on_the_shield`): the block's sound in front of them and a
+    // shove back, as a hit taken on it; nothing there, no harm.
+    if event.id == "blow_on_the_shield" {
+        let at = memory.last.pos;
+        let way = facing_way(memory.last.yaw);
+        let front = [at[0] + way[0] as f64, at[1] + 1.2, at[2] + way[1] as f64];
+        return vec![
+            (
+                sound_at(ids, target, "minecraft:item.shield.block", front, 1.0),
+                0,
+            ),
+            (
+                Command::PushPlayer {
+                    id: ids(),
+                    player: target,
+                    velocity: [-way[0] as f64 * GUST_PUSH, 0.1, -way[1] as f64 * GUST_PUSH],
+                },
+                1,
+            ),
+        ];
+    }
     // A gust from nowhere (`gust_from_nowhere`): a wind charge's burst beside them and a soft
     // push away from it, as from a breeze no one sent; no harm.
     if event.id == "gust_from_nowhere" {
@@ -17708,6 +17729,40 @@ mod tests {
             made.iter()
                 .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_blow_lands_on_their_shield_and_shoves_them_back() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("blow_on_the_shield").unwrap();
+        assert!(
+            !crate::brain::offer::meets(crate::events::Need::HoldsShield, &memory, &Now::default()),
+            "no shield"
+        );
+        memory.last.off_hand = "minecraft:shield".to_string();
+        assert!(
+            crate::brain::offer::meets(crate::events::Need::HoldsShield, &memory, &Now::default()),
+            "the off hand"
+        );
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[0].0, Command::PlaySound { sound, pos, .. } if sound == "minecraft:item.shield.block" && pos[2] > 0.5),
+            "in front: {made:?}"
+        );
+        assert!(
+            matches!(&made[1].0, Command::PushPlayer { velocity, .. } if velocity[2] < 0.0),
+            "back: {made:?}"
         );
     }
 }
