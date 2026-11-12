@@ -1336,6 +1336,8 @@ pub enum Action {
     EndGoesQuiet,
     /// In the End, every chorus plant near them flowering at once, on their screen alone a while.
     ChorusBlooms,
+    /// The dragon egg at home on their pillow in the morning.
+    EggOnThePillow,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8439,6 +8441,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ChorusBlooms,
         false,
     ),
+    // docs/events_todo.md, 308: the dragon egg on its plinth at home is on their pillow in the morning.
+    row(
+        "egg_on_the_pillow",
+        4,
+        5,
+        &[Fixture("dragon_egg"), Bed, TargetAwayOrAsleep],
+        3.0,
+        1,
+        Full,
+        Action::EggOnThePillow,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8819,6 +8833,7 @@ impl Event {
             | Action::CatGift
             | Action::BundleGains
             | Action::LeatherDyed
+            | Action::EggOnThePillow
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -9734,6 +9749,7 @@ impl Event {
             "endermen_at_the_edge" => "stand the endermen near them in a row facing the void",
             "end_goes_quiet" => "hush the End round them a minute",
             "chorus_blooms" => "flower every chorus plant near them at once",
+            "egg_on_the_pillow" => "move their dragon egg onto their pillow",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

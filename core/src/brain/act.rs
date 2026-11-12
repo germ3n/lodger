@@ -914,6 +914,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::EndermenAtTheEdge
         | Action::EndGoesQuiet
         | Action::ChorusBlooms
+        | Action::EggOnThePillow
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10596,6 +10597,22 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 308.
+        Action::EggOnThePillow => match (
+            memory.fixtures("dragon_egg").next(),
+            memory.home.as_ref().and_then(|h| h.bed),
+        ) {
+            (Some(egg), Some(bed)) => vec![(
+                Command::MoveBlock {
+                    id: ids(),
+                    from: egg.pos,
+                    to: [bed[0], bed[1] + 1, bed[2]],
+                    around: 1,
+                },
+                0,
+            )],
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14478,6 +14495,8 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                // A dragon egg of theirs, which this memory has not: its own test.
+                || event.id == "egg_on_the_pillow"
                 || event.id == "chorus_blooms"
                 || event.id == "end_goes_quiet"
                 || event.id == "endermen_at_the_edge"
@@ -23047,6 +23066,26 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::GhostNear { of, block, .. }, 0)] if of == "minecraft:chorus_plant" && block == "minecraft:chorus_flower"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn egg_on_the_pillow_moves_their_egg_onto_the_bed() {
+        let mut memory = rich_memory();
+        memory.fixtures.push(crate::memory::Fixture {
+            kind: "dragon_egg".to_string(),
+            pos: [-3, 65, -3],
+        });
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:dragon_egg"),
+            Some("dragon_egg")
+        );
+        let bed = memory.home.as_ref().unwrap().bed.unwrap();
+        let event = find("egg_on_the_pillow").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::MoveBlock { from, to, .. }, 0)] if *from == [-3, 65, -3] && *to == [bed[0], bed[1] + 1, bed[2]]),
             "{made:?}"
         );
     }

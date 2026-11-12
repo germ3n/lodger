@@ -852,6 +852,8 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "crafter",
         // A shelf, any wood's (`shelf_shuffled`).
         "shelf",
+        // Their dragon egg (`egg_on_the_pillow`).
+        "dragon_egg",
     ];
     if is_mod_furniture(id) {
         return Some("furniture");
