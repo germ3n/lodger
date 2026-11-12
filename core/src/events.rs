@@ -1046,6 +1046,8 @@ pub enum Action {
     KnocksOnWood,
     /// A trail of blazes on the trunks ahead of them, a strip of bark gone from each.
     BlazedTrees,
+    /// A branch cracks in the tree they just passed, its leaves torn.
+    BranchSnaps,
     /// Their most valuable things, carried and in their chests, up into the sky.
     TakenUp,
     /// What it took up falls out of the sky in front of their door.
@@ -4828,6 +4830,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 85.
+    row(
+        "branch_snaps",
+        3,
+        5,
+        &[InTheWoods, TargetWalking],
+        1.0,
+        3,
+        Full,
+        Action::BranchSnaps,
+        false,
+    ),
     // docs/events_todo.md, 84.
     row(
         "blazed_trees",
@@ -5693,6 +5707,7 @@ impl Event {
             | Action::SoundPair(..)
             | Action::ChestAnswers
             | Action::KnocksOnWood
+            | Action::BranchSnaps
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -5975,6 +5990,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "branch_snaps" => "snap a branch in the tree they just passed",
             "blazed_trees" => "blaze a trail on the trees ahead of them",
             "knocks_on_wood" => "knock on the trees ahead of them, deeper and deeper in",
             "tree_to_tree" => {

@@ -135,6 +135,11 @@ impl Memory {
         behind.into_iter().map(|(_, t)| t).collect()
     }
 
+    /// The trunk behind them they passed last: the nearest of those behind, three to ten blocks.
+    pub fn trunk_just_passed(&self) -> Option<BlockPos> {
+        self.trunks_behind(3.0, 10.0).last().copied()
+    }
+
     /// The trunks ahead of where they look, within 55 degrees of it, from `near` to `far`
     /// blocks off along the ground, nearest first.
     pub fn trunks_ahead(&self, near: f64, far: f64) -> Vec<BlockPos> {

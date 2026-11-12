@@ -620,6 +620,14 @@ pub enum Command {
         most: u32,
         keep: String,
     },
+    /// A branch snapping in the tree whose trunk rises from `trunk`: a crack of breaking wood
+    /// over it, heard by `player`, and up to four of its own leaves torn out of its crown, falling
+    /// as leaves break (never a leaf anyone placed). Refused with no leaves over it. ABI 54.
+    SnapBranch {
+        id: u64,
+        player: u32,
+        trunk: BlockPos,
+    },
     /// Every stack kept under a name beginning `prefix` dropped at `pos` (high over it, they fall
     /// from the sky), a moment apart, as items that do not despawn. Done, doing nothing, when
     /// none is kept. ABI 54.
@@ -1374,6 +1382,7 @@ impl Command {
             | Command::Firework { id, .. }
             | Command::DropHeld { id, .. }
             | Command::TakeUp { id, .. }
+            | Command::SnapBranch { id, .. }
             | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }

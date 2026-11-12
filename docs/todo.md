@@ -1966,6 +1966,11 @@ The `[x]` lines above, summed up by day:
   height (`trees::blaze_line`). Leads straight on, not to its place: the trees read are within
   twenty blocks of them. Tests: one in `trees`, one in `act`. Was: no such event.
 
+- [x] **A branch snaps** (`docs/events_todo.md`, 85): `branch_snaps`, stages 3 to 5, walking in the
+  woods: a crack in the tree just passed and up to four of its own leaves torn out, falling
+  (`snap_branch`, ABI 54; never persistent leaves, which someone placed). Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

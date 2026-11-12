@@ -124,6 +124,7 @@ public final class Executors {
 				case "put_item" -> putItem(level, command, id, data);
 				case "drop_item" -> dropItem(level, command, id, data);
 				case "take_up" -> takeUp(level, command, id, data, context);
+				case "snap_branch" -> snapBranch(level, command, id, context);
 				case "drop_kept" -> dropKept(level, command, id, data);
 				case "rename_item" -> renameItem(level, command, id);
 				case "sign_book" -> signBook(level, command, id);
@@ -1892,6 +1893,38 @@ public final class Executors {
 		}
 		into.setItem(slot, stack);
 		into.setChanged();
+
+		return report(id, true, "");
+	}
+
+	/**
+	 * A branch snapping (ABI 54): the crack over the trunk, to the player, and up to four of the
+	 * tree's own leaves (never persistent ones, which someone placed) broken out of its crown.
+	 */
+	private static JsonObject snapBranch(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		BlockPos trunk = blockPos(command.getAsJsonArray("trunk"));
+		List<BlockPos> leaves = new ArrayList<>();
+		for (BlockPos p : BlockPos.betweenClosed(trunk.offset(-2, 3, -2), trunk.offset(2, 10, 2))) {
+			BlockState state = level.getBlockState(p);
+			if (state.is(net.minecraft.tags.BlockTags.LEAVES) && state.hasProperty(net.minecraft.world.level.block.LeavesBlock.PERSISTENT)
+					&& !state.getValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT)) {
+				leaves.add(p.immutable());
+			}
+		}
+		if (leaves.isEmpty()) {
+			return report(id, false, "no leaves of its own over it");
+		}
+		if (player != null) {
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+					net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.WOOD_BREAK), net.minecraft.sounds.SoundSource.HOSTILE,
+					trunk.getX() + 0.5, trunk.getY() + 4, trunk.getZ() + 0.5, 1.2f, 0.55f, player.getRandom().nextLong()));
+		}
+		// The lowest first: the torn branch's, under the crown.
+		leaves.sort(java.util.Comparator.comparingInt(BlockPos::getY));
+		for (int i = 0; i < Math.min(4, leaves.size()); i++) {
+			level.destroyBlock(leaves.get(i), false);
+		}
 
 		return report(id, true, "");
 	}

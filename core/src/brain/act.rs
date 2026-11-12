@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The tree they just passed.
+        Action::BranchSnaps => memory.trunk_just_passed(),
         // The farthest trunk of a line of blazes straight ahead of them.
         Action::BlazedTrees => {
             let line = crate::trees::blaze_line(
@@ -6356,6 +6358,19 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // The crack of a branch in it, its own leaves torn out and falling; no one there.
+        Action::BranchSnaps => pos
+            .map(|trunk| {
+                vec![(
+                    Command::SnapBranch {
+                        id: ids(),
+                        player: target,
+                        trunk,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         // A strip of bark gone at eye height from each trunk of the line, as a trail is blazed.
         Action::BlazedTrees => pos
             .map(|_| {
@@ -8758,11 +8773,11 @@ mod tests {
         memory
             .holes
             .push(([7, 63, 0], "minecraft:dirt".to_string()));
-        // Trees all round, two rings of them, for the forest's events.
+        // Trees all round, three rings of them, for the forest's events.
         memory.trunks = (0..16)
             .flat_map(|i| {
                 let angle = std::f64::consts::TAU * i as f64 / 16.0;
-                [14.0, 24.0].map(|r| {
+                [6.0, 14.0, 24.0].map(|r| {
                     [
                         (r * angle.cos()).round() as i32,
                         64,
@@ -13882,5 +13897,23 @@ mod tests {
             .iter()
             .all(|(c, _)| matches!(c, Command::SwapBlock { block, pos, .. }
             if block == "minecraft:stripped_spruce_log" && pos[1] == 65)));
+    }
+
+    #[test]
+    fn a_branch_snaps_in_the_tree_they_just_passed() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.trunks = vec![[0, 64, -6], [0, 64, -9], [0, 64, 5]];
+        let event = find("branch_snaps").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, Some([0, 64, -6]), "the nearest behind them");
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::SnapBranch { trunk, .. }, 0)] if *trunk == [0, 64, -6]),
+            "{made:?}"
+        );
     }
 }
