@@ -394,7 +394,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             .min_by(|a, b| distance(a.pos, at).total_cmp(&distance(b.pos, at)))
             .map(|d| d.pos);
     }
-    if event.id == "compass_points" {
+    if event.id == "compass_points" || event.id == "recovery_compass_lies" {
         return memory.place.or_else(|| spot(memory, rng));
     }
     // Ripples on the water near them, from the shore on their side outward.
@@ -3678,7 +3678,7 @@ pub fn commands(
                 "camera_nudge" => memory
                     .place
                     .or_else(|| memory.home.as_ref().map(|h| h.center)),
-                "ripples" | "painting_flip" | "compass_points" => pos,
+                "ripples" | "painting_flip" | "compass_points" | "recovery_compass_lies" => pos,
                 // Twelve blocks ahead of where they look, at their eye's height.
                 "eyes_in_the_dark" => {
                     let at = block_of(memory.last.pos);
@@ -17781,6 +17781,26 @@ mod tests {
         );
         assert!(
             matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "spyglass_figure" && *seconds >= 60.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn their_recovery_compass_points_at_its_place() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.place = Some([40, 64, -12]);
+        let event = find("recovery_compass_lies").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, pos: Some(p), .. }, 0)] if hint == "recovery_compass_lies" && *p == [40, 64, -12]),
             "{made:?}"
         );
     }

@@ -25,6 +25,14 @@ public final class Atmosphere {
 	/** Dusk at noon: the light drained, grey-violet, the distance gone. */
 	public static final Fog DUSK = new Fog(4, 44, 0.22f, 0.20f, 0.27f);
 
+	/**
+	 * Whether a hint turns this compass to its place: `compass_points` any compass, as it did;
+	 * `recovery_compass_lies` a recovery compass alone, which then points not at where they died.
+	 */
+	public static boolean pointsAway(String hint, boolean recovery) {
+		return hint.equals("compass_points") || (recovery && hint.equals("recovery_compass_lies"));
+	}
+
 	/** The fog an atmosphere's hint stands for, or null for none. The old `fog_close` is mist now. */
 	public static Fog of(String hint) {
 		return switch (hint) {

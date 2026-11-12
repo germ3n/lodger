@@ -134,13 +134,13 @@ public final class Atmospheres {
 	}
 
 	/** The compass hook: where a compass points while `compass_points` is on, else what it would. */
-	public static GlobalPos compass(GlobalPos would) {
+	public static GlobalPos compass(boolean recovery, GlobalPos would) {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.level == null) {
 			return would;
 		}
 		for (Hints.Active active : Hints.active()) {
-			if (active.hint().hint().equals("compass_points") && active.hint().pos().isPresent()) {
+			if (Atmosphere.pointsAway(active.hint().hint(), recovery) && active.hint().pos().isPresent()) {
 				return GlobalPos.of(minecraft.level.dimension(), active.hint().pos().get());
 			}
 		}

@@ -6795,6 +6795,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("spyglass_figure", 300.0),
         false,
     ),
+    // docs/events_todo.md, 191: their recovery compass points at its place, not their death.
+    row(
+        "recovery_compass_lies",
+        3,
+        5,
+        &[Holding("minecraft:recovery_compass")],
+        2.0,
+        3,
+        Half,
+        Action::Hint("recovery_compass_lies", 120.0),
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7890,6 +7902,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "recovery_compass_lies" => "turn their recovery compass to its place",
             "spyglass_figure" => "stand far off where they look through a spyglass",
             "red_trail" => "leave red specks from their door to their bed",
             "snow_shape" => "press the shape of a body into the snow by the house",

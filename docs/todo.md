@@ -2540,6 +2540,10 @@ The `[x]` lines above, summed up by day:
   lower it and not again (`SpyglassFigure`, on their client alone). Tests: one in `act`. Was: no
   such event.
 
+- [x] **The recovery compass lies** (`docs/events_todo.md`, 191): `recovery_compass_lies`, stages
+  3 to 5, holding a recovery compass: it points at its place two minutes (`Atmosphere.pointsAway`,
+  a recovery compass alone). Tests: one in `act`, `AtmosphereTest`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

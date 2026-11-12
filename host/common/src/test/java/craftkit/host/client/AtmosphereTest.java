@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,5 +61,13 @@ class AtmosphereTest {
 		org.junit.jupiter.api.Assertions.assertTrue(Atmosphere.weight(Atmosphere.QUICK_IN, 150) < 0.2f, "the slow way still slow");
 		org.junit.jupiter.api.Assertions.assertEquals(0f, Atmosphere.weightQuick(150, 150), 1e-6, "gone at its end");
 	}
-}
 
+	@Test
+	void a_recovery_compass_lies_alone_and_compass_points_turns_any() {
+		assertTrue(Atmosphere.pointsAway("recovery_compass_lies", true));
+		assertFalse(Atmosphere.pointsAway("recovery_compass_lies", false), "a plain compass is left alone");
+		assertTrue(Atmosphere.pointsAway("compass_points", false));
+		assertTrue(Atmosphere.pointsAway("compass_points", true));
+		assertFalse(Atmosphere.pointsAway("mist", true));
+	}
+}
