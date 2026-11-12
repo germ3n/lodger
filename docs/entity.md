@@ -482,6 +482,7 @@ caves, from before.
 | `prints_in_soul_sand` | 4 to 5 | In the Nether, dark prints their size on the ground ahead of them, from two blocks off to sixteen, leading away into the dark, on their screen alone (the `footprints` hint, as `prints_around_the_house` draws them). | In the Nether. |
 | `prints_off_the_edge` | 4 to 5 | In the End, dark prints their size across the end stone from beside them outward, away from the End's middle, twenty-four blocks, toward the island's edge and over it, on their screen alone (the `footprints` hint). | In the End. |
 | `portal_weeps` | 4 to 5 | In the Nether, near the portal they came through (ten blocks), the obsidian round them turns to crying obsidian block by block, purple tears dripping, a minute and a half, on their screen alone (`ghost_near`'s `in_turn`). | In the Nether, near where they came in. |
+| `compass_steadies` | 3 to 5 | In the Nether, where a compass spins, theirs stops and points steady at where they came in, a minute, on their screen alone (the client's `compass_steadies` hint, on the compass hook). | In the Nether, holding a compass. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

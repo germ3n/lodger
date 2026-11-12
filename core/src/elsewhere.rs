@@ -38,6 +38,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("prints_in_soul_sand", "minecraft:the_nether"),
     ("prints_off_the_edge", "minecraft:the_end"),
     ("portal_weeps", "minecraft:the_nether"),
+    ("compass_steadies", "minecraft:the_nether"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.

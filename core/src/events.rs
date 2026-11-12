@@ -8193,6 +8193,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PortalWeeps,
         false,
     ),
+    // docs/events_todo.md, 279: their compass steadies on where they came in.
+    row(
+        "compass_steadies",
+        3,
+        5,
+        &[InNether, Holding("minecraft:compass")],
+        1.0,
+        3,
+        Half,
+        Action::Hint("compass_steadies", 60.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9455,6 +9467,7 @@ impl Event {
             "prints_off_the_edge" => "lay prints from them to the island's edge",
             "prints_from_the_portal" => "lay prints from their portal to their door",
             "portal_weeps" => "make the portal they came through weep",
+            "compass_steadies" => "steady their compass on where they came in",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

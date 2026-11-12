@@ -806,6 +806,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "sniffer_at_its_place" {
         return spot(memory, rng);
     }
+    // Their compass steadies on where they came into the Nether.
+    if event.id == "compass_steadies" {
+        return memory.arrived_at;
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -14123,6 +14127,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "compass_steadies"
                 || event.id == "portal_weeps"
                 || event.id == "prints_from_the_portal"
                 || event.id == "prints_off_the_edge"
@@ -22444,5 +22449,18 @@ mod tests {
         );
         memory.arrived_at = Some([500, 64, 500]);
         assert!(commands(event, None, &memory, &mut ids(), &Now::default(), None).is_empty());
+    }
+
+    #[test]
+    fn compass_steadies_points_at_where_they_came_in() {
+        let mut memory = rich_memory();
+        memory.arrived_at = Some([7, 70, -3]);
+        let event = find("compass_steadies").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, pos: Some(p), .. }, 0)] if hint == "compass_steadies" && *p == [7, 70, -3]),
+            "{made:?}"
+        );
     }
 }
