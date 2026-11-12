@@ -733,6 +733,14 @@ pub enum Command {
         player: u32,
         from: Pos,
     },
+    /// One `item` more in the bundle in the container at `pos`, slot `slot`, of what the mod
+    /// holds (its digging): refused with no bundle there, or one full. ABI 56.
+    PutInBundle {
+        id: u64,
+        pos: BlockPos,
+        slot: u32,
+        item: String,
+    },
     /// The next block `player` breaks within eight blocks of them, within `seconds` (ten minutes
     /// at most), drops what it drops a second and a half late, as if held, where it would have.
     /// ABI 56.
@@ -1700,6 +1708,7 @@ impl Command {
             | Command::CurlUp { id, .. }
             | Command::RefuseFood { id, .. }
             | Command::LateDrop { id, .. }
+            | Command::PutInBundle { id, .. }
             | Command::DropBlock { id, .. }
             | Command::Fangs { id, .. }
             | Command::GuardianBeam { id, .. }

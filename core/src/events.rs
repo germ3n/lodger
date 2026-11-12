@@ -1242,6 +1242,8 @@ pub enum Action {
     TheChildStares,
     /// What they next mine dropping a moment late, as if held.
     LateDrop,
+    /// Their bundle holding one thing more than they put in it: a pebble of cobblestone, of its digging.
+    BundleGains,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7709,6 +7711,22 @@ pub const CATALOGUE: &[Event] = &[
         Action::LateDrop,
         false,
     ),
+    // docs/events_todo.md, 256: their bundle holds one thing more: a pebble of cobblestone.
+    row(
+        "bundle_gains",
+        3,
+        5,
+        &[
+            InChest("bundle"),
+            Stored("minecraft:cobblestone", 1),
+            TargetAwayOrAsleep,
+        ],
+        2.0,
+        2,
+        Half,
+        Action::BundleGains,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8076,6 +8094,7 @@ impl Event {
             | Action::BucketFishChanged
             | Action::ShelfShuffled
             | Action::CatGift
+            | Action::BundleGains
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -8909,6 +8928,7 @@ impl Event {
             "refuses_food" => "make the next animal they feed refuse it",
             "the_child_stares" => "make the young animals near them stare at them",
             "late_drop" => "hold back what they next mine a moment",
+            "bundle_gains" => "slip a pebble into their bundle",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

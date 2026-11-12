@@ -1462,6 +1462,12 @@ impl Brain {
                     memory.store(&item.id, -(item.count as i64));
                 }
             }
+            // A pebble in their bundle (`bundle_gains`) comes out of what it dug.
+            if let Command::PutInBundle { item, .. } = command {
+                if memory.stored(item) > 0 {
+                    memory.store(item, -1);
+                }
+            }
             // A build's share: laid, the store spent where it has the block, the rest made up.
             crate::building::account(memory, &plan.event, command, day);
             // The kind the kill sign counts, as written.

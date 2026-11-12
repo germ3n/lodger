@@ -164,6 +164,30 @@ public final class Executors {
 				case "ghost_block" -> ghostBlock(level, command, id, context);
 				case "ghost_near" -> ghostNear(level, command, id, context);
 				case "rotate_slots" -> rotateSlots(level, command, id);
+				case "put_in_bundle" -> {
+					// One thing more in a bundle of theirs (ABI 56), of what the mod holds: a pebble.
+					net.minecraft.world.Container container = Senses.containerAt(level, blockPos(command.getAsJsonArray("pos")));
+					int slot = command.get("slot").getAsInt();
+					if (container == null || slot < 0 || slot >= container.getContainerSize()) {
+						yield report(id, false, "no such slot there");
+					}
+					ItemStack bundle = container.getItem(slot);
+					if (!bundle.has(net.minecraft.core.component.DataComponents.BUNDLE_CONTENTS)) {
+						yield report(id, false, "no bundle in that slot");
+					}
+					Optional<Holder.Reference<net.minecraft.world.item.Item>> item = BuiltInRegistries.ITEM.get(Identifier.parse(command.get("item").getAsString()));
+					if (item.isEmpty()) {
+						yield report(id, false, "no such item");
+					}
+					var contents = bundle.getOrDefault(net.minecraft.core.component.DataComponents.BUNDLE_CONTENTS,
+							net.minecraft.world.item.component.BundleContents.EMPTY).asMutable();
+					if (contents.tryInsert(new ItemStack(item.get().value())) <= 0) {
+						yield report(id, false, "the bundle is full");
+					}
+					bundle.set(net.minecraft.core.component.DataComponents.BUNDLE_CONTENTS, contents.toImmutable());
+					container.setChanged();
+					yield report(id, true, "");
+				}
 				case "late_drop" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

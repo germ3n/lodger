@@ -781,6 +781,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::RefusesFood
         | Action::TheChildStares
         | Action::LateDrop
+        | Action::BundleGains
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9244,6 +9245,19 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 256.
+        Action::BundleGains => match memory.in_used_container(|id| id.ends_with("bundle")) {
+            Some((chest, bundle)) => vec![(
+                Command::PutInBundle {
+                    id: ids(),
+                    pos: chest.pos,
+                    slot: bundle.slot,
+                    item: "minecraft:cobblestone".to_string(),
+                },
+                0,
+            )],
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13120,6 +13134,8 @@ mod tests {
                 || event.id == "horse_balks"
                 // A cat of theirs, which this memory has not: its own test.
                 || event.id == "cat_gift"
+                // A bundle in the chest they use, which this memory has not: its own test.
+                || event.id == "bundle_gains"
             {
                 continue;
             }
@@ -20904,6 +20920,21 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::LateDrop { seconds, .. }, 0)] if *seconds == 300.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn bundle_gains_a_pebble_of_its_digging() {
+        let mut memory = rich_memory();
+        let used = memory.used_container().map(|c| c.pos);
+        if let Some(c) = memory.containers.iter_mut().find(|c| Some(c.pos) == used) {
+            c.contents.push(stack("minecraft:brown_bundle", 1, 26));
+        }
+        let event = find("bundle_gains").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PutInBundle { slot: 26, item, .. }, 0)] if item == "minecraft:cobblestone"),
             "{made:?}"
         );
     }
