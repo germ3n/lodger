@@ -89,6 +89,28 @@ button to put one (or all) back to the preset; single events can be turned off b
   then, and a player who only joins servers needs nothing more. Turn it back on in the
   settings (Use the model).
 
+### Recommended addons
+
+The set the lodger is played and tested with on Fabric 26.3. None is needed; each works beside
+it. Grouped by what it is for:
+
+- **Sound:** AmbientSounds, Presence Footsteps, Sound Physics Remastered (its echoes carry the
+  lodger's sounds too, and sounds that go wrong go wrong with it on).
+- **The look of the world:** Subtle Effects, Visuality, Fancy World Animations, LambDynamicLights,
+  Leaves Be Gone, ItemPhysic, Inventory Particles, NotEnoughAnimations, FirstPerson.
+- **Performance:** Sodium, Sodium Extra, Lithium, FerriteCore, ImmediatelyFast, EntityCulling,
+  More Culling, and Iris for shaders.
+- **Interface:** AppleSkin, Auto HUD, EffectTimerPlus, Just Enough Items, Mod Menu, Ok Zoomer,
+  Liteminer.
+- **Libraries** the mods above need: Fabric API, Fabric Language Kotlin, Cloth Config,
+  YetAnotherConfigLib, Forge Config API Port, Fzzy Config, MezzConfig, Konfig, Amber, CreativeCore,
+  Data Anchor, MossyLib, Placeholder API, Puzzles Lib.
+
+### Recommended shader
+
+**Hysteria**, with Iris. The lodger's mists and fog show through a shader pack too: with one on,
+they are drawn over the screen instead of as the game's own fog.
+
 ### The model, and what it needs
 
 What the lodger does next is decided by a small language model that runs **on your own

@@ -2361,6 +2361,11 @@ The `[x]` lines above, summed up by day:
   `finds` (`lava`, `cliff_top`) and `mount`, ABI 55, the host finding what the mind cannot know.
   All fifty of 116 to 165 are built. Tests: in `act`.
 
+- [x] **Recommended addons and shader on the Modrinth page** (owner: "put these mods into
+  mod/modrinth.md under a recommended addon/shaders sections"; "take out the celestials one").
+  Was: none named. Now `mod/modrinth.md` lists the owner's set, by what each is for, and
+  Hysteria with Iris.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
