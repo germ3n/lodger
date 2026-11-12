@@ -733,6 +733,14 @@ pub enum Command {
         player: u32,
         from: Pos,
     },
+    /// The next block `player` breaks within eight blocks of them, within `seconds` (ten minutes
+    /// at most), drops what it drops a second and a half late, as if held, where it would have.
+    /// ABI 56.
+    LateDrop {
+        id: u64,
+        player: u32,
+        seconds: f32,
+    },
     /// The next animal `player` tries to feed within `seconds` (ten minutes at most) refuses,
     /// once: it turns its head away and eats nothing, the food left in their hand. ABI 56.
     RefuseFood {
@@ -1691,6 +1699,7 @@ impl Command {
             | Command::RotateSlots { id, .. }
             | Command::CurlUp { id, .. }
             | Command::RefuseFood { id, .. }
+            | Command::LateDrop { id, .. }
             | Command::DropBlock { id, .. }
             | Command::Fangs { id, .. }
             | Command::GuardianBeam { id, .. }

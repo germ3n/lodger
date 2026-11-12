@@ -2900,6 +2900,11 @@ The `[x]` lines above, summed up by day:
   young animal near them: every young animal near (none a pet) held ten minutes facing them as they
   move (`hold`; a new passing need, `BabyNear`). Tests: one in `act`. Was: no such event.
 
+- [x] **A late drop** (`docs/events_todo.md`, 255): `late_drop`, stages 3 to 5, underground: the
+  next block they break within eight blocks of them in five minutes drops its stacks a second and a
+  half late, where it would have (`late_drop`, ABI 56: `LateDrops` and `PopResourceMixin`). Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

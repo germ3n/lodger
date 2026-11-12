@@ -780,6 +780,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SnifferAtItsPlace
         | Action::RefusesFood
         | Action::TheChildStares
+        | Action::LateDrop
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9234,6 +9235,15 @@ pub fn commands(
                 )
             })
             .collect(),
+        // docs/events_todo.md, 255.
+        Action::LateDrop => vec![(
+            Command::LateDrop {
+                id: ids(),
+                player: target,
+                seconds: 300.0,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20884,6 +20894,17 @@ mod tests {
                 )]
             ),
             "the piglet alone: {made:?}"
+        );
+    }
+
+    #[test]
+    fn late_drop_arms_their_next_break() {
+        let memory = rich_memory();
+        let event = find("late_drop").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::LateDrop { seconds, .. }, 0)] if *seconds == 300.0),
+            "{made:?}"
         );
     }
 }

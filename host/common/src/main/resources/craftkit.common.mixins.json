@@ -6,6 +6,7 @@
 		"AnimalFeedMixin",
 		"ButtonSignalMixin",
 		"LeverSignalMixin",
+		"PopResourceMixin",
 		"PressurePlateSignalMixin"
 	],
 	"client": [

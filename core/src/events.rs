@@ -1240,6 +1240,8 @@ pub enum Action {
     RefusesFood,
     /// The young animals near them staring at them wherever they go, a long while.
     TheChildStares,
+    /// What they next mine dropping a moment late, as if held.
+    LateDrop,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7695,6 +7697,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TheChildStares,
         false,
     ),
+    // docs/events_todo.md, 255: what they mine drops a moment late, as if held.
+    row(
+        "late_drop",
+        3,
+        5,
+        &[TargetUnderground, TargetAwake],
+        1.0,
+        3,
+        Half,
+        Action::LateDrop,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8320,6 +8334,7 @@ impl Event {
             | Action::SnifferAtItsPlace
             | Action::RefusesFood
             | Action::TheChildStares
+            | Action::LateDrop
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8893,6 +8908,7 @@ impl Event {
             "sniffer_at_its_place" => "stand a sniffer snuffling at its place",
             "refuses_food" => "make the next animal they feed refuse it",
             "the_child_stares" => "make the young animals near them stare at them",
+            "late_drop" => "hold back what they next mine a moment",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
