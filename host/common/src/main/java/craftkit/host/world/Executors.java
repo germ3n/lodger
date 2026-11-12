@@ -3167,6 +3167,20 @@ public final class Executors {
 			shown = withState(found.get().value().defaultBlockState(), state);
 		}
 		player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(pos, shown));
+		// A player's head with a player's own face (`head_of`): the skull's profile sent with it.
+		if (!block.isEmpty() && command.has("head_of") && !command.get("head_of").isJsonNull()) {
+			ServerPlayer face = context.senses().player(level, command.get("head_of").getAsInt());
+			if (face != null) {
+				var profile = net.minecraft.world.item.component.ResolvableProfile.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE,
+						net.minecraft.world.item.component.ResolvableProfile.createResolved(face.getGameProfile())).result();
+				if (profile.isPresent()) {
+					net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+					tag.put("profile", profile.get());
+					var skull = new net.minecraft.world.level.block.entity.SkullBlockEntity(pos, shown);
+					player.connection.send(net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(skull, (be, registries) -> tag));
+				}
+			}
+		}
 
 		return report(id, true, "");
 	}

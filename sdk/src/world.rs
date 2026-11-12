@@ -735,6 +735,9 @@ pub enum Command {
         /// Shown only where the world holds air: their furniture never hidden under it.
         #[serde(default, skip_serializing_if = "is_false")]
         only_air: bool,
+        /// A player's head (`minecraft:player_head`) with this player's own face on it.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        head_of: Option<u32>,
     },
     /// The big dripleaves near `player` (ten blocks), up to six, tipped one after another from
     /// the farthest in, as if something walked across them toward them, each with its sound, and

@@ -2761,6 +2761,11 @@ The `[x]` lines above, summed up by day:
   they use taken and another of those put in its slot (the take first, so a failed take puts
   nothing); never an axolotl's or a tadpole's. Tests: one in `act`. Was: no such event.
 
+- [x] **A head on the pillow** (`docs/events_todo.md`, 226): `head_on_the_pillow`, stage 5, as they
+  wake: a player head with their own face shown on their pillow, facing into the room, to their
+  client alone ten minutes (`ghost_block`'s `head_of`, ABI 56: the skull's profile sent with it).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

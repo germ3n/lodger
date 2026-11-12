@@ -711,6 +711,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FangsInALine
         | Action::BeamFromTheWater
         | Action::BucketFishChanged
+        | Action::HeadOnThePillow
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8013,6 +8014,7 @@ pub fn commands(
                             block: "minecraft:respawn_anchor".to_string(),
                             state: "charges=4".to_string(),
                             only_air: true,
+                            head_of: None,
                         },
                         0,
                     ),
@@ -8024,6 +8026,7 @@ pub fn commands(
                             block: String::new(),
                             state: String::new(),
                             only_air: false,
+                            head_of: None,
                         },
                         ANCHOR_SHOWN_TICKS,
                     ),
@@ -8053,6 +8056,7 @@ pub fn commands(
                             block: "minecraft:potted_wither_rose".to_string(),
                             state: String::new(),
                             only_air: false,
+                            head_of: None,
                         },
                         0,
                     ),
@@ -8064,6 +8068,7 @@ pub fn commands(
                             block: String::new(),
                             state: String::new(),
                             only_air: false,
+                            head_of: None,
                         },
                         ROSE_SHOWN_TICKS,
                     ),
@@ -8200,6 +8205,7 @@ pub fn commands(
                         block: "minecraft:oak_stairs".to_string(),
                         state: format!("facing={facing}"),
                         only_air: false,
+                        head_of: None,
                     },
                     0,
                 ),
@@ -8211,6 +8217,7 @@ pub fn commands(
                         block: String::new(),
                         state: String::new(),
                         only_air: false,
+                        head_of: None,
                     },
                     ROSE_SHOWN_TICKS,
                 ),
@@ -8229,6 +8236,7 @@ pub fn commands(
                         block: block.clone(),
                         state: String::new(),
                         only_air: true,
+                        head_of: None,
                     },
                     0,
                 ));
@@ -8240,6 +8248,7 @@ pub fn commands(
                         block: String::new(),
                         state: String::new(),
                         only_air: false,
+                        head_of: None,
                     },
                     ROSE_SHOWN_TICKS,
                 ));
@@ -8417,6 +8426,7 @@ pub fn commands(
                         block: "minecraft:skeleton_skull".to_string(),
                         state: format!("rotation={rotation}"),
                         only_air: false,
+                        head_of: None,
                     },
                     0,
                 ),
@@ -8428,6 +8438,7 @@ pub fn commands(
                         block: String::new(),
                         state: String::new(),
                         only_air: false,
+                        head_of: None,
                     },
                     SKULL_SHOWN_TICKS,
                 ),
@@ -8544,6 +8555,41 @@ pub fn commands(
                 ]
             }
             None => vec![],
+        },
+        // docs/events_todo.md, 226.
+        Action::HeadOnThePillow => match memory.home.as_ref().map(|h| (h.bed, h.center)) {
+            Some((Some(bed), center)) => {
+                let cell = [bed[0], bed[1] + 1, bed[2]];
+                let yaw = yaw_toward(block_center(cell), block_center(center));
+                let rotation = ((yaw / 22.5).round() as i32).rem_euclid(16);
+                vec![
+                    (
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: cell,
+                            block: "minecraft:player_head".to_string(),
+                            state: format!("rotation={rotation}"),
+                            only_air: true,
+                            head_of: Some(target),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: cell,
+                            block: String::new(),
+                            state: String::new(),
+                            only_air: false,
+                            head_of: None,
+                        },
+                        ROSE_SHOWN_TICKS,
+                    ),
+                ]
+            }
+            _ => vec![],
         },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -19748,5 +19794,19 @@ mod tests {
             matches!(&made[..], [(Command::TakeItem { expect, .. }, 0), (Command::PutItem { item, slot: Some(25), .. }, 1)] if expect == "minecraft:salmon_bucket" && item.id != "minecraft:salmon_bucket" && item.id.ends_with("_bucket")),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn head_on_the_pillow_wears_their_face_over_the_bed() {
+        let memory = rich_memory();
+        let bed = memory.home.as_ref().unwrap().bed.unwrap();
+        let event = find("head_on_the_pillow").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        let them = memory.target.unwrap_or(0);
+        assert!(
+            matches!(&made[0].0, Command::GhostBlock { block, pos, head_of: Some(t), only_air: true, .. } if block == "minecraft:player_head" && *pos == [bed[0], bed[1] + 1, bed[2]] && *t == them),
+            "{made:?}"
+        );
+        assert_eq!(made[1].1, ROSE_SHOWN_TICKS);
     }
 }

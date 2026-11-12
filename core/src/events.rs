@@ -1184,6 +1184,8 @@ pub enum Action {
     BeamFromTheWater,
     /// The fish in a bucket of theirs another kind overnight, a bucket for a bucket.
     BucketFishChanged,
+    /// A head with their own face on their pillow as they wake, on their screen alone a while.
+    HeadOnThePillow,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7291,6 +7293,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BucketFishChanged,
         false,
     ),
+    // docs/events_todo.md, 226: a head with their own face on their pillow in the morning.
+    row(
+        "head_on_the_pillow",
+        5,
+        5,
+        &[Home, Bed, JustWoke],
+        4.0,
+        1,
+        Full,
+        Action::HeadOnThePillow,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7895,6 +7909,7 @@ impl Event {
             | Action::PaleHorse
             | Action::FangsInALine
             | Action::BeamFromTheWater
+            | Action::HeadOnThePillow
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8438,6 +8453,7 @@ impl Event {
             "fangs_in_a_line" => "snap a line of evoker fangs up toward them",
             "beam_from_the_water" => "charge a guardian's beam at them from the water",
             "bucket_fish_changed" => "change the fish in their bucket to another kind",
+            "head_on_the_pillow" => "lay a head with their own face on their pillow",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
