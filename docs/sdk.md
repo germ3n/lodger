@@ -281,6 +281,7 @@ pub trait Mod: Sized + Send + Sync + 'static {
     fn warm(&self) -> Result<(), String> { Ok(()) }
     fn status(&self) -> Status { /* ready */ }
     fn open(&self, info: &WorldInfo, saved: &[u8]) -> Result<Self::World, String>;
+    fn spares(&self, world: &Self::World) -> bool { true }
     fn observe(&self, world: &mut Self::World, observations: &Observations);
     fn tick(&self, world: &mut Self::World, now: &Now) -> Vec<Command>;
     fn report(&self, world: &mut Self::World, reports: &[Report]);
@@ -407,6 +408,20 @@ the same with a two-line mod, and is the test of the macro.
 
 The SDK crate and the host carry one version (`sdk/Cargo.toml`, `host/gradle.properties`); a mod
 declares the least host it needs in its manifests (`craftkit >= 0.1.1`). The ABI version moves
-slower than the crate's and is what the host actually checks. Publishing (the crate to crates.io,
-the host jars to Modrinth) waits until a second mod can be written against it, which is the todo's
-last phase; until then both live in this repository.
+slower than the crate's and is what the host actually checks.
+
+The crate is ready for crates.io as `craftkit` (owner: "a separate crate for craftkit that i can
+upload to crates.io"): `sdk/` is its own package, its `README.md` the page on crates.io and the
+front of its docs on docs.rs (the example in it is a doctest, so it always builds), `LICENSE` beside
+it, and `include` keeps the upload to the crate alone. It stays in this workspace, so the lodger
+always builds against the very crate published. To publish, from the repository's root:
+
+```sh
+cargo package -p craftkit --list   # what goes up
+cargo publish -p craftkit --dry-run
+cargo login                        # once, with a crates.io token
+cargo publish -p craftkit
+```
+
+A version goes up once: bump `sdk/Cargo.toml` and `host/gradle.properties` together before the
+next. The host jars go to Modrinth on their own.

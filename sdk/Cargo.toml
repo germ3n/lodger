@@ -4,8 +4,13 @@ version = "0.1.1"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Write Minecraft mods in Rust: the protocol a mod speaks with the craftkit host, the Mod trait, the exported C ABI, and a headless harness to test a mod without a game. Working name."
-publish = false
+description = "Write Minecraft mods in Rust: the protocol a mod speaks with the craftkit host, the Mod trait, the exported C ABI, and a headless harness to test a mod without a game."
+readme = "README.md"
+documentation = "https://docs.rs/craftkit"
+keywords = ["minecraft", "modding", "fabric", "neoforge", "ffi"]
+categories = ["game-development", "api-bindings"]
+# What goes up to crates.io: the crate alone, never the lodger or the host.
+include = ["src/**", "tests/**", "README.md", "LICENSE", "Cargo.toml"]
 
 [dependencies]
 serde.workspace = true

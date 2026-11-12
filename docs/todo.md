@@ -2366,6 +2366,15 @@ The `[x]` lines above, summed up by day:
   Was: none named. Now `mod/modrinth.md` lists the owner's set, by what each is for, and
   Hysteria with Iris.
 
+- [x] **craftkit as a crate for crates.io** (owner: "can you create a seperate crate for craftkit
+  that i can upload to crates.io"). Was: `sdk/` marked `publish = false`, no readme, keywords or
+  license file of its own, its docs pointing at paths in this repository, and the workspace's
+  `repository` naming another address than the real one. Now it is publishable as `craftkit`
+  (the name is free): `sdk/README.md` (a whole mod and its harness test, run as a doctest) is its
+  crates.io page and its docs' front, `sdk/LICENSE`, keywords and categories, `include` keeping
+  the upload to the crate, and the repository `github.com/germ3n/lodger`. How to publish is in
+  [The SDK](sdk.md#versions-and-publishing). Not published: the owner uploads it.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

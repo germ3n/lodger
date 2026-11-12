@@ -1,15 +1,4 @@
-//! craftkit (a working name): write Minecraft mods in Rust.
-//!
-//! A Rust mod is a crate that implements [`Mod`] and exports it with [`export_mod!`], built as a
-//! shared library and shipped in a content jar beside its assets and a manifest. The craftkit
-//! host, a Java mod for Fabric and NeoForge (`../host`), loads the library through Java's FFM
-//! API and talks to it through the C ABI in [`abi`]: once a tick it hands the mod what the world
-//! did ([`protocol`]'s observations) and takes back what the mod wants done (its commands). The
-//! mod never touches Minecraft's classes, so it is tested with [`harness`] in `cargo test`, and
-//! survives Minecraft versions the host is updated for.
-//!
-//! The phases of `../docs/todo.md` build this up; phase 0 is the ABI's shape, `init`, and the
-//! harness calling through the exported functions as the host would.
+#![doc = include_str!("../README.md")]
 
 pub mod abi;
 pub mod base64;

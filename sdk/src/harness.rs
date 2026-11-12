@@ -2,7 +2,7 @@
 //!
 //! [`Harness`] goes through the exported functions of a library, not the [`crate::Mod`] trait,
 //! so what a test exercises is the same path the host takes: bytes in, JSON out, panics caught.
-//! A mod's own tests build one with [`harness!`] and ask it questions; the SDK's tests do the
+//! A mod's own tests build one with [`crate::harness!`] and ask it questions; the SDK's tests do the
 //! same with a mod of their own (`tests/exported.rs`).
 
 use std::ffi::c_char;

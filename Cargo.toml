@@ -7,7 +7,7 @@ members = ["sdk", "core"]
 [workspace.package]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/razor/mcmod"
+repository = "https://github.com/germ3n/lodger"
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
