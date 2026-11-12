@@ -642,6 +642,43 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 136.
+        "bubbling_under" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.bubble_column.upwards_ambient", 0),
+                        ("minecraft:block.bubble_column.upwards_ambient", 20),
+                        ("minecraft:block.bubble_column.upwards_ambient", 40),
+                        ("minecraft:block.bubble_column.upwards_ambient", 60),
+                    ],
+                    (0.8, 0.9),
+                    0.7,
+                    Below,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.bubble_column.whirlpool_ambient", 0),
+                        ("minecraft:block.bubble_column.whirlpool_ambient", 25),
+                        ("minecraft:block.bubble_column.whirlpool_ambient", 50),
+                    ],
+                    (0.8, 0.9),
+                    0.7,
+                    Below,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.water.ambient", 0),
+                        ("minecraft:block.water.ambient", 30),
+                        ("minecraft:block.water.ambient", 60),
+                    ],
+                    (0.7, 0.8),
+                    0.8,
+                    Below,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1606,6 +1643,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "bubbling_under",
             "bones_underfoot",
             "glass_rubbed",
             "witch_laughs",

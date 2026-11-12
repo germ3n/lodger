@@ -180,7 +180,7 @@ scream, a ghast's cry, its lying down in their bed) were replaced. Twenty-seven 
 | 133 | `boom_far` | 4 | At night, a far explosion from the way of its place, a flash on the sky there; nothing is harmed. | Night, outdoors, its place. | An explosion's sound and particles far off on their client alone. | M |
 | 134 | `glass_rubbed` | 3 | **Built.** At night a finger drags slowly across the window glass from outside, a long squeak. | Indoors at night, a window. | `sound` (glass step, slowed) at a pane. | S |
 | 135 | `bones_underfoot` | 4 | **Built (bone's step sounds at their feet a few seconds, not their own steps swapped).** For a minute, every step they take in one room crunches like bone. | Indoors. | A client hint swapping their step sounds for bone's in that room. | M |
-| 136 | `bubbling_under` | 3 | Water bubbling under the floor of the house, as from a deep spring, a minute; there is no water. | Indoors. | `sound` (bubble column) under the floor. | S |
+| 136 | `bubbling_under` | 3 | **Built.** Water bubbling under the floor of the house, as from a deep spring, a minute; there is no water. | Indoors. | `sound` (bubble column) under the floor. | S |
 | 137 | `the_bell_in_the_chest` | 4 | They open their chest and a bell rings inside it, once. | Opening a chest of theirs. | The chest opening trigger; a bell sound at the chest. | S |
 | 138 | `panting_behind` | 4 | Running, panting right behind them, matching theirs; when they stop it stops a breath later. | Running. | A breath sound behind them each second they run (the movement's pace). | M |
 | 139 | `iron_door_below` | 4 | Underground, an iron door slams somewhere under them, where there are no doors. | Underground. | `sound` (iron door close) below them. | S |

@@ -5536,6 +5536,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.bone_block.step"),
         false,
     ),
+    // docs/events_todo.md, 136.
+    row(
+        "bubbling_under",
+        3,
+        5,
+        &[TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:block.bubble_column.upwards_ambient"),
+        true,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6703,6 +6715,7 @@ impl Event {
             "pet_whines_at_door" => "set their dog whining at the door all night",
             "glass_rubbed" => "drag a finger slowly across their window",
             "bones_underfoot" => "crunch bone under their steps",
+            "bubbling_under" => "bubble water under their floor",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
