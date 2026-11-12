@@ -175,9 +175,40 @@ pub fn nearer_and_nearer(behind: &[BlockPos], at: Pos, most: usize) -> Vec<Block
     way
 }
 
+/// A trail of blazes ahead of them: trunks close to the line straight ahead (within 25 degrees),
+/// each five blocks or more past the last, nearest first, at most `most`.
+pub fn blaze_line(ahead: &[BlockPos], at: Pos, yaw: f32, most: usize) -> Vec<BlockPos> {
+    let yaw = (yaw as f64).to_radians();
+    let (fx, fz) = (-yaw.sin(), yaw.cos());
+    let mut line: Vec<BlockPos> = Vec::new();
+    for t in ahead {
+        let (dx, dz) = (t[0] as f64 + 0.5 - at[0], t[2] as f64 + 0.5 - at[2]);
+        let d = (dx * dx + dz * dz).sqrt().max(0.01);
+        let on_line = (dx * fx + dz * fz) / d >= 25f64.to_radians().cos();
+        let past = line.last().is_none_or(|l| distance(*t, *l) >= 5.0);
+        if on_line && past && line.len() < most {
+            line.push(*t);
+        }
+    }
+    line
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_blazes_go_straight_on_ahead_of_them_spaced_apart() {
+        let ahead = vec![
+            [0, 64, 6],
+            [1, 64, 8],
+            [0, 64, 12],
+            [9, 64, 13],
+            [0, 64, 19],
+        ];
+        let line = blaze_line(&ahead, [0.5, 64.0, 0.5], 0.0, 5);
+        assert_eq!(line, vec![[0, 64, 6], [0, 64, 12], [0, 64, 19]], "{line:?}");
+    }
 
     #[test]
     fn behind_them_a_way_of_trunks_nearer_and_nearer() {

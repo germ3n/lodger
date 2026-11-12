@@ -378,6 +378,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The farthest trunk of a line of blazes straight ahead of them.
+        Action::BlazedTrees => {
+            let line = crate::trees::blaze_line(
+                &memory.trunks_ahead(10.0, 30.0),
+                memory.last.pos,
+                memory.last.yaw,
+                5,
+            );
+            (line.len() >= 3).then(|| *line.last().unwrap_or(&line[0]))
+        }
         // The nearest trunk ahead of them of three, each farther in.
         Action::KnocksOnWood => {
             let ahead = memory.trunks_ahead(8.0, 28.0);
@@ -6346,6 +6356,31 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // A strip of bark gone at eye height from each trunk of the line, as a trail is blazed.
+        Action::BlazedTrees => pos
+            .map(|_| {
+                crate::trees::blaze_line(
+                    &memory.trunks_ahead(10.0, 30.0),
+                    memory.last.pos,
+                    memory.last.yaw,
+                    5,
+                )
+                .into_iter()
+                .filter_map(|t| {
+                    let log = memory.trunk_log(t)?;
+                    Some((
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: [t[0], t[1] + 1, t[2]],
+                            block: crate::trees::stripped(log)?,
+                            only: vec![log.to_string()],
+                        },
+                        0,
+                    ))
+                })
+                .collect()
+            })
+            .unwrap_or_default(),
         // Three knocks on a trunk ahead, then on one farther in, then on a third; on the last, a
         // strip of its bark gone at eye height, as if something had marked it.
         Action::KnocksOnWood => pos
@@ -8735,6 +8770,11 @@ mod tests {
                     ]
                 })
             })
+            .collect();
+        memory.trunk_logs = memory
+            .trunks
+            .iter()
+            .map(|t| (*t, "minecraft:oak_log".to_string()))
             .collect();
         memory.containers.push(Container {
             pos: [-2, 64, 0],
@@ -13819,5 +13859,28 @@ mod tests {
             "{:?}",
             made.last()
         );
+    }
+
+    #[test]
+    fn a_trail_is_blazed_on_the_trees_straight_ahead_of_them() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.trunks = vec![[0, 64, 11], [0, 64, 17], [1, 64, 23], [12, 64, 12]];
+        memory.trunk_logs = memory
+            .trunks
+            .iter()
+            .map(|t| (*t, "minecraft:spruce_log".to_string()))
+            .collect();
+        let event = find("blazed_trees").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, Some([1, 64, 23]), "the line's far end");
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 3, "{made:?}");
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::SwapBlock { block, pos, .. }
+            if block == "minecraft:stripped_spruce_log" && pos[1] == 65)));
     }
 }

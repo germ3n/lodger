@@ -1961,6 +1961,11 @@ The `[x]` lines above, summed up by day:
   bark stripped at eye height (the tree read keeps each trunk's log now). Tests: `trees`'s, one in
   `act`. Was: no such event.
 
+- [x] **A trail blazed** (`docs/events_todo.md`, 84): `blazed_trees`, stages 3 to 5, in the woods:
+  three to five trunks in a line straight ahead of them, a strip of bark gone from each at eye
+  height (`trees::blaze_line`). Leads straight on, not to its place: the trees read are within
+  twenty blocks of them. Tests: one in `trees`, one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
