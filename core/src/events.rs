@@ -1149,6 +1149,8 @@ pub enum Action {
     WitherRoseInPot,
     /// Mushrooms grown overnight on the floor of their house along its walls, the corners first, gone in a day.
     MushroomsInCorners,
+    /// Their shulker box opening a crack by itself, a moment, and shutting.
+    ShulkerLidPeeks,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7055,6 +7057,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::MushroomsInCorners,
         false,
     ),
+    // docs/events_todo.md, 210: their shulker box opens a crack by itself and shuts.
+    row(
+        "shulker_lid_peeks",
+        4,
+        5,
+        &[Fixture("shulker_box"), TargetIndoors],
+        1.0,
+        3,
+        Half,
+        Action::ShulkerLidPeeks,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7646,6 +7660,7 @@ impl Event {
             | Action::AnchorCharged
             | Action::DripstoneFalls
             | Action::WitherRoseInPot
+            | Action::ShulkerLidPeeks
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8169,6 +8184,7 @@ impl Event {
             "dripstone_falls" => "drop pointed dripstone from the ceiling beside them",
             "wither_rose_in_pot" => "put a wither rose in one of their flower pots",
             "mushrooms_in_corners" => "grow mushrooms in the corners of their house",
+            "shulker_lid_peeks" => "open their shulker box a crack by itself",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -760,17 +760,24 @@ public final class Executors {
 
 	private static JsonObject openLid(ServerLevel level, BlockPos pos, float seconds, long id, Context context) {
 		BlockState state = level.getBlockState(pos);
-		if (!(level.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity)) {
-			return report(id, false, "no chest there");
+		var entity = level.getBlockEntity(pos);
+		boolean shulker = entity instanceof net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
+		if (!(entity instanceof net.minecraft.world.level.block.entity.ChestBlockEntity) && !shulker) {
+			return report(id, false, "no chest or shulker box there");
 		}
 
-		// Block event 1 is the chest's opener count: the clients animate the lid from it.
+		// Block event 1 is the opener count, a chest's and a shulker box's (ABI 56): the clients
+		// animate the lid from it.
+		var open = shulker ? net.minecraft.sounds.SoundEvents.SHULKER_BOX_OPEN : net.minecraft.sounds.SoundEvents.CHEST_OPEN;
+		var close = shulker ? net.minecraft.sounds.SoundEvents.SHULKER_BOX_CLOSE : net.minecraft.sounds.SoundEvents.CHEST_CLOSE;
 		level.blockEvent(pos, state.getBlock(), 1, 1);
-		level.playSound(null, pos, net.minecraft.sounds.SoundEvents.CHEST_OPEN, SoundSource.BLOCKS, 0.5f, level.getRandom().nextFloat() * 0.1f + 0.9f);
+		level.playSound(null, pos, open, SoundSource.BLOCKS, 0.5f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 		context.later().at(seconds, () -> {
-			if (level.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity) {
+			var now = level.getBlockEntity(pos);
+			if (now instanceof net.minecraft.world.level.block.entity.ChestBlockEntity
+					|| now instanceof net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity) {
 				level.blockEvent(pos, level.getBlockState(pos).getBlock(), 1, 0);
-				level.playSound(null, pos, net.minecraft.sounds.SoundEvents.CHEST_CLOSE, SoundSource.BLOCKS, 0.5f, level.getRandom().nextFloat() * 0.1f + 0.9f);
+				level.playSound(null, pos, close, SoundSource.BLOCKS, 0.5f, level.getRandom().nextFloat() * 0.1f + 0.9f);
 			}
 		});
 

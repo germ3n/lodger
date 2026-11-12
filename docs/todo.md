@@ -2682,6 +2682,10 @@ The `[x]` lines above, summed up by day:
   they built, the corners first, into air standing on a floor; a day on, gone. Tests: one in `act`.
   Was: no such event.
 
+- [x] **The shulker box peeks** (`docs/events_todo.md`, 210): `shulker_lid_peeks`, stages 4 and 5,
+  indoors: their shulker box opened by itself a moment, with its sound, and shut (`open_lid`, now a
+  shulker box's too, ABI 56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

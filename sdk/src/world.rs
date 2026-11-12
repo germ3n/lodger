@@ -1059,7 +1059,8 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_false")]
         through: bool,
     },
-    /// Open a chest's lid, with its sound, and close it after `seconds`. Nothing inside changes.
+    /// Open a chest's lid, or a shulker box's (ABI 56), with its sound, and close it after
+    /// `seconds`. Nothing inside changes.
     OpenLid {
         id: u64,
         pos: BlockPos,

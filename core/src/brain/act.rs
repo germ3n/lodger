@@ -462,6 +462,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             (!pots.is_empty()).then(|| pots[(rng.next_u64() % pots.len() as u64) as usize])
         };
     }
+    // Their shulker box peeks open.
+    if event.id == "shulker_lid_peeks" {
+        return memory.fixtures("shulker_box").next().map(|f| f.pos);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -480,6 +484,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::DripstoneFalls
         | Action::WitherRoseInPot
         | Action::MushroomsInCorners
+        | Action::ShulkerLidPeeks
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7888,6 +7893,19 @@ pub fn commands(
             }
             made
         }
+        // docs/events_todo.md, 210.
+        Action::ShulkerLidPeeks => pos
+            .map(|p| {
+                vec![(
+                    Command::OpenLid {
+                        id: ids(),
+                        pos: p,
+                        seconds: 1.2,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -18766,5 +18784,19 @@ mod tests {
             made[0].0
         );
         assert_eq!(made[1].1, DAY_TICKS, "gone in a day");
+    }
+
+    #[test]
+    fn shulker_lid_peeks_opens_their_box_a_moment_where_they_see_it() {
+        let memory = rich_memory();
+        let theirs = memory.fixtures("shulker_box").next().unwrap().pos;
+        let event = find("shulker_lid_peeks").unwrap();
+        assert!(!crate::rules::hidden_from_view(event.action));
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::OpenLid { pos, seconds, .. }, 0)] if *pos == theirs && *seconds < 2.0),
+            "{made:?}"
+        );
     }
 }
