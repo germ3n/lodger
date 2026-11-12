@@ -3297,6 +3297,12 @@ The `[x]` lines above, summed up by day:
   Tests: one in `act`, every source of the mind read for a `hypot` call. Was: the natives' job
   failing.
 
+- [x] **The Mac and Windows natives side by side in CI** (owner: "instead of 1 macos-windows
+  job, it has a matrix of 4 (1 per os per arch) so it compiles concurrently? keep the building on
+  macos though"): `natives-mac-windows` is a matrix of four macOS runners, one per platform, each
+  its own artifact; Homebrew's tools and cargo-xwin only on the Windows two. `jars` waits for all
+  four as before. Was: one runner building the four in turn.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

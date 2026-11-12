@@ -50,22 +50,39 @@ jobs:
       # Every test binary, a failure in one not hiding the next.
       - run: cargo test --workspace --no-fail-fast
 
-  # Both macOS natives (Metal; Intel cross-built on the Apple chip), and both Windows natives
-  # (Vulkan) cross-built with cargo-xwin, as on a developer's Mac.
+  # The macOS natives (Metal; Intel cross-built on the Apple chip) and the Windows natives
+  # (Vulkan, cross-built with cargo-xwin), all on macOS as on a developer's Mac: one runner per
+  # platform, side by side (owner: "a matrix of 4 ... so it compiles concurrently? keep the
+  # building on macos"). Only the Windows ones need Homebrew's LLVM, lld and shaderc and
+  # cargo-xwin.
   natives-mac-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-aarch64
+            windows: false
+          - platform: macos-x86_64
+            windows: false
+          - platform: windows-x86_64
+            windows: true
+          - platform: windows-aarch64
+            windows: true
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.98.1
-      - run: brew install llvm lld shaderc
-      - run: cargo install cargo-xwin --locked
-      - run: python3 scripts/build_natives.py macos-aarch64 macos-x86_64 windows-x86_64 windows-aarch64 --out natives
+      - if: ${{ matrix.windows }}
+        run: brew install llvm lld shaderc
+      - if: ${{ matrix.windows }}
+        run: cargo install cargo-xwin --locked
+      - run: python3 scripts/build_natives.py ${{ matrix.platform }} --out natives
       - run: find natives -type f -exec shasum -a 256 {} \;
       - uses: actions/upload-artifact@v7
         with:
-          name: natives-mac-windows
+          name: natives-${{ matrix.platform }}
           path: natives/
           if-no-files-found: error
 
