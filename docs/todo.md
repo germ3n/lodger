@@ -2771,6 +2771,11 @@ The `[x]` lines above, summed up by day:
   (`place_entity`'s `minecraft:leash_knot`, ABI 56, its y counted from the ground). Tests: one in
   `act`. Was: no such event.
 
+- [x] **A dried ghast on the doorstep** (`docs/events_todo.md`, 228): `dried_ghast_on_doorstep`,
+  stages 4 and 5, as they come to their door: a dried ghast shown on the step outside it, facing
+  out, to their client alone three minutes, into air alone (`ghost_block`: none made, none to grow).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

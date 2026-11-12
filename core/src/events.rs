@@ -1188,6 +1188,8 @@ pub enum Action {
     HeadOnThePillow,
     /// A lead knotted on a fence post at its place, nothing on the other end.
     EmptyLead,
+    /// A dried ghast on their doorstep as they come home, on their screen alone a while.
+    DriedGhastOnDoorstep,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7319,6 +7321,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EmptyLead,
         false,
     ),
+    // docs/events_todo.md, 228: a dried ghast sits on their doorstep.
+    row(
+        "dried_ghast_on_doorstep",
+        4,
+        5,
+        &[Home, Door, TargetApproachingDoor],
+        3.0,
+        1,
+        Half,
+        Action::DriedGhastOnDoorstep,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7925,6 +7939,7 @@ impl Event {
             | Action::BeamFromTheWater
             | Action::HeadOnThePillow
             | Action::EmptyLead
+            | Action::DriedGhastOnDoorstep
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8470,6 +8485,7 @@ impl Event {
             "bucket_fish_changed" => "change the fish in their bucket to another kind",
             "head_on_the_pillow" => "lay a head with their own face on their pillow",
             "empty_lead" => "knot a lead on a post at its place with nothing on it",
+            "dried_ghast_on_doorstep" => "sit a dried ghast on their doorstep",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

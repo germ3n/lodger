@@ -717,6 +717,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BucketFishChanged
         | Action::HeadOnThePillow
         | Action::EmptyLead
+        | Action::DriedGhastOnDoorstep
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8621,6 +8622,46 @@ pub fn commands(
                 ]
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 228.
+        Action::DriedGhastOnDoorstep => match (memory.usual_door(), memory.home.as_ref()) {
+            (Some(door), Some(home)) => {
+                let step = out_of_door(memory, home.center, door);
+                let cell = [door[0] + step[0], door[1], door[2] + step[1]];
+                let facing = match step {
+                    [1, 0] => "east",
+                    [-1, 0] => "west",
+                    [0, 1] => "south",
+                    _ => "north",
+                };
+                vec![
+                    (
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: cell,
+                            block: "minecraft:dried_ghast".to_string(),
+                            state: format!("facing={facing}"),
+                            only_air: true,
+                            head_of: None,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: cell,
+                            block: String::new(),
+                            state: String::new(),
+                            only_air: false,
+                            head_of: None,
+                        },
+                        SKULL_SHOWN_TICKS,
+                    ),
+                ]
+            }
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -19849,6 +19890,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::SetBlock { block, .. }, 0), (Command::PlaceEntity { of, pos, .. }, 5)] if block == "minecraft:oak_fence" && of == "minecraft:leash_knot" && pos[1] == (GROUND_Y + 1) as f64 && pos[0] == 18.5),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn dried_ghast_sits_on_the_step_outside_their_door_facing_out() {
+        let memory = rich_memory();
+        let door = memory.usual_door().unwrap();
+        let step = out_of_door(&memory, memory.home.as_ref().unwrap().center, door);
+        let event = find("dried_ghast_on_doorstep").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::GhostBlock { block, pos, only_air: true, .. } if block == "minecraft:dried_ghast" && *pos == [door[0] + step[0], door[1], door[2] + step[1]]),
             "{made:?}"
         );
     }
