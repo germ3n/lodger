@@ -162,6 +162,7 @@ public final class Executors {
 					yield report(id, true, "");
 				}
 				case "ghost_block" -> ghostBlock(level, command, id, context);
+				case "drop_block" -> dropBlock(level, command, id);
 				case "tip_dripleaves" -> tipDripleaves(level, command, id, context);
 				case "boss_bar" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
@@ -3030,6 +3031,53 @@ public final class Executors {
 			level.setBlock(pos, state.setValue(tilt, to), Block.UPDATE_CLIENTS);
 			level.playSound(null, pos, sound, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 0.9f);
 		}
+	}
+
+	/**
+	 * A block let fall, hurting no one and dropping nothing (ABI 56): one that cannot stand where
+	 * it lands breaks there, as pointed dripstone shatters. With {@code beside}, from under the
+	 * ceiling over the first open cell beside the place.
+	 */
+	private static JsonObject dropBlock(ServerLevel level, JsonObject command, long id) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		if (!level.isLoaded(pos)) {
+			return report(id, false, "the place is not loaded");
+		}
+		Optional<Holder.Reference<Block>> found = BuiltInRegistries.BLOCK.get(Identifier.parse(blockId(command)));
+		if (found.isEmpty()) {
+			return report(id, false, "no such block");
+		}
+		String properties = command.has("state") ? command.get("state").getAsString() : "";
+		BlockState state = withState(found.get().value().defaultBlockState(), properties);
+		BlockPos from = null;
+		if (command.has("beside") && command.get("beside").getAsBoolean()) {
+			for (Direction side : Direction.Plane.HORIZONTAL) {
+				BlockPos cell = pos.relative(side);
+				if (!level.getBlockState(cell).isAir()) {
+					continue;
+				}
+				for (int up = 1; up <= 12; up++) {
+					if (!level.getBlockState(cell.above(up)).isAir()) {
+						from = up > 1 ? cell.above(up - 1) : null;
+						break;
+					}
+				}
+				if (from != null) {
+					break;
+				}
+			}
+			if (from == null) {
+				return report(id, false, "no open cell under a ceiling beside it");
+			}
+		} else {
+			from = pos;
+			if (!level.getBlockState(from).isAir()) {
+				return report(id, false, "the place holds " + Senses.blockId(level.getBlockState(from)));
+			}
+		}
+		net.minecraft.world.entity.item.FallingBlockEntity.fall(level, from, state).disableDrop();
+
+		return report(id, true, "");
 	}
 
 	/**

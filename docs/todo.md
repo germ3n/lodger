@@ -2667,6 +2667,11 @@ The `[x]` lines above, summed up by day:
   five minutes, then what is really there shown again (`ghost_block`, ABI 56, a block on one
   player's screen the world never holds). Tests: one in `act`. Was: no such event.
 
+- [x] **Dripstone falls** (`docs/events_todo.md`, 207): `dripstone_falls`, stages 4 and 5,
+  underground: pointed dripstone let fall from under the ceiling over an open cell beside them,
+  shattering where it lands, hurting no one and dropping nothing (`drop_block`, ABI 56). Tests: one
+  in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

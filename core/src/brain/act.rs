@@ -464,6 +464,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::Hint(_, _)
         | Action::BossBarIt
         | Action::AnchorCharged
+        | Action::DripstoneFalls
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7781,6 +7782,17 @@ pub fn commands(
                 ]
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 207.
+        Action::DripstoneFalls => vec![(
+            Command::DropBlock {
+                id: ids(),
+                pos: block_of(memory.last.pos),
+                block: "minecraft:pointed_dripstone".to_string(),
+                state: "vertical_direction=down,thickness=tip".to_string(),
+                beside: true,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -18592,5 +18604,21 @@ mod tests {
             made[1].0
         );
         assert_eq!(made[1].1, ANCHOR_SHOWN_TICKS);
+    }
+
+    #[test]
+    fn dripstone_falls_beside_them_point_down() {
+        let mut memory = rich_memory();
+        memory.last.pos = [3.5, 20.0, 4.5];
+        let event = find("dripstone_falls").unwrap();
+        assert!(
+            !crate::rules::hidden_from_view(event.action),
+            "it falls where they see it"
+        );
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::DropBlock { pos, block, state, beside: true, .. }, 0)] if *pos == [3, 20, 4] && block == "minecraft:pointed_dripstone" && state.contains("vertical_direction=down")),
+            "{made:?}"
+        );
     }
 }

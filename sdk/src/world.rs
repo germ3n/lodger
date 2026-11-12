@@ -689,6 +689,19 @@ pub enum Command {
         pos: BlockPos,
         stage: i32,
     },
+    /// A block let fall, hurting no one and dropping nothing: one that cannot stand where it lands
+    /// breaks there (pointed dripstone shatters). From `pos`, into air alone; with `beside`, from
+    /// under the ceiling (the first solid block within twelve up) over the first of the four cells
+    /// beside `pos` that is open, never `pos` itself. ABI 56.
+    DropBlock {
+        id: u64,
+        pos: BlockPos,
+        block: String,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        state: String,
+        #[serde(default, skip_serializing_if = "is_false")]
+        beside: bool,
+    },
     /// A block shown at `pos` to `player` alone, `block` with `state` (`charges=4`), the world's
     /// own block untouched under it; `block` empty shows them what is really there again. Their
     /// client forgets it when the chunk is sent afresh, so a quit never leaves it. A y below
@@ -1587,6 +1600,7 @@ impl Command {
             | Command::TipDripleaves { id, .. }
             | Command::CrackBlock { id, .. }
             | Command::GhostBlock { id, .. }
+            | Command::DropBlock { id, .. }
             | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }
