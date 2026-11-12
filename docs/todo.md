@@ -2561,6 +2561,12 @@ The `[x]` lines above, summed up by day:
   target away or asleep: pale moss carpet on their floor from a corner, three blocks more each
   time (`moss_cells`). Tests: one in `act`. Was: no such event.
 
+- [x] **What it took, given back in sand or a pot** (`docs/events_todo.md`, 196 and 197):
+  `sand_gives_back` (suspicious sand by the house; brushed, it gives it back) and `pot_of_returns`
+  (a decorated pot at its place; broken, it gives it back), stages 4 and 5, the thing it holds
+  (`keep_in`, ABI 55: the kept stack in the block, kept still when nothing can go there; held no
+  more once it lands). Tests: in `act`. Was: no such events.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

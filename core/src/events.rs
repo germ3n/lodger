@@ -1131,6 +1131,9 @@ pub enum Action {
     CreakingInTheField,
     /// Pale moss creeping across their floor from a corner, more each night.
     PaleMossCreeps,
+    /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
+    /// find: brushed or broken, it gives it back.
+    KeepIn(&'static str),
     /// A grave at its place with their own name on it and a day not come yet.
     YourGrave,
     /// Cobwebs in the upper corners of their house, gone in a day.
@@ -6863,6 +6866,31 @@ pub const CATALOGUE: &[Event] = &[
         Action::PaleMossCreeps,
         false,
     ),
+    // docs/events_todo.md, 196: a patch of suspicious sand by the house; brushed, it gives
+    // back what it took.
+    row(
+        "sand_gives_back",
+        4,
+        5,
+        &[Held, Home, TargetAwayOrAsleep],
+        2.0,
+        2,
+        Half,
+        Action::KeepIn("minecraft:suspicious_sand"),
+        false,
+    ),
+    // docs/events_todo.md, 197: a decorated pot at its place; broken, it gives back what it took.
+    row(
+        "pot_of_returns",
+        4,
+        5,
+        &[Held, Home, TargetAwayOrAsleep],
+        2.0,
+        2,
+        Half,
+        Action::KeepIn("minecraft:decorated_pot"),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7245,6 +7273,7 @@ impl Event {
             | Action::FrostOnGlass
             | Action::StairsToNowhere
             | Action::PaleMossCreeps
+            | Action::KeepIn(_)
             | Action::FaceInTheCanopy
             | Action::BootsAtTheDoor
             | Action::PathWorn
@@ -7961,6 +7990,8 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "sand_gives_back" => "bury what it took in a patch of sand by the house",
+            "pot_of_returns" => "leave what it took in a pot at its place",
             "pale_moss_creeps" => "creep pale moss across their floor",
             "creaking_in_the_field" => "stand a creaking in their field that comes while unwatched",
             "copper_golem_at_door" => "stand a copper golem outside their door",

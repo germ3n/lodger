@@ -148,6 +148,7 @@ public final class Executors {
 					yield report(id, placed, placed ? "" : "no villager could be made");
 				}
 				case "turn_torches" -> turnTorches(level, command, id);
+				case "keep_in" -> keepIn(level, command, id, data);
 				case "boss_bar" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -2963,6 +2964,63 @@ public final class Executors {
 		}
 
 		return report(id, placed > 0, "base " + y + " placed " + placed);
+	}
+
+	/** What `keep_in` may hold a kept stack in. */
+	private static final List<String> KEEPERS = List.of("minecraft:suspicious_sand", "minecraft:decorated_pot");
+
+	/**
+	 * A suspicious sand or a decorated pot holding a kept stack (ABI 55): brushed or broken, it
+	 * gives it back. Into air, or the sand over natural sand, dirt or grass alone; the stack is
+	 * kept still when nothing can go there.
+	 */
+	private static JsonObject keepIn(ServerLevel level, JsonObject command, long id, WorldData data) {
+		String block = command.get("block").getAsString();
+		if (!KEEPERS.contains(block)) {
+			return report(id, false, "not something it keeps things in");
+		}
+		BlockPos pos = onGround(level, blockPos(command.getAsJsonArray("pos")));
+		if (pos == null) {
+			return report(id, false, "the place is not loaded");
+		}
+		List<String> over = block.equals("minecraft:suspicious_sand")
+				? List.of("minecraft:sand", "minecraft:dirt", "minecraft:grass_block", "minecraft:coarse_dirt")
+				: List.of("minecraft:short_grass", "minecraft:snow");
+		String taken = taken(level, pos, over, false);
+		if (taken != null) {
+			return report(id, false, taken);
+		}
+		String key = command.get("kept").getAsString();
+		ItemStack stack = data.giveBack(key);
+		if (stack == null || stack.isEmpty()) {
+			return report(id, false, "nothing kept under " + key);
+		}
+		Optional<Holder.Reference<Block>> kind = BuiltInRegistries.BLOCK.get(Identifier.parse(block));
+		if (kind.isEmpty()) {
+			data.keep(key, stack);
+			return report(id, false, "no such block");
+		}
+		level.setBlock(pos, kind.get().value().defaultBlockState(), Block.UPDATE_ALL);
+		BlockEntity entity = level.getBlockEntity(pos);
+		try {
+			if (entity instanceof net.minecraft.world.level.block.entity.DecoratedPotBlockEntity pot) {
+				pot.setTheItem(stack);
+			} else if (entity instanceof net.minecraft.world.level.block.entity.BrushableBlockEntity sand) {
+				var item = net.minecraft.world.level.block.entity.BrushableBlockEntity.class.getDeclaredField("item");
+				item.setAccessible(true);
+				item.set(sand, stack);
+				sand.setChanged();
+			} else {
+				throw new ReflectiveOperationException("no block entity to hold it");
+			}
+		} catch (ReflectiveOperationException e) {
+			// Nothing to hold it: the block taken back, the stack kept.
+			level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+			data.keep(key, stack);
+			return report(id, false, "it could not hold it");
+		}
+
+		return report(id, true, "");
 	}
 
 	/**

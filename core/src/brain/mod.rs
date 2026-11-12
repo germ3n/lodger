@@ -1478,7 +1478,7 @@ impl Brain {
             memory.offer_waiting = plan.pos;
         }
         for (command, later_ticks) in made {
-            let puts_held = matches!(&command, Command::PutItem { kept, .. } if kept == "held");
+            let puts_held = puts_held(&command);
             self.pending.push(Pending {
                 id: command.id(),
                 event: plan.event.clone(),
@@ -2941,6 +2941,12 @@ fn cancel_reason(
     }
 
     None
+}
+
+/// Whether a command gives back the thing it holds: put in a chest, or kept in sand or a pot
+/// (`keep_in`); done, it is held no more.
+fn puts_held(command: &Command) -> bool {
+    matches!(command, Command::PutItem { kept, .. } | Command::KeepIn { kept, .. } if kept == "held")
 }
 
 /// Events whose "replaced" block is not dug into the lodger's store: a light put out, a light
@@ -5038,6 +5044,25 @@ mod tests {
             let event = events::find(id).unwrap_or_else(|| panic!("{id}"));
             assert!(!event.small, "{id} is a bold one");
         }
+    }
+
+    #[test]
+    fn what_it_holds_is_given_back_by_a_put_or_by_sand_or_a_pot() {
+        let keep_in = |kept: &str| Command::KeepIn {
+            id: 1,
+            pos: [0, 64, 0],
+            block: "minecraft:decorated_pot".to_string(),
+            kept: kept.to_string(),
+        };
+        assert!(puts_held(&keep_in("held")));
+        assert!(
+            !puts_held(&keep_in("taken_up1")),
+            "another kept stack is not what it holds"
+        );
+        assert!(!puts_held(&Command::Log {
+            id: 1,
+            text: String::new()
+        }));
     }
 
     #[test]

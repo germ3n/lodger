@@ -668,6 +668,16 @@ pub enum Command {
         id: u64,
         on: bool,
     },
+    /// `block` (`minecraft:suspicious_sand` over natural ground, or `minecraft:decorated_pot`
+    /// on it) at `pos` (counted from the ground below -1000, as `set_block`'s), holding the stack
+    /// kept under `kept` (`take_item`'s `keep`): brushed or broken, it gives it back. Only into air
+    /// or over sand, dirt or grass; the stack stays kept when it cannot go. ABI 55.
+    KeepIn {
+        id: u64,
+        pos: BlockPos,
+        block: String,
+        kept: String,
+    },
     /// A boss bar named `name` at the top of `player`'s screen alone, filling from empty over
     /// `seconds` (ninety at most), then gone. ABI 55.
     BossBar {
@@ -1542,6 +1552,7 @@ impl Command {
             | Command::FakeCreeper { id, .. }
             | Command::TurnTorches { id, .. }
             | Command::BossBar { id, .. }
+            | Command::KeepIn { id, .. }
             | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }

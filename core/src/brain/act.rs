@@ -626,6 +626,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }
         Action::SnowShape => spot(memory, rng),
         Action::StairsToNowhere | Action::PaleMossCreeps => home.map(|h| h.center),
+        // At its place, or eight to twelve blocks from the house.
+        Action::KeepIn(_) => spot(memory, rng),
         // The middle of their field.
         Action::CreakingInTheField => {
             let field = &memory.field;
@@ -7557,6 +7559,24 @@ pub fn commands(
                     .collect()
             }
             None => vec![],
+        },
+        // What it took, in the sand (the ground's own block there, sand for sand) or in a pot (on
+        // the ground there): given back when they brush it or break it, and held no more.
+        Action::KeepIn(block) => match (pos.map(grounded), &memory.held) {
+            (Some(p), Some(_)) => vec![(
+                Command::KeepIn {
+                    id: ids(),
+                    pos: if block.ends_with("sand") {
+                        p
+                    } else {
+                        [p[0], p[1] + 1, p[2]]
+                    },
+                    block: block.to_string(),
+                    kept: "held".to_string(),
+                },
+                0,
+            )],
+            _ => vec![],
         },
         // At the top of their screen, a boss bar reading only "it", filling over a minute.
         Action::BossBarIt => vec![(
@@ -17997,5 +18017,56 @@ mod tests {
                 .collect()
         };
         assert_eq!(cells(&first)[..], cells(&second)[..3]);
+    }
+
+    #[test]
+    fn what_it_took_comes_back_in_the_sand_or_in_a_pot() {
+        let mut memory = rich_memory();
+        memory.place = Some([30, 64, 30]);
+        memory.held = Some(crate::memory::Held {
+            item: stack("minecraft:iron_pickaxe", 1, 0),
+            from: [2, 64, 0],
+            slot: 4,
+            ..Default::default()
+        });
+        let sand = find("sand_gives_back").unwrap();
+        let made = commands(
+            sand,
+            place(sand, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::KeepIn { block, kept, pos, .. }, 0)] if block == "minecraft:suspicious_sand" && kept == "held" && *pos == [30, GROUND_Y, 30]),
+            "the sand is the ground's own block: {made:?}"
+        );
+        let pot = find("pot_of_returns").unwrap();
+        let made = commands(
+            pot,
+            place(pot, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::KeepIn { block, pos, .. }, 0)] if block == "minecraft:decorated_pot" && *pos == [30, GROUND_Y + 1, 30]),
+            "the pot on the ground: {made:?}"
+        );
+        memory.held = None;
+        assert!(
+            commands(
+                pot,
+                place(pot, &memory, &mut Rng::new(1)),
+                &memory,
+                &mut ids(),
+                &Now::default(),
+                None
+            )
+            .is_empty(),
+            "nothing held, nothing to give"
+        );
     }
 }
