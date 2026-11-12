@@ -1180,6 +1180,8 @@ pub enum Action {
     PaleHorse,
     /// A line of evoker fangs snapping up out of the ground toward them, stopping short, on their screen alone.
     FangsInALine,
+    /// A guardian's beam from the water near them to them, charging, never firing, on their screen alone.
+    BeamFromTheWater,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7254,6 +7256,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FangsInALine,
         false,
     ),
+    // docs/events_todo.md, 224: a guardian's beam charges at them from the water and never fires.
+    row(
+        "beam_from_the_water",
+        5,
+        5,
+        &[WaterNear(32), TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::BeamFromTheWater,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7856,6 +7870,7 @@ impl Event {
             | Action::SkullInTheTunnel
             | Action::PaleHorse
             | Action::FangsInALine
+            | Action::BeamFromTheWater
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8397,6 +8412,7 @@ impl Event {
             "copper_ages" => "weather their copper a stage overnight",
             "pale_horse_in_your_pen" => "stand a skeleton horse among the animals in their pen",
             "fangs_in_a_line" => "snap a line of evoker fangs up toward them",
+            "beam_from_the_water" => "charge a guardian's beam at them from the water",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

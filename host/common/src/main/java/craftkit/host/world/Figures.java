@@ -684,6 +684,39 @@ public final class Figures {
 		}
 	}
 
+	/**
+	 * A guardian's beam from {@code at} to {@code player}, on their screen alone (ABI 56): an
+	 * unseen guardian there, its target them, so their client draws the beam charging and plays
+	 * its sound; gone after {@code seconds}, before a guardian's charge would end. The world
+	 * holds no guardian: it can never fire.
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean fakeBeam(ServerPlayer player, Vec3 at, float seconds, Later later) {
+		int entityId = nextId++;
+		player.connection.send(new ClientboundAddEntityPacket(entityId, UUID.randomUUID(), at.x, at.y, at.z, 0, 0,
+				net.minecraft.world.entity.EntityTypes.GUARDIAN, 0, Vec3.ZERO, 0));
+		try {
+			var target = net.minecraft.world.entity.monster.Guardian.class.getDeclaredField("DATA_ID_ATTACK_TARGET");
+			target.setAccessible(true);
+			var flags = net.minecraft.world.entity.Entity.class.getDeclaredField("DATA_SHARED_FLAGS_ID");
+			flags.setAccessible(true);
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(entityId, List.of(
+					// Unseen itself: the beam alone shows (the shared flags' invisible bit).
+					net.minecraft.network.syncher.SynchedEntityData.DataValue.create(
+							(net.minecraft.network.syncher.EntityDataAccessor<Byte>) flags.get(null), (byte) 0x20),
+					net.minecraft.network.syncher.SynchedEntityData.DataValue.create(
+							(net.minecraft.network.syncher.EntityDataAccessor<Integer>) target.get(null), player.getId()))));
+		} catch (ReflectiveOperationException e) {
+			player.connection.send(new ClientboundRemoveEntitiesPacket(entityId));
+			return false;
+		}
+		later.at(Math.min(seconds, BEAM_MOST_SECONDS), () -> player.connection.send(new ClientboundRemoveEntitiesPacket(entityId)));
+		return true;
+	}
+
+	/** The longest a beam shown stays: short of a guardian's four-second charge. */
+	private static final float BEAM_MOST_SECONDS = 3.5f;
+
 	/** How long a fang shown stands, its bite done: about a second, as the game's own. */
 	private static final int FANG_TICKS = 22;
 

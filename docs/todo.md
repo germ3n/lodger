@@ -2750,6 +2750,12 @@ The `[x]` lines above, summed up by day:
   `FangLine` and its JUnit test; off with the glitches). Tests: one in `act`, two in JUnit
   (`FangLineTest`). Was: no such event.
 
+- [x] **A beam from the water** (`docs/events_todo.md`, 224): `beam_from_the_water`, stage 5,
+  outdoors by water: a guardian's beam drawn on their client alone from three blocks in from the
+  shore on their side to them, charging three seconds with its sound, gone before a charge would end
+  (`guardian_beam`, ABI 56, an unseen guardian shown to them alone; off with the glitches). Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

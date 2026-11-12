@@ -709,6 +709,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::CopperAges
         | Action::PaleHorse
         | Action::FangsInALine
+        | Action::BeamFromTheWater
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8487,6 +8488,19 @@ pub fn commands(
                 0,
             )]
         }
+        // docs/events_todo.md, 224.
+        Action::BeamFromTheWater => match memory.shore_toward_target(3.0) {
+            Some(p) => vec![(
+                Command::GuardianBeam {
+                    id: ids(),
+                    player: target,
+                    from: [p[0], p[1] + 0.2, p[2]],
+                    seconds: 3.0,
+                },
+                0,
+            )],
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -19662,6 +19676,17 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Fangs { from, .. }, 0)] if from[2] == 0.5 + FANGS_FROM && from[0] == 0.5),
             "facing +z, the line from ahead: {made:?}"
+        );
+    }
+
+    #[test]
+    fn beam_from_the_water_charges_from_the_shore_on_their_side() {
+        let memory = rich_memory();
+        let event = find("beam_from_the_water").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GuardianBeam { seconds, .. }, 0)] if *seconds < 4.0),
+            "{made:?}"
         );
     }
 }

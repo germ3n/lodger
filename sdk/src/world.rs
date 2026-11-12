@@ -704,6 +704,15 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_false")]
         beside: bool,
     },
+    /// A guardian's beam from `from`, in water, to `player`, on their screen alone: it charges,
+    /// with its sound, for `seconds` (three and a half at most, short of a guardian's charge),
+    /// and is gone; there is no guardian in the world, so it never fires. ABI 56.
+    GuardianBeam {
+        id: u64,
+        player: u32,
+        from: Pos,
+        seconds: f32,
+    },
     /// Evoker fangs on `player`'s screen alone, a line from `from` straight toward them, one
     /// every block and a quarter snapping up in turn with its sound, the last a block and a half
     /// short of them; there is nothing in the world to bite anyone. ABI 56.
@@ -1616,6 +1625,7 @@ impl Command {
             | Command::GhostBlock { id, .. }
             | Command::DropBlock { id, .. }
             | Command::Fangs { id, .. }
+            | Command::GuardianBeam { id, .. }
             | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }

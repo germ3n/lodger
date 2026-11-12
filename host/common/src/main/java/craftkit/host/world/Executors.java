@@ -163,6 +163,19 @@ public final class Executors {
 				}
 				case "ghost_block" -> ghostBlock(level, command, id, context);
 				case "drop_block" -> dropBlock(level, command, id);
+				case "guardian_beam" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					JsonArray f = command.getAsJsonArray("from");
+					Vec3 from = new Vec3(f.get(0).getAsDouble(), f.get(1).getAsDouble(), f.get(2).getAsDouble());
+					if (!level.getFluidState(BlockPos.containing(from)).is(net.minecraft.tags.FluidTags.WATER)) {
+						yield report(id, false, "no water there");
+					}
+					boolean shown = context.figures().fakeBeam(player, from, command.get("seconds").getAsFloat(), context.later());
+					yield report(id, shown, shown ? "" : "the beam could not be drawn");
+				}
 				case "fangs" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
