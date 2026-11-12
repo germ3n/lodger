@@ -243,7 +243,7 @@ things, and on the screen. Not built yet.
 | 184 | `lava_in_the_wall` | 4 | **Built.** From inside a stone wall of theirs, the pop and gloop of lava; the wall is cold. | Indoors or underground, stone walls of theirs. | `sound` (lava pop) at a stone wall block. | S |
 | 185 | `crossbow_click` | 4 | **Built.** Behind them, the click of a crossbow being loaded; nothing follows. | The target awake. | `sound` (crossbow loading end) behind them. | S |
 | 186 | `blow_on_the_shield` | 4 | With their shield raised, a hit lands on it, the block's sound and a shove back; nothing is there. | Holding a shield up. | The use trigger; `sound` (shield block) and a small push. | S |
-| 187 | `teleport_beside` | 4 | Twice, the warp of a chorus fruit right beside them, as if something kept stepping closer. | The target awake. | `sound` (chorus fruit teleport) beside them, then nearer. | S |
+| 187 | `teleport_beside` | 4 | **Built.** Twice, the warp of a chorus fruit right beside them, as if something kept stepping closer. | The target awake. | `sound` (chorus fruit teleport) beside them, then nearer. | S |
 | 188 | `sweeping_next_room` | 3 | From the next room, the soft strokes of a brush sweeping, as at a dig; it stops when they come in. | Indoors, a home of more than one room. | `sound` (brush) at a room's anchor, stopped as they near. | S |
 | 189 | `pot_shatters` | 3 | In the house, a decorated pot shatters loudly; nothing of theirs is broken. | Indoors. | `sound` (decorated pot shatter) in another part of the house. | S |
 | 190 | `spyglass_figure` | 4 | Looking through a spyglass, far off on the horizon, the figure looks back; lower it and it is not there. | Using a spyglass outdoors. | A client hint: the figure drawn only while they scope. | M |

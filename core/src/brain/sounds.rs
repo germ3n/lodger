@@ -1382,6 +1382,40 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 187.
+        "teleport_beside" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:item.chorus_fruit.teleport", 0),
+                        ("minecraft:item.chorus_fruit.teleport", 30),
+                    ],
+                    (0.9, 1.0),
+                    0.8,
+                    Closer,
+                ),
+                v(
+                    &[
+                        ("minecraft:item.chorus_fruit.teleport", 0),
+                        ("minecraft:item.chorus_fruit.teleport", 20),
+                    ],
+                    (0.85, 0.95),
+                    0.8,
+                    Closer,
+                ),
+                v(
+                    &[
+                        ("minecraft:item.chorus_fruit.teleport", 0),
+                        ("minecraft:item.chorus_fruit.teleport", 25),
+                        ("minecraft:item.chorus_fruit.teleport", 45),
+                    ],
+                    (0.9, 1.0),
+                    0.7,
+                    Closer,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2368,6 +2402,7 @@ mod tests {
             "wings_in_the_room",
             "lava_in_the_wall",
             "crossbow_click",
+            "teleport_beside",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",
