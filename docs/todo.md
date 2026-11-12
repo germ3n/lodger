@@ -2189,6 +2189,9 @@ The `[x]` lines above, summed up by day:
   for good; the pillar went on rising, a block a night as it should, three hundred blocks off by the
   old home, and the one by the new home never began. Tests: one in `memory`.
 
+- [x] **Sniffing** (`docs/events_todo.md`, 122): `sniffing`, stages 4 and 5, at night outdoors: sniffing behind them, nearer or moving off. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

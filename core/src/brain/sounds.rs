@@ -295,6 +295,43 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 122.
+        "sniffing" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.sniffer.sniffing", 0),
+                        ("minecraft:entity.sniffer.sniffing", 25),
+                        ("minecraft:entity.sniffer.sniffing", 50),
+                    ],
+                    (0.8, 0.9),
+                    0.7,
+                    Behind,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.sniffer.sniffing", 0),
+                        ("minecraft:entity.sniffer.sniffing", 20),
+                        ("minecraft:entity.sniffer.sniffing", 40),
+                        ("minecraft:entity.sniffer.sniffing", 60),
+                    ],
+                    (0.7, 0.8),
+                    0.6,
+                    Closer,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.sniffer.searching", 0),
+                        ("minecraft:entity.sniffer.searching", 25),
+                        ("minecraft:entity.sniffer.searching", 50),
+                    ],
+                    (0.8, 0.9),
+                    0.6,
+                    Away,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1258,6 +1295,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "sniffing",
             "rain_on_the_roof",
             "breath_in_the_chest",
             "armour_behind",
