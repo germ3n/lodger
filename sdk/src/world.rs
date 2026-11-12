@@ -680,6 +680,15 @@ pub enum Command {
         block: String,
         kept: String,
     },
+    /// The game's breaking cracks over the block at `pos` on `player`'s client alone, at `stage`
+    /// (0, the first, to 9, nearly broken; below 0, gone); the block itself is never touched.
+    /// ABI 55.
+    CrackBlock {
+        id: u64,
+        player: u32,
+        pos: BlockPos,
+        stage: i32,
+    },
     /// The big dripleaves near `player` (ten blocks), up to six, tipped one after another from
     /// the farthest in, as if something walked across them toward them, each with its sound, and
     /// up again a moment on; refused when there are none. ABI 55.
@@ -1564,6 +1573,7 @@ impl Command {
             | Command::BossBar { id, .. }
             | Command::KeepIn { id, .. }
             | Command::TipDripleaves { id, .. }
+            | Command::CrackBlock { id, .. }
             | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }

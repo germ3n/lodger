@@ -452,6 +452,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LootGift
         | Action::Hint(_, _)
         | Action::BossBarIt
+        | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
         | Action::RefuseRest
@@ -7664,6 +7665,47 @@ pub fn commands(
                 )
             })
             .collect(),
+        // The wall block of theirs nearest them (indoors at home, the room's own), cracking a stage
+        // each half second to nearly broken,
+        // as if something broke it from the other side, held a moment, then the cracks gone; the
+        // wall itself never touched.
+        Action::CracksInTheWall => {
+            let at = block_of(memory.last.pos);
+            let wall = memory
+                .walls
+                .iter()
+                .filter(|(_, id)| is_wall_block(id))
+                .min_by(|a, b| distance(a.0, at).total_cmp(&distance(b.0, at)))
+                .map(|(p, _)| *p);
+            match wall {
+                Some(p) => {
+                    let mut made: Vec<(Command, u64)> = (0..10)
+                        .map(|stage| {
+                            (
+                                Command::CrackBlock {
+                                    id: ids(),
+                                    player: target,
+                                    pos: p,
+                                    stage,
+                                },
+                                stage as u64 * 10,
+                            )
+                        })
+                        .collect();
+                    made.push((
+                        Command::CrackBlock {
+                            id: ids(),
+                            player: target,
+                            pos: p,
+                            stage: -1,
+                        },
+                        130,
+                    ));
+                    made
+                }
+                None => vec![],
+            }
+        }
         // The dripleaves near them, the host finds them: tipped toward them one after another.
         Action::DripleafSteps => vec![(
             Command::TipDripleaves {
@@ -18370,6 +18412,40 @@ mod tests {
             matches!(&made[0].0, Command::SetBlock { block, pos, state, .. } if block == "minecraft:sculk_vein" && *pos == [5, 61, 0] && state == "east=true"),
             "the basement's wall first, on its face: {:?}",
             made[0].0
+        );
+    }
+
+    #[test]
+    fn cracks_spread_over_their_wall_and_vanish_leaving_it_whole() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [4.5, 64.0, 4.5];
+        let event = find("cracks_in_the_wall").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let stages: Vec<i32> = made
+            .iter()
+            .map(|(c, _)| match c {
+                Command::CrackBlock { stage, pos, .. } if *pos == [5, 65, 5] => *stage,
+                other => panic!("{other:?}"),
+            })
+            .collect();
+        assert_eq!(
+            stages,
+            (0..10).chain([-1]).collect::<Vec<_>>(),
+            "the wall block nearest, up to nearly broken, then gone"
+        );
+        assert!(made.windows(2).all(|w| w[0].1 < w[1].1));
+        assert!(
+            made.iter()
+                .all(|(c, _)| !matches!(c, Command::SetBlock { .. } | Command::BreakBlock { .. })),
+            "the wall untouched"
         );
     }
 }

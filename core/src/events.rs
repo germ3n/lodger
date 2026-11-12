@@ -1139,6 +1139,8 @@ pub enum Action {
     AxolotlsPlayDead,
     /// Sculk veins over the walls of their house low down, more each night.
     SculkCreeps,
+    /// Cracks spreading over a block of their wall, as if broken from the other side, then gone.
+    CracksInTheWall,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -6985,6 +6987,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SculkCreeps,
         false,
     ),
+    // docs/events_todo.md, 205: cracks spread over a block of their wall, then vanish.
+    row(
+        "cracks_in_the_wall",
+        4,
+        5,
+        &[Home, Walls, TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::CracksInTheWall,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7574,7 +7588,10 @@ impl Event {
             | Action::SplashDark
             | Action::DoorCloud
             | Action::Charge(..) => "seen",
-            Action::Hint(_, _) | Action::GhastName | Action::BossBarIt => "sky",
+            Action::Hint(_, _)
+            | Action::GhastName
+            | Action::BossBarIt
+            | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway => "house",
             Action::HandOnShoulder => "seen",
@@ -8089,6 +8106,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
             "dripleaf_steps" => "tip the dripleaves near them as if walked across",

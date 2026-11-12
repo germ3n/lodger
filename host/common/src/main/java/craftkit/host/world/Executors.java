@@ -149,6 +149,18 @@ public final class Executors {
 				}
 				case "turn_torches" -> turnTorches(level, command, id);
 				case "keep_in" -> keepIn(level, command, id, data);
+				case "crack_block" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					// The game's own breaking cracks, on their client alone (ABI 55): the stage 0 to 9,
+					// below 0 the cracks gone; the block itself never touched.
+					int stage = command.get("stage").getAsInt();
+					player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket(CRACKS_ID,
+							blockPos(command.getAsJsonArray("pos")), stage < 0 ? -1 : Math.min(9, stage)));
+					yield report(id, true, "");
+				}
 				case "tip_dripleaves" -> tipDripleaves(level, command, id, context);
 				case "boss_bar" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
@@ -3018,6 +3030,9 @@ public final class Executors {
 			level.playSound(null, pos, sound, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 0.9f);
 		}
 	}
+
+	/** Whose cracks `crack_block`'s are, to the client: a number no entity has. */
+	private static final int CRACKS_ID = -0x4C4F4449;
 
 	/** What `keep_in` may hold a kept stack in. */
 	private static final List<String> KEEPERS = List.of("minecraft:suspicious_sand", "minecraft:decorated_pot");

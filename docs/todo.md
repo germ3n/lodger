@@ -2597,6 +2597,10 @@ The `[x]` lines above, summed up by day:
   asleep: sculk veins on their lowest walls, stuck to each wall's face, two more each night to
   twelve. Tests: one in `act`. Was: no such event.
 
+- [x] **Cracks in the wall** (`docs/events_todo.md`, 205): `cracks_in_the_wall`, stages 4 and 5,
+  indoors: the game's breaking cracks over the wall block nearest them, a stage each half second,
+  then gone, the wall untouched (`crack_block`, ABI 55). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

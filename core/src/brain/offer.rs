@@ -302,6 +302,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         // on their client alone, glitches too.
         Action::Hint(_, _)
         | Action::BossBarIt
+        | Action::CracksInTheWall
         | Action::GhastName
         | Action::LostHour
         | Action::SoundWarp
@@ -400,6 +401,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::HandOnShoulder => Some("sound"),
         Action::Hint(_, _)
         | Action::BossBarIt
+        | Action::CracksInTheWall
         | Action::SoundWarp
         | Action::CreeperBehind
         | Action::PrintsAroundTheHouse => Some("screen"),
