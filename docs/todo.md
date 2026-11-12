@@ -2429,8 +2429,9 @@ The `[x]` lines above, summed up by day:
   `granite4-micro` (IBM's Granite 4.0 Micro) and `granite4-tiny` (IBM's Granite 4.0 H Tiny, 7B,
   about 1B at work a word), both from IBM's own repositories, Apache-2.0; each file's length and
   SHA-256 from Hugging Face, each architecture checked in the vendored llama.cpp. Phi-4 has no
-  7-8B. In the preparing screen's choices, smallest first, the settings, the docs. Not measured on
-  the harness yet (each is a download). Tests: in `config` and the crate's; the counts of sizes, 6
+  7-8B. In the preparing screen's choices, smallest first, the settings, the docs. Phi-4 mini and
+  Granite Micro measured against the two Qwens (owner's pick; [Model](model.md#scoring)): the
+  Qwen3 4B still the best reader; neither the default. Granite H Tiny not measured (a download). Tests: in `config` and the crate's; the counts of sizes, 6
   to 9, and the labels looked up by name, not place (owner told).
 
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or

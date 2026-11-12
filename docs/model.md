@@ -205,6 +205,25 @@ frame says nothing it does yet could not be explained away. With `mixed` the fra
 sentence tells too: the 4B picked the loud events in all six late-stage asks under it, in three
 under the old frame.
 
+**Against the other makers** (the owner's pick of models to measure: Phi-4 mini and Granite
+Micro, against the two Qwens; all under `mixed`, the new frame, on the GPU, each file checked by its
+SHA-256 first):
+
+| | Qwen2.5 1.5B | Qwen3 4B | Phi-4 mini | Granite 4.0 Micro |
+| --- | --- | --- | --- | --- |
+| Fits of 18, the catalogue's words | 6 | 12 | 6 | 6 |
+| Fits of 18, short words | 3 | 12 | 12 | 9 |
+| Obvious `When?` right | 2 of 2 | 2 of 2 | 0 of 2 | 0 of 2 |
+| Late-stage menus, the loud events picked | 6 of 6 | 6 of 6 | 6 of 6 | 1 to 2 of 6 |
+| Five days: decisions, events landed | 120, 51 | 92, 54 | 95, 40 | 84, 45 |
+
+The Qwen3 4B is the best of them: the only one that fits the situation most of the time with the
+catalogue's own words and reads every obvious answer. Phi-4 mini fits as well with short words,
+not with the catalogue's, misreads the obvious answers, and waits through the first stage (22 of
+its 22 picks) and most of the second before it builds. Granite Micro builds sensibly over five
+days but misreads the obvious answers and seldom takes the loud events late. Both stay offered;
+neither is the default.
+
 The unit tests of the pure parts (softmax, log-softmax, the winner, the validation of empty
 situations and choices) are the engine's, moved. The scoring itself is tested against the real
 model only in the ignored `model::` tests, which need the file (see
