@@ -1145,6 +1145,8 @@ pub enum Action {
     AnchorCharged,
     /// Pointed dripstone falling from the ceiling right beside them, shattering; it never hits.
     DripstoneFalls,
+    /// A wither rose in one of their flower pots as they wake, on their screen alone a while.
+    WitherRoseInPot,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7027,6 +7029,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::DripstoneFalls,
         false,
     ),
+    // docs/events_todo.md, 208: a wither rose in one of their pots in the morning.
+    row(
+        "wither_rose_in_pot",
+        4,
+        5,
+        &[Fixture("flower_pot"), JustWoke],
+        3.0,
+        2,
+        Half,
+        Action::WitherRoseInPot,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7617,6 +7631,7 @@ impl Event {
             | Action::DoorCloud
             | Action::AnchorCharged
             | Action::DripstoneFalls
+            | Action::WitherRoseInPot
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8138,6 +8153,7 @@ impl Event {
             "static" => "cover their screen in static a moment",
             "anchor_charged" => "show a charged respawn anchor at its place",
             "dripstone_falls" => "drop pointed dripstone from the ceiling beside them",
+            "wither_rose_in_pot" => "put a wither rose in one of their flower pots",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

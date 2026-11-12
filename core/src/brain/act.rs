@@ -105,6 +105,9 @@ fn craftkit_yaw(dx: f64, dz: f64) -> f32 {
 /// A body lying with its arms out, its head at the spot: the cells its shape takes off the snow.
 const SNOW_BODY: &[[i32; 2]] = &[[0, 0], [0, 1], [0, 2], [-1, 1], [1, 1], [-1, 3], [1, 3]];
 
+/// How long `wither_rose_in_pot`'s rose shows, ticks: ten minutes of their morning.
+const ROSE_SHOWN_TICKS: u64 = 12_000;
+
 /// How long `anchor_charged`'s anchor shows, ticks: five minutes of the night.
 const ANCHOR_SHOWN_TICKS: u64 = 6000;
 
@@ -449,6 +452,13 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "anchor_charged" {
         return spot(memory, rng);
     }
+    // One of their flower pots holds the wither rose.
+    if event.id == "wither_rose_in_pot" {
+        return {
+            let pots: Vec<BlockPos> = memory.fixtures("flower_pot").map(|f| f.pos).collect();
+            (!pots.is_empty()).then(|| pots[(rng.next_u64() % pots.len() as u64) as usize])
+        };
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -465,6 +475,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BossBarIt
         | Action::AnchorCharged
         | Action::DripstoneFalls
+        | Action::WitherRoseInPot
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7793,6 +7804,33 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 208.
+        Action::WitherRoseInPot => pos
+            .map(|p| {
+                vec![
+                    (
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: p,
+                            block: "minecraft:potted_wither_rose".to_string(),
+                            state: String::new(),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: p,
+                            block: String::new(),
+                            state: String::new(),
+                        },
+                        ROSE_SHOWN_TICKS,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -18618,6 +18656,26 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::DropBlock { pos, block, state, beside: true, .. }, 0)] if *pos == [3, 20, 4] && block == "minecraft:pointed_dripstone" && state.contains("vertical_direction=down")),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn wither_rose_in_pot_shows_in_one_of_their_pots_a_while() {
+        let mut memory = rich_memory();
+        memory.fixtures.push(crate::memory::Fixture {
+            kind: "flower_pot".to_string(),
+            pos: [4, 65, 2],
+        });
+        let event = find("wither_rose_in_pot").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert!(
+            memory.fixtures("flower_pot").any(|f| Some(f.pos) == pos),
+            "{pos:?}"
+        );
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostBlock { block, .. }, 0), (Command::GhostBlock { block: back, .. }, ROSE_SHOWN_TICKS)] if block == "minecraft:potted_wither_rose" && back.is_empty()),
             "{made:?}"
         );
     }
