@@ -5366,6 +5366,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:item.armor.equip_iron"),
         false,
     ),
+    // docs/events_todo.md, 120.
+    row(
+        "breath_in_the_chest",
+        3,
+        5,
+        &[UsedContainer, TargetIndoors],
+        2.0,
+        3,
+        Full,
+        Action::Sound("minecraft:entity.player.breath"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6519,6 +6531,7 @@ impl Event {
             "scream_indoors" => "scream like a goat from another room of their house",
             "item_break_behind" => "snap a tool right behind them",
             "armour_behind" => "clank like armour walking behind them",
+            "breath_in_the_chest" => "breathe from inside the chest they use",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
