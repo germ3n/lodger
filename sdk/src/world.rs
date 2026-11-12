@@ -706,6 +706,16 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_false")]
         beside: bool,
     },
+    /// An item lying at `pos` on `player`'s screen alone (a y below -1000 counted from the
+    /// ground, its fraction kept): nothing in the world, so never theirs to pick up; gone when
+    /// they come within two blocks of it, or after `seconds` (ten minutes at most). ABI 56.
+    GhostItem {
+        id: u64,
+        player: u32,
+        pos: Pos,
+        item: String,
+        seconds: f32,
+    },
     /// A guardian's beam from `from`, in water, to `player`, on their screen alone: it charges,
     /// with its sound, for `seconds` (three and a half at most, short of a guardian's charge),
     /// and is gone; there is no guardian in the world, so it never fires. ABI 56.
@@ -1659,6 +1669,7 @@ impl Command {
             | Command::DropBlock { id, .. }
             | Command::Fangs { id, .. }
             | Command::GuardianBeam { id, .. }
+            | Command::GhostItem { id, .. }
             | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }

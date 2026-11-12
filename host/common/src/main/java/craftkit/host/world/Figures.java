@@ -714,6 +714,43 @@ public final class Figures {
 		return true;
 	}
 
+	/**
+	 * An item lying at {@code at} on {@code player}'s screen alone (ABI 56): never theirs to pick
+	 * up, there being nothing in the world; gone when they come within two blocks of it, or after
+	 * {@code seconds}.
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean fakeItem(ServerPlayer player, Vec3 at, ItemStack stack, float seconds, Later later) {
+		int entityId = nextId++;
+		try {
+			var item = net.minecraft.world.entity.item.ItemEntity.class.getDeclaredField("DATA_ITEM");
+			item.setAccessible(true);
+			player.connection.send(new ClientboundAddEntityPacket(entityId, UUID.randomUUID(), at.x, at.y, at.z, 0, 0,
+					net.minecraft.world.entity.EntityTypes.ITEM, 0, Vec3.ZERO, 0));
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(entityId, List.of(
+					net.minecraft.network.syncher.SynchedEntityData.DataValue.create(
+							(net.minecraft.network.syncher.EntityDataAccessor<ItemStack>) item.get(null), stack))));
+		} catch (ReflectiveOperationException e) {
+			return false;
+		}
+		boolean[] gone = {false};
+		Runnable remove = () -> {
+			if (!gone[0]) {
+				gone[0] = true;
+				player.connection.send(new ClientboundRemoveEntitiesPacket(entityId));
+			}
+		};
+		for (int s = 1; s < seconds; s++) {
+			later.at(s, () -> {
+				if (!gone[0] && player.position().distanceTo(at) < 2) {
+					remove.run();
+				}
+			});
+		}
+		later.at(seconds, remove);
+		return true;
+	}
+
 	/** The longest a beam shown stays: short of a guardian's four-second charge. */
 	private static final float BEAM_MOST_SECONDS = 3.5f;
 

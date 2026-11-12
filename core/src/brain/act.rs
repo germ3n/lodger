@@ -738,6 +738,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::GolemStatueTurns
         | Action::ShelfShuffled
         | Action::FirefliesGoOut
+        | Action::TrialKeyLeft
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8787,6 +8788,27 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 233.
+        Action::TrialKeyLeft => match (memory.usual_door(), memory.home.as_ref()) {
+            (Some(door), Some(home)) => {
+                let step = out_of_door(memory, home.center, door);
+                vec![(
+                    Command::GhostItem {
+                        id: ids(),
+                        player: target,
+                        pos: [
+                            (door[0] + step[0]) as f64 + 0.5,
+                            (GROUND_Y + 1) as f64,
+                            (door[2] + step[1]) as f64 + 0.5,
+                        ],
+                        item: "minecraft:trial_key".to_string(),
+                        seconds: 600.0,
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20090,6 +20112,19 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::GhostNear { of, block, in_turn: true, .. }, 0)] if of == "minecraft:firefly_bush" && block == "minecraft:bush"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn trial_key_left_lies_on_their_step_on_their_screen_alone() {
+        let memory = rich_memory();
+        let door = memory.usual_door().unwrap();
+        let step = out_of_door(&memory, memory.home.as_ref().unwrap().center, door);
+        let event = find("trial_key_left").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostItem { item, pos, .. }, 0)] if item == "minecraft:trial_key" && pos[0] == (door[0] + step[0]) as f64 + 0.5 && pos[1] == (GROUND_Y + 1) as f64),
             "{made:?}"
         );
     }

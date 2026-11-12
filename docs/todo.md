@@ -2796,6 +2796,11 @@ The `[x]` lines above, summed up by day:
   bushes, the farthest first a quarter second apart, twenty seconds (`ghost_near`'s `in_turn`, ABI
   56). Tests: one in `act`. Was: no such event.
 
+- [x] **A trial key left** (`docs/events_todo.md`, 233): `trial_key_left`, stages 3 to 5, as they
+  wake: a trial key shown to their client alone lying on the step outside the door they use, gone
+  when they come within two blocks or ten minutes on (`ghost_item`, ABI 56: an item entity on one
+  player's screen, nothing in the world). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

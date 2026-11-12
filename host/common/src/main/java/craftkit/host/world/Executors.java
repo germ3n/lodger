@@ -165,6 +165,25 @@ public final class Executors {
 				case "ghost_near" -> ghostNear(level, command, id, context);
 				case "rotate_slots" -> rotateSlots(level, command, id);
 				case "drop_block" -> dropBlock(level, command, id);
+				case "ghost_item" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					Optional<Holder.Reference<net.minecraft.world.item.Item>> item = BuiltInRegistries.ITEM.get(Identifier.parse(command.get("item").getAsString()));
+					if (item.isEmpty()) {
+						yield report(id, false, "no such item");
+					}
+					JsonArray g = command.getAsJsonArray("pos");
+					BlockPos cell = onGround(level, BlockPos.containing(g.get(0).getAsDouble(), g.get(1).getAsDouble(), g.get(2).getAsDouble()));
+					if (cell == null) {
+						yield report(id, false, "the place is not loaded");
+					}
+					Vec3 at = new Vec3(g.get(0).getAsDouble(), cell.getY() + (g.get(1).getAsDouble() - Math.floor(g.get(1).getAsDouble())), g.get(2).getAsDouble());
+					float seconds = Math.min(600, command.get("seconds").getAsFloat());
+					boolean shown = context.figures().fakeItem(player, at, new ItemStack(item.get().value()), seconds, context.later());
+					yield report(id, shown, shown ? "" : "the item could not be shown");
+				}
 				case "guardian_beam" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

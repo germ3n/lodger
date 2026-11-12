@@ -1198,6 +1198,8 @@ pub enum Action {
     ShelfShuffled,
     /// At night, the firefly bushes near them going dark one by one toward them, as if something passed.
     FirefliesGoOut,
+    /// A trial key lying on their doorstep in the morning, on their screen alone: gone as they reach for it.
+    TrialKeyLeft,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7389,6 +7391,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FirefliesGoOut,
         false,
     ),
+    // docs/events_todo.md, 233: a trial key lies on their doorstep in the morning.
+    row(
+        "trial_key_left",
+        3,
+        5,
+        &[Home, Door, JustWoke],
+        3.0,
+        1,
+        Half,
+        Action::TrialKeyLeft,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8000,6 +8014,7 @@ impl Event {
             | Action::EyeblossomsOpen
             | Action::GolemStatueTurns
             | Action::FirefliesGoOut
+            | Action::TrialKeyLeft
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8550,6 +8565,7 @@ impl Event {
             "golem_statue_turns" => "stand a copper golem statue by their door that turns to them",
             "shelf_shuffled" => "shuffle the things on their shelf",
             "fireflies_go_out" => "put out the fireflies near them one by one",
+            "trial_key_left" => "leave a trial key on their doorstep",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
