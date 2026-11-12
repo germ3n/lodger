@@ -359,6 +359,38 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 124.
+        "water_where_none" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.player.swim", 0),
+                        ("minecraft:entity.player.swim", 12),
+                        ("minecraft:entity.player.swim", 24),
+                    ],
+                    (0.8, 0.9),
+                    0.6,
+                    Beside,
+                ),
+                v(
+                    &[("minecraft:entity.generic.splash", 0)],
+                    (0.8, 0.9),
+                    0.7,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.water.ambient", 0),
+                        ("minecraft:block.water.ambient", 30),
+                        ("minecraft:block.water.ambient", 60),
+                    ],
+                    (0.9, 1.0),
+                    0.6,
+                    Below,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1322,6 +1354,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "water_where_none",
             "gasp_when_turning",
             "sniffing",
             "rain_on_the_roof",

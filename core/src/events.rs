@@ -5414,6 +5414,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.player.breath"),
         false,
     ),
+    // docs/events_todo.md, 124.
+    row(
+        "water_where_none",
+        3,
+        5,
+        &[TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.player.swim"),
+        true,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6571,6 +6583,7 @@ impl Event {
             "rain_on_the_roof" => "drum rain on their roof under a clear sky",
             "sniffing" => "sniff after them in the dark",
             "gasp_when_turning" => "gasp behind them, as if startled",
+            "water_where_none" => "splash water in a dry corner of their house",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

@@ -2195,6 +2195,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A gasp behind them** (`docs/events_todo.md`, 123): `gasp_when_turning`, stages 4 and 5, walking at night: a sharp breath in behind them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Water where there is none** (`docs/events_todo.md`, 124): `water_where_none`, stages 3 to 5, indoors: swimming and splashes beside them, water under the floor. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
