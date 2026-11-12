@@ -2174,6 +2174,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A tool snaps behind them** (`docs/events_todo.md`, 118): `item_break_behind`, stages 3 to 5: a tool's break heard behind them, nothing broken. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Armour behind them** (`docs/events_todo.md`, 119): `armour_behind`, stages 4 and 5, walking at night: armour's clanks a few steps behind. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

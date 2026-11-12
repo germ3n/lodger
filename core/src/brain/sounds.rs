@@ -149,6 +149,50 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 119.
+        "armour_behind" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:item.armor.equip_iron", 0),
+                        ("minecraft:item.armor.equip_iron", 9),
+                        ("minecraft:item.armor.equip_iron", 18),
+                        ("minecraft:item.armor.equip_iron", 27),
+                        ("minecraft:item.armor.equip_iron", 36),
+                        ("minecraft:item.armor.equip_iron", 45),
+                    ],
+                    (0.7, 0.8),
+                    0.5,
+                    Behind,
+                ),
+                v(
+                    &[
+                        ("minecraft:item.armor.equip_chain", 0),
+                        ("minecraft:item.armor.equip_chain", 9),
+                        ("minecraft:item.armor.equip_chain", 18),
+                        ("minecraft:item.armor.equip_chain", 27),
+                        ("minecraft:item.armor.equip_chain", 36),
+                        ("minecraft:item.armor.equip_chain", 45),
+                    ],
+                    (0.7, 0.8),
+                    0.5,
+                    Behind,
+                ),
+                v(
+                    &[
+                        ("minecraft:item.armor.equip_netherite", 0),
+                        ("minecraft:item.armor.equip_netherite", 10),
+                        ("minecraft:item.armor.equip_netherite", 20),
+                        ("minecraft:item.armor.equip_netherite", 30),
+                        ("minecraft:item.armor.equip_netherite", 40),
+                    ],
+                    (0.6, 0.7),
+                    0.5,
+                    Behind,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1111,6 +1155,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "armour_behind",
             "item_break_behind",
             "scream_indoors",
             "breathing_in_the_wall",
