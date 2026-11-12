@@ -2943,6 +2943,11 @@ The `[x]` lines above, summed up by day:
   seconds of red petals (the game's tinted falling leaves) round them on their client (the
   `red_petals` hint; off with the glitches). Tests: one in `act`. Was: no such event.
 
+- [x] **A sculk trail** (`docs/events_todo.md`, 264): `sculk_trail`, stage 5, indoors: thirty
+  seconds of sculk charge particles along the floor from the door to their bed on their client (the
+  `sculk_trail` hint, drawn as `red_trail`'s line; off with the glitches). Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -21137,4 +21137,20 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn sculk_trail_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("sculk_trail").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "sculk_trail" && *seconds == 30.0),
+            "{made:?}"
+        );
+        let home = memory.home.as_ref().unwrap();
+        let bed = home.bed.unwrap();
+        assert!(
+            matches!(&made[0].0, Command::Hint { pos, detail, .. } if *pos == home.doors.first().copied() && *detail == format!("{},{},{}", bed[0], bed[1], bed[2]))
+        );
+    }
 }
