@@ -149,6 +149,7 @@ public final class Executors {
 				}
 				case "turn_torches" -> turnTorches(level, command, id);
 				case "keep_in" -> keepIn(level, command, id, data);
+				case "tip_dripleaves" -> tipDripleaves(level, command, id, context);
 				case "boss_bar" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -2976,6 +2977,46 @@ public final class Executors {
 		}
 
 		return report(id, placed > 0, "base " + y + " placed " + placed);
+	}
+
+	/**
+	 * The big dripleaves near a player, up to six, tipped one after another from the farthest in,
+	 * as if something walked across them toward them, each with its sound, and up again a moment
+	 * on (ABI 55). Refused when there are none within ten blocks.
+	 */
+	private static JsonObject tipDripleaves(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		BlockPos at = player.blockPosition();
+		List<BlockPos> leaves = new ArrayList<>();
+		for (BlockPos pos : BlockPos.betweenClosed(at.offset(-10, -4, -10), at.offset(10, 4, 10))) {
+			if (level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof net.minecraft.world.level.block.BigDripleafBlock) {
+				leaves.add(pos.immutable());
+			}
+		}
+		if (leaves.isEmpty()) {
+			return report(id, false, "no big dripleaf near");
+		}
+		List<double[]> points = leaves.stream().map(p -> new double[] {p.getX() + 0.5, p.getZ() + 0.5}).toList();
+		List<Integer> order = Toward.order(points, player.getX(), player.getZ(), 6);
+		for (int k = 0; k < order.size(); k++) {
+			BlockPos leaf = leaves.get(order.get(k));
+			context.later().at(k * 0.4f, () -> setTilt(level, leaf, net.minecraft.world.level.block.state.properties.Tilt.FULL, net.minecraft.sounds.SoundEvents.BIG_DRIPLEAF_TILT_DOWN));
+			context.later().at(k * 0.4f + 1.5f, () -> setTilt(level, leaf, net.minecraft.world.level.block.state.properties.Tilt.NONE, net.minecraft.sounds.SoundEvents.BIG_DRIPLEAF_TILT_UP));
+		}
+
+		return report(id, true, "tipped " + order.size());
+	}
+
+	private static void setTilt(ServerLevel level, BlockPos pos, net.minecraft.world.level.block.state.properties.Tilt to, net.minecraft.sounds.SoundEvent sound) {
+		BlockState state = level.getBlockState(pos);
+		var tilt = net.minecraft.world.level.block.state.properties.BlockStateProperties.TILT;
+		if (state.getBlock() instanceof net.minecraft.world.level.block.BigDripleafBlock && state.hasProperty(tilt)) {
+			level.setBlock(pos, state.setValue(tilt, to), Block.UPDATE_CLIENTS);
+			level.playSound(null, pos, sound, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 0.9f);
+		}
 	}
 
 	/** What `keep_in` may hold a kept stack in. */

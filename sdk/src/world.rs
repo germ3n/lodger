@@ -680,6 +680,13 @@ pub enum Command {
         block: String,
         kept: String,
     },
+    /// The big dripleaves near `player` (ten blocks), up to six, tipped one after another from
+    /// the farthest in, as if something walked across them toward them, each with its sound, and
+    /// up again a moment on; refused when there are none. ABI 55.
+    TipDripleaves {
+        id: u64,
+        player: u32,
+    },
     /// A boss bar named `name` at the top of `player`'s screen alone, filling from empty over
     /// `seconds` (ninety at most), then gone. ABI 55.
     BossBar {
@@ -1556,6 +1563,7 @@ impl Command {
             | Command::TurnTorches { id, .. }
             | Command::BossBar { id, .. }
             | Command::KeepIn { id, .. }
+            | Command::TipDripleaves { id, .. }
             | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }

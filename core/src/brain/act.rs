@@ -452,6 +452,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LootGift
         | Action::Hint(_, _)
         | Action::BossBarIt
+        | Action::DripleafSteps
         | Action::RefuseRest
         | Action::Stare
         | Action::SoundAtTarget(_)
@@ -7640,6 +7641,14 @@ pub fn commands(
             }
             None => vec![],
         },
+        // The dripleaves near them, the host finds them: tipped toward them one after another.
+        Action::DripleafSteps => vec![(
+            Command::TipDripleaves {
+                id: ids(),
+                player: target,
+            },
+            0,
+        )],
         // At the top of their screen, a boss bar reading only "it", filling over a minute.
         Action::BossBarIt => vec![(
             Command::BossBar {
@@ -18234,6 +18243,25 @@ mod tests {
         let want = format!("{},{},{}", door[0], door[1], door[2]);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, pos: Some(p), detail, .. }, 0)] if hint == "prints_on_the_ceiling" && *p == bed && *detail == want),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn the_dripleaves_near_them_are_tipped_one_after_another() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("dripleaf_steps").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::TipDripleaves { .. }, 0)]),
             "{made:?}"
         );
     }

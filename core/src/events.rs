@@ -1133,6 +1133,8 @@ pub enum Action {
     PaleMossCreeps,
     /// One window of theirs tinted black a day: from inside, the night is black.
     WindowTinted,
+    /// The big dripleaves near them tipped one after another, as if walked across.
+    DripleafSteps,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -6943,6 +6945,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("prints_on_the_ceiling", 60.0),
         false,
     ),
+    // docs/events_todo.md, 202: the big dripleaves near them tip one after another toward them.
+    row(
+        "dripleaf_steps",
+        3,
+        5,
+        &[TargetOutdoors, TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::DripleafSteps,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7326,6 +7340,7 @@ impl Event {
             | Action::StairsToNowhere
             | Action::PaleMossCreeps
             | Action::WindowTinted
+            | Action::DripleafSteps
             | Action::KeepIn(_)
             | Action::FaceInTheCanopy
             | Action::BootsAtTheDoor
@@ -8044,6 +8059,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "dripleaf_steps" => "tip the dripleaves near them as if walked across",
             "prints_on_the_ceiling" => "walk dark footprints across their ceiling to the bed",
             "window_tinted" => "tint one of their windows black for a day",
             "happy_ghast_overhead" => "ride a happy ghast over their house",
