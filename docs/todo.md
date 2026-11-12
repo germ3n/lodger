@@ -2149,6 +2149,10 @@ The `[x]` lines above, summed up by day:
   (`host/gradle.properties`, `sdk/Cargo.toml`) at 0.1.1, the lodger needing craftkit 0.1.1 or later
   (ABI 54). Was: 0.1.0.
 
+- [x] **The mod's build finds the host jar of its version** (`mod/build.gradle`): the craftkit jar
+  of `craftkit_version`, so an older one left in `host/*/build/libs` after a version moves is
+  passed over. Was: the build stopped with "more than one file" until the old jar was removed.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

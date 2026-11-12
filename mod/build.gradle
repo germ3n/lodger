@@ -37,7 +37,9 @@ def hostJar = { String loader ->
 	if (!dropped.isEmpty()) {
 		return dropped.singleFile
 	}
-	def built = fileTree(dir: new File(repo, "host/${loader}/build/libs"), include: "craftkit-${loader}-*.jar", exclude: '*-sources.jar')
+	// The jar of the craftkit version asked for: an older one left in build/libs after a
+	// version moved stopped the build ("more than one file").
+	def built = fileTree(dir: new File(repo, "host/${loader}/build/libs"), include: "craftkit-${loader}-*-${craftkit_version}.jar")
 	if (!built.isEmpty()) {
 		return built.singleFile
 	}
