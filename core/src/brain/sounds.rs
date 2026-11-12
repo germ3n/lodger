@@ -885,6 +885,33 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 166.
+        "sigh_at_the_door" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:entity.player.breath", 0)],
+                    (0.5, 0.6),
+                    0.7,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 30),
+                    ],
+                    (0.45, 0.55),
+                    0.6,
+                    Still,
+                ),
+                v(
+                    &[("minecraft:entity.player.breath", 0)],
+                    (0.4, 0.5),
+                    0.8,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1743,6 +1770,7 @@ pub fn commands(
 
 /// The events whose sound comes from a door, a chest or a window of a house.
 pub const HOUSE_SOUNDS: &[&str] = &[
+    "sigh_at_the_door",
     "the_bell_in_the_chest",
     "glass_rubbed",
     "breath_in_the_chest",
@@ -1854,6 +1882,7 @@ mod tests {
             "cave_air",
             "door_scratch",
             "snoring_beside",
+            "sigh_at_the_door",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

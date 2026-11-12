@@ -222,7 +222,7 @@ things, and on the screen. Not built yet.
 
 | # | Event | Stage | What happens | Needs | Takes | Size |
 | --- | --- | --- | --- | --- | --- | --- |
-| 166 | `sigh_at_the_door` | 3 | As they open their door from inside, a long sigh just outside it; no one there. | A home with a door, the target indoors. | `sound` (a breath, slowed) one block out from the door. | S |
+| 166 | `sigh_at_the_door` | 3 | **Built.** As they open their door from inside, a long sigh just outside it; no one there. | A home with a door, the target indoors. | `sound` (a breath, slowed) one block out from the door. | S |
 | 167 | `humming_ahead` | 3 | In a tunnel, a few notes hummed somewhere ahead, a tune, then quiet when they stop to listen. | Underground, walking. | `sound` (villager hum, pitched low) ahead of them in the tunnel. | S |
 | 168 | `steps_counted` | 4 | In the dark, each step they take plays a note one higher, eight notes, then nothing, as if something counted them. | Night or underground, walking. | The movement's steps; `sound` (note block harp) a step higher each. | M |
 | 169 | `cart_overhead` | 3 | Underground, a minecart rolls across the rock over their head and away; there are no rails. | Underground. | `sound` (minecart rolling) moving along above them. | S |

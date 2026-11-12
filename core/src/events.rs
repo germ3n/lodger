@@ -5652,6 +5652,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.fox.sleep"),
         false,
     ),
+    // docs/events_todo.md, 166.
+    row(
+        "sigh_at_the_door",
+        3,
+        5,
+        &[Home, Door, TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.player.breath"),
+        true,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7146,6 +7158,7 @@ impl Event {
             "ice_cracks" => "crack the ice under them",
             "bush_rustles" => "rustle a bush hard beside them",
             "snoring_beside" => "snore softly beside them in bed",
+            "sigh_at_the_door" => "sigh just outside their door",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
