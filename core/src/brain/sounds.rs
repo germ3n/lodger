@@ -1355,6 +1355,33 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 185.
+        "crossbow_click" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:item.crossbow.loading_end", 0)],
+                    (0.9, 1.0),
+                    0.7,
+                    Behind,
+                ),
+                v(
+                    &[("minecraft:item.crossbow.loading_end", 0)],
+                    (0.85, 0.95),
+                    0.6,
+                    Ear,
+                ),
+                v(
+                    &[
+                        ("minecraft:item.crossbow.loading_end", 0),
+                        ("minecraft:item.crossbow.loading_end", 30),
+                    ],
+                    (0.9, 1.0),
+                    0.6,
+                    Behind,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2340,6 +2367,7 @@ mod tests {
             "digging_under_the_floor",
             "wings_in_the_room",
             "lava_in_the_wall",
+            "crossbow_click",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

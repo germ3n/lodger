@@ -241,7 +241,7 @@ things, and on the screen. Not built yet.
 | 182 | `rustle_in_the_pack` | 3 | **Built.** As they open their inventory, something rustles in it, as a bundle does, though they carry none. | The target awake. | A client hint on opening the inventory: the bundle's insert sound. | S |
 | 183 | `wings_in_the_room` | 4 | **Built.** Awake at night, wings beat inside the room, close, circling, and stop. | Indoors at night, awake. | `sound` (phantom flap) moving round them. | S |
 | 184 | `lava_in_the_wall` | 4 | **Built.** From inside a stone wall of theirs, the pop and gloop of lava; the wall is cold. | Indoors or underground, stone walls of theirs. | `sound` (lava pop) at a stone wall block. | S |
-| 185 | `crossbow_click` | 4 | Behind them, the click of a crossbow being loaded; nothing follows. | The target awake. | `sound` (crossbow loading end) behind them. | S |
+| 185 | `crossbow_click` | 4 | **Built.** Behind them, the click of a crossbow being loaded; nothing follows. | The target awake. | `sound` (crossbow loading end) behind them. | S |
 | 186 | `blow_on_the_shield` | 4 | With their shield raised, a hit lands on it, the block's sound and a shove back; nothing is there. | Holding a shield up. | The use trigger; `sound` (shield block) and a small push. | S |
 | 187 | `teleport_beside` | 4 | Twice, the warp of a chorus fruit right beside them, as if something kept stepping closer. | The target awake. | `sound` (chorus fruit teleport) beside them, then nearer. | S |
 | 188 | `sweeping_next_room` | 3 | From the next room, the soft strokes of a brush sweeping, as at a dig; it stops when they come in. | Indoors, a home of more than one room. | `sound` (brush) at a room's anchor, stopped as they near. | S |

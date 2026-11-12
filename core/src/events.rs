@@ -5880,6 +5880,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.lava.pop"),
         false,
     ),
+    // docs/events_todo.md, 185.
+    row(
+        "crossbow_click",
+        4,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:item.crossbow.loading_end"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7393,6 +7405,7 @@ impl Event {
             "rustle_in_the_pack" => "rustle something in their pack as they open it",
             "wings_in_the_room" => "beat wings close round them in the room",
             "lava_in_the_wall" => "pop lava inside the wall beside them",
+            "crossbow_click" => "load a crossbow right behind them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
