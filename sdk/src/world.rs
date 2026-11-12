@@ -450,7 +450,8 @@ pub enum Command {
         block: String,
     },
     /// Place an entity of kind `of` at `pos` facing `yaw`: an armour stand, a farm animal, a
-    /// bat (ABI 54), a copper golem (ABI 55), or, for a while only, a trident thrown straight
+    /// bat (ABI 54), a copper golem (ABI 55), or, for a while only, a skeleton horse or a
+    /// trident thrown straight
     /// down out of the sky into the ground at `pos`, never to be picked up (ABI 56). With
     /// `seconds` above 0 it is there for that long only, then gone, and gone at once when its
     /// level saves or closes, or when next seen after a quit. ABI 27.

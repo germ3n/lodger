@@ -661,6 +661,19 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "trapdoor_to_nothing" {
         return natural_floor(memory);
     }
+    // Among the animals in their pen, at their middle.
+    if event.id == "pale_horse_in_your_pen" {
+        return {
+            let penned = memory.penned();
+            (!penned.is_empty()).then(|| {
+                let n = penned.len() as f64;
+                let x = penned.iter().map(|c| c.pos[0]).sum::<f64>() / n;
+                let y = penned.iter().map(|c| c.pos[1]).fold(f64::MAX, f64::min);
+                let z = penned.iter().map(|c| c.pos[2]).sum::<f64>() / n;
+                block_of([x, y, z])
+            })
+        };
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -691,6 +704,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::DripstoneInTunnel
         | Action::SkullInTheTunnel
         | Action::CopperAges
+        | Action::PaleHorse
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8432,6 +8446,26 @@ pub fn commands(
                 )
             })
             .collect(),
+        // docs/events_todo.md, 222.
+        Action::PaleHorse => pos
+            .map(|p| {
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:skeleton_horse".to_string(),
+                        pos: [p[0] as f64 + 0.5, p[1] as f64, p[2] as f64 + 0.5],
+                        yaw: 0.0,
+                        seconds: 600.0,
+                        kept: String::new(),
+                        face: Some(target),
+                        targets: None,
+                        harm: 0.0,
+                        wears: Vec::new(),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -19579,6 +19613,19 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             made.iter().any(|(c, _)| matches!(c, Command::SwapBlock { pos, block, only, .. } if *pos == [3, 66, -3] && block == "minecraft:exposed_cut_copper" && only == &vec!["minecraft:cut_copper".to_string()])),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn pale_horse_stands_among_their_penned_animals_facing_them() {
+        let memory = rich_memory();
+        let event = find("pale_horse_in_your_pen").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert!(pos.is_some(), "the pen's middle");
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PlaceEntity { of, seconds, face: Some(_), .. }, 0)] if of == "minecraft:skeleton_horse" && *seconds > 0.0),
             "{made:?}"
         );
     }

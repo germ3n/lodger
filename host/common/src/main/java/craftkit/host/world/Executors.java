@@ -2636,7 +2636,7 @@ public final class Executors {
 	private static final List<String> PLACEABLE = List.of("minecraft:armor_stand", "minecraft:cow", "minecraft:pig", "minecraft:sheep",
 			"minecraft:chicken", "minecraft:goat", "minecraft:horse", "minecraft:donkey", "minecraft:mule", "minecraft:llama",
 			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel", "minecraft:squid", "minecraft:bat",
-			"minecraft:copper_golem");
+			"minecraft:copper_golem", "minecraft:skeleton_horse");
 	/** The hostiles it may set on a player for a while, spared (ABI 54). */
 	private static final List<String> HOSTILE = List.of("minecraft:silverfish", "minecraft:cave_spider", "minecraft:wolf",
 			"minecraft:zombie", "minecraft:vex", "minecraft:phantom", "minecraft:creeper", "minecraft:killer_bunny", "minecraft:creaking");
@@ -2674,6 +2674,10 @@ public final class Executors {
 		Optional<Holder.Reference<net.minecraft.world.entity.EntityType<?>>> type = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(killer ? "minecraft:rabbit" : of));
 		if (type.isEmpty()) {
 			return report(id, false, "no such entity");
+		}
+		// A skeleton horse only for a while (ABI 56): one that stayed would be a mount from nothing.
+		if (of.equals("minecraft:skeleton_horse") && wanted <= 0) {
+			return report(id, false, "a skeleton horse is only ever placed for a while");
 		}
 		// Never a mooshroom for a while: shorn, it turns into a cow that stays, and its mushrooms.
 		if (of.equals("minecraft:mooshroom") && command.has("seconds") && command.get("seconds").getAsFloat() > 0) {

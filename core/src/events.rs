@@ -1176,6 +1176,8 @@ pub enum Action {
     SkullInTheTunnel,
     /// Their copper blocks a stage more weathered overnight, as if years had passed.
     CopperAges,
+    /// A skeleton horse among the animals in their pen at night, still, facing them, a while.
+    PaleHorse,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7226,6 +7228,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CopperAges,
         false,
     ),
+    // docs/events_todo.md, 222: a skeleton horse stands among the animals in their pen at night.
+    row(
+        "pale_horse_in_your_pen",
+        4,
+        5,
+        &[Home, Night, Penned(2)],
+        3.0,
+        2,
+        Half,
+        Action::PaleHorse,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7826,6 +7840,7 @@ impl Event {
             | Action::RoomClosesIn
             | Action::DripstoneInTunnel
             | Action::SkullInTheTunnel
+            | Action::PaleHorse
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8365,6 +8380,7 @@ impl Event {
             "dripstone_in_tunnel" => "grow a column of dripstone across their tunnel",
             "skull_in_the_tunnel" => "set a skull into their tunnel's wall facing them",
             "copper_ages" => "weather their copper a stage overnight",
+            "pale_horse_in_your_pen" => "stand a skeleton horse among the animals in their pen",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

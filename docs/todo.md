@@ -2739,6 +2739,11 @@ The `[x]` lines above, summed up by day:
   weathering, every shared property kept; never waxed copper, nor oxidized (a new need, `Copper`).
   Tests: one in `act`. Was: no such event.
 
+- [x] **A pale horse in their pen** (`docs/events_todo.md`, 222): `pale_horse_in_your_pen`, stages 4
+  and 5, at night with two animals or more in their pen: a skeleton horse placed at the animals'
+  middle for ten minutes, held facing them (`place_entity`'s `minecraft:skeleton_horse`, for a while
+  only, ABI 56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
