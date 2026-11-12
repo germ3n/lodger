@@ -182,6 +182,7 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::Figure(_, _, _)
             | crate::events::Action::FigureSwing(_)
             | crate::events::Action::FigureWave
+            | crate::events::Action::FarEndOfTheBridge
             | crate::events::Action::StandingInThePortal
             | crate::events::Action::OnThePeak
             | crate::events::Action::FigureInYourArmour

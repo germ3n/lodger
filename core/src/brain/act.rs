@@ -896,6 +896,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PrintsFromThePortal
         | Action::PortalWeeps
         | Action::StandingInThePortal
+        | Action::FarEndOfTheBridge
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10270,6 +10271,23 @@ pub fn commands(
             }
             None => vec![],
         },
+        // docs/events_todo.md, 290.
+        Action::FarEndOfTheBridge => {
+            let way = facing_way(memory.last.yaw);
+            let at = block_of(memory.last.pos);
+            let mut shown = figure_shown(
+                ids,
+                memory,
+                target,
+                [at[0] + way[0] * 24, at[1] - 1, at[2] + way[1] * 24],
+                40.0,
+                false,
+            );
+            if let Command::Figure { once_seen, .. } = &mut shown {
+                *once_seen = true;
+            }
+            vec![(shown, 0)]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14152,6 +14170,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "far_end_of_the_bridge"
                 || event.id == "standing_in_the_portal"
                 || event.id == "compass_steadies"
                 || event.id == "portal_weeps"
@@ -22498,6 +22517,19 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Figure { pos, vanish_within, .. }, 0)] if pos[0] == 5.5 && pos[1] == 70.0 && *vanish_within == 5.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn far_end_of_the_bridge_stands_ahead_of_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 70.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("far_end_of_the_bridge").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { pos, once_seen: true, .. }, 0)] if pos[2] == 24.5 && pos[1] == 70.0),
             "{made:?}"
         );
     }

@@ -3071,6 +3071,11 @@ The `[x]` lines above, summed up by day:
   until they come within five blocks (the owner's call: the figure in the Nether). Tests: one in
   `act`. Was: no such event.
 
+- [x] **The far end of the bridge** (`docs/events_todo.md`, 290): `far_end_of_the_bridge`, stages 4
+  and 5, in the Nether with a wither skeleton near (a fortress): the figure twenty-four blocks ahead
+  of them at their height, forty seconds or until seen and looked away from (the owner's call).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -1308,6 +1308,8 @@ pub enum Action {
     PortalWeeps,
     /// In the Nether, the figure standing just inside the portal they came through, facing them.
     StandingInThePortal,
+    /// In a Nether fortress, the figure at the far end of the bridge ahead of them, still.
+    FarEndOfTheBridge,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8219,6 +8221,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::StandingInThePortal,
         false,
     ),
+    // docs/events_todo.md, 290: in a Nether fortress, the figure at the far end of the bridge ahead of them, still.
+    row(
+        "far_end_of_the_bridge",
+        4,
+        5,
+        &[InNether, MobNear("wither_skeleton")],
+        2.0,
+        2,
+        Full,
+        Action::FarEndOfTheBridge,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8874,6 +8888,7 @@ impl Event {
             | Action::PrintsFromThePortal
             | Action::PortalWeeps
             | Action::StandingInThePortal
+            | Action::FarEndOfTheBridge
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9484,6 +9499,7 @@ impl Event {
             "portal_weeps" => "make the portal they came through weep",
             "compass_steadies" => "steady their compass on where they came in",
             "standing_in_the_portal" => "stand the figure in the portal they came through",
+            "far_end_of_the_bridge" => "stand the figure at the far end of the fortress bridge",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
