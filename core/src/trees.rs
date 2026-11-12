@@ -34,24 +34,37 @@ pub fn wooded(biome: &str) -> bool {
     .any(|w| biome.contains(w))
 }
 
-/// The trunks among the logs read: each column of [`TRUNK_LOGS`] or more, at its lowest log.
-/// A column with a log the target placed is a house's wall or post, not a tree.
-pub fn trunks_of(logs: &[BlockPos], placed: &[BlockPos]) -> Vec<BlockPos> {
-    let mut columns: Vec<([i32; 2], Vec<i32>)> = Vec::new();
-    for log in logs {
+/// The trunks among the logs read, each with its log's id: each column of [`TRUNK_LOGS`] or
+/// more, at its lowest log. A column with a log the target placed is a house's wall or post, not
+/// a tree.
+pub fn trunks_of(logs: &[(String, BlockPos)], placed: &[BlockPos]) -> Vec<(BlockPos, String)> {
+    let mut columns: Vec<([i32; 2], Vec<i32>, String)> = Vec::new();
+    for (kind, log) in logs {
         let key = [log[0], log[2]];
-        match columns.iter_mut().find(|(k, _)| *k == key) {
-            Some((_, ys)) => ys.push(log[1]),
-            None => columns.push((key, vec![log[1]])),
+        match columns.iter_mut().find(|(k, _, _)| *k == key) {
+            Some((_, ys, low)) => {
+                if ys.iter().all(|y| log[1] < *y) {
+                    *low = kind.clone();
+                }
+                ys.push(log[1]);
+            }
+            None => columns.push((key, vec![log[1]], kind.clone())),
         }
     }
     columns
         .into_iter()
-        .filter(|([x, z], ys)| {
+        .filter(|([x, z], ys, _)| {
             ys.len() >= TRUNK_LOGS && !placed.iter().any(|p| p[0] == *x && p[2] == *z)
         })
-        .map(|([x, z], ys)| [x, *ys.iter().min().unwrap_or(&0), z])
+        .map(|([x, z], ys, kind)| ([x, *ys.iter().min().unwrap_or(&0), z], kind))
         .collect()
+}
+
+/// A log's stripped kind, `minecraft:oak_log` to `minecraft:stripped_oak_log`; none for one
+/// stripped already.
+pub fn stripped(log: &str) -> Option<String> {
+    let (space, name) = log.split_once(':').unwrap_or(("minecraft", log));
+    (!name.starts_with("stripped_")).then(|| format!("{space}:stripped_{name}"))
 }
 
 /// Where a figure peeks out from behind `trunk` as seen from `at`, and where it hides: behind the
@@ -79,6 +92,14 @@ pub fn peek_spots(trunk: BlockPos, at: Pos, side: f64) -> (Pos, Pos) {
 }
 
 impl Memory {
+    /// A trunk's log, by id, as the last read had it.
+    pub fn trunk_log(&self, trunk: BlockPos) -> Option<&str> {
+        self.trunk_logs
+            .iter()
+            .find(|(t, _)| *t == trunk)
+            .map(|(_, log)| log.as_str())
+    }
+
     /// Whether they are in the woods: outdoors, with [`WOODS_TRUNKS`] trunks of the last read
     /// within [`WOODS_WITHIN`] blocks of them.
     pub fn in_the_woods(&self) -> bool {
@@ -194,12 +215,21 @@ mod tests {
             [9, 65, 9],
             [9, 66, 9],
         ];
+        let logs: Vec<(String, BlockPos)> = logs
+            .into_iter()
+            .map(|p| ("minecraft:birch_log".to_string(), p))
+            .collect();
         let trunks = trunks_of(&logs, &[[9, 65, 9]]);
         assert_eq!(
             trunks,
-            vec![[0, 64, 0]],
+            vec![([0, 64, 0], "minecraft:birch_log".to_string())],
             "two logs are a branch; their wall is theirs"
         );
+        assert_eq!(
+            stripped("minecraft:birch_log").as_deref(),
+            Some("minecraft:stripped_birch_log")
+        );
+        assert_eq!(stripped("minecraft:stripped_birch_log"), None);
         assert!(wooded("minecraft:old_growth_spruce_taiga"));
         assert!(wooded("minecraft:dark_forest"));
         assert!(!wooded("minecraft:plains"));

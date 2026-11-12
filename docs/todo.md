@@ -1956,6 +1956,11 @@ The `[x]` lines above, summed up by day:
   with a branch's crack (`figure`'s `then_at`, ABI 54). Tests: one in `trees`, one in `act`. Was: no
   such event.
 
+- [x] **Knocks on the trees** (`docs/events_todo.md`, 83): `knocks_on_wood`, stages 3 to 5, in the
+  woods: knocks in threes on a trunk ahead, then on one farther in, then a third; the last tree's
+  bark stripped at eye height (the tree read keeps each trunk's log now). Tests: `trees`'s, one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

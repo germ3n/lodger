@@ -679,6 +679,9 @@ pub struct Memory {
     /// Not saved: read again as they walk.
     #[serde(skip)]
     pub trunks: Vec<BlockPos>,
+    /// Each trunk's log, by id, for stripping its bark.
+    #[serde(skip)]
+    pub trunk_logs: Vec<(BlockPos, String)>,
     /// The crop blocks of the last field read, around the crops by the home (`crate::farm`).
     pub field: Vec<BlockPos>,
     /// Their tunnels, what they dug underground grouped as it was dug (`crate::tunnels`).
@@ -1343,13 +1346,14 @@ impl Memory {
                 continue;
             }
             if by.as_deref() == Some("tree_read") {
-                let logs: Vec<BlockPos> = scan
+                let logs: Vec<(String, BlockPos)> = scan
                     .positions
                     .iter()
                     .take(crate::trees::MOST_LOGS)
-                    .map(|(_, pos)| *pos)
+                    .cloned()
                     .collect();
-                self.trunks = crate::trees::trunks_of(&logs, &self.placed);
+                self.trunk_logs = crate::trees::trunks_of(&logs, &self.placed);
+                self.trunks = self.trunk_logs.iter().map(|(t, _)| *t).collect();
                 continue;
             }
             if by.as_deref() == Some("cave_read") {

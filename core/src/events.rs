@@ -1042,6 +1042,8 @@ pub enum Action {
     DrawnToTheLight,
     /// In the woods, a figure behind a trunk one tree nearer each time they look back.
     TreeToTree,
+    /// Knocks on a trunk ahead, three at a time, then farther in; the last tree's bark stripped.
+    KnocksOnWood,
     /// Their most valuable things, carried and in their chests, up into the sky.
     TakenUp,
     /// What it took up falls out of the sky in front of their door.
@@ -4824,6 +4826,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 83.
+    row(
+        "knocks_on_wood",
+        3,
+        5,
+        &[InTheWoods],
+        1.0,
+        3,
+        Full,
+        Action::KnocksOnWood,
+        false,
+    ),
     // docs/events_todo.md, 82.
     row(
         "tree_to_tree",
@@ -5664,6 +5678,7 @@ impl Event {
             | Action::WetSteps
             | Action::SoundPair(..)
             | Action::ChestAnswers
+            | Action::KnocksOnWood
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -5945,6 +5960,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "knocks_on_wood" => "knock on the trees ahead of them, deeper and deeper in",
             "tree_to_tree" => {
                 "set the figure behind the trees, a tree nearer each time they look back"
             }

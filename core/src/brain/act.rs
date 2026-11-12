@@ -378,6 +378,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The nearest trunk ahead of them of three, each farther in.
+        Action::KnocksOnWood => {
+            let ahead = memory.trunks_ahead(8.0, 28.0);
+            (ahead.len() >= 3).then(|| ahead[0])
+        }
         // The farthest trunk of a way behind them, nearer and nearer.
         Action::TreeToTree => {
             let behind = memory.trunks_behind(8.0, 30.0);
@@ -1696,6 +1701,8 @@ const HUNTED_FROM: f64 = 36.0;
 const RING_BLOCKS: f64 = 20.0;
 /// The ring's figures are numbered from here, apart from the one figure (1).
 const RING_FIRST: u32 = 11;
+/// Ticks between the trees that knock (`knocks_on_wood`).
+const KNOCKS_APART: u64 = 80;
 /// The figure that comes from tree to tree (`tree_to_tree`).
 const TREE_FIGURE: u32 = 63;
 /// The figure drawn to their light (`drawn_to_the_light`), and how far off it starts.
@@ -6337,6 +6344,51 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Three knocks on a trunk ahead, then on one farther in, then on a third; on the last, a
+        // strip of its bark gone at eye height, as if something had marked it.
+        Action::KnocksOnWood => pos
+            .map(|first| {
+                let here = block_of(memory.last.pos);
+                let mut trees = vec![first];
+                for t in memory.trunks_ahead(8.0, 28.0) {
+                    let last = *trees.last().unwrap_or(&first);
+                    if trees.len() < 3 && distance(t, here) >= distance(last, here) + 4.0 {
+                        trees.push(t);
+                    }
+                }
+                let mut made = Vec::new();
+                for (i, tree) in trees.iter().enumerate() {
+                    let knock = [
+                        tree[0] as f64 + 0.5,
+                        tree[1] as f64 + 1.5,
+                        tree[2] as f64 + 0.5,
+                    ];
+                    for k in 0..3u64 {
+                        let mut sound =
+                            sound_at(ids, target, "minecraft:block.wooden_door.close", knock, 0.5);
+                        if let Command::PlaySound { pitch, .. } = &mut sound {
+                            *pitch = 1.65;
+                        }
+                        made.push((sound, i as u64 * KNOCKS_APART + k * 8));
+                    }
+                }
+                let last = *trees.last().unwrap_or(&first);
+                if let Some(log) = memory.trunk_log(last) {
+                    if let Some(bare) = crate::trees::stripped(log) {
+                        made.push((
+                            Command::SwapBlock {
+                                id: ids(),
+                                pos: [last[0], last[1] + 1, last[2]],
+                                block: bare,
+                                only: vec![log.to_string()],
+                            },
+                            (trees.len() as u64 - 1) * KNOCKS_APART + 30,
+                        ));
+                    }
+                }
+                made
             })
             .unwrap_or_default(),
         // Half out from behind the farthest trunk of the way, facing them; seen and looked away
@@ -13729,5 +13781,43 @@ mod tests {
             assert!(away(next) < last, "nearer each time");
             last = away(next);
         }
+    }
+
+    #[test]
+    fn knocks_on_the_trees_ahead_deeper_in_and_the_last_one_marked() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.trunk_logs = memory
+            .trunks
+            .iter()
+            .map(|t| (*t, "minecraft:oak_log".to_string()))
+            .collect();
+        let event = find("knocks_on_wood").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let first = place(event, &memory, &mut Rng::new(1)).unwrap();
+        let made = commands(
+            event,
+            Some(first),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let knocks = made
+            .iter()
+            .filter(|(c, _)| matches!(c, Command::PlaySound { .. }))
+            .count();
+        assert!(
+            knocks >= 6 && knocks % 3 == 0,
+            "threes, two trees or more: {made:?}"
+        );
+        assert!(
+            matches!(made.last(), Some((Command::SwapBlock { block, only, .. }, _))
+                if block == "minecraft:stripped_oak_log" && only == &["minecraft:oak_log".to_string()]),
+            "{:?}",
+            made.last()
+        );
     }
 }
