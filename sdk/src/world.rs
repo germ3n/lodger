@@ -1498,7 +1498,8 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         finds: String,
         /// Sitting on a mount of this kind placed under it for its time, standing still
-        /// (`minecraft:skeleton_horse`, `minecraft:zombie_horse`, `minecraft:horse`; ABI 55).
+        /// (`minecraft:skeleton_horse`, `minecraft:zombie_horse`, `minecraft:horse`,
+        /// `minecraft:happy_ghast`, held in the air where it is set; ABI 55).
         #[serde(default, skip_serializing_if = "String::is_empty")]
         mount: String,
     },

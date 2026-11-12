@@ -363,6 +363,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::InTheLava
         | Action::OverTheEdge
         | Action::RiderOnTheRidge
+        | Action::HappyGhastOverhead
         | Action::TheTreeLine
         | Action::AnimalsFleeTheWoods
         | Action::RaisesTheirSword
@@ -450,6 +451,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::InTheLava
         | Action::OverTheEdge
         | Action::RiderOnTheRidge
+        | Action::HappyGhastOverhead
         | Action::TheTreeLine
         | Action::AnimalsFleeTheWoods
         | Action::RaisesTheirSword

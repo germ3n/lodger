@@ -639,6 +639,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::CeilingCrawl | Action::InTheLava | Action::OverTheEdge => {
             Some(block_of(memory.last.pos))
         }
+        // In the air over the house, fourteen blocks above its floor.
+        Action::HappyGhastOverhead => home.map(|h| [h.center[0], h.floor_y + 14, h.center[2]]),
         // Forty blocks off to one side of them, on the ground.
         Action::RiderOnTheRidge => {
             let at = block_of(memory.last.pos);
@@ -7241,6 +7243,25 @@ pub fn commands(
                     *once_seen = true;
                     // Over the edge, its head alone above the top.
                     *sunk = !lava;
+                    *held = ItemStack::default();
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Over the house on a happy ghast, still in the air, watching them; gone once seen and
+        // looked away from.
+        Action::HappyGhastOverhead => pos
+            .map(|p| {
+                let mut shown = figure_shown(ids, memory, target, p, 60.0, false);
+                if let Command::Figure {
+                    mount,
+                    once_seen,
+                    held,
+                    ..
+                } = &mut shown
+                {
+                    *mount = "minecraft:happy_ghast".to_string();
+                    *once_seen = true;
                     *held = ItemStack::default();
                 }
                 vec![(shown, 0)]
@@ -18102,6 +18123,25 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::ToggleBlock { pos, .. }, _)] if *pos == [3, 64, 3]),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn at_dusk_the_figure_rides_a_happy_ghast_over_the_house() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("happy_ghast_overhead").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Figure { mount, once_seen: true, pos, .. }, 0)] if mount == "minecraft:happy_ghast" && pos[1] >= 64.0 + 14.0),
+            "in the air over the house: {made:?}"
         );
     }
 }

@@ -906,7 +906,7 @@ public final class Executors {
 	}
 
 	/** The mounts a figure may be set on (ABI 55). */
-	private static final List<String> MOUNTS = List.of("minecraft:skeleton_horse", "minecraft:zombie_horse", "minecraft:horse");
+	private static final List<String> MOUNTS = List.of("minecraft:skeleton_horse", "minecraft:zombie_horse", "minecraft:horse", "minecraft:happy_ghast");
 
 	/**
 	 * Where a figure stands in lava: the surface of the nearest still lava with air over it, six

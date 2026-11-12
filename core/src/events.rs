@@ -1162,6 +1162,8 @@ pub enum Action {
     OverTheEdge,
     /// The figure on a skeleton horse far off, watching.
     RiderOnTheRidge,
+    /// The figure riding a happy ghast in the air over the house.
+    HappyGhastOverhead,
     /// Far from any village, a villager bangs on their door, runs in and drops dead.
     VillagerFleesIn,
     /// Every sound they hear goes wrong a while, one way of four.
@@ -6903,6 +6905,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ToggleFixture("crafter"),
         true,
     ),
+    // docs/events_todo.md, 199: at dusk a happy ghast over the house, the figure riding it.
+    row(
+        "happy_ghast_overhead",
+        4,
+        5,
+        &[Dusk, TargetOutdoors, Home],
+        2.0,
+        2,
+        Full,
+        Action::HappyGhastOverhead,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7425,6 +7439,7 @@ impl Event {
             | Action::InTheLava
             | Action::OverTheEdge
             | Action::RiderOnTheRidge
+            | Action::HappyGhastOverhead
             | Action::TheTreeLine
             | Action::AnimalsFleeTheWoods
             | Action::VillagersFleeYou
@@ -8002,6 +8017,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "happy_ghast_overhead" => "ride a happy ghast over their house",
             "crafter_clicks" => "make their crafter craft once by itself",
             "sand_gives_back" => "bury what it took in a patch of sand by the house",
             "pot_of_returns" => "leave what it took in a pot at its place",
