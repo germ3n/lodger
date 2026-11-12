@@ -492,6 +492,7 @@ caves, from before.
 | `shulkers_open` | 3 to 5 | At an end city, every shulker within twenty-four blocks of them opens its shell at once, three seconds, and shuts it at once (`shulkers_peek`, ABI 56). | In the End, a shulker near them. |
 | `gateway_flashes` | 3 to 5 | In the End, the end gateway nearest them (forty-eight blocks) flashes its beam and sounds, as if someone just went through it; no one is near (`gateway_flash`, ABI 56; with none near, nothing). | In the End. |
 | `blaze_ring` | 4 to 5 | In a Nether fortress, the blazes near them (eight at most) are suddenly in a ring round them, five blocks out and a block and a half up, and hang there facing them, firing nothing, six seconds; then they are themselves again (`move_entity`, `hold`). | In the Nether, a blaze near them. |
+| `endermen_at_the_edge` | 4 to 5 | In the End, the endermen near them (six at most) stand in a row ten blocks out from them, away from the End's middle toward the island's edge, three blocks apart, all facing out over the void, thirty seconds (`move_entity`, `hold`'s `at`). | In the End, an enderman near them. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

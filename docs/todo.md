@@ -3128,6 +3128,11 @@ The `[x]` lines above, summed up by day:
   with blazes near: up to eight moved into a ring five blocks round them a block and a half up, held
   six seconds facing them (`move_entity`, `hold`). Tests: one in `act`. Was: no such event.
 
+- [x] **Endermen at the edge** (`docs/events_todo.md`, 293): `endermen_at_the_edge`, stages 4 and 5,
+  in the End with endermen near: up to six moved into a row ten blocks out from them away from the
+  End's middle, three apart, held thirty seconds facing outward (`move_entity`, `hold`'s `at`).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

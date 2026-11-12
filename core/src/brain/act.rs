@@ -911,6 +911,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ShulkersOpen
         | Action::GatewayFlashes
         | Action::BlazeRing
+        | Action::EndermenAtTheEdge
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10514,6 +10515,47 @@ pub fn commands(
             }
             made
         }
+        // docs/events_todo.md, 293.
+        Action::EndermenAtTheEdge => {
+            // Out from them, away from the End's middle, across the way: a row toward the edge.
+            let p = memory.last.pos;
+            let far = (p[0] * p[0] + p[2] * p[2]).sqrt().max(1.0);
+            let out = [p[0] / far, p[2] / far];
+            let across = [-out[1], out[0]];
+            let endermen: Vec<&crate::memory::Creature> =
+                mobs_near(memory, "enderman").take(6).collect();
+            let n = endermen.len() as f64;
+            let mut made = Vec::new();
+            for (i, enderman) in endermen.iter().enumerate() {
+                let k = (i as f64 - (n - 1.0) / 2.0) * 3.0;
+                let to = [
+                    p[0] + out[0] * 10.0 + across[0] * k,
+                    p[1],
+                    p[2] + out[1] * 10.0 + across[1] * k,
+                ];
+                made.push((
+                    Command::MoveEntity {
+                        id: ids(),
+                        entity: enderman.id,
+                        to,
+                    },
+                    0,
+                ));
+                made.push((
+                    Command::Hold {
+                        id: ids(),
+                        entity: enderman.id,
+                        player: target,
+                        seconds: 30.0,
+                        at: Some([to[0] + out[0] * 20.0, to[1], to[2] + out[1] * 20.0]),
+                        creep: false,
+                        spin: false,
+                    },
+                    1,
+                ));
+            }
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14396,6 +14438,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "endermen_at_the_edge"
                 || event.id == "blaze_ring"
                 || event.id == "gateway_flashes"
                 || event.id == "shulkers_open"
@@ -22921,5 +22964,26 @@ mod tests {
             matches!(&made[0].0, Command::MoveEntity { entity: 420, to, .. } if (to[0] - 5.0).abs() < 1e-9)
         );
         assert!(matches!(&made[3].0, Command::Hold { entity: 421, .. }));
+    }
+
+    #[test]
+    fn endermen_at_the_edge_stand_in_a_row_facing_out() {
+        let mut memory = rich_memory();
+        memory.last.pos = [100.0, 60.0, 0.0];
+        for id in [430, 431] {
+            memory.last.hostiles_near.push(Creature {
+                id,
+                kind: "enderman".to_string(),
+                pos: [104.0, 60.0, 0.0],
+                ..Creature::default()
+            });
+        }
+        let event = find("endermen_at_the_edge").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::MoveEntity { to, .. } if (to[0] - 110.0).abs() < 1e-9 && (to[2] + 1.5).abs() < 1e-9),
+            "{made:?}"
+        );
+        assert!(matches!(&made[1].0, Command::Hold { at: Some(a), .. } if a[0] > 120.0));
     }
 }

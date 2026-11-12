@@ -1330,6 +1330,8 @@ pub enum Action {
     GatewayFlashes,
     /// In a fortress, the blazes near them drifting into a ring round them and hanging there, firing nothing.
     BlazeRing,
+    /// In the End, the endermen near them standing in a row out toward the island's edge, spaced, all facing the void.
+    EndermenAtTheEdge,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8397,6 +8399,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BlazeRing,
         false,
     ),
+    // docs/events_todo.md, 293: the endermen near them stand in a row at the edge, facing the void.
+    row(
+        "endermen_at_the_edge",
+        4,
+        5,
+        &[InEnd, MobNear("enderman")],
+        1.5,
+        2,
+        Full,
+        Action::EndermenAtTheEdge,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9062,6 +9076,7 @@ impl Event {
             | Action::ShulkersOpen
             | Action::GatewayFlashes
             | Action::BlazeRing
+            | Action::EndermenAtTheEdge
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9686,6 +9701,7 @@ impl Event {
             "shulkers_open" => "open every shulker near them at once",
             "gateway_flashes" => "flash the end gateway near them as if used",
             "blaze_ring" => "ring them round with the blazes near them",
+            "endermen_at_the_edge" => "stand the endermen near them in a row facing the void",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
