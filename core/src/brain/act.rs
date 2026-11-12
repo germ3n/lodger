@@ -788,6 +788,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LeatherDyed
         | Action::OreCounted
         | Action::SnowballComesBack
+        | Action::ArrowReturned
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9311,6 +9312,16 @@ pub fn commands(
                 id: ids(),
                 player: target,
                 what: "snowball".to_string(),
+                seconds: 120.0,
+            },
+            0,
+        )],
+        // docs/events_todo.md, 260.
+        Action::ArrowReturned => vec![(
+            Command::ThrowBack {
+                id: ids(),
+                player: target,
+                what: "arrow".to_string(),
                 seconds: 120.0,
             },
             0,
@@ -21059,6 +21070,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::ThrowBack { what, .. }, 0)] if what == "snowball"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn arrow_returned_arms_their_next_shot() {
+        let memory = rich_memory();
+        let event = find("arrow_returned").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::ThrowBack { what, .. }, 0)] if what == "arrow"),
             "{made:?}"
         );
     }

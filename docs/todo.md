@@ -2924,6 +2924,12 @@ The `[x]` lines above, summed up by day:
   snowball thrown back at them from where it landed, a second and a half on (`throw_back`, ABI 56:
   `Returns` and `SnowballMixin`). Tests: one in `act`. Was: no such event.
 
+- [x] **The arrow returned** (`docs/events_todo.md`, 260): `arrow_returned`, stages 4 and 5,
+  outdoors at night holding a bow: the next arrow they shoot within two minutes that sticks, one
+  they could pick up, taken out and dropped at their feet a second and a half on, the very arrow
+  (`throw_back`, ABI 56: `Returns` and `AbstractArrowMixin`). Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

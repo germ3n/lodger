@@ -1254,6 +1254,8 @@ pub enum Action {
     OreCounted,
     /// A snowball they throw into the dark coming flying back from where it landed.
     SnowballComesBack,
+    /// An arrow they shoot into the dark landing at their feet a moment later, their own.
+    ArrowReturned,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7781,6 +7783,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SnowballComesBack,
         false,
     ),
+    // docs/events_todo.md, 260: an arrow they shoot into the dark lands at their feet a moment later.
+    row(
+        "arrow_returned",
+        4,
+        5,
+        &[Night, TargetOutdoors, Holding("minecraft:bow")],
+        1.0,
+        3,
+        Half,
+        Action::ArrowReturned,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8411,6 +8425,7 @@ impl Event {
             | Action::TheChildStares
             | Action::LateDrop
             | Action::SnowballComesBack
+            | Action::ArrowReturned
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8989,6 +9004,7 @@ impl Event {
             "leather_dyed" => "dye their leather armour black overnight",
             "ore_counted" => "count each diamond they mine with a chime",
             "snowball_comes_back" => "throw back the next snowball they throw",
+            "arrow_returned" => "bring back the next arrow they shoot",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
