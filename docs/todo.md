@@ -2245,6 +2245,9 @@ The `[x]` lines above, summed up by day:
 - [x] **An iron door below** (`docs/events_todo.md`, 139): `iron_door_below`, stages 4 and 5, underground: an iron door slams sixteen blocks under them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Ice cracks** (`docs/events_todo.md`, 140): `ice_cracks`, stages 3 to 5, walking in a snowy biome: a crack under them. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

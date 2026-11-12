@@ -777,6 +777,37 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 140.
+        "ice_cracks" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:block.glass.break", 0)],
+                    (0.5, 0.6),
+                    0.6,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.glass.break", 0),
+                        ("minecraft:block.glass.break", 8),
+                    ],
+                    (0.45, 0.55),
+                    0.5,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.glass.hit", 0),
+                        ("minecraft:block.glass.hit", 5),
+                        ("minecraft:block.glass.hit", 10),
+                    ],
+                    (0.5, 0.6),
+                    0.6,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1745,6 +1776,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "ice_cracks",
             "iron_door_below",
             "panting_behind",
             "the_bell_in_the_chest",

@@ -5584,6 +5584,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.iron_door.close"),
         true,
     ),
+    // docs/events_todo.md, 140.
+    row(
+        "ice_cracks",
+        3,
+        5,
+        &[SnowyHere, TargetWalking, TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:block.glass.break"),
+        true,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6755,6 +6767,7 @@ impl Event {
             "the_bell_in_the_chest" => "ring a bell inside the chest they use",
             "panting_behind" => "pant right behind them as they run",
             "iron_door_below" => "slam an iron door far under them",
+            "ice_cracks" => "crack the ice under them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
