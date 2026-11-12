@@ -723,6 +723,13 @@ pub enum Command {
         player: u32,
         from: Pos,
     },
+    /// Every slot of the container at `pos` moved one on, the last to the first: a shelf's
+    /// things in another order. Nothing taken or made; refused with fewer than two stacks.
+    /// ABI 56.
+    RotateSlots {
+        id: u64,
+        pos: BlockPos,
+    },
     /// Every `of` within `radius` of `player` (twelve at most) shown to them alone as `block`,
     /// keeping what properties the two share, for `seconds`; then each as it really is. The
     /// world's own blocks are untouched; refused with none near. ABI 56.
@@ -1644,6 +1651,7 @@ impl Command {
             | Command::CrackBlock { id, .. }
             | Command::GhostBlock { id, .. }
             | Command::GhostNear { id, .. }
+            | Command::RotateSlots { id, .. }
             | Command::DropBlock { id, .. }
             | Command::Fangs { id, .. }
             | Command::GuardianBeam { id, .. }

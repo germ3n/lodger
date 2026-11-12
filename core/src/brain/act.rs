@@ -686,6 +686,17 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "empty_lead" {
         return spot(memory, rng);
     }
+    // One of their shelves.
+    if event.id == "shelf_shuffled" {
+        return pick_ref(
+            memory
+                .fixtures("shelf")
+                .map(|f| f.pos)
+                .collect::<Vec<_>>()
+                .as_slice(),
+            rng,
+        );
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -725,6 +736,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::DriedGhastOnDoorstep
         | Action::EyeblossomsOpen
         | Action::GolemStatueTurns
+        | Action::ShelfShuffled
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8756,6 +8768,10 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // docs/events_todo.md, 231.
+        Action::ShelfShuffled => pos
+            .map(|p| vec![(Command::RotateSlots { id: ids(), pos: p }, 0)])
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -11866,6 +11882,7 @@ mod tests {
             ("lever", [2, 65, -2]),
             ("candle", [0, 65, 1]),
             ("crafter", [3, 64, -3]),
+            ("shelf", [-3, 66, 3]),
         ] {
             memory.fixtures.push(Fixture {
                 kind: kind.to_string(),
@@ -20032,6 +20049,22 @@ mod tests {
         )));
         assert!(
             matches!(&made.last().unwrap().0, Command::GhostBlock { block, .. } if block.is_empty())
+        );
+    }
+
+    #[test]
+    fn shelf_shuffled_moves_the_things_on_one_of_their_shelves() {
+        let memory = rich_memory();
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:spruce_shelf"),
+            Some("shelf")
+        );
+        let event = find("shelf_shuffled").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::RotateSlots { pos, .. }, 0)] if *pos == [-3, 66, 3]),
+            "{made:?}"
         );
     }
 }

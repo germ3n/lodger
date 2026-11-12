@@ -163,6 +163,7 @@ public final class Executors {
 				}
 				case "ghost_block" -> ghostBlock(level, command, id, context);
 				case "ghost_near" -> ghostNear(level, command, id, context);
+				case "rotate_slots" -> rotateSlots(level, command, id);
 				case "drop_block" -> dropBlock(level, command, id);
 				case "guardian_beam" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
@@ -3115,6 +3116,35 @@ public final class Executors {
 			level.setBlock(pos, state.setValue(tilt, to), Block.UPDATE_CLIENTS);
 			level.playSound(null, pos, sound, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 0.9f);
 		}
+	}
+
+	/**
+	 * Every slot of a container moved one on, the last to the first (ABI 56): a shelf's three
+	 * in another order. Nothing taken or made; refused with fewer than two stacks.
+	 */
+	private static JsonObject rotateSlots(ServerLevel level, JsonObject command, long id) {
+		BlockPos pos = blockPos(command.getAsJsonArray("pos"));
+		if (!(level.getBlockEntity(pos) instanceof net.minecraft.world.Container container)) {
+			return report(id, false, "no container there");
+		}
+		int size = container.getContainerSize();
+		int stacks = 0;
+		for (int i = 0; i < size; i++) {
+			stacks += container.getItem(i).isEmpty() ? 0 : 1;
+		}
+		if (stacks < 2) {
+			return report(id, false, "fewer than two stacks");
+		}
+		ItemStack last = container.getItem(size - 1).copy();
+		for (int i = size - 1; i > 0; i--) {
+			container.setItem(i, container.getItem(i - 1).copy());
+		}
+		container.setItem(0, last);
+		container.setChanged();
+		BlockState state = level.getBlockState(pos);
+		level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
+
+		return report(id, true, "");
 	}
 
 	/** The most `ghost_near` looks round a player, blocks. */

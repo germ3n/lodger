@@ -2786,6 +2786,11 @@ The `[x]` lines above, summed up by day:
   first, then four times twenty seconds apart turned to face them where they are, then gone
   (`ghost_block`'s `face_player`, ABI 56). Tests: one in `act`. Was: no such event.
 
+- [x] **The shelf shuffled** (`docs/events_todo.md`, 231): `shelf_shuffled`, stages 3 to 5, the
+  target away or asleep: one of their shelves (a fixture now) with each thing moved one place along,
+  the last to the first (`rotate_slots`, ABI 56, refused with fewer than two things on it). Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

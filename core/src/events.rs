@@ -1194,6 +1194,8 @@ pub enum Action {
     EyeblossomsOpen,
     /// A copper golem statue by their door that turns to face them, again and again, on their screen alone.
     GolemStatueTurns,
+    /// The things on a shelf of theirs in another order by morning.
+    ShelfShuffled,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7361,6 +7363,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::GolemStatueTurns,
         false,
     ),
+    // docs/events_todo.md, 231: the things on their shelf in another order in the morning.
+    row(
+        "shelf_shuffled",
+        3,
+        5,
+        &[Fixture("shelf"), TargetAwayOrAsleep],
+        1.0,
+        3,
+        Half,
+        Action::ShelfShuffled,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7726,6 +7740,7 @@ impl Event {
             | Action::SignWithCoords
             | Action::ToolsLaidOut
             | Action::BucketFishChanged
+            | Action::ShelfShuffled
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -8518,6 +8533,7 @@ impl Event {
             "dried_ghast_on_doorstep" => "sit a dried ghast on their doorstep",
             "eyeblossoms_open" => "open every eyeblossom near them by day",
             "golem_statue_turns" => "stand a copper golem statue by their door that turns to them",
+            "shelf_shuffled" => "shuffle the things on their shelf",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
