@@ -581,6 +581,39 @@ mod tests {
     }
 
     #[test]
+    fn the_other_worlds_choose_an_open_chains_next_step_first() {
+        let mut nether = stay("minecraft:the_nether");
+        let mut shared = Elsewhere {
+            target: Some(0),
+            chain_next: vec!["their_door_behind"],
+            ..Elsewhere::default()
+        };
+        nether.memory.set_target(0, "", "");
+        let seen = player_at([0.0, 70.0, 0.0]);
+        let (mut door, mut rain) = (0, 0);
+        let mut tick = 20;
+        while door + rain < 40 {
+            shared.allowed = vec!["rain_in_the_nether", "their_door_behind"];
+            shared.done.clear();
+            nether.observe(&seen, 0.0);
+            nether.tick_elsewhere(
+                &Now {
+                    tick,
+                    ..Now::default()
+                },
+                &mut shared,
+            );
+            tick += 20;
+            match shared.done.first().map(|(id, _)| *id) {
+                Some("their_door_behind") => door += 1,
+                Some("rain_in_the_nether") => rain += 1,
+                _ => {}
+            }
+        }
+        assert!(door > rain * 2, "the chain's step first: {door} to {rain}");
+    }
+
+    #[test]
     fn an_enderman_holds_the_block_they_build_with_and_nothing_happens_before_stage_three() {
         let mut config = Config::default();
         config.events.cooldown_scale = 0.0;
