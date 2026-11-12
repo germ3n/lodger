@@ -94,6 +94,7 @@ impl Script {
                         slot: 1,
                     },
                 ],
+                size: 0,
             });
         }
 

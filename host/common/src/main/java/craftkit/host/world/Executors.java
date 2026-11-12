@@ -3298,10 +3298,9 @@ public final class Executors {
 		return warped ? report(id, true, "") : report(id, false, "it is held or warped already");
 	}
 
+	/** The container a command names: a double chest whole, as the senses report it (ABI 55). */
 	private static Container container(ServerLevel level, BlockPos pos) {
-		BlockEntity entity = level.getBlockEntity(pos);
-
-		return entity instanceof Container container ? container : null;
+		return Senses.containerAt(level, pos);
 	}
 
 	static BlockPos blockPos(JsonArray array) {

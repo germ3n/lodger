@@ -186,6 +186,11 @@ pub struct Event {
     pub detail: String,
     /// A container's contents, for `OpenedContainer`.
     pub contents: Vec<ItemStack>,
+    /// A container's slots, for `OpenedContainer` and `ClosedContainer`: 54 for a double chest,
+    /// which is reported whole and always at the same half, whichever is clicked; 0 when unknown.
+    /// ABI 55.
+    #[serde(default, skip_serializing_if = "is_zero_u32")]
+    pub size: u32,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]

@@ -294,7 +294,7 @@ public final class Glitches {
 					var random = minecraft.level.getRandom();
 					// Banks of it low over the ground, big soft drifts (seen with a shader pack on
 					// too, which hides the game's fog), and the motes in it.
-					int banks = (int) (w * 6);
+					int banks = MistVeil.banks(w, shadersOn());
 					for (int i = 0; i < banks; i++) {
 						double x = minecraft.player.getX() + random.nextDouble() * 28 - 14;
 						double y = minecraft.player.getY() + random.nextDouble() * 1.6 - 0.3;

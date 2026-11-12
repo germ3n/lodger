@@ -16,8 +16,8 @@ public final class Atmosphere {
 	public record Fog(float start, float end, float r, float g, float b) {
 	}
 
-	/** Mist: pale grey, close. */
-	public static final Fog MIST = new Fog(0, 13, 0.74f, 0.76f, 0.80f);
+	/** Mist: pale grey, close; 22 blocks out (13 was a whiteout without a shader pack, owner: "i can hardly see anything"). */
+	public static final Fog MIST = new Fog(0, 22, 0.74f, 0.76f, 0.80f);
 	/** Red mist: deep red, a little farther. */
 	public static final Fog RED_MIST = new Fog(0, 20, 0.42f, 0.04f, 0.04f);
 	/** Darkness: black, a few blocks. */

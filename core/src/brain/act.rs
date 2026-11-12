@@ -2797,7 +2797,7 @@ pub fn commands(
             _ => vec![],
         },
         Action::TidyContainer => match (pos, memory.used_container()) {
-            (Some(p), Some(container)) => tidy_moves(&container.contents, 27)
+            (Some(p), Some(container)) => tidy_moves(&container.contents, container.slots())
                 .into_iter()
                 .enumerate()
                 .map(|(i, (from_slot, to_slot, count))| {
@@ -4708,7 +4708,7 @@ pub fn commands(
                         stack.id = format!("0{colour}_{kind}");
                     }
                 }
-                tidy_moves(&by_colour, 27)
+                tidy_moves(&by_colour, container.slots())
                     .into_iter()
                     .enumerate()
                     .map(|(i, (from_slot, to_slot, count))| {
@@ -10210,6 +10210,7 @@ mod tests {
                 stack("minecraft:coal", 9, 7),
                 stack("minecraft:oak_sapling", 2, 8),
             ],
+            size: 0,
         });
         memory
     }
@@ -10370,6 +10371,7 @@ mod tests {
             in_home: false,
             last_opened_day: 0.0,
             contents: vec![stack("minecraft:dirt", 12, 0)],
+            size: 0,
         });
         memory.containers.push(Container {
             pos: [0, 64, 2],
@@ -10383,6 +10385,7 @@ mod tests {
                 stack("minecraft:iron_ingot", 3, 2),
                 stack("minecraft:coal", 3, 1),
             ],
+            size: 0,
         });
         for (kind, pos) in [
             ("jukebox", [3, 64, -2]),

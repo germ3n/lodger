@@ -147,6 +147,10 @@ pub struct Container {
     /// It stands in the house they sleep in (the surroundings pass's house read): the home's,
     /// whoever placed it (owner).
     pub in_home: bool,
+    /// Its slots as the host reported them: 54 for a double chest, read whole (owner: "its saying
+    /// my chest holds nothing even tho theres stuff in there", a double chest whose clicked half
+    /// alone was read); 0 when unknown, a saved container from before, taken as 27.
+    pub size: u32,
 }
 
 impl Container {
@@ -164,9 +168,18 @@ impl Container {
         self.kind.ends_with("furnace") || self.kind.ends_with("smoker")
     }
 
-    /// The slots that hold nothing, for a chest-sized container (27) or a furnace (3).
+    /// How many slots it has: as reported, else a furnace's 3 or a chest's 27.
+    pub fn slots(&self) -> u32 {
+        match (self.size, self.is_furnace()) {
+            (size, _) if size > 0 => size,
+            (_, true) => 3,
+            _ => 27,
+        }
+    }
+
+    /// The slots that hold nothing, of all it has (a double chest's 54 too).
     pub fn empty_slots(&self) -> Vec<u32> {
-        let size = if self.is_furnace() { 3 } else { 27 };
+        let size = self.slots();
         let used: Vec<u32> = self.contents.iter().map(|s| s.slot).collect();
 
         (0..size).filter(|slot| !used.contains(slot)).collect()
@@ -1593,6 +1606,11 @@ impl Memory {
                     if let Some(pos) = event.pos {
                         let used = self.used_container().map(|c| c.pos) == Some(pos);
                         self.container_opened(pos, &event.detail, &event.contents, day);
+                        if event.size > 0 {
+                            if let Some(c) = self.containers.iter_mut().find(|c| c.pos == pos) {
+                                c.size = event.size;
+                            }
+                        }
                         if used {
                             self.trigger("opened_chest");
                         }
@@ -1904,6 +1922,9 @@ impl Memory {
                     if let Some(pos) = event.pos {
                         if let Some(container) = self.containers.iter_mut().find(|c| c.pos == pos) {
                             container.contents = event.contents.clone();
+                            if event.size > 0 {
+                                container.size = event.size;
+                            }
                         }
                     }
                 }
@@ -2343,6 +2364,7 @@ impl Memory {
                     placed: false,
                     days: 1,
                     in_home: false,
+                    size: 0,
                 });
                 self.drop_least_opened_container();
             }
@@ -3745,6 +3767,7 @@ mod tests {
                             count: 1,
                             slot: 4,
                         }],
+                        size: 0,
                     },
                 ],
             ),
@@ -3766,6 +3789,7 @@ mod tests {
             pos: Some(pos),
             detail: detail.to_string(),
             contents,
+            size: 0,
         }
     }
 
@@ -3775,6 +3799,57 @@ mod tests {
             count: 3,
             slot: 0,
         }]
+    }
+
+    #[test]
+    fn a_double_chest_is_its_whole_fifty_four_slots_and_what_is_in_its_far_half_is_kept() {
+        // The owner's: "its saying my chest holds nothing even tho theres stuff in there", a
+        // double chest whose clicked half alone was read.
+        let mut memory = Memory::default();
+        let here = vec![player(0, [0.0, 64.0, 0.0], 0.0)];
+        let far_half = vec![ItemStack {
+            id: "minecraft:wheat_seeds".to_string(),
+            count: 12,
+            slot: 40,
+        }];
+        let mut opened = at(
+            EventKind::OpenedContainer,
+            [-403, 63, -374],
+            "minecraft:chest",
+            far_half.clone(),
+        );
+        opened.size = 54;
+        memory.observe(&obs(here.clone(), vec![opened]), 0.2);
+        let chest = &memory.containers[0];
+        assert_eq!(chest.slots(), 54);
+        assert_eq!(chest.contents, far_half, "what is in the far half is seen");
+        let empty = chest.empty_slots();
+        assert_eq!(empty.len(), 53);
+        assert!(empty.contains(&53) && !empty.contains(&40));
+
+        // Closed as they left it, the size kept.
+        let mut closed = at(
+            EventKind::ClosedContainer,
+            [-403, 63, -374],
+            "minecraft:chest",
+            vec![],
+        );
+        closed.size = 54;
+        memory.observe(&obs(here, vec![closed]), 0.3);
+        assert!(memory.containers[0].contents.is_empty());
+        assert_eq!(memory.containers[0].slots(), 54);
+
+        // A container saved before sizes were reported: a chest's 27, a furnace's 3.
+        let old = Container {
+            kind: "minecraft:chest".to_string(),
+            ..Default::default()
+        };
+        assert_eq!(old.slots(), 27);
+        let furnace = Container {
+            kind: "minecraft:furnace".to_string(),
+            ..Default::default()
+        };
+        assert_eq!(furnace.slots(), 3);
     }
 
     #[test]

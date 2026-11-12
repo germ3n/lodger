@@ -80,6 +80,7 @@ fn observations(tick: u64) -> Observations {
                     slot: 2,
                 },
             ],
+            size: 0,
         });
     }
     if tick == 100 {

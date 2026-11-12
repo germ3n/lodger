@@ -3274,6 +3274,7 @@ mod tests {
             in_home: false,
             last_opened_day: 0.0,
             contents: vec![],
+            size: 0,
         });
         let mut arc = Arc {
             stage: 2,
@@ -4890,6 +4891,7 @@ mod tests {
             pos: Some([300, 40, 12]),
             detail: "minecraft:iron_pickaxe".to_string(),
             contents: vec![],
+            size: 0,
         });
         memory.observe(&seen, 0.0);
         memory.last.online = true; // the observation carried no players

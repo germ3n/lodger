@@ -2441,6 +2441,23 @@ The `[x]` lines above, summed up by day:
   on you, the senses going wrong and the things taken into the sky, and the model section says
   the Qwen3 4B reads best and names the other makers'.
 
+- [x] **The mist no whiteout** (owner: "the fog got really dense and i can hardly see anything",
+  "weird smoke/steam particles all over the ground", "i am not using shaders rn"). Was: the mist's
+  fog closed to thirteen blocks, and banks of big dust drifted over the ground with or without a
+  shader pack, though they were there for a shader pack's sake (whose own fog hides the game's):
+  without one, fog and banks together left nothing to see. Now the mist's fog ends at twenty-two
+  blocks, and the banks drift only with a shader pack on (`MistVeil.banks`, with a test).
+
+- [x] **A double chest read whole** (owner: "its saying my chest holds nothing even tho theres
+  stuff in there", "i have 2 chests tho, 1 empty and 1 not", a double chest). Was: the host read
+  the half clicked alone, 27 slots, so what lay in the other half was never seen (after a stack
+  moved, the chest "held nothing"), each half was its own record, and the lodger's moves and
+  takes reached one half. Now the host reads a double chest whole, 54 slots as the screen shows
+  them (`Senses.containerAt`), reports it always at the same half (`ChestHalves`, with a test)
+  with its slots (`size`, ABI 55), and every command on a container uses the whole; the mind keeps
+  the size (`Container::slots`), its empty slots and tidying over all of them. Tests: in `memory`,
+  `ChestHalvesTest`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

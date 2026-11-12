@@ -31,6 +31,16 @@ public final class MistVeil {
 		return full * Math.max(0, Math.min(1, weight));
 	}
 
+	/**
+	 * How many banks of mist drift low over the ground this tick: only with a shader pack on, as
+	 * its veil's body, the game's own fog showing the mist without one (the banks over the
+	 * game's fog, too, were a whiteout and smoke over the ground, owner: "weird smoke/steam
+	 * particles all over the ground").
+	 */
+	public static int banks(float weight, boolean shaders) {
+		return shaders ? (int) (Math.max(0, Math.min(1, weight)) * 6) : 0;
+	}
+
 	/** The veil's colour for a mist of this kind. */
 	public static int colour(String kind) {
 		return kind.equals("red_mist") ? RED : PALE;

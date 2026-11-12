@@ -586,7 +586,7 @@ it stands. A render hook at the end of the game's fog setup closes and tints it
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `mist` | 2 | Pale grey mist to thirteen blocks, banks of it drifting low over the ground and motes in it, four minutes. `fog_close` is this mist, a minute long. With a shader pack on (which draws its own fog), a pale veil over the screen as well. | The target awake. |
+| `mist` | 2 | Pale grey mist to twenty-two blocks, motes in it, four minutes. `fog_close` is this mist, a minute long. With a shader pack on (which draws its own fog), a pale veil over the screen and banks of it drifting low over the ground instead. | The target awake. |
 | `dusk_noon` | 3 | At noon the light drains: the fog grey-violet to forty blocks, the sky dimmed, a grey veil, five minutes. | Day, the target awake. |
 | `red_mist` | 4 | Deep red mist to twenty blocks, a rust sky, red motes, four and a half minutes. | Night, the target awake. |
 | `darkness` | 4 | The dark closes to seven blocks, black, their own light still showing what is near, three minutes. | Night, the target awake. |

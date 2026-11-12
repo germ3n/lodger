@@ -334,9 +334,12 @@ public final class Senses {
 		if (player.level().getBlockState(pos).getBlock() instanceof net.minecraft.world.level.block.BellBlock) {
 			event(player, "rang_bell", pos, blockId(player.level().getBlockState(pos)), null);
 		}
-		if (entity instanceof Container container) {
-			openedAt.put(player.getUUID(), pos.immutable());
-			event(player, "opened_container", pos, blockId(player.level().getBlockState(pos)), contents(container));
+		if (entity instanceof Container) {
+			// A double chest whole, known by the same half whichever is clicked.
+			BlockPos known = containerPos(player.level(), pos);
+			Container container = containerAt(player.level(), pos);
+			openedAt.put(player.getUUID(), known);
+			event(player, "opened_container", known, blockId(player.level().getBlockState(pos)), contents(container), container.getContainerSize());
 		}
 	}
 
@@ -602,9 +605,9 @@ public final class Senses {
 		if (hadOpen != null && hadOpen && !containerOpen) {
 			// The contents as the player left them: what they took or put in while it was open.
 			BlockPos at = openedAt.remove(uuid);
-			BlockEntity entity = at == null ? null : player.level().getBlockEntity(at);
-			if (entity instanceof Container container) {
-				event(player, "closed_container", at, blockId(player.level().getBlockState(at)), contents(container));
+			Container container = at == null ? null : containerAt(player.level(), at);
+			if (container != null) {
+				event(player, "closed_container", at, blockId(player.level().getBlockState(at)), contents(container), container.getContainerSize());
 			} else {
 				event(player, "closed_container", null, "", null);
 			}
@@ -742,7 +745,15 @@ public final class Senses {
 	}
 
 	private void event(ServerPlayer player, String kind, BlockPos pos, String detail, JsonArray contents) {
+		event(player, kind, pos, detail, contents, 0);
+	}
+
+	/** An event, with a container's slots (`size`, ABI 55) when it is about one. */
+	private void event(ServerPlayer player, String kind, BlockPos pos, String detail, JsonArray contents, int size) {
 		JsonObject event = new JsonObject();
+		if (size > 0) {
+			event.addProperty("size", size);
+		}
 		event.addProperty("player", indexOf(player));
 		event.addProperty("kind", kind);
 		if (pos != null) {
@@ -809,6 +820,38 @@ public final class Senses {
 		panel.add("events", events);
 
 		return panel;
+	}
+
+	/**
+	 * The container at a place, a double chest whole: both halves, its 54 slots as the game's
+	 * screen shows them, whichever half is asked (it read the half asked alone, and what was in
+	 * the other half was never seen). Null for none.
+	 */
+	public static Container containerAt(net.minecraft.world.level.Level level, BlockPos pos) {
+		BlockState state = level.getBlockState(pos);
+		if (state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock chest) {
+			Container whole = net.minecraft.world.level.block.ChestBlock.getContainer(chest, state, level, pos, true);
+			if (whole != null) {
+				return whole;
+			}
+		}
+
+		return level.getBlockEntity(pos) instanceof Container container ? container : null;
+	}
+
+	/** Where a container is known by: a double chest always by the same half ({@code ChestHalves}). */
+	public static BlockPos containerPos(net.minecraft.world.level.Level level, BlockPos pos) {
+		BlockState state = level.getBlockState(pos);
+		if (state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock
+				&& state.getValue(net.minecraft.world.level.block.ChestBlock.TYPE) != net.minecraft.world.level.block.state.properties.ChestType.SINGLE) {
+			BlockPos other = pos.relative(net.minecraft.world.level.block.ChestBlock.getConnectedDirection(state));
+			if (level.getBlockState(other).getBlock() == state.getBlock()
+					&& !craftkit.host.world.ChestHalves.known(pos.getX(), pos.getZ(), other.getX(), other.getZ())) {
+				return other.immutable();
+			}
+		}
+
+		return pos.immutable();
 	}
 
 	static JsonArray contents(Container container) {
