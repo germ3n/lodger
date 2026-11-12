@@ -1294,6 +1294,8 @@ pub enum Action {
     PurpurKnock,
     /// In the End, by the ship, the deck creaking under weight, step by step, as if someone walked it.
     ShipCreaks,
+    /// In a Nether fortress, a torch ahead of them that they did not place, standing as theirs stand.
+    TheirTorchAhead,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8109,6 +8111,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("cold_breath", 20.0),
         false,
     ),
+    // docs/events_todo.md, 274: in a fortress, a torch ahead of them they did not place.
+    row(
+        "their_torch_ahead",
+        4,
+        5,
+        &[InNether, MobNear("wither_skeleton")],
+        2.0,
+        2,
+        Half,
+        Action::TheirTorchAhead,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8757,6 +8771,7 @@ impl Event {
             | Action::BackToTheWall
             | Action::EndermenTurnAway
             | Action::ZombifiedFollow
+            | Action::TheirTorchAhead
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9359,6 +9374,7 @@ impl Event {
             "ship_creaks" => "creak the deck as if someone walked it",
             "souls_follow" => "raise the souls only where they have just stepped",
             "breath_in_the_nether" => "show their breath in the heat of the Nether",
+            "their_torch_ahead" => "light a torch ahead of them in the fortress",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -3031,6 +3031,11 @@ The `[x]` lines above, summed up by day:
   `cold_breath` hint `cold_house` uses; off with the glitches). Tests: one in `act`. Was: no such
   event.
 
+- [x] **Their torch ahead** (`docs/events_todo.md`, 274): `their_torch_ahead`, stages 4 and 5, in
+  the Nether with a wither skeleton near (a fortress): a torch set nine blocks ahead of them,
+  standing or on a wall within three up or down, out of their sight. Tests: one in `act`. Was: no
+  such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -882,6 +882,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SecondWings
         | Action::PurpurKnock
         | Action::ShipCreaks
+        | Action::TheirTorchAhead
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10125,6 +10126,15 @@ pub fn commands(
                 ),
             ]
         }
+        // docs/events_todo.md, 274.
+        Action::TheirTorchAhead => {
+            let way = facing_way(memory.last.yaw);
+            let at = block_of(memory.last.pos);
+            vec![(
+                torch(ids, [at[0] + way[0] * 9, at[1], at[2] + way[1] * 9], 3),
+                0,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14007,6 +14017,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "their_torch_ahead"
                 || event.id == "breath_in_the_nether"
                 || event.id == "souls_follow"
                 || event.id == "ship_creaks"
@@ -22243,6 +22254,19 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "cold_breath" && *seconds == 20.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn their_torch_ahead_stands_nine_ahead_of_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 70.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("their_torch_ahead").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::SetBlock { pos, block, settle: 3, .. }, 0)] if *pos == [0, 70, 9] && block == "minecraft:torch"),
             "{made:?}"
         );
     }

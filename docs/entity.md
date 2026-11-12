@@ -477,6 +477,7 @@ caves, from before.
 | `ship_creaks` | 3 to 5 | At an end city or its ship (a shulker near them), the creak of wood under weight, step by step, coming up behind them; no one is there. | In the End, a shulker near them. |
 | `souls_follow` | 3 to 5 | In the Nether, walking the soul sand valley, the souls rise only where they have just stepped, a trail of them behind, a minute, on their screen alone (the client's `souls_follow` hint, ABI 56). | In the Nether. |
 | `breath_in_the_nether` | 3 to 5 | In the heat of the Nether their breath shows before their face, in puffs, as on a winter night, twenty seconds (the client's `cold_breath` hint of `cold_house`, there). | In the Nether. |
+| `their_torch_ahead` | 4 to 5 | In a Nether fortress (a wither skeleton near them), nine blocks ahead of them a torch they did not place, on the floor or on a wall as a torch finds room, out of their sight as it is set. | In the Nether, a wither skeleton near them. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).
