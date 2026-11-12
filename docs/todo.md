@@ -3021,6 +3021,11 @@ The `[x]` lines above, summed up by day:
   with a shulker near (at an end city or its ship): six low wooden steps coming up from five blocks
   behind them, to them alone. Tests: one in `act`. Was: no such event.
 
+- [x] **The souls follow** (`docs/events_todo.md`, 270): `souls_follow`, stages 3 to 5, in the
+  Nether: a minute in which, on soul sand or soul soil, a soul rises from where they have just
+  stepped every third of a second, on their client (the `souls_follow` hint; off with the glitches).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

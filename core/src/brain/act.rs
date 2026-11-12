@@ -14007,6 +14007,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "souls_follow"
                 || event.id == "ship_creaks"
                 || event.id == "purpur_knock"
                 || event.id == "second_wings"
@@ -22221,5 +22222,16 @@ mod tests {
         assert!(made
             .iter()
             .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
+    }
+
+    #[test]
+    fn souls_follow_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("souls_follow").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "souls_follow" && *seconds == 60.0),
+            "{made:?}"
+        );
     }
 }

@@ -505,6 +505,17 @@ public final class Glitches {
 						hint.pos().ifPresent(from -> trail(minecraft, from, hint.detail(), new net.minecraft.core.particles.SculkChargeParticleOptions(0f)));
 					}
 				}
+				// The souls rising from the sand only where they have just stepped (ABI 56).
+				case "souls_follow" -> {
+					if (minecraft.level.getGameTime() % 6 == 0) {
+						var under = minecraft.level.getBlockState(minecraft.player.blockPosition().below());
+						if (under.is(net.minecraft.world.level.block.Blocks.SOUL_SAND) || under.is(net.minecraft.world.level.block.Blocks.SOUL_SOIL)) {
+							Vec3 back = minecraft.player.getViewVector(1f).multiply(-0.8, 0, -0.8);
+							minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.SOUL,
+									minecraft.player.getX() + back.x, minecraft.player.getY() + 0.1, minecraft.player.getZ() + back.z, 0, 0.04, 0);
+						}
+					}
+				}
 				// Ash drifting down round them out of a clear sky (ABI 56).
 				case "ash_on_the_wind" -> {
 					var random = minecraft.level.getRandom();

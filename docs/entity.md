@@ -475,6 +475,7 @@ caves, from before.
 | `second_wings` | 4 to 5 | In the End, the beat of a second pair of wings three blocks behind them, keeping pace with them, six beats, and gone when they turn; nothing is there. | In the End. |
 | `purpur_knock` | 3 to 5 | At an end city (a shulker near them), three knocks from inside the wall beside them, as if from the other side; behind it is solid. | In the End, a shulker near them. |
 | `ship_creaks` | 3 to 5 | At an end city or its ship (a shulker near them), the creak of wood under weight, step by step, coming up behind them; no one is there. | In the End, a shulker near them. |
+| `souls_follow` | 3 to 5 | In the Nether, walking the soul sand valley, the souls rise only where they have just stepped, a trail of them behind, a minute, on their screen alone (the client's `souls_follow` hint, ABI 56). | In the Nether. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

@@ -8085,6 +8085,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ShipCreaks,
         true,
     ),
+    // docs/events_todo.md, 270: in the nether, walking the soul sand valley, the souls rise only where they have just stepped, a trail of them behind, a minute, on their screen alone.
+    row(
+        "souls_follow",
+        3,
+        5,
+        &[InNether],
+        1.0,
+        3,
+        Half,
+        Action::Hint("souls_follow", 60.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9333,6 +9345,7 @@ impl Event {
             "second_wings" => "beat a second pair of wings behind them",
             "purpur_knock" => "knock on the purpur wall beside them",
             "ship_creaks" => "creak the deck as if someone walked it",
+            "souls_follow" => "raise the souls only where they have just stepped",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
