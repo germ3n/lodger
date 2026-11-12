@@ -671,6 +671,7 @@ a dock or bridge), never over anything a player built (see the
 | `the_count` | 4 | At dusk a bell rings at their house: the first time once, the next twice, each time once more, nine at most, counting. | Dusk, a home. |
 | `rattling_round_the_house` | 4 | At night while they are in the house, a skeleton's rattling steps go all the way round the outside of it, a block and a half from the walls, and a rattle at the last corner; no skeleton. | The target indoors at night, a home. |
 | `chains_dragging` | 4 | Underground, chains dragged along the stone behind them, coming nearer, or going off. | The target underground. |
+| `shriek_below` | 5 | Once a stay, in the house, a sculk shrieker's shriek from far under it; or a heartbeat down there, then the shriek. | A home, the target indoors. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

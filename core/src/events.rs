@@ -5476,6 +5476,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.chain.step"),
         false,
     ),
+    // docs/events_todo.md, 130.
+    row(
+        "shriek_below",
+        5,
+        5,
+        &[Home, TargetIndoors],
+        4.0,
+        1,
+        Full,
+        Action::SoundAtTarget("minecraft:block.sculk_shrieker.shriek"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6638,6 +6650,7 @@ impl Event {
             "the_count" => "ring the bell at their house once more than last time",
             "rattling_round_the_house" => "rattle bones round the outside of their house",
             "chains_dragging" => "drag chains along the stone behind them",
+            "shriek_below" => "shriek from deep under their house",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

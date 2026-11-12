@@ -478,6 +478,39 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 130.
+        "shriek_below" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:block.sculk_shrieker.shriek", 0)],
+                    (0.8, 0.9),
+                    2.5,
+                    Deep,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.sculk_shrieker.shriek", 0),
+                        ("minecraft:block.sculk_shrieker.shriek", 40),
+                    ],
+                    (0.7, 0.8),
+                    2.0,
+                    Deep,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.warden.heartbeat", 0),
+                        ("minecraft:entity.warden.heartbeat", 20),
+                        ("minecraft:entity.warden.heartbeat", 40),
+                        ("minecraft:entity.warden.heartbeat", 60),
+                        ("minecraft:block.sculk_shrieker.shriek", 80),
+                    ],
+                    (0.8, 0.9),
+                    2.0,
+                    Deep,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1441,6 +1474,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "shriek_below",
             "chains_dragging",
             "doors_slam_far",
             "water_where_none",
