@@ -292,6 +292,8 @@ pub const WOKE_CHANCE: f64 = 0.35;
 pub const PORTAL_CHANCE: f64 = 0.3;
 /// How often coming back finds prints from the portal to their door (`prints_from_the_portal`).
 pub const PORTAL_PRINTS_CHANCE: f64 = 0.25;
+/// How often coming back shows another hour's sky a moment (`came_back_wrong_hour`).
+pub const WRONG_HOUR_CHANCE: f64 = 0.2;
 /// How often a light placed underground shows a figure (`torch_flash`).
 pub const TORCH_FLASH_CHANCE: f64 = 0.15;
 /// The chance a diamond mined begins the count (`ore_counted`); once begun, every one is counted.
@@ -972,6 +974,19 @@ impl Brain {
         if let Some(gone) = memory.back_after.take() {
             if gone >= AWAY_LEAST && !held_back {
                 self.consider_back(now, day, memory, arc, config, log);
+            }
+            // Perhaps the sky of another hour, a moment, as they come out.
+            if !held_back {
+                self.consider_started(
+                    "came_back_wrong_hour",
+                    WRONG_HOUR_CHANCE,
+                    now,
+                    day,
+                    memory,
+                    arc,
+                    config,
+                    log,
+                );
             }
             // Perhaps prints from it to their door, laid before they came.
             if !held_back {

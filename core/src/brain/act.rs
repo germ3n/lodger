@@ -22777,4 +22777,16 @@ mod tests {
             .iter()
             .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
     }
+
+    #[test]
+    fn came_back_wrong_hour_is_a_moment_of_the_wrong_sky() {
+        let memory = rich_memory();
+        let event = find("came_back_wrong_hour").unwrap();
+        assert!(event.needs.contains(&crate::events::Need::CameBack));
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "wrong_sky" && *seconds == 6.0),
+            "{made:?}"
+        );
+    }
 }
