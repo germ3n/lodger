@@ -2115,6 +2115,11 @@ The `[x]` lines above, summed up by day:
   way back, taken away ten minutes on, each of its own blocks alone (`crate::out_of_place`). Tests:
   one in `out_of_place`, one in `act`. Was: no such event.
 
+- [x] **Trees bare and skinned** (`docs/events_todo.md`, 112, owner's): `bare_trees`, stages 4 and 5,
+  in the woods: a stand of trees off to one side bare of leaves, stripped, or both by turns
+  (`bare_tree`, ABI 54; `Memory::stand_of_trees`). In view or not; overnight was not needed, since the
+  stand is off to the side. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

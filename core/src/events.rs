@@ -1125,6 +1125,8 @@ pub enum Action {
     CaveTorchesFlicker,
     /// A small scene that does not belong, set out where they will come on it.
     OutOfPlace,
+    /// A stand of trees near them gone bare, or skinned, or both.
+    BareTrees,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4922,6 +4924,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 112 (owner's): "some trees dont have leaves? or like have all of the
+    // logs stripped".
+    row(
+        "bare_trees",
+        4,
+        5,
+        &[InTheWoods],
+        2.0,
+        3,
+        Full,
+        Action::BareTrees,
+        false,
+    ),
     // docs/events_todo.md, 110 (owner's).
     row(
         "out_of_place",
@@ -6272,6 +6287,7 @@ impl Event {
             | Action::BlazedTrees
             | Action::TreesCloseBehind
             | Action::DeadRedstone
+            | Action::BareTrees
             | Action::OutOfPlace
             | Action::CaveTorchesFlicker
             | Action::PrintsAroundTheHouse
@@ -6422,6 +6438,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "bare_trees" => "strip a stand of trees near them bare, or skin their bark",
             "out_of_place" => "set out something that does not belong where they will come on it",
             "cave_torches_flicker" => {
                 "flicker their torches in the cave, one after another toward them"

@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The first tree of a stand off to one side of them.
+        Action::BareTrees => memory.stand_of_trees().first().copied(),
         // A cave floor they have not been to, or their way back.
         Action::OutOfPlace => memory.out_of_place_spot(),
         // The nearest of their lights underground.
@@ -6550,6 +6552,29 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Each tree of the stand made wrong, by turns: bare of leaves, skinned, or both.
+        Action::BareTrees => {
+            let (leaves, strip) = match memory.times(event.id) % 3 {
+                0 => (true, false),
+                1 => (false, true),
+                _ => (true, true),
+            };
+            memory
+                .stand_of_trees()
+                .into_iter()
+                .map(|trunk| {
+                    (
+                        Command::BareTree {
+                            id: ids(),
+                            trunk,
+                            leaves,
+                            strip,
+                        },
+                        0,
+                    )
+                })
+                .collect()
+        }
         // The scene set out on its floor, a scene by turns; ten minutes on, each block of it taken
         // away again, the very block alone (gone already, it is let be).
         Action::OutOfPlace => pos
@@ -10360,6 +10385,8 @@ mod tests {
                 || event.id == "villager_collapses"
                 // A wall of theirs beside them, which this memory has not: its own test.
                 || event.id == "wall_bursts"
+                // Trees at their height off to one side, which this memory's are not: its own test.
+                || event.id == "bare_trees"
             {
                 continue;
             }
@@ -15341,5 +15368,34 @@ mod tests {
             |(c, later)| matches!(c, Command::SwapBlock { block, .. } if block == "minecraft:air")
                 && *later == crate::out_of_place::STANDS_TICKS
         ));
+    }
+
+    #[test]
+    fn a_stand_of_trees_near_them_is_bare_or_skinned_by_turns() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.trunks = vec![
+            [16, 64, 0],
+            [18, 64, 3],
+            [20, 64, -2],
+            [40, 64, 0],
+            [3, 64, 3],
+        ];
+        let event = find("bare_trees").unwrap();
+        assert_eq!(place(event, &memory, &mut Rng::new(1)), Some([16, 64, 0]));
+        let mut ways = Vec::new();
+        for _ in 0..3 {
+            let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+            assert_eq!(
+                made.len(),
+                3,
+                "the stand, not the far tree or the near one: {made:?}"
+            );
+            if let Command::BareTree { leaves, strip, .. } = made[0].0 {
+                ways.push((leaves, strip));
+            }
+            memory.record("bare_trees", None, 0.0, true, "");
+        }
+        assert_eq!(ways, vec![(true, false), (false, true), (true, true)]);
     }
 }

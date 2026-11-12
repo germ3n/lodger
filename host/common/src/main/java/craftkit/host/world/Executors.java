@@ -125,6 +125,7 @@ public final class Executors {
 				case "drop_item" -> dropItem(level, command, id, data);
 				case "take_up" -> takeUp(level, command, id, data, context);
 				case "snap_branch" -> snapBranch(level, command, id, context);
+				case "bare_tree" -> bareTree(level, command, id);
 				case "fell_tree" -> fellTree(level, command, id, context);
 				case "panic" -> panic(level, command, id, context);
 				case "dead_redstone" -> {
@@ -2023,6 +2024,63 @@ public final class Executors {
 			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
 					net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.HOSTILE,
 					stump.getX() + 0.5 + way[0] * 4, stump.getY() + 1, stump.getZ() + 0.5 + way[1] * 4, 0.35f, 0.5f, player.getRandom().nextLong()));
+		}
+
+		return report(id, true, "");
+	}
+
+	/**
+	 * A tree made wrong (ABI 54): its own logs found from the trunk up and out (joined logs, at
+	 * most 160), stripped; and its own leaves round them (never persistent ones) taken away.
+	 */
+	private static JsonObject bareTree(ServerLevel level, JsonObject command, long id) {
+		BlockPos trunk = blockPos(command.getAsJsonArray("trunk"));
+		if (!level.getBlockState(trunk).is(net.minecraft.tags.BlockTags.LOGS)) {
+			return report(id, false, "no tree there");
+		}
+		boolean leaves = command.has("leaves") && command.get("leaves").getAsBoolean();
+		boolean strip = command.has("strip") && command.get("strip").getAsBoolean();
+		// The tree's logs: joined to the trunk, never below it, at most so many.
+		java.util.Set<BlockPos> logs = new java.util.LinkedHashSet<>();
+		java.util.ArrayDeque<BlockPos> open = new java.util.ArrayDeque<>(List.of(trunk));
+		while (!open.isEmpty() && logs.size() < 160) {
+			BlockPos at = open.poll();
+			if (logs.contains(at) || at.getY() < trunk.getY() || !level.getBlockState(at).is(net.minecraft.tags.BlockTags.LOGS)) {
+				continue;
+			}
+			logs.add(at);
+			for (BlockPos next : BlockPos.betweenClosed(at.offset(-1, 0, -1), at.offset(1, 1, 1))) {
+				if (!logs.contains(next)) {
+					open.add(next.immutable());
+				}
+			}
+		}
+		if (leaves) {
+			for (BlockPos log : logs) {
+				for (BlockPos p : BlockPos.betweenClosed(log.offset(-3, -1, -3), log.offset(3, 3, 3))) {
+					BlockState state = level.getBlockState(p);
+					if (state.is(net.minecraft.tags.BlockTags.LEAVES) && state.hasProperty(net.minecraft.world.level.block.LeavesBlock.PERSISTENT)
+							&& !state.getValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT)) {
+						level.setBlock(p, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+					}
+				}
+			}
+		}
+		if (strip) {
+			for (BlockPos log : logs) {
+				BlockState state = level.getBlockState(log);
+				Identifier key = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+				if (key.getPath().startsWith("stripped_")) {
+					continue;
+				}
+				BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath(key.getNamespace(), "stripped_" + key.getPath())).ifPresent(bare -> {
+					BlockState stripped = bare.value().defaultBlockState();
+					if (state.hasProperty(net.minecraft.world.level.block.RotatedPillarBlock.AXIS) && stripped.hasProperty(net.minecraft.world.level.block.RotatedPillarBlock.AXIS)) {
+						stripped = stripped.setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, state.getValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS));
+					}
+					level.setBlock(log, stripped, Block.UPDATE_CLIENTS);
+				});
+			}
 		}
 
 		return report(id, true, "");

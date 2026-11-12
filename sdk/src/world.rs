@@ -698,6 +698,17 @@ pub enum Command {
         trunk: BlockPos,
         toward: Pos,
     },
+    /// The tree whose trunk rises from `trunk` made wrong: with `leaves` every leaf of its own
+    /// taken away (never a placed one), with `strip` every log of it, the trunk and all joined to
+    /// it, swapped to its stripped log. Refused when it is no tree. ABI 54.
+    BareTree {
+        id: u64,
+        trunk: BlockPos,
+        #[serde(default, skip_serializing_if = "is_false")]
+        leaves: bool,
+        #[serde(default, skip_serializing_if = "is_false")]
+        strip: bool,
+    },
     /// A branch snapping in the tree whose trunk rises from `trunk`: a crack of breaking wood
     /// over it, heard by `player`, and up to four of its own leaves torn out of its crown, falling
     /// as leaves break (never a leaf anyone placed). Refused with no leaves over it. ABI 54.
@@ -1478,6 +1489,7 @@ impl Command {
             | Command::DropHeld { id, .. }
             | Command::TakeUp { id, .. }
             | Command::SnapBranch { id, .. }
+            | Command::BareTree { id, .. }
             | Command::FellTree { id, .. }
             | Command::Panic { id, .. }
             | Command::HoldTrades { id, .. }

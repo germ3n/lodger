@@ -145,6 +145,30 @@ impl Memory {
             && self.trunks_ahead(3.0, 24.0).len() <= 1
     }
 
+    /// A stand of trees off to one side of them, fourteen to twenty-four blocks: the trunk
+    /// nearest that place and up to five more within six blocks of it.
+    pub fn stand_of_trees(&self) -> Vec<BlockPos> {
+        let at = block_of(self.last.pos);
+        let Some(first) = self
+            .trunks
+            .iter()
+            .filter(|t| (14.0..=24.0).contains(&distance(**t, at)))
+            .min_by(|a, b| distance(**a, at).total_cmp(&distance(**b, at)))
+            .copied()
+        else {
+            return Vec::new();
+        };
+        let mut stand: Vec<BlockPos> = self
+            .trunks
+            .iter()
+            .copied()
+            .filter(|t| distance(*t, first) <= 6.0)
+            .collect();
+        stand.sort_by(|a, b| distance(*a, first).total_cmp(&distance(*b, first)));
+        stand.truncate(6);
+        stand
+    }
+
     /// The trunk behind them they passed last: the nearest of those behind, three to ten blocks.
     pub fn trunk_just_passed(&self) -> Option<BlockPos> {
         self.trunks_behind(3.0, 10.0).last().copied()
