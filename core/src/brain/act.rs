@@ -900,6 +900,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::NameFromTheVoid
         | Action::StandingOnTheVoid
         | Action::SplashInTheNether
+        | Action::SomeoneWentThrough
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10356,6 +10357,32 @@ pub fn commands(
                 },
                 0,
             )]
+        }
+        // docs/events_todo.md, 311.
+        Action::SomeoneWentThrough => {
+            // Across the ground: a frame up a hill is as near as one beside them.
+            let at = memory.last.pos;
+            let flat = |p: &BlockPos| {
+                ((p[0] as f64 + 0.5 - at[0]).powi(2) + (p[2] as f64 + 0.5 - at[2]).powi(2)).sqrt()
+            };
+            match memory
+                .placed_obsidian
+                .iter()
+                .min_by(|a, b| flat(a).total_cmp(&flat(b)))
+            {
+                Some(frame) if flat(frame) <= 48.0 => vec![(
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.portal.travel".to_string(),
+                        pos: block_center(*frame),
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    0,
+                )],
+                _ => vec![],
+            }
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -22641,5 +22668,18 @@ mod tests {
             matches!(&made[..], [(Command::SplashPotion { from, effect, .. }, 0)] if from[1] == 71.5 && effect != "levitation"),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn someone_went_through_is_heard_and_nothing_else() {
+        let mut memory = rich_memory();
+        memory.placed_obsidian = vec![block_of(memory.last.pos)];
+        let event = find("someone_went_through").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 1, "{made:?}");
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
     }
 }

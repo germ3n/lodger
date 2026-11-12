@@ -1316,6 +1316,8 @@ pub enum Action {
     StandingOnTheVoid,
     /// In the Nether, a splash potion from the dark landing at their feet, as at home.
     SplashInTheNether,
+    /// At home, the sound of someone going through their portal behind them.
+    SomeoneWentThrough,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8275,6 +8277,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SplashInTheNether,
         false,
     ),
+    // docs/events_todo.md, 311: near the portal they built at home.
+    row(
+        "someone_went_through",
+        3,
+        5,
+        &[TargetOutdoors],
+        1.0,
+        3,
+        Half,
+        Action::SomeoneWentThrough,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8583,6 +8597,7 @@ impl Event {
             | Action::SecondWings
             | Action::PurpurKnock
             | Action::ShipCreaks
+            | Action::SomeoneWentThrough
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -9548,6 +9563,7 @@ impl Event {
             "name_from_the_void" => "call their name from the void below them",
             "standing_on_the_void" => "stand the figure on nothing over the void",
             "splash_in_the_nether" => "throw a splash potion at their feet from the Nether's dark",
+            "someone_went_through" => "sound someone going through their portal",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

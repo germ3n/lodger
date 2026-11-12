@@ -3090,6 +3090,10 @@ The `[x]` lines above, summed up by day:
   from seven blocks ahead at their height (`splash_potion`; never levitation over the lava). Owner:
   "can you also do like splash potion event?". Tests: one in `act`. Was: no such event.
 
+- [x] **Someone went through** (`docs/events_todo.md`, 311): `someone_went_through`, stages 3 to 5,
+  outdoors within forty-eight blocks of the portal they built: a portal's crossing heard from its
+  frame, to them alone. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
