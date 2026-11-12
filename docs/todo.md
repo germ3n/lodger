@@ -2705,6 +2705,11 @@ The `[x]` lines above, summed up by day:
   the flight, to their client alone ten minutes (`ghost_block`; the floor itself never cut). Tests:
   one in `act`. Was: no such event.
 
+- [x] **The room closes in** (`docs/events_todo.md`, 215): `room_closes_in`, stage 5, as they wake:
+  the side of the house with the most of their wall, from the floor to two up, shown a block further
+  in, each block its own kind, to their client alone ten minutes, into air alone (`ghost_block`'s
+  `only_air`, ABI 56: their furniture never hidden). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

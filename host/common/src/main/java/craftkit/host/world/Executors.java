@@ -3119,6 +3119,9 @@ public final class Executors {
 			return report(id, false, "the place is not loaded");
 		}
 		String block = command.get("block").getAsString();
+		if (!block.isEmpty() && command.has("only_air") && command.get("only_air").getAsBoolean() && !level.getBlockState(pos).isAir()) {
+			return report(id, false, "the place holds " + Senses.blockId(level.getBlockState(pos)));
+		}
 		BlockState shown;
 		if (block.isEmpty()) {
 			shown = level.getBlockState(pos);

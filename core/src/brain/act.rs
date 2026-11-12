@@ -133,6 +133,53 @@ fn staircase_foot(memory: &Memory) -> Option<(BlockPos, &'static str)> {
     Some(([s[0] - d[0], s[1] - 1, s[2] - d[1]], facing))
 }
 
+/// One wall of their house a block further in: on the side where they built the most wall, from
+/// the floor to two up, the cell just inside each of its blocks, with that block's own kind;
+/// none where the cell is a wall too.
+fn wall_closer(memory: &Memory) -> Vec<(BlockPos, String)> {
+    let Some(home) = memory.home.as_ref() else {
+        return vec![];
+    };
+    let floor = home.floor_y;
+    let ours: Vec<&(BlockPos, String)> = memory
+        .walls
+        .iter()
+        .filter(|(p, id)| {
+            let near = match memory.house {
+                Some(_) => memory.in_house(*p),
+                None => (p[0] - home.center[0]).abs() <= 12 && (p[2] - home.center[2]).abs() <= 12,
+            };
+            is_wall_block(id) && near && (floor..=floor + 2).contains(&p[1])
+        })
+        .collect();
+    let (Some(x0), Some(x1), Some(z0), Some(z1)) = (
+        ours.iter().map(|(p, _)| p[0]).min(),
+        ours.iter().map(|(p, _)| p[0]).max(),
+        ours.iter().map(|(p, _)| p[2]).min(),
+        ours.iter().map(|(p, _)| p[2]).max(),
+    ) else {
+        return vec![];
+    };
+    let walls: std::collections::HashSet<BlockPos> = memory.walls.iter().map(|(p, _)| *p).collect();
+    let sides: [(usize, i32, [i32; 2]); 4] = [
+        (0, x1, [-1, 0]),
+        (0, x0, [1, 0]),
+        (2, z1, [0, -1]),
+        (2, z0, [0, 1]),
+    ];
+    sides
+        .iter()
+        .map(|(axis, at, inward)| {
+            ours.iter()
+                .filter(|(p, _)| p[*axis] == *at)
+                .map(|(p, id)| ([p[0] + inward[0], p[1], p[2] + inward[1]], id.clone()))
+                .filter(|(c, _)| !walls.contains(c))
+                .collect::<Vec<_>>()
+        })
+        .max_by_key(|cells| cells.len())
+        .unwrap_or_default()
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -536,6 +583,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TridentPlanted
         | Action::SlamCrater
         | Action::OneStepMore
+        | Action::RoomClosesIn
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7837,6 +7885,7 @@ pub fn commands(
                             pos: cell,
                             block: "minecraft:respawn_anchor".to_string(),
                             state: "charges=4".to_string(),
+                            only_air: true,
                         },
                         0,
                     ),
@@ -7847,6 +7896,7 @@ pub fn commands(
                             pos: cell,
                             block: String::new(),
                             state: String::new(),
+                            only_air: false,
                         },
                         ANCHOR_SHOWN_TICKS,
                     ),
@@ -7875,6 +7925,7 @@ pub fn commands(
                             pos: p,
                             block: "minecraft:potted_wither_rose".to_string(),
                             state: String::new(),
+                            only_air: false,
                         },
                         0,
                     ),
@@ -7885,6 +7936,7 @@ pub fn commands(
                             pos: p,
                             block: String::new(),
                             state: String::new(),
+                            only_air: false,
                         },
                         ROSE_SHOWN_TICKS,
                     ),
@@ -8020,6 +8072,7 @@ pub fn commands(
                         pos: foot,
                         block: "minecraft:oak_stairs".to_string(),
                         state: format!("facing={facing}"),
+                        only_air: false,
                     },
                     0,
                 ),
@@ -8030,12 +8083,42 @@ pub fn commands(
                         pos: foot,
                         block: String::new(),
                         state: String::new(),
+                        only_air: false,
                     },
                     ROSE_SHOWN_TICKS,
                 ),
             ],
             None => vec![],
         },
+        // docs/events_todo.md, 215.
+        Action::RoomClosesIn => {
+            let mut made = Vec::new();
+            for (cell, block) in wall_closer(memory) {
+                made.push((
+                    Command::GhostBlock {
+                        id: ids(),
+                        player: target,
+                        pos: cell,
+                        block: block.clone(),
+                        state: String::new(),
+                        only_air: true,
+                    },
+                    0,
+                ));
+                made.push((
+                    Command::GhostBlock {
+                        id: ids(),
+                        player: target,
+                        pos: cell,
+                        block: String::new(),
+                        state: String::new(),
+                        only_air: false,
+                    },
+                    ROSE_SHOWN_TICKS,
+                ));
+            }
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -18995,6 +19078,33 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::GhostBlock { pos, state, .. }, 0), (Command::GhostBlock { block, .. }, _)] if *pos == [3, 64, 3] && state == "facing=east" && block.is_empty()),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn room_closes_in_shows_their_longest_wall_a_block_further_in() {
+        let mut memory = rich_memory();
+        let floor = memory.home.as_ref().unwrap().floor_y;
+        memory.walls.retain(|_| false);
+        for z in -2..=2 {
+            memory
+                .walls
+                .push(([6, floor, z], "minecraft:oak_planks".to_string()));
+        }
+        memory
+            .walls
+            .push(([-6, floor, 0], "minecraft:cobblestone".to_string()));
+        let closer = wall_closer(&memory);
+        assert_eq!(closer.len(), 5, "{closer:?}");
+        assert!(closer
+            .iter()
+            .all(|(c, b)| c[0] == 5 && b == "minecraft:oak_planks"));
+        let event = find("room_closes_in").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            made.iter()
+                .any(|(c, _)| matches!(c, Command::GhostBlock { only_air: true, .. })),
             "{made:?}"
         );
     }

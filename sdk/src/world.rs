@@ -714,6 +714,9 @@ pub enum Command {
         block: String,
         #[serde(default, skip_serializing_if = "String::is_empty")]
         state: String,
+        /// Shown only where the world holds air: their furniture never hidden under it.
+        #[serde(default, skip_serializing_if = "is_false")]
+        only_air: bool,
     },
     /// The big dripleaves near `player` (ten blocks), up to six, tipped one after another from
     /// the farthest in, as if something walked across them toward them, each with its sound, and
