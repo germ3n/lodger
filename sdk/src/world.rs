@@ -749,6 +749,16 @@ pub enum Command {
         slot: u32,
         item: String,
     },
+    /// What `player` next throws or shoots within `seconds` (ten minutes at most) comes back,
+    /// once: `what` a `snowball` (where it lands, one thrown back at them a moment on) or an
+    /// `arrow` (one that sticks, which they could pick up, taken out and dropped at their feet a
+    /// moment on, the very arrow). ABI 56.
+    ThrowBack {
+        id: u64,
+        player: u32,
+        what: String,
+        seconds: f32,
+    },
     /// The next block `player` breaks within eight blocks of them, within `seconds` (ten minutes
     /// at most), drops what it drops a second and a half late, as if held, where it would have.
     /// ABI 56.
@@ -1716,6 +1726,7 @@ impl Command {
             | Command::CurlUp { id, .. }
             | Command::RefuseFood { id, .. }
             | Command::LateDrop { id, .. }
+            | Command::ThrowBack { id, .. }
             | Command::PutInBundle { id, .. }
             | Command::DyeItem { id, .. }
             | Command::DropBlock { id, .. }

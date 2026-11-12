@@ -204,6 +204,19 @@ public final class Executors {
 					container.setChanged();
 					yield report(id, true, "");
 				}
+				case "throw_back" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					String what = command.get("what").getAsString();
+					Returns.Kind back = what.equals("snowball") ? Returns.Kind.SNOWBALL : what.equals("arrow") ? Returns.Kind.ARROW : null;
+					if (back == null) {
+						yield report(id, false, "nothing called " + what + " comes back");
+					}
+					Returns.arm(player.getUUID(), back, level.getGameTime() + (long) (Math.min(600, command.get("seconds").getAsFloat()) * 20));
+					yield report(id, true, "");
+				}
 				case "late_drop" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

@@ -240,6 +240,7 @@ public final class Worlds {
 		figures.tick();
 		BossBars.tick();
 		LateDrops.tick(server);
+		Returns.tick(server);
 		for (Gatherings.Bought sale : gatherings.takeBought()) {
 			if (open.containsKey(sale.level())) {
 				senses.noticedBought(sale.level(), sale.player(), sale.at(), sale.item());

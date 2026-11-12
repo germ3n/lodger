@@ -1252,6 +1252,8 @@ pub enum Action {
     LeatherDyed,
     /// Each diamond they mine, a soft chime, one more each time, as if counted.
     OreCounted,
+    /// A snowball they throw into the dark coming flying back from where it landed.
+    SnowballComesBack,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7767,6 +7769,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::OreCounted,
         true,
     ),
+    // docs/events_todo.md, 259: a snowball they throw into the dark comes flying back.
+    row(
+        "snowball_comes_back",
+        3,
+        5,
+        &[Night, TargetOutdoors, Holding("minecraft:snowball")],
+        1.0,
+        3,
+        Half,
+        Action::SnowballComesBack,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8396,6 +8410,7 @@ impl Event {
             | Action::RefusesFood
             | Action::TheChildStares
             | Action::LateDrop
+            | Action::SnowballComesBack
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8973,6 +8988,7 @@ impl Event {
             "bundle_gains" => "slip a pebble into their bundle",
             "leather_dyed" => "dye their leather armour black overnight",
             "ore_counted" => "count each diamond they mine with a chime",
+            "snowball_comes_back" => "throw back the next snowball they throw",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

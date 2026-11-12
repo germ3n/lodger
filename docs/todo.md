@@ -2919,6 +2919,11 @@ The `[x]` lines above, summed up by day:
   up the scale, one more each diamond to eight; a three-in-ten chance to begin, every diamond
   counted after (the brain). Tests: two in `act`, one in `memory`. Was: no such event.
 
+- [x] **The snowball comes back** (`docs/events_todo.md`, 259): `snowball_comes_back`, stages 3 to
+  5, outdoors at night holding a snowball: the next one they throw within two minutes answered by a
+  snowball thrown back at them from where it landed, a second and a half on (`throw_back`, ABI 56:
+  `Returns` and `SnowballMixin`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

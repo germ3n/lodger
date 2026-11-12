@@ -787,6 +787,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BundleGains
         | Action::LeatherDyed
         | Action::OreCounted
+        | Action::SnowballComesBack
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9304,6 +9305,16 @@ pub fn commands(
                 })
                 .collect()
         }
+        // docs/events_todo.md, 259.
+        Action::SnowballComesBack => vec![(
+            Command::ThrowBack {
+                id: ids(),
+                player: target,
+                what: "snowball".to_string(),
+                seconds: 120.0,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -21037,6 +21048,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::PlaySound { sound, .. }, 0)] if sound.contains("chime")),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn snowball_comes_back_arms_their_next_throw() {
+        let memory = rich_memory();
+        let event = find("snowball_comes_back").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::ThrowBack { what, .. }, 0)] if what == "snowball"),
             "{made:?}"
         );
     }
