@@ -620,6 +620,17 @@ pub enum Command {
         most: u32,
         keep: String,
     },
+    /// The tree whose trunk rises from `trunk` comes down toward `toward`: each log above the
+    /// stump (the lowest log, left standing) falls as a block, laid along the ground the way it
+    /// falls, a crash as it goes; its leaves left to fall as leaves do. Never a log landed within
+    /// two blocks of `player`, nor on anything but air, where a log stays standing instead.
+    /// Refused with nothing over the stump. ABI 54.
+    FellTree {
+        id: u64,
+        player: u32,
+        trunk: BlockPos,
+        toward: Pos,
+    },
     /// A branch snapping in the tree whose trunk rises from `trunk`: a crack of breaking wood
     /// over it, heard by `player`, and up to four of its own leaves torn out of its crown, falling
     /// as leaves break (never a leaf anyone placed). Refused with no leaves over it. ABI 54.
@@ -1383,6 +1394,7 @@ impl Command {
             | Command::DropHeld { id, .. }
             | Command::TakeUp { id, .. }
             | Command::SnapBranch { id, .. }
+            | Command::FellTree { id, .. }
             | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }

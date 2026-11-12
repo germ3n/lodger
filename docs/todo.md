@@ -1981,6 +1981,11 @@ The `[x]` lines above, summed up by day:
   (`trees::sapling_of`, `Memory::way_they_came`). Tests: one in `trees`, one in `act`. Was: no such
   event.
 
+- [x] **A tree comes down** (`docs/events_todo.md`, 88): `tree_comes_down`, stages 4 and 5, walking
+  in the woods: a tree ahead of them falls across their way, its logs laid along the ground as falling
+  blocks, the stump left (`fell_tree`, ABI 54; `Felled.java`, never a log within two blocks of them,
+  never one landed on anything but air). Tests: `FelledTest`, one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

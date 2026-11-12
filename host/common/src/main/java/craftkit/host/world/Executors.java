@@ -125,6 +125,7 @@ public final class Executors {
 				case "drop_item" -> dropItem(level, command, id, data);
 				case "take_up" -> takeUp(level, command, id, data, context);
 				case "snap_branch" -> snapBranch(level, command, id, context);
+				case "fell_tree" -> fellTree(level, command, id, context);
 				case "drop_kept" -> dropKept(level, command, id, data);
 				case "rename_item" -> renameItem(level, command, id);
 				case "sign_book" -> signBook(level, command, id);
@@ -1893,6 +1894,58 @@ public final class Executors {
 		}
 		into.setItem(slot, stack);
 		into.setChanged();
+
+		return report(id, true, "");
+	}
+
+	/**
+	 * A tree brought down (ABI 54, {@link Felled}): every log of the column over the stump moved
+	 * out along the way it falls to its height and dropped from there as a falling block, so it
+	 * lies on the ground as a felled tree; a log whose place is not air, or too near them, stays.
+	 */
+	private static JsonObject fellTree(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		BlockPos stump = blockPos(command.getAsJsonArray("trunk"));
+		JsonArray toward = command.getAsJsonArray("toward");
+		int[] way = Felled.way(toward.get(0).getAsDouble() - (stump.getX() + 0.5), toward.get(2).getAsDouble() - (stump.getZ() + 0.5));
+		List<BlockPos> logs = new ArrayList<>();
+		for (BlockPos p = stump.above(); level.getBlockState(p).is(net.minecraft.tags.BlockTags.LOGS) && logs.size() < 24; p = p.above()) {
+			logs.add(p.immutable());
+		}
+		if (logs.isEmpty()) {
+			return report(id, false, "nothing over the stump");
+		}
+		double px = player == null ? Double.MAX_VALUE : player.getX();
+		double pz = player == null ? Double.MAX_VALUE : player.getZ();
+		int felled = 0;
+		for (BlockPos log : logs) {
+			int up = log.getY() - stump.getY();
+			int[] out = Felled.lies(up, way);
+			BlockPos to = new BlockPos(stump.getX() + out[0], log.getY(), stump.getZ() + out[1]);
+			if (!level.getBlockState(to).isAir() || Felled.nearThem(to.getX(), to.getZ(), px, pz)) {
+				continue;
+			}
+			BlockState state = level.getBlockState(log);
+			if (state.hasProperty(net.minecraft.world.level.block.RotatedPillarBlock.AXIS)) {
+				state = state.setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS,
+						way[0] != 0 ? net.minecraft.core.Direction.Axis.X : net.minecraft.core.Direction.Axis.Z);
+			}
+			level.setBlock(log, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+			level.setBlock(to, state, Block.UPDATE_ALL);
+			net.minecraft.world.entity.item.FallingBlockEntity.fall(level, to, state);
+			felled++;
+		}
+		if (felled == 0) {
+			return report(id, false, "no room for it to fall");
+		}
+		if (player != null) {
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+					net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.WOOD_BREAK), net.minecraft.sounds.SoundSource.HOSTILE,
+					stump.getX() + 0.5, stump.getY() + 3, stump.getZ() + 0.5, 1.5f, 0.45f, player.getRandom().nextLong()));
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+					net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.HOSTILE,
+					stump.getX() + 0.5 + way[0] * 4, stump.getY() + 1, stump.getZ() + 0.5 + way[1] * 4, 0.35f, 0.5f, player.getRandom().nextLong()));
+		}
 
 		return report(id, true, "");
 	}

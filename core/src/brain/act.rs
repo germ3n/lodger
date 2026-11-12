@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // A trunk beside them ahead, five to nine blocks off.
+        Action::TreeComesDown => memory.trunks_ahead(5.0, 9.0).first().copied(),
         // On their trail where they came in, behind them.
         Action::TreesCloseBehind => memory.way_they_came(),
         // The first place between two trees of the edge behind them.
@@ -6365,6 +6367,22 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Down across their way: toward the ground six blocks ahead of them.
+        Action::TreeComesDown => pos
+            .map(|trunk| {
+                let at = memory.last.pos;
+                let yaw = (memory.last.yaw as f64).to_radians();
+                vec![(
+                    Command::FellTree {
+                        id: ids(),
+                        player: target,
+                        trunk,
+                        toward: [at[0] - yaw.sin() * 6.0, at[1], at[2] + yaw.cos() * 6.0],
+                    },
+                    0,
+                )]
             })
             .unwrap_or_default(),
         // A sapling of the woods' own kind set in the way they came, and grown at once: a tree
@@ -14016,6 +14034,24 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::SetBlock { block, .. }, 0), (Command::Grow { pos, .. }, 2)]
                 if block == "minecraft:spruce_sapling" && *pos == spot),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_tree_beside_them_comes_down_across_their_way() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.trunks = vec![[3, 64, 6], [0, 64, 20]];
+        let event = find("tree_comes_down").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, Some([3, 64, 6]));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::FellTree { trunk, toward, .. }, 0)]
+                if *trunk == [3, 64, 6] && toward[2] > 6.0 - 1e-9),
             "{made:?}"
         );
     }

@@ -1056,6 +1056,8 @@ pub enum Action {
     TheTreeLine,
     /// Deep in the woods, a full-grown tree where they came in.
     TreesCloseBehind,
+    /// A tree beside them comes down across their way.
+    TreeComesDown,
     /// Their most valuable things, carried and in their chests, up into the sky.
     TakenUp,
     /// What it took up falls out of the sky in front of their door.
@@ -4838,6 +4840,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 88.
+    row(
+        "tree_comes_down",
+        4,
+        5,
+        &[InTheWoods, TargetWalking],
+        2.0,
+        2,
+        Full,
+        Action::TreeComesDown,
+        false,
+    ),
     // docs/events_todo.md, 87.
     row(
         "trees_close_behind",
@@ -5894,6 +5908,7 @@ impl Event {
             | Action::ItsBanner
             | Action::BlazedTrees
             | Action::TreesCloseBehind
+            | Action::TreeComesDown
             | Action::PathThroughTheTrees
             | Action::ArrowInTheDoor
             | Action::WallSwap(..) => "house",
@@ -6024,6 +6039,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "tree_comes_down" => "bring a tree down across their way",
             "trees_close_behind" => "grow a tree in the way they came into the woods",
             "the_tree_line" => {
                 "stand figures between the trees behind them as they leave the woods"
