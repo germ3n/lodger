@@ -243,6 +243,8 @@ pub enum Need {
     Riding(&'static str),
     /// A pet of theirs of this kind near (`cat_gift`).
     PetOf(&'static str),
+    /// A young animal near them (`the_child_stares`).
+    BabyNear,
     /// Where they last died is in sight: twelve to sixty-four blocks from them.
     NearTheirDeath,
     /// Down a shaft of their ladders, six blocks or more below its top.
@@ -300,6 +302,7 @@ impl Need {
                 | Need::TargetWalking
                 | Need::Riding(_)
                 | Need::PetOf(_)
+                | Need::BabyNear
                 | Need::TargetInBed
                 | Need::TargetSaid
                 | Need::Heard
@@ -483,6 +486,7 @@ impl Need {
             Need::Copper => "no copper of theirs left to weather".to_string(),
             Need::Riding(kind) => format!("they ride no {}", kind.replace('_', " ")),
             Need::PetOf(kind) => format!("no {} of theirs near", kind.replace('_', " ")),
+            Need::BabyNear => "no young animal near them".to_string(),
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetSwimming => "the target is not swimming".to_string(),
@@ -1234,6 +1238,8 @@ pub enum Action {
     SnifferAtItsPlace,
     /// The next animal they feed turning its head away, eating nothing, once.
     RefusesFood,
+    /// The young animals near them staring at them wherever they go, a long while.
+    TheChildStares,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7677,6 +7683,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::RefusesFood,
         false,
     ),
+    // docs/events_todo.md, 254: the young animals near them stare at them wherever they go.
+    row(
+        "the_child_stares",
+        4,
+        5,
+        &[BabyNear],
+        1.0,
+        3,
+        Half,
+        Action::TheChildStares,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8301,6 +8319,7 @@ impl Event {
             | Action::ArmadillosCurl
             | Action::SnifferAtItsPlace
             | Action::RefusesFood
+            | Action::TheChildStares
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8873,6 +8892,7 @@ impl Event {
             "armadillos_curl" => "curl every armadillo near them up at once",
             "sniffer_at_its_place" => "stand a sniffer snuffling at its place",
             "refuses_food" => "make the next animal they feed refuse it",
+            "the_child_stares" => "make the young animals near them stare at them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

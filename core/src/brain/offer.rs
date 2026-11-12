@@ -147,6 +147,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::LitUnderground => false,
         Need::Riding(kind) => last.online && last.riding.ends_with(kind),
         Need::PetOf(kind) => memory.pets().any(|p| p.kind == kind),
+        Need::BabyNear => last.creatures_near.iter().any(|c| c.baby && !c.pet),
         Need::Copper => memory
             .walls
             .iter()

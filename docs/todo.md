@@ -2896,6 +2896,10 @@ The `[x]` lines above, summed up by day:
   and the food kept (`refuse_food`, ABI 56: `Refusals` and `AnimalFeedMixin`, a JUnit test). Tests:
   one in `act`, two in JUnit (`RefusalsTest`). Was: no such event.
 
+- [x] **The child stares** (`docs/events_todo.md`, 254): `the_child_stares`, stages 4 and 5, with a
+  young animal near them: every young animal near (none a pet) held ten minutes facing them as they
+  move (`hold`; a new passing need, `BabyNear`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

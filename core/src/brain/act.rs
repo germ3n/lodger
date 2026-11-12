@@ -779,6 +779,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ArmadillosCurl
         | Action::SnifferAtItsPlace
         | Action::RefusesFood
+        | Action::TheChildStares
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9212,6 +9213,27 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 254.
+        Action::TheChildStares => memory
+            .last
+            .creatures_near
+            .iter()
+            .filter(|c| c.baby && !c.pet)
+            .map(|young| {
+                (
+                    Command::Hold {
+                        id: ids(),
+                        entity: young.id,
+                        player: target,
+                        seconds: 600.0,
+                        at: None,
+                        creep: false,
+                        spin: false,
+                    },
+                    0,
+                )
+            })
+            .collect(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -12376,6 +12398,14 @@ mod tests {
                 baby: false,
             });
         }
+        // A piglet, for `the_child_stares`.
+        memory.last.creatures_near.push(Creature {
+            id: 208,
+            kind: "pig".to_string(),
+            pos: [11.0, 64.0, 9.0],
+            baby: true,
+            ..Creature::default()
+        });
         for (kind, id) in [("zombie", 301), ("skeleton", 302), ("spider", 303)] {
             memory.last.hostiles_near.push(Creature {
                 id,
@@ -20833,6 +20863,27 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::RefuseFood { seconds, .. }, 0)] if *seconds == 600.0),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn the_child_stares_holds_the_young_ones_facing_them() {
+        let memory = rich_memory();
+        let event = find("the_child_stares").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(
+                &made[..],
+                [(
+                    Command::Hold {
+                        entity: 208,
+                        at: None,
+                        ..
+                    },
+                    0
+                )]
+            ),
+            "the piglet alone: {made:?}"
         );
     }
 }
