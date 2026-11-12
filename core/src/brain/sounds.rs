@@ -1184,6 +1184,42 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 178.
+        "creaking_behind" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.creaking.step", 0),
+                        ("minecraft:entity.creaking.step", 10),
+                        ("minecraft:entity.creaking.ambient", 22),
+                    ],
+                    (0.8, 0.9),
+                    0.8,
+                    Behind,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.creaking.ambient", 0),
+                        ("minecraft:entity.creaking.step", 14),
+                    ],
+                    (0.75, 0.85),
+                    0.8,
+                    Behind,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.creaking.step", 0),
+                        ("minecraft:entity.creaking.step", 8),
+                        ("minecraft:entity.creaking.step", 16),
+                        ("minecraft:entity.creaking.step", 24),
+                    ],
+                    (0.8, 0.9),
+                    0.7,
+                    Closer,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2164,6 +2200,7 @@ mod tests {
             "eating_in_the_wall",
             "ominous_hum",
             "vault_opens_by_the_bed",
+            "creaking_behind",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

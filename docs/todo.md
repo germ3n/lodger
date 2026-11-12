@@ -2496,6 +2496,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A vault opens by the bed** (`docs/events_todo.md`, 177): `vault_opens_by_the_bed`, stages 4 to 5: in bed, a vault unlocking beside them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **A creaking behind them** (`docs/events_todo.md`, 178): `creaking_behind`, stages 4 to 5: in the woods, a creaking's groan and steps behind them. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
