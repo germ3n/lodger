@@ -3111,6 +3111,11 @@ The `[x]` lines above, summed up by day:
   they come back from another dimension (the brain, a fifth of the times): six seconds of the
   `wrong_sky` hint on their client. Tests: one in `act`. Was: no such event.
 
+- [x] **Lightning below** (`docs/events_todo.md`, 316): `lightning_below`, stages 4 and 5, in the
+  Nether: a visual-only lightning bolt six ahead of them and three to the side, flash and thunder,
+  nothing burnt or hurt (`lightning`, ABI 56). Owner's ask: in the Nether and the End both, a row
+  for each world. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

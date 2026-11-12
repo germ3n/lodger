@@ -1322,6 +1322,8 @@ pub enum Action {
     RuinedPortalGlows,
     /// Indoors at night, a splash potion shattering against the outside of their window; nothing comes in.
     PotionAtTheWindow,
+    /// In the Nether or the End, where there is no weather, lightning striking a few blocks from them; nothing burns.
+    LightningBelow,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8341,6 +8343,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("wrong_sky", 6.0),
         false,
     ),
+    // docs/events_todo.md, 316: lightning strikes beside them in the Nether, where there is no weather.
+    row(
+        "lightning_below",
+        4,
+        5,
+        &[InNether],
+        1.5,
+        3,
+        Full,
+        Action::LightningBelow,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9002,6 +9016,7 @@ impl Event {
             | Action::StandingOnTheVoid
             | Action::SplashInTheNether
             | Action::RuinedPortalGlows
+            | Action::LightningBelow
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9622,6 +9637,7 @@ impl Event {
             "ruined_portal_glows" => "make the ruined portal near them weep",
             "potion_at_the_window" => "shatter a splash potion against their window",
             "came_back_wrong_hour" => "show them the wrong hour's sky as they come back",
+            "lightning_below" => "strike lightning beside them where there is no weather",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

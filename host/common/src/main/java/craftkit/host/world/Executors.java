@@ -233,6 +233,65 @@ public final class Executors {
 					Refusals.arm(player.getUUID(), level.getGameTime() + (long) (Math.min(600, command.get("seconds").getAsFloat()) * 20));
 					yield report(id, true, "");
 				}
+				case "lightning" -> {
+					// A bolt that only shows (ABI 56): its flash and thunder, nothing burnt, no one hurt.
+					JsonArray p = command.getAsJsonArray("pos");
+					var bolt = net.minecraft.world.entity.EntityTypes.LIGHTNING_BOLT.create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
+					if (bolt == null) {
+						yield report(id, false, "it could not be made");
+					}
+					bolt.snapTo(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
+					bolt.setVisualOnly(true);
+					level.addFreshEntity(bolt);
+					yield report(id, true, "");
+				}
+				case "shulkers_peek" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					var near = level.getEntitiesOfClass(net.minecraft.world.entity.monster.Shulker.class, player.getBoundingBox().inflate(24));
+					if (near.isEmpty()) {
+						yield report(id, false, "no shulker near them");
+					}
+					// Every shell open at once, and shut at once (ABI 56): its peek, as its own goal sets it.
+					try {
+						var field = net.minecraft.world.entity.monster.Shulker.class.getDeclaredField("DATA_PEEK_ID");
+						field.setAccessible(true);
+						@SuppressWarnings("unchecked")
+						var peek = (net.minecraft.network.syncher.EntityDataAccessor<Byte>) field.get(null);
+						near.forEach(s -> s.getEntityData().set(peek, (byte) 100));
+						context.later().at(Math.min(10, command.get("seconds").getAsFloat()), () -> near.forEach(s -> {
+							if (!s.isRemoved()) {
+								s.getEntityData().set(peek, (byte) 0);
+							}
+						}));
+					} catch (ReflectiveOperationException e) {
+						yield report(id, false, "the shells could not be moved");
+					}
+					yield report(id, true, "");
+				}
+				case "gateway_flash" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					// The nearest end gateway within forty-eight flashes its beam as if used (ABI 56).
+					BlockPos at = player.blockPosition();
+					BlockPos found = null;
+					for (BlockPos p : BlockPos.betweenClosed(at.offset(-48, -24, -48), at.offset(48, 24, 48))) {
+						if (level.getBlockEntity(p) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity
+								&& (found == null || p.distSqr(at) < found.distSqr(at))) {
+							found = p.immutable();
+						}
+					}
+					if (found == null) {
+						yield report(id, false, "no end gateway near them");
+					}
+					net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity.triggerCooldown(level, found, level.getBlockState(found),
+							(net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity) level.getBlockEntity(found));
+					yield report(id, true, "");
+				}
 				case "curl_up" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

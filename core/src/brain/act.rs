@@ -907,6 +907,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SomeoneWentThrough
         | Action::RuinedPortalGlows
         | Action::PotionAtTheWindow
+        | Action::LightningBelow
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10441,6 +10442,22 @@ pub fn commands(
             ],
             None => vec![],
         },
+        // docs/events_todo.md, 316.
+        Action::LightningBelow => {
+            let way = facing_way(memory.last.yaw);
+            let p = memory.last.pos;
+            vec![(
+                Command::Lightning {
+                    id: ids(),
+                    pos: [
+                        p[0] + way[0] as f64 * 6.0 - way[1] as f64 * 3.0,
+                        p[1],
+                        p[2] + way[1] as f64 * 6.0 + way[0] as f64 * 3.0,
+                    ],
+                },
+                0,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14323,6 +14340,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "lightning_below"
                 || event.id == "splash_in_the_nether"
                 || event.id == "standing_on_the_void"
                 || event.id == "name_from_the_void"
@@ -22786,6 +22804,19 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "wrong_sky" && *seconds == 6.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn lightning_below_strikes_beside_them_and_only_shows() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 70.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("lightning_below").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Lightning { pos, .. }, 0)] if pos[2] == 6.5 && pos[1] == 70.0),
             "{made:?}"
         );
     }

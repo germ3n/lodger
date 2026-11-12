@@ -488,6 +488,7 @@ caves, from before.
 | `name_from_the_void` | 4 to 5 | In the End, their own name in the subtitles, once, from twenty-four blocks below them, out of the void (the client's `name_called` hint, from there). | In the End. |
 | `standing_on_the_void` | 5 | In the End, eighteen blocks out from them, away from the End's middle and so out over the void off the island's edge, the figure stands at their height on nothing, empty-handed, facing them; forty seconds, or gone once seen and looked away from. The figure in the End, the owner's call. | In the End. |
 | `splash_in_the_nether` | 3 to 5 | In the Nether, a splash potion thrown from the dark seven blocks ahead of them lands at their feet: darkness, slowness, blindness or nausea a moment, never harm, as `splash_dark` at home (never levitation over the lava). | In the Nether. |
+| `lightning_below` | 4 to 5 | In the Nether or the End, where there is no weather, lightning strikes six blocks ahead of them and three to the side, its flash and its thunder; nothing burns and no one is hurt (`lightning`, ABI 56, the game's bolt that only shows). Owner: "maybe also do a lighting strike event in end/nether?". | In the Nether or the End. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

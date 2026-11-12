@@ -774,6 +774,25 @@ pub enum Command {
         player: u32,
         seconds: f32,
     },
+    /// A lightning bolt at `pos` that only shows: its flash and thunder, nothing burnt, no one
+    /// hurt. ABI 56.
+    Lightning {
+        id: u64,
+        pos: Pos,
+    },
+    /// Every shulker within twenty-four blocks of `player` opens its shell at once and shuts it
+    /// at once `seconds` on (ten at most); refused with none. ABI 56.
+    ShulkersPeek {
+        id: u64,
+        player: u32,
+        seconds: f32,
+    },
+    /// The end gateway nearest `player`, within forty-eight blocks, flashes its beam as if
+    /// someone went through; refused with none. ABI 56.
+    GatewayFlash {
+        id: u64,
+        player: u32,
+    },
     /// Every armadillo within sixteen blocks of `player` rolled up at once, as if something it
     /// feared passed; each unrolls on its own, as after any fright. Refused with none. ABI 56.
     CurlUp {
@@ -1729,6 +1748,9 @@ impl Command {
             | Command::GhostNear { id, .. }
             | Command::RotateSlots { id, .. }
             | Command::CurlUp { id, .. }
+            | Command::Lightning { id, .. }
+            | Command::ShulkersPeek { id, .. }
+            | Command::GatewayFlash { id, .. }
             | Command::RefuseFood { id, .. }
             | Command::LateDrop { id, .. }
             | Command::ThrowBack { id, .. }
