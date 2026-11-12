@@ -2153,6 +2153,15 @@ The `[x]` lines above, summed up by day:
   of `craftkit_version`, so an older one left in `host/*/build/libs` after a version moves is
   passed over. Was: the build stopped with "more than one file" until the old jar was removed.
 
+- [x] **The jars' manifests at the build's version, and checked** (owner: the game said "lodger
+  0.1.0 requires craftkit 0.1.0, which is missing" after the move to 0.1.1): the mod's manifest
+  tasks take the versions and the nested host jar's name as inputs, so a version moved fills them
+  in again; and each lodger jar checks itself as it is made, its manifest at the build's version
+  and every jar it nests inside it (`mod/build.gradle`). The host's manifests carry the project's
+  description, not its resources task's. Was: Gradle kept the 0.1.0 manifest, which named a host
+  jar no longer in the jar, and Fabric found no craftkit; craftkit read "Processes main resources."
+  in the mod lists.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

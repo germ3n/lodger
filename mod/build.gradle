@@ -59,6 +59,8 @@ def expandProps = { project.properties.findAll { k, v -> v instanceof String } }
 
 tasks.register('processResources', Sync) {
 	description = 'Fills the shared manifests in with the versions.'
+	// The versions are inputs: without them a version moved left the last build's files in place.
+	inputs.properties(expandProps())
 	from('src/main/resources') {
 		filesMatching(['pack.mcmeta']) {
 			expand(expandProps())
@@ -72,6 +74,11 @@ tasks.register('processResources', Sync) {
 ['fabric', 'neoforge'].each { loader ->
 	def manifestTask = tasks.register("${loader}Manifest", Copy) {
 		description = "Fills in the ${loader} manifest."
+		// What it fills in, as inputs (the versions, the nested host jar's name): moved to 0.1.1,
+		// the manifest stayed 0.1.0, naming a host jar no longer inside, and the game found no
+		// craftkit.
+		inputs.properties(expandProps())
+		inputs.property('craftkit_jar', providers.provider { hostJar(loader).name })
 		from("src/${loader}/resources") {
 			filesMatching(['fabric.mod.json', 'META-INF/neoforge.mods.toml', 'META-INF/jarjar/metadata.json']) {
 				def props = expandProps()
@@ -110,6 +117,39 @@ tasks.register('processResources', Sync) {
 		}
 		// The notices for what the jar carries (`gen_notices.py` at the root writes them).
 		from(new File(repo, 'THIRD_PARTY_NOTICES.txt'))
+		// The jar checked as made: its manifest's version is this build's, and every jar it
+		// nests is inside it. A stale manifest named a host jar that was not there.
+		doLast {
+			def made = archiveFile.get().asFile
+			def zip = new java.util.zip.ZipFile(made)
+			try {
+				def entry = { String name -> zip.getEntry(name) }
+				def text = { String name -> zip.getInputStream(entry(name)).getText('UTF-8') }
+				if (loader == 'fabric') {
+					def manifest = new groovy.json.JsonSlurper().parseText(text('fabric.mod.json'))
+					if (manifest.version != project.version) {
+						throw new GradleException("${made.name}: fabric.mod.json says ${manifest.version}, the build is ${project.version}")
+					}
+					manifest.jars.each { nested ->
+						if (entry(nested.file) == null) {
+							throw new GradleException("${made.name}: fabric.mod.json nests ${nested.file}, which is not in the jar")
+						}
+					}
+				} else {
+					def metadata = new groovy.json.JsonSlurper().parseText(text('META-INF/jarjar/metadata.json'))
+					metadata.jars.each { nested ->
+						if (entry(nested.path) == null) {
+							throw new GradleException("${made.name}: jarjar metadata nests ${nested.path}, which is not in the jar")
+						}
+					}
+					if (!text('META-INF/neoforge.mods.toml').contains("version = \"${project.version}\"")) {
+						throw new GradleException("${made.name}: neoforge.mods.toml is not at ${project.version}")
+					}
+				}
+			} finally {
+				zip.close()
+			}
+		}
 	}
 }
 

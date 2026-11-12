@@ -51,7 +51,9 @@ processResources {
 		'mod_author'                   : mod_author,
 		'mod_id'                       : mod_id,
 		'license'                      : license,
-		'description'                  : description,
+		// The project's, from gradle.properties: plain `description` in here is this task's
+		// own ("Processes main resources."), which the mod lists showed as craftkit's.
+		'description'                  : project.description,
 		'neoforge_version'             : neoforge_version,
 		'neoforge_loader_version_range': neoforge_loader_version_range,
 		'java_version'                 : java_version
