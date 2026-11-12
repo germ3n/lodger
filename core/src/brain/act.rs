@@ -466,6 +466,20 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "shulker_lid_peeks" {
         return memory.fixtures("shulker_box").next().map(|f| f.pos);
     }
+    // Beside the door they use, two out, to the other side from what they typed on a sign.
+    if event.id == "sign_with_coords" {
+        return match (memory.usual_door(), home) {
+            (Some(door), Some(h)) => {
+                let step = out_of_door(memory, h.center, door);
+                Some([
+                    door[0] + step[0] * 2 + step[1],
+                    door[1],
+                    door[2] + step[1] * 2 + step[0],
+                ])
+            }
+            _ => None,
+        };
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -485,6 +499,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::WitherRoseInPot
         | Action::MushroomsInCorners
         | Action::ShulkerLidPeeks
+        | Action::SignWithCoords
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7906,6 +7921,11 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 211.
+        Action::SignWithCoords => match (pos, memory.home.as_ref().and_then(|h| h.bed)) {
+            (Some(p), Some(bed)) => sign_at(ids, p, bed.iter().map(|n| n.to_string()).collect()),
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -18796,6 +18816,22 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::OpenLid { pos, seconds, .. }, 0)] if *pos == theirs && *seconds < 2.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn sign_with_coords_reads_where_their_bed_is() {
+        let memory = rich_memory();
+        let bed = memory.home.as_ref().unwrap().bed.unwrap();
+        let event = find("sign_with_coords").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert!(pos.is_some());
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        let want: Vec<String> = bed.iter().map(|n| n.to_string()).collect();
+        assert!(
+            made.iter()
+                .any(|(c, _)| matches!(c, Command::SetSign { lines, .. } if *lines == want)),
             "{made:?}"
         );
     }

@@ -1151,6 +1151,8 @@ pub enum Action {
     MushroomsInCorners,
     /// Their shulker box opening a crack by itself, a moment, and shutting.
     ShulkerLidPeeks,
+    /// A sign by their door with three numbers on it, a line each: where their bed is.
+    SignWithCoords,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7069,6 +7071,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ShulkerLidPeeks,
         false,
     ),
+    // docs/events_todo.md, 211: a sign by their door with their bed's coordinates.
+    row(
+        "sign_with_coords",
+        4,
+        5,
+        &[Home, Bed, Door, TargetAwayOrAsleep],
+        3.0,
+        1,
+        Half,
+        Action::SignWithCoords,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7431,6 +7445,7 @@ impl Event {
             | Action::FrameEmptied
             | Action::FrameSwap
             | Action::MoveVehicle
+            | Action::SignWithCoords
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -8185,6 +8200,7 @@ impl Event {
             "wither_rose_in_pot" => "put a wither rose in one of their flower pots",
             "mushrooms_in_corners" => "grow mushrooms in the corners of their house",
             "shulker_lid_peeks" => "open their shulker box a crack by itself",
+            "sign_with_coords" => "put a sign by their door saying where they sleep",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
