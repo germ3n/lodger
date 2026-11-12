@@ -757,6 +757,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FigureDigging
         | Action::FigureBows
         | Action::ClimbingTheHouse
+        | Action::FigureAtTheLectern
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8938,6 +8939,37 @@ pub fn commands(
                 {
                     *path = up;
                     *once_seen = true;
+                    *held = ItemStack::default();
+                }
+                vec![(shown, 0)]
+            }
+            _ => vec![],
+        },
+        // docs/events_todo.md, 245.
+        Action::FigureAtTheLectern => match (
+            memory.fixtures("lectern").next().map(|f| f.pos),
+            memory.home.as_ref(),
+        ) {
+            (Some(lectern), Some(home)) => {
+                // On the lectern's side toward the house's middle, facing it.
+                let (dx, dz) = (home.center[0] - lectern[0], home.center[2] - lectern[2]);
+                let side = if dx.abs() >= dz.abs() {
+                    [dx.signum(), 0]
+                } else {
+                    [0, dz.signum()]
+                };
+                let side = if side == [0, 0] { [1, 0] } else { side };
+                let stand = [lectern[0] + side[0], lectern[1] - 1, lectern[2] + side[1]];
+                let mut shown = figure_shown(ids, memory, target, stand, 120.0, false);
+                if let Command::Figure {
+                    faces,
+                    vanish_within,
+                    held,
+                    ..
+                } = &mut shown
+                {
+                    *faces = Some(block_center(lectern));
+                    *vanish_within = 8.0;
                     *held = ItemStack::default();
                 }
                 vec![(shown, 0)]
@@ -20407,6 +20439,18 @@ mod tests {
             path.windows(2)
                 .all(|w| w[1][1] == w[0][1] + 1.0 && w[1][0] == w[0][0] && w[1][2] == w[0][2]),
             "straight up: {path:?}"
+        );
+    }
+
+    #[test]
+    fn figure_at_the_lectern_faces_it_and_goes_as_they_come() {
+        let memory = rich_memory();
+        let lectern = memory.fixtures("lectern").next().unwrap().pos;
+        let event = find("figure_at_the_lectern").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { faces: Some(f), vanish_within, .. }, 0)] if *f == block_center(lectern) && *vanish_within == 8.0),
+            "{made:?}"
         );
     }
 }

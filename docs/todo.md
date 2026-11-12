@@ -2854,6 +2854,10 @@ The `[x]` lines above, summed up by day:
   below the pane, a block a step, facing in at them, forty seconds or until seen and looked away
   from. Tests: one in `act`. Was: no such event.
 
+- [x] **At the lectern** (`docs/events_todo.md`, 245): `figure_at_the_lectern`, stages 4 and 5,
+  outdoors: the figure beside their lectern on the side toward the house's middle, facing it, two
+  minutes or until they come within eight blocks. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
