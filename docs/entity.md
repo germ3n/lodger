@@ -487,6 +487,7 @@ caves, from before.
 | `far_end_of_the_bridge` | 4 to 5 | In a Nether fortress (a wither skeleton near them), twenty-four blocks straight ahead of them, at their height, the figure stands still at the far end of the bridge; forty seconds, or gone once seen and looked away from. The figure in the Nether, the owner's call. | In the Nether, a wither skeleton near them. |
 | `name_from_the_void` | 4 to 5 | In the End, their own name in the subtitles, once, from twenty-four blocks below them, out of the void (the client's `name_called` hint, from there). | In the End. |
 | `standing_on_the_void` | 5 | In the End, eighteen blocks out from them, away from the End's middle and so out over the void off the island's edge, the figure stands at their height on nothing, empty-handed, facing them; forty seconds, or gone once seen and looked away from. The figure in the End, the owner's call. | In the End. |
+| `splash_in_the_nether` | 3 to 5 | In the Nether, a splash potion thrown from the dark seven blocks ahead of them lands at their feet: darkness, slowness, blindness or nausea a moment, never harm, as `splash_dark` at home (never levitation over the lava). | In the Nether. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

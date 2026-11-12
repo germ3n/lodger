@@ -1314,6 +1314,8 @@ pub enum Action {
     NameFromTheVoid,
     /// In the End, the figure standing on nothing out over the void, facing them.
     StandingOnTheVoid,
+    /// In the Nether, a splash potion from the dark landing at their feet, as at home.
+    SplashInTheNether,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8261,6 +8263,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::StandingOnTheVoid,
         false,
     ),
+    // docs/events_todo.md, 320: a splash potion from the dark lands at their feet in the Nether.
+    row(
+        "splash_in_the_nether",
+        3,
+        5,
+        &[InNether],
+        1.5,
+        3,
+        Full,
+        Action::SplashInTheNether,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8918,6 +8932,7 @@ impl Event {
             | Action::StandingInThePortal
             | Action::FarEndOfTheBridge
             | Action::StandingOnTheVoid
+            | Action::SplashInTheNether
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9532,6 +9547,7 @@ impl Event {
             "far_end_of_the_bridge" => "stand the figure at the far end of the fortress bridge",
             "name_from_the_void" => "call their name from the void below them",
             "standing_on_the_void" => "stand the figure on nothing over the void",
+            "splash_in_the_nether" => "throw a splash potion at their feet from the Nether's dark",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

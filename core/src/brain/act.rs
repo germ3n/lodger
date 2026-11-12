@@ -899,6 +899,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FarEndOfTheBridge
         | Action::NameFromTheVoid
         | Action::StandingOnTheVoid
+        | Action::SplashInTheNether
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10330,6 +10331,32 @@ pub fn commands(
             }
             vec![(shown, 0)]
         }
+        // docs/events_todo.md, 320.
+        Action::SplashInTheNether => {
+            let (effect, seconds) = [
+                ("darkness", 10.0),
+                ("slowness", 8.0),
+                ("blindness", 5.0),
+                ("nausea", 8.0),
+            ][seed % 4];
+            let at = memory.last.pos;
+            let way = facing_way(memory.last.yaw);
+            vec![(
+                Command::SplashPotion {
+                    id: ids(),
+                    player: target,
+                    // At their height: the Nether's ground counted from the top would be its roof.
+                    from: [
+                        at[0] + way[0] as f64 * 7.0,
+                        at[1] + 1.5,
+                        at[2] + way[1] as f64 * 7.0,
+                    ],
+                    effect: effect.to_string(),
+                    seconds,
+                },
+                0,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14212,6 +14239,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "splash_in_the_nether"
                 || event.id == "standing_on_the_void"
                 || event.id == "name_from_the_void"
                 || event.id == "far_end_of_the_bridge"
@@ -22599,6 +22627,18 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Figure { pos, once_seen: true, .. }, 0)] if pos[0] == 118.5 && pos[1] == 60.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn splash_in_the_nether_is_thrown_from_their_height_never_levitation() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 70.0, 0.5];
+        let event = find("splash_in_the_nether").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::SplashPotion { from, effect, .. }, 0)] if from[1] == 71.5 && effect != "levitation"),
             "{made:?}"
         );
     }

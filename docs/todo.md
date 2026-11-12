@@ -3085,6 +3085,11 @@ The `[x]` lines above, summed up by day:
   seconds or until seen and looked away from (the owner's call: the figure in the End). Tests: one
   in `act`. Was: no such event.
 
+- [x] **A splash in the Nether** (`docs/events_todo.md`, 320): `splash_in_the_nether`, stages 3 to
+  5, in the Nether: a splash potion of darkness, slowness, blindness or nausea thrown at their feet
+  from seven blocks ahead at their height (`splash_potion`; never levitation over the lava). Owner:
+  "can you also do like splash potion event?". Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -43,6 +43,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("far_end_of_the_bridge", "minecraft:the_nether"),
     ("name_from_the_void", "minecraft:the_end"),
     ("standing_on_the_void", "minecraft:the_end"),
+    ("splash_in_the_nether", "minecraft:the_nether"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
