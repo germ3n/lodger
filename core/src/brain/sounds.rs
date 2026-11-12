@@ -433,6 +433,51 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 129.
+        "chains_dragging" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.chain.step", 0),
+                        ("minecraft:block.chain.step", 6),
+                        ("minecraft:block.chain.step", 12),
+                        ("minecraft:block.chain.step", 18),
+                        ("minecraft:block.chain.step", 24),
+                        ("minecraft:block.chain.step", 30),
+                        ("minecraft:block.chain.step", 36),
+                        ("minecraft:block.chain.step", 42),
+                    ],
+                    (0.6, 0.7),
+                    0.7,
+                    Closer,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.chain.step", 0),
+                        ("minecraft:block.chain.step", 8),
+                        ("minecraft:block.chain.step", 16),
+                        ("minecraft:block.chain.step", 24),
+                        ("minecraft:block.chain.step", 32),
+                        ("minecraft:block.chain.step", 40),
+                    ],
+                    (0.6, 0.7),
+                    0.6,
+                    Away,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.chain.place", 0),
+                        ("minecraft:block.chain.place", 10),
+                        ("minecraft:block.chain.place", 20),
+                        ("minecraft:block.chain.place", 30),
+                    ],
+                    (0.5, 0.6),
+                    0.6,
+                    Behind,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1396,6 +1441,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "chains_dragging",
             "doors_slam_far",
             "water_where_none",
             "gasp_when_turning",

@@ -5464,6 +5464,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.skeleton.step"),
         false,
     ),
+    // docs/events_todo.md, 129.
+    row(
+        "chains_dragging",
+        4,
+        5,
+        &[TargetUnderground],
+        2.0,
+        3,
+        Full,
+        Action::SoundAtTarget("minecraft:block.chain.step"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6625,6 +6637,7 @@ impl Event {
             "doors_slam_far" => "slam every door far off at once",
             "the_count" => "ring the bell at their house once more than last time",
             "rattling_round_the_house" => "rattle bones round the outside of their house",
+            "chains_dragging" => "drag chains along the stone behind them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
