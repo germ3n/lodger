@@ -873,6 +873,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::MagmaCubesSettle
         | Action::BackToTheWall
         | Action::EndermenTurnAway
+        | Action::ZombifiedFollow
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9460,6 +9461,23 @@ pub fn commands(
         Action::BackToTheWall => hold_away(ids, memory, target, "wither_skeleton", 30.0),
         // docs/events_todo.md, 292.
         Action::EndermenTurnAway => hold_away(ids, memory, target, "enderman", 60.0),
+        // docs/events_todo.md, 287.
+        Action::ZombifiedFollow => mobs_near(memory, "zombified_piglin")
+            .map(|m| {
+                (
+                    Command::Hold {
+                        id: ids(),
+                        entity: m.id,
+                        player: target,
+                        seconds: 60.0,
+                        at: None,
+                        creep: true,
+                        spin: false,
+                    },
+                    0,
+                )
+            })
+            .collect(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13342,6 +13360,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "zombified_follow"
                 || event.id == "endermen_turn_away"
                 || event.id == "back_to_the_wall"
                 || event.id == "magma_cubes_settle"
@@ -21424,6 +21443,23 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hold { entity: 410, seconds, at: Some(to), .. }, 0)] if *seconds == 60.0 && to[0] > 6.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn zombified_follow_holds_every_zombified_piglin_near_them() {
+        let mut memory = rich_memory();
+        memory.last.hostiles_near.push(Creature {
+            id: 410,
+            kind: "zombified_piglin".to_string(),
+            pos: [6.0, 64.0, 2.0],
+            ..Creature::default()
+        });
+        let event = find("zombified_follow").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hold { entity: 410, seconds, creep: true, .. }, 0)] if *seconds == 60.0),
             "{made:?}"
         );
     }

@@ -466,6 +466,7 @@ caves, from before.
 | `magma_cubes_settle` | 3 to 5 | In the Nether, every magma cube near them stops bouncing at once and sits still, six seconds (`hold`). | In the Nether, a magma cube near them. |
 | `back_to_the_wall` | 4 to 5 | In a fortress, every wither skeleton near them stands with its back to them, facing away, thirty seconds, and does not turn as they pass or strike them (`hold`'s `at`, a point beyond each). | In the Nether, a wither skeleton near them. |
 | `endermen_turn_away` | 3 to 5 | In the End, every enderman near them turns its back on them at once and stands so a minute, facing away, so there is no face to meet (`hold`'s `at`, a point beyond each). | In the End, an enderman near them. |
+| `zombified_follow` | 4 to 5 | In the Nether, the zombified piglins near them come a step nearer each moment they look away, silent, to six blocks, and stand back where they were the moment they look round; a minute (`hold`'s `creep`). | In the Nether, a zombified piglin near them. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

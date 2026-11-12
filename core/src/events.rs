@@ -1276,6 +1276,8 @@ pub enum Action {
     BackToTheWall,
     /// In the End, every enderman near them turning its back on them at once, so there is nothing to look at.
     EndermenTurnAway,
+    /// In the Nether, the zombified piglins near them coming a step nearer each time they look away, silent, and back the moment they look.
+    ZombifiedFollow,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7959,6 +7961,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EndermenTurnAway,
         false,
     ),
+    // docs/events_todo.md, 287: in the nether, the zombified piglins near them come a step nearer each moment they look away, silent, to six blocks, and stand back where they were the moment they look round.
+    row(
+        "zombified_follow",
+        4,
+        5,
+        &[InNether, MobNear("zombified_piglin")],
+        1.0,
+        3,
+        Half,
+        Action::ZombifiedFollow,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8598,6 +8612,7 @@ impl Event {
             | Action::MagmaCubesSettle
             | Action::BackToTheWall
             | Action::EndermenTurnAway
+            | Action::ZombifiedFollow
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9189,6 +9204,7 @@ impl Event {
             "magma_cubes_settle" => "make every magma cube near them stop bouncing",
             "back_to_the_wall" => "turn the wither skeletons near them to the wall",
             "endermen_turn_away" => "turn every enderman near them away from them",
+            "zombified_follow" => "make the zombified piglins near them follow when unwatched",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
