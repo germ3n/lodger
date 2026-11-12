@@ -2464,6 +2464,10 @@ The `[x]` lines above, summed up by day:
 - [x] **Humming ahead** (`docs/events_todo.md`, 167): `humming_ahead`, stages 3 to 5: in a tunnel, a few low notes hummed ahead of them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Their steps counted** (`docs/events_todo.md`, 168): `steps_counted`, stages 4 and 5,
+  walking at night: eight notes behind them a step apart, each higher up the scale. Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

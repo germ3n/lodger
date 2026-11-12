@@ -5676,6 +5676,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.villager.ambient"),
         false,
     ),
+    // docs/events_todo.md, 168: in the dark, each step a note one higher, eight, then nothing.
+    row(
+        "steps_counted",
+        4,
+        5,
+        &[TargetWalking, Night],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:block.note_block.harp"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7172,6 +7184,7 @@ impl Event {
             "snoring_beside" => "snore softly beside them in bed",
             "sigh_at_the_door" => "sigh just outside their door",
             "humming_ahead" => "hum a few notes in the tunnel ahead",
+            "steps_counted" => "count their steps in notes, one higher each",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

@@ -105,6 +105,9 @@ fn craftkit_yaw(dx: f64, dz: f64) -> f32 {
 /// A body lying with its arms out, its head at the spot: the cells its shape takes off the snow.
 const SNOW_BODY: &[[i32; 2]] = &[[0, 0], [0, 1], [0, 2], [-1, 1], [1, 1], [-1, 3], [1, 3]];
 
+/// The notes `steps_counted` counts in: a major scale up an octave, from the harp's lowest.
+const STEPS_COUNTED: [f32; 8] = [0.5, 0.561, 0.63, 0.667, 0.749, 0.841, 0.944, 1.0];
+
 /// A Minecraft day, in ticks: what it hangs in their house for a day stays this long.
 const DAY_TICKS: u64 = 24_000;
 
@@ -2532,6 +2535,29 @@ pub fn commands(
                     .collect()
             })
             .unwrap_or_default();
+    }
+    // Their steps counted (`steps_counted`): a note behind them a step's time apart, each one
+    // higher up the scale, eight, as if something counted them, then nothing.
+    if event.id == "steps_counted" {
+        let at = behind(memory, 2.0);
+        let walk = [at[0] as f64 + 0.5, at[1] as f64 + 1.0, at[2] as f64 + 0.5];
+        return STEPS_COUNTED
+            .iter()
+            .enumerate()
+            .map(|(i, pitch)| {
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.note_block.harp".to_string(),
+                        pos: walk,
+                        volume: 0.5,
+                        pitch: *pitch,
+                    },
+                    i as u64 * 8,
+                )
+            })
+            .collect();
     }
     // Bones round the house (`rattling_round_the_house`): a skeleton's steps round the walls,
     // a block and a half out, and a rattle at the last corner.
@@ -17082,5 +17108,39 @@ mod tests {
                 .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn walking_at_night_their_steps_are_counted_in_rising_notes() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("steps_counted").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 8);
+        let pitches: Vec<f32> = made
+            .iter()
+            .map(|(c, _)| match c {
+                Command::PlaySound { pitch, sound, .. }
+                    if sound == "minecraft:block.note_block.harp" =>
+                {
+                    *pitch
+                }
+                other => panic!("{other:?}"),
+            })
+            .collect();
+        assert!(
+            pitches.windows(2).all(|w| w[0] < w[1]),
+            "each one higher: {pitches:?}"
+        );
+        assert!(made.windows(2).all(|w| w[0].1 < w[1].1), "a step apart");
     }
 }
