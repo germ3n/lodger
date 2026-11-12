@@ -2254,6 +2254,12 @@ The `[x]` lines above, summed up by day:
 - [x] **Snoring beside them** (`docs/events_todo.md`, 142): `snoring_beside`, stages 4 and 5, in bed: slow snoring beside them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **More than the music at the start** (owner: "it seems to ALWAYS pick cut_music, no matter what,
+  at the start"; owner's pick): `pickup_pop`, `drip`, `place_sound` and `subtitle`, four of the
+  faintest, come from stage one too. Not the seed: at the very start, nothing learned yet, the menu
+  was `wait` and `cut_music` alone, every other stage-one event wanting a home, a chest or a door.
+  Tests: one in `offer`. Was: the start's one choice was cutting the music.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

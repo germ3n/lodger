@@ -723,4 +723,28 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn at_the_very_start_more_than_the_music_is_offered() {
+        // Nothing learned yet: no home, no chest, no door; online, awake, indoors.
+        let mut memory = Memory::default();
+        memory.last.online = true;
+        memory.last.indoors = true;
+        let config = Config::default();
+        let mut offered = std::collections::HashSet::new();
+        for seed in 0..40 {
+            let menu = offer(
+                CATALOGUE,
+                1,
+                &memory,
+                &Now::default(),
+                0.0,
+                &config,
+                &mut Rng::new(seed),
+            );
+            offered.extend(menu.iter().map(|e| e.id).filter(|id| *id != "wait"));
+        }
+        assert!(offered.len() >= 4, "{offered:?}");
+        assert!(offered.contains("cut_music"));
+    }
 }

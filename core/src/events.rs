@@ -2628,7 +2628,7 @@ pub const CATALOGUE: &[Event] = &[
     ),
     row(
         "subtitle",
-        2,
+        1,
         5,
         &[TargetAwake],
         2.0,
@@ -3467,9 +3467,11 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.ladder.step"),
         true,
     ),
+    // Stage one's too (owner: at the start the music was cut every time, the one thing that
+    // needed nothing learned): an item's pop, a drip, a block placed, a subtitle.
     row(
         "pickup_pop",
-        2,
+        1,
         5,
         &[TargetOnline],
         1.0,
@@ -6062,7 +6064,7 @@ pub const CATALOGUE: &[Event] = &[
     ),
     row(
         "place_sound",
-        2,
+        1,
         5,
         &[TargetIndoors, TargetOnline],
         1.0,
@@ -6084,7 +6086,7 @@ pub const CATALOGUE: &[Event] = &[
     ),
     row(
         "drip",
-        2,
+        1,
         5,
         &[TargetIndoors, TargetOnline],
         1.0,

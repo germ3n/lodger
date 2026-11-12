@@ -428,7 +428,7 @@ Offered with water within 32 blocks of the home or the route.
 | `boat_in_house` | 4 | Their boat sits in the middle of the house in the morning. Owner's pick. | Their boat and a home, the target away or asleep. |
 | `under_the_water` | 3 | A dark shape, a squid, hangs still under the water on their side, facing them, for twenty seconds, then is gone (`place_entity` with `face`, ABI 30). Owner's pick. | Water within 24 blocks, the target outdoors. |
 | `wet_steps` | 3 | Wet steps and a drip with each walk from the door they use to their bed while they are inside. Owner's pick. | A bed and a door, the target indoors. |
-| `drip` | 2 | Dripping water, indoors, with no water near. | The target indoors. |
+| `drip` | 1 | Dripping water, indoors, with no water near. | The target indoors. |
 
 ### Snow, sand and weather
 
@@ -502,7 +502,7 @@ Heard by the target alone. Nothing in the world changes.
 | `steps_above` | 2 | Footsteps cross the floor above the target, three blocks up, wood or wool underfoot, slow or quick; there is no floor above, or no one on it. | The target indoors. |
 | `scratching` | 3 | Something scratches inside the wall beside them at night, small and quick, or slow, a block and a half to their right. | The target indoors, night. |
 | `ladder_climb` | 3 | Someone climbs a ladder just behind them, rung by rung, rising five blocks, slow or quick. | The target indoors. |
-| `pickup_pop` | 2 | Behind them, the pop of an item picked up, once or twice, or an experience orb taken; nothing on the ground. | The target online. |
+| `pickup_pop` | 1 | Behind them, the pop of an item picked up, once or twice, or an experience orb taken; nothing on the ground. | The target online. |
 | `cold_crackle` | 2 | Their furnace crackles as if lit, once or a few times, and a candle goes out after. It is cold. | A furnace of theirs, the target indoors. |
 | `breath_close` | 3 | Breathing at their ear, half a block behind them at head height, once or slowly a few times; in its last way a heartbeat. | The target online. |
 | `breath` | 3 | When they crouch still for ten seconds, now and then, slow breathing at their ear, a little longer each way, one way with a heartbeat in it; it stops the moment they move (the brain drops what is left). Started by the crouch, never planned. | Crouched still ten seconds. |
@@ -514,7 +514,7 @@ Heard by the target alone. Nothing in the world changes.
 | `cut_music` | 1 | The client's music stops and does not start for an in-game evening. | The target online. |
 | `late_steps` | 2 | The target's own footstep sounds play once more, half a second after they stop, from their own position. | The target walking. |
 | `late_eating` | 2 | The same with eating: one more bite after the target's. | The target eating. |
-| `place_sound` | 2 | A block-placed sound behind the target. Nothing placed. | The target indoors. |
+| `place_sound` | 1 | A block-placed sound behind the target. Nothing placed. | The target indoors. |
 | `knock` | 2 to 3 | Soft knocks on a door of the house the target is in, at night: three evenly, or two, a pause and one, or four quick, or one; the door shut, no one there. A door-close sound pitched up and quiet (owner: soft knocks early, the heavy one later). | A door, the target indoors, night. |
 | `answer_knock` | 2 | They knock on a door (strike it twice within a second and a half, the `knocked` sense, ABI 38); half the time it knocks back from that door a second later: two knocks, or three, or one slow one. Started by the knock, never planned. | They just knocked. |
 | `knock_heavy` | 4 | Something heavy at the door at night: slow pounding, two, three or five, the sound of a zombie at a wooden door pitched low; nothing there when it is opened. | A door, the target indoors, night. |
@@ -581,7 +581,7 @@ The target's own HUD and camera, for a moment. Off with `events.glitches`.
 | `slips_from_hand` | 4 | Walking, what they hold in their main hand slips from it and lies still at their feet, to be picked up again; never with a monster near, never thrown, never lost (`drop_held`). | The target walking, holding something, no monster near. |
 | `hunger_shake` | 2 | The hunger bar shakes as if starving, for three seconds, their saturation put back after. | The target awake. |
 | `heart_skip` | 3 | The hearts blink as if hurt, once, with no damage. | The target awake. |
-| `subtitle` | 2 | With subtitles on, `Footsteps` appears behind them, with no sound. | The target awake. |
+| `subtitle` | 1 | With subtitles on, `Footsteps` appears behind them, with no sound. | The target awake. |
 | `wrong_sky` | 3 | At noon in the open, for a minute, the moon is where the sun should be and the sun is under the world, on their screen alone (the sky hook). | Noon, outdoors. |
 | `name_called` | 3 | With subtitles on, their own name appears in the subtitles, four blocks behind them, with no sound. | The target awake. |
 | `hand_on_shoulder` | 3 | At noon in the open, their view turns two degrees, as if a hand were on their shoulder, and a step sounds on the ground right behind them. | Noon, outdoors. |
