@@ -2162,6 +2162,9 @@ The `[x]` lines above, summed up by day:
   jar no longer in the jar, and Fabric found no craftkit; craftkit read "Processes main resources."
   in the mod lists.
 
+- [x] **The handprints shorter** (owner: "the handprints dont seem to stop"): `handprints` shows half a
+  minute. Was: a minute and a half, still on the glass long after they had looked at them.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

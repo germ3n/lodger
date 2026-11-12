@@ -5994,7 +5994,9 @@ pub const CATALOGUE: &[Event] = &[
         4.0,
         2,
         Full,
-        Action::Hint("handprints", 90.0),
+        // Half a minute: a minute and a half, they were still on the glass long after they had
+        // been seen (owner: "the handprints dont seem to stop").
+        Action::Hint("handprints", 30.0),
         false,
     ),
     // docs/events_todo.md, 22: a second of the death screen, nothing died.

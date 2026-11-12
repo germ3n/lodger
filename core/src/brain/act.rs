@@ -15409,4 +15409,15 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn the_handprints_show_half_a_minute() {
+        let memory = rich_memory();
+        let event = find("handprints").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { seconds, .. }, _)] if *seconds == 30.0),
+            "{made:?}"
+        );
+    }
 }
