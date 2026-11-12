@@ -627,7 +627,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             home.map(|h| h.center)
         }
         Action::SnowShape => spot(memory, rng),
-        Action::StairsToNowhere | Action::PaleMossCreeps => home.map(|h| h.center),
+        Action::StairsToNowhere | Action::PaleMossCreeps | Action::SculkCreeps => {
+            home.map(|h| h.center)
+        }
         // At its place, or eight to twelve blocks from the house.
         Action::KeepIn(_) => spot(memory, rng),
         // The middle of their field.
@@ -7670,6 +7672,35 @@ pub fn commands(
             },
             0,
         )],
+        // Sculk veins on the walls they built, the lowest first (a basement's, else the house's
+        // own low down), stuck to the wall's face: two the first night, two more each night after,
+        // twelve at most; into air alone.
+        Action::SculkCreeps => {
+            let reach = ((memory.times(event.id) + 1) * 2).min(12);
+            let mut cells = inside_walls(memory, -8, 2, 12);
+            cells.sort_by_key(|c| (c[1], c[0], c[2]));
+            cells
+                .into_iter()
+                .take(reach)
+                .enumerate()
+                .map(|(i, cell)| {
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: cell,
+                            block: "minecraft:sculk_vein".to_string(),
+                            state: format!("{}=true", facing_toward_wall(memory, cell)),
+                            replace: vec![],
+                            settle: 0,
+                            wall: String::new(),
+                            rest: false,
+                            only: false,
+                        },
+                        i as u64 * 4,
+                    )
+                })
+                .collect()
+        }
         // At the top of their screen, a boss bar reading only "it", filling over a minute.
         Action::BossBarIt => vec![(
             Command::BossBar {
@@ -18317,5 +18348,28 @@ mod tests {
             })
             .collect();
         assert_eq!(held, vec![207, 301, 302], "all at once: {made:?}");
+    }
+
+    #[test]
+    fn sculk_creeps_over_their_lowest_walls_stuck_to_each_face() {
+        let mut memory = rich_memory();
+        memory
+            .walls
+            .push(([6, 61, 0], "minecraft:stone_bricks".to_string()));
+        let event = find("sculk_creeps").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 2, "two the first night: {made:?}");
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { block, pos, state, .. } if block == "minecraft:sculk_vein" && *pos == [5, 61, 0] && state == "east=true"),
+            "the basement's wall first, on its face: {:?}",
+            made[0].0
+        );
     }
 }

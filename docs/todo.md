@@ -2593,6 +2593,10 @@ The `[x]` lines above, summed up by day:
   axolotls near: every one held still at once, twenty seconds (`hold`). Tests: one in `act`. Was:
   no such event.
 
+- [x] **Sculk creeps** (`docs/events_todo.md`, 204): `sculk_creeps`, stage 5, the target away or
+  asleep: sculk veins on their lowest walls, stuck to each wall's face, two more each night to
+  twelve. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
