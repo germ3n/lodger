@@ -2434,6 +2434,13 @@ The `[x]` lines above, summed up by day:
   Qwen3 4B still the best reader; neither the default. Granite H Tiny not measured (a download). Tests: in `config` and the crate's; the counts of sizes, 6
   to 9, and the labels looked up by name, not place (owner told).
 
+- [x] **The Modrinth page caught up** (owner: "you updated the modrinth desc ye?"). Was: it said
+  it never kills before the very end (untrue since `events.kills`, on by default) and never
+  chases, and its spoilers had none of the fifty newest events. Now the rule reads as it is, the
+  chasing waits "not for a long time", the spoilers name the woods, the villagers, what it sets
+  on you, the senses going wrong and the things taken into the sky, and the model section says
+  the Qwen3 4B reads best and names the other makers'.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

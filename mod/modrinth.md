@@ -31,8 +31,8 @@ Something moves into your world and learns how you play. Not quite horror. Come 
 not see it for a long time. It notices where you sleep, which chest you open first, the way you
 walk home, and it uses what it noticed.
 
-It does not chase you. It does not scream. For most of its stay, nothing happens that you could
-swear to. And then, slowly, more does.
+It does not chase you, not for a long time. It does not scream. For most of its stay, nothing
+happens that you could swear to. And then, slowly, more does.
 
 This is a not-quite-horror mod: unsettling rather than jump-scary, and different every time,
 because what it does comes from what *you* did.
@@ -51,9 +51,9 @@ because what it does comes from what *you* did.
   somewhere.
 - It never makes anything of value out of nothing. What it makes is its own work: the books it
   writes, a potion of its brewing, a little more in your composter.
-- It never kills you before the very end of a stay, and never harms another player. It can nip
-  at you from the middle of a stay (half a heart, never below half a heart), and from later on
-  hit harder, always spared.
+- It never harms another player. It can nip at you from the middle of a stay, and hit harder
+  later. By default what it does can kill you, late in a stay; turn `events.kills` off in the
+  settings and it never takes you below half a heart before the very end.
 - What it does to your house, it does while you look away.
 - It lives in the overworld. Past a portal, you are mostly on your own.
 
@@ -118,7 +118,9 @@ machine** (the server's, in multiplayer). It is downloaded once from Hugging Fac
 model's publisher, after you accept its license on the title screen. It never connects
 anywhere else.
 
-Pick the size in the settings (`model.size`). By default the whole model runs on the GPU
+Pick the size in the settings (`model.size`). The 1.5B is the default and light; the **Qwen3
+4B reads you best** of all of them, if your GPU has about 3 GB to spare. Microsoft's Phi-4 mini
+and IBM's Granites are there too, if you would rather run one of theirs. By default the whole model runs on the GPU
 (Vulkan on Windows and Linux, Metal on a Mac). If the game stutters, lower `model.gpu_share`
 (0 to 1) to put part of it on the CPU, or set it to `0` to keep the GPU free for the game. With
 no GPU it all runs on the CPU.
@@ -164,6 +166,15 @@ operators, and you in your own singleplayer world) that shows what it knows, wha
 - One night you wake in your house, and it is not your house.
 - One night you cannot sleep, because something is standing by your bed. It has brought
   something with it.
+- Out walking, the woods are not empty. Something peeks from behind the trees, and the trees
+  behind you are closer than they were.
+- The villagers stop being themselves. One will not trade. One stabs you. One comes running to
+  your door, as if something were after it.
+- It sets things on you: a vex, a swarm of them, a rabbit that should not be, a creeper right
+  behind you.
+- Your senses go wrong. Sounds drag and echo. The screen fills with static. Something on the
+  ceiling. A face as you wake.
+- Your most valuable things rise into the sky in front of you. Later, they come back down.
 - It has a temper. How you treat it changes how it treats you.
 - In the end, it leaves, it takes, or it stays, depending on how you treated it.
 
