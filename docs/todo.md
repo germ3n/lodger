@@ -2049,6 +2049,11 @@ The `[x]` lines above, summed up by day:
   open: five wolves circling them nearer, growling, then running off (`circle`, ABI 54; `Ring.java`,
   the wolves placed for a while and unhurt). Tests: `RingTest`, one in `act`. Was: no such event.
 
+- [x] **A zombie in their gear** (`docs/events_todo.md`, 100): `zombie_in_your_gear`, stage 5, at night:
+  a spared zombie in copies of their armour and tool walks at them, two hearts a hit, never a kill
+  (`place_entity`'s `wears`, ABI 54; the memory keeps what they wear now). Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

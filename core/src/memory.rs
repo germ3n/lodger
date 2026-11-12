@@ -423,6 +423,8 @@ pub struct Snapshot {
     pub main_hand: String,
     /// What they hold in the other hand, by id.
     pub off_hand: String,
+    /// What they wear, by id: the armour's pieces.
+    pub armour: Vec<String>,
     /// The biome they stand in, by id.
     pub biome: String,
     /// Sprint starts in the last minute.
@@ -2174,6 +2176,12 @@ impl Memory {
         self.last.indoors = player.sky_light < 8 && !self.last.underground;
         self.last.main_hand = player.main_hand.id.clone();
         self.last.off_hand = player.off_hand.id.clone();
+        self.last.armour = player
+            .armor
+            .iter()
+            .filter(|a| !a.id.is_empty())
+            .map(|a| a.id.clone())
+            .collect();
         self.last.biome = player.biome.clone();
         self.last.sprint_bursts = player.movement.sprint_bursts;
         self.last.pace = player.movement.pace;

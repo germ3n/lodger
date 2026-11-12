@@ -467,6 +467,10 @@ pub enum Command {
         /// ABI 54.
         #[serde(default, skip_serializing_if = "is_zero_f32")]
         harm: f32,
+        /// Items it is made to wear and hold, by id, each in the slot it goes in (armour on, a
+        /// tool or a weapon in its hand): new and plain, never dropped. ABI 54.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        wears: Vec<String>,
     },
     /// Footprints a player's size in the snow from `from` to `to`: a snow layer taken off at
     /// each step, left and right of the line, where there is snow; refused under three. ABI 30.

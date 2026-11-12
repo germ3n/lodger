@@ -2430,6 +2430,17 @@ public final class Executors {
 				return report(id, false, "the player is not here");
 			}
 			context.temporaries().addHostile(hostile, prey, seconds, command.has("harm") ? command.get("harm").getAsFloat() : 0);
+			// Dressed as asked: new, plain pieces, each in its slot, never dropped.
+			if (command.has("wears") && command.get("wears").isJsonArray()) {
+				for (JsonElement worn : command.getAsJsonArray("wears")) {
+					BuiltInRegistries.ITEM.get(Identifier.parse(worn.getAsString())).ifPresent(item -> {
+						ItemStack piece = new ItemStack(item.value());
+						net.minecraft.world.entity.EquipmentSlot slot = hostile.getEquipmentSlotForItem(piece);
+						hostile.setItemSlot(slot, piece);
+						hostile.setDropChance(slot, 0);
+					});
+				}
+			}
 		} else if (seconds > 0) {
 			context.temporaries().add(entity, seconds);
 		}

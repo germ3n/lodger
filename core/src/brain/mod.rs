@@ -4329,6 +4329,7 @@ mod tests {
                 face: None,
                 targets: None,
                 harm: 0.0,
+                wears: Vec::new(),
             },
             while_still: false,
         });

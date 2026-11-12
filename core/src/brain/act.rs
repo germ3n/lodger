@@ -378,6 +378,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // Twenty blocks behind them, on the ground: it walks at them out of the dark.
+        Action::ZombieInYourGear(_) => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            Some([
+                at[0] + (yaw.sin() * 20.0).round() as i32,
+                -10_000,
+                at[2] - (yaw.cos() * 20.0).round() as i32,
+            ])
+        }
         // Round them.
         Action::WolvesCircle => Some(block_of(memory.last.pos)),
         // A block and a half ahead of their face, at the head's height: the ceiling there.
@@ -5967,6 +5977,7 @@ pub fn commands(
                             face: None,
                             targets: None,
                             harm: 0.0,
+                            wears: Vec::new(),
                         },
                         0,
                     )
@@ -6471,6 +6482,31 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // A zombie in armour like theirs, holding a tool like the one in their hand, set on them
+        // two minutes: its hits by the harm stages, never a kill; killed it leaves nothing.
+        Action::ZombieInYourGear(harm) => pos
+            .map(|spot| {
+                let mut wears = memory.last.armour.clone();
+                if !memory.last.main_hand.is_empty() {
+                    wears.push(memory.last.main_hand.clone());
+                }
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:zombie".to_string(),
+                        pos: [spot[0] as f64 + 0.5, -10_000.0, spot[2] as f64 + 0.5],
+                        yaw: 0.0,
+                        seconds: 120.0,
+                        kept: String::new(),
+                        face: None,
+                        targets: Some(target),
+                        harm,
+                        wears,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         // Five wild wolves round them, circling nearer half a minute, growling, then off.
         Action::WolvesCircle => vec![(
             Command::Circle {
@@ -6503,6 +6539,7 @@ pub fn commands(
                         face: None,
                         targets: Some(target),
                         harm: 1.0,
+                        wears: Vec::new(),
                     },
                     0,
                 ),
@@ -6537,6 +6574,7 @@ pub fn commands(
                         face: None,
                         targets: Some(target),
                         harm: 1.0,
+                        wears: Vec::new(),
                     },
                     0,
                 )]
@@ -6586,6 +6624,7 @@ pub fn commands(
                             face: None,
                             targets: Some(target),
                             harm: 1.0,
+                            wears: Vec::new(),
                         },
                         1 + i * 4,
                     ));
@@ -7640,6 +7679,7 @@ pub fn commands(
                         face: Some(target),
                         targets: None,
                         harm: 0.0,
+                        wears: Vec::new(),
                     },
                     0,
                 )]
@@ -8032,6 +8072,7 @@ pub fn commands(
                                 face: None,
                                 targets: None,
                                 harm: 0.0,
+                                wears: Vec::new(),
                                 of: "minecraft:armor_stand".to_string(),
                                 pos: stand_at,
                                 yaw: yaw_toward(stand_at, house),
@@ -8128,6 +8169,7 @@ pub fn commands(
                         face: None,
                         targets: None,
                         harm: 0.0,
+                        wears: Vec::new(),
                         of: format!("minecraft:{kind}"),
                         pos: [at[0] + 1.5, at[1], at[2] + 1.5],
                         yaw: (seed % 360) as f32,
@@ -14778,5 +14820,35 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Circle { of, count: 5, .. }, 0)] if of == "minecraft:wolf")
         );
+    }
+
+    #[test]
+    fn at_night_a_zombie_walks_at_them_in_what_they_wear() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.armour = vec![
+            "minecraft:iron_helmet".to_string(),
+            "minecraft:diamond_chestplate".to_string(),
+        ];
+        memory.last.main_hand = "minecraft:iron_sword".to_string();
+        let event = find("zombie_in_your_gear").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        let [(
+            Command::PlaceEntity {
+                of,
+                wears,
+                harm,
+                targets: Some(0),
+                ..
+            },
+            0,
+        )] = &made[..]
+        else {
+            panic!("{made:?}");
+        };
+        assert_eq!(of, "minecraft:zombie");
+        assert_eq!(*harm, 4.0);
+        assert_eq!(wears.len(), 3, "their armour and their sword: {wears:?}");
     }
 }

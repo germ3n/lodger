@@ -1093,6 +1093,8 @@ pub enum Action {
     DropsFromTheCeiling,
     /// At night, wild wolves circle them, nearer each round, then run.
     WolvesCircle,
+    /// At night a zombie walks at them in armour like theirs, a tool like theirs in its hand.
+    ZombieInYourGear(f32),
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4890,6 +4892,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 100: two hearts a hit by the harm stages, as `figure_swing`'s.
+    row(
+        "zombie_in_your_gear",
+        5,
+        5,
+        &[Night, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::ZombieInYourGear(4.0),
+        false,
+    ),
     // docs/events_todo.md, 99.
     row(
         "wolves_circle",
@@ -6163,6 +6177,7 @@ impl Event {
             | Action::DaylightPhantom
             | Action::DropsFromTheCeiling
             | Action::WolvesCircle
+            | Action::ZombieInYourGear(_)
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6246,6 +6261,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "zombie_in_your_gear" => "send a zombie at them dressed in what they wear",
             "wolves_circle" => "set wild wolves circling them in the dark",
             "drops_from_the_ceiling" => "drop a cave spider from the ceiling before their face",
             "daylight_phantom" => "send a phantom at them out of the noon sun",
