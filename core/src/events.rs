@@ -5548,6 +5548,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.bubble_column.upwards_ambient"),
         true,
     ),
+    // docs/events_todo.md, 137.
+    row(
+        "the_bell_in_the_chest",
+        4,
+        5,
+        &[UsedContainer, TargetIndoors],
+        2.0,
+        2,
+        Full,
+        Action::Sound("minecraft:block.bell.use"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6716,6 +6728,7 @@ impl Event {
             "glass_rubbed" => "drag a finger slowly across their window",
             "bones_underfoot" => "crunch bone under their steps",
             "bubbling_under" => "bubble water under their floor",
+            "the_bell_in_the_chest" => "ring a bell inside the chest they use",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

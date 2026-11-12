@@ -679,6 +679,28 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 137.
+        "the_bell_in_the_chest" => {
+            const WAYS: &[Variant] = &[
+                v(&[("minecraft:block.bell.use", 0)], (1.4, 1.5), 0.4, Still),
+                v(
+                    &[("minecraft:block.bell.resonate", 0)],
+                    (1.2, 1.3),
+                    0.3,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.bell.use", 0),
+                        ("minecraft:block.bell.use", 20),
+                    ],
+                    (1.6, 1.7),
+                    0.3,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1537,6 +1559,7 @@ pub fn commands(
 
 /// The events whose sound comes from a door, a chest or a window of a house.
 pub const HOUSE_SOUNDS: &[&str] = &[
+    "the_bell_in_the_chest",
     "glass_rubbed",
     "breath_in_the_chest",
     "door_sound",
@@ -1558,7 +1581,10 @@ pub const HOUSE_SOUNDS: &[&str] = &[
 /// cave, with no door anywhere near, played at the target's own feet (the dev
 /// client).
 pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos> {
-    let want_chest = matches!(event, "chest_sound" | "breath_in_the_chest");
+    let want_chest = matches!(
+        event,
+        "chest_sound" | "breath_in_the_chest" | "the_bell_in_the_chest"
+    );
     let want_pane = matches!(event, "window_tap" | "glass_rubbed");
     let home_near = memory.home.as_ref().is_some_and(|h| {
         let at = memory.last.pos;
@@ -1643,6 +1669,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "the_bell_in_the_chest",
             "bubbling_under",
             "bones_underfoot",
             "glass_rubbed",
