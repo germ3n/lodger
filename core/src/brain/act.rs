@@ -887,6 +887,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ShipCreaks
         | Action::TheirTorchAhead
         | Action::NameInNetherrack
+        | Action::PrintsInSoulSand
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10175,6 +10176,20 @@ pub fn commands(
             }
             made
         }
+        // docs/events_todo.md, 280.
+        Action::PrintsInSoulSand => {
+            let way = facing_way(memory.last.yaw);
+            let p = memory.last.pos;
+            let ahead = |k: f64| [p[0] + way[0] as f64 * k, p[2] + way[1] as f64 * k];
+            vec![(
+                prints_hint(
+                    ids,
+                    target,
+                    &crate::prints::walk(ahead(2.0), ahead(16.0), p[1]),
+                ),
+                0,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14057,6 +14072,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "prints_in_soul_sand"
                 || event.id == "name_in_netherrack"
                 || event.id == "their_torch_ahead"
                 || event.id == "breath_in_the_nether"
@@ -22323,5 +22339,18 @@ mod tests {
         let cells = snow_letter('A').len() + snow_letter('L').len();
         assert_eq!(made.len(), cells, "{made:?}");
         assert!(made.iter().all(|(c, _)| matches!(c, Command::SetBlock { pos, replace, .. } if pos[2] == -3 && replace == &vec!["minecraft:netherrack".to_string()])));
+    }
+
+    #[test]
+    fn prints_in_soul_sand_lead_away_ahead_of_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 70.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("prints_in_soul_sand").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, detail, .. }, 0)] if hint == "footprints" && !detail.is_empty()),
+            "{made:?}"
+        );
     }
 }

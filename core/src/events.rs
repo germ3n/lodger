@@ -1298,6 +1298,8 @@ pub enum Action {
     TheirTorchAhead,
     /// In the Nether, their name cut a block deep into the netherrack behind them, read as they turn back.
     NameInNetherrack,
+    /// In the Nether, prints their size ahead of them, leading away into the dark.
+    PrintsInSoulSand,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8137,6 +8139,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::NameInNetherrack,
         false,
     ),
+    // docs/events_todo.md, 280: prints their size ahead of them, leading away.
+    row(
+        "prints_in_soul_sand",
+        4,
+        5,
+        &[InNether],
+        1.0,
+        3,
+        Half,
+        Action::PrintsInSoulSand,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8787,6 +8801,7 @@ impl Event {
             | Action::ZombifiedFollow
             | Action::TheirTorchAhead
             | Action::NameInNetherrack
+            | Action::PrintsInSoulSand
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9391,6 +9406,7 @@ impl Event {
             "breath_in_the_nether" => "show their breath in the heat of the Nether",
             "their_torch_ahead" => "light a torch ahead of them in the fortress",
             "name_in_netherrack" => "cut their name into the netherrack behind them",
+            "prints_in_soul_sand" => "lay prints ahead of them leading away",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -479,6 +479,7 @@ caves, from before.
 | `breath_in_the_nether` | 3 to 5 | In the heat of the Nether their breath shows before their face, in puffs, as on a winter night, twenty seconds (the client's `cold_breath` hint of `cold_house`, there). | In the Nether. |
 | `their_torch_ahead` | 4 to 5 | In a Nether fortress (a wither skeleton near them), nine blocks ahead of them a torch they did not place, on the floor or on a wall as a torch finds room, out of their sight as it is set. | In the Nether, a wither skeleton near them. |
 | `name_in_netherrack` | 4 to 5 | In the Nether, three blocks behind them, their name is cut a block deep into the netherrack, five high from their feet, in the letters `name_in_the_snow` treads; they read it as they turn back. Netherrack alone, eight letters at most. | In the Nether. |
+| `prints_in_soul_sand` | 4 to 5 | In the Nether, dark prints their size on the ground ahead of them, from two blocks off to sixteen, leading away into the dark, on their screen alone (the `footprints` hint, as `prints_around_the_house` draws them). | In the Nether. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

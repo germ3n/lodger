@@ -3041,6 +3041,11 @@ The `[x]` lines above, summed up by day:
   alone three blocks behind them, five high from their feet, in `name_in_the_snow`'s letters stood
   on end. Tests: one in `act`. Was: no such event.
 
+- [x] **Prints in the soul sand** (`docs/events_todo.md`, 280): `prints_in_soul_sand`, stages 4 and
+  5, in the Nether: footprints their size from two to sixteen blocks ahead of them, walking away, on
+  their client (the `footprints` hint; off with the glitches). Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
