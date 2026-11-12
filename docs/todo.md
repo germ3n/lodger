@@ -3098,6 +3098,11 @@ The `[x]` lines above, summed up by day:
   a compass: a minute of it pointing at their bed on their client, a lodestone's as any (the
   `compass_points` hint at the bed; off with the glitches). Tests: one in `act`. Was: no such event.
 
+- [x] **The ruined portal glows** (`docs/events_todo.md`, 314): `ruined_portal_glows`, stages 3 to
+  5, outdoors: the obsidian within twelve blocks shown to their client as crying obsidian, the
+  farthest first, a minute, a portal's hum with it (`ghost_near`; the frame not drawn whole). Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

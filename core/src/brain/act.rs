@@ -905,6 +905,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::StandingOnTheVoid
         | Action::SplashInTheNether
         | Action::SomeoneWentThrough
+        | Action::RuinedPortalGlows
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10388,6 +10389,31 @@ pub fn commands(
                 _ => vec![],
             }
         }
+        // docs/events_todo.md, 314.
+        Action::RuinedPortalGlows => vec![
+            (
+                Command::GhostNear {
+                    id: ids(),
+                    player: target,
+                    radius: 12,
+                    of: "minecraft:obsidian".to_string(),
+                    block: "minecraft:crying_obsidian".to_string(),
+                    seconds: 60.0,
+                    in_turn: true,
+                },
+                0,
+            ),
+            (
+                sound_at(
+                    ids,
+                    target,
+                    "minecraft:block.portal.ambient",
+                    memory.last.pos,
+                    0.6,
+                ),
+                0,
+            ),
+        ],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -22698,5 +22724,17 @@ mod tests {
             matches!(&made[..], [(Command::Hint { hint, pos: p, .. }, 0)] if hint == "compass_points" && *p == bed),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn ruined_portal_glows_weeps_its_obsidian_with_a_hum() {
+        let memory = rich_memory();
+        let event = find("ruined_portal_glows").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::GhostNear { of, in_turn: true, .. } if of == "minecraft:obsidian"),
+            "{made:?}"
+        );
+        assert!(matches!(&made[1].0, Command::PlaySound { .. }));
     }
 }

@@ -1318,6 +1318,8 @@ pub enum Action {
     SplashInTheNether,
     /// At home, the sound of someone going through their portal behind them.
     SomeoneWentThrough,
+    /// The obsidian near them, a ruined portal's, weeping as if it were lit, on their screen alone.
+    RuinedPortalGlows,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8301,6 +8303,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("compass_points", 60.0),
         false,
     ),
+    // docs/events_todo.md, 314: a ruined portal's obsidian near them weeps as if lit.
+    row(
+        "ruined_portal_glows",
+        3,
+        5,
+        &[TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::RuinedPortalGlows,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8960,6 +8974,7 @@ impl Event {
             | Action::FarEndOfTheBridge
             | Action::StandingOnTheVoid
             | Action::SplashInTheNether
+            | Action::RuinedPortalGlows
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9577,6 +9592,7 @@ impl Event {
             "splash_in_the_nether" => "throw a splash potion at their feet from the Nether's dark",
             "someone_went_through" => "sound someone going through their portal",
             "lodestone_wrong" => "turn their compass to their bed",
+            "ruined_portal_glows" => "make the ruined portal near them weep",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
