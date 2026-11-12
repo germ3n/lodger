@@ -701,6 +701,52 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 138.
+        "panting_behind" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 10),
+                        ("minecraft:entity.player.breath", 20),
+                        ("minecraft:entity.player.breath", 30),
+                        ("minecraft:entity.player.breath", 40),
+                        ("minecraft:entity.player.breath", 50),
+                    ],
+                    (1.2, 1.3),
+                    0.8,
+                    Behind,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 8),
+                        ("minecraft:entity.player.breath", 16),
+                        ("minecraft:entity.player.breath", 24),
+                        ("minecraft:entity.player.breath", 32),
+                        ("minecraft:entity.player.breath", 40),
+                        ("minecraft:entity.player.breath", 48),
+                        ("minecraft:entity.player.breath", 56),
+                    ],
+                    (1.3, 1.4),
+                    0.7,
+                    Behind,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.player.breath", 0),
+                        ("minecraft:entity.player.breath", 12),
+                        ("minecraft:entity.player.breath", 24),
+                        ("minecraft:entity.player.breath", 36),
+                        ("minecraft:entity.player.breath", 48),
+                    ],
+                    (1.1, 1.2),
+                    0.7,
+                    Ear,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1669,6 +1715,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "panting_behind",
             "the_bell_in_the_chest",
             "bubbling_under",
             "bones_underfoot",

@@ -5560,6 +5560,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Sound("minecraft:block.bell.use"),
         false,
     ),
+    // docs/events_todo.md, 138.
+    row(
+        "panting_behind",
+        4,
+        5,
+        &[TargetRunning, Night],
+        2.0,
+        3,
+        Full,
+        Action::SoundAtTarget("minecraft:entity.player.breath"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6729,6 +6741,7 @@ impl Event {
             "bones_underfoot" => "crunch bone under their steps",
             "bubbling_under" => "bubble water under their floor",
             "the_bell_in_the_chest" => "ring a bell inside the chest they use",
+            "panting_behind" => "pant right behind them as they run",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

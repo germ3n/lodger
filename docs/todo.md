@@ -2239,6 +2239,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A bell in the chest** (`docs/events_todo.md`, 137): `the_bell_in_the_chest`, stages 4 and 5, indoors: a small bell inside the chest they use. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Panting behind them** (`docs/events_todo.md`, 138): `panting_behind`, stages 4 and 5, running at night: panting behind them (the running need, new). Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
