@@ -397,6 +397,14 @@ pub fn quieted(made: Vec<(Command, u64)>, config: &crate::config::Config) -> Vec
         .collect()
 }
 
+/// How far a block's middle is from a point across the ground, x and z alone. A square root of
+/// squares, never `f64::hypot`: that is glibc's `hypot`, versioned 2.35, newer than the Linux
+/// natives may ask for.
+fn flat_distance(block: BlockPos, at: Pos) -> f64 {
+    let (dx, dz) = (block[0] as f64 + 0.5 - at[0], block[2] as f64 + 0.5 - at[2]);
+    (dx * dx + dz * dz).sqrt()
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -10644,12 +10652,10 @@ pub fn commands(
         },
         // docs/events_todo.md, 309.
         Action::ChorusLandsHome => match (memory.usual_door(), memory.home.as_ref()) {
-            // The host moves no one farther than thirty-two blocks.
-            (Some(door), Some(home))
-                if (home.center[0] as f64 + 0.5 - memory.last.pos[0])
-                    .hypot(home.center[2] as f64 + 0.5 - memory.last.pos[2])
-                    <= 28.0 =>
-            {
+            // The host moves no one farther than thirty-two blocks. A square root, not `hypot`:
+            // glibc 2.35 versioned `hypot` anew, and a Linux native asking for it will not load on
+            // RHEL 9's 2.34 (the natives' check refused it).
+            (Some(door), Some(home)) if flat_distance(home.center, memory.last.pos) <= 28.0 => {
                 let step = out_of_door(memory, home.center, door);
                 vec![(
                     Command::MovePlayer {
@@ -19368,7 +19374,7 @@ mod tests {
             panic!("{made:?}");
         };
         assert!(!then_at.is_empty(), "somewhere nearer next");
-        let away = |p: &[f64; 3]| (p[0] - 0.5).hypot(p[2] - 0.5);
+        let away = |p: &[f64; 3]| ((p[0] - 0.5).powi(2) + (p[2] - 0.5).powi(2)).sqrt();
         let mut last = away(pos);
         for next in then_at {
             assert!(away(next) < last, "nearer each time");
@@ -23593,5 +23599,62 @@ mod tests {
         let hint = find("sculk_trail").unwrap();
         let made = commands(hint, None, &memory, &mut ids(), &Now::default(), None);
         assert!(quieted(made, &config).is_empty(), "a hint unshown");
+    }
+
+    #[test]
+    fn no_maths_the_linux_natives_cannot_ask_for() {
+        // `f64::hypot` is glibc's `hypot`, which 2.35 versioned anew: a Linux native calling it
+        // asks for glibc 2.35 and the natives' check (2.34 at most, RHEL 9) refuses it. Caught
+        // once in CI only; here every source of the mind is read for it.
+        for source in [
+            include_str!("../arc.rs"),
+            include_str!("../books.rs"),
+            include_str!("act.rs"),
+            include_str!("log.rs"),
+            include_str!("mod.rs"),
+            include_str!("offer.rs"),
+            include_str!("rules_brain.rs"),
+            include_str!("situation.rs"),
+            include_str!("sounds.rs"),
+            include_str!("text.rs"),
+            include_str!("../building.rs"),
+            include_str!("../caves.rs"),
+            include_str!("../chains.rs"),
+            include_str!("../config.rs"),
+            include_str!("../debug.rs"),
+            include_str!("../elsewhere.rs"),
+            include_str!("../ending.rs"),
+            include_str!("../events.rs"),
+            include_str!("../farm.rs"),
+            include_str!("../habits.rs"),
+            include_str!("../lib.rs"),
+            include_str!("../lights.rs"),
+            include_str!("../memory.rs"),
+            include_str!("../model/infer.rs"),
+            include_str!("../model/mod.rs"),
+            include_str!("../model/queue.rs"),
+            include_str!("../multiplayer.rs"),
+            include_str!("../out_of_place.rs"),
+            include_str!("../people.rs"),
+            include_str!("../places.rs"),
+            include_str!("../prints.rs"),
+            include_str!("../rules.rs"),
+            include_str!("../stay.rs"),
+            include_str!("../taken_up.rs"),
+            include_str!("../temper.rs"),
+            include_str!("../trees.rs"),
+            include_str!("../tunnels.rs"),
+            include_str!("../village.rs"),
+            include_str!("../warped.rs"),
+            include_str!("../water.rs"),
+            include_str!("../workshop.rs"),
+        ] {
+            // Built from halves, so this test is not itself what it looks for.
+            let call = [".hy", "pot("].concat();
+            assert!(
+                !source.contains(&call),
+                "f64::hypot in the mind: use a square root"
+            );
+        }
     }
 }

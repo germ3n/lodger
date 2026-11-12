@@ -203,3 +203,8 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   load. Check both when the lodger seems dumb.
 - **Changing `brain.*` thresholds mid-stay changes behaviour at once.** Nothing is recomputed,
   but the next decision uses the new numbers. The stage and the memory stay as they were.
+
+- **No `f64::hypot` in the mind.** It is glibc's `hypot`, which glibc 2.35 versioned anew: a Linux
+  native calling it asks for 2.35, past the 2.34 the natives keep to (RHEL 9), and the natives'
+  check fails the build. Write the square root of the squares; a test in `act` reads the mind's
+  sources for it.

@@ -3290,6 +3290,13 @@ The `[x]` lines above, summed up by day:
   The brain tells the memory the stage each tick (`Memory::stage_now`). Tests: three in `chains`.
   Was: a blind pick, any number open, every first step weighed up.
 
+- [x] **The Linux natives back under glibc 2.34** (owner, the CI's natives job: "linux-aarch64
+  asks for glibc 2.35, newer than 2.34"): `chorus_lands_home` measured its reach with
+  `f64::hypot`, which is glibc's `hypot`, versioned anew in 2.35, so a native built on Debian 12
+  asked for 2.35 and would not load on RHEL 9. Now a square root of squares (`flat_distance`).
+  Tests: one in `act`, every source of the mind read for a `hypot` call. Was: the natives' job
+  failing.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
