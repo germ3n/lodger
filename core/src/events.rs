@@ -1182,6 +1182,8 @@ pub enum Action {
     FangsInALine,
     /// A guardian's beam from the water near them to them, charging, never firing, on their screen alone.
     BeamFromTheWater,
+    /// The fish in a bucket of theirs another kind overnight, a bucket for a bucket.
+    BucketFishChanged,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -1281,6 +1283,15 @@ pub enum FigureWhere {
     /// At the edge of their light, stepping back out of it.
     EdgeOfLight,
 }
+
+/// The buckets of fish `bucket_fish_changed` changes one into another: none of a living
+/// creature with a kind of its own (an axolotl, a tadpole).
+pub const FISH_BUCKETS: &[&str] = &[
+    "cod_bucket",
+    "salmon_bucket",
+    "pufferfish_bucket",
+    "tropical_fish_bucket",
+];
 
 /// One row of the catalogue.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -7268,6 +7279,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BeamFromTheWater,
         false,
     ),
+    // docs/events_todo.md, 225: the fish in their bucket is another kind in the morning.
+    row(
+        "bucket_fish_changed",
+        3,
+        5,
+        &[InChestAny(FISH_BUCKETS), TargetAwayOrAsleep],
+        2.0,
+        2,
+        Half,
+        Action::BucketFishChanged,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7632,6 +7655,7 @@ impl Event {
             | Action::MoveVehicle
             | Action::SignWithCoords
             | Action::ToolsLaidOut
+            | Action::BucketFishChanged
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -8413,6 +8437,7 @@ impl Event {
             "pale_horse_in_your_pen" => "stand a skeleton horse among the animals in their pen",
             "fangs_in_a_line" => "snap a line of evoker fangs up toward them",
             "beam_from_the_water" => "charge a guardian's beam at them from the water",
+            "bucket_fish_changed" => "change the fish in their bucket to another kind",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

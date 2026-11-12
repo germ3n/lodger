@@ -710,6 +710,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PaleHorse
         | Action::FangsInALine
         | Action::BeamFromTheWater
+        | Action::BucketFishChanged
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8501,6 +8502,49 @@ pub fn commands(
             )],
             None => vec![],
         },
+        // docs/events_todo.md, 225.
+        Action::BucketFishChanged => match memory
+            .in_used_container(|id| crate::events::FISH_BUCKETS.iter().any(|b| id.ends_with(b)))
+        {
+            Some((chest, stack)) => {
+                let name = stack.id.rsplit(':').next().unwrap_or(&stack.id);
+                let others: Vec<&&str> = crate::events::FISH_BUCKETS
+                    .iter()
+                    .filter(|b| **b != name)
+                    .collect();
+                let into = others[seed % others.len()];
+                vec![
+                    (
+                        Command::TakeItem {
+                            id: ids(),
+                            from: chest.pos,
+                            slot: stack.slot,
+                            expect: stack.id.clone(),
+                            count: 1,
+                            keep: String::new(),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::PutItem {
+                            id: ids(),
+                            into: chest.pos,
+                            slot: Some(stack.slot),
+                            item: ItemStack {
+                                id: format!("minecraft:{into}"),
+                                count: 1,
+                                slot: stack.slot,
+                            },
+                            kept: String::new(),
+                            wear: 0,
+                            name: String::new(),
+                        },
+                        1,
+                    ),
+                ]
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -11807,6 +11851,11 @@ mod tests {
         memory
             .walls
             .push(([0, 65, 1], "minecraft:candle".to_string()));
+        // A bucket of fish in the chest they use, for `bucket_fish_changed`.
+        let used = memory.used_container().map(|c| c.pos);
+        if let Some(c) = memory.containers.iter_mut().find(|c| Some(c.pos) == used) {
+            c.contents.push(stack("minecraft:salmon_bucket", 1, 25));
+        }
         // Copper of theirs on the roof, for `copper_ages`.
         memory
             .walls
@@ -19686,6 +19735,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::GuardianBeam { seconds, .. }, 0)] if *seconds < 4.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn bucket_fish_changed_takes_one_bucket_and_puts_another_kind() {
+        let memory = rich_memory();
+        let event = find("bucket_fish_changed").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::TakeItem { expect, .. }, 0), (Command::PutItem { item, slot: Some(25), .. }, 1)] if expect == "minecraft:salmon_bucket" && item.id != "minecraft:salmon_bucket" && item.id.ends_with("_bucket")),
             "{made:?}"
         );
     }

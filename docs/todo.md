@@ -2756,6 +2756,11 @@ The `[x]` lines above, summed up by day:
   (`guardian_beam`, ABI 56, an unseen guardian shown to them alone; off with the glitches). Tests:
   one in `act`. Was: no such event.
 
+- [x] **The fish in the bucket changed** (`docs/events_todo.md`, 225): `bucket_fish_changed`, stages
+  3 to 5, the target away or asleep: a cod, salmon, pufferfish or tropical fish bucket in the chest
+  they use taken and another of those put in its slot (the take first, so a failed take puts
+  nothing); never an axolotl's or a tadpole's. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
