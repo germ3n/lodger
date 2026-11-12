@@ -2729,6 +2729,11 @@ The `[x]` lines above, summed up by day:
   their newest tunnel, the lower half rising and the upper hanging, merged at the tips, into air
   alone; gone a day on. Tests: one in `act`. Was: no such event.
 
+- [x] **A skull in the tunnel** (`docs/events_todo.md`, 220): `skull_in_the_tunnel`, stages 4 and 5,
+  in a tunnel of theirs: a skeleton skull shown in the wall at head height beside its far end from
+  them, facing back along it, to their client alone three minutes (`ghost_block`; the wall
+  untouched). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

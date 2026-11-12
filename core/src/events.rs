@@ -1169,6 +1169,8 @@ pub enum Action {
     ToolsLaidOut,
     /// A column of pointed dripstone grown overnight across their tunnel, floor to ceiling, gone in a day.
     DripstoneInTunnel,
+    /// A skeleton skull set into the wall at the far end of the tunnel they are in, facing back along it at them, on their screen alone a while.
+    SkullInTheTunnel,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7195,6 +7197,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::DripstoneInTunnel,
         false,
     ),
+    // docs/events_todo.md, 220: a skeleton skull in the wall of their tunnel, facing them as they come.
+    row(
+        "skull_in_the_tunnel",
+        4,
+        5,
+        &[InTunnel],
+        2.0,
+        2,
+        Half,
+        Action::SkullInTheTunnel,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7794,6 +7808,7 @@ impl Event {
             | Action::OneStepMore
             | Action::RoomClosesIn
             | Action::DripstoneInTunnel
+            | Action::SkullInTheTunnel
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8330,6 +8345,7 @@ impl Event {
             "bed_fenced" => "fence their bed round while they sleep",
             "tools_laid_out" => "lay their tools out on the floor in a row",
             "dripstone_in_tunnel" => "grow a column of dripstone across their tunnel",
+            "skull_in_the_tunnel" => "set a skull into their tunnel's wall facing them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

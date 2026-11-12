@@ -224,6 +224,30 @@ fn dripstone_state(i: usize, n: usize) -> String {
     )
 }
 
+/// How long `skull_in_the_tunnel`'s skull shows, ticks: three minutes.
+const SKULL_SHOWN_TICKS: u64 = 3_600;
+
+/// Where the skull goes in the tunnel they stand in: in the wall at head height beside its far
+/// end from them, and its rotation (a skull's sixteenth turns, 0 facing south) looking back
+/// along the tunnel toward them.
+fn tunnel_skull(memory: &Memory) -> Option<(BlockPos, u8)> {
+    let tunnel = memory.tunnel_at_target()?;
+    let at = block_of(memory.last.pos);
+    let (mouth, end, way) = (tunnel.mouth(), tunnel.end(), tunnel.way());
+    let (far, back) = if distance(end, at) >= distance(mouth, at) {
+        (end, [-way[0], -way[1]])
+    } else {
+        (mouth, way)
+    };
+    let rotation = match back {
+        [0, 1] => 0,
+        [-1, 0] => 4,
+        [0, -1] => 8,
+        _ => 12,
+    };
+    Some(([far[0] + way[1], far[1] + 1, far[2] + way[0]], rotation))
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -636,6 +660,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BedFenced
         | Action::ToolsLaidOut
         | Action::DripstoneInTunnel
+        | Action::SkullInTheTunnel
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8329,6 +8354,34 @@ pub fn commands(
                 }
                 made
             }
+            None => vec![],
+        },
+        // docs/events_todo.md, 220.
+        Action::SkullInTheTunnel => match tunnel_skull(memory) {
+            Some((cell, rotation)) => vec![
+                (
+                    Command::GhostBlock {
+                        id: ids(),
+                        player: target,
+                        pos: cell,
+                        block: "minecraft:skeleton_skull".to_string(),
+                        state: format!("rotation={rotation}"),
+                        only_air: false,
+                    },
+                    0,
+                ),
+                (
+                    Command::GhostBlock {
+                        id: ids(),
+                        player: target,
+                        pos: cell,
+                        block: String::new(),
+                        state: String::new(),
+                        only_air: false,
+                    },
+                    SKULL_SHOWN_TICKS,
+                ),
+            ],
             None => vec![],
         },
         Action::SculkCreeps => {
@@ -19423,5 +19476,18 @@ mod tests {
             })
             .collect();
         assert_eq!(set, vec![[1, 0, 0], [1, 1, 0]], "{made:?}");
+    }
+
+    #[test]
+    fn skull_in_the_tunnel_faces_back_along_it_from_its_far_end() {
+        let memory = rich_memory();
+        // The tunnel runs east from -6 to 7, they stand at its middle: its end is farther.
+        assert_eq!(tunnel_skull(&memory), Some(([7, 1, 1], 4)));
+        let event = find("skull_in_the_tunnel").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostBlock { block, state, .. }, 0), (_, SKULL_SHOWN_TICKS)] if block == "minecraft:skeleton_skull" && state == "rotation=4"),
+            "{made:?}"
+        );
     }
 }
