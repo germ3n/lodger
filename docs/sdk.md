@@ -241,7 +241,11 @@ over it within three blocks, the other roofed; a door with both or neither open 
 `move_player` looks for room one block down as well as up, the ground outside a door being a step
 below its sill at times. ABI 55: `set_block`'s and `set_sign`'s `pos` with a y below -1000 is
 counted from the ground in its column, -10000 the ground's own block, a block more each one up (a
-hole at its place was dug at the home's floor height, into the air on lower ground).
+hole at its place was dug at the home's floor height, into the air on lower ground). Also `turn_torches`
+(each wall torch among them turned to point at a place, a wall holding it), `place_entity`'s
+`minecraft:killer_bunny`, and whether the host spares the players from what the mod does: the open
+answer's `spare` (`Mod::spares`, spared unless a mod says otherwise) and the `spare` command for a
+change after; off, every hit, burn and arrow the host deals for the mod lands in full.
 
 ## Resources
 

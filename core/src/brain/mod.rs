@@ -498,7 +498,7 @@ impl Brain {
         }
     }
 
-    fn id(&mut self) -> u64 {
+    pub(crate) fn id(&mut self) -> u64 {
         let id = self.next_command_id;
         self.next_command_id += 1;
 

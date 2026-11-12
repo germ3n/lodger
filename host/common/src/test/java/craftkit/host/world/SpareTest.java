@@ -40,4 +40,17 @@ class SpareTest {
 		}
 		assertEquals(6, Spare.arrowHarm(6, 20), "plenty of health: as asked");
 	}
+
+	@Test
+	void with_sparing_off_every_hit_and_burn_lands_in_full() {
+		try {
+			Spare.set(false);
+			assertEquals(8f, Spare.harm(8, 3, 1.5f), 1e-6);
+			assertEquals(5f, Spare.fireSeconds(2, 5), 1e-6);
+			assertEquals(6f, Spare.arrowHarm(6, 2), 1e-6);
+		} finally {
+			Spare.set(true);
+		}
+		assertTrue(Spare.harm(8, 3, 1f) <= 2f, "on again, spared again");
+	}
 }

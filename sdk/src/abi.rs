@@ -60,10 +60,17 @@ impl Ok {
     }
 }
 
-/// `{"handle": n}`, the answer to opening a world.
+/// `{"handle": n, "spare": b}`, the answer to opening a world: `spare` whether the host spares
+/// the players from what the mod does (ABI 55, [`crate::Mod::spares`]).
 #[derive(Serialize, serde::Deserialize)]
 pub struct Handle {
     pub handle: u64,
+    #[serde(default = "spared")]
+    pub spare: bool,
+}
+
+fn spared() -> bool {
+    true
 }
 
 /// `{"bytes": "<base64>"}`, the answer to saving a world.

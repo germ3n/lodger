@@ -1158,7 +1158,7 @@ public final class Figures {
 				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket(figure.entityId,
 						net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
 				if (damage > 0 && player.level() instanceof ServerLevel level) {
-					float harm = spare ? Math.min(damage, Math.max(0, player.getHealth() - 1)) : damage;
+					float harm = spare ? Spare.harm(damage, player.getHealth(), 1f) : damage;
 					player.playSound(net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_STRONG, 1f, 0.9f);
 					if (harm > 0) {
 						player.hurtServer(level, level.damageSources().generic(), harm);

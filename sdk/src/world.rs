@@ -653,6 +653,14 @@ pub enum Command {
         outside: Pos,
         inside: Pos,
     },
+    /// Whether the host spares the players from what the mod does to them: with `on`, every hit,
+    /// burn, arrow and squeeze the host deals for it, and a hostile it set on them, leaves them
+    /// half a heart (as each command's own words say); off, they land in full. On until a mod says
+    /// otherwise; one setting for the whole server. ABI 55.
+    Spare {
+        id: u64,
+        on: bool,
+    },
     /// Every wall torch among `torches` turned on its block to point as nearly at `toward` as a
     /// wall there lets it, lit or not as it was; anything else among them left as it is. Reports
     /// `turned <n>`. ABI 55.
@@ -1508,6 +1516,7 @@ impl Command {
             | Command::Circle { id, .. }
             | Command::FakeCreeper { id, .. }
             | Command::TurnTorches { id, .. }
+            | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }
             | Command::DropKept { id, .. }

@@ -110,12 +110,14 @@ lodger a presence rather than a mob, and they are also what makes it safe to put
   an armour slot or the ender chest.** From a chest the player opens often, one item, one that
   the memory says they use. What it takes it holds, and it always comes back, somewhere. Items
   it moves between the player's own chests are all still the player's.
-- **It never kills before the last stage, and never harms a witness.** Its harm comes in the
+- **It never harms a witness, and with `events.kills` off it never kills before the last stage.** Its harm comes in the
   owner's stages: nothing in stages one and two; a nip from stage three (half a heart, an animal
   or the figure, `animals_nip`, `figure_nip`, an approach that strikes); real harm from stage
   four (`animals_turn`, `figure_swing`, `arrow_grazes`), always spared: never below half a
   heart, never a kill. The one death is the hard ending's, in the last stage, depending on the
-  difficulty, and once it is done the stay is over.
+  difficulty, and once it is done the stay is over. That is with `events.kills` off; it is on by
+  default (owner), lifting the sparing: its hits, fire, arrows and squeezes land in full, and a death from one is the game's
+  own; the stages still hold back what harms, and a witness is never harmed either way.
 - **It never pretends to be anyone but you, and never speaks to anyone but you.** It wears
   your skin and your name, and with `events.chat` it shows in your player list, joins and leaves
   in your name, and answers you in chat in your own name, to you alone. Never another player's

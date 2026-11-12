@@ -66,6 +66,14 @@ pub trait Mod: Sized + Send + Sync + 'static {
     /// A world loaded, with the bytes [`Mod::save`] last gave for it, or none for a new one.
     fn open(&self, info: &WorldInfo, saved: &[u8]) -> Result<Self::World, String>;
 
+    /// Whether the host is to spare the players from what this mod does to them, told with the
+    /// opened world (ABI 55): every hit, burn, arrow and squeeze leaving them half a heart, as
+    /// each command's own words say. Spared unless a mod says otherwise; a change after is the
+    /// `spare` command.
+    fn spares(&self, _world: &Self::World) -> bool {
+        true
+    }
+
     /// What the host saw since the last tick. Called before [`Mod::tick`] on the same tick.
     fn observe(&self, world: &mut Self::World, observations: &Observations);
 
@@ -217,6 +225,7 @@ macro_rules! export_mod {
                 let saved = unsafe { $crate::abi::bytes(saved, saved_len) }?;
                 let made = craftkit_the_mod()?;
                 let world = <$mod as $crate::Mod>::open(&made, &info, saved)?;
+                let spare = <$mod as $crate::Mod>::spares(&made, &world);
                 let handle =
                     CRAFTKIT_NEXT_WORLD.fetch_add(1, ::std::sync::atomic::Ordering::Relaxed);
                 let mut worlds = CRAFTKIT_WORLDS
@@ -226,7 +235,7 @@ macro_rules! export_mod {
                     .get_or_insert_with(::std::collections::HashMap::new)
                     .insert(handle, world);
 
-                Ok($crate::abi::Handle { handle })
+                Ok($crate::abi::Handle { handle, spare })
             })
         }
 

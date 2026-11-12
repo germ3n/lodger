@@ -47,6 +47,10 @@ pub struct Stay {
     /// reopen is stamped with (it was day 0, which moved habits and the temper's day).
     #[serde(default)]
     pub last_day: f32,
+    /// What the host was last told of sparing them (`events.kills`), this load: with the opened
+    /// world first (`Mod::spares`), then a `spare` command whenever the setting moves.
+    #[serde(skip)]
+    pub spare_told: Option<bool>,
 }
 
 /// The first bincode layout's leading fields, which formats 1 and 2 both began with.
@@ -232,6 +236,16 @@ impl Stay {
         if self.world != "minecraft:overworld" || !config.enabled {
             return Vec::new();
         }
+        // Whether the host spares them: told with the opened world (`spares`), and again here
+        // only when the setting moves since. A stay not opened through the mod has told nothing.
+        let spare = !config.events.kills;
+        let told = self.spare_told.is_some_and(|t| t != spare).then(|| {
+            self.spare_told = Some(spare);
+            Command::Spare {
+                id: self.brain.id(),
+                on: spare,
+            }
+        });
 
         let day = self.day(now);
         self.last_day = day;
@@ -266,7 +280,8 @@ impl Stay {
             }
         }
 
-        self.brain.tick(
+        let mut made: Vec<Command> = told.into_iter().collect();
+        made.extend(self.brain.tick(
             now,
             day,
             &mut self.memory,
@@ -274,7 +289,8 @@ impl Stay {
             config,
             log,
             model,
-        )
+        ));
+        made
     }
 
     pub fn report(&mut self, reports: &[Report], log: &mut Log) {
@@ -329,6 +345,50 @@ impl Stay {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn the_host_is_told_whether_to_spare_them_once_and_again_when_it_changes() {
+        let mut stay = Stay {
+            world: "minecraft:overworld".to_string(),
+            ..Default::default()
+        };
+        let mut config = Config::default();
+        let mut log = Log::new(None, 1, false);
+        let spares = |made: &[Command]| -> Vec<bool> {
+            made.iter()
+                .filter_map(|c| match c {
+                    Command::Spare { on, .. } => Some(*on),
+                    _ => None,
+                })
+                .collect()
+        };
+        let now = |tick| Now {
+            tick,
+            ..Default::default()
+        };
+        // Never opened through the mod: nothing was told, nothing to answer.
+        assert!(spares(&stay.tick(&now(1), &config, &mut log)).is_empty());
+        // Opened, the world's answer told the host (`Mod::spares`): quiet while it holds.
+        stay.spare_told = Some(!config.events.kills);
+        assert!(spares(&stay.tick(&now(2), &config, &mut log)).is_empty());
+        config.events.kills = !config.events.kills;
+        assert_eq!(
+            spares(&stay.tick(&now(3), &config, &mut log)),
+            vec![!config.events.kills],
+            "the setting moved"
+        );
+        assert!(
+            spares(&stay.tick(&now(4), &config, &mut log)).is_empty(),
+            "told once"
+        );
+        config.events.kills = !config.events.kills;
+        assert_eq!(
+            spares(&stay.tick(&now(5), &config, &mut log)),
+            vec![!config.events.kills],
+            "and back"
+        );
+    }
+
     use super::*;
 
     fn info() -> WorldInfo {

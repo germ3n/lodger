@@ -2329,6 +2329,16 @@ The `[x]` lines above, summed up by day:
   `border_closes` (the world border close round them on their client a moment) and
   `frost_on_the_glass` (their panes white from inside a minute and a half). Tests: in `act`.
 
+- [x] **Never a kill, made a setting** (owner: "its also kinda silly to have the never a death
+  rule, maybe we should make that toggleable in the lodger settings"; "make the death setting
+  true by default"). Was: every hit, burn, arrow and squeeze it dealt, and every hostile it set on
+  them, left them half a heart, always. Now `events.kills`, on by default, lets them land in full,
+  a death from one the game's own; off, as before. The host learns it with the opened world
+  (`Mod::spares`, the open answer's `spare`, ABI 55) and from a `spare` command whenever the
+  setting moves, and its one `Spare` gate lifts every clamp and the refused death of a spared
+  hostile's hit. The stages still decide what may harm, and the fight keeps its own death. Tests:
+  `SpareTest`, in `stay`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

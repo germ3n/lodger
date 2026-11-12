@@ -110,6 +110,8 @@ public final class Worlds {
 			}
 
 			perMod.put(mod, new Open(answer.get("handle").getAsLong(), data));
+			// Whether it spares the players (ABI 55): told with the world, a `spare` command after.
+			Spare.set(!answer.has("spare") || answer.get("spare").getAsBoolean());
 			Log.LOGGER.info("{}: opened {} ({} saved bytes)", mod.id(), info.get("id").getAsString(), saved.length);
 		}
 
@@ -119,8 +121,9 @@ public final class Worlds {
 
 	/** Whether a player's death may go ahead: during a fight, only the one that keeps everything. */
 	public boolean allowDeath(net.minecraft.server.level.ServerPlayer player, net.minecraft.world.damagesource.DamageSource source, boolean totemTried) {
-		// A spared hostile's hit never kills (ABI 54): left at half a heart.
-		if (Temporaries.spares(source)) {
+		// A spared hostile's hit never kills (ABI 54): left at half a heart, unless the mod has
+		// let its harm land in full (`spare`, ABI 55).
+		if (Spare.on() && Temporaries.spares(source)) {
 			player.setHealth(1f);
 			return false;
 		}

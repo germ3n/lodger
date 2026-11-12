@@ -410,8 +410,14 @@ impl Mod for Lodger {
         // In multiplayer with `multiplayer.pick` at `model`, the brain picks the target; with
         // `first`, the first player seen is it (the memory's default).
         stay.memory.defer_target = self.config.multiplayer.pick == "model";
+        // The host is told with the world whether to spare them (`spares`).
+        stay.spare_told = Some(!self.config.events.kills);
 
         Ok(stay)
+    }
+
+    fn spares(&self, world: &Stay) -> bool {
+        world.spare_told.unwrap_or(!self.config.events.kills)
     }
 
     fn observe(&self, world: &mut Stay, observations: &Observations) {

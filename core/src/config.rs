@@ -424,6 +424,11 @@ pub struct Events {
     /// Whether it may show in the player list, in join messages and in chat, as the target, to
     /// the target.
     pub chat: bool,
+    /// Whether what it does may kill them (owner: "kinda silly to have the never a death rule,
+    /// maybe we should make that toggleable"; "make the death setting true by default"): on,
+    /// its hits land in full and a death from one is the game's own; off, every hit, burn, arrow
+    /// and squeeze of its own leaves them half a heart.
+    pub kills: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -519,6 +524,7 @@ impl Default for Events {
             figure: true,
             glitches: true,
             chat: true,
+            kills: true,
         }
     }
 }
