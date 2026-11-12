@@ -462,6 +462,7 @@ caves, from before.
 | `piglins_stare` | 3 to 5 | In the Nether, every piglin near them stops what it is doing and turns to watch them, eight seconds, still, and then goes back to it; none turns on them for it (`hold`). | In the Nether, a piglin near them. |
 | `strider_turns_home` | 4 to 5 | In the Nether, the strider they ride stops answering the rod, eight seconds, and stands on the lava facing the way their house would be from there, an eighth as far, as the portals go (`hold`'s `at`, the home's middle the overworld shares). | In the Nether, riding a strider. |
 | `ghast_watches` | 3 to 5 | In the Nether, every ghast near them stops firing and hangs where it is, facing them, a minute, as if watching; then it is as it was (`hold`). | In the Nether, a ghast near them. |
+| `hoglins_part` | 3 to 5 | In the Nether, the hoglins near them stand off where they are, twelve seconds, facing them and charging none, as if something walked beside them that they feared (`hold`). | In the Nether, a hoglin near them. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

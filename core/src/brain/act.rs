@@ -835,6 +835,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PiglinsStare
         | Action::StriderTurnsHome
         | Action::GhastWatches
+        | Action::HoglinsPart
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9414,6 +9415,8 @@ pub fn commands(
         }
         // docs/events_todo.md, 269.
         Action::GhastWatches => hold_kind(ids, memory, target, "ghast", 60.0),
+        // docs/events_todo.md, 277.
+        Action::HoglinsPart => hold_kind(ids, memory, target, "hoglin", 12.0),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13296,6 +13299,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "hoglins_part"
                 || event.id == "ghast_watches"
                 || event.id == "strider_turns_home"
             {
@@ -21306,6 +21310,23 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hold { entity: 410, seconds, .. }, 0)] if *seconds == 60.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn hoglins_part_holds_every_hoglin_near_them() {
+        let mut memory = rich_memory();
+        memory.last.hostiles_near.push(Creature {
+            id: 410,
+            kind: "hoglin".to_string(),
+            pos: [6.0, 64.0, 2.0],
+            ..Creature::default()
+        });
+        let event = find("hoglins_part").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hold { entity: 410, seconds, .. }, 0)] if *seconds == 12.0),
             "{made:?}"
         );
     }

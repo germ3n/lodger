@@ -1268,6 +1268,8 @@ pub enum Action {
     StriderTurnsHome,
     /// In the Nether, every ghast near them going quiet, firing nothing, drifting where it is facing them a minute.
     GhastWatches,
+    /// In the Nether, the hoglins near them standing off, facing them, charging none, as round something beside them.
+    HoglinsPart,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7903,6 +7905,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::GhastWatches,
         false,
     ),
+    // docs/events_todo.md, 277: in the nether, the hoglins near them stand off where they are, twelve seconds, facing them and charging none, as if something walked beside them that they feared.
+    row(
+        "hoglins_part",
+        3,
+        5,
+        &[InNether, MobNear("hoglin")],
+        1.0,
+        3,
+        Half,
+        Action::HoglinsPart,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8538,6 +8552,7 @@ impl Event {
             | Action::PiglinsStare
             | Action::StriderTurnsHome
             | Action::GhastWatches
+            | Action::HoglinsPart
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9125,6 +9140,7 @@ impl Event {
             "piglins_stare" => "make every piglin near them stop and watch them",
             "strider_turns_home" => "turn the strider they ride toward their house",
             "ghast_watches" => "make a ghast near them stop and watch them",
+            "hoglins_part" => "make the hoglins near them stand off and not charge",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
