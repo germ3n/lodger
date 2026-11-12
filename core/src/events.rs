@@ -1286,6 +1286,8 @@ pub enum Action {
     NetherRoofSteps,
     /// In the Nether, at the portal they came through, the sounds of home coming through it.
     HomeThroughThePortal,
+    /// In the End, the dragon's growl from the central island, far off, long after it died.
+    TheDragonGrowls,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8029,6 +8031,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::HomeThroughThePortal,
         true,
     ),
+    // docs/events_todo.md, 294: in the end, far off, the dragon's growl from the central island, as if it were there still.
+    row(
+        "the_dragon_growls",
+        4,
+        5,
+        &[InEnd],
+        1.0,
+        3,
+        Half,
+        Action::TheDragonGrowls,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8333,6 +8347,7 @@ impl Event {
             | Action::TheirDoorBehind
             | Action::NetherRoofSteps
             | Action::HomeThroughThePortal
+            | Action::TheDragonGrowls
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -9269,6 +9284,7 @@ impl Event {
             "their_door_behind" => "open and shut a door behind them in the Nether",
             "nether_roof_steps" => "walk steps across the rock over them",
             "home_through_the_portal" => "let the sounds of home through their portal",
+            "the_dragon_growls" => "growl the dragon's growl from the empty island",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -27,6 +27,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("their_door_behind", "minecraft:the_nether"),
     ("nether_roof_steps", "minecraft:the_nether"),
     ("home_through_the_portal", "minecraft:the_nether"),
+    ("the_dragon_growls", "minecraft:the_end"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
@@ -470,6 +471,9 @@ mod tests {
         home.memory.store("minecraft:stone_bricks", 2);
         let mut shared = Elsewhere::default();
         home.share(&Now::default(), &config, &mut shared);
+        // The enderman's event alone in the End: the End's others need no enderman.
+        let all = shared.allowed.clone();
+        shared.allowed.retain(|a| *a == "ender_holds");
         let mut end = stay("minecraft:the_end");
         for i in 0..5_000u64 {
             end.observe(&player_at([0.0, 64.0, 0.0]), 0.0);
@@ -482,6 +486,7 @@ mod tests {
             );
             assert!(sent.is_empty(), "no enderman: {sent:?}");
         }
+        shared.allowed = all;
         let mut nether = stay("minecraft:the_nether");
         for i in 0..5_000u64 {
             nether.observe(&Observations::default(), 0.0);
