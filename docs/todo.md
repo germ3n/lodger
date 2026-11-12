@@ -1971,6 +1971,11 @@ The `[x]` lines above, summed up by day:
   (`snap_branch`, ABI 54; never persistent leaves, which someone placed). Tests: one in `act`. Was:
   no such event.
 
+- [x] **The tree line** (`docs/events_todo.md`, 86): `the_tree_line`, stage 5, walking out of the
+  woods (`Memory::leaving_the_woods`): figures between the trees of the edge behind them
+  (`trees::between_trunks`), gone together once seen and looked away from. Tests: one in `trees`,
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

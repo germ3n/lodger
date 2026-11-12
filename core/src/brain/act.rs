@@ -378,6 +378,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The first place between two trees of the edge behind them.
+        Action::TheTreeLine => {
+            let spots = crate::trees::between_trunks(&memory.trunks_behind(6.0, 24.0), 6);
+            (spots.len() >= 3).then(|| spots[0])
+        }
         // The tree they just passed.
         Action::BranchSnaps => memory.trunk_just_passed(),
         // The farthest trunk of a line of blazes straight ahead of them.
@@ -1713,6 +1718,8 @@ const HUNTED_FROM: f64 = 36.0;
 const RING_BLOCKS: f64 = 20.0;
 /// The ring's figures are numbered from here, apart from the one figure (1).
 const RING_FIRST: u32 = 11;
+/// The first of the tree line's figures (`the_tree_line`), its group too.
+const TREE_LINE_FIRST: u32 = 71;
 /// Ticks between the trees that knock (`knocks_on_wood`).
 const KNOCKS_APART: u64 = 80;
 /// The figure that comes from tree to tree (`tree_to_tree`).
@@ -6356,6 +6363,33 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // A figure between each two trees of the edge behind them, still, facing them, empty-
+        // handed; seen and looked away from, all gone at once.
+        Action::TheTreeLine => pos
+            .map(|_| {
+                crate::trees::between_trunks(&memory.trunks_behind(6.0, 24.0), 6)
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, spot)| {
+                        let mut shown = figure_shown(ids, memory, target, spot, 90.0, false);
+                        if let Command::Figure {
+                            figure,
+                            held,
+                            once_seen,
+                            together,
+                            ..
+                        } = &mut shown
+                        {
+                            *figure = TREE_LINE_FIRST + i as u32;
+                            *held = ItemStack::default();
+                            *once_seen = true;
+                            *together = TREE_LINE_FIRST;
+                        }
+                        (shown, 0)
+                    })
+                    .collect()
             })
             .unwrap_or_default(),
         // The crack of a branch in it, its own leaves torn out and falling; no one there.
@@ -13915,5 +13949,22 @@ mod tests {
             matches!(&made[..], [(Command::SnapBranch { trunk, .. }, 0)] if *trunk == [0, 64, -6]),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn out_of_the_woods_figures_stand_between_the_trees_behind_them_and_go_together() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.walking = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.trunks = (0..6).map(|i| [i * 5 - 12, 64, -10]).collect();
+        let event = find("the_tree_line").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert!(pos.is_some());
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(made.len() >= 3, "{made:?}");
+        assert!(made.iter().all(|(c, _)| matches!(c,
+            Command::Figure { together, once_seen: true, .. } if *together == TREE_LINE_FIRST)));
     }
 }

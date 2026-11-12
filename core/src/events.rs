@@ -258,6 +258,8 @@ pub enum Need {
     RanLit,
     /// Its things taken up have been up there half a day or more (`Memory::taken_up_due`).
     TakenUpDue,
+    /// Walking out of the woods (`Memory::leaving_the_woods`).
+    LeavingTheWoods,
 }
 
 impl Need {
@@ -333,6 +335,7 @@ impl Need {
                 | Need::InTheWoods
                 | Need::RanLit
                 | Need::TakenUpDue
+                | Need::LeavingTheWoods
         )
     }
 
@@ -454,6 +457,7 @@ impl Need {
             Need::InTheWoods => "the target is not among trees".to_string(),
             Need::RanLit => "happens only as they run about at night with a light".to_string(),
             Need::TakenUpDue => "nothing of theirs up there long enough".to_string(),
+            Need::LeavingTheWoods => "the target is not walking out of the woods".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -1048,6 +1052,8 @@ pub enum Action {
     BlazedTrees,
     /// A branch cracks in the tree they just passed, its leaves torn.
     BranchSnaps,
+    /// Walking out of the woods, figures between the trees behind them, gone together.
+    TheTreeLine,
     /// Their most valuable things, carried and in their chests, up into the sky.
     TakenUp,
     /// What it took up falls out of the sky in front of their door.
@@ -4830,6 +4836,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 86.
+    row(
+        "the_tree_line",
+        5,
+        5,
+        &[LeavingTheWoods],
+        2.0,
+        2,
+        Full,
+        Action::TheTreeLine,
+        false,
+    ),
     // docs/events_todo.md, 85.
     row(
         "branch_snaps",
@@ -5907,6 +5925,7 @@ impl Event {
             | Action::WhileUnseen(_)
             | Action::DrawnToTheLight
             | Action::TreeToTree
+            | Action::TheTreeLine
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -5990,6 +6009,9 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "the_tree_line" => {
+                "stand figures between the trees behind them as they leave the woods"
+            }
             "branch_snaps" => "snap a branch in the tree they just passed",
             "blazed_trees" => "blaze a trail on the trees ahead of them",
             "knocks_on_wood" => "knock on the trees ahead of them, deeper and deeper in",

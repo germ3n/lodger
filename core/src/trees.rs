@@ -135,6 +135,16 @@ impl Memory {
         behind.into_iter().map(|(_, t)| t).collect()
     }
 
+    /// Whether they are walking out of the woods: five trunks or more behind them, one at most
+    /// ahead.
+    pub fn leaving_the_woods(&self) -> bool {
+        self.last.online
+            && self.last.walking
+            && !self.last.indoors
+            && self.trunks_behind(6.0, 24.0).len() >= 5
+            && self.trunks_ahead(3.0, 24.0).len() <= 1
+    }
+
     /// The trunk behind them they passed last: the nearest of those behind, three to ten blocks.
     pub fn trunk_just_passed(&self) -> Option<BlockPos> {
         self.trunks_behind(3.0, 10.0).last().copied()
@@ -180,6 +190,26 @@ pub fn nearer_and_nearer(behind: &[BlockPos], at: Pos, most: usize) -> Vec<Block
     way
 }
 
+/// Along the woods' edge behind them, a place between each two trunks side by side (four to
+/// eight blocks apart), on the ground, at most `most`.
+pub fn between_trunks(behind: &[BlockPos], most: usize) -> Vec<BlockPos> {
+    let mut spots: Vec<BlockPos> = Vec::new();
+    for (i, a) in behind.iter().enumerate() {
+        for b in &behind[i + 1..] {
+            let d = distance(*a, *b);
+            let spot = [(a[0] + b[0]) / 2, -10_000, (a[2] + b[2]) / 2];
+            let clear = spots.iter().all(|s| {
+                let (dx, dz) = (s[0] - spot[0], s[2] - spot[2]);
+                dx * dx + dz * dz >= 9
+            });
+            if (4.0..=8.0).contains(&d) && clear && spots.len() < most {
+                spots.push(spot);
+            }
+        }
+    }
+    spots
+}
+
 /// A trail of blazes ahead of them: trunks close to the line straight ahead (within 25 degrees),
 /// each five blocks or more past the last, nearest first, at most `most`.
 pub fn blaze_line(ahead: &[BlockPos], at: Pos, yaw: f32, most: usize) -> Vec<BlockPos> {
@@ -201,6 +231,23 @@ pub fn blaze_line(ahead: &[BlockPos], at: Pos, yaw: f32, most: usize) -> Vec<Blo
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn walking_out_of_the_woods_figures_stand_between_the_trees_behind() {
+        let mut memory = Memory::default();
+        memory.last.online = true;
+        memory.last.walking = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        // Looking south: the woods behind them, north, and open ground ahead.
+        memory.trunks = (0..6).map(|i| [i * 5 - 12, 64, -10]).collect();
+        assert!(memory.leaving_the_woods());
+        let spots = between_trunks(&memory.trunks_behind(6.0, 24.0), 6);
+        assert!(spots.len() >= 4, "{spots:?}");
+        assert!(spots.iter().all(|s| s[2] == -10 && s[1] < -1000));
+        memory.trunks.push([0, 64, 8]);
+        memory.trunks.push([3, 64, 12]);
+        assert!(!memory.leaving_the_woods(), "still among trees ahead");
+    }
 
     #[test]
     fn the_blazes_go_straight_on_ahead_of_them_spaced_apart() {
