@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // A block and a half ahead of their face, at the head's height: the ceiling there.
+        Action::DropsFromTheCeiling => Some(block_of(memory.last.pos)),
         // High over them and a little ahead, out of the sun.
         Action::DaylightPhantom => {
             let at = block_of(memory.last.pos);
@@ -6467,6 +6469,46 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // A cave spider dropping before their face, set on them a minute, a nip and its poison,
+        // never a kill, nothing dropped.
+        Action::DropsFromTheCeiling => {
+            let at = memory.last.pos;
+            let yaw = (memory.last.yaw as f64).to_radians();
+            vec![
+                (
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:cave_spider".to_string(),
+                        pos: [
+                            at[0] - yaw.sin() * 1.5,
+                            at[1] + 1.5,
+                            at[2] + yaw.cos() * 1.5,
+                        ],
+                        yaw: 0.0,
+                        seconds: 60.0,
+                        kept: String::new(),
+                        face: None,
+                        targets: Some(target),
+                        harm: 1.0,
+                    },
+                    0,
+                ),
+                (
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:entity.spider.ambient",
+                        [
+                            at[0] - yaw.sin() * 1.5,
+                            at[1] + 1.5,
+                            at[2] + yaw.cos() * 1.5,
+                        ],
+                        1.0,
+                    ),
+                    1,
+                ),
+            ]
+        }
         // A phantom set on them, burning in the sun as it swoops, a nip at most, gone fifteen
         // seconds on with nothing dropped.
         Action::DaylightPhantom => pos
@@ -14690,6 +14732,27 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::PlaceEntity { of, targets: Some(0), harm, seconds, .. }, 0)]
             if of == "minecraft:phantom" && *harm <= 1.0 && *seconds <= 20.0)
+        );
+    }
+
+    #[test]
+    fn underground_a_cave_spider_drops_before_their_face() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 30.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("drops_from_the_ceiling").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[0].0, Command::PlaceEntity { of, pos, targets: Some(0), .. }
+            if of == "minecraft:cave_spider" && pos[1] > 31.0 && pos[2] > 1.5),
+            "{made:?}"
         );
     }
 }

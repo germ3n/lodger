@@ -1089,6 +1089,8 @@ pub enum Action {
     WallBursts,
     /// At noon a phantom out of the sun swoops at them once, burning, and is gone.
     DaylightPhantom,
+    /// Underground, a cave spider drops from the ceiling right before their face.
+    DropsFromTheCeiling,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4886,6 +4888,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 98.
+    row(
+        "drops_from_the_ceiling",
+        4,
+        5,
+        &[TargetUnderground],
+        2.0,
+        3,
+        Full,
+        Action::DropsFromTheCeiling,
+        false,
+    ),
     // docs/events_todo.md, 97.
     row(
         "daylight_phantom",
@@ -6133,6 +6147,7 @@ impl Event {
             | Action::VillagerCollapses
             | Action::WallBursts
             | Action::DaylightPhantom
+            | Action::DropsFromTheCeiling
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6216,6 +6231,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "drops_from_the_ceiling" => "drop a cave spider from the ceiling before their face",
             "daylight_phantom" => "send a phantom at them out of the noon sun",
             "wall_bursts" => "break a block of their wall and pour silverfish out of it at them",
             "villager_collapses" => "drop a villager dead before their eyes, for a minute",
