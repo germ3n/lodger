@@ -720,6 +720,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "figure_in_your_armour" {
         return far_spot(memory, rng);
     }
+    // The sniffer snuffles at its place.
+    if event.id == "sniffer_at_its_place" {
+        return spot(memory, rng);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -773,6 +777,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::HorseBalks
         | Action::CatGift
         | Action::ArmadillosCurl
+        | Action::SnifferAtItsPlace
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9152,6 +9157,51 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 252.
+        Action::SnifferAtItsPlace => pos
+            .map(|p| {
+                let ground = [p[0] as f64 + 0.5, GROUND_Y as f64 + 1.0, p[2] as f64 + 0.5];
+                let near = guessed(memory, grounded(p));
+                let mut made = vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:sniffer".to_string(),
+                        pos: ground,
+                        yaw: 0.0,
+                        seconds: 60.0,
+                        kept: String::new(),
+                        face: None,
+                        targets: None,
+                        harm: 0.0,
+                        wears: Vec::new(),
+                    },
+                    0,
+                )];
+                for i in 0..4u64 {
+                    made.push((
+                        sound_at(
+                            ids,
+                            target,
+                            "minecraft:entity.sniffer.sniffing",
+                            at(near),
+                            1.0,
+                        ),
+                        40 + i * 200,
+                    ));
+                    made.push((
+                        sound_at(
+                            ids,
+                            target,
+                            "minecraft:entity.sniffer.digging",
+                            at(near),
+                            1.0,
+                        ),
+                        140 + i * 200,
+                    ));
+                }
+                made
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20749,5 +20799,19 @@ mod tests {
             matches!(&made[..], [(Command::CurlUp { .. }, 0)]),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn sniffer_at_its_place_stands_on_the_ground_there_a_minute() {
+        let mut memory = rich_memory();
+        memory.place = Some([12, 63, -20]);
+        let event = find("sniffer_at_its_place").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::PlaceEntity { of, pos, seconds, .. } if of == "minecraft:sniffer" && pos[1] < -1000.0 && *seconds == 60.0),
+            "{made:?}"
+        );
+        assert_eq!(made.len(), 9);
     }
 }

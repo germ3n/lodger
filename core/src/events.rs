@@ -1230,6 +1230,8 @@ pub enum Action {
     CatGift,
     /// Every armadillo near them curling up at once, as if something passed that they feared.
     ArmadillosCurl,
+    /// A sniffer at its place a while, snuffling and digging at the ground, then gone.
+    SnifferAtItsPlace,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7649,6 +7651,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ArmadillosCurl,
         false,
     ),
+    // docs/events_todo.md, 252: a sniffer snuffles and digs at its place, then is gone.
+    row(
+        "sniffer_at_its_place",
+        4,
+        5,
+        &[Home, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::SnifferAtItsPlace,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8271,6 +8285,7 @@ impl Event {
             | Action::CattleTurnAway
             | Action::HorseBalks
             | Action::ArmadillosCurl
+            | Action::SnifferAtItsPlace
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8841,6 +8856,7 @@ impl Event {
             "horse_balks" => "make the horse they ride balk at nothing",
             "cat_gift" => "lay a gift from their chest by the bed, their cat",
             "armadillos_curl" => "curl every armadillo near them up at once",
+            "sniffer_at_its_place" => "stand a sniffer snuffling at its place",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

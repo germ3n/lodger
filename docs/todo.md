@@ -2886,6 +2886,11 @@ The `[x]` lines above, summed up by day:
   outdoors with armadillos near: every armadillo within sixteen blocks rolled up at once, each
   unrolling in its own time (`curl_up`, ABI 56). Tests: one in `act`. Was: no such event.
 
+- [x] **A sniffer at its place** (`docs/events_todo.md`, 252): `sniffer_at_its_place`, stages 4
+  and 5, outdoors: a sniffer at its place for a minute, still with its mind off, four rounds of its
+  sniffing and digging heard (`place_entity`'s `minecraft:sniffer`, for a while only, and
+  `place_entity`'s y counted from the ground, ABI 56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -262,7 +262,8 @@ the figure's `bows` (once, a moment after it is shown, down two seconds and up) 
 `finds`' `peak` (the highest ground 24 to 64 blocks off, twelve over them or more);
 `ghost_item` (an item lying on one player's screen alone, gone as they come within two
 blocks, never theirs); `guardian_beam` (a guardian's beam charging from water at one player, on their screen
-alone, gone before it would fire); `place_entity`'s `minecraft:skeleton_horse`, `minecraft:leash_knot` (on the fence post in the
+alone, gone before it would fire); `place_entity`'s `pos` with a y below -1000 counted from the ground, its
+`minecraft:skeleton_horse`, `minecraft:sniffer` (still, never digging), `minecraft:leash_knot` (on the fence post in the
 place's column, nothing tied to it) and `minecraft:trident`, for a while only, the trident thrown straight down
 into the ground, never to be picked up.
 

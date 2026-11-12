@@ -2740,7 +2740,7 @@ public final class Executors {
 	private static final List<String> PLACEABLE = List.of("minecraft:armor_stand", "minecraft:cow", "minecraft:pig", "minecraft:sheep",
 			"minecraft:chicken", "minecraft:goat", "minecraft:horse", "minecraft:donkey", "minecraft:mule", "minecraft:llama",
 			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel", "minecraft:squid", "minecraft:bat",
-			"minecraft:copper_golem", "minecraft:skeleton_horse");
+			"minecraft:copper_golem", "minecraft:skeleton_horse", "minecraft:sniffer");
 	/** The hostiles it may set on a player for a while, spared (ABI 54). */
 	private static final List<String> HOSTILE = List.of("minecraft:silverfish", "minecraft:cave_spider", "minecraft:wolf",
 			"minecraft:zombie", "minecraft:vex", "minecraft:phantom", "minecraft:creeper", "minecraft:killer_bunny", "minecraft:creaking");
@@ -2805,9 +2805,10 @@ public final class Executors {
 		if (type.isEmpty()) {
 			return report(id, false, "no such entity");
 		}
-		// A skeleton horse only for a while (ABI 56): one that stayed would be a mount from nothing.
-		if (of.equals("minecraft:skeleton_horse") && wanted <= 0) {
-			return report(id, false, "a skeleton horse is only ever placed for a while");
+		// A skeleton horse or a sniffer only for a while (ABI 56): one that stayed would be a mount,
+		// or a digger of seeds, from nothing.
+		if ((of.equals("minecraft:skeleton_horse") || of.equals("minecraft:sniffer")) && wanted <= 0) {
+			return report(id, false, "a " + of.substring(of.indexOf(':') + 1).replace('_', ' ') + " is only ever placed for a while");
 		}
 		// Never a mooshroom for a while: shorn, it turns into a cow that stays, and its mushrooms.
 		if (of.equals("minecraft:mooshroom") && command.has("seconds") && command.get("seconds").getAsFloat() > 0) {
@@ -2815,6 +2816,14 @@ public final class Executors {
 		}
 		JsonArray p = command.getAsJsonArray("pos");
 		Vec3 pos = new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble());
+		// A y below -1000 counted from the ground (ABI 56), as `set_block`'s.
+		if (pos.y < -1000) {
+			BlockPos ground = onGround(level, BlockPos.containing(pos));
+			if (ground == null) {
+				return report(id, false, "the place is not loaded");
+			}
+			pos = new Vec3(pos.x, ground.getY(), pos.z);
+		}
 		BlockPos at = BlockPos.containing(pos);
 		if (!level.getBlockState(at).getCollisionShape(level, at).isEmpty()) {
 			return report(id, false, "no room there");
@@ -2834,6 +2843,10 @@ public final class Executors {
 			if (worn != null && !worn.isEmpty()) {
 				living.setItemSlot(living.getEquipmentSlotForItem(worn), worn);
 			}
+		}
+		// A sniffer stands still, its own mind off, so it never digs up a seed from nothing.
+		if (entity instanceof net.minecraft.world.entity.Mob mob && of.equals("minecraft:sniffer")) {
+			mob.setNoAi(true);
 		}
 		level.addFreshEntity(entity);
 		float seconds = command.has("seconds") ? command.get("seconds").getAsFloat() : 0;
