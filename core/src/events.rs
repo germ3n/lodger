@@ -5844,6 +5844,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.sniffer.digging"),
         false,
     ),
+    // docs/events_todo.md, 182: the next time they open their inventory, a bundle rustles in it.
+    row(
+        "rustle_in_the_pack",
+        3,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Hint("rustle_in_the_pack", 120.0),
+        true,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7354,6 +7366,7 @@ impl Event {
             "bulbs_clicking" => "click copper bulbs on and off in the room",
             "gust_from_nowhere" => "burst a gust of wind beside them that pushes them",
             "digging_under_the_floor" => "dig and snuffle under the floor",
+            "rustle_in_the_pack" => "rustle something in their pack as they open it",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

@@ -2509,6 +2509,10 @@ The `[x]` lines above, summed up by day:
 - [x] **Digging under the floor** (`docs/events_todo.md`, 181): `digging_under_the_floor`, stages 3 to 5: indoors, something digging and snuffling under the floor. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **A rustle in the pack** (`docs/events_todo.md`, 182): `rustle_in_the_pack`, stages 3 to 5:
+  the first time they open their inventory in the next two minutes, a bundle's rustle, once (a
+  client hint on the inventory screen). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

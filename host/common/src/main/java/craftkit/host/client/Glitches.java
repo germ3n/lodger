@@ -64,6 +64,8 @@ import java.util.Set;
  *   <li>{@code clock_wrong}: a clock shows the time half a day off ({@code ClockTimeMixin}).</li>
  *   <li>{@code phantom_item}: the first time they open their inventory while it lasts, a paper
  *       named "behind you" in an empty slot for three seconds ({@code InventoryScreenMixin}).</li>
+ *   <li>{@code rustle_in_the_pack}: the first time they open their inventory while it lasts,
+ *       a bundle's rustle, once, though they carry none ({@code InventoryScreenMixin}).</li>
  *   <li>{@code border_closes}: the world border on their client drawn close round them, then
  *       put back as it was.</li>
  *   <li>{@code shadow_on_the_wall}: while they hold a light indoors, a person's shadow on the
@@ -713,6 +715,21 @@ public final class Glitches {
 				graphics.setTooltipForNextFrame(Minecraft.getInstance().font, paper, mouseX, mouseY);
 			}
 			return;
+		}
+	}
+
+	/** `rustle_in_the_pack`: the inventory open, a bundle's rustle once a hint. */
+	public static void inventoryOpen() {
+		for (Hints.Active active : Hints.active()) {
+			if (active.hint().hint().equals("rustle_in_the_pack")) {
+				once(active, () -> {
+					var minecraft = Minecraft.getInstance();
+					if (minecraft.player != null && minecraft.level != null) {
+						minecraft.level.playLocalSound(minecraft.player.getX(), minecraft.player.getY(), minecraft.player.getZ(),
+								net.minecraft.sounds.SoundEvents.BUNDLE_INSERT, SoundSource.PLAYERS, 0.8f, 0.8f, false);
+					}
+				});
+			}
 		}
 	}
 

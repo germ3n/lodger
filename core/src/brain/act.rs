@@ -17553,4 +17553,23 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn opening_their_inventory_something_rustles_in_it() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("rustle_in_the_pack").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "rustle_in_the_pack" && *seconds >= 60.0),
+            "{made:?}"
+        );
+    }
 }

@@ -26,6 +26,7 @@ public abstract class InventoryScreenMixin {
 	/** `phantom_item`: drawn over the slots once the screen is drawn. */
 	@Inject(method = "extractRenderState", at = @At("TAIL"))
 	private void craftkit$phantom(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+		Glitches.inventoryOpen();
 		var screen = (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) (Object) this;
 		try {
 			if (craftkit$left == null) {
