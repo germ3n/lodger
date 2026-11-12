@@ -3235,6 +3235,12 @@ public final class Executors {
 			}
 			String state = command.has("state") ? command.get("state").getAsString() : "";
 			shown = withState(found.get().value().defaultBlockState(), state);
+			// Facing them where they stand now (`face_player`): a statue turned to them.
+			if (command.has("face_player") && command.get("face_player").getAsBoolean()
+					&& shown.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)) {
+				shown = shown.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING,
+						Direction.getApproximateNearest(player.getX() - (pos.getX() + 0.5), 0, player.getZ() - (pos.getZ() + 0.5)));
+			}
 		}
 		player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(pos, shown));
 		// A player's head with a player's own face (`head_of`): the skull's profile sent with it.

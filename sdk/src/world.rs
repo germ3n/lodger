@@ -751,6 +751,10 @@ pub enum Command {
         /// A player's head (`minecraft:player_head`) with this player's own face on it.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         head_of: Option<u32>,
+        /// Turned to face `player` where they stand as it is sent, a block that faces one of
+        /// four ways (a copper golem statue).
+        #[serde(default, skip_serializing_if = "is_false")]
+        face_player: bool,
     },
     /// The big dripleaves near `player` (ten blocks), up to six, tipped one after another from
     /// the farthest in, as if something walked across them toward them, each with its sound, and

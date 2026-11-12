@@ -251,7 +251,8 @@ horse kind placed under it, still, for its time), an upside-down figure's path h
 ceiling, and `place_entity`'s `wears` on an armour stand for a while (unseen, unbreakable, its
 things locked).
 ABI 56: `ghost_block` (a block shown to one player alone, the world's own untouched under it, with
-`only_air` only where the world holds air, with `head_of` a player head wearing that player's face, an empty block showing them what is really there again; forgotten when the chunk is sent afresh), `ghost_near` (every block of a kind near one player shown to them alone as another a
+`only_air` only where the world holds air, with `head_of` a player head wearing that player's face, with `face_player` turned to face
+them as it is sent, an empty block showing them what is really there again; forgotten when the chunk is sent afresh), `ghost_near` (every block of a kind near one player shown to them alone as another a
 while, then as it is), `drop_block` (a block let fall, hurting no one and
 dropping nothing, from under the ceiling beside a place when asked; one that cannot stand where it
 lands breaks there), and `open_lid` on a shulker box as on a chest; `fangs` (evoker fangs on one player's screen alone, a line from a place snapping

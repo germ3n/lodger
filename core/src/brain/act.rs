@@ -280,6 +280,11 @@ pub fn weathered(id: &str) -> Option<String> {
 /// How far ahead of them `fangs_in_a_line`'s line starts, blocks.
 const FANGS_FROM: f64 = 14.0;
 
+/// How many times `golem_statue_turns`' statue is shown, the first facing out, each after
+/// turned to them, and how long between.
+const STATUE_TURNS: u64 = 5;
+const STATUE_TURN_TICKS: u64 = 400;
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -719,6 +724,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::EmptyLead
         | Action::DriedGhastOnDoorstep
         | Action::EyeblossomsOpen
+        | Action::GolemStatueTurns
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8022,6 +8028,7 @@ pub fn commands(
                             state: "charges=4".to_string(),
                             only_air: true,
                             head_of: None,
+                            face_player: false,
                         },
                         0,
                     ),
@@ -8034,6 +8041,7 @@ pub fn commands(
                             state: String::new(),
                             only_air: false,
                             head_of: None,
+                            face_player: false,
                         },
                         ANCHOR_SHOWN_TICKS,
                     ),
@@ -8064,6 +8072,7 @@ pub fn commands(
                             state: String::new(),
                             only_air: false,
                             head_of: None,
+                            face_player: false,
                         },
                         0,
                     ),
@@ -8076,6 +8085,7 @@ pub fn commands(
                             state: String::new(),
                             only_air: false,
                             head_of: None,
+                            face_player: false,
                         },
                         ROSE_SHOWN_TICKS,
                     ),
@@ -8213,6 +8223,7 @@ pub fn commands(
                         state: format!("facing={facing}"),
                         only_air: false,
                         head_of: None,
+                        face_player: false,
                     },
                     0,
                 ),
@@ -8225,6 +8236,7 @@ pub fn commands(
                         state: String::new(),
                         only_air: false,
                         head_of: None,
+                        face_player: false,
                     },
                     ROSE_SHOWN_TICKS,
                 ),
@@ -8244,6 +8256,7 @@ pub fn commands(
                         state: String::new(),
                         only_air: true,
                         head_of: None,
+                        face_player: false,
                     },
                     0,
                 ));
@@ -8256,6 +8269,7 @@ pub fn commands(
                         state: String::new(),
                         only_air: false,
                         head_of: None,
+                        face_player: false,
                     },
                     ROSE_SHOWN_TICKS,
                 ));
@@ -8434,6 +8448,7 @@ pub fn commands(
                         state: format!("rotation={rotation}"),
                         only_air: false,
                         head_of: None,
+                        face_player: false,
                     },
                     0,
                 ),
@@ -8446,6 +8461,7 @@ pub fn commands(
                         state: String::new(),
                         only_air: false,
                         head_of: None,
+                        face_player: false,
                     },
                     SKULL_SHOWN_TICKS,
                 ),
@@ -8579,6 +8595,7 @@ pub fn commands(
                             state: format!("rotation={rotation}"),
                             only_air: true,
                             head_of: Some(target),
+                            face_player: false,
                         },
                         0,
                     ),
@@ -8591,6 +8608,7 @@ pub fn commands(
                             state: String::new(),
                             only_air: false,
                             head_of: None,
+                            face_player: false,
                         },
                         ROSE_SHOWN_TICKS,
                     ),
@@ -8644,6 +8662,7 @@ pub fn commands(
                             state: format!("facing={facing}"),
                             only_air: true,
                             head_of: None,
+                            face_player: false,
                         },
                         0,
                     ),
@@ -8656,6 +8675,7 @@ pub fn commands(
                             state: String::new(),
                             only_air: false,
                             head_of: None,
+                            face_player: false,
                         },
                         SKULL_SHOWN_TICKS,
                     ),
@@ -8687,6 +8707,55 @@ pub fn commands(
                 0,
             ),
         ],
+        // docs/events_todo.md, 230.
+        Action::GolemStatueTurns => match (memory.usual_door(), memory.home.as_ref()) {
+            (Some(door), Some(home)) => {
+                let step = out_of_door(memory, home.center, door);
+                // Two out from the door and one to its side, facing away from the house at first.
+                let cell = [
+                    door[0] + step[0] * 2 + step[1],
+                    door[1],
+                    door[2] + step[1] * 2 + step[0],
+                ];
+                let out = match step {
+                    [1, 0] => "east",
+                    [-1, 0] => "west",
+                    [0, 1] => "south",
+                    _ => "north",
+                };
+                let mut made = Vec::new();
+                for turn in 0..STATUE_TURNS {
+                    made.push((
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: cell,
+                            block: "minecraft:copper_golem_statue".to_string(),
+                            state: format!("facing={out}"),
+                            only_air: true,
+                            head_of: None,
+                            face_player: turn > 0,
+                        },
+                        turn * STATUE_TURN_TICKS,
+                    ));
+                }
+                made.push((
+                    Command::GhostBlock {
+                        id: ids(),
+                        player: target,
+                        pos: cell,
+                        block: String::new(),
+                        state: String::new(),
+                        only_air: false,
+                        head_of: None,
+                        face_player: false,
+                    },
+                    STATUE_TURNS * STATUE_TURN_TICKS,
+                ));
+                made
+            }
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -19943,5 +20012,26 @@ mod tests {
             "{made:?}"
         );
         assert!(matches!(&made[1].0, Command::PlaySound { .. }));
+    }
+
+    #[test]
+    fn golem_statue_turns_to_them_after_facing_out() {
+        let memory = rich_memory();
+        let event = find("golem_statue_turns").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len() as u64, STATUE_TURNS + 1, "{made:?}");
+        assert!(
+            matches!(&made[0].0, Command::GhostBlock { face_player: false, block, .. } if block == "minecraft:copper_golem_statue")
+        );
+        assert!(made[1..STATUE_TURNS as usize].iter().all(|(c, _)| matches!(
+            c,
+            Command::GhostBlock {
+                face_player: true,
+                ..
+            }
+        )));
+        assert!(
+            matches!(&made.last().unwrap().0, Command::GhostBlock { block, .. } if block.is_empty())
+        );
     }
 }

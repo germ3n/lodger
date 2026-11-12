@@ -1192,6 +1192,8 @@ pub enum Action {
     DriedGhastOnDoorstep,
     /// By day, every eyeblossom near them opening its eyes at once, looking, a minute.
     EyeblossomsOpen,
+    /// A copper golem statue by their door that turns to face them, again and again, on their screen alone.
+    GolemStatueTurns,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7347,6 +7349,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EyeblossomsOpen,
         false,
     ),
+    // docs/events_todo.md, 230: a copper golem statue by their door keeps turning to face them.
+    row(
+        "golem_statue_turns",
+        4,
+        5,
+        &[Home, Door, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::GolemStatueTurns,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7955,6 +7969,7 @@ impl Event {
             | Action::EmptyLead
             | Action::DriedGhastOnDoorstep
             | Action::EyeblossomsOpen
+            | Action::GolemStatueTurns
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8502,6 +8517,7 @@ impl Event {
             "empty_lead" => "knot a lead on a post at its place with nothing on it",
             "dried_ghast_on_doorstep" => "sit a dried ghast on their doorstep",
             "eyeblossoms_open" => "open every eyeblossom near them by day",
+            "golem_statue_turns" => "stand a copper golem statue by their door that turns to them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

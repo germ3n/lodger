@@ -2781,6 +2781,11 @@ The `[x]` lines above, summed up by day:
   minute, with the sound of them opening (`ghost_near`, ABI 56: each block of a kind near a player
   shown to them as another a while; refused with none). Tests: one in `act`. Was: no such event.
 
+- [x] **The golem statue turns** (`docs/events_todo.md`, 230): `golem_statue_turns`, stages 4 and 5,
+  outdoors: a copper golem statue shown to their client alone outside the door they use, facing away
+  first, then four times twenty seconds apart turned to face them where they are, then gone
+  (`ghost_block`'s `face_player`, ABI 56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
