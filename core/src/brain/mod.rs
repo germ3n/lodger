@@ -1414,7 +1414,10 @@ impl Brain {
         let made = match checked {
             Ok(()) => {
                 let mut ids = || self.id();
-                act::commands(event, plan.pos, memory, &mut ids, now, written.as_deref())
+                act::quieted(
+                    act::commands(event, plan.pos, memory, &mut ids, now, written.as_deref()),
+                    config,
+                )
             }
             Err(_) => Vec::new(),
         };
@@ -1782,7 +1785,10 @@ impl Brain {
             return Vec::new();
         }
         let mut ids = || self.id();
-        let made = act::commands(event, Some(door), memory, &mut ids, now, None);
+        let made = act::quieted(
+            act::commands(event, Some(door), memory, &mut ids, now, None),
+            config,
+        );
         memory.record(event.id, Some(door), day, true, "");
         log.acted(event.id, Some(door), made.len());
         for (command, later) in made {
@@ -1845,7 +1851,10 @@ impl Brain {
             return;
         };
         let mut ids = || self.id();
-        let made = act::commands(event, Some(pos), memory, &mut ids, now, None);
+        let made = act::quieted(
+            act::commands(event, Some(pos), memory, &mut ids, now, None),
+            config,
+        );
         memory.record(event.id, Some(pos), day, true, "");
         log.acted(event.id, Some(pos), made.len());
         let while_still = STOPS_WHEN_THEY_MOVE.contains(&event.id);
@@ -1936,7 +1945,10 @@ impl Brain {
             return Vec::new();
         };
         let mut ids = || self.id();
-        let made = act::commands(event, Some(pos), memory, &mut ids, now, None);
+        let made = act::quieted(
+            act::commands(event, Some(pos), memory, &mut ids, now, None),
+            config,
+        );
         memory.record(event.id, Some(pos), day, true, "");
         log.acted(event.id, Some(pos), made.len());
         let mut sent = Vec::new();

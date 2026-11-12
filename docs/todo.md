@@ -3241,6 +3241,14 @@ The `[x]` lines above, summed up by day:
   (`trial_key_left` moved there), every step reachable at the stage of the one before. Tests: the
   chains' own, the count now 75. Was: a hundred and thirty-four, added in three goes.
 
+- [x] **Sounds off is silent, glitches off unshown, whatever the event** (the stays test caught
+  `eyeblossoms_open`'s sound with `events.sounds` off, once the chains brought it up more): an
+  event of another group that makes a sound or shows a hint along the way (the eyeblossoms, the
+  crater's boom, the digging figure, the sniffer, the horse's breath, the ruined portal's hum) is
+  done without it when its group is off: `act::quieted` takes the sounds out with `events.sounds`
+  off and the hints with `events.glitches` off, wherever the brain makes an event's commands.
+  Tests: one in `act`, and the stays test as it was. Was: heard with sounds off.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

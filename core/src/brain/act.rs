@@ -384,6 +384,19 @@ const VINE_AGAIN_TICKS: u64 = 300;
 /// How long `portal_goes_out`'s portal stays out, ticks: ten seconds.
 const PORTAL_OUT_TICKS: u64 = 200;
 
+/// An event's commands with what its switched-off groups would add taken out: with
+/// `events.sounds` off no sound of any event is heard, with `events.glitches` off no hint is shown,
+/// the rest of the event still done (the eyeblossoms open with sounds off, unheard).
+pub fn quieted(made: Vec<(Command, u64)>, config: &crate::config::Config) -> Vec<(Command, u64)> {
+    made.into_iter()
+        .filter(|(c, _)| {
+            !(matches!(c, Command::PlaySound { .. } | Command::BlockSound { .. })
+                && !config.events.sounds)
+                && !(matches!(c, Command::Hint { .. }) && !config.events.glitches)
+        })
+        .collect()
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -23551,5 +23564,34 @@ mod tests {
             matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "the_poem_knows" && *seconds == 1.0),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn with_sounds_off_an_event_is_done_unheard_and_with_glitches_off_unshown() {
+        let memory = rich_memory();
+        let event = find("eyeblossoms_open").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        let mut config = crate::config::Config::default();
+        assert_eq!(
+            quieted(made.clone(), &config).len(),
+            made.len(),
+            "all on: all of it"
+        );
+        config.events.sounds = false;
+        let quiet = quieted(made, &config);
+        assert!(
+            quiet
+                .iter()
+                .all(|(c, _)| !matches!(c, Command::PlaySound { .. })),
+            "{quiet:?}"
+        );
+        assert!(
+            matches!(&quiet[..], [(Command::GhostNear { .. }, 0)]),
+            "the eyes still open: {quiet:?}"
+        );
+        config.events.glitches = false;
+        let hint = find("sculk_trail").unwrap();
+        let made = commands(hint, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(quieted(made, &config).is_empty(), "a hint unshown");
     }
 }
