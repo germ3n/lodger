@@ -895,6 +895,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PrintsOffTheEdge
         | Action::PrintsFromThePortal
         | Action::PortalWeeps
+        | Action::StandingInThePortal
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10245,6 +10246,30 @@ pub fn commands(
             )],
             _ => vec![],
         },
+        // docs/events_todo.md, 289.
+        Action::StandingInThePortal => match memory.arrived_at {
+            Some(portal) => {
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [portal[0], portal[1] - 1, portal[2]],
+                    60.0,
+                    false,
+                );
+                if let Command::Figure {
+                    vanish_within,
+                    held,
+                    ..
+                } = &mut shown
+                {
+                    *vanish_within = 5.0;
+                    *held = ItemStack::default();
+                }
+                vec![(shown, 0)]
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14127,6 +14152,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "standing_in_the_portal"
                 || event.id == "compass_steadies"
                 || event.id == "portal_weeps"
                 || event.id == "prints_from_the_portal"
@@ -22460,6 +22486,18 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, pos: Some(p), .. }, 0)] if hint == "compass_steadies" && *p == [7, 70, -3]),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn standing_in_the_portal_stands_where_they_came_in() {
+        let mut memory = rich_memory();
+        memory.arrived_at = Some([5, 70, 5]);
+        let event = find("standing_in_the_portal").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { pos, vanish_within, .. }, 0)] if pos[0] == 5.5 && pos[1] == 70.0 && *vanish_within == 5.0),
             "{made:?}"
         );
     }

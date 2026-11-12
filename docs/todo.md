@@ -3066,6 +3066,11 @@ The `[x]` lines above, summed up by day:
   (the `compass_steadies` hint, `Atmosphere.pointsAway`; off with the glitches). Tests: one in
   `act`, one in JUnit (`AtmosphereTest`). Was: no such event.
 
+- [x] **Standing in the portal** (`docs/events_todo.md`, 289): `standing_in_the_portal`, stages 4
+  and 5, in the Nether: the figure at where they came in, in the portal, facing them, a minute or
+  until they come within five blocks (the owner's call: the figure in the Nether). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
