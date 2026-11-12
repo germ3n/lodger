@@ -417,7 +417,8 @@ pub enum Command {
         only: bool,
     },
     /// Put another block in a block's place, keeping every property the two share (a wall
-    /// torch's facing, a lantern's hanging), and only over one of `only`: a torch's flame turned
+    /// torch's facing, a lantern's hanging), a pane, bars or a fence joined to its neighbours
+    /// afresh (ABI 55), and only over one of `only`: a torch's flame turned
     /// to soul fire where it hangs. ABI 24.
     SwapBlock {
         id: u64,

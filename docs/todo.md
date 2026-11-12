@@ -2575,6 +2575,11 @@ The `[x]` lines above, summed up by day:
   and 5, at dusk: the figure on a happy ghast in the air over the house, gone once seen (the
   figure's `mount` takes a happy ghast, ABI 55). Tests: one in `act`. Was: no such event.
 
+- [x] **A window tinted** (`docs/events_todo.md`, 200): `window_tinted`, stages 4 and 5, the
+  target away or asleep: one window's panes tinted glass for a day, then back. And `swap_block`
+  lets a pane, bars or a fence it puts down join its neighbours afresh (ABI 55): a pane put back
+  stood alone as a post. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

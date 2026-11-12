@@ -1131,6 +1131,8 @@ pub enum Action {
     CreakingInTheField,
     /// Pale moss creeping across their floor from a corner, more each night.
     PaleMossCreeps,
+    /// One window of theirs tinted black a day: from inside, the night is black.
+    WindowTinted,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -6917,6 +6919,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::HappyGhastOverhead,
         false,
     ),
+    // docs/events_todo.md, 200: overnight one window of theirs is tinted glass, a day.
+    row(
+        "window_tinted",
+        4,
+        5,
+        &[Home, Pane, TargetAwayOrAsleep],
+        2.0,
+        2,
+        Half,
+        Action::WindowTinted,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7299,6 +7313,7 @@ impl Event {
             | Action::FrostOnGlass
             | Action::StairsToNowhere
             | Action::PaleMossCreeps
+            | Action::WindowTinted
             | Action::KeepIn(_)
             | Action::FaceInTheCanopy
             | Action::BootsAtTheDoor
@@ -8017,6 +8032,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "window_tinted" => "tint one of their windows black for a day",
             "happy_ghast_overhead" => "ride a happy ghast over their house",
             "crafter_clicks" => "make their crafter craft once by itself",
             "sand_gives_back" => "bury what it took in a patch of sand by the house",

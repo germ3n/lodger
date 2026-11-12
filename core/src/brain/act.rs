@@ -662,7 +662,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             let out = out_of_door(memory, h.center, door);
             Some([door[0] - out[0], door[1], door[2] - out[1]])
         }),
-        Action::FrostOnGlass => windows_of(memory).first().copied(),
+        Action::FrostOnGlass | Action::WindowTinted => windows_of(memory).first().copied(),
         // Eight blocks ahead of them, where they see it sit.
         Action::KillerRabbit(_) => {
             let at = block_of(memory.last.pos);
@@ -7598,6 +7598,39 @@ pub fn commands(
                 0,
             )],
             _ => vec![],
+        },
+        // The panes of one window (within two blocks of its first), tinted glass for a day, then
+        // each the plain pane it was, joined to the rest again.
+        Action::WindowTinted => match pos {
+            Some(first) => {
+                let mut made = Vec::new();
+                for pane in memory
+                    .fixtures("glass_pane")
+                    .map(|f| f.pos)
+                    .filter(|p| distance(*p, first) <= 2.0)
+                {
+                    made.push((
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: pane,
+                            block: "minecraft:tinted_glass".to_string(),
+                            only: vec!["minecraft:glass_pane".to_string()],
+                        },
+                        0,
+                    ));
+                    made.push((
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: pane,
+                            block: "minecraft:glass_pane".to_string(),
+                            only: vec!["minecraft:tinted_glass".to_string()],
+                        },
+                        DAY_TICKS,
+                    ));
+                }
+                made
+            }
+            None => vec![],
         },
         // At the top of their screen, a boss bar reading only "it", filling over a minute.
         Action::BossBarIt => vec![(
@@ -18142,6 +18175,36 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Figure { mount, once_seen: true, pos, .. }, 0)] if mount == "minecraft:happy_ghast" && pos[1] >= 64.0 + 14.0),
             "in the air over the house: {made:?}"
+        );
+    }
+
+    #[test]
+    fn one_window_is_tinted_a_day_then_as_it_was() {
+        let mut memory = rich_memory();
+        for pos in [[5, 66, 5], [5, 66, 6], [5, 67, 5], [5, 66, 20]] {
+            memory.fixtures.push(crate::memory::Fixture {
+                kind: "glass_pane".to_string(),
+                pos,
+            });
+        }
+        let event = find("window_tinted").unwrap();
+        let first = place(event, &memory, &mut Rng::new(1)).expect("a window");
+        let made = commands(
+            event,
+            Some(first),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let on: Vec<_> = made.iter().filter(|(c, d)| *d == 0 && matches!(c, Command::SwapBlock { block, .. } if block == "minecraft:tinted_glass")).collect();
+        let off: Vec<_> = made.iter().filter(|(c, d)| *d == DAY_TICKS && matches!(c, Command::SwapBlock { block, .. } if block == "minecraft:glass_pane")).collect();
+        assert!(!on.is_empty() && on.len() == off.len(), "{made:?}");
+        assert!(
+            made.iter().all(
+                |(c, _)| matches!(c, Command::SwapBlock { pos, .. } if distance(*pos, first) <= 2.0)
+            ),
+            "one window alone"
         );
     }
 }

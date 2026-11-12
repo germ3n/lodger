@@ -1124,6 +1124,11 @@ public final class Executors {
 		for (net.minecraft.world.level.block.state.properties.Property<?> property : there.getProperties()) {
 			swapped = copy(there, swapped, property);
 		}
+		// A pane, bars or a fence joins its neighbours afresh (ABI 55): a pane put back where a
+		// glass block was stood alone, a bare post, its sides not reaching the window's others.
+		if (swapped.getBlock() instanceof net.minecraft.world.level.block.CrossCollisionBlock) {
+			swapped = Block.updateFromNeighbourShapes(swapped, level, pos);
+		}
 		level.setBlock(pos, swapped, Block.UPDATE_ALL);
 
 		return report(id, true, "");
