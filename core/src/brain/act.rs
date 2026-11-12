@@ -915,6 +915,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::EndGoesQuiet
         | Action::ChorusBlooms
         | Action::EggOnThePillow
+        | Action::ChorusLandsHome
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10611,6 +10612,30 @@ pub fn commands(
                 },
                 0,
             )],
+            _ => vec![],
+        },
+        // docs/events_todo.md, 309.
+        Action::ChorusLandsHome => match (memory.usual_door(), memory.home.as_ref()) {
+            // The host moves no one farther than thirty-two blocks.
+            (Some(door), Some(home))
+                if (home.center[0] as f64 + 0.5 - memory.last.pos[0])
+                    .hypot(home.center[2] as f64 + 0.5 - memory.last.pos[2])
+                    <= 28.0 =>
+            {
+                let step = out_of_door(memory, home.center, door);
+                vec![(
+                    Command::MovePlayer {
+                        id: ids(),
+                        player: target,
+                        to: [
+                            (door[0] + step[0]) as f64 + 0.5,
+                            door[1] as f64,
+                            (door[2] + step[1]) as f64 + 0.5,
+                        ],
+                    },
+                    0,
+                )]
+            }
             _ => vec![],
         },
         Action::SculkCreeps => {
@@ -23087,6 +23112,26 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::MoveBlock { from, to, .. }, 0)] if *from == [-3, 65, -3] && *to == [bed[0], bed[1] + 1, bed[2]]),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn chorus_lands_home_sets_them_on_their_step() {
+        let mut memory = rich_memory();
+        let home = memory.home.as_ref().unwrap().center;
+        memory.last.pos = [home[0] as f64 + 10.0, 64.0, home[2] as f64];
+        let door = memory.usual_door().unwrap();
+        let step = out_of_door(&memory, home, door);
+        let event = find("chorus_lands_home").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::MovePlayer { to, .. }, 0)] if to[0] == (door[0] + step[0]) as f64 + 0.5),
+            "{made:?}"
+        );
+        memory.last.pos = [home[0] as f64 + 200.0, 64.0, home[2] as f64];
+        assert!(
+            commands(event, None, &memory, &mut ids(), &Now::default(), None).is_empty(),
+            "too far"
         );
     }
 }

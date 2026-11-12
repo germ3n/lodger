@@ -298,6 +298,8 @@ pub const WRONG_HOUR_CHANCE: f64 = 0.2;
 pub const TORCH_FLASH_CHANCE: f64 = 0.15;
 /// The chance a diamond mined begins the count (`ore_counted`); once begun, every one is counted.
 pub const ORE_COUNT_CHANCE: f64 = 0.3;
+/// The chance a chorus fruit eaten near home lands them on their doorstep (`chorus_lands_home`).
+pub const CHORUS_HOME_CHANCE: f64 = 0.4;
 /// How long they run lit at night before it may notice them, and how likely it is to then.
 pub const RUN_LIT_TICKS: u64 = 5 * TPS;
 pub const DRAWN_CHANCE: f64 = 0.35;
@@ -1077,6 +1079,20 @@ impl Brain {
             }
         }
 
+        // A chorus fruit eaten near home: perhaps it sets them down on their doorstep.
+        if std::mem::take(&mut memory.chorus_eaten_now) && !held_back {
+            self.consider_started(
+                "chorus_lands_home",
+                CHORUS_HOME_CHANCE,
+                now,
+                day,
+                memory,
+                arc,
+                config,
+                log,
+            );
+        }
+
         // A diamond mined: once it has begun counting, every one after is counted; before, perhaps.
         if memory.diamond_mined_now.take().is_some() && !held_back {
             let chance = if memory.times("ore_counted") > 0 {
@@ -1786,6 +1802,7 @@ impl Brain {
                         events::Need::JustWoke
                             | events::Need::LitUnderground
                             | events::Need::MinedDiamond
+                            | events::Need::AteChorus
                             | events::Need::RanLit
                             | events::Need::CameBack
                             | events::Need::KilledNow

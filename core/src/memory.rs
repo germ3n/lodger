@@ -605,6 +605,10 @@ pub struct Memory {
     /// saved.
     #[serde(skip)]
     pub diamond_mined_now: Option<BlockPos>,
+    /// A chorus fruit they just ate, taken by the brain on its next tick (`chorus_lands_home`).
+    /// Not saved.
+    #[serde(skip)]
+    pub chorus_eaten_now: bool,
     /// Where the target last came into this world from another: where they stood as the
     /// crossing was told (a portal's mouth, the End's platform).
     #[serde(default)]
@@ -1837,6 +1841,9 @@ impl Memory {
                 }
                 EventKind::Ate => {
                     self.last.ate_day = day;
+                    if event.detail.ends_with("chorus_fruit") {
+                        self.chorus_eaten_now = true;
+                    }
                 }
                 EventKind::Hit | EventKind::Killed => {
                     let kind = event
@@ -4508,6 +4515,22 @@ mod tests {
             0.0,
         );
         assert_eq!(memory.lit_underground_now, None);
+    }
+
+    #[test]
+    fn a_chorus_fruit_eaten_is_noticed_for_the_brain() {
+        let mut memory = Memory::default();
+        let them = player(0, [4.0, 64.0, 4.0], 0.0);
+        let ate = |what: &str| Event {
+            player: 0,
+            kind: EventKind::Ate,
+            detail: what.to_string(),
+            ..Event::default()
+        };
+        memory.observe(&obs(vec![them.clone()], vec![ate("minecraft:bread")]), 0.0);
+        assert!(!memory.chorus_eaten_now);
+        memory.observe(&obs(vec![them], vec![ate("minecraft:chorus_fruit")]), 0.0);
+        assert!(memory.chorus_eaten_now);
     }
 
     #[test]

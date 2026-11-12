@@ -249,6 +249,8 @@ pub enum Need {
     MinedDiamond,
     /// A mob of this kind near them, a creature or a hostile (the Nether's and the End's).
     MobNear(&'static str),
+    /// A chorus fruit they have just eaten: met only then (`chorus_lands_home`).
+    AteChorus,
     /// Where they last died is in sight: twelve to sixty-four blocks from them.
     NearTheirDeath,
     /// Down a shaft of their ladders, six blocks or more below its top.
@@ -309,6 +311,7 @@ impl Need {
                 | Need::BabyNear
                 | Need::MinedDiamond
                 | Need::MobNear(_)
+                | Need::AteChorus
                 | Need::TargetInBed
                 | Need::TargetSaid
                 | Need::Heard
@@ -495,6 +498,7 @@ impl Need {
             Need::BabyNear => "no young animal near them".to_string(),
             Need::MinedDiamond => "happens only as they mine a diamond".to_string(),
             Need::MobNear(kind) => format!("no {} near them", kind.replace('_', " ")),
+            Need::AteChorus => "happens only as they eat a chorus fruit".to_string(),
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetSwimming => "the target is not swimming".to_string(),
@@ -1338,6 +1342,8 @@ pub enum Action {
     ChorusBlooms,
     /// The dragon egg at home on their pillow in the morning.
     EggOnThePillow,
+    /// A chorus fruit eaten near home setting them down on their doorstep.
+    ChorusLandsHome,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8453,6 +8459,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EggOnThePillow,
         false,
     ),
+    // docs/events_todo.md, 309: a chorus fruit eaten near home sets them down on their doorstep.
+    row(
+        "chorus_lands_home",
+        4,
+        5,
+        &[Home, Door, AteChorus],
+        2.0,
+        2,
+        Full,
+        Action::ChorusLandsHome,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9121,6 +9139,7 @@ impl Event {
             | Action::BlazeRing
             | Action::EndermenAtTheEdge
             | Action::ChorusBlooms
+            | Action::ChorusLandsHome
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9750,6 +9769,7 @@ impl Event {
             "end_goes_quiet" => "hush the End round them a minute",
             "chorus_blooms" => "flower every chorus plant near them at once",
             "egg_on_the_pillow" => "move their dragon egg onto their pillow",
+            "chorus_lands_home" => "set them down on their doorstep as they eat a chorus fruit",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

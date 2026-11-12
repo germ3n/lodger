@@ -3145,6 +3145,11 @@ The `[x]` lines above, summed up by day:
   the target away or asleep: their dragon egg (a fixture now) moved onto the bed's head, or the
   nearest room round it (`move_block`). Tests: one in `act`. Was: no such event.
 
+- [x] **The chorus lands them home** (`docs/events_todo.md`, 309): `chorus_lands_home`, stages 4 and
+  5, as they eat a chorus fruit within twenty-eight blocks of home (a new moment, `AteChorus`; the
+  brain, two in five times): moved onto the step outside the door they use (`move_player`). Tests:
+  one in `act`, one in `memory`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
