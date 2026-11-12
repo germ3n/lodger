@@ -5760,6 +5760,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.sheep.shear"),
         false,
     ),
+    // docs/events_todo.md, 175.
+    row(
+        "eating_in_the_wall",
+        3,
+        5,
+        &[TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.generic.eat"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7263,6 +7275,7 @@ impl Event {
             "bark_from_home" => "bark from inside their empty house",
             "hoofbeats_circling" => "gallop hoofbeats round the outside of their house",
             "snipping_in_the_dark" => "snip shears beside their sheep in the dark",
+            "eating_in_the_wall" => "chew slowly inside the wall beside them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

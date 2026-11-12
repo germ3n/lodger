@@ -1094,6 +1094,42 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 175.
+        "eating_in_the_wall" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.generic.eat", 0),
+                        ("minecraft:entity.generic.eat", 8),
+                        ("minecraft:entity.generic.eat", 16),
+                    ],
+                    (0.5, 0.6),
+                    0.6,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.generic.eat", 0),
+                        ("minecraft:entity.generic.eat", 10),
+                        ("minecraft:entity.generic.eat", 20),
+                        ("minecraft:entity.generic.eat", 30),
+                    ],
+                    (0.45, 0.55),
+                    0.5,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.generic.eat", 0),
+                        ("minecraft:entity.generic.eat", 12),
+                    ],
+                    (0.5, 0.55),
+                    0.6,
+                    Beside,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2071,6 +2107,7 @@ mod tests {
             "bell_underwater",
             "bark_from_home",
             "snipping_in_the_dark",
+            "eating_in_the_wall",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",
