@@ -7,6 +7,16 @@ use serde::{Deserialize, Serialize};
 
 /// How far from the home's center the home reaches.
 pub const HOME_RADIUS: i32 = 16;
+/// The house's box at the least, round the home's middle: eight out each way, three down, five
+/// up (what the house reads were, alone, before the house was traced).
+pub const HOUSE_LEAST: [i32; 3] = [8, 3, 5];
+/// The farthest the house is traced from the bed: thirty-two out each way, twelve down, twenty
+/// up, so a town of theirs is not one house.
+pub const HOUSE_REACH: [i32; 3] = [32, 12, 20];
+/// Their blocks join into one house across a gap this wide: a doorway, a window, a hall's span.
+pub const HOUSE_JOIN: i32 = 3;
+/// The most blocks a scan of the house may hold (the host's own limit).
+pub const HOUSE_SCAN_MOST: i64 = 40_000;
 /// Past this many blocks from a home moved to, its place is chosen again by the new home.
 pub const PLACE_FROM_HOME: f64 = 32.0;
 /// Past this many blocks from a home moved to, a build of its is let go (its house stands 56
@@ -623,6 +633,15 @@ pub struct Memory {
     /// (`Memory::read_home`). Not saved.
     #[serde(skip)]
     pub home_scan: (u64, BlockPos, BlockPos),
+    /// The home read's other scans, when the house is too big for one (`house_slices`): each
+    /// its id and its box. Not saved.
+    #[serde(skip)]
+    pub home_scan_more: Vec<(u64, BlockPos, BlockPos)>,
+    /// The house as they built it (owner: "can the house detection be improved ... idk how
+    /// large a house can be"): the box round the blocks of theirs joined to the bed, worked out
+    /// at each home read (`read_house_bounds`); none before the first, the home's own box then.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub house: Option<(BlockPos, BlockPos)>,
     /// The target built or broke something near the home since the last read.
     #[serde(skip)]
     pub home_dirty: bool,
@@ -761,6 +780,30 @@ const MOST_WALLS: usize = 512; // oldest dropped first
 #[cfg(test)]
 pub fn fixture_kind_of(id: &str) -> Option<&'static str> {
     fixture_kind(id)
+}
+
+/// The house's least box round the home's middle ([`HOUSE_LEAST`]).
+pub fn least_house(c: BlockPos) -> (BlockPos, BlockPos) {
+    let [out, down, up] = HOUSE_LEAST;
+    (
+        [c[0] - out, c[1] - down, c[2] - out],
+        [c[0] + out, c[1] + up, c[2] + out],
+    )
+}
+
+/// A box cut into slabs along x, each holding at most [`HOUSE_SCAN_MOST`] blocks: a big house's
+/// scans.
+pub fn house_slices(min: BlockPos, max: BlockPos) -> Vec<(BlockPos, BlockPos)> {
+    let (dy, dz) = ((max[1] - min[1] + 1) as i64, (max[2] - min[2] + 1) as i64);
+    let width = (HOUSE_SCAN_MOST / (dy * dz).max(1)).max(1) as i32;
+    let mut slices = Vec::new();
+    let mut x = min[0];
+    while x <= max[0] {
+        let end = (x + width - 1).min(max[0]);
+        slices.push(([x, min[1], min[2]], [end, max[1], max[2]]));
+        x = end + 1;
+    }
+    slices
 }
 
 /// The plain kind of a placed block an event can use, or none.
@@ -1332,6 +1375,13 @@ impl Memory {
         for scan in &observations.scans {
             if self.home_scan.0 != 0 && scan.id == self.home_scan.0 {
                 let (_, min, max) = self.home_scan;
+                self.read_home(&scan.positions, min, max);
+                self.read_outs(&scan.outs, min, max);
+                continue;
+            }
+            if let Some(&(_, min, max)) =
+                self.home_scan_more.iter().find(|(id, _, _)| *id == scan.id)
+            {
                 self.read_home(&scan.positions, min, max);
                 self.read_outs(&scan.outs, min, max);
                 continue;
@@ -1993,9 +2043,68 @@ impl Memory {
             .home
             .as_ref()
             .is_some_and(|h| distance(h.center, pos) <= 12.0)
+            || self.in_house(pos)
         {
             self.home_dirty = true;
         }
+    }
+
+    /// The house's box: as traced at the last home read, else the home's own round its middle.
+    pub fn house_box(&self) -> Option<(BlockPos, BlockPos)> {
+        let home = self.home.as_ref()?;
+        Some(self.house.unwrap_or_else(|| least_house(home.center)))
+    }
+
+    /// Whether a place is in the house, or a block from its edge.
+    pub fn in_house(&self, p: BlockPos) -> bool {
+        self.house_box()
+            .is_some_and(|(min, max)| (0..3).all(|i| p[i] >= min[i] - 1 && p[i] <= max[i] + 1))
+    }
+
+    /// Traces the house from what they placed: every block of theirs joined to the bed (or the
+    /// home's middle) across gaps of up to [`HOUSE_JOIN`], within [`HOUSE_REACH`] of it, and the
+    /// box round them and the home's least box. Too few joined (a village house moved into), the
+    /// least box alone. Kept in `house` for every event and read to use.
+    pub fn read_house_bounds(&mut self) {
+        let Some(home) = self.home.as_ref() else {
+            self.house = None;
+            return;
+        };
+        let seed = home.bed.unwrap_or(home.center);
+        let (mut min, mut max) = least_house(home.center);
+        let [out, down, up] = HOUSE_REACH;
+        let within = |p: &BlockPos| {
+            (p[0] - seed[0]).abs() <= out
+                && (p[2] - seed[2]).abs() <= out
+                && p[1] - seed[1] >= -down
+                && p[1] - seed[1] <= up
+        };
+        let theirs: std::collections::HashSet<BlockPos> =
+            self.placed.iter().copied().filter(within).collect();
+        let near_seed = |p: &BlockPos| (0..3).all(|i| (p[i] - seed[i]).abs() <= 4);
+        let mut queue: Vec<BlockPos> = theirs.iter().filter(|p| near_seed(p)).copied().collect();
+        let mut joined: std::collections::HashSet<BlockPos> = queue.iter().copied().collect();
+        while let Some(p) = queue.pop() {
+            for dx in -HOUSE_JOIN..=HOUSE_JOIN {
+                for dy in -HOUSE_JOIN..=HOUSE_JOIN {
+                    for dz in -HOUSE_JOIN..=HOUSE_JOIN {
+                        let q = [p[0] + dx, p[1] + dy, p[2] + dz];
+                        if theirs.contains(&q) && joined.insert(q) {
+                            queue.push(q);
+                        }
+                    }
+                }
+            }
+        }
+        if joined.len() >= 8 {
+            for p in &joined {
+                for i in 0..3 {
+                    min[i] = min[i].min(p[i]);
+                    max[i] = max[i].max(p[i]);
+                }
+            }
+        }
+        self.house = Some((min, max));
     }
 
     /// How many of a block it holds from digging.
@@ -3801,6 +3910,98 @@ mod tests {
             count: 3,
             slot: 0,
         }]
+    }
+
+    #[test]
+    fn the_house_is_traced_from_what_they_built_whatever_its_size() {
+        // The owner's: "idk how large a house can be". A long hall, slept in at one end.
+        let mut memory = Memory {
+            home: Some(Home {
+                bed: Some([0, 64, 0]),
+                center: [0, 64, 0],
+                floor_y: 64,
+                ..Home::default()
+            }),
+            ..Memory::default()
+        };
+        for x in -2..=40 {
+            for y in 64..=67 {
+                memory.placed.push([x, y, -3]);
+                memory.placed.push([x, y, 3]);
+            }
+        }
+        // A barn of theirs twenty blocks off across open ground: not the house.
+        for y in 64..=66 {
+            for z in 30..=34 {
+                memory.placed.push([0, y, z]);
+            }
+        }
+        memory.read_house_bounds();
+        let (min, max) = memory.house.expect("traced");
+        assert_eq!(min[0], -8, "the least box still");
+        assert_eq!(max[0], 32, "the hall to its end, as far as a house reaches");
+        assert!(max[2] < 30, "the barn apart: {max:?}");
+        assert!(
+            memory.in_house([30, 65, 0]),
+            "the hall's far end is in the house"
+        );
+        assert!(!memory.in_house([0, 65, 32]), "the barn is not");
+
+        // Too few of theirs about the bed (a village house moved into): the least box alone.
+        let mut village = Memory {
+            home: memory.home.clone(),
+            placed: vec![[1, 64, 1], [2, 64, 1]],
+            ..Memory::default()
+        };
+        village.read_house_bounds();
+        assert_eq!(village.house, Some(least_house([0, 64, 0])));
+    }
+
+    #[test]
+    fn a_big_house_is_scanned_in_slabs_the_host_will_take_and_each_slab_is_read() {
+        let (min, max) = ([-8, 52, -32], [32, 84, 32]);
+        let slices = house_slices(min, max);
+        assert!(slices.len() > 1, "too big for one scan");
+        let volume = |(a, b): &(BlockPos, BlockPos)| {
+            ((b[0] - a[0] + 1) * (b[1] - a[1] + 1) * (b[2] - a[2] + 1)) as i64
+        };
+        assert!(slices.iter().all(|s| volume(s) <= HOUSE_SCAN_MOST));
+        // End to end, no gap, no overlap.
+        assert_eq!(slices[0].0[0], min[0]);
+        assert_eq!(slices.last().unwrap().1[0], max[0]);
+        assert!(slices.windows(2).all(|w| w[1].0[0] == w[0].1[0] + 1));
+
+        // A door found in the second slab is kept.
+        let mut memory = Memory {
+            home: Some(Home {
+                center: [0, 64, 0],
+                floor_y: 64,
+                ..Home::default()
+            }),
+            ..Memory::default()
+        };
+        memory.home_scan = (11, slices[0].0, slices[0].1);
+        memory.home_scan_more = vec![(12, slices[1].0, slices[1].1)];
+        let door = [slices[1].0[0], 64, 0];
+        memory.observe(
+            &Observations {
+                scans: vec![craftkit::world::Scan {
+                    id: 12,
+                    positions: vec![
+                        ("minecraft:oak_door".to_string(), door),
+                        ("minecraft:oak_door".to_string(), [door[0], 65, 0]),
+                    ],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            0.5,
+        );
+        assert!(
+            memory.home.as_ref().unwrap().doors.contains(&door),
+            "{:?}",
+            memory.home
+        );
     }
 
     #[test]

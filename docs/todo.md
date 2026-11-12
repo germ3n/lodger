@@ -2612,6 +2612,18 @@ The `[x]` lines above, summed up by day:
   the elder's face, the rumble...) stand alone. Tests changed (owner told): the count, 35 to 48; two expected
   next steps now name their alternatives.
 
+- [x] **The house as they built it, whatever its size** (owner: "can the house detection be
+  improved btw? across all events, and memory and such ... idk how large a house can be"). Was:
+  the home read scanned eight blocks round the home's middle, three down and five up; the house's
+  outline was its walls within twelve of the middle; its windows twelve round; and so a long hall,
+  a second storey past five blocks, a wing or a basement past three was half seen or not at all.
+  Now the house is traced from what they built, joined to the bed across small gaps, up to
+  thirty-two out, twelve down and twenty up (`read_house_bounds`), at each home read; the read
+  scans all of it in slabs the host takes (`house_slices`, `home_scan_more`), and the events that
+  mean the house ask it (`in_house`): the walls, the windows, the way round, the table, the
+  redstone. Too few of theirs joined (a village house), the least box as before. Tests: two in
+  `memory`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

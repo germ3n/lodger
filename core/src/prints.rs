@@ -30,6 +30,11 @@ pub struct Print {
 /// max_z]`, and its floor; four blocks round the middle when they built none.
 pub fn house_box(memory: &Memory) -> Option<([i32; 4], i32)> {
     let home = memory.home.as_ref()?;
+    // The house as traced, its walls whatever its size (it was its walls within twelve blocks
+    // of the home's middle, a long house's far end left out).
+    if let Some((min, max)) = memory.house {
+        return Some(([min[0], min[2], max[0], max[2]], home.floor_y));
+    }
     let c = home.center;
     let near: Vec<BlockPos> = memory
         .walls

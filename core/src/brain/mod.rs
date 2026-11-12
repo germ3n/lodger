@@ -687,25 +687,44 @@ impl Brain {
                 || (memory.home_dirty && since >= 30 * TPS)
                 || (near && since >= 600 * TPS);
             if due {
-                let c = home.center;
-                let (min, max) = (
-                    [c[0] - 8, c[1] - 3, c[2] - 8],
-                    [c[0] + 8, c[1] + 5, c[2] + 8],
-                );
-                let id = self.id();
-                commands.push(Command::Scan {
-                    step: 0,
-                    dark: false,
-                    most: 0,
-                    id,
-                    min,
-                    max,
-                    kinds: crate::memory::HOME_KINDS
-                        .iter()
-                        .map(|k| k.to_string())
-                        .collect(),
-                });
-                memory.home_scan = (id, min, max);
+                // The whole house as they built it, in slabs a scan may hold (owner: "idk how
+                // large a house can be"): it was eight blocks round the home's middle alone.
+                memory.read_house_bounds();
+                let (min, max) = memory
+                    .house_box()
+                    .unwrap_or_else(|| crate::memory::least_house(home.center));
+                let mut scans = Vec::new();
+                for (k, (min, max)) in crate::memory::house_slices(min, max)
+                    .into_iter()
+                    .enumerate()
+                {
+                    let id = self.id();
+                    let scan = Command::Scan {
+                        step: 0,
+                        dark: false,
+                        most: 0,
+                        id,
+                        min,
+                        max,
+                        kinds: crate::memory::HOME_KINDS
+                            .iter()
+                            .map(|k| k.to_string())
+                            .collect(),
+                    };
+                    // One slab a quarter second, not all in one tick: a big house is four.
+                    if k == 0 {
+                        commands.push(scan);
+                    } else {
+                        self.later.push(Later {
+                            at_tick: now.tick + k as u64 * 5,
+                            command: scan,
+                            while_still: false,
+                        });
+                    }
+                    scans.push((id, min, max));
+                }
+                memory.home_scan = scans[0];
+                memory.home_scan_more = scans[1..].to_vec();
                 memory.home_dirty = false;
                 self.last_home_read = now.tick.max(1);
             }

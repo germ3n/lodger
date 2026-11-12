@@ -171,9 +171,13 @@ fn inside_walls(memory: &Memory, low: i32, high: i32, most: usize) -> Vec<BlockP
         .map(|(p, _)| *p)
         .filter(|p| {
             let (dx, dz) = (p[0] - home.center[0], p[2] - home.center[2]);
+            // In the house as traced, whatever its size; before it is, twelve blocks round.
+            let near = match memory.house {
+                Some(_) => memory.in_house(*p),
+                None => dx.abs() <= 12 && dz.abs() <= 12,
+            };
             (dx != 0 || dz != 0)
-                && dx.abs() <= 12
-                && dz.abs() <= 12
+                && near
                 && (home.floor_y + low..=home.floor_y + high).contains(&p[1])
         })
         .collect();
@@ -959,10 +963,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }
         // Their crafting table in the house.
         Action::AtTheirTable => memory.fixtures("crafting_table").map(|f| f.pos).find(|p| {
-            memory
-                .home
-                .as_ref()
-                .is_some_and(|h| distance(h.center, *p) <= 12.0)
+            memory.in_house(*p)
+                || memory
+                    .home
+                    .as_ref()
+                    .is_some_and(|h| distance(h.center, *p) <= 12.0)
         }),
         Action::PulledUnder | Action::HeldBreath | Action::AllFreeze => {
             Some(block_of(memory.last.pos))
@@ -1857,7 +1862,10 @@ pub(crate) fn windows_of(memory: &Memory) -> Vec<BlockPos> {
 fn windows(memory: &Memory, center: BlockPos) -> Vec<BlockPos> {
     let mut taken: Vec<BlockPos> = Vec::new();
     for pane in memory.fixtures("glass_pane").map(|f| f.pos) {
-        if distance(pane, center) <= 12.0 && !taken.iter().any(|t| distance(*t, pane) <= 2.0) {
+        let in_house = memory
+            .house
+            .map_or(distance(pane, center) <= 12.0, |_| memory.in_house(pane));
+        if in_house && !taken.iter().any(|t| distance(*t, pane) <= 2.0) {
             taken.push(pane);
         }
     }
@@ -2141,7 +2149,7 @@ pub(crate) fn redstone_at_home(memory: &Memory) -> Option<BlockPos> {
             memory
                 .fixtures(kind)
                 .map(|f| f.pos)
-                .find(|p| distance(*p, home.center) <= 16.0)
+                .find(|p| distance(*p, home.center) <= 16.0 || memory.in_house(*p))
         })
 }
 
@@ -7509,7 +7517,7 @@ pub fn commands(
                     memory
                         .fixtures("glass_pane")
                         .map(|f| f.pos)
-                        .filter(|p| distance(*p, h.center) <= 12.0)
+                        .filter(|p| distance(*p, h.center) <= 12.0 || memory.in_house(*p))
                         .take(16)
                         .collect()
                 })
