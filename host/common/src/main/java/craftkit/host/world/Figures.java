@@ -184,6 +184,10 @@ public final class Figures {
 		remove(player, number);
 
 		Vec3 at = upsideDown ? hanging(level, pos) : ground(level, pos);
+		// Upside down along a path, each point under the ceiling over it (ABI 55: `ceiling_crawl`).
+		if (upsideDown && !path.isEmpty()) {
+			path = new ArrayList<>(path.stream().map(p -> hanging(level, p)).toList());
+		}
 		UUID uuid = UUID.randomUUID();
 		GameProfile profile = new GameProfile(uuid, upsideDown ? "Dinnerbone" : skinOf.getGameProfile().name(), skinOf.getGameProfile().properties());
 		Figure figure = new Figure(player, number, nextId++, uuid, profile, held, at, path, seconds > 0 ? tick + (long) (seconds * 20) : Long.MAX_VALUE, vanishWithin);
@@ -449,6 +453,12 @@ public final class Figures {
 	 * The figure {@code number} shown to {@code player} lies on the ground (ABI 54): the sleeping
 	 * pose with no bed, which the game draws on its side, as a body.
 	 */
+	/** Where the figure {@code number} shown to {@code player} stands, or null when none is. */
+	public Vec3 where(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		return figure == null ? null : figure.at;
+	}
+
 	public void lie(ServerPlayer player, int number) {
 		Figure figure = find(player, number);
 		if (figure != null) {

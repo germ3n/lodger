@@ -1139,6 +1139,14 @@ pub enum Action {
     FaceInTheCanopy,
     /// A pair of boots like theirs standing inside their door, as if someone came in.
     BootsAtTheDoor,
+    /// The figure crawling upside down across the ceiling over them.
+    CeilingCrawl,
+    /// The figure standing in a lava lake near them, unburnt, facing them.
+    InTheLava,
+    /// A head peeking over the cliff edge high above them.
+    OverTheEdge,
+    /// The figure on a skeleton horse far off, watching.
+    RiderOnTheRidge,
     /// Far from any village, a villager bangs on their door, runs in and drops dead.
     VillagerFleesIn,
     /// Every sound they hear goes wrong a while, one way of four.
@@ -6434,6 +6442,55 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("nightmare", 0.15),
         false,
     ),
+    // docs/events_todo.md, 154: at night in the house, the figure crawls across the ceiling
+    // over them, upside down.
+    row(
+        "ceiling_crawl",
+        5,
+        5,
+        &[TargetIndoors, Night, Home],
+        2.0,
+        2,
+        Full,
+        Action::CeilingCrawl,
+        false,
+    ),
+    // docs/events_todo.md, 155: underground, the figure in a lava lake, unburnt, facing them.
+    row(
+        "in_the_lava",
+        4,
+        5,
+        &[TargetUnderground],
+        2.0,
+        2,
+        Full,
+        Action::InTheLava,
+        false,
+    ),
+    // docs/events_todo.md, 156: at a cliff's foot, a head peeks over the edge high above.
+    row(
+        "over_the_edge",
+        4,
+        5,
+        &[TargetOutdoors, TargetAwake],
+        2.0,
+        2,
+        Full,
+        Action::OverTheEdge,
+        false,
+    ),
+    // docs/events_todo.md, 160: at dusk the figure on a skeleton horse far off, watching.
+    row(
+        "rider_on_the_ridge",
+        4,
+        5,
+        &[Dusk, TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::RiderOnTheRidge,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -6950,6 +7007,10 @@ impl Event {
             | Action::WhileUnseen(_)
             | Action::DrawnToTheLight
             | Action::TreeToTree
+            | Action::CeilingCrawl
+            | Action::InTheLava
+            | Action::OverTheEdge
+            | Action::RiderOnTheRidge
             | Action::TheTreeLine
             | Action::AnimalsFleeTheWoods
             | Action::VillagersFleeYou
@@ -7514,6 +7575,10 @@ impl Event {
             "face_in_the_canopy" => "cut a face into the leaves of a tree by the house",
             "boots_at_the_door" => "stand a pair of boots like theirs inside the door",
             "nightmare" => "flash the figure's face at them as they wake",
+            "ceiling_crawl" => "crawl across the ceiling over them",
+            "in_the_lava" => "stand in the lava facing them",
+            "over_the_edge" => "peek over the cliff edge above them",
+            "rider_on_the_ridge" => "watch them from a skeleton horse far off",
             "elder_face" => "show them the elder guardian's face",
             "boom_far" => "set off a far explosion from the way of its place",
             "red_rain" => "turn the rain red",

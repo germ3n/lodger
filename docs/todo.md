@@ -2354,6 +2354,13 @@ The `[x]` lines above, summed up by day:
   door, ABI 55) and `nightmare` (a frame of their own face over the screen as they wake). Tests:
   in `act`, `SilhouetteTest`.
 
+- [x] **The last four of the fifty** (`docs/events_todo.md` 154, 155, 156, 160). Was: no such
+  events. Now `ceiling_crawl` (upside down across the ceiling over them, the path hung under the
+  ceiling), `in_the_lava` (in the nearest lava, unburnt), `over_the_edge` (a head over the cliff
+  edge above them) and `rider_on_the_ridge` (on a skeleton horse far off at dusk); the figure's
+  `finds` (`lava`, `cliff_top`) and `mount`, ABI 55, the host finding what the mind cannot know.
+  All fifty of 116 to 165 are built. Tests: in `act`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

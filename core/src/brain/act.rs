@@ -568,6 +568,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }
         Action::SnowShape => spot(memory, rng),
         Action::StairsToNowhere => home.map(|h| h.center),
+        // Where they are: the ceiling over them, or the host finds the lava or the cliff.
+        Action::CeilingCrawl | Action::InTheLava | Action::OverTheEdge => {
+            Some(block_of(memory.last.pos))
+        }
+        // Forty blocks off to one side of them, on the ground.
+        Action::RiderOnTheRidge => {
+            let at = block_of(memory.last.pos);
+            let way = facing_way(memory.last.yaw);
+            Some([at[0] - way[1] * 40, -10_000, at[2] + way[0] * 40])
+        }
         // The tree nearest the house, within twenty-four blocks.
         Action::FaceInTheCanopy => home.and_then(|h| {
             memory
@@ -2166,6 +2176,8 @@ fn figure_shown(
         while_unseen: None,
         drawn_to_light: false,
         then_at: Vec::new(),
+        finds: String::new(),
+        mount: String::new(),
     }
 }
 
@@ -7023,6 +7035,75 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // Upside down under the ceiling, crawling across over them from one side to the other,
+        // and gone at its end.
+        Action::CeilingCrawl => pos
+            .map(|_| {
+                let at = memory.last.pos;
+                let way = facing_way(memory.last.yaw);
+                let side = [-way[1] as f64, way[0] as f64];
+                let point = |k: f64| [at[0] + side[0] * k, at[1], at[2] + side[1] * k];
+                let mut shown =
+                    figure_shown(ids, memory, target, block_of(point(-5.0)), 20.0, false);
+                if let Command::Figure {
+                    pos,
+                    path,
+                    upside_down,
+                    crawls,
+                    held,
+                    ..
+                } = &mut shown
+                {
+                    *pos = point(-5.0);
+                    *path = vec![point(0.0), point(5.0)];
+                    *upside_down = true;
+                    *crawls = true;
+                    *held = ItemStack::default();
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // In the nearest lava, unburnt, facing them; gone once seen and looked away from. The
+        // host finds the lava; none near, it is refused.
+        Action::InTheLava | Action::OverTheEdge => pos
+            .map(|p| {
+                let lava = event.action == Action::InTheLava;
+                let mut shown = figure_shown(ids, memory, target, p, 60.0, false);
+                if let Command::Figure {
+                    finds,
+                    once_seen,
+                    sunk,
+                    held,
+                    ..
+                } = &mut shown
+                {
+                    *finds = if lava { "lava" } else { "cliff_top" }.to_string();
+                    *once_seen = true;
+                    // Over the edge, its head alone above the top.
+                    *sunk = !lava;
+                    *held = ItemStack::default();
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Far off on a skeleton horse, still, watching them; gone once seen and looked away from.
+        Action::RiderOnTheRidge => pos
+            .map(|p| {
+                let mut shown = figure_shown(ids, memory, target, p, 60.0, false);
+                if let Command::Figure {
+                    mount,
+                    once_seen,
+                    held,
+                    ..
+                } = &mut shown
+                {
+                    *mount = "minecraft:skeleton_horse".to_string();
+                    *once_seen = true;
+                    *held = ItemStack::default();
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         // Along an inside wall of theirs, up from the floor a block a step, into the ceiling: only
         // into air, so the flight stops where the ceiling is. A day on, gone again.
         Action::StairsToNowhere => {
@@ -9490,6 +9571,8 @@ pub fn commands(
                         while_unseen: None,
                         drawn_to_light: false,
                         then_at: Vec::new(),
+                        finds: String::new(),
+                        mount: String::new(),
                     },
                     0,
                 )]
@@ -11485,6 +11568,39 @@ mod tests {
         assert!(
             matches!(&boots[..], [(Command::PlaceEntity { of, wears, seconds, targets: None, .. }, 0)] if of == "minecraft:armor_stand" && wears == &vec!["minecraft:iron_boots".to_string()] && *seconds == 300.0),
             "{boots:?}"
+        );
+    }
+
+    #[test]
+    fn across_the_ceiling_in_the_lava_over_the_edge_and_on_a_horse_far_off() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let now = Now::default();
+        let made_by = |id: &str| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, &mut Rng::new(1));
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+
+        // Facing +z: across from one side to the other over them, upside down, crawling.
+        let crawl = made_by("ceiling_crawl");
+        assert!(
+            matches!(&crawl[..], [(Command::Figure { pos, path, upside_down: true, crawls: true, .. }, 0)] if pos[0] != path[1][0] && path[0][0] == 0.5 && pos[2] == path[1][2]),
+            "{crawl:?}"
+        );
+        let lava = made_by("in_the_lava");
+        assert!(
+            matches!(&lava[..], [(Command::Figure { finds, once_seen: true, sunk: false, .. }, 0)] if finds == "lava")
+        );
+        let edge = made_by("over_the_edge");
+        assert!(
+            matches!(&edge[..], [(Command::Figure { finds, once_seen: true, sunk: true, .. }, 0)] if finds == "cliff_top")
+        );
+        let rider = made_by("rider_on_the_ridge");
+        assert!(
+            matches!(&rider[..], [(Command::Figure { mount, once_seen: true, pos, .. }, 0)] if mount == "minecraft:skeleton_horse" && pos[1] <= -1000.0 && (pos[0] - 0.5).abs() >= 39.0),
+            "{rider:?}"
         );
     }
 

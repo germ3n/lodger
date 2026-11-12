@@ -301,7 +301,9 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::LostHour
         | Action::SoundWarp
         | Action::CreeperBehind
-        | Action::PrintsAroundTheHouse => config.events.glitches,
+        | Action::PrintsAroundTheHouse
+        // Their breath showing is on their client alone.
+        | Action::ColdHouse => config.events.glitches,
         // The bedside figure too: with the figures off, none comes to the bed (until now the
         // choke and the shot came whatever `events.figure` said).
         Action::Figure(_, _, _)
@@ -352,6 +354,10 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::WhileUnseen(_)
         | Action::DrawnToTheLight
         | Action::TreeToTree
+        | Action::CeilingCrawl
+        | Action::InTheLava
+        | Action::OverTheEdge
+        | Action::RiderOnTheRidge
         | Action::TheTreeLine
         | Action::AnimalsFleeTheWoods
         | Action::RaisesTheirSword
@@ -434,6 +440,10 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::WhileUnseen(_)
         | Action::DrawnToTheLight
         | Action::TreeToTree
+        | Action::CeilingCrawl
+        | Action::InTheLava
+        | Action::OverTheEdge
+        | Action::RiderOnTheRidge
         | Action::TheTreeLine
         | Action::AnimalsFleeTheWoods
         | Action::RaisesTheirSword

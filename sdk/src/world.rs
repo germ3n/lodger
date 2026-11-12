@@ -1467,6 +1467,16 @@ pub enum Command {
         /// branch's crack where it stood. ABI 54.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         then_at: Vec<Pos>,
+        /// Where it stands found by the host near the player instead of `pos` (ABI 55): `lava`,
+        /// in the surface of the nearest lava six to sixteen blocks off; `cliff_top`, at the top
+        /// edge of high ground straight ahead of them, eight blocks over them or more. Refused
+        /// when there is none.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        finds: String,
+        /// Sitting on a mount of this kind placed under it for its time, standing still
+        /// (`minecraft:skeleton_horse`, `minecraft:zombie_horse`, `minecraft:horse`; ABI 55).
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        mount: String,
     },
     RemoveFigure {
         id: u64,

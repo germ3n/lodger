@@ -163,6 +163,10 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::WhileUnseen(_)
             | crate::events::Action::DrawnToTheLight
             | crate::events::Action::TreeToTree
+            | crate::events::Action::CeilingCrawl
+            | crate::events::Action::InTheLava
+            | crate::events::Action::OverTheEdge
+            | crate::events::Action::RiderOnTheRidge
             | crate::events::Action::TheTreeLine
             | crate::events::Action::AnimalsFleeTheWoods
             | crate::events::Action::LanternInTheWoods

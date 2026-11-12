@@ -793,6 +793,8 @@ fn figure(
         while_unseen: None,
         drawn_to_light: false,
         then_at: Vec::new(),
+        finds: String::new(),
+        mount: String::new(),
     }
 }
 

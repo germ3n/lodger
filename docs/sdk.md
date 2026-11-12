@@ -245,7 +245,11 @@ hole at its place was dug at the home's floor height, into the air on lower grou
 (each wall torch among them turned to point at a place, a wall holding it), `place_entity`'s
 `minecraft:killer_bunny`, and whether the host spares the players from what the mod does: the open
 answer's `spare` (`Mod::spares`, spared unless a mod says otherwise) and the `spare` command for a
-change after; off, every hit, burn and arrow the host deals for the mod lands in full.
+change after; off, every hit, burn and arrow the host deals for the mod lands in full. And the figure's
+`finds` (`lava`, `cliff_top`: where it stands found by the host near the player), its `mount` (a
+horse kind placed under it, still, for its time), an upside-down figure's path hung under the
+ceiling, and `place_entity`'s `wears` on an armour stand for a while (unseen, unbreakable, its
+things locked).
 
 ## Resources
 

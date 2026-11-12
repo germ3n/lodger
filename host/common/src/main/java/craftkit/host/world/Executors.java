@@ -889,6 +889,62 @@ public final class Executors {
 		return null;
 	}
 
+	/** The mounts a figure may be set on (ABI 55). */
+	private static final List<String> MOUNTS = List.of("minecraft:skeleton_horse", "minecraft:zombie_horse", "minecraft:horse");
+
+	/**
+	 * Where a figure stands in lava: the surface of the nearest still lava with air over it, six
+	 * to sixteen blocks from them, eight up or down; null for none.
+	 */
+	private static Vec3 lavaNear(ServerLevel level, ServerPlayer player) {
+		BlockPos at = player.blockPosition();
+		BlockPos best = null;
+		double bestDistance = Double.MAX_VALUE;
+		for (BlockPos pos : BlockPos.betweenClosed(at.offset(-16, -8, -16), at.offset(16, 8, 16))) {
+			double d = pos.distSqr(at);
+			if (d < 36 || d > 256 || d >= bestDistance || !level.isLoaded(pos)) {
+				continue;
+			}
+			var fluid = level.getFluidState(pos);
+			if (fluid.is(net.minecraft.tags.FluidTags.LAVA) && fluid.isSource() && level.getBlockState(pos.above()).isAir()) {
+				best = pos.immutable();
+				bestDistance = d;
+			}
+		}
+
+		return best == null ? null : new Vec3(best.getX() + 0.5, best.getY() + 0.5, best.getZ() + 0.5);
+	}
+
+	/**
+	 * Where a head peeks over a cliff at them: straight ahead within fourteen blocks (three to a
+	 * side), the first column whose ground stands eight or more over them with the one before it
+	 * lower, a face of rock between; its top, for a `sunk` figure. Null for none.
+	 */
+	private static Vec3 cliffTopAhead(ServerLevel level, ServerPlayer player) {
+		Vec3 look = player.getViewVector(1f);
+		Vec3 ahead = new Vec3(look.x, 0, look.z).normalize();
+		Vec3 side = new Vec3(-ahead.z, 0, ahead.x);
+		double feet = player.getY();
+		for (int d = 3; d <= 14; d++) {
+			for (int s = 0; s <= 6; s++) {
+				int across = (s % 2 == 0 ? 1 : -1) * ((s + 1) / 2);
+				Vec3 p = player.position().add(ahead.scale(d)).add(side.scale(across));
+				Vec3 before = player.position().add(ahead.scale(d - 1)).add(side.scale(across));
+				BlockPos column = BlockPos.containing(p.x, 0, p.z);
+				if (!level.isLoaded(column)) {
+					continue;
+				}
+				int top = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column).getY();
+				int under = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, BlockPos.containing(before.x, 0, before.z)).getY();
+				if (top >= feet + 8 && under <= top - 3) {
+					return new Vec3(column.getX() + 0.5, top, column.getZ() + 0.5);
+				}
+			}
+		}
+
+		return null;
+	}
+
 	private static JsonObject figure(ServerLevel level, JsonObject command, long id, Context context) {
 		ServerPlayer skinOf = context.senses().player(level, command.get("skin_of").getAsInt());
 		if (skinOf == null) {
@@ -915,9 +971,24 @@ public final class Executors {
 			}
 		}
 
+		// Where it stands, found here near them (ABI 55): the mind knows no lava or cliffs.
+		Vec3 standing = new Vec3(pos.get(0).getAsDouble(), pos.get(1).getAsDouble(), pos.get(2).getAsDouble());
+		String finds = command.has("finds") ? command.get("finds").getAsString() : "";
+		if (!finds.isEmpty()) {
+			Vec3 found = switch (finds) {
+				case "lava" -> lavaNear(level, skinOf);
+				case "cliff_top" -> cliffTopAhead(level, skinOf);
+				default -> null;
+			};
+			if (found == null) {
+				return report(id, false, "nowhere for it: no " + finds.replace('_', ' ') + " near");
+			}
+			standing = found;
+		}
+
 		// The figure is shown to the player whose skin it wears: it is for them alone.
 		context.figures().show(level, skinOf, command.get("figure").getAsInt(), skinOf,
-				new Vec3(pos.get(0).getAsDouble(), pos.get(1).getAsDouble(), pos.get(2).getAsDouble()),
+				standing,
 				path, held, command.has("name_shown") && command.get("name_shown").getAsBoolean(),
 				command.has("seconds") ? command.get("seconds").getAsFloat() : 0,
 				command.has("vanish_within") ? command.get("vanish_within").getAsFloat() : 0,
@@ -980,6 +1051,34 @@ public final class Executors {
 				&& !context.figures().ride(skinOf, command.get("figure").getAsInt(), command.get("rides").getAsInt())) {
 			context.figures().remove(skinOf, command.get("figure").getAsInt());
 			return report(id, false, "nothing to ride with that id, or someone rides it");
+		}
+		if (command.has("mount") && !command.get("mount").getAsString().isEmpty()) {
+			String mount = command.get("mount").getAsString();
+			if (!MOUNTS.contains(mount)) {
+				context.figures().remove(skinOf, command.get("figure").getAsInt());
+				return report(id, false, "not a mount it places");
+			}
+			Optional<Holder.Reference<net.minecraft.world.entity.EntityType<?>>> kind = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(mount));
+			Entity horse = kind.map(k -> k.value().create(level, net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED)).orElse(null);
+			Vec3 under = context.figures().where(skinOf, command.get("figure").getAsInt());
+			if (horse == null || under == null) {
+				context.figures().remove(skinOf, command.get("figure").getAsInt());
+				return report(id, false, "the mount could not be made");
+			}
+			horse.snapTo(under.x, under.y, under.z, skinOf.getYRot() + 180, 0);
+			if (horse instanceof net.minecraft.world.entity.Mob mob) {
+				mob.setNoAi(true);
+			}
+			horse.setSilent(true);
+			horse.setPermanentlyInvulnerable(true);
+			level.addFreshEntity(horse);
+			float lasts = command.has("seconds") && command.get("seconds").getAsFloat() > 0 ? command.get("seconds").getAsFloat() : 60;
+			context.temporaries().add(horse, lasts);
+			if (!context.figures().ride(skinOf, command.get("figure").getAsInt(), horse.getId())) {
+				horse.discard();
+				context.figures().remove(skinOf, command.get("figure").getAsInt());
+				return report(id, false, "it could not sit the mount");
+			}
 		}
 		if (command.has("rides_behind") && command.get("rides_behind").getAsBoolean()
 				&& !context.figures().seatBehind(skinOf, command.get("figure").getAsInt())) {
