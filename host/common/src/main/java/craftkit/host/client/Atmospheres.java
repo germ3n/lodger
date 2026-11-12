@@ -146,6 +146,10 @@ public final class Atmospheres {
 			return would;
 		}
 		for (Hints.Active active : Hints.active()) {
+			// Spinning as in the Nether (`compass_spins`, ABI 56): no target, so the game spins it.
+			if (active.hint().hint().equals("compass_spins") && !recovery) {
+				return null;
+			}
 			if (Atmosphere.pointsAway(active.hint().hint(), recovery) && active.hint().pos().isPresent()) {
 				return GlobalPos.of(minecraft.level.dimension(), active.hint().pos().get());
 			}

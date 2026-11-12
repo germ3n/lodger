@@ -7489,6 +7489,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("enchant_six", 600.0),
         false,
     ),
+    // docs/events_todo.md, 241: for a minute their compass spins as it does in the nether, here in the overworld, and then points home again.
+    row(
+        "compass_spins",
+        3,
+        5,
+        &[Holding("minecraft:compass")],
+        1.0,
+        3,
+        Half,
+        Action::Hint("compass_spins", 60.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8660,6 +8672,7 @@ impl Event {
             "held_name_wrong" => "make their held item's name read its",
             "title_splash" => "put a line about them in the title screen's splash",
             "enchant_six" => "make every enchanting offer cost 6",
+            "compass_spins" => "spin their compass as in the Nether",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

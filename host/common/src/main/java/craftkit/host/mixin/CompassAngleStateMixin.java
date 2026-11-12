@@ -10,7 +10,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-/** `compass_points`: a compass's target, its place while the hint is on; `recovery_compass_lies`: a recovery compass's. */
+/**
+ * `compass_points`: a compass's target, its place while the hint is on; `recovery_compass_lies`: a
+ * recovery compass's; `compass_spins`: none, so it spins as in the Nether.
+ */
 @Mixin(CompassAngleState.class)
 public abstract class CompassAngleStateMixin {
 	@Redirect(method = "calculate", at = @At(value = "INVOKE",

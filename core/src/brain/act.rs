@@ -20221,4 +20221,15 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn compass_spins_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("compass_spins").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "compass_spins" && *seconds == 60.0),
+            "{made:?}"
+        );
+    }
 }
