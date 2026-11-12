@@ -1165,6 +1165,8 @@ pub enum Action {
     TrapdoorToNothing,
     /// A ring of fences round their bed by morning, a gap only where they lie, gone in a day.
     BedFenced,
+    /// Their tools from their chests laid on the floor in a neat row, the very stacks, kept from despawning.
+    ToolsLaidOut,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7167,6 +7169,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BedFenced,
         false,
     ),
+    // docs/events_todo.md, 218: their tools laid out on the floor in a neat row.
+    row(
+        "tools_laid_out",
+        4,
+        5,
+        &[Home, ToolInContainer, TargetAwayOrAsleep],
+        3.0,
+        1,
+        Full,
+        Action::ToolsLaidOut,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7530,6 +7544,7 @@ impl Event {
             | Action::FrameSwap
             | Action::MoveVehicle
             | Action::SignWithCoords
+            | Action::ToolsLaidOut
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -8298,6 +8313,7 @@ impl Event {
             "room_closes_in" => "move one wall of their room a block further in",
             "trapdoor_to_nothing" => "set a trapdoor in their floor over a lit pit",
             "bed_fenced" => "fence their bed round while they sleep",
+            "tools_laid_out" => "lay their tools out on the floor in a row",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

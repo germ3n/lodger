@@ -191,6 +191,18 @@ fn natural_floor(memory: &Memory) -> Option<BlockPos> {
         .find(|c| (1..=4).all(|d| !built.contains(&[c[0], floor - d, c[2]])))
 }
 
+/// How many of their tools `tools_laid_out` lays out, a block apart.
+const TOOLS_LAID_MOST: usize = 6;
+
+/// A tool `tools_laid_out` lays out: a pick, an axe, a sword, a shovel, a hoe, shears, a bow.
+fn is_laid_tool(id: &str) -> bool {
+    [
+        "_pickaxe", "_axe", "_sword", "_shovel", "_hoe", "shears", "bow",
+    ]
+    .iter()
+    .any(|t| id.ends_with(t))
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -601,6 +613,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::RoomClosesIn
         | Action::TrapdoorToNothing
         | Action::BedFenced
+        | Action::ToolsLaidOut
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8193,6 +8206,58 @@ pub fn commands(
                             only: vec!["minecraft:oak_fence".to_string()],
                         },
                         DAY_TICKS,
+                    ));
+                }
+                made
+            }
+            None => vec![],
+        },
+        // docs/events_todo.md, 218.
+        Action::ToolsLaidOut => match memory.home.as_ref() {
+            Some(home) => {
+                let tools: Vec<(BlockPos, &ItemStack)> = memory
+                    .containers
+                    .iter()
+                    .filter(|c| c.theirs() && !c.is_furnace())
+                    .flat_map(|c| {
+                        c.contents
+                            .iter()
+                            .filter(|s| is_laid_tool(&s.id))
+                            .map(move |s| (c.pos, s))
+                    })
+                    .take(TOOLS_LAID_MOST)
+                    .collect();
+                let mut made = Vec::new();
+                for (i, (from, stack)) in tools.into_iter().enumerate() {
+                    let keep = format!("tools_laid_out_{i}");
+                    made.push((
+                        Command::TakeItem {
+                            id: ids(),
+                            from,
+                            slot: stack.slot,
+                            expect: stack.id.clone(),
+                            count: stack.count,
+                            keep: keep.clone(),
+                        },
+                        0,
+                    ));
+                    made.push((
+                        Command::DropItem {
+                            id: ids(),
+                            pos: [
+                                home.center[0] as f64 + 0.5 + i as f64
+                                    - (TOOLS_LAID_MOST as f64 - 1.0) / 2.0,
+                                home.floor_y as f64 + 0.1,
+                                home.center[2] as f64 + 0.5,
+                            ],
+                            item: ItemStack {
+                                id: stack.id.clone(),
+                                count: stack.count,
+                                slot: 0,
+                            },
+                            kept: keep,
+                        },
+                        1,
                     ));
                 }
                 made
@@ -19223,5 +19288,29 @@ mod tests {
             "{made:?}"
         );
         assert_eq!(made.iter().filter(|(_, d)| *d == DAY_TICKS).count(), 8);
+    }
+
+    #[test]
+    fn tools_laid_out_take_their_tools_and_lay_them_in_a_row() {
+        let memory = rich_memory();
+        let event = find("tools_laid_out").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty() && made.len() % 2 == 0, "{made:?}");
+        let drops: Vec<Pos> = made
+            .iter()
+            .filter_map(|(c, _)| match c {
+                Command::DropItem { pos, kept, .. } if kept.starts_with("tools_laid_out_") => {
+                    Some(*pos)
+                }
+                _ => None,
+            })
+            .collect();
+        assert_eq!(drops.len() * 2, made.len());
+        assert!(
+            drops
+                .windows(2)
+                .all(|w| (w[1][0] - w[0][0] - 1.0).abs() < 1e-9 && w[0][2] == w[1][2]),
+            "a row: {drops:?}"
+        );
     }
 }
