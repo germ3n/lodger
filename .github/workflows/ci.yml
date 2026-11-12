@@ -1,4 +1,4 @@
-# Run by hand (owner): Actions, ci, Run workflow. The checks on three systems, then each native
+# Run by hand (owner): Actions, ci, Run workflow. The checks on three systems (when ticked), then each native
 # built by the same script as on a developer's Mac (scripts/build_natives.py), then the two
 # lodger jars with the six natives xz-compressed inside (scripts/build_jars.py). docs/build.md
 # describes it; VersionsTest checks the pins here agree with rust-toolchain.toml and the
@@ -14,10 +14,16 @@ on:
       prerelease:
         description: "Mark the release as a pre-release"
         type: boolean
-        default: false 
+        default: false
+      # The checks on three systems take most of a run's minutes (owner): off unless ticked.
+      checks:
+        description: "Run the checks (fmt, clippy, tests) on macOS, Ubuntu and Windows"
+        type: boolean
+        default: false
 
 jobs:
   checks:
+    if: ${{ inputs.checks }}
     strategy:
       fail-fast: false
       matrix:
@@ -85,8 +91,10 @@ jobs:
           if-no-files-found: error
 
   # The host for both loaders with its tests, then the two lodger jars with the six natives.
+  # With the checks off they are skipped, and the jars still build; a check that fails stops them.
   jars:
     needs: [checks, natives-mac-windows, natives-linux]
+    if: ${{ !cancelled() && needs.natives-mac-windows.result == 'success' && needs.natives-linux.result == 'success' && needs.checks.result != 'failure' }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -124,6 +132,8 @@ jobs:
   # SHA256SUMS, with every file's SHA-256 in its notes.
   release:
     needs: [jars]
+    # Stated, so the checks skipped further up do not skip the release with them.
+    if: ${{ !cancelled() && needs.jars.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write

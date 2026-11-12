@@ -138,7 +138,7 @@ in `mod/`, with the client stopped:
 ```sh
 python3 - <<'EOF'
 import zipfile, json
-src = 'mod/build/libs/lodger-fabric-26.3-0.1.0.jar'
+src = 'mod/build/libs/lodger-fabric-26.3-0.1.1.jar'
 dst = 'host/fabric/runs/client/mods/lodger-dev.jar'
 zi, zo = zipfile.ZipFile(src), zipfile.ZipFile(dst, 'w', zipfile.ZIP_DEFLATED)
 for i in zi.infolist():

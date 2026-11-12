@@ -396,7 +396,7 @@ the same with a two-line mod, and is the test of the macro.
 ## Versions and publishing
 
 The SDK crate and the host carry one version (`sdk/Cargo.toml`, `host/gradle.properties`); a mod
-declares the least host it needs in its manifests (`craftkit >= 0.1.0`). The ABI version moves
+declares the least host it needs in its manifests (`craftkit >= 0.1.1`). The ABI version moves
 slower than the crate's and is what the host actually checks. Publishing (the crate to crates.io,
 the host jars to Modrinth) waits until a second mod can be written against it, which is the todo's
 last phase; until then both live in this repository.

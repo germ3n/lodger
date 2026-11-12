@@ -140,17 +140,18 @@ deleting `target/` give it back.
 
 ## The CI
 
-`.github/workflows/ci.yml` runs by hand only: Actions, ci, Run workflow, with the release's tag
-and whether it is a pre-release as its two inputs. Its jobs:
+`.github/workflows/ci.yml` runs by hand only: Actions, ci, Run workflow, with the release's tag,
+whether it is a pre-release, and whether to run the checks as its three inputs. Its jobs:
 
-1. **checks** on macOS, Ubuntu 22.04 and Windows: `cargo fmt --check`, clippy with warnings as
+1. **checks**, only when *Run the checks* is ticked (off at first: on three systems they took
+   most of a run's minutes), on macOS, Ubuntu 22.04 and Windows: `cargo fmt --check`, clippy with warnings as
    errors, `cargo test --workspace`. On Windows these build with MSVC itself and the dynamic C
    runtime (llama.cpp's CMake build keeps it there); the shipped natives carry theirs inside.
 2. **natives-mac-windows** on macOS: `build_natives.py macos-aarch64 macos-x86_64
    windows-x86_64 windows-aarch64`, four natives, as on a developer's Mac (Homebrew's LLVM, lld and shaderc; cargo-xwin).
 3. **natives-linux**, one runner per chip (`ubuntu-22.04`, `ubuntu-22.04-arm`): `build_natives.py
    linux-<arch>` in the same Docker image, natively.
-4. **jars**, once the rest pass: the six natives merged into one folder, then
+4. **jars**, once the natives pass and the checks passed or were not run: the six natives merged into one folder, then
    `build_jars.py 26.3 --natives natives`, which builds the host with its JUnit tests and both
    content jars. The jars and their `SHA256SUMS` are the run's `lodger-jars` artifact, and the
    sums are printed in the log and on the run's summary page; each native job prints its own

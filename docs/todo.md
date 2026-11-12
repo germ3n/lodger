@@ -2139,6 +2139,16 @@ The `[x]` lines above, summed up by day:
   the chains test counts thirty-five and checks no event is in two chains. Was: sixteen chains,
   `knocks_on_wood` in two of them.
 
+- [x] **The CI's checks behind a box** (owner: "make the checks matrix a checkbox, else it eats up
+  too many minutes of actions"): `ci.yml` has a third input, *Run the checks*, off at first; the
+  checks job on three systems runs only when it is ticked, and the jars build after the natives
+  whether the checks ran or not (stopped only by a check that failed). Was: every run ran fmt,
+  clippy and the tests on macOS, Ubuntu and Windows first.
+
+- [x] **Version 0.1.1** (owner): the lodger (`mod/gradle.properties`, `core/Cargo.toml`) and craftkit
+  (`host/gradle.properties`, `sdk/Cargo.toml`) at 0.1.1, the lodger needing craftkit 0.1.1 or later
+  (ABI 54). Was: 0.1.0.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
