@@ -601,6 +601,10 @@ pub struct Memory {
     /// (`torch_flash`, which finds it as `habits.last_light`). Not saved.
     #[serde(skip)]
     pub lit_underground_now: Option<BlockPos>,
+    /// A diamond ore they just broke, taken by the brain on its next tick (`ore_counted`). Not
+    /// saved.
+    #[serde(skip)]
+    pub diamond_mined_now: Option<BlockPos>,
     /// Where `the_offer`'s figure stands holding out what it took, until it is gone.
     pub offer_waiting: Option<BlockPos>,
     /// They came to it: where, taken by the brain on its next tick, which gives it. Not saved.
@@ -1883,6 +1887,9 @@ impl Memory {
                 }
                 EventKind::BrokeBlock => {
                     if let Some(pos) = event.pos {
+                        if event.detail.ends_with("diamond_ore") {
+                            self.diamond_mined_now = Some(pos);
+                        }
                         // Gone, so not its light any more: the leave ending put out a torch of
                         // theirs set where its had been.
                         self.its_lights.retain(|p| *p != pos);
@@ -4494,6 +4501,34 @@ mod tests {
             0.0,
         );
         assert_eq!(memory.lit_underground_now, None);
+    }
+
+    #[test]
+    fn a_diamond_broken_is_noticed_for_the_brain_and_stone_is_not() {
+        let mut memory = Memory::default();
+        let them = player(0, [5.0, 12.0, 5.0], 0.0);
+        let broke = |pos, what: &str| Event {
+            player: 0,
+            kind: EventKind::BrokeBlock,
+            pos: Some(pos),
+            detail: what.to_string(),
+            ..Event::default()
+        };
+        memory.observe(&obs(vec![them.clone()], vec![]), 0.0);
+        memory.observe(
+            &obs(
+                vec![them.clone()],
+                vec![broke([4, 12, 9], "minecraft:deepslate_diamond_ore")],
+            ),
+            0.0,
+        );
+        assert_eq!(memory.diamond_mined_now, Some([4, 12, 9]));
+        memory.diamond_mined_now = None;
+        memory.observe(
+            &obs(vec![them], vec![broke([5, 12, 9], "minecraft:stone")]),
+            0.0,
+        );
+        assert_eq!(memory.diamond_mined_now, None);
     }
 
     #[test]

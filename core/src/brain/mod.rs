@@ -292,6 +292,8 @@ pub const WOKE_CHANCE: f64 = 0.35;
 pub const PORTAL_CHANCE: f64 = 0.3;
 /// How often a light placed underground shows a figure (`torch_flash`).
 pub const TORCH_FLASH_CHANCE: f64 = 0.15;
+/// The chance a diamond mined begins the count (`ore_counted`); once begun, every one is counted.
+pub const ORE_COUNT_CHANCE: f64 = 0.3;
 /// How long they run lit at night before it may notice them, and how likely it is to then.
 pub const RUN_LIT_TICKS: u64 = 5 * TPS;
 pub const DRAWN_CHANCE: f64 = 0.35;
@@ -1045,6 +1047,16 @@ impl Brain {
             }
         }
 
+        // A diamond mined: once it has begun counting, every one after is counted; before, perhaps.
+        if memory.diamond_mined_now.take().is_some() && !held_back {
+            let chance = if memory.times("ore_counted") > 0 {
+                1.0
+            } else {
+                ORE_COUNT_CHANCE
+            };
+            self.consider_started("ore_counted", chance, now, day, memory, arc, config, log);
+        }
+
         // A light placed underground: perhaps a figure in its light, for a blink.
         if memory.lit_underground_now.take().is_some() && !held_back {
             self.consider_started(
@@ -1743,6 +1755,7 @@ impl Brain {
                         n,
                         events::Need::JustWoke
                             | events::Need::LitUnderground
+                            | events::Need::MinedDiamond
                             | events::Need::RanLit
                             | events::Need::CameBack
                             | events::Need::KilledNow

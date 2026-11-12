@@ -2914,6 +2914,11 @@ The `[x]` lines above, summed up by day:
   target away or asleep: every piece of leather armour in the chest they use dyed black dye's black
   where it lies (`dye_item`, ABI 56). Tests: one in `act`. Was: no such event.
 
+- [x] **Ore counted** (`docs/events_todo.md`, 258): `ore_counted`, stages 4 and 5, as they break a
+  diamond ore (a sense of the break, a new need, `MinedDiamond`, never from the menu): chimes rising
+  up the scale, one more each diamond to eight; a three-in-ten chance to begin, every diamond
+  counted after (the brain). Tests: two in `act`, one in `memory`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

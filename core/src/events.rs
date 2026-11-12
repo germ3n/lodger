@@ -245,6 +245,8 @@ pub enum Need {
     PetOf(&'static str),
     /// A young animal near them (`the_child_stares`).
     BabyNear,
+    /// A diamond ore they have just broken: met only then (`ore_counted`).
+    MinedDiamond,
     /// Where they last died is in sight: twelve to sixty-four blocks from them.
     NearTheirDeath,
     /// Down a shaft of their ladders, six blocks or more below its top.
@@ -303,6 +305,7 @@ impl Need {
                 | Need::Riding(_)
                 | Need::PetOf(_)
                 | Need::BabyNear
+                | Need::MinedDiamond
                 | Need::TargetInBed
                 | Need::TargetSaid
                 | Need::Heard
@@ -487,6 +490,7 @@ impl Need {
             Need::Riding(kind) => format!("they ride no {}", kind.replace('_', " ")),
             Need::PetOf(kind) => format!("no {} of theirs near", kind.replace('_', " ")),
             Need::BabyNear => "no young animal near them".to_string(),
+            Need::MinedDiamond => "happens only as they mine a diamond".to_string(),
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetSwimming => "the target is not swimming".to_string(),
@@ -1246,6 +1250,8 @@ pub enum Action {
     BundleGains,
     /// Their leather armour in the chest dyed black overnight.
     LeatherDyed,
+    /// Each diamond they mine, a soft chime, one more each time, as if counted.
+    OreCounted,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7749,6 +7755,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LeatherDyed,
         false,
     ),
+    // docs/events_todo.md, 258: each diamond they mine, a chime, one more each time.
+    row(
+        "ore_counted",
+        4,
+        5,
+        &[MinedDiamond],
+        0.0,
+        64,
+        Half,
+        Action::OreCounted,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8048,6 +8066,7 @@ impl Event {
             | Action::KnocksOnWood
             | Action::SoundWarp
             | Action::BranchSnaps
+            | Action::OreCounted
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -8953,6 +8972,7 @@ impl Event {
             "late_drop" => "hold back what they next mine a moment",
             "bundle_gains" => "slip a pebble into their bundle",
             "leather_dyed" => "dye their leather armour black overnight",
+            "ore_counted" => "count each diamond they mine with a chime",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

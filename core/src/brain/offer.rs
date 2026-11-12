@@ -148,6 +148,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Riding(kind) => last.online && last.riding.ends_with(kind),
         Need::PetOf(kind) => memory.pets().any(|p| p.kind == kind),
         Need::BabyNear => last.creatures_near.iter().any(|c| c.baby && !c.pet),
+        Need::MinedDiamond => false,
         Need::Copper => memory
             .walls
             .iter()
@@ -302,7 +303,8 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::PetGrowl
         | Action::Footsteps
         | Action::HandOnShoulder
-        | Action::ChestAnswers => config.events.sounds,
+        | Action::ChestAnswers
+        | Action::OreCounted => config.events.sounds,
         // Their name in the ghasts' cries is a hint too: off with the glitches.
         // The lost hour begins with their screen black: a glitch too.
         // The sound gone wrong and the creeper only they see (its bang muffles their hearing):
@@ -414,7 +416,8 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::WetSteps
         | Action::PetGrowl
         | Action::Footsteps
-        | Action::HandOnShoulder => Some("sound"),
+        | Action::HandOnShoulder
+        | Action::OreCounted => Some("sound"),
         Action::Hint(_, _)
         | Action::BossBarIt
         | Action::CracksInTheWall

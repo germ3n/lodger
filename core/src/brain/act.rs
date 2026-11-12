@@ -786,6 +786,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LateDrop
         | Action::BundleGains
         | Action::LeatherDyed
+        | Action::OreCounted
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9284,6 +9285,25 @@ pub fn commands(
                 .collect(),
             None => vec![],
         },
+        // docs/events_todo.md, 258.
+        Action::OreCounted => {
+            let n = (memory.times(event.id) + 1).min(STEPS_COUNTED.len());
+            (0..n)
+                .map(|i| {
+                    (
+                        Command::PlaySound {
+                            id: ids(),
+                            player: target,
+                            sound: "minecraft:block.note_block.chime".to_string(),
+                            pos: memory.last.pos,
+                            volume: 0.5,
+                            pitch: STEPS_COUNTED[i],
+                        },
+                        i as u64 * 6,
+                    )
+                })
+                .collect()
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14995,6 +15015,24 @@ mod tests {
             &memory,
             &Now::default()
         ));
+    }
+
+    #[test]
+    fn every_diamond_after_the_first_counted_is_counted_and_never_from_the_menu() {
+        let mut memory = rich_memory();
+        assert!(!crate::brain::offer::meets(
+            crate::events::Need::MinedDiamond,
+            &memory,
+            &Now::default()
+        ));
+        memory.record("ore_counted", None, 1.0, true, "");
+        memory.record("ore_counted", None, 1.1, true, "");
+        let event = find("ore_counted").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 3, "the third: three chimes {made:?}");
+        assert!(
+            matches!(&made[2].0, Command::PlaySound { pitch, .. } if *pitch == STEPS_COUNTED[2])
+        );
     }
 
     #[test]
@@ -20988,6 +21026,17 @@ mod tests {
                     0
                 )]
             ),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn ore_counted_chimes_once_for_the_first() {
+        let memory = rich_memory();
+        let event = find("ore_counted").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PlaySound { sound, .. }, 0)] if sound.contains("chime")),
             "{made:?}"
         );
     }
