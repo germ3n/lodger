@@ -620,6 +620,16 @@ pub enum Command {
         most: u32,
         keep: String,
     },
+    /// The mob `entity` falls dead on `player`'s screen alone, the game's own death and sound,
+    /// held still meanwhile; after `seconds` (five minutes at most), once they are not looking
+    /// at it, it is whole again on their screen and goes about as before. Nothing is harmed.
+    /// ABI 54.
+    FakeDeath {
+        id: u64,
+        entity: u32,
+        player: u32,
+        seconds: f32,
+    },
     /// The villagers `entities` run from `player` for `seconds`, as from a zombie, in a panic
     /// (they think it hurt them; no reputation is lost, no golem set on them). Refused with
     /// none of them here. ABI 54.
@@ -1423,6 +1433,7 @@ impl Command {
             | Command::FellTree { id, .. }
             | Command::Panic { id, .. }
             | Command::HoldTrades { id, .. }
+            | Command::FakeDeath { id, .. }
             | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }

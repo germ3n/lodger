@@ -1083,6 +1083,8 @@ pub enum Action {
     VillagerSpins,
     /// At dusk the villagers walk out of the village single file, toward its place.
     VillagersWalkOut,
+    /// A villager drops dead on their screen, and is up again a minute on.
+    VillagerCollapses,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4880,6 +4882,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 95.
+    row(
+        "villager_collapses",
+        4,
+        5,
+        &[Creature("villager")],
+        3.0,
+        2,
+        Full,
+        Action::VillagerCollapses,
+        false,
+    ),
     // docs/events_todo.md, 94.
     row(
         "villagers_walk_out",
@@ -6088,6 +6102,7 @@ impl Event {
             | Action::VillagerStabs(_)
             | Action::VillagerSpins
             | Action::VillagersWalkOut
+            | Action::VillagerCollapses
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6171,6 +6186,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "villager_collapses" => "drop a villager dead before their eyes, for a minute",
             "villagers_walk_out" => "walk the villagers out of the village at dusk, single file",
             "villager_spins" => "set a villager turning round and round where it stands",
             "trades_refused" => "have every villager refuse them for a day",

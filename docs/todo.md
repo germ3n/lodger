@@ -2023,6 +2023,12 @@ The `[x]` lines above, summed up by day:
   at dusk (a new need, 11,500 to 13,500): the villagers near them single file out of the village
   toward its place, home to bed of themselves after. Tests: one in `act`. Was: no such event.
 
+- [x] **A villager collapses** (`docs/events_todo.md`, 95): `villager_collapses`, stages 4 and 5: a
+  villager falls dead on their screen alone, the game's death event sent to them, held still on the
+  server; a minute on, when they look away, it is sent to them again whole and let go (`fake_death`,
+  ABI 54; the held mobs' tag and sweep keep one from being left frozen). Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

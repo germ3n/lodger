@@ -127,6 +127,19 @@ public final class Executors {
 				case "snap_branch" -> snapBranch(level, command, id, context);
 				case "fell_tree" -> fellTree(level, command, id, context);
 				case "panic" -> panic(level, command, id, context);
+				case "fake_death" -> {
+					Entity entity = level.getEntity(command.get("entity").getAsInt());
+					Mob mob = entity == null ? null : Senses.mob(entity);
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (mob == null || player == null) {
+						yield report(id, false, mob == null ? "no mob with that id here" : "the player is not here");
+					}
+					if (mob.entityTags().contains(Warps.TAG) || mob.entityTags().contains(Holds.TAG)) {
+						yield report(id, false, "the mob is held or warped");
+					}
+					context.holds().collapse(mob, player, command.get("seconds").getAsFloat());
+					yield report(id, true, "");
+				}
 				case "drop_kept" -> dropKept(level, command, id, data);
 				case "rename_item" -> renameItem(level, command, id);
 				case "sign_book" -> signBook(level, command, id);

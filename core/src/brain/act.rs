@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The villager nearest them, six to twenty-four blocks off: where it falls.
+        Action::VillagerCollapses => collapsing_villager(memory).map(|c| block_of(c.pos)),
         // Forty blocks out of the village, toward its place, or away from the target's home.
         Action::VillagersWalkOut => memory.feature("village").map(|v| {
             let toward = memory
@@ -1766,6 +1768,17 @@ const TREE_FIGURE: u32 = 63;
 /// The figure drawn to their light (`drawn_to_the_light`), and how far off it starts.
 const DRAWN_FIGURE: u32 = 62;
 const DRAWN_FROM: f64 = 45.0;
+/// The villager to fall (`villager_collapses`): the nearest six to twenty-four blocks from them.
+fn collapsing_villager(memory: &Memory) -> Option<&crate::memory::Creature> {
+    let at = block_of(memory.last.pos);
+    memory
+        .last
+        .creatures_near
+        .iter()
+        .filter(|c| c.kind == "villager" && (6.0..=24.0).contains(&distance(block_of(c.pos), at)))
+        .min_by(|a, b| distance(block_of(a.pos), at).total_cmp(&distance(block_of(b.pos), at)))
+}
+
 /// The villager to spin (`villager_spins`): the nearest twelve to thirty blocks from them, off
 /// at a distance to be seen turning, not one at their elbow.
 fn spinning_villager(memory: &Memory) -> Option<&crate::memory::Creature> {
@@ -6419,6 +6432,21 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // It falls dead before them, the game's own death, on their screen alone; a minute on,
+        // when they look away, it is up and about.
+        Action::VillagerCollapses => collapsing_villager(memory)
+            .map(|villager| {
+                vec![(
+                    Command::FakeDeath {
+                        id: ids(),
+                        entity: villager.id,
+                        player: target,
+                        seconds: 60.0,
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         // Every villager near them walks out to the one place, a few seconds apart, single file;
         // let go there (or after twenty seconds), they go home to their beds of themselves.
         Action::VillagersWalkOut => pos
@@ -9867,6 +9895,7 @@ mod tests {
                 || event.id == "trees_close_behind"
                 // A villager off a way, which this memory has not: its own test.
                 || event.id == "villager_spins"
+                || event.id == "villager_collapses"
             {
                 continue;
             }
@@ -14483,5 +14512,24 @@ mod tests {
             assert_eq!(*later, i as u64 * 30, "single file");
             assert!(matches!(command, Command::Approach { to: Some(to), .. } if to[2] == 40.5));
         }
+    }
+
+    #[test]
+    fn a_villager_falls_dead_before_them_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.creatures_near = vec![crate::memory::Creature {
+            id: 7,
+            kind: "villager".to_string(),
+            pos: [10.5, 64.0, 0.5],
+            ..Default::default()
+        }];
+        let event = find("villager_collapses").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::FakeDeath { entity: 7, seconds, .. }, 0)] if *seconds == 60.0),
+            "{made:?}"
+        );
     }
 }

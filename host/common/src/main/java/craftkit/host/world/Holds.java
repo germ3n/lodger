@@ -69,6 +69,69 @@ public final class Holds {
 	private final List<Hold> active = new ArrayList<>();
 	private long tick;
 
+	/** A mob dead on one player's screen alone (`fake_death`, ABI 54): held still on the server until it rises. */
+	private record Collapse(Mob mob, UUID player, long untilTick) {
+	}
+
+	private final List<Collapse> collapses = new ArrayList<>();
+
+	/**
+	 * The mob falls dead on {@code player}'s screen alone, the game's own death and its sound,
+	 * held still on the server meanwhile; after {@code seconds}, the first moment they are not
+	 * looking, it is sent to them again whole, as it is, and let go. Nothing is harmed.
+	 */
+	public void collapse(Mob mob, ServerPlayer player, float seconds) {
+		if (!mob.entityTags().contains(TAG)) {
+			if (mob.isNoAi()) {
+				mob.addTag(TAG_STILL);
+			}
+			mob.addTag(TAG);
+		}
+		mob.setNoAi(true);
+		mob.getNavigation().stop();
+		mob.setDeltaMovement(Vec3.ZERO);
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(mob, (byte) 3));
+		collapses.add(new Collapse(mob, player.getUUID(), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20)));
+	}
+
+	/** Each fallen mob, once its time is up and they look away: whole again on their screen, and let go. */
+	private void tickCollapses(MinecraftServer server) {
+		Iterator<Collapse> it = collapses.iterator();
+		while (it.hasNext()) {
+			Collapse each = it.next();
+			Mob mob = each.mob();
+			ServerPlayer player = server.getPlayerList().getPlayer(each.player());
+			if (mob.isRemoved() || player == null) {
+				release(mob);
+				it.remove();
+				continue;
+			}
+			if (tick < each.untilTick()) {
+				continue;
+			}
+			Vec3 to = mob.position().add(0, 1, 0).subtract(player.getEyePosition());
+			Vec3 view = player.getViewVector(1f);
+			if (player.level() == mob.level() && WarpMath.lookedAt(view.x, view.y, view.z, to.x, to.y, to.z)) {
+				continue;
+			}
+			// Sent again, as the game sends a mob coming into view: the body gone, the mob there.
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket(mob.getId()));
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(mob.getId(), mob.getUUID(), mob.getX(), mob.getY(), mob.getZ(),
+					mob.getXRot(), mob.getYRot(), mob.getType(), 0, Vec3.ZERO, mob.getYHeadRot()));
+			var data = mob.getEntityData().getNonDefaultValues();
+			if (data != null && !data.isEmpty()) {
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(mob.getId(), data));
+			}
+			release(mob);
+			it.remove();
+		}
+	}
+
+	/** Whether a mob is fallen on someone's screen. */
+	private boolean collapsed(Mob mob) {
+		return collapses.stream().anyMatch(c -> c.mob() == mob);
+	}
+
 	/** Holds a mob for a player; a mob already held is held for the new time. */
 	public void add(Mob mob, ServerPlayer player, float seconds) {
 		add(mob, player, seconds, null);
@@ -123,6 +186,7 @@ public final class Holds {
 
 	public void tick(MinecraftServer server) {
 		tick++;
+		tickCollapses(server);
 		Iterator<Hold> it = active.iterator();
 		while (it.hasNext()) {
 			Hold hold = it.next();
@@ -174,7 +238,7 @@ public final class Holds {
 		if (tick % SWEEP_EVERY == 0) {
 			for (ServerLevel level : server.getAllLevels()) {
 				for (Entity entity : level.getAllEntities()) {
-					if (entity instanceof Mob mob && mob.entityTags().contains(TAG) && active.stream().noneMatch(h -> h.mob() == mob)) {
+					if (entity instanceof Mob mob && mob.entityTags().contains(TAG) && active.stream().noneMatch(h -> h.mob() == mob) && !collapsed(mob)) {
 						release(mob);
 					}
 				}
@@ -184,6 +248,13 @@ public final class Holds {
 
 	/** Lets every mob in a level go: it is about to be saved and closed. */
 	public void releaseIn(ServerLevel level) {
+		collapses.removeIf(c -> {
+			if (c.mob().level() == level) {
+				release(c.mob());
+				return true;
+			}
+			return false;
+		});
 		active.removeIf(hold -> {
 			if (hold.mob().level() == level) {
 				release(hold.mob());
