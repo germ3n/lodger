@@ -247,6 +247,8 @@ pub enum Need {
     BabyNear,
     /// A diamond ore they have just broken: met only then (`ore_counted`).
     MinedDiamond,
+    /// A mob of this kind near them, a creature or a hostile (the Nether's and the End's).
+    MobNear(&'static str),
     /// Where they last died is in sight: twelve to sixty-four blocks from them.
     NearTheirDeath,
     /// Down a shaft of their ladders, six blocks or more below its top.
@@ -306,6 +308,7 @@ impl Need {
                 | Need::PetOf(_)
                 | Need::BabyNear
                 | Need::MinedDiamond
+                | Need::MobNear(_)
                 | Need::TargetInBed
                 | Need::TargetSaid
                 | Need::Heard
@@ -491,6 +494,7 @@ impl Need {
             Need::PetOf(kind) => format!("no {} of theirs near", kind.replace('_', " ")),
             Need::BabyNear => "no young animal near them".to_string(),
             Need::MinedDiamond => "happens only as they mine a diamond".to_string(),
+            Need::MobNear(kind) => format!("no {} near them", kind.replace('_', " ")),
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetSwimming => "the target is not swimming".to_string(),
@@ -1258,6 +1262,8 @@ pub enum Action {
     ArrowReturned,
     /// Crouched at a ledge's edge, a tug toward the drop, a little; never over.
     EdgeTug,
+    /// In the Nether, every piglin near them stopping to watch them a few seconds; none turns on them.
+    PiglinsStare,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7857,6 +7863,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("false_glint", 90.0),
         false,
     ),
+    // docs/events_todo.md, 266: in the Nether, every piglin near them stops and watches them.
+    row(
+        "piglins_stare",
+        3,
+        5,
+        &[InNether, MobNear("piglin")],
+        1.0,
+        3,
+        Half,
+        Action::PiglinsStare,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8489,6 +8507,7 @@ impl Event {
             | Action::SnowballComesBack
             | Action::ArrowReturned
             | Action::EdgeTug
+            | Action::PiglinsStare
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9073,6 +9092,7 @@ impl Event {
             "red_petals" => "let red petals fall round them",
             "sculk_trail" => "creep sculk's charge along the floor to their bed",
             "false_glint" => "make the thing in their hand shimmer as if enchanted",
+            "piglins_stare" => "make every piglin near them stop and watch them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

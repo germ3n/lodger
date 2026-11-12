@@ -2953,6 +2953,12 @@ The `[x]` lines above, summed up by day:
   their client (the `false_glint` hint, `ItemStackFoilMixin`; off with the glitches). Tests: one in
   `act`. Was: no such event.
 
+- [x] **The piglins stare** (`docs/events_todo.md`, 266): `piglins_stare`, stages 3 to 5, in the
+  Nether with piglins near: every piglin near them held eight seconds facing them (`hold`; the first
+  of the new Nether rows, and `elsewhere` now chooses among the rows whose needs that world meets,
+  keeping their waits; a new passing need, `MobNear`). Tests: one in `act`, one in `elsewhere`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

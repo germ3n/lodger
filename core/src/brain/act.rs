@@ -302,6 +302,45 @@ const LEATHER_BLACK: u32 = 0x1D1D21;
 /// How hard `edge_tug` tugs them toward the drop, blocks a tick: a nudge their crouch holds.
 const EDGE_TUG: f64 = 0.12;
 
+/// The mobs of a kind near them, creatures and hostiles both (the Nether's piglins are hostile).
+fn mobs_near<'a>(
+    memory: &'a Memory,
+    kind: &'a str,
+) -> impl Iterator<Item = &'a crate::memory::Creature> + 'a {
+    memory
+        .last
+        .creatures_near
+        .iter()
+        .chain(memory.last.hostiles_near.iter())
+        .filter(move |c| c.kind == kind)
+}
+
+/// Every mob of a kind near them held facing them a while: the Nether's and the End's watchers.
+fn hold_kind(
+    ids: &mut impl FnMut() -> u64,
+    memory: &Memory,
+    target: u32,
+    kind: &str,
+    seconds: f32,
+) -> Vec<(Command, u64)> {
+    mobs_near(memory, kind)
+        .map(|m| {
+            (
+                Command::Hold {
+                    id: ids(),
+                    entity: m.id,
+                    player: target,
+                    seconds,
+                    at: None,
+                    creep: false,
+                    spin: false,
+                },
+                0,
+            )
+        })
+        .collect()
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -793,6 +832,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SnowballComesBack
         | Action::ArrowReturned
         | Action::EdgeTug
+        | Action::PiglinsStare
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9346,6 +9386,8 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 266.
+        Action::PiglinsStare => hold_kind(ids, memory, target, "piglin", 8.0),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13226,6 +13268,8 @@ mod tests {
                 || event.id == "bundle_gains"
                 // Leather armour in the chest they use, which this memory has not: its own test.
                 || event.id == "leather_dyed"
+                // In the Nether or the End, whose mobs this memory has not: their own tests.
+                || event.id == "piglins_stare"
             {
                 continue;
             }
@@ -21161,6 +21205,33 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "false_glint" && *seconds == 90.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn piglins_stare_holds_every_piglin_near_them() {
+        let mut memory = rich_memory();
+        memory.last.hostiles_near.push(Creature {
+            id: 401,
+            kind: "piglin".to_string(),
+            pos: [6.0, 64.0, 2.0],
+            ..Creature::default()
+        });
+        let event = find("piglins_stare").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(
+                &made[..],
+                [(
+                    Command::Hold {
+                        entity: 401,
+                        at: None,
+                        ..
+                    },
+                    0
+                )]
+            ),
             "{made:?}"
         );
     }

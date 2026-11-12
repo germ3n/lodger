@@ -149,6 +149,11 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::PetOf(kind) => memory.pets().any(|p| p.kind == kind),
         Need::BabyNear => last.creatures_near.iter().any(|c| c.baby && !c.pet),
         Need::MinedDiamond => false,
+        Need::MobNear(kind) => last
+            .creatures_near
+            .iter()
+            .chain(last.hostiles_near.iter())
+            .any(|c| c.kind == kind),
         Need::Copper => memory
             .walls
             .iter()

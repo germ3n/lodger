@@ -336,7 +336,7 @@ yet.
 
 | # | Event | Stage | What happens | Needs | Takes | Size |
 | --- | --- | --- | --- | --- | --- | --- |
-| 266 | `piglins_stare` | 3 | Every piglin near them stops what it is doing and turns to watch them, a few seconds, and goes back to it; none turns on them. | In the Nether, piglins near. | An `elsewhere` row; the piglins held facing them (the hold `cattle_turn_away` would use). | M |
+| 266 | `piglins_stare` | 3 | **Built (eight seconds, every one near them).** Every piglin near them stops what it is doing and turns to watch them, a few seconds, and goes back to it; none turns on them. | In the Nether, piglins near. | An `elsewhere` row; the piglins held facing them (the hold `cattle_turn_away` would use). | M |
 | 267 | `barter_from_home` | 4 | A piglin they barter with throws back, among its usual things, one thing of theirs from their chest at home; it is gone from the chest. | In the Nether, bartering, a chest of theirs at home with something in it. | The bartered drop's trigger; `take_item` from the home chest by way of `elsewhere`, the item dropped by the piglin. | L |
 | 268 | `strider_turns_home` | 4 | The strider they ride stops answering the rod and walks a while the way their house would be, scaled to the Nether, then answers again. | In the Nether, riding a strider. | The strider steered toward home's x and z over eight, a few seconds, against their rod. | M |
 | 269 | `ghast_watches` | 3 | A ghast near them stops firing and goes quiet, drifting at the same distance, looking at them, a minute. | In the Nether, a ghast near. | The ghast's attack held and its sounds muted, facing them. | M |

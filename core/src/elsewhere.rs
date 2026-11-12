@@ -15,6 +15,7 @@ use craftkit::world::{Command, Now};
 pub const ROWS: &[(&str, &str)] = &[
     ("ghast_name", "minecraft:the_nether"),
     ("ender_holds", "minecraft:the_end"),
+    ("piglins_stare", "minecraft:the_nether"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
@@ -81,13 +82,25 @@ impl Stay {
         }
     }
 
-    /// Another dimension's side: with the target here and one of its events allowed, now and
-    /// then, that event.
+    /// Another dimension's side: what waits a moment sent at its time; and with the target here,
+    /// now and then, one of its events the overworld allows whose needs this world meets, chosen
+    /// among them.
     pub fn tick_elsewhere(&mut self, now: &Now, shared: &mut Elsewhere) -> Vec<Command> {
         self.ticks += 1;
         self.last_now = now.clone();
+        let mut out: Vec<Command> = Vec::new();
+        let mut waiting = std::mem::take(&mut self.waiting);
+        waiting.retain(|(due, command)| {
+            if *due <= now.tick {
+                out.push(command.clone());
+                false
+            } else {
+                true
+            }
+        });
+        self.waiting = waiting;
         if !now.tick.is_multiple_of(20) || shared.target.is_none() {
-            return Vec::new();
+            return out;
         }
         if self.memory.target != shared.target || self.memory.target_uuid != shared.target_uuid {
             if let Some(index) = shared.target {
@@ -95,30 +108,25 @@ impl Stay {
                     .set_target(index, &shared.name.clone(), &shared.target_uuid.clone());
             }
             self.memory.last = Default::default();
-            return Vec::new();
+            return out;
         }
         if !self.memory.last.online {
-            return Vec::new();
+            return out;
         }
         let world = self.world.clone();
-        let Some(&(id, _)) = ROWS
+        let ready: Vec<&'static str> = ROWS
             .iter()
-            .find(|(id, w)| *w == world && shared.allowed.contains(id))
-        else {
-            return Vec::new();
-        };
-        let near = id != "ender_holds"
-            || self
-                .memory
-                .last
-                .hostiles_near
-                .iter()
-                .any(|m| m.kind == "enderman");
-        if !near || self.brain.rng.next_f64() >= CHANCE_A_SECOND {
-            return Vec::new();
+            .filter(|(id, w)| {
+                *w == world && shared.allowed.contains(id) && self.meets_here(id, now)
+            })
+            .map(|(id, _)| *id)
+            .collect();
+        if ready.is_empty() || self.brain.rng.next_f64() >= CHANCE_A_SECOND {
+            return out;
         }
+        let id = ready[(self.brain.rng.next_u64() % ready.len() as u64) as usize];
         let Some(event) = events::find(id) else {
-            return Vec::new();
+            return out;
         };
         self.memory.target_name = shared.name.clone();
         let mut next = self.ticks.wrapping_mul(1000);
@@ -126,21 +134,49 @@ impl Stay {
             next += 1;
             next
         };
+        let pos = crate::brain::act::place(event, &self.memory, &mut self.brain.rng);
         let made = crate::brain::act::commands(
             event,
-            None,
+            pos,
             &self.memory,
             &mut ids,
             now,
             shared.block.as_deref(),
         );
         if made.is_empty() {
-            return Vec::new();
+            return out;
         }
         shared.allowed.retain(|a| *a != id);
         shared.done.push((id, world));
-        // What waits a moment goes with the rest: another dimension's stay keeps no later.
-        made.into_iter().map(|(command, _)| command).collect()
+        for (command, delay) in made {
+            if delay == 0 {
+                out.push(command);
+            } else {
+                self.waiting.push((now.tick + delay, command));
+            }
+        }
+        out
+    }
+
+    /// Whether this world meets an event's needs as they are here, the dimension's own need
+    /// aside: an enderman near for `ender_holds`, piglins near for the piglins' stare.
+    fn meets_here(&self, id: &str, now: &Now) -> bool {
+        let Some(event) = events::find(id) else {
+            return false;
+        };
+        let enderman = id != "ender_holds"
+            || self
+                .memory
+                .last
+                .hostiles_near
+                .iter()
+                .any(|m| m.kind == "enderman");
+        enderman
+            && event
+                .needs
+                .iter()
+                .filter(|n| !matches!(n, events::Need::InNether | events::Need::InEnd))
+                .all(|n| crate::brain::offer::meets(*n, &self.memory, now))
     }
 }
 
@@ -183,9 +219,13 @@ mod tests {
             ..Now::default()
         };
         home.share(&now, &config, &mut shared);
-        assert_eq!(
-            shared.allowed,
-            vec!["ghast_name"],
+        assert!(
+            shared.allowed.contains(&"ghast_name"),
+            "{:?}",
+            shared.allowed
+        );
+        assert!(
+            !shared.allowed.contains(&"ender_holds"),
             "no block of theirs: no enderman"
         );
         assert_eq!(shared.target, Some(0));
@@ -193,6 +233,7 @@ mod tests {
         // In the Nether, the target there: now and then, their name in the ghasts' cries.
         let mut nether = stay("minecraft:the_nether");
         let mut sent = Vec::new();
+        let mut sent_at = 0;
         for i in 0..20_000u64 {
             let at = Now {
                 tick: 40 + i * 20,
@@ -200,6 +241,7 @@ mod tests {
             };
             nether.observe(&player_at([0.0, 70.0, 0.0]), 0.0);
             sent = nether.tick_elsewhere(&at, &mut shared);
+            sent_at = at.tick;
             if !sent.is_empty() {
                 break;
             }
@@ -209,11 +251,26 @@ mod tests {
                 if hint == "ghast_name" && detail == "Player612" && *seconds == 300.0),
             "{sent:?}"
         );
+        // Its cry a moment on, at the time the event gives it (until now every command went at
+        // once, the waits dropped).
+        let mut later = Vec::new();
+        for i in 1..400u64 {
+            later.extend(nether.tick_elsewhere(
+                &Now {
+                    tick: sent_at + i,
+                    ..Now::default()
+                },
+                &mut shared,
+            ));
+        }
         assert!(
-            matches!(&sent[1], Command::PlaySound { sound, .. } if sound.ends_with("ghast.ambient"))
+            sent.iter()
+                .chain(later.iter())
+                .any(|c| matches!(c, Command::PlaySound { sound, .. } if sound.ends_with("ghast.ambient"))),
+            "{sent:?} {later:?}"
         );
         assert!(
-            shared.allowed.is_empty(),
+            !shared.allowed.contains(&"ghast_name"),
             "once, until the overworld says again"
         );
 
@@ -225,6 +282,65 @@ mod tests {
             !shared.allowed.contains(&"ghast_name"),
             "the same as the last event: {:?}",
             shared.allowed
+        );
+    }
+
+    #[test]
+    fn the_nether_chooses_among_what_its_world_meets_and_nothing_without_it() {
+        let mut config = Config::default();
+        config.events.cooldown_scale = 0.0;
+        let mut home = stay("minecraft:overworld");
+        home.memory.target = Some(0);
+        home.memory.target_name = "Player612".to_string();
+        home.arc.stage = 3;
+        let mut shared = Elsewhere::default();
+        home.share(&Now::default(), &config, &mut shared);
+        assert!(
+            shared.allowed.contains(&"piglins_stare"),
+            "{:?}",
+            shared.allowed
+        );
+        shared.allowed = vec!["piglins_stare"];
+
+        let mut nether = stay("minecraft:the_nether");
+        let tick = |nether: &mut Stay, shared: &mut Elsewhere, seen: &Observations, from: u64| {
+            for i in 0..4_000u64 {
+                nether.observe(seen, 0.0);
+                let sent = nether.tick_elsewhere(
+                    &Now {
+                        tick: from + i * 20,
+                        ..Now::default()
+                    },
+                    shared,
+                );
+                if !sent.is_empty() {
+                    return sent;
+                }
+            }
+            Vec::new()
+        };
+        let alone = player_at([0.0, 70.0, 0.0]);
+        assert!(
+            tick(&mut nether, &mut shared, &alone, 20).is_empty(),
+            "no piglin near: nothing"
+        );
+
+        let mut with = player_at([0.0, 70.0, 0.0]);
+        with.entities = vec![Entity {
+            id: 901,
+            kind: "minecraft:piglin".to_string(),
+            pos: [6.0, 70.0, 0.0],
+            hostile: true,
+            ..Entity::default()
+        }];
+        let sent = tick(&mut nether, &mut shared, &with, 100_000);
+        assert!(
+            matches!(&sent[..], [Command::Hold { entity: 901, .. }]),
+            "{sent:?}"
+        );
+        assert_eq!(
+            shared.done,
+            vec![("piglins_stare", "minecraft:the_nether".to_string())]
         );
     }
 

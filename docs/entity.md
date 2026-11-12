@@ -449,6 +449,21 @@ Offered with water within 32 blocks of the home or the route.
 | `wet_steps` | 3 | Wet steps and a drip with each walk from the door they use to their bed while they are inside. Owner's pick. | A bed and a door, the target indoors. |
 | `drip` | 1 | Dripping water, indoors, with no water near. | The target indoors. |
 
+### The Nether and the End
+
+Done there by the other dimension's own stay, on the overworld's word (`crate::elsewhere`): the
+overworld's rules, caps and budget say which may happen, the stay there picks among those whose
+needs it meets as it stands (who is near, what they hold), and the overworld counts what was
+done on its next tick. `ghast_name` and `ender_holds` are under Water and boats and Mines and
+caves, from before.
+
+| Event | Stages | What happens | Needs |
+| --- | --- | --- | --- |
+| `piglins_stare` | 3 to 5 | In the Nether, every piglin near them stops what it is doing and turns to watch them, eight seconds, still, and then goes back to it; none turns on them for it (`hold`). | In the Nether, a piglin near them. |
+
+The figure follows them there only in the events that say so (the owner's call, against the old
+line that it stays on this side).
+
 ### Snow, sand and weather
 
 | Event | Stages | What happens | Needs |

@@ -51,6 +51,10 @@ pub struct Stay {
     /// world first (`Mod::spares`), then a `spare` command whenever the setting moves.
     #[serde(skip)]
     pub spare_told: Option<bool>,
+    /// Another dimension's commands that wait a moment (`crate::elsewhere`), each with the host
+    /// tick it is due at. Not saved: a quit drops what was still to come.
+    #[serde(skip)]
+    pub waiting: Vec<(u64, craftkit::world::Command)>,
 }
 
 /// The first bincode layout's leading fields, which formats 1 and 2 both began with.
