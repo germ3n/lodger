@@ -66,6 +66,9 @@ import java.util.Set;
  *       named "behind you" in an empty slot for three seconds ({@code InventoryScreenMixin}).</li>
  *   <li>{@code border_closes}: the world border on their client drawn close round them, then
  *       put back as it was.</li>
+ *   <li>{@code shadow_on_the_wall}: while they hold a light indoors, a person's shadow on the
+ *       wall behind them ({@link Silhouette}), gone for good once they turn to it.</li>
+ *   <li>{@code nightmare}: one frame of their own face, the figure's, filling the screen.</li>
  *   <li>{@code static}: a second of grey noise over the screen and a hiss.</li>
  *   <li>{@code elder_face}: the elder guardian's face over the screen and its cry, as the game
  *       shows it, no curse.</li>
@@ -405,6 +408,12 @@ public final class Glitches {
 								at.x + random.nextDouble() * 4 - 2, at.y + 3 + random.nextDouble() * 3, at.z + random.nextDouble() * 4 - 2, 0, 0.1, 0);
 					}
 				}));
+				// A person's shadow on the wall behind them, cast by the light they hold.
+				case "shadow_on_the_wall" -> {
+					if (!DONE_ONCE.contains(active.id()) && minecraft.level.getGameTime() % 3 == 0) {
+						shadow(minecraft, active);
+					}
+				}
 				// Red specks from the door to the bed, on the floor, every half second.
 				case "red_trail" -> {
 					if (minecraft.level.getGameTime() % 10 == 0) {
@@ -567,6 +576,16 @@ public final class Glitches {
 					}
 				}
 				case "lightning_silent" -> fill(graphics, width, height, 0xFFFFFF, progress < 0.3f ? 0.8f : 0.8f * (1 - progress));
+				// Their own face, the figure's, over the whole screen for a frame or two.
+				case "nightmare" -> {
+					var player = Minecraft.getInstance().player;
+					if (player != null) {
+						fill(graphics, width, height, 0x000000, 1f);
+						int size = Math.max(width, height);
+						net.minecraft.client.gui.components.PlayerFaceExtractor.extractRenderState(graphics, player.getSkin(),
+								(width - size) / 2, (height - size) / 2, size);
+					}
+				}
 				// Grey noise, new each frame, in blocks of four.
 				case "static" -> {
 					var random = java.util.concurrent.ThreadLocalRandom.current();
@@ -588,6 +607,44 @@ public final class Glitches {
 				default -> {
 				}
 			}
+		}
+	}
+
+	/**
+	 * The shadow behind them: on the first wall straight back from them, within eight blocks,
+	 * dark dust in a person's outline facing them; only while they hold a light, and gone for
+	 * good once they look round at it.
+	 */
+	private static void shadow(Minecraft minecraft, Hints.Active active) {
+		var player = minecraft.player;
+		String held = craftkit.host.senses.Senses.itemId(player.getMainHandItem()) + " " + craftkit.host.senses.Senses.itemId(player.getOffhandItem());
+		if (!held.contains("torch") && !held.contains("lantern")) {
+			return;
+		}
+		Vec3 look = player.getViewVector(1f);
+		Vec3 back = new Vec3(-look.x, 0, -look.z).normalize();
+		Vec3 feet = player.position();
+		Vec3 wall = null;
+		for (double d = 1; d <= 8; d += 0.25) {
+			Vec3 at = feet.add(back.scale(d)).add(0, 1, 0);
+			net.minecraft.core.BlockPos block = net.minecraft.core.BlockPos.containing(at);
+			if (!minecraft.level.getBlockState(block).getCollisionShape(minecraft.level, block).isEmpty()) {
+				wall = feet.add(back.scale(d - 0.3));
+				break;
+			}
+		}
+		if (wall == null) {
+			return;
+		}
+		Vec3 toWall = wall.subtract(player.getEyePosition());
+		if (look.dot(toWall.normalize()) > 0.3) {
+			DONE_ONCE.add(active.id());
+			return;
+		}
+		Vec3 across = new Vec3(-back.z, 0, back.x);
+		for (double[] p : Silhouette.points()) {
+			minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x050505, 0.9f),
+					wall.x + across.x * p[0], feet.y + p[1], wall.z + across.z * p[0], 0, 0, 0);
 		}
 	}
 

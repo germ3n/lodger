@@ -2563,6 +2563,28 @@ public final class Executors {
 			}
 		} else if (seconds > 0) {
 			context.temporaries().add(entity, seconds);
+			// A stand for a while wearing what it is given (ABI 55): unseen itself, the things on
+			// it never theirs to take, and it never breaks (`boots_at_the_door`).
+			if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand stand && command.has("wears") && command.get("wears").isJsonArray()) {
+				for (JsonElement worn : command.getAsJsonArray("wears")) {
+					BuiltInRegistries.ITEM.get(Identifier.parse(worn.getAsString())).ifPresent(item -> {
+						ItemStack piece = new ItemStack(item.value());
+						stand.setItemSlot(stand.getEquipmentSlotForItem(piece), piece);
+					});
+				}
+				stand.setInvisible(true);
+				stand.setNoBasePlate(true);
+				stand.setPermanentlyInvulnerable(true);
+				try {
+					var disabled = net.minecraft.world.entity.decoration.ArmorStand.class.getDeclaredField("disabledSlots");
+					disabled.setAccessible(true);
+					disabled.setInt(stand, 0x3F3F3F);
+				} catch (ReflectiveOperationException e) {
+					// No lock on its slots: the stand goes rather than give anything away.
+					stand.discard();
+					return report(id, false, "its slots could not be locked");
+				}
+			}
 		}
 		// Still, facing a player, for its time (ABI 30: the shape under the water).
 		if (command.has("face") && !command.get("face").isJsonNull() && entity instanceof net.minecraft.world.entity.Mob mob) {

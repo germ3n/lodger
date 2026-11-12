@@ -1133,6 +1133,12 @@ pub enum Action {
     KillerRabbit(f32),
     /// Their windows frosted white from inside a while.
     FrostOnGlass,
+    /// A flight of stairs up from their floor into the ceiling, going nowhere, gone in a day.
+    StairsToNowhere,
+    /// A face cut into the leaves of a tree by the house, looking at their door.
+    FaceInTheCanopy,
+    /// A pair of boots like theirs standing inside their door, as if someone came in.
+    BootsAtTheDoor,
     /// Far from any village, a villager bangs on their door, runs in and drops dead.
     VillagerFleesIn,
     /// Every sound they hear goes wrong a while, one way of four.
@@ -6367,6 +6373,67 @@ pub const CATALOGUE: &[Event] = &[
         Action::FrostOnGlass,
         false,
     ),
+    // docs/events_todo.md, 148: indoors at night, a shadow of a person on the wall behind them
+    // cast by the light they hold, gone when they turn.
+    row(
+        "shadow_on_the_wall",
+        4,
+        5,
+        &[TargetIndoors, Night],
+        2.0,
+        2,
+        Half,
+        Action::Hint("shadow_on_the_wall", 20.0),
+        false,
+    ),
+    // docs/events_todo.md, 158: overnight, stairs up from their floor into the ceiling.
+    row(
+        "stairs_up_to_nowhere",
+        4,
+        5,
+        &[Home, Walls, TargetAwayOrAsleep],
+        2.0,
+        2,
+        Half,
+        Action::StairsToNowhere,
+        false,
+    ),
+    // docs/events_todo.md, 159: a face cut into the leaves of a tree by the house.
+    row(
+        "face_in_the_canopy",
+        4,
+        5,
+        &[Home, Door, TargetAwayOrAsleep],
+        2.0,
+        1,
+        Half,
+        Action::FaceInTheCanopy,
+        false,
+    ),
+    // docs/events_todo.md, 161: coming home, boots like theirs just inside the door.
+    row(
+        "boots_at_the_door",
+        4,
+        5,
+        &[Home, Door, TargetApproachingDoor],
+        2.0,
+        2,
+        Half,
+        Action::BootsAtTheDoor,
+        false,
+    ),
+    // docs/events_todo.md, 163: as they wake, one frame of the figure's face fills the screen.
+    row(
+        "nightmare",
+        5,
+        5,
+        &[JustWoke],
+        2.0,
+        2,
+        Full,
+        Action::Hint("nightmare", 0.15),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -6747,6 +6814,9 @@ impl Event {
             | Action::SnowShape
             | Action::ColdHouse
             | Action::FrostOnGlass
+            | Action::StairsToNowhere
+            | Action::FaceInTheCanopy
+            | Action::BootsAtTheDoor
             | Action::PathWorn
             | Action::CarpetShift
             | Action::Cauldron
@@ -7439,6 +7509,11 @@ impl Event {
             "phantom_item" => "slip a strange paper into their inventory a moment",
             "border_closes" => "close the world's edge round them a moment",
             "frost_on_the_glass" => "frost their windows over from inside",
+            "shadow_on_the_wall" => "cast a shadow of someone on the wall behind them",
+            "stairs_up_to_nowhere" => "build stairs from their floor into the ceiling",
+            "face_in_the_canopy" => "cut a face into the leaves of a tree by the house",
+            "boots_at_the_door" => "stand a pair of boots like theirs inside the door",
+            "nightmare" => "flash the figure's face at them as they wake",
             "elder_face" => "show them the elder guardian's face",
             "boom_far" => "set off a far explosion from the way of its place",
             "red_rain" => "turn the rain red",

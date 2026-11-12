@@ -2346,6 +2346,14 @@ The `[x]` lines above, summed up by day:
   off, temper resting at 0.6, the death at the end on every difficulty. In the settings' preset
   choice. Tests: in `config`.
 
+- [x] **Five more of the fifty** (`docs/events_todo.md` 148, 158, 159, 161, 163). Was: no such
+  events. Now `shadow_on_the_wall` (a person's shadow behind them while they hold a light,
+  `Silhouette`), `stairs_up_to_nowhere` (oak stairs up an inside wall into the ceiling, gone a day
+  on), `face_in_the_canopy` (eyes and a mouth cut in the leaves of the tree nearest the house,
+  facing the door), `boots_at_the_door` (boots like theirs on an unseen locked stand inside the
+  door, ABI 55) and `nightmare` (a frame of their own face over the screen as they wake). Tests:
+  in `act`, `SilhouetteTest`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -250,6 +250,9 @@ The senses report every mob the target hits and kills, and the memory keeps a ta
 | `snow_shape` | 4 | In the snow by the house, a hollow the shape of a person lying with their arms out, the snow layer taken off where it lay, as if one lay there all night. | A home in snow, the target away or asleep. |
 | `cold_house` | 4 | The house goes cold a minute: their breath shows in puffs before their face, and frost lies on a few blocks of the floor, gone with it (`cold_breath`, a client hint, and snow it lays and takes away again). | A home, the target indoors. |
 | `frost_on_the_glass` | 3 | Their windows frost over from inside, every pane white, a minute and a half, though it is not cold; then clear again, the very panes as they were. | A home with windows, the target indoors. |
+| `stairs_up_to_nowhere` | 4 | Overnight, a flight of oak stairs up from their floor along an inside wall of theirs, a step a block, into the ceiling, going nowhere; a day on, gone. | A home, their building, the target away or asleep. |
+| `face_in_the_canopy` | 4 | In the tree nearest the house, the leaves cut away three deep in a face, two eyes and a wide mouth, looking at their door; leaves alone, never the trunk. | A home with a door, a tree within twenty-four blocks, the target away or asleep. |
+| `boots_at_the_door` | 4 | As they come home, just inside the door, a pair of boots like the ones they wear, standing as if someone had just taken them off and come in; five minutes on they are gone. An unseen stand wears them, its things never theirs to take (`place_entity`'s `wears` on a stand, ABI 55). | A home with a door, the target coming to it. |
 | `kill_line` | 3 | A chat line in the target's own name about it, at night: `i saw what you did to the cows`, `the cows remember`, `14 cows`. | Three or more kills of one kind, night. |
 
 ### The house, changed
@@ -564,6 +567,8 @@ seconds and then stops; `events.glitches` turns the group off, with [The screen]
 | `clock_wrong` | 3 | The clock in their hand shows night at noon, a minute and a half (a hook on the clock's face). | Holding a clock, by day. |
 | `phantom_item` | 4 | The first time they open their inventory in the next two minutes, a paper named "behind you" sits in an empty slot, its name under the mouse; three seconds on it is gone, as if it never was (a hook on the inventory screen). | The target awake. |
 | `border_closes` | 5 | The world border's striped red wall stands close round them, seven blocks off on every side, two seconds and a half, as if the world were ending; then it is where it was (on their client alone). | The target awake. |
+| `shadow_on_the_wall` | 4 | Indoors at night, while they hold a torch or a lantern, a person's dark shadow on the wall behind them, as if cast by their light; once they turn to it it is gone for good (`shadow_on_the_wall`, a client hint). | Indoors, night. |
+| `nightmare` | 5 | As they wake, a single frame of the figure's face, their own skin's, fills their screen over black. | Just woken. |
 | `rumble` | 4 | A deep rumble under them, three seconds: the view shakes, hard at first and dying away, and indoors dust falls from the ceiling over them; nothing breaks (`rumble`, a client hint). | The target awake. |
 | `boom_far` | 4 | At night in the open, a far explosion from the way of its place: a flash low on the sky there, the burst seen sixty-four blocks off, the boom coming to them muffled; nothing is harmed (`boom_far`, a client hint at the place it is seen). | Night, the target outdoors, a home. |
 | `night_early` | 4 | The sun, moon and stars stand two hours later than they are, the sky dimmed, for a minute, eased in and out, then right. | The target outdoors by day. |

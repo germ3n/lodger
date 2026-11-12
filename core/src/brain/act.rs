@@ -93,6 +93,15 @@ pub(crate) fn spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     ])
 }
 
+/// The face cut in the canopy, `[across, up]` from the trunk's lowest log: two eyes, a wide
+/// mouth under them.
+const CANOPY_FACE: [[i32; 2]; 5] = [[-1, 5], [1, 5], [-1, 3], [0, 3], [1, 3]];
+
+/// The game's yaw (0 facing +z, 90 facing -x) that looks along dx, dz.
+fn craftkit_yaw(dx: f64, dz: f64) -> f32 {
+    (dz.atan2(dx).to_degrees() - 90.0) as f32
+}
+
 /// A body lying with its arms out, its head at the spot: the cells its shape takes off the snow.
 const SNOW_BODY: &[[i32; 2]] = &[[0, 0], [0, 1], [0, 2], [-1, 1], [1, 1], [-1, 3], [1, 3]];
 
@@ -558,6 +567,22 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             home.map(|h| h.center)
         }
         Action::SnowShape => spot(memory, rng),
+        Action::StairsToNowhere => home.map(|h| h.center),
+        // The tree nearest the house, within twenty-four blocks.
+        Action::FaceInTheCanopy => home.and_then(|h| {
+            memory
+                .trunks
+                .iter()
+                .filter(|t| distance(**t, h.center) <= 24.0)
+                .min_by(|a, b| distance(**a, h.center).total_cmp(&distance(**b, h.center)))
+                .copied()
+        }),
+        // Just inside the door of the house.
+        Action::BootsAtTheDoor => home.and_then(|h| {
+            let door = *h.doors.first()?;
+            let out = out_of_door(memory, h.center, door);
+            Some([door[0] - out[0], door[1], door[2] - out[1]])
+        }),
         Action::FrostOnGlass => windows_of(memory).first().copied(),
         // Eight blocks ahead of them, where they see it sit.
         Action::KillerRabbit(_) => {
@@ -1907,7 +1932,7 @@ fn crumb_stack(chest: &crate::memory::Container) -> Option<&ItemStack> {
         .max_by_key(|s| s.count)
 }
 
-/// The leaves `path_through_the_trees` cuts, every kind the game has.
+/// The leaves `path_through_the_trees` and `face_in_the_canopy` cut, every kind the game has.
 const LEAVES: &[&str] = &[
     "minecraft:oak_leaves",
     "minecraft:spruce_leaves",
@@ -6998,6 +7023,125 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // Along an inside wall of theirs, up from the floor a block a step, into the ceiling: only
+        // into air, so the flight stops where the ceiling is. A day on, gone again.
+        Action::StairsToNowhere => {
+            match (memory.home.as_ref(), inside_walls(memory, 0, 1, 1).first()) {
+                (Some(home), Some(cell)) => {
+                    let base = [cell[0], home.floor_y, cell[2]];
+                    let (way, facing) = match facing_toward_wall(memory, base) {
+                        "east" | "west" => ([0, 1], "south"),
+                        _ => ([1, 0], "east"),
+                    };
+                    let steps: Vec<BlockPos> =
+                        (0..5).map(|i| [way[0] * i, i, way[1] * i]).collect();
+                    let mut made = vec![(
+                        Command::PlaceBlueprint {
+                            id: ids(),
+                            at: base,
+                            parts: steps
+                                .iter()
+                                .map(|at| craftkit::world::BlueprintPart {
+                                    at: *at,
+                                    block: "minecraft:oak_stairs".to_string(),
+                                    state: format!("facing={facing},half=bottom"),
+                                })
+                                .collect(),
+                            replace: vec![],
+                        },
+                        0,
+                    )];
+                    for at in steps {
+                        made.push((
+                            Command::SwapBlock {
+                                id: ids(),
+                                pos: [base[0] + at[0], base[1] + at[1], base[2] + at[2]],
+                                block: "minecraft:air".to_string(),
+                                only: vec!["minecraft:oak_stairs".to_string()],
+                            },
+                            DAY_TICKS,
+                        ));
+                    }
+                    made
+                }
+                _ => vec![],
+            }
+        }
+        // Two eyes and a mouth cut three deep into the leaves on the side of the tree that looks
+        // at their door: leaves alone, never the trunk or anything else.
+        Action::FaceInTheCanopy => match (pos, memory.home.as_ref()) {
+            (Some(trunk), Some(home)) => {
+                let door = home.doors.first().copied().unwrap_or(home.center);
+                let (dx, dz) = (door[0] - trunk[0], door[2] - trunk[2]);
+                let out = if dx.abs() >= dz.abs() {
+                    [dx.signum(), 0]
+                } else {
+                    [0, dz.signum()]
+                };
+                let side = [-out[1], out[0]];
+                let leaves: Vec<String> = LEAVES.iter().map(|l| l.to_string()).collect();
+                let mut made = Vec::new();
+                for depth in 1..=3 {
+                    for [across, up] in CANOPY_FACE {
+                        made.push((
+                            Command::SetBlock {
+                                id: ids(),
+                                pos: [
+                                    trunk[0] + out[0] * depth + side[0] * across,
+                                    trunk[1] + up,
+                                    trunk[2] + out[1] * depth + side[1] * across,
+                                ],
+                                block: "minecraft:air".to_string(),
+                                state: String::new(),
+                                replace: leaves.clone(),
+                                settle: 0,
+                                wall: String::new(),
+                                rest: false,
+                                only: true,
+                            },
+                            0,
+                        ));
+                    }
+                }
+                made
+            }
+            _ => vec![],
+        },
+        // An invisible stand wearing boots like theirs, just inside the door, facing in, five
+        // minutes: never theirs to take.
+        Action::BootsAtTheDoor => match (pos, memory.home.as_ref()) {
+            (Some(inside), Some(home)) => {
+                let boots = memory
+                    .last
+                    .armour
+                    .iter()
+                    .find(|a| a.ends_with("_boots"))
+                    .cloned()
+                    .unwrap_or_else(|| "minecraft:leather_boots".to_string());
+                let door = home.doors.first().copied().unwrap_or(inside);
+                let (dx, dz) = (inside[0] - door[0], inside[2] - door[2]);
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:armor_stand".to_string(),
+                        pos: [
+                            inside[0] as f64 + 0.5,
+                            inside[1] as f64,
+                            inside[2] as f64 + 0.5,
+                        ],
+                        yaw: craftkit_yaw(dx as f64, dz as f64),
+                        seconds: 300.0,
+                        kept: String::new(),
+                        face: None,
+                        targets: None,
+                        harm: 0.0,
+                        wears: vec![boots],
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
         // A body's outline in the snow layer by the house, lying with its arms out: the snow
         // taken off where it lay, nothing else.
         Action::SnowShape => pos
@@ -11301,6 +11445,47 @@ mod tests {
         let on: Vec<_> = frost.iter().filter(|(_, d)| *d == 0).collect();
         let off: Vec<_> = frost.iter().filter(|(_, d)| *d == 1_800).collect();
         assert!(!on.is_empty() && on.len() == off.len(), "{frost:?}");
+    }
+
+    #[test]
+    fn stairs_into_the_ceiling_a_face_in_the_tree_and_boots_inside_the_door() {
+        let mut memory = rich_memory();
+        memory.trunks = vec![[10, 64, 0], [40, 64, 0]];
+        memory.last.armour = vec!["minecraft:iron_boots".to_string()];
+        let now = Now::default();
+        let made_by = |id: &str, memory: &Memory| {
+            let event = find(id).unwrap();
+            let pos = place(event, memory, &mut Rng::new(1));
+            commands(event, pos, memory, &mut ids(), &now, None)
+        };
+
+        // Up along the wall at (5,65,5): from the floor beside it, a block a step, south.
+        let stairs = made_by("stairs_up_to_nowhere", &memory);
+        assert!(
+            matches!(&stairs[0].0, Command::PlaceBlueprint { at, parts, replace, .. } if *at == [4, 64, 5] && parts.len() == 5 && parts[4].at == [0, 4, 4] && parts[0].state == "facing=south,half=bottom" && replace.is_empty()),
+            "{:?}",
+            stairs[0].0
+        );
+        assert!(stairs[1..].iter().all(|(c, d)| *d == DAY_TICKS && matches!(c, Command::SwapBlock { only, .. } if only == &["minecraft:oak_stairs".to_string()])));
+
+        // The near tree, its leaves alone, the face on the side toward the door.
+        let face = made_by("face_in_the_canopy", &memory);
+        assert_eq!(face.len(), 15, "five cells, three deep");
+        // The door is west of the tree (x 3 against 10): the face is on its west side.
+        assert!(memory.home.as_ref().unwrap().doors[0][0] < 10);
+        assert!(face.iter().all(|(c, _)| matches!(c, Command::SetBlock { pos, replace, only: true, block, .. } if block == "minecraft:air" && replace.iter().all(|r| r.ends_with("_leaves")) && (7..10).contains(&pos[0]) && pos[2].abs() <= 1)), "{face:?}");
+        memory.trunks = vec![[40, 64, 0]];
+        assert!(
+            made_by("face_in_the_canopy", &memory).is_empty(),
+            "no tree near the house"
+        );
+
+        // Their own kind of boots on a stand for a while, inside the door.
+        let boots = made_by("boots_at_the_door", &memory);
+        assert!(
+            matches!(&boots[..], [(Command::PlaceEntity { of, wears, seconds, targets: None, .. }, 0)] if of == "minecraft:armor_stand" && wears == &vec!["minecraft:iron_boots".to_string()] && *seconds == 300.0),
+            "{boots:?}"
+        );
     }
 
     #[test]

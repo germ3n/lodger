@@ -470,7 +470,9 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_zero_f32")]
         harm: f32,
         /// Items it is made to wear and hold, by id, each in the slot it goes in (armour on, a
-        /// tool or a weapon in its hand): new and plain, never dropped. ABI 54.
+        /// tool or a weapon in its hand): new and plain, never dropped. ABI 54. On an armour
+        /// stand for a while (ABI 55) the stand itself is unseen, never breaks, and what it wears
+        /// can never be taken.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         wears: Vec<String>,
     },
