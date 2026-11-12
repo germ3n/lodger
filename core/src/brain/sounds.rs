@@ -1010,6 +1010,23 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 171.
+        "bell_underwater" => {
+            const WAYS: &[Variant] = &[
+                v(&[("minecraft:block.bell.use", 0)], (0.5, 0.6), 0.5, Below),
+                v(
+                    &[
+                        ("minecraft:block.bell.use", 0),
+                        ("minecraft:block.bell.use", 40),
+                    ],
+                    (0.45, 0.5),
+                    0.4,
+                    Below,
+                ),
+                v(&[("minecraft:block.bell.use", 0)], (0.4, 0.45), 0.6, Deep),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1984,6 +2001,7 @@ mod tests {
             "humming_ahead",
             "cart_overhead",
             "ram_on_the_wall",
+            "bell_underwater",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

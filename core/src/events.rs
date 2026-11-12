@@ -5712,6 +5712,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.goat.ram_impact"),
         false,
     ),
+    // docs/events_todo.md, 171.
+    row(
+        "bell_underwater",
+        4,
+        5,
+        &[TargetSwimming],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:block.bell.use"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7211,6 +7223,7 @@ impl Event {
             "steps_counted" => "count their steps in notes, one higher each",
             "cart_overhead" => "roll a minecart through the rock over them",
             "ram_on_the_wall" => "ram the outside of their wall three times",
+            "bell_underwater" => "ring a bell under the water below them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
