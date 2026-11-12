@@ -291,7 +291,7 @@ public final class Worlds {
 
 	private void remember(LoadedMod mod, JsonObject command, JsonObject report) {
 		String kind = command.has("kind") ? command.get("kind").getAsString() : "?";
-		String line = mod.id() + ": " + kind + (report.get("done").getAsBoolean() ? " done" : " not done, " + report.get("reason").getAsString());
+		String line = mod.id() + ": " + kind + craftkit.host.client.debug.Coordinates.placeOf(command) + (report.get("done").getAsBoolean() ? " done" : " not done, " + report.get("reason").getAsString());
 		if (Senses.DEBUG) {
 			Log.LOGGER.info("did: {} {}", line, command);
 		}

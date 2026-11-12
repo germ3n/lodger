@@ -107,8 +107,11 @@ A stay takes weeks of play by design. For development:
   waits for;
   it opens on the Mind tab. Hovering an event shows what it does and needs (the catalogue's
   own row, built into the mind from `docs/entity.md`), its cooldown and cap, and how it went
-  last; any line or plan with a spot in it, `(x,y,z)` or `(x,ground,z)`, is a link that
-  teleports you there. The Senses tab is the host's reading of you (pace, stops, turns,
+  last; every spot written anywhere in the panel, `(x,y,z)` or `(x,ground,z)`, is a link that
+  teleports you there on Shift+click, each spot of a line its own: the plans, the Log tab's lines
+  (each command carried out names where it acted, each event sensed where it happened, the mind's
+  log where a forced event goes), the entities near (the nearest of each kind), and the line at
+  the top after Fire. The Senses tab is the host's reading of you (pace, stops, turns,
   look-backs, backing away, a fear meter, light, health, the clock), the Mind tab the lodger's
   gauges (stage, days in stage, the day's budget, the plans held of how many, decisions, its
   temper with where it rests and what moved it last, whether the model or the rules decide, what

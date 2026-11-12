@@ -249,11 +249,16 @@ public final class DebugScreen extends Screen {
 		graphics.pose().scale(SCALE, SCALE);
 
 		// The header: the title or what just happened, then the tabs.
+		boolean flashing = model.error.isEmpty() && !flash.isEmpty() && System.currentTimeMillis() < flashUntil;
 		String head = !model.error.isEmpty() ? model.error
-				: !flash.isEmpty() && System.currentTimeMillis() < flashUntil ? flash
+				: flashing ? flash
 				: this.title.getString() + (model.mods.size() > 1 ? "  (" + mod + ", click to switch)" : "");
 		int headColour = !model.error.isEmpty() ? RED : !flash.isEmpty() && System.currentTimeMillis() < flashUntil ? YELLOW : WHITE;
 		graphics.text(this.font, trim(head, pw - 2 * PAD), PAD, PAD, headColour);
+		// What just happened names where (owner: "let me click when i fire").
+		if (flashing) {
+			spots(graphics, trim(head, pw - 2 * PAD), PAD, PAD);
+		}
 		if (model.mods.size() > 1) {
 			hits.add(new Hit(PAD, PAD, pw - 2 * PAD, ROW, () -> {
 				int index = (model.mods.indexOf(mod) + 1) % model.mods.size();
@@ -464,7 +469,10 @@ public final class DebugScreen extends Screen {
 	}
 
 	private int line(GuiGraphicsExtractor graphics, int y, String text, int colour) {
-		graphics.text(this.font, trim(text, pw - 2 * PAD - 4), PAD, y, colour);
+		String shown = trim(text, pw - 2 * PAD - 4);
+		graphics.text(this.font, shown, PAD, y, colour);
+		spots(graphics, shown, PAD, y);
+		goTo(graphics, text, PAD, y, pw - 2 * PAD, 10);
 
 		return y + 10;
 	}
@@ -474,6 +482,7 @@ public final class DebugScreen extends Screen {
 		int start = y;
 		for (FormattedCharSequence part : this.font.split(Component.literal(text), pw - 2 * PAD - 4)) {
 			graphics.text(this.font, part, PAD, y, colour);
+			spots(graphics, plain(part), PAD, y);
 			y += 10;
 		}
 		goTo(graphics, text, PAD, start, pw - 2 * PAD, y - start);
@@ -481,22 +490,48 @@ public final class DebugScreen extends Screen {
 		return y;
 	}
 
+	/** A drawn line's characters, for finding the spots in it. */
+	private static String plain(FormattedCharSequence part) {
+		StringBuilder text = new StringBuilder();
+		part.accept((index, style, codePoint) -> {
+			text.appendCodePoint(codePoint);
+			return true;
+		});
+
+		return text.toString();
+	}
+
+	/**
+	 * Each spot written in a drawn line its own link, over its own characters: a line naming two
+	 * places goes to the one clicked. Added before the whole line's link, so it is found first.
+	 */
+	private void spots(GuiGraphicsExtractor graphics, String shown, int x, int y) {
+		for (Coordinates.Found found : Coordinates.findAll(shown)) {
+			int from = x + this.font.width(shown.substring(0, found.start()));
+			int w = this.font.width(shown.substring(found.start(), found.end()));
+			link(graphics, found.spot(), from, y, w, 10);
+		}
+	}
+
 	/**
 	 * A line with a spot in it is a link: underlined under the mouse, Shift+click goes there. A
 	 * plain click does nothing (owner: a stray click put them deep in a cave).
 	 */
 	private void goTo(GuiGraphicsExtractor graphics, String text, int x, int y, int w, int h) {
-		Coordinates.find(text).ifPresent(spot -> {
-			hits.add(new Hit(x, y, w, h, () -> {
-				if (net.minecraft.client.Minecraft.getInstance().hasShiftDown()) {
-					ask("{\"kind\":\"teleport\",\"pos\":" + spot.json() + "}");
-				}
-			}));
-			if (mx >= x && mx < x + w && my >= y && my < y + h) {
-				graphics.fill(x, y + h - 1, x + w, y + h, YELLOW);
-				tooltip = "shift+click: go to " + spot.x() + " " + spot.y().map(String::valueOf).orElse("(the ground)") + " " + spot.z();
+		Coordinates.find(text).ifPresent(spot -> link(graphics, spot, x, y, w, h));
+	}
+
+	private void link(GuiGraphicsExtractor graphics, Coordinates.Spot spot, int x, int y, int w, int h) {
+		hits.add(new Hit(x, y, w, h, () -> {
+			if (net.minecraft.client.Minecraft.getInstance().hasShiftDown()) {
+				ask("{\"kind\":\"teleport\",\"pos\":" + spot.json() + "}");
 			}
-		});
+		}));
+		// The first link under the mouse marks itself; the line's own after it does not.
+		if (tooltip.isEmpty() && mx >= x && mx < x + w && my >= y && my < y + h) {
+			graphics.fill(x, y + h - 1, x + w, y + h, YELLOW);
+			tooltip = "shift+click: go to " + spot.x() + " " + spot.y().map(String::valueOf).orElse("(the ground)") + " " + spot.z();
+		}
 	}
 
 	/** The tooltip, by the mouse and inside the panel: a dark box of wrapped lines. */

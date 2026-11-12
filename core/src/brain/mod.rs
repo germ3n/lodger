@@ -2644,7 +2644,13 @@ impl Brain {
             on: String::new(),
             words_asked: act::text_kind(event).is_none(),
         });
-        log.note(&format!("forced {}", event.id));
+        // Where, so the log's line is a link to it on the debug screen (owner).
+        log.note(&format!(
+            "forced {}{}",
+            event.id,
+            pos.map(|p| format!(" at {}", log::spot_words(p)))
+                .unwrap_or_default()
+        ));
 
         match pos {
             Some(p) => format!(

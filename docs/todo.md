@@ -2301,6 +2301,15 @@ The `[x]` lines above, summed up by day:
   with a y below -1000), the host finding the ground; the view rule and the distance from what
   they built take those blocks at the home's floor.
 
+- [x] **Every spot in the debug panel is a link** (owner: "make EVERY place with coordinates in
+  the ui clickable", "like in the log page", "and also let me click when i fire, the little text
+  that appears above"). Was: a line linked to its first spot alone, the Log tab's commands named
+  no place, its sensed events wrote theirs as `x, y, z`, which no link read, the entity lines and
+  the line at the top after Fire were never links. Now each spot of a line is its own link over
+  its own characters, every command carried out names where it acted, sensed events and the
+  nearest entity of each kind are written `(x,y,z)`, the mind's "forced" note says where, and the
+  line at the top links its spot (`Coordinates.findAll`, `words`, `placeOf`, with tests).
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

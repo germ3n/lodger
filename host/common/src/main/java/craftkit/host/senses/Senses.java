@@ -757,7 +757,7 @@ public final class Senses {
 			events.computeIfAbsent(level, l -> new ArrayList<>()).add(event);
 		}
 
-		recentEvents.addLast(String.format("%d %s%s%s", tick, kind, pos == null ? "" : " at " + pos.toShortString(), detail.isEmpty() ? "" : " " + detail));
+		recentEvents.addLast(String.format("%d %s%s%s", tick, kind, pos == null ? "" : " at " + craftkit.host.client.debug.Coordinates.words(pos.getX(), pos.getY(), pos.getZ()), detail.isEmpty() ? "" : " " + detail));
 		while (recentEvents.size() > MOST_RECENT) {
 			recentEvents.removeFirst();
 		}
@@ -786,14 +786,22 @@ public final class Senses {
 		panel.addProperty("players", level.players().size());
 
 		java.util.Map<String, Integer> kinds = new java.util.TreeMap<>();
+		// The nearest of each kind, so its line can be clicked to go there.
+		java.util.Map<String, Entity> nearest = new java.util.HashMap<>();
 		for (Entity entity : level.getEntities(player, player.getBoundingBox().inflate(REACH), e -> !(e instanceof ServerPlayer))) {
-			kinds.merge(entityId(entity).replace("minecraft:", ""), 1, Integer::sum);
+			String kind = entityId(entity).replace("minecraft:", "");
+			kinds.merge(kind, 1, Integer::sum);
+			nearest.merge(kind, entity, (a, b) -> a.distanceToSqr(player) <= b.distanceToSqr(player) ? a : b);
 		}
 		JsonArray near = new JsonArray();
 		kinds.entrySet().stream()
 				.sorted((a, b) -> b.getValue() - a.getValue())
 				.limit(12)
-				.forEach(entry -> near.add(entry.getValue() + " " + entry.getKey()));
+				.forEach(entry -> {
+					Entity one = nearest.get(entry.getKey());
+					near.add(entry.getValue() + " " + entry.getKey() + ", nearest "
+							+ craftkit.host.client.debug.Coordinates.words(one.getX(), one.getY(), one.getZ()));
+				});
 		panel.add("entities", near);
 
 		JsonArray events = new JsonArray();
