@@ -542,6 +542,8 @@ impl Brain {
         model: Option<&Model>,
     ) -> Vec<Command> {
         let mut commands = Vec::new();
+        // The chains' forks and first steps go by the stage it is now.
+        memory.stage_now = arc.stage;
 
         self.take_replies(now, day, memory, arc, config, log, model);
 

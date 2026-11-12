@@ -1096,7 +1096,13 @@ twenty-five seconds rather than five minutes, at half its cost when counted at h
 "multiple possible chains to go down per trigger ... yes yes a fork"): the trigger opens one of
 them, picked from those not yet run in the stay and varying with the day and how much has
 happened, none while one of them is open; landing again after, it may go down another. A branch
-that is a scene rolls its next step straight on, as any scene does. A hundred and fourteen
+that is a scene rolls its next step straight on, as any scene does. A fork opens only a branch
+whose next step happens at the stage it is now; none can, none opens yet. At most three chains
+are open at once (`MOST_OPEN`, the owner's call), scenes among them; a trigger while three are
+open opens nothing, and landing later it may; the design's five, the spine (the thing, the place,
+the watcher, the house, the diary), open whatever the count and are not counted. The menu weighs
+up only first steps of the stage it is, of a chain that could go on now, and none of a fork with
+a branch open or, but the spine's, while three are open. A hundred and fourteen
 branches (owner: "make like 150-200 total ... however many make sense"), a hundred and
 eighty-nine chains in all, seventy-five triggers going down two ways or three:
 

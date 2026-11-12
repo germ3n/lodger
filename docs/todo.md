@@ -3280,6 +3280,16 @@ The `[x]` lines above, summed up by day:
 - [x] **Version 0.1.3** (owner: "bump the version to 0.1.3"): the mind, the SDK, the host and the
   content jar, and the least host the manifests ask for (`craftkit >= 0.1.3`). Was: 0.1.2.
 
+- [x] **Forks by the stage, three chains open at most** (owner: "the fork logic/branch is sound
+  ye?", "yes", and "what do you recommend for the open-chain cap?"): a fork opens only a branch
+  whose next step happens at the stage now (it picked blind, and a stage-five branch could sit
+  open at stage three, its days held, its fork shut); none can, none opens. At most three chains
+  open at once (`chains::MOST_OPEN`), the design's five (`SPINE`) always and uncounted (the
+  scripted stays' place was kept shut by the rest otherwise). The menu's first-step weight only for first
+  steps of the stage now, of a chain that could go on, of no shut fork, none while three are open.
+  The brain tells the memory the stage each tick (`Memory::stage_now`). Tests: three in `chains`.
+  Was: a blind pick, any number open, every first step weighed up.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -613,6 +613,11 @@ pub struct Memory {
     /// next straight on (`chains::SCENE_CHANCE`). Not saved.
     #[serde(skip)]
     pub scene_moved: Vec<&'static str>,
+    /// The stage as the brain last ticked, for which of a fork's branches may open and which
+    /// chains' first steps the menu weighs up (`chains`). Not saved; 0 before the first tick, when
+    /// any stage fits.
+    #[serde(skip)]
+    pub stage_now: u8,
     /// Where the target last came into this world from another: where they stood as the
     /// crossing was told (a portal's mouth, the End's platform).
     #[serde(default)]

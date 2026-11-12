@@ -36,6 +36,21 @@ pub struct Chain {
     pub scene: bool,
 }
 
+/// Whether an event happens at this stage; any does at stage 0, before the brain's first tick.
+fn at_stage(event: &str, stage: u8) -> bool {
+    stage == 0
+        || crate::events::find(event).is_some_and(|e| (e.from_stage..=e.to_stage).contains(&stage))
+}
+
+/// Whether a chain can go on at this stage: its next step after the first has an event that
+/// happens now. A branch that cannot would sit open, its days held, and keep its fork shut.
+fn goes_on_at(chain: &Chain, stage: u8) -> bool {
+    chain
+        .steps
+        .get(1)
+        .is_none_or(|s| s.events.iter().any(|e| at_stage(e, stage)))
+}
+
 /// Which of a trigger's branches opens: the event, the day and how much has happened mixed, so
 /// the same trigger goes down different branches in different stays and moments.
 fn branch_pick(event: &str, day: f32, done: usize) -> usize {
@@ -45,6 +60,20 @@ fn branch_pick(event: &str, day: f32, done: usize) -> usize {
     }
     (h ^ (h >> 29)) as usize
 }
+
+/// The most chains open at once, scenes among them (owner's call: three): more, and the threads
+/// cross; a trigger while three are open opens nothing, and landing later it may. The design's
+/// own ([`SPINE`]) open whatever the count and are not counted.
+pub const MOST_OPEN: usize = 3;
+/// The design's chains, the story's spine: the thing, the place, the watcher, the house, the
+/// diary (its brought book depending on it). Never kept shut by the others.
+pub const SPINE: &[&str] = &[
+    "the_thing",
+    "the_place",
+    "the_watcher",
+    "the_house",
+    "the_diary",
+];
 
 /// The chance a scene's next step is rolled straight on, once a step of it lands.
 pub const SCENE_CHANCE: f64 = 0.6;
@@ -2140,6 +2169,7 @@ impl Memory {
     /// after, another may.
     fn open_branch(&mut self, event: &str, day: f32, chains: &'static [Chain]) {
         let begins_here = |c: &Chain| c.steps[0].events.contains(&event);
+        let full = self.open_counted() >= MOST_OPEN;
         let branch_open = self.chains.iter().any(|o| {
             chains
                 .iter()
@@ -2149,12 +2179,16 @@ impl Memory {
         if branch_open {
             return;
         }
+        // Only a branch that can go on at this stage: none that can, none opens yet, and the
+        // trigger landing later may.
         let branches: Vec<&Chain> = chains
             .iter()
             .filter(|c| {
                 begins_here(c)
                     && !self.chains.iter().any(|o| o.id == c.id)
                     && !self.chains_done.iter().any(|d| d == c.id)
+                    && goes_on_at(c, self.stage_now)
+                    && (!full || SPINE.contains(&c.id))
             })
             .collect();
         if branches.is_empty() {
@@ -2225,6 +2259,14 @@ impl Memory {
         }
     }
 
+    /// The chains open that count toward [`MOST_OPEN`]: all but the spine's.
+    fn open_counted(&self) -> usize {
+        self.chains
+            .iter()
+            .filter(|o| !SPINE.contains(&o.id.as_str()))
+            .count()
+    }
+
     /// The open scenes' next steps, ready: the other worlds take them at a scene's pace.
     pub fn scene_next(&self) -> Vec<&'static str> {
         self.chains
@@ -2281,11 +2323,28 @@ impl Memory {
     /// so a chain still begins as the catalogue grows (its first step was one among a hundred
     /// and more, and a chain often never opened).
     pub fn chain_starts(&self) -> Vec<&'static str> {
-        CHAINS
+        // A trigger whose fork has a branch open opens nothing more, so it is not weighed up;
+        // nor a first step of another stage, nor a branch that could not go on now.
+        let fork_open = |c: &Chain| {
+            self.chains.iter().any(|o| {
+                find(&o.id).is_some_and(|open| {
+                    open.steps[0]
+                        .events
+                        .iter()
+                        .any(|e| c.steps[0].events.contains(e))
+                })
+            })
+        };
+        // Three open: none begins now but the spine's, so none else is weighed up.
+        let full = self.open_counted() >= MOST_OPEN;
+        let mut starts: Vec<&'static str> = CHAINS
             .iter()
             .filter(|c| {
                 !self.chains.iter().any(|o| o.id == c.id)
                     && !self.chains_done.iter().any(|d| d == c.id)
+                    && !fork_open(c)
+                    && goes_on_at(c, self.stage_now)
+                    && (!full || SPINE.contains(&c.id))
             })
             .flat_map(|c| {
                 c.steps
@@ -2294,8 +2353,12 @@ impl Memory {
                     .unwrap_or(&[])
                     .iter()
                     .copied()
+                    .filter(|e| at_stage(e, self.stage_now))
             })
-            .collect()
+            .collect();
+        starts.sort_unstable();
+        starts.dedup();
+        starts
     }
 
     /// The situation's line for each open chain: what it began, and what may come.
@@ -2440,6 +2503,108 @@ mod tests {
             })
             .collect();
         assert_eq!(picked.len(), 2, "{picked:?}");
+    }
+
+    #[test]
+    fn a_fork_opens_only_a_branch_that_goes_on_at_this_stage() {
+        static BRANCHES: &[Chain] = &[
+            // Its next step from stage three.
+            Chain {
+                id: "branch_three",
+                steps: &[
+                    step(&["knock"], 0.0, Always),
+                    step(&["door_scratch"], 3.0, Always),
+                ],
+                scene: false,
+            },
+            // Its next step from stage four.
+            Chain {
+                id: "branch_four",
+                steps: &[
+                    step(&["knock"], 0.0, Always),
+                    step(&["knock_heavy"], 3.0, Always),
+                ],
+                scene: false,
+            },
+        ];
+        for day in 0..10 {
+            let mut memory = Memory {
+                stage_now: 3,
+                ..Memory::default()
+            };
+            memory.open_branch("knock", day as f32 * 0.31, BRANCHES);
+            assert_eq!(
+                memory.chains[0].id, "branch_three",
+                "the one that goes on at three"
+            );
+        }
+        let mut early = Memory {
+            stage_now: 2,
+            ..Memory::default()
+        };
+        early.open_branch("knock", 1.0, BRANCHES);
+        assert!(
+            early.chains.is_empty(),
+            "none goes on at two: none opens yet"
+        );
+    }
+
+    #[test]
+    fn the_menu_weighs_up_only_first_steps_of_this_stage_and_no_shut_fork() {
+        let mut memory = Memory {
+            stage_now: 2,
+            ..Memory::default()
+        };
+        let starts = memory.chain_starts();
+        assert!(!starts.contains(&"knock_heavy"), "stage four's");
+        assert!(starts.iter().all(|e| at_stage(e, 2)), "{starts:?}");
+        // A branch of `window_tap`'s fork open: its trigger is no more weighed up.
+        memory.stage_now = 4;
+        assert!(memory.chain_starts().contains(&"window_tap"));
+        memory.chains.push(Open {
+            id: "the_windows".to_string(),
+            landed: vec![0],
+            ..Default::default()
+        });
+        assert!(
+            !memory.chain_starts().contains(&"window_tap"),
+            "its fork is shut"
+        );
+    }
+
+    #[test]
+    fn three_open_at_once_and_no_more_but_the_spine_s() {
+        let mut memory = Memory::default();
+        for id in ["the_knock", "the_fog", "the_books"] {
+            memory.chains.push(Open {
+                id: id.to_string(),
+                landed: vec![0],
+                ..Default::default()
+            });
+        }
+        memory.chain_landed("ice_cracks", 1.0);
+        assert_eq!(memory.chains.len(), MOST_OPEN, "a fourth waits");
+        let starts = memory.chain_starts();
+        assert!(
+            !starts.contains(&"ice_cracks") && starts.contains(&"light_path"),
+            "the spine's alone weighed up: {starts:?}"
+        );
+        memory.chain_landed("diary_sold", 1.0);
+        memory.chain_landed("light_path", 1.0);
+        assert!(
+            memory.chains.iter().any(|o| o.id == "the_diary"),
+            "the diary whatever the count"
+        );
+        assert!(
+            memory.chains.iter().any(|o| o.id == "the_place"),
+            "the place too"
+        );
+        memory.chain_landed("mist", 1.0);
+        assert_eq!(
+            memory.chains.len(),
+            MOST_OPEN + 2,
+            "the spine's not counted, the rest still three"
+        );
     }
 
     #[test]
