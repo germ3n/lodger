@@ -307,6 +307,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         Action::Hint(_, _)
         | Action::BossBarIt
         | Action::CracksInTheWall
+        | Action::FangsInALine
         | Action::GhastName
         | Action::LostHour
         | Action::SoundWarp
@@ -406,6 +407,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         Action::Hint(_, _)
         | Action::BossBarIt
         | Action::CracksInTheWall
+        | Action::FangsInALine
         | Action::SoundWarp
         | Action::CreeperBehind
         | Action::PrintsAroundTheHouse => Some("screen"),

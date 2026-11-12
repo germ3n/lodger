@@ -277,6 +277,9 @@ pub fn weathered(id: &str) -> Option<String> {
     Some(format!("minecraft:{next}"))
 }
 
+/// How far ahead of them `fangs_in_a_line`'s line starts, blocks.
+const FANGS_FROM: f64 = 14.0;
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -705,6 +708,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SkullInTheTunnel
         | Action::CopperAges
         | Action::PaleHorse
+        | Action::FangsInALine
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8466,6 +8470,23 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 223.
+        Action::FangsInALine => {
+            let way = facing_way(memory.last.yaw);
+            let p = memory.last.pos;
+            vec![(
+                Command::Fangs {
+                    id: ids(),
+                    player: target,
+                    from: [
+                        p[0] + way[0] as f64 * FANGS_FROM,
+                        p[1],
+                        p[2] + way[1] as f64 * FANGS_FROM,
+                    ],
+                },
+                0,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -19627,6 +19648,20 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::PlaceEntity { of, seconds, face: Some(_), .. }, 0)] if of == "minecraft:skeleton_horse" && *seconds > 0.0),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn fangs_in_a_line_start_ahead_of_them_on_their_screen() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("fangs_in_a_line").unwrap();
+        assert!(!crate::rules::hidden_from_view(event.action));
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Fangs { from, .. }, 0)] if from[2] == 0.5 + FANGS_FROM && from[0] == 0.5),
+            "facing +z, the line from ahead: {made:?}"
         );
     }
 }

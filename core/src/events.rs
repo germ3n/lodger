@@ -1178,6 +1178,8 @@ pub enum Action {
     CopperAges,
     /// A skeleton horse among the animals in their pen at night, still, facing them, a while.
     PaleHorse,
+    /// A line of evoker fangs snapping up out of the ground toward them, stopping short, on their screen alone.
+    FangsInALine,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7240,6 +7242,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PaleHorse,
         false,
     ),
+    // docs/events_todo.md, 223: a line of evoker fangs snaps up toward them and stops short.
+    row(
+        "fangs_in_a_line",
+        5,
+        5,
+        &[TargetOutdoors, TargetAwake],
+        2.0,
+        2,
+        Full,
+        Action::FangsInALine,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7841,6 +7855,7 @@ impl Event {
             | Action::DripstoneInTunnel
             | Action::SkullInTheTunnel
             | Action::PaleHorse
+            | Action::FangsInALine
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8381,6 +8396,7 @@ impl Event {
             "skull_in_the_tunnel" => "set a skull into their tunnel's wall facing them",
             "copper_ages" => "weather their copper a stage overnight",
             "pale_horse_in_your_pen" => "stand a skeleton horse among the animals in their pen",
+            "fangs_in_a_line" => "snap a line of evoker fangs up toward them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

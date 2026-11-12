@@ -163,6 +163,22 @@ public final class Executors {
 				}
 				case "ghost_block" -> ghostBlock(level, command, id, context);
 				case "drop_block" -> dropBlock(level, command, id);
+				case "fangs" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					JsonArray f = command.getAsJsonArray("from");
+					List<Vec3> line = FangLine.cells(f.get(0).getAsDouble(), f.get(2).getAsDouble(), player.getX(), player.getZ()).stream()
+							.map(c -> new Vec3(c[0], level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+									net.minecraft.util.Mth.floor(c[0]), net.minecraft.util.Mth.floor(c[1])), c[1]))
+							.toList();
+					if (line.isEmpty()) {
+						yield report(id, false, "they are too near");
+					}
+					context.figures().fakeFangs(player, line, FangLine.GAP_TICKS, context.later());
+					yield report(id, true, "");
+				}
 				case "tip_dripleaves" -> tipDripleaves(level, command, id, context);
 				case "boss_bar" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());

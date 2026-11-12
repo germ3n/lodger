@@ -704,6 +704,14 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "is_false")]
         beside: bool,
     },
+    /// Evoker fangs on `player`'s screen alone, a line from `from` straight toward them, one
+    /// every block and a quarter snapping up in turn with its sound, the last a block and a half
+    /// short of them; there is nothing in the world to bite anyone. ABI 56.
+    Fangs {
+        id: u64,
+        player: u32,
+        from: Pos,
+    },
     /// A block shown at `pos` to `player` alone, `block` with `state` (`charges=4`), the world's
     /// own block untouched under it; `block` empty shows them what is really there again. Their
     /// client forgets it when the chunk is sent afresh, so a quit never leaves it. A y below
@@ -1607,6 +1615,7 @@ impl Command {
             | Command::CrackBlock { id, .. }
             | Command::GhostBlock { id, .. }
             | Command::DropBlock { id, .. }
+            | Command::Fangs { id, .. }
             | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }

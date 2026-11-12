@@ -659,6 +659,35 @@ public final class Figures {
 	static final int FUSE_TICKS = 30;
 
 	/**
+	 * Evoker fangs in a line on {@code player}'s screen alone (ABI 56), one at each of
+	 * {@code at} in turn, {@code gapTicks} apart: each snaps up with its sound and is gone; there
+	 * is no entity in the world to bite anyone.
+	 */
+	public void fakeFangs(ServerPlayer player, List<Vec3> at, int gapTicks, Later later) {
+		var type = net.minecraft.world.entity.EntityTypes.EVOKER_FANGS;
+		for (int i = 0; i < at.size(); i++) {
+			Vec3 p = at.get(i);
+			int entityId = nextId++;
+			later.at(i * gapTicks / 20f, () -> {
+				if (player.isRemoved()) {
+					return;
+				}
+				player.connection.send(new ClientboundAddEntityPacket(entityId, UUID.randomUUID(), p.x, p.y, p.z, 0, 0, type, 0, Vec3.ZERO, 0));
+				// Entity event 4 is the fangs' bite: the client draws them snapping up from it.
+				var bite = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+				bite.writeInt(entityId);
+				bite.writeByte(4);
+				player.connection.send(net.minecraft.network.protocol.game.ClientboundEntityEventPacket.STREAM_CODEC.decode(bite));
+				soundAt(player, p, net.minecraft.sounds.SoundEvents.EVOKER_FANGS_ATTACK, 0.9f + player.getRandom().nextFloat() * 0.2f);
+			});
+			later.at((i * gapTicks + FANG_TICKS) / 20f, () -> player.connection.send(new ClientboundRemoveEntitiesPacket(entityId)));
+		}
+	}
+
+	/** How long a fang shown stands, its bite done: about a second, as the game's own. */
+	private static final int FANG_TICKS = 22;
+
+	/**
 	 * A creeper right behind {@code player}, on their screen alone, at {@code at}: it hisses and
 	 * swells as a real one does and goes off, the flash, the bang, the jolt; no harm, not a block
 	 * broken, nothing there after (ABI 54).

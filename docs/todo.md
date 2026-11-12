@@ -2744,6 +2744,12 @@ The `[x]` lines above, summed up by day:
   middle for ten minutes, held facing them (`place_entity`'s `minecraft:skeleton_horse`, for a while
   only, ABI 56). Tests: one in `act`. Was: no such event.
 
+- [x] **Fangs in a line** (`docs/events_todo.md`, 223): `fangs_in_a_line`, stage 5, outdoors: evoker
+  fangs shown to their client alone in a line from fourteen blocks ahead straight at them, one each
+  block and a quarter two ticks apart, the last a block and a half short (`fangs`, ABI 56,
+  `FangLine` and its JUnit test; off with the glitches). Tests: one in `act`, two in JUnit
+  (`FangLineTest`). Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
