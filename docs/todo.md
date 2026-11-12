@@ -2019,6 +2019,10 @@ The `[x]` lines above, summed up by day:
   off a way turns round and round where it stands until they come near (`hold`'s `spin`, ABI 54).
   Tests: one in `act`. Was: no such event.
 
+- [x] **The villagers walk out** (`docs/events_todo.md`, 94): `villagers_walk_out`, stages 4 and 5,
+  at dusk (a new need, 11,500 to 13,500): the villagers near them single file out of the village
+  toward its place, home to bed of themselves after. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

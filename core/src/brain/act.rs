@@ -378,6 +378,20 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // Forty blocks out of the village, toward its place, or away from the target's home.
+        Action::VillagersWalkOut => memory.feature("village").map(|v| {
+            let toward = memory
+                .place
+                .or_else(|| memory.home.as_ref().map(|h| h.center))
+                .unwrap_or([v.pos[0] + 40, v.pos[1], v.pos[2]]);
+            let (dx, dz) = ((toward[0] - v.pos[0]) as f64, (toward[2] - v.pos[2]) as f64);
+            let length = (dx * dx + dz * dz).sqrt().max(1.0);
+            [
+                v.pos[0] + (dx / length * 40.0).round() as i32,
+                -10_000,
+                v.pos[2] + (dz / length * 40.0).round() as i32,
+            ]
+        }),
         // The villager nearest them, twelve to thirty blocks off, where it stands.
         Action::VillagerSpins => spinning_villager(memory).map(|c| block_of(c.pos)),
         // At them: the villagers they go to.
@@ -6403,6 +6417,35 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Every villager near them walks out to the one place, a few seconds apart, single file;
+        // let go there (or after twenty seconds), they go home to their beds of themselves.
+        Action::VillagersWalkOut => pos
+            .map(|out| {
+                memory
+                    .villagers_near()
+                    .into_iter()
+                    .take(8)
+                    .enumerate()
+                    .map(|(i, villager)| {
+                        (
+                            Command::Approach {
+                                id: ids(),
+                                entities: vec![villager],
+                                player: target,
+                                stop: 0.0,
+                                seconds: 20.0,
+                                pace: Some(0.8),
+                                then: String::new(),
+                                damage: 0.0,
+                                kept: String::new(),
+                                to: Some([out[0] as f64 + 0.5, -10_000.0, out[2] as f64 + 0.5]),
+                            },
+                            i as u64 * 30,
+                        )
+                    })
+                    .collect()
             })
             .unwrap_or_default(),
         // Round and round where it stands, fast and silent, until they come near: then it stops
@@ -14408,5 +14451,37 @@ mod tests {
             ),
             "the one off a way: {made:?}"
         );
+    }
+
+    #[test]
+    fn at_dusk_the_villagers_walk_out_single_file_toward_its_place() {
+        let mut memory = rich_memory();
+        memory.last.creatures_near = (0..3)
+            .map(|i| crate::memory::Creature {
+                id: 20 + i,
+                kind: "villager".to_string(),
+                pos: [100.5 + i as f64, 64.0, 0.5],
+                ..Default::default()
+            })
+            .collect();
+        let surround = memory
+            .surroundings
+            .get_or_insert_with(crate::memory::Surround::default);
+        surround.features.retain(|f| f.kind != "village");
+        surround.features.push(craftkit::world::Feature {
+            kind: "village".to_string(),
+            pos: [100, 64, 0],
+            ..Default::default()
+        });
+        memory.place = Some([100, 64, 80]);
+        let event = find("villagers_walk_out").unwrap();
+        let out = place(event, &memory, &mut Rng::new(1)).unwrap();
+        assert_eq!((out[0], out[2]), (100, 40), "forty out toward its place");
+        let made = commands(event, Some(out), &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 3);
+        for (i, (command, later)) in made.iter().enumerate() {
+            assert_eq!(*later, i as u64 * 30, "single file");
+            assert!(matches!(command, Command::Approach { to: Some(to), .. } if to[2] == 40.5));
+        }
     }
 }

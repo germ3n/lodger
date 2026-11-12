@@ -265,6 +265,8 @@ pub enum Need {
     /// Walking into the village: within forty blocks of its middle and coming nearer, villagers
     /// near them.
     EnteringVillage,
+    /// Dusk: the sun going down.
+    Dusk,
 }
 
 impl Need {
@@ -343,6 +345,7 @@ impl Need {
                 | Need::LeavingTheWoods
                 | Need::SnowyHere
                 | Need::EnteringVillage
+                | Need::Dusk
         )
     }
 
@@ -467,6 +470,7 @@ impl Need {
             Need::LeavingTheWoods => "the target is not walking out of the woods".to_string(),
             Need::SnowyHere => "no snow where they are".to_string(),
             Need::EnteringVillage => "the target is not walking into a village".to_string(),
+            Need::Dusk => "not dusk".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -1077,6 +1081,8 @@ pub enum Action {
     TradesRefused,
     /// A villager turning round and round where it stands, till they come near.
     VillagerSpins,
+    /// At dusk the villagers walk out of the village single file, toward its place.
+    VillagersWalkOut,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4874,6 +4880,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 94.
+    row(
+        "villagers_walk_out",
+        4,
+        5,
+        &[Dusk, Creature("villager"), Around("village")],
+        3.0,
+        2,
+        Full,
+        Action::VillagersWalkOut,
+        false,
+    ),
     // docs/events_todo.md, 93.
     row(
         "villager_spins",
@@ -6069,6 +6087,7 @@ impl Event {
             | Action::TradesRefused
             | Action::VillagerStabs(_)
             | Action::VillagerSpins
+            | Action::VillagersWalkOut
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6152,6 +6171,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "villagers_walk_out" => "walk the villagers out of the village at dusk, single file",
             "villager_spins" => "set a villager turning round and round where it stands",
             "trades_refused" => "have every villager refuse them for a day",
             "villager_stabs" => "have the next villager they trade with stab them",

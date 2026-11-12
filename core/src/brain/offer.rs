@@ -186,6 +186,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
                 && crate::brain::act::frame_shows(memory).is_some()
         }
         Need::Noon => (5_000..7_000).contains(&now.day_time),
+        Need::Dusk => (11_500..13_500).contains(&now.day_time),
         Need::FieldWord => memory
             .field_word()
             .is_some_and(|(_, cells)| !cells.is_empty()),
