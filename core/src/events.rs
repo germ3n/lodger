@@ -5772,6 +5772,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.generic.eat"),
         false,
     ),
+    // docs/events_todo.md, 176.
+    row(
+        "ominous_hum",
+        4,
+        5,
+        &[Home, TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:block.trial_spawner.ominous_activate"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7276,6 +7288,7 @@ impl Event {
             "hoofbeats_circling" => "gallop hoofbeats round the outside of their house",
             "snipping_in_the_dark" => "snip shears beside their sheep in the dark",
             "eating_in_the_wall" => "chew slowly inside the wall beside them",
+            "ominous_hum" => "hum like a trial spawner under the floor",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

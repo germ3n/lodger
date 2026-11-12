@@ -2490,6 +2490,9 @@ The `[x]` lines above, summed up by day:
 - [x] **Eating in the wall** (`docs/events_todo.md`, 175): `eating_in_the_wall`, stages 3 to 5: indoors, slow chewing from inside the wall beside them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **An ominous hum** (`docs/events_todo.md`, 176): `ominous_hum`, stages 4 to 5: at home, a trial spawner's ominous hum from under the floor. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

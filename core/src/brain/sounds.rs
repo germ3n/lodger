@@ -1130,6 +1130,33 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 176.
+        "ominous_hum" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:block.trial_spawner.ominous_activate", 0)],
+                    (0.6, 0.7),
+                    0.8,
+                    Below,
+                ),
+                v(
+                    &[("minecraft:block.trial_spawner.ominous_activate", 0)],
+                    (0.5, 0.6),
+                    0.9,
+                    Deep,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.trial_spawner.ominous_activate", 0),
+                        ("minecraft:block.trial_spawner.ominous_activate", 50),
+                    ],
+                    (0.55, 0.65),
+                    0.7,
+                    Below,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2108,6 +2135,7 @@ mod tests {
             "bark_from_home",
             "snipping_in_the_dark",
             "eating_in_the_wall",
+            "ominous_hum",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

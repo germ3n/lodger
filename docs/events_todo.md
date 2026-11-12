@@ -232,7 +232,7 @@ things, and on the screen. Not built yet.
 | 173 | `hoofbeats_circling` | 4 | **Built.** At night, hoofbeats gallop a loop around the house and away; no horse. | Indoors at night, a home. | `sound` (horse gallop steps) at points round the walls in turn. | S |
 | 174 | `snipping_in_the_dark` | 3 | **Built.** Near their sheep at night, the snip of shears, again and again; the sheep keep their wool. | Sheep of theirs near, night. | `sound` (shears) beside the sheep. | S |
 | 175 | `eating_in_the_wall` | 4 | **Built.** Chewing, wet and slow, from inside a wall of the house. | Indoors. | `sound` (eating, pitched low) at their nearest wall block. | S |
-| 176 | `ominous_hum` | 4 | From under the floor, the low hum of a trial spawner turning ominous; there is no spawner. | A home, the target at home. | `sound` (trial spawner ominous activate) below the floor. | S |
+| 176 | `ominous_hum` | 4 | **Built.** From under the floor, the low hum of a trial spawner turning ominous; there is no spawner. | A home, the target at home. | `sound` (trial spawner ominous activate) below the floor. | S |
 | 177 | `vault_opens_by_the_bed` | 4 | Lying down, the clunk and chime of a vault unlocking beside the bed. | In bed. | `sound` (vault unlock) at the bed's side. | S |
 | 178 | `creaking_behind` | 5 | In the woods, the groan and steps of a creaking behind them, coming only while they do not look. | In the woods, walking. | `sound` (creaking step and ambient) behind them, nearer while unwatched. | M |
 | 179 | `bulbs_clicking` | 3 | In a dark room of the house, the click of copper bulbs switching, one after another; there are none. | Indoors. | `sound` (copper bulb toggle) at points in the room. | S |
