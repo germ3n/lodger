@@ -1129,6 +1129,8 @@ pub enum Action {
     CopperGolemAtDoor,
     /// A creaking in their field at night: still while watched, nearer while not.
     CreakingInTheField,
+    /// Pale moss creeping across their floor from a corner, more each night.
+    PaleMossCreeps,
     /// A grave at its place with their own name on it and a day not come yet.
     YourGrave,
     /// Cobwebs in the upper corners of their house, gone in a day.
@@ -6849,6 +6851,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CreakingInTheField,
         false,
     ),
+    // docs/events_todo.md, 195: pale moss creeps across their floor overnight, more each night.
+    row(
+        "pale_moss_creeps",
+        4,
+        5,
+        &[Home, TargetAwayOrAsleep],
+        1.0,
+        5,
+        Half,
+        Action::PaleMossCreeps,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7230,6 +7244,7 @@ impl Event {
             | Action::ColdHouse
             | Action::FrostOnGlass
             | Action::StairsToNowhere
+            | Action::PaleMossCreeps
             | Action::FaceInTheCanopy
             | Action::BootsAtTheDoor
             | Action::PathWorn
@@ -7946,6 +7961,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "pale_moss_creeps" => "creep pale moss across their floor",
             "creaking_in_the_field" => "stand a creaking in their field that comes while unwatched",
             "copper_golem_at_door" => "stand a copper golem outside their door",
             "boss_bar_it" => "fill a boss bar named for it over their screen",

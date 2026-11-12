@@ -137,6 +137,23 @@ fn round_the_house(memory: &Memory) -> Option<Vec<Pos>> {
     Some(round)
 }
 
+/// The floor cells pale moss creeps over, nearest the room's north-west corner first: the
+/// house's middle three blocks out and back, a widening wedge from there.
+fn moss_cells(center: BlockPos, floor_y: i32) -> Vec<BlockPos> {
+    let corner = [center[0] - 3, center[2] - 3];
+    let mut cells: Vec<BlockPos> = (0..7)
+        .flat_map(|dx| (0..7).map(move |dz| [corner[0] + dx, floor_y, corner[1] + dz]))
+        .collect();
+    cells.sort_by_key(|c| {
+        (
+            (c[0] - corner[0]).pow(2) + (c[2] - corner[1]).pow(2),
+            c[0],
+            c[2],
+        )
+    });
+    cells
+}
+
 /// A Minecraft day, in ticks: what it hangs in their house for a day stays this long.
 const DAY_TICKS: u64 = 24_000;
 
@@ -608,7 +625,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             home.map(|h| h.center)
         }
         Action::SnowShape => spot(memory, rng),
-        Action::StairsToNowhere => home.map(|h| h.center),
+        Action::StairsToNowhere | Action::PaleMossCreeps => home.map(|h| h.center),
         // The middle of their field.
         Action::CreakingInTheField => {
             let field = &memory.field;
@@ -7527,6 +7544,20 @@ pub fn commands(
                 )]
             })
             .unwrap_or_default(),
+        // Pale moss on their floor from one corner of the room, three blocks more each night it
+        // comes (the first three, then six, nine...), into air on the floor alone.
+        Action::PaleMossCreeps => match memory.home.as_ref() {
+            Some(home) => {
+                let reach = (memory.times(event.id) as usize + 1) * 3;
+                moss_cells(home.center, home.floor_y)
+                    .into_iter()
+                    .take(reach)
+                    .enumerate()
+                    .map(|(i, cell)| (fill(ids, cell, "minecraft:pale_moss_carpet"), i as u64 * 4))
+                    .collect()
+            }
+            None => vec![],
+        },
         // At the top of their screen, a boss bar reading only "it", filling over a minute.
         Action::BossBarIt => vec![(
             Command::BossBar {
@@ -17930,5 +17961,41 @@ mod tests {
                 if of == "minecraft:creaking" && pos[0] == 11.5 && *harm <= 1.0 && *seconds > 0.0),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn pale_moss_creeps_from_a_corner_three_more_each_night() {
+        let mut memory = rich_memory();
+        let event = find("pale_moss_creeps").unwrap();
+        let first = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(first.len(), 3);
+        assert!(first.iter().all(|(c, _)| matches!(c, Command::SetBlock { block, replace, pos, .. } if block == "minecraft:pale_moss_carpet" && replace.is_empty() && pos[1] == 64)));
+        memory.record("pale_moss_creeps", None, 1.0, true, "");
+        let second = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(second.len(), 6, "three more the next night");
+        // From the same corner outward: the first night's cells are the second's first.
+        let cells = |made: &[(Command, u64)]| -> Vec<BlockPos> {
+            made.iter()
+                .filter_map(|(c, _)| match c {
+                    Command::SetBlock { pos, .. } => Some(*pos),
+                    _ => None,
+                })
+                .collect()
+        };
+        assert_eq!(cells(&first)[..], cells(&second)[..3]);
     }
 }

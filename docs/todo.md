@@ -2557,6 +2557,10 @@ The `[x]` lines above, summed up by day:
   a nick of half a heart if it reaches them (`place_entity` may set a creaking, spared, ABI 55).
   Tests: one in `act`. Was: no such event.
 
+- [x] **Pale moss creeps** (`docs/events_todo.md`, 195): `pale_moss_creeps`, stages 4 and 5, the
+  target away or asleep: pale moss carpet on their floor from a corner, three blocks more each
+  time (`moss_cells`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
