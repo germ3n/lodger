@@ -762,6 +762,31 @@ public final class Glitches {
 	 * paper named "behind you" drawn in an empty slot of theirs for three seconds, its name
 	 * under the mouse; then gone, as if it never was.
 	 */
+	/**
+	 * `slot_barred` (ABI 56): while it lasts, one empty slot of their inventory drawn with a
+	 * barrier in it whenever the inventory is open, the same slot each time.
+	 */
+	public static void barredSlot(GuiGraphicsExtractor graphics, net.minecraft.world.inventory.AbstractContainerMenu menu, int left, int top) {
+		for (Hints.Active active : Hints.active()) {
+			if (!active.hint().hint().equals("slot_barred")) {
+				continue;
+			}
+			java.util.List<net.minecraft.world.inventory.Slot> empty = new java.util.ArrayList<>();
+			for (net.minecraft.world.inventory.Slot slot : menu.slots) {
+				if (slot.container instanceof net.minecraft.world.entity.player.Inventory && slot.getContainerSlot() >= 9
+						&& slot.getContainerSlot() < 36 && !slot.hasItem()) {
+					empty.add(slot);
+				}
+			}
+			if (empty.isEmpty()) {
+				return;
+			}
+			net.minecraft.world.inventory.Slot barred = empty.get((int) Math.floorMod(active.id(), (long) empty.size()));
+			graphics.item(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BARRIER), left + barred.x, top + barred.y);
+			return;
+		}
+	}
+
 	public static void phantomItem(GuiGraphicsExtractor graphics, net.minecraft.world.inventory.AbstractContainerMenu menu, int left, int top, int mouseX, int mouseY) {
 		long now = System.currentTimeMillis();
 		for (Hints.Active active : Hints.active()) {

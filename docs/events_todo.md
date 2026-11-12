@@ -293,7 +293,7 @@ things, and on the screen. Not built yet.
 | 234 | `title_your_name` | 4 | **Built (dark red, a second).** Their own name fills the screen in big letters for a second, at night. | The target awake, night. | A title sent to them alone. | S |
 | 235 | `recipe_toast` | 3 | **Built (the thing unlocked their own head, named "you").** A recipe toast pops up for an item called "you". | The target awake. | A client hint showing a recipe toast with that name. | S |
 | 236 | `count_shows_zero` | 3 | **Built (three seconds, every stack, a tool's too).** For a moment every stack in their hotbar shows a count of 0. | The target awake. | A client hint over the hotbar's counts. | S |
-| 237 | `slot_barred` | 4 | One slot of their inventory shows a barrier a while; nothing can go in it. | Opening the inventory. | A client hint drawing a barrier over one empty slot. | S |
+| 237 | `slot_barred` | 4 | **Built (two minutes, drawn whenever the inventory is open; the slot itself as ever).** One slot of their inventory shows a barrier a while; nothing can go in it. | Opening the inventory. | A client hint drawing a barrier over one empty slot. | S |
 | 238 | `held_name_wrong` | 3 | Switching item, the name that pops up over the hotbar reads "its" a moment. | The target awake, switching item. | A client hint on the held item's name. | S |
 | 239 | `title_splash` | 4 | The title screen's yellow splash text reads a line about them: "we watched you sleep". | The game's title screen, after a stay has begun. | A hook on the splash text while the hint is armed. | M |
 | 240 | `enchant_six` | 4 | At the enchanting table, the three offers cost 6, 6 and 6, and their glyphs read the same. | Using an enchanting table. | A client hint on the enchanting screen's costs. | S |

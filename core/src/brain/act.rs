@@ -20177,4 +20177,15 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn slot_barred_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("slot_barred").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "slot_barred" && *seconds == 120.0),
+            "{made:?}"
+        );
+    }
 }

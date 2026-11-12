@@ -2815,6 +2815,11 @@ The `[x]` lines above, summed up by day:
   `count_shows_zero` hint, `HudMixin` on the hotbar's slot drawing; off with the glitches). Tests:
   one in `act`. Was: no such event.
 
+- [x] **A slot barred** (`docs/events_todo.md`, 237): `slot_barred`, stages 4 and 5, awake: two
+  minutes in which their inventory, whenever open, draws a barrier in one empty slot, the same each
+  time (the `slot_barred` hint, drawn where `phantom_item` is; off with the glitches). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

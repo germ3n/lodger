@@ -36,6 +36,7 @@ public abstract class InventoryScreenMixin {
 				craftkit$top.setAccessible(true);
 			}
 			Glitches.phantomItem(graphics, screen.getMenu(), craftkit$left.getInt(screen), craftkit$top.getInt(screen), mouseX, mouseY);
+			Glitches.barredSlot(graphics, screen.getMenu(), craftkit$left.getInt(screen), craftkit$top.getInt(screen));
 		} catch (ReflectiveOperationException ignored) {
 			// The screen moved its fields: no paper, nothing else lost.
 		}
