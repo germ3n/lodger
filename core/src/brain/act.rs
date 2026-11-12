@@ -600,6 +600,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::OneStepMore
         | Action::RoomClosesIn
         | Action::TrapdoorToNothing
+        | Action::BedFenced
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8160,6 +8161,44 @@ pub fn commands(
                 ]
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 217.
+        Action::BedFenced => match memory.home.as_ref().and_then(|h| h.bed) {
+            Some(bed) => {
+                let ring: Vec<[i32; 2]> = (-1..=1)
+                    .flat_map(|dx| (-1..=1).map(move |dz| [dx, dz]))
+                    .filter(|d| *d != [0, 0])
+                    .collect();
+                let mut made = vec![(
+                    Command::PlaceBlueprint {
+                        id: ids(),
+                        at: bed,
+                        parts: ring
+                            .iter()
+                            .map(|d| craftkit::world::BlueprintPart {
+                                at: [d[0], 0, d[1]],
+                                block: "minecraft:oak_fence".to_string(),
+                                state: String::new(),
+                            })
+                            .collect(),
+                        replace: vec![],
+                    },
+                    0,
+                )];
+                for d in &ring {
+                    made.push((
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: [bed[0] + d[0], bed[1], bed[2] + d[1]],
+                            block: "minecraft:air".to_string(),
+                            only: vec!["minecraft:oak_fence".to_string()],
+                        },
+                        DAY_TICKS,
+                    ));
+                }
+                made
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -19171,5 +19210,18 @@ mod tests {
                 .push(([c[0], floor - 1, c[2]], "minecraft:oak_planks".to_string()));
         }
         assert_eq!(natural_floor(&memory), None);
+    }
+
+    #[test]
+    fn bed_fenced_rings_the_bed_into_air_and_goes_in_a_day() {
+        let memory = rich_memory();
+        let bed = memory.home.as_ref().unwrap().bed.unwrap();
+        let event = find("bed_fenced").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::PlaceBlueprint { at, parts, replace, .. } if *at == bed && parts.len() == 8 && replace.is_empty()),
+            "{made:?}"
+        );
+        assert_eq!(made.iter().filter(|(_, d)| *d == DAY_TICKS).count(), 8);
     }
 }

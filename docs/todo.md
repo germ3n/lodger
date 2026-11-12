@@ -2715,6 +2715,10 @@ The `[x]` lines above, summed up by day:
   pit two deep with a torch at its bottom and a spruce trapdoor over it, set over natural ground
   alone (never through a floor they laid). Tests: one in `act`. Was: no such event.
 
+- [x] **The bed fenced in** (`docs/events_todo.md`, 217): `bed_fenced`, stages 4 and 5, the target
+  asleep: oak fences in the eight cells round their bed's head, into air alone (the bed's foot the
+  only gap), gone a day on. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
