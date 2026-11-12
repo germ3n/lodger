@@ -2868,6 +2868,10 @@ The `[x]` lines above, summed up by day:
   seconds or until seen and looked away from (the figure's `finds`' `peak`, ABI 56: refused with
   none so high). Tests: one in `act`. Was: no such event.
 
+- [x] **The cattle turn away** (`docs/events_todo.md`, 248): `cattle_turn_away`, stages 3 to 5,
+  outdoors with cows near: every cow held forty-five seconds facing a point ten blocks beyond it,
+  straight away from where they stood (`hold`'s `at`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

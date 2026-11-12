@@ -764,6 +764,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FigureAtTheLectern
         | Action::FigureInYourArmour
         | Action::OnThePeak
+        | Action::CattleTurnAway
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9011,6 +9012,33 @@ pub fn commands(
                 *once_seen = true;
             }
             vec![(shown, 0)]
+        }
+        // docs/events_todo.md, 248.
+        Action::CattleTurnAway => {
+            let me = memory.last.pos;
+            memory
+                .creatures("cow")
+                .map(|cow| {
+                    let (dx, dz) = (cow.pos[0] - me[0], cow.pos[2] - me[2]);
+                    let length = (dx * dx + dz * dz).sqrt().max(0.1);
+                    (
+                        Command::Hold {
+                            id: ids(),
+                            entity: cow.id,
+                            player: target,
+                            seconds: 45.0,
+                            at: Some([
+                                cow.pos[0] + dx / length * 10.0,
+                                cow.pos[1],
+                                cow.pos[2] + dz / length * 10.0,
+                            ]),
+                            creep: false,
+                            spin: false,
+                        },
+                        0,
+                    )
+                })
+                .collect()
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -20522,5 +20550,31 @@ mod tests {
             matches!(&made[..], [(Command::Figure { finds, once_seen: true, .. }, 0)] if finds == "peak"),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn cattle_turn_away_face_a_point_beyond_each_cow() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.0, 64.0, 0.0];
+        let event = find("cattle_turn_away").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        let cow = memory.creatures("cow").next().unwrap();
+        let Some((
+            Command::Hold {
+                entity,
+                at: Some(to),
+                ..
+            },
+            0,
+        )) = made.first()
+        else {
+            panic!("{made:?}");
+        };
+        assert_eq!(*entity, cow.id);
+        let (away, cow_off) = (
+            (to[0] * to[0] + to[2] * to[2]).sqrt(),
+            (cow.pos[0] * cow.pos[0] + cow.pos[2] * cow.pos[2]).sqrt(),
+        );
+        assert!(away > cow_off + 9.0, "beyond the cow, from them: {to:?}");
     }
 }

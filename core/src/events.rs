@@ -1214,6 +1214,8 @@ pub enum Action {
     FigureInYourArmour,
     /// At sunset, the figure on top of the nearest mountain, against the sky.
     OnThePeak,
+    /// Every cow near them turning its back on them at once, a while.
+    CattleTurnAway,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7585,6 +7587,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::OnThePeak,
         false,
     ),
+    // docs/events_todo.md, 248: all the cows near them turn their backs on them at once.
+    row(
+        "cattle_turn_away",
+        3,
+        5,
+        &[Creature("cow"), TargetOutdoors],
+        1.0,
+        3,
+        Half,
+        Action::CattleTurnAway,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8203,6 +8217,7 @@ impl Event {
             | Action::FigureAtTheLectern
             | Action::FigureInYourArmour
             | Action::OnThePeak
+            | Action::CattleTurnAway
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8769,6 +8784,7 @@ impl Event {
             "figure_at_the_lectern" => "stand at their lectern reading, the figure",
             "figure_in_your_armour" => "stand far off in the armour they wear, the figure",
             "on_the_peak" => "stand on the nearest peak at sunset, the figure",
+            "cattle_turn_away" => "turn every cow near them away from them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
