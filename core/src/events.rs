@@ -1290,6 +1290,8 @@ pub enum Action {
     TheDragonGrowls,
     /// In the End, the beat of a second pair of wings just behind them, keeping pace.
     SecondWings,
+    /// In the End, at an end city, a knock from the other side of the wall beside them.
+    PurpurKnock,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8057,6 +8059,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SecondWings,
         true,
     ),
+    // docs/events_todo.md, 300: at an end city.
+    row(
+        "purpur_knock",
+        3,
+        5,
+        &[InEnd, MobNear("shulker")],
+        1.0,
+        3,
+        Half,
+        Action::PurpurKnock,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8363,6 +8377,7 @@ impl Event {
             | Action::HomeThroughThePortal
             | Action::TheDragonGrowls
             | Action::SecondWings
+            | Action::PurpurKnock
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -9301,6 +9316,7 @@ impl Event {
             "home_through_the_portal" => "let the sounds of home through their portal",
             "the_dragon_growls" => "growl the dragon's growl from the empty island",
             "second_wings" => "beat a second pair of wings behind them",
+            "purpur_knock" => "knock on the purpur wall beside them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

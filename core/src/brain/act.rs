@@ -880,6 +880,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::HomeThroughThePortal
         | Action::TheDragonGrowls
         | Action::SecondWings
+        | Action::PurpurKnock
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9998,6 +9999,58 @@ pub fn commands(
                 ),
             ]
         }
+        // docs/events_todo.md, 300.
+        Action::PurpurKnock => {
+            let b = memory.last.pos;
+            let way = facing_way(memory.last.yaw);
+            vec![
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.stone.hit".to_string(),
+                        pos: [
+                            b[0] - way[1] as f64 * 1.5,
+                            b[1] + 1.0,
+                            b[2] + way[0] as f64 * 1.5,
+                        ],
+                        volume: 1.0,
+                        pitch: 0.6,
+                    },
+                    0,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.stone.hit".to_string(),
+                        pos: [
+                            b[0] - way[1] as f64 * 1.5,
+                            b[1] + 1.0,
+                            b[2] + way[0] as f64 * 1.5,
+                        ],
+                        volume: 1.0,
+                        pitch: 0.6,
+                    },
+                    8,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.stone.hit".to_string(),
+                        pos: [
+                            b[0] - way[1] as f64 * 1.5,
+                            b[1] + 1.0,
+                            b[2] + way[0] as f64 * 1.5,
+                        ],
+                        volume: 1.0,
+                        pitch: 0.6,
+                    },
+                    16,
+                ),
+            ]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13880,6 +13933,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "purpur_knock"
                 || event.id == "second_wings"
                 || event.id == "the_dragon_growls"
                 || event.id == "home_through_the_portal"
@@ -22063,6 +22117,19 @@ mod tests {
         assert_eq!(event.effect(), "sounds");
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 6, "{made:?}");
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
+    }
+
+    #[test]
+    fn purpur_knock_is_heard_and_nothing_else() {
+        let mut memory = rich_memory();
+        memory.arrived_at = Some([3, 64, 3]);
+        let event = find("purpur_knock").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 3, "{made:?}");
         assert!(made
             .iter()
             .all(|(c, _)| matches!(c, Command::PlaySound { .. })));

@@ -473,6 +473,7 @@ caves, from before.
 | `home_through_the_portal` | 3 to 5 | In the Nether, where they came through, the sounds of home come through the portal, faint: a hen, a door shutting, a cow, rain; with nowhere they arrived known, nothing. | In the Nether, where they came in known. |
 | `the_dragon_growls` | 4 to 5 | In the End, far off, the dragon's growl from the central island, as if it were there still; heard from the island's middle, or forty-eight blocks toward it when farther. | In the End. |
 | `second_wings` | 4 to 5 | In the End, the beat of a second pair of wings three blocks behind them, keeping pace with them, six beats, and gone when they turn; nothing is there. | In the End. |
+| `purpur_knock` | 3 to 5 | At an end city (a shulker near them), three knocks from inside the wall beside them, as if from the other side; behind it is solid. | In the End, a shulker near them. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

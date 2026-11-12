@@ -3013,6 +3013,10 @@ The `[x]` lines above, summed up by day:
   the End: six wingbeats three blocks behind them four fifths of a second apart, to them alone.
   Tests: one in `act`. Was: no such event.
 
+- [x] **A knock in the purpur** (`docs/events_todo.md`, 300): `purpur_knock`, stages 3 to 5, in the
+  End with a shulker near (at an end city): three stone knocks a block and a half to their side, two
+  fifths of a second apart, to them alone. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
