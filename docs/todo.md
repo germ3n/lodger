@@ -3036,6 +3036,11 @@ The `[x]` lines above, summed up by day:
   standing or on a wall within three up or down, out of their sight. Tests: one in `act`. Was: no
   such event.
 
+- [x] **Their name in the netherrack** (`docs/events_todo.md`, 275): `name_in_netherrack`, stages 4
+  and 5, in the Nether: their name (eight letters at most, letters and digits) cut into netherrack
+  alone three blocks behind them, five high from their feet, in `name_in_the_snow`'s letters stood
+  on end. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

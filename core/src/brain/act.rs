@@ -375,6 +375,9 @@ fn hold_kind(
         .collect()
 }
 
+/// The most letters of their name `name_in_netherrack` cuts.
+const NAME_CUT_MOST: usize = 8;
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -883,6 +886,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PurpurKnock
         | Action::ShipCreaks
         | Action::TheirTorchAhead
+        | Action::NameInNetherrack
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10135,6 +10139,42 @@ pub fn commands(
                 0,
             )]
         }
+        // docs/events_todo.md, 275.
+        Action::NameInNetherrack => {
+            let name: String = memory
+                .target_name
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric())
+                .take(NAME_CUT_MOST)
+                .collect();
+            let way = facing_way(memory.last.yaw);
+            let side = [-way[1], way[0]];
+            let at = block_of(memory.last.pos);
+            // Three behind them, read from where they stand: the letters left to right as they
+            // face it, five high from their feet up.
+            let base = [at[0] - way[0] * 3, at[1], at[2] - way[1] * 3];
+            let width = name.chars().count() as i32 * 4 - 1;
+            let mut made = Vec::new();
+            for (i, letter) in name.chars().enumerate() {
+                for [lx, lz] in snow_letter(letter) {
+                    let across = i as i32 * 4 + lx - width / 2;
+                    made.push((
+                        set(
+                            ids,
+                            [
+                                base[0] + side[0] * across,
+                                base[1] + 4 - lz,
+                                base[2] + side[1] * across,
+                            ],
+                            "minecraft:air",
+                            &["minecraft:netherrack"],
+                        ),
+                        0,
+                    ));
+                }
+            }
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14017,6 +14057,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "name_in_netherrack"
                 || event.id == "their_torch_ahead"
                 || event.id == "breath_in_the_nether"
                 || event.id == "souls_follow"
@@ -22269,5 +22310,18 @@ mod tests {
             matches!(&made[..], [(Command::SetBlock { pos, block, settle: 3, .. }, 0)] if *pos == [0, 70, 9] && block == "minecraft:torch"),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn name_in_netherrack_cuts_the_letters_behind_them_in_netherrack_alone() {
+        let mut memory = rich_memory();
+        memory.target_name = "Al".to_string();
+        memory.last.pos = [0.5, 70.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("name_in_netherrack").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        let cells = snow_letter('A').len() + snow_letter('L').len();
+        assert_eq!(made.len(), cells, "{made:?}");
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::SetBlock { pos, replace, .. } if pos[2] == -3 && replace == &vec!["minecraft:netherrack".to_string()])));
     }
 }
