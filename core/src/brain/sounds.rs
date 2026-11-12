@@ -1256,6 +1256,33 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 181.
+        "digging_under_the_floor" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:entity.sniffer.digging", 0)],
+                    (0.7, 0.8),
+                    0.8,
+                    Below,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.sniffer.digging", 0),
+                        ("minecraft:entity.sniffer.digging", 40),
+                    ],
+                    (0.65, 0.75),
+                    0.7,
+                    Below,
+                ),
+                v(
+                    &[("minecraft:entity.sniffer.digging", 0)],
+                    (0.6, 0.7),
+                    0.9,
+                    Below,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2238,6 +2265,7 @@ mod tests {
             "vault_opens_by_the_bed",
             "creaking_behind",
             "bulbs_clicking",
+            "digging_under_the_floor",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

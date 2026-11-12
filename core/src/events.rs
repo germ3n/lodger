@@ -5832,6 +5832,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.wind_charge.wind_burst"),
         false,
     ),
+    // docs/events_todo.md, 181.
+    row(
+        "digging_under_the_floor",
+        3,
+        5,
+        &[TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.sniffer.digging"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7341,6 +7353,7 @@ impl Event {
             "creaking_behind" => "creak and step behind them in the woods",
             "bulbs_clicking" => "click copper bulbs on and off in the room",
             "gust_from_nowhere" => "burst a gust of wind beside them that pushes them",
+            "digging_under_the_floor" => "dig and snuffle under the floor",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
