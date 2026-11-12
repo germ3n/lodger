@@ -147,7 +147,13 @@ fn observations(tick: u64) -> Observations {
 #[test]
 #[ignore = "needs the real model under core/models and a minute; prints every decision"]
 fn three_days_against_the_real_model_print_every_decision() {
-    let Some(path) = local_model() else {
+    // MODEL=<path> for another model (the 4B in a game instance's config/lodger/models), GPU=1
+    // with `--features metal` (or `vulkan`) to run it on the GPU.
+    let Some(path) = std::env::var("MODEL")
+        .ok()
+        .map(PathBuf::from)
+        .or_else(local_model)
+    else {
         eprintln!("no model under core/models; nothing to calibrate against");
         return;
     };
@@ -162,7 +168,7 @@ fn three_days_against_the_real_model_print_every_decision() {
         context: 1024,
         temperature: 0.7,
         seed: 7,
-        gpu_layers: 0,
+        gpu_layers: if std::env::var("GPU").is_ok() { 999 } else { 0 },
         pause_ms: 1,
     });
     model.warm().expect("the model loads");

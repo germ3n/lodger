@@ -358,6 +358,57 @@ fn mean_logprob(
     Ok(total / choice.len() as f32)
 }
 
+/// How many orders a lettered question is asked in.
+const LETTERED_ORDERS: usize = 3;
+/// Past this many choices a question is a menu, and `mixed` letters it.
+const LETTERED_PAST: usize = 5;
+
+/// A lettered question's scores, a choice each: the log-probability of its letter after
+/// `The answer is:`, with the list in `LETTERED_ORDERS` orders (turned a third of the way each
+/// time), averaged. The situation stays decoded; each order is decoded on it and rewound.
+fn lettered_scores(
+    engine: &mut Engine,
+    vocab: &LlamaVocab,
+    batch: &mut LlamaBatch,
+    sit_end: i32,
+    question: &Question,
+) -> Result<Vec<f32>, String> {
+    let n = question.choices.len();
+    if n > 26 {
+        return Err("a lettered question holds 26 choices at most".to_string());
+    }
+    let letters: Vec<char> = ('A'..='Z').take(n).collect();
+    let letter_tokens: Vec<LlamaToken> = letters
+        .iter()
+        .map(|l| tokenize(vocab, &format!(" {l}"), false).first().copied())
+        .collect::<Option<Vec<_>>>()
+        .ok_or_else(|| "a letter produced no token".to_string())?;
+    let orders = LETTERED_ORDERS.min(n.max(1));
+    let mut totals = vec![0.0f32; n];
+    for k in 0..orders {
+        let shift = k * n / orders;
+        // At place i, choice (i + shift) % n.
+        let order: Vec<usize> = (0..n).map(|i| (i + shift) % n).collect();
+        let mut listing = String::new();
+        for (place, choice) in order.iter().enumerate() {
+            listing.push_str(&format!(
+                "{}. {}\n",
+                letters[place], question.choices[*choice]
+            ));
+        }
+        let suffix = format!("\n{}\n{listing}The answer is:", question.text);
+        rewind(&mut engine.ctx, sit_end)?;
+        let tokens = tokenize(vocab, &suffix, false);
+        decode_tokens(&mut engine.ctx, batch, &tokens, sit_end, true)?;
+        let logits = logits_row(&engine.ctx, batch.n_tokens() - 1);
+        for (place, choice) in order.iter().enumerate() {
+            totals[*choice] += log_softmax_at(&logits, letter_tokens[place].0)?;
+        }
+    }
+
+    Ok(totals.into_iter().map(|t| t / orders as f32).collect())
+}
+
 /// A situation's frame: up to and through its "What it knows:" line, the memory's lines left out;
 /// all of it when it has none.
 fn frame_of(situation: &str) -> &str {
@@ -427,7 +478,22 @@ fn decode_questions(
             rewind(&mut engine.ctx, sit_end)?;
         }
 
-        let suffix = if mode >= 3 {
+        // Lettered (5): the choices under letters, the letter answered scored, each choice one
+        // token, so no common phrase rides on the words that follow its first; asked in several
+        // orders and averaged, for a small model's lean toward the first letters.
+        // Mixed (6): lettered for a menu (more than five choices), spaced for the short fixed
+        // questions, which spaced already reads right.
+        if mode == 5 || (mode == 6 && question.choices.len() > LETTERED_PAST) {
+            let scores = lettered_scores(engine, &vocab, &mut batch, sit_end, question)?;
+            let answer = {
+                let mut rng = engine.rng.lock().unwrap_or_else(|err| err.into_inner());
+                answer_for(&question.choices, &scores, engine.temperature, &mut rng)
+            };
+            answers.push(answer);
+            continue;
+        }
+
+        let suffix = if mode == 3 || mode == 4 {
             format!(
                 "\n{}\nIts choices: {}.\nThe answer is:",
                 question.text,

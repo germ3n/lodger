@@ -132,7 +132,8 @@ loaded, the first ask loads it on the worker thread and waits the second or two.
    without logits.
 2. For each question: rewind the cache to the end of the situation, tokenize
    `\n<question>\nThe answer is:` and decode it, keeping the last position's logits.
-3. For each choice: tokenize it with a space before it (` move a torch`; no special tokens). Its score is the mean over its tokens of
+3. A question of more than five choices, the menu, is lettered (below). For the others: tokenize
+   each choice with a space before it (` move a torch`; no special tokens). Its score is the mean over its tokens of
    the log-probability of each token given the ones before: the first from the question's
    logits, the rest by decoding the choice one token at a time, then rewinding to the end of
    the question for the next choice. A one-token choice costs no decode.
@@ -162,15 +163,44 @@ sleep`; gone mining far from home: `while they are away`):
 | `plain`, as it was | 1 of 2 | 1 of 2 | one short phrase whatever the situation |
 | `spaced` (now) | 2 of 2 | 2 of 2 | the same short phrase |
 | `calibrated`: less the choice's score after the frame alone | 0 of 2 | 0 to 1 of 2 | the same |
-| `half`: less half that | 0 of 2 | 0 of 2 | the 4B the loudest events, but never another |
 | `listed`: the choices named in the question | 0 to 1 of 2 | 1 of 2 | the loudest events, by where they sit in the list |
+| `half`: listed, less half the baseline | 0 of 2 | 0 of 2 | the 4B the loudest events, but never another |
+| `lettered`: the choices under letters, the letter scored | 0 to 2 of 2 | 0 to 2 of 2 | the loud ones, fitting the situation |
+| `mixed` (now): lettered past five choices, spaced below | 2 of 2 | 2 of 2 | the loud ones in the late stages, fitting the situation |
 
-So `spaced` alone reads the situation, on both models. Calibration (the usual cure for a common
-phrase winning, and tried two ways) and listing the choices moved the picks toward the loud
-events but stopped the model reading the situation, which is worse. What is left is in the menu's
-words: they run from one word to fifteen, and a short, common phrase (`knock on the door`) wins
-the mean over a long, particular one (`walk to their bed as they sleep and choke them with a
-lead`). The frame (`docs/brain.md`) moved the picks little either way.
+**Why a common phrase won.** The mean over a choice's tokens: once ` knock` is read, ` on the
+door` is all but certain, so that idiom's mean stays high whatever the situation, and any idiom on
+a menu beats the rest. Shortening the words did not help (below), so it was not their length.
+
+**Lettered.** The choices listed under letters, `A. wait`, `B. move a torch`, ..., then `The
+answer is:`, and each choice scored by its letter's log-probability: one token each, so no
+phrase rides on its own words. A small model leans toward the first letters, so the list is
+asked in three orders (turned a third of the way each time) and the scores averaged
+(`lettered_scores`). One decode an order rather than one a choice's token, so it is no slower.
+The short fixed questions (`Should it do something soon?`, `When?`, `Where?`) stay `spaced`,
+which already reads them right and which lettering made worse.
+
+**Fits** (`short_menu_words_against_long_on_situations_with_one_plain_fit`): six situations,
+each with one event that plainly fits (asleep in bed: the choke; trading with a villager: the
+stab; deep in a cave: the torches flicker; in a dark forest: peeking from the trees; opening their
+chest: sorting it; swimming a lake: the figure beneath), on one menu with `knock on the door` and
+`move a torch`, three orders each, eighteen asks:
+
+| Scoring | 1.5B, the catalogue's words | 1.5B, short words | 4B, the catalogue's words | 4B, short words |
+| --- | --- | --- | --- | --- |
+| `spaced` | 0 | 0 | 0 | 0 |
+| `mixed` | 6 | 3 | 12 | 12 |
+
+Every `spaced` answer was `knock on the door`. The menu's words were kept as they are: under
+`mixed` the 4B fits as well with them as with short ones, and the 1.5B better.
+
+**A three-day stay** (`core/tests/calibration.rs`, seed 7) under `mixed`: the 1.5B 71 decisions,
+31 events landed, 23 of its picks `wait`; the 4B 56, 33 and 16. Before, the 1.5B made 49 and
+landed 31 with two `wait`s: `wait` lost to `knock on the door` as everything did. As many land
+(the day's budget holds them), and it now waits when waiting fits, oftenest early, where the
+frame says nothing it does yet could not be explained away. With `mixed` the frame's stage
+sentence tells too: the 4B picked the loud events in all six late-stage asks under it, in three
+under the old frame.
 
 The unit tests of the pure parts (softmax, log-softmax, the winner, the validation of empty
 situations and choices) are the engine's, moved. The scoring itself is tested against the real

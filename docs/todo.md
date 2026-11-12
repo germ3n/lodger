@@ -2413,6 +2413,16 @@ The `[x]` lines above, summed up by day:
   [Model](model.md#scoring). Left: the menu's words (one to fifteen words; short, common ones
   win). Tests changed (owner told): the situation's frame text and the brain's "What it knows".
 
+- [x] **The menu picked to fit the situation** (owner: "do this please", of shortening the menu's
+  words). Was: one common phrase (`knock on the door`) won every menu, on the 1.5B and the 4B,
+  whatever the situation. Measured first: shortening the words changed nothing (0 of 18 fits
+  either way), so the words were kept; the cause was scoring a choice by the mean over its
+  tokens, an idiom's tail all but certain. Now a menu (more than five choices) is lettered: the
+  letter answered is scored, the list asked in three orders and averaged; the short questions
+  stay `spaced` (`mixed`, the default). Fits went from 0 to 6 of 18 on the 1.5B and 0 to 12 on the
+  4B, every obvious `When?` right on both, and a three-day stay waits when waiting fits. Numbers in
+  [Model](model.md#scoring); the half mode measured, correctly named (it was also listed).
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

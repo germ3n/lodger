@@ -62,10 +62,13 @@ pub const DECODE_REST: std::time::Duration = std::time::Duration::from_millis(1)
 /// by how much the situation raises it, not by how common its words are; 3 `listed`, spaced,
 /// with the choices named in the question first (`Its choices: a; b; c.`), so it picks among
 /// them rather than judging each alone; 4 `half`, spaced, less half the `calibrated` baseline.
-/// The baseline is the choice's score after the frame alone, no memory lines.
-/// `spaced` by default: measured against the 1.5B and the 4B, the one way that reads the
-/// situation (`docs/model.md`, Scoring); the others stay for `core/tests/frames.rs` to compare.
-pub static SCORING: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(1);
+/// The baseline is the choice's score after the frame alone, no memory lines. 5 `lettered`: the
+/// choices listed under letters and the letter answered scored, in three orders averaged. 6
+/// `mixed`: lettered for a question of more than five choices (the menu), spaced for the rest.
+/// `mixed` by default: measured against the 1.5B and the 4B, the one way that both reads the
+/// situation and picks from the menu to fit it (`docs/model.md`, Scoring); the others stay for
+/// `core/tests/frames.rs` to compare.
+pub static SCORING: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(6);
 
 /// The rest the config asks for (`model.pause_ms`), for every decode: set as the model starts.
 pub static PAUSE_MS: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(1);

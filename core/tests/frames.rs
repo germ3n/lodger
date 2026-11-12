@@ -119,9 +119,17 @@ fn the_old_frame_and_the_new_scored_on_late_stage_menus() {
             "while they are away",
         ),
     ];
-    for (mode, scoring) in ["plain", "spaced", "calibrated", "listed", "half"]
-        .iter()
-        .enumerate()
+    for (mode, scoring) in [
+        "plain",
+        "spaced",
+        "calibrated",
+        "listed",
+        "half",
+        "lettered",
+        "mixed",
+    ]
+    .iter()
+    .enumerate()
     {
         if std::env::var("ONLY").is_ok_and(|only| only != *scoring) {
             continue;
@@ -173,6 +181,123 @@ fn the_old_frame_and_the_new_scored_on_late_stage_menus() {
             }
             println!("SUMMARY {scoring} {name}: {loud} of 6 loud, {} different picks, {right} of 2 obvious whens right", picks.len());
         }
+    }
+    model.shutdown();
+}
+
+/// Whether the menu's wording decides the pick: six situations, each with one event that plainly
+/// fits it, on one menu with the two that won every menu before; scored with the catalogue's
+/// words and with short ones. Ignored; `MODEL` and `GPU=1` as above.
+#[test]
+#[ignore = "needs the real model under core/models; prints every answer"]
+fn short_menu_words_against_long_on_situations_with_one_plain_fit() {
+    let path = std::env::var("MODEL")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("models")
+                .join("qwen-1.5b.gguf")
+        });
+    if !path.is_file() {
+        eprintln!("no model; nothing to compare");
+        return;
+    }
+    let model = Model::new(Settings {
+        path,
+        threads: 4,
+        context: 1024,
+        temperature: 0.0,
+        seed: 7,
+        gpu_layers: if std::env::var("GPU").is_ok() { 999 } else { 0 },
+        pause_ms: 1,
+    });
+    model.warm().expect("the model loads");
+    // Each situation, the event that fits it, and its short words.
+    let cases = [
+        (
+            "The player is asleep in their bed. It is the middle of the night.",
+            "choke",
+            "choke them in their sleep",
+        ),
+        (
+            "The player is in the village, trading with a villager.",
+            "villager_stabs",
+            "stab them through a villager",
+        ),
+        (
+            "The player is deep in a cave, their torches along the tunnel behind them.",
+            "cave_torches_flicker",
+            "flicker their cave torches",
+        ),
+        (
+            "The player is walking through a dark forest.",
+            "peeks_from_the_trees",
+            "peek at them from the trees",
+        ),
+        (
+            "The player just opened their chest by the door.",
+            "tidy_chest",
+            "sort the chest",
+        ),
+        (
+            "The player is swimming across a deep lake.",
+            "swims_beneath",
+            "swim beneath them",
+        ),
+    ];
+    let others = [
+        ("knock", "knock on the door"),
+        ("move_light", "move a torch"),
+    ];
+    let scoring = std::env::var("SCORING")
+        .ok()
+        .and_then(|s| s.parse::<u8>().ok())
+        .unwrap_or(1);
+    lodger_core::model::SCORING.store(scoring, Ordering::Relaxed);
+    for wording in ["long", "short"] {
+        let words_of = |id: &str, short: &str| {
+            if wording == "short" {
+                short.to_string()
+            } else {
+                lodger_core::events::find(id)
+                    .unwrap()
+                    .menu_words()
+                    .to_string()
+            }
+        };
+        let mut menu: Vec<(String, &str)> = vec![("wait".to_string(), "wait")];
+        for (_, id, short) in cases {
+            menu.push((words_of(id, short), id));
+        }
+        for (id, short) in others {
+            menu.push((words_of(id, short), id));
+        }
+        let mut fits = 0;
+        for (line, wanted, _) in cases {
+            for turn in 0..3 {
+                let mut choices: Vec<(String, &str)> = menu.clone();
+                choices.rotate_left(turn * 3);
+                let question = Question {
+                    text: WHAT.to_string(),
+                    choices: choices.iter().map(|(w, _)| w.clone()).collect(),
+                };
+                let text = format!("{}{line}\n", new_frame(4));
+                let answer = &model.ask(&text, &[question]).expect("answered")[0];
+                let picked = choices
+                    .iter()
+                    .find(|(w, _)| *w == answer.choice)
+                    .map(|(_, id)| *id)
+                    .unwrap_or("?");
+                if picked == wanted {
+                    fits += 1;
+                }
+                println!(
+                    "{wording} {wanted} t{turn}: {picked} ({:.2})",
+                    answer.confidence
+                );
+            }
+        }
+        println!("FITS scoring {scoring} {wording}: {fits} of 18");
     }
     model.shutdown();
 }
