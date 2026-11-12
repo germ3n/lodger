@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // Over them.
+        Action::Vexes(..) => Some(block_of(memory.last.pos)),
         // Twenty blocks behind them, on the ground: it walks at them out of the dark.
         Action::ZombieInYourGear(_) => {
             let at = block_of(memory.last.pos);
@@ -6482,6 +6484,37 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Out of nowhere round them, a few blocks up and behind, at them half a minute: each hit
+        // the harm asked, never a kill; killed they leave nothing.
+        Action::Vexes(count, harm) => {
+            let at = memory.last.pos;
+            let yaw = (memory.last.yaw as f64).to_radians();
+            (0..count)
+                .map(|i| {
+                    let spread = if count > 1 {
+                        std::f64::consts::TAU * i as f64 / count as f64
+                    } else {
+                        0.0
+                    };
+                    let a = yaw + std::f64::consts::PI + spread;
+                    (
+                        Command::PlaceEntity {
+                            id: ids(),
+                            of: "minecraft:vex".to_string(),
+                            pos: [at[0] - a.sin() * 7.0, at[1] + 3.0, at[2] + a.cos() * 7.0],
+                            yaw: 0.0,
+                            seconds: 30.0,
+                            kept: String::new(),
+                            face: None,
+                            targets: Some(target),
+                            harm,
+                            wears: Vec::new(),
+                        },
+                        i as u64 * 3,
+                    )
+                })
+                .collect()
+        }
         // A zombie in armour like theirs, holding a tool like the one in their hand, set on them
         // two minutes: its hits by the harm stages, never a kill; killed it leaves nothing.
         Action::ZombieInYourGear(harm) => pos
@@ -14850,5 +14883,45 @@ mod tests {
         assert_eq!(of, "minecraft:zombie");
         assert_eq!(*harm, 4.0);
         assert_eq!(wears.len(), 3, "their armour and their sword: {wears:?}");
+    }
+
+    #[test]
+    fn a_vex_by_the_stage_or_a_swarm_that_nicks() {
+        let memory = rich_memory();
+        let made = |id: &str| {
+            let event = find(id).unwrap();
+            commands(
+                event,
+                place(event, &memory, &mut Rng::new(1)),
+                &memory,
+                &mut ids(),
+                &Now::default(),
+                None,
+            )
+        };
+        let harm = |made: &[(Command, u64)]| -> Vec<f32> {
+            made.iter()
+                .filter_map(|(c, _)| match c {
+                    Command::PlaceEntity {
+                        of,
+                        harm,
+                        targets: Some(0),
+                        ..
+                    } if of == "minecraft:vex" => Some(*harm),
+                    _ => None,
+                })
+                .collect()
+        };
+        assert_eq!(harm(&made("vex_single")), vec![4.0]);
+        assert_eq!(
+            harm(&made("vex_strikes")),
+            vec![6.0],
+            "harder in stage five"
+        );
+        let wave = harm(&made("vex_wave"));
+        assert_eq!(wave.len(), 12);
+        assert!(wave.iter().all(|h| *h <= 1.0), "a nick each");
+        assert_eq!(find("vex_single").unwrap().to_stage, 4);
+        assert_eq!(find("vex_strikes").unwrap().from_stage, 5);
     }
 }

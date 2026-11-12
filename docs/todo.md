@@ -2054,6 +2054,11 @@ The `[x]` lines above, summed up by day:
   (`place_entity`'s `wears`, ABI 54; the memory keeps what they wear now). Tests: one in `act`. Was:
   no such event.
 
+- [x] **Vexes** (`docs/events_todo.md`, 113, owner's): `vex_single` (stage 4, two hearts a hit) and
+  `vex_strikes` (stage 5, three), one vex at them; `vex_wave` (stages 4 and 5), twelve, half a heart
+  each; all spared, never a kill, nothing dropped, gone in half a minute. Tests: one in `act`. Was:
+  no such events.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
