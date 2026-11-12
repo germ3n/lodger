@@ -117,6 +117,12 @@ public final class Atmospheres {
 	private static long redAsked;
 
 	/** The rain hook: a drop's colour, red while red rain is on, its alpha kept. */
+	/** Whether red rain colours the drops now (`rain`'s weight above nothing). */
+	public static boolean redRainOn() {
+		rain(1f);
+		return redWeight > 0;
+	}
+
 	public static int rain(float alpha) {
 		// Asked once a frame or so: the rain asks this of every column it draws.
 		long now = System.currentTimeMillis();

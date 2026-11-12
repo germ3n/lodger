@@ -1,20 +1,30 @@
 package craftkit.host.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import craftkit.host.client.Atmospheres;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
-import net.minecraft.util.ARGB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
-/** Red rain: each drop's colour, white in the game, red while `red_rain` is on. */
-@Mixin(WeatherEffectRenderer.class)
+/**
+ * Red rain: each drop's colour as it is set, red while `red_rain` is on. A wrap of the colour
+ * call itself, at a priority over the rest, so it is the last word: Subtle Effects' biome-coloured
+ * rain sets the drops' colour there too, and it left them water-blue under red rain (owner: "without
+ * a shader the rain drops are still blue, even when triggering red_rain"). Otherwise the call goes
+ * on as it was, theirs included.
+ */
+@Mixin(value = WeatherEffectRenderer.class, priority = 1500)
 public abstract class WeatherEffectRendererMixin {
-	@Redirect(method = "prepareInstances", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ARGB;white(F)I"))
-	private int craftkit$redRain(float alpha, com.mojang.blaze3d.vertex.VertexConsumer builder, java.util.List<?> columns,
-			net.minecraft.world.phys.Vec3 cameraPos, float maxAlpha, int radius, float intensity) {
-		// The rain's call is made with a full alpha, the snow's with 0.8: the snow stays white
-		// (until now it turned red too).
-		return maxAlpha >= 0.9f ? Atmospheres.rain(alpha) : net.minecraft.util.ARGB.white(alpha);
+	@WrapOperation(method = "prepareInstances", at = @At(value = "INVOKE",
+			target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;setColor(I)Lcom/mojang/blaze3d/vertex/VertexConsumer;"))
+	private VertexConsumer craftkit$redRain(VertexConsumer vertex, int colour, Operation<VertexConsumer> original,
+			VertexConsumer builder, java.util.List<?> columns, net.minecraft.world.phys.Vec3 cameraPos, float maxAlpha, int radius, float intensity) {
+		// The rain's columns are drawn with a full alpha, the snow's with 0.8: the snow stays white.
+		if (maxAlpha >= 0.9f && Atmospheres.redRainOn()) {
+			return vertex.setColor(Atmospheres.rain(((colour >>> 24) & 0xFF) / 255f));
+		}
+		return original.call(vertex, colour);
 	}
 }

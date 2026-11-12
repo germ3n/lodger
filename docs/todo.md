@@ -2647,6 +2647,14 @@ The `[x]` lines above, summed up by day:
   the snow layer on the ground taken off in each column (counted from the ground, over snow
   alone). Tests: one in `act`.
 
+- [x] **Red rain beside Subtle Effects** (owner: "without a shader the rain drops are still
+  blue, even when triggering red_rain"). Was: red rain changed the drops' colour where the game
+  makes it (`ARGB.white` in `prepareInstances`), and Subtle Effects' biome-coloured rain set it
+  again at the colour call after, to the biome's water. Now the hook wraps that colour call
+  itself (MixinExtras, priority 1500, the last word): under red rain the drops are red, its own
+  colourless rain texture taking the tint cleanly; otherwise theirs goes on as it was. Snow stays
+  white.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -30,6 +30,9 @@ dependencies {
 	// jar's own deflate. Bundled by each loader's jar (Fabric's include, NeoForge's jarJar).
 	implementation "org.tukaani:xz:${xz_version}"
 	compileOnly 'net.fabricmc:sponge-mixin:0.17.5+mixin.0.8.7'
+	// MixinExtras, which both loaders ship: red rain wraps the drops' colour call, as Subtle
+	// Effects' biome-coloured rain does, and must run after it.
+	compileOnly 'io.github.llamalad7:mixinextras-fabric:0.5.5'
 	// Gson is the game's own, on the compile classpath through NeoForm, but the JUnit runtime
 	// classpath does not get the game's libraries; the tests that parse manifests need it.
 	testImplementation 'com.google.code.gson:gson:2.14.0'
