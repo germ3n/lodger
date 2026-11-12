@@ -288,6 +288,9 @@ const STATUE_TURN_TICKS: u64 = 400;
 /// How many spadefuls `figure_digging` is heard digging, two and a half seconds apart.
 const DIG_SOUNDS: u64 = 12;
 
+/// How many blocks `climbing_the_house`'s figure climbs, from two below the window.
+const CLIMB_STEPS: i32 = 7;
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -753,6 +756,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TitleYourName
         | Action::FigureDigging
         | Action::FigureBows
+        | Action::ClimbingTheHouse
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8898,6 +8902,48 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 244.
+        Action::ClimbingTheHouse => match (
+            memory.fixtures("glass_pane").next().map(|f| f.pos),
+            memory.home.as_ref(),
+        ) {
+            (Some(pane), Some(home)) => {
+                let (dx, dz) = (pane[0] - home.center[0], pane[2] - home.center[2]);
+                let out = if dx.abs() >= dz.abs() {
+                    [dx.signum(), 0]
+                } else {
+                    [0, dz.signum()]
+                };
+                let (x, z) = (
+                    (pane[0] + out[0]) as f64 + 0.5,
+                    (pane[2] + out[1]) as f64 + 0.5,
+                );
+                let up: Vec<Pos> = (0..=CLIMB_STEPS)
+                    .map(|i| [x, (pane[1] - 2 + i) as f64, z])
+                    .collect();
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    [pane[0] + out[0], pane[1] - 3, pane[2] + out[1]],
+                    40.0,
+                    false,
+                );
+                if let Command::Figure {
+                    path,
+                    once_seen,
+                    held,
+                    ..
+                } = &mut shown
+                {
+                    *path = up;
+                    *once_seen = true;
+                    *held = ItemStack::default();
+                }
+                vec![(shown, 0)]
+            }
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20337,6 +20383,30 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Figure { bows: true, held, seconds, .. }, 0)] if held.id.is_empty() && *seconds == 6.0),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn climbing_the_house_goes_straight_up_outside_their_window() {
+        let memory = rich_memory();
+        let event = find("climbing_the_house").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        let Some((
+            Command::Figure {
+                path,
+                once_seen: true,
+                ..
+            },
+            0,
+        )) = made.first()
+        else {
+            panic!("{made:?}");
+        };
+        assert_eq!(path.len() as i32, CLIMB_STEPS + 1);
+        assert!(
+            path.windows(2)
+                .all(|w| w[1][1] == w[0][1] + 1.0 && w[1][0] == w[0][0] && w[1][2] == w[0][2]),
+            "straight up: {path:?}"
         );
     }
 }

@@ -2849,6 +2849,11 @@ The `[x]` lines above, summed up by day:
   figure far off, empty-handed, bowing once a moment after it is shown, two seconds down and up
   again, gone at six seconds (the figure's `bows`, ABI 56). Tests: one in `act`. Was: no such event.
 
+- [x] **Climbing the house** (`docs/events_todo.md`, 244): `climbing_the_house`, stage 5, indoors at
+  night: the figure a block outside one of their windows, its path straight up the wall from two
+  below the pane, a block a step, facing in at them, forty seconds or until seen and looked away
+  from. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
