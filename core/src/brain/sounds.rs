@@ -100,6 +100,33 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 117.
+        "scream_indoors" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:entity.goat.screaming.ambient", 0)],
+                    (0.7, 0.8),
+                    0.9,
+                    Above,
+                ),
+                v(
+                    &[("minecraft:entity.goat.screaming.hurt", 0)],
+                    (0.6, 0.7),
+                    0.8,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.goat.screaming.ambient", 0),
+                        ("minecraft:entity.goat.screaming.ambient", 30),
+                    ],
+                    (0.75, 0.85),
+                    0.7,
+                    Above,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1062,6 +1089,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "scream_indoors",
             "breathing_in_the_wall",
         ] {
             let n = variants(id)

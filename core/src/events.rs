@@ -5330,6 +5330,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.player.breath"),
         false,
     ),
+    // docs/events_todo.md, 117.
+    row(
+        "scream_indoors",
+        4,
+        5,
+        &[TargetIndoors, Night],
+        3.0,
+        2,
+        Full,
+        Action::SoundAtTarget("minecraft:entity.goat.screaming.ambient"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6480,6 +6492,7 @@ impl Event {
             "sound_warp" => "make every sound they hear go wrong a while",
             "villager_flees_in" => "send a villager banging at their door, to run in and die",
             "breathing_in_the_wall" => "breathe slowly inside the wall beside them",
+            "scream_indoors" => "scream like a goat from another room of their house",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
