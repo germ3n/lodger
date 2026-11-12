@@ -2690,6 +2690,11 @@ The `[x]` lines above, summed up by day:
   and 5, the target away or asleep: a sign by the door they use, two out, with their bed's x, y and
   z a line each. Tests: one in `act`. Was: no such event.
 
+- [x] **A trident planted at its place** (`docs/events_todo.md`, 212): `trident_planted`, stages 4
+  and 5, the target away or asleep: a trident thrown straight down into the ground at its place,
+  never to be picked up, gone in a day (`place_entity`'s `minecraft:trident`, ABI 56). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

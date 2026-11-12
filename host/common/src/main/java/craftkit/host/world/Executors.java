@@ -2652,6 +2652,23 @@ public final class Executors {
 		if (HOSTILE.contains(of) && wanted <= 0) {
 			return report(id, false, "a hostile is only ever placed for a while");
 		}
+		// A trident thrown straight down out of the sky, stuck in the ground (ABI 56): never
+		// theirs to pick up, harmless, and gone with its time, so nothing is had from nothing.
+		if (of.equals("minecraft:trident")) {
+			if (wanted <= 0) {
+				return report(id, false, "a trident is only ever placed for a while");
+			}
+			JsonArray t = command.getAsJsonArray("pos");
+			var trident = new net.minecraft.world.entity.projectile.arrow.ThrownTrident(level, t.get(0).getAsDouble(),
+					t.get(1).getAsDouble() + 6, t.get(2).getAsDouble(), new ItemStack(net.minecraft.world.item.Items.TRIDENT));
+			trident.pickup = net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.DISALLOWED;
+			trident.setBaseDamage(0);
+			trident.setDeltaMovement(0, -2.5, 0);
+			trident.setXRot(-90);
+			level.addFreshEntity(trident);
+			context.temporaries().add(trident, wanted);
+			return report(id, true, "");
+		}
 		// The killer bunny is the game's own rabbit of its evil kind (ABI 55).
 		boolean killer = of.equals("minecraft:killer_bunny");
 		Optional<Holder.Reference<net.minecraft.world.entity.EntityType<?>>> type = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(killer ? "minecraft:rabbit" : of));

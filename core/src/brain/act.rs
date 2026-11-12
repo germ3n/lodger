@@ -480,6 +480,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             _ => None,
         };
     }
+    // A trident stands at its place.
+    if event.id == "trident_planted" {
+        return spot(memory, rng);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -500,6 +504,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::MushroomsInCorners
         | Action::ShulkerLidPeeks
         | Action::SignWithCoords
+        | Action::TridentPlanted
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7926,6 +7931,26 @@ pub fn commands(
             (Some(p), Some(bed)) => sign_at(ids, p, bed.iter().map(|n| n.to_string()).collect()),
             _ => vec![],
         },
+        // docs/events_todo.md, 212.
+        Action::TridentPlanted => pos
+            .map(|p| {
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:trident".to_string(),
+                        pos: [p[0] as f64 + 0.5, p[1] as f64, p[2] as f64 + 0.5],
+                        yaw: 0.0,
+                        seconds: DAY_TICKS as f32 / 20.0,
+                        kept: String::new(),
+                        face: None,
+                        targets: None,
+                        harm: 0.0,
+                        wears: Vec::new(),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -18832,6 +18857,19 @@ mod tests {
         assert!(
             made.iter()
                 .any(|(c, _)| matches!(c, Command::SetSign { lines, .. } if *lines == want)),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn trident_planted_stands_at_its_place_a_day() {
+        let mut memory = rich_memory();
+        memory.place = Some([20, 63, -14]);
+        let event = find("trident_planted").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PlaceEntity { of, pos, seconds, .. }, 0)] if of == "minecraft:trident" && pos[0] == 20.5 && pos[2] == -13.5 && *seconds == 1200.0),
             "{made:?}"
         );
     }
