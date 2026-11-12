@@ -72,6 +72,87 @@ public final class Temporaries {
 		due.add(mob, tick + (long) (Math.min(seconds, MOST_SECONDS) * 20));
 	}
 
+	/** A pack circling a player ({@link Ring}): who, its mobs, and its time. */
+	private record Circling(net.minecraft.server.level.ServerPlayer player, java.util.List<net.minecraft.world.entity.Mob> pack, long fromTick, long ticks) {
+	}
+
+	private final java.util.List<Circling> circlings = new java.util.ArrayList<>();
+
+	/**
+	 * {@code count} of {@code type} placed round {@code player} for {@code seconds}, circling them
+	 * nearer each round, a growl now and then, then breaking off and running into the dark
+	 * (`circle`, ABI 54). They are placed for a while as any are, and hurt no one. False when none
+	 * could be placed.
+	 */
+	public boolean circle(ServerLevel level, net.minecraft.server.level.ServerPlayer player, net.minecraft.world.entity.EntityType<?> type, int count, float seconds) {
+		java.util.List<net.minecraft.world.entity.Mob> pack = new java.util.ArrayList<>();
+		for (int i = 0; i < Math.min(count, 8); i++) {
+			double a = Ring.angle(i, count, 0);
+			double x = player.getX() + Math.cos(a) * Ring.FROM;
+			double z = player.getZ() + Math.sin(a) * Ring.FROM;
+			net.minecraft.core.BlockPos column = net.minecraft.core.BlockPos.containing(x, 0, z);
+			int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column.getX(), column.getZ());
+			if (!(type.create(level, net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED) instanceof net.minecraft.world.entity.Mob mob)) {
+				continue;
+			}
+			mob.snapTo(x, y, z, 0, 0);
+			level.addFreshEntity(mob);
+			add(mob, seconds + 2);
+			pack.add(mob);
+		}
+		if (pack.isEmpty()) {
+			return false;
+		}
+		circlings.add(new Circling(player, pack, tick, (long) (Math.min(seconds, 60) * 20)));
+		return true;
+	}
+
+	/** Each pack a tick on: round its player, nearer; then off into the dark. */
+	private void tickCircling() {
+		java.util.Iterator<Circling> it = circlings.iterator();
+		while (it.hasNext()) {
+			Circling c = it.next();
+			long since = tick - c.fromTick();
+			if (since > c.ticks() || c.player().isRemoved()) {
+				it.remove();
+				continue;
+			}
+			if (since % 10 != 0) {
+				continue;
+			}
+			double t = since / (double) c.ticks();
+			for (int i = 0; i < c.pack().size(); i++) {
+				net.minecraft.world.entity.Mob mob = c.pack().get(i);
+				if (mob.isRemoved()) {
+					continue;
+				}
+				double x;
+				double z;
+				if (Ring.running(t)) {
+					double ax = mob.getX() - c.player().getX();
+					double az = mob.getZ() - c.player().getZ();
+					double length = Math.max(0.1, Math.sqrt(ax * ax + az * az));
+					x = c.player().getX() + ax / length * 40;
+					z = c.player().getZ() + az / length * 40;
+					mob.getNavigation().moveTo(x, mob.getY(), z, 1.8);
+				} else {
+					double a = Ring.angle(i, c.pack().size(), since / 20.0);
+					double r = Ring.radius(t);
+					x = c.player().getX() + Math.cos(a) * r;
+					z = c.player().getZ() + Math.sin(a) * r;
+					mob.getNavigation().moveTo(x, c.player().getY(), z, 1.3);
+					mob.getLookControl().setLookAt(c.player(), 30, 30);
+				}
+			}
+			// A growl from one of them now and then, a low one.
+			if (!Ring.running(t) && since % 40 == 0) {
+				net.minecraft.world.entity.Mob growler = c.pack().get((int) (since / 40 % c.pack().size()));
+				net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.get(net.minecraft.resources.Identifier.parse("minecraft:entity.wolf.growl"))
+						.ifPresent(growl -> growler.playSound(growl.value(), 1f, 0.8f));
+			}
+		}
+	}
+
 	/** Whether a hit from this source is a spared hostile's: such a hit never kills. */
 	public static boolean spares(net.minecraft.world.damagesource.DamageSource source) {
 		Entity by = source.getEntity();
@@ -93,6 +174,7 @@ public final class Temporaries {
 
 	public void tick(MinecraftServer server) {
 		tick++;
+		tickCircling();
 		for (Entity entity : due.due(tick)) {
 			active.remove(entity);
 			// Removed already (killed, or unloaded with its chunk and seen again as another

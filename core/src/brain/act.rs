@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // Round them.
+        Action::WolvesCircle => Some(block_of(memory.last.pos)),
         // A block and a half ahead of their face, at the head's height: the ceiling there.
         Action::DropsFromTheCeiling => Some(block_of(memory.last.pos)),
         // High over them and a little ahead, out of the sun.
@@ -6469,6 +6471,17 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Five wild wolves round them, circling nearer half a minute, growling, then off.
+        Action::WolvesCircle => vec![(
+            Command::Circle {
+                id: ids(),
+                player: target,
+                of: "minecraft:wolf".to_string(),
+                count: 5,
+                seconds: 30.0,
+            },
+            0,
+        )],
         // A cave spider dropping before their face, set on them a minute, a nip and its poison,
         // never a kill, nothing dropped.
         Action::DropsFromTheCeiling => {
@@ -14753,6 +14766,17 @@ mod tests {
             matches!(&made[0].0, Command::PlaceEntity { of, pos, targets: Some(0), .. }
             if of == "minecraft:cave_spider" && pos[1] > 31.0 && pos[2] > 1.5),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn at_night_wolves_circle_them() {
+        let memory = rich_memory();
+        let event = find("wolves_circle").unwrap();
+        assert!(event.needs.contains(&crate::events::Need::Night));
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Circle { of, count: 5, .. }, 0)] if of == "minecraft:wolf")
         );
     }
 }

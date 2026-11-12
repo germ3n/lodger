@@ -629,6 +629,16 @@ pub enum Command {
         most: u32,
         keep: String,
     },
+    /// `count` (eight at most) of `of` (`minecraft:wolf`) placed round `player` twelve blocks
+    /// out, circling them for `seconds` (a minute at most), nearer each round, a growl now and
+    /// then; then they break off and run into the dark, and are gone. They hurt no one. ABI 54.
+    Circle {
+        id: u64,
+        player: u32,
+        of: String,
+        count: u32,
+        seconds: f32,
+    },
     /// The mob `entity` falls dead on `player`'s screen alone, the game's own death and sound,
     /// held still meanwhile; after `seconds` (five minutes at most), once they are not looking
     /// at it, it is whole again on their screen and goes about as before. Nothing is harmed.
@@ -1443,6 +1453,7 @@ impl Command {
             | Command::Panic { id, .. }
             | Command::HoldTrades { id, .. }
             | Command::FakeDeath { id, .. }
+            | Command::Circle { id, .. }
             | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }

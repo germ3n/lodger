@@ -127,6 +127,16 @@ public final class Executors {
 				case "snap_branch" -> snapBranch(level, command, id, context);
 				case "fell_tree" -> fellTree(level, command, id, context);
 				case "panic" -> panic(level, command, id, context);
+				case "circle" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					String of = command.get("of").getAsString();
+					var type = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(of));
+					if (player == null || type.isEmpty() || !List.of("minecraft:wolf").contains(of)) {
+						yield report(id, false, player == null ? "the player is not here" : "not something it circles with");
+					}
+					boolean placed = context.temporaries().circle(level, player, type.get().value(), command.get("count").getAsInt(), command.get("seconds").getAsFloat());
+					yield report(id, placed, placed ? "" : "none could be placed");
+				}
 				case "fake_death" -> {
 					Entity entity = level.getEntity(command.get("entity").getAsInt());
 					Mob mob = entity == null ? null : Senses.mob(entity);

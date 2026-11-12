@@ -1091,6 +1091,8 @@ pub enum Action {
     DaylightPhantom,
     /// Underground, a cave spider drops from the ceiling right before their face.
     DropsFromTheCeiling,
+    /// At night, wild wolves circle them, nearer each round, then run.
+    WolvesCircle,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4888,6 +4890,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 99.
+    row(
+        "wolves_circle",
+        4,
+        5,
+        &[Night, TargetOutdoors],
+        3.0,
+        2,
+        Full,
+        Action::WolvesCircle,
+        false,
+    ),
     // docs/events_todo.md, 98.
     row(
         "drops_from_the_ceiling",
@@ -6148,6 +6162,7 @@ impl Event {
             | Action::WallBursts
             | Action::DaylightPhantom
             | Action::DropsFromTheCeiling
+            | Action::WolvesCircle
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6231,6 +6246,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "wolves_circle" => "set wild wolves circling them in the dark",
             "drops_from_the_ceiling" => "drop a cave spider from the ceiling before their face",
             "daylight_phantom" => "send a phantom at them out of the noon sun",
             "wall_bursts" => "break a block of their wall and pour silverfish out of it at them",
