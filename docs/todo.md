@@ -2976,6 +2976,10 @@ The `[x]` lines above, summed up by day:
   in the Nether with magma cubes near: every magma cube near them held six seconds (`hold`). Tests:
   one in `act`. Was: no such event.
 
+- [x] **Back to the wall** (`docs/events_todo.md`, 278): `back_to_the_wall`, stages 4 and 5, in the
+  Nether with wither skeletons near: every one held thirty seconds facing a point ten blocks beyond
+  it, away from them (`hold`'s `at`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

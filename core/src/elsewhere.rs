@@ -20,6 +20,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("ghast_watches", "minecraft:the_nether"),
     ("hoglins_part", "minecraft:the_nether"),
     ("magma_cubes_settle", "minecraft:the_nether"),
+    ("back_to_the_wall", "minecraft:the_nether"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.

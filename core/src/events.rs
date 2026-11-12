@@ -1272,6 +1272,8 @@ pub enum Action {
     HoglinsPart,
     /// In the Nether, every magma cube near them stopping its bouncing and sitting still a few seconds.
     MagmaCubesSettle,
+    /// In the Nether, the wither skeletons near them standing with their backs to them, faces to the wall, striking none.
+    BackToTheWall,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7931,6 +7933,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::MagmaCubesSettle,
         false,
     ),
+    // docs/events_todo.md, 278: in a fortress, every wither skeleton near them stands with its back to them, facing away, thirty seconds, and does not turn as they pass or strike them.
+    row(
+        "back_to_the_wall",
+        4,
+        5,
+        &[InNether, MobNear("wither_skeleton")],
+        1.0,
+        3,
+        Half,
+        Action::BackToTheWall,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8568,6 +8582,7 @@ impl Event {
             | Action::GhastWatches
             | Action::HoglinsPart
             | Action::MagmaCubesSettle
+            | Action::BackToTheWall
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9157,6 +9172,7 @@ impl Event {
             "ghast_watches" => "make a ghast near them stop and watch them",
             "hoglins_part" => "make the hoglins near them stand off and not charge",
             "magma_cubes_settle" => "make every magma cube near them stop bouncing",
+            "back_to_the_wall" => "turn the wither skeletons near them to the wall",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

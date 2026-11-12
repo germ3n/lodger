@@ -315,6 +315,40 @@ fn mobs_near<'a>(
         .filter(move |c| c.kind == kind)
 }
 
+/// Every mob of a kind near them held facing straight away from them a while, at a point ten
+/// blocks beyond it: backs turned.
+fn hold_away(
+    ids: &mut impl FnMut() -> u64,
+    memory: &Memory,
+    target: u32,
+    kind: &str,
+    seconds: f32,
+) -> Vec<(Command, u64)> {
+    let me = memory.last.pos;
+    mobs_near(memory, kind)
+        .map(|m| {
+            let (dx, dz) = (m.pos[0] - me[0], m.pos[2] - me[2]);
+            let length = (dx * dx + dz * dz).sqrt().max(0.1);
+            (
+                Command::Hold {
+                    id: ids(),
+                    entity: m.id,
+                    player: target,
+                    seconds,
+                    at: Some([
+                        m.pos[0] + dx / length * 10.0,
+                        m.pos[1],
+                        m.pos[2] + dz / length * 10.0,
+                    ]),
+                    creep: false,
+                    spin: false,
+                },
+                0,
+            )
+        })
+        .collect()
+}
+
 /// Every mob of a kind near them held facing them a while: the Nether's and the End's watchers.
 fn hold_kind(
     ids: &mut impl FnMut() -> u64,
@@ -837,6 +871,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::GhastWatches
         | Action::HoglinsPart
         | Action::MagmaCubesSettle
+        | Action::BackToTheWall
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9420,6 +9455,8 @@ pub fn commands(
         Action::HoglinsPart => hold_kind(ids, memory, target, "hoglin", 12.0),
         // docs/events_todo.md, 282.
         Action::MagmaCubesSettle => hold_kind(ids, memory, target, "magma_cube", 6.0),
+        // docs/events_todo.md, 278.
+        Action::BackToTheWall => hold_away(ids, memory, target, "wither_skeleton", 30.0),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13302,6 +13339,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "back_to_the_wall"
                 || event.id == "magma_cubes_settle"
                 || event.id == "hoglins_part"
                 || event.id == "ghast_watches"
@@ -21348,6 +21386,23 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hold { entity: 410, seconds, .. }, 0)] if *seconds == 6.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn back_to_the_wall_holds_every_wither_skeleton_near_them() {
+        let mut memory = rich_memory();
+        memory.last.hostiles_near.push(Creature {
+            id: 410,
+            kind: "wither_skeleton".to_string(),
+            pos: [6.0, 64.0, 2.0],
+            ..Creature::default()
+        });
+        let event = find("back_to_the_wall").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hold { entity: 410, seconds, at: Some(to), .. }, 0)] if *seconds == 30.0 && to[0] > 6.0),
             "{made:?}"
         );
     }

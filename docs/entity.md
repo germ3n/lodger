@@ -464,6 +464,7 @@ caves, from before.
 | `ghast_watches` | 3 to 5 | In the Nether, every ghast near them stops firing and hangs where it is, facing them, a minute, as if watching; then it is as it was (`hold`). | In the Nether, a ghast near them. |
 | `hoglins_part` | 3 to 5 | In the Nether, the hoglins near them stand off where they are, twelve seconds, facing them and charging none, as if something walked beside them that they feared (`hold`). | In the Nether, a hoglin near them. |
 | `magma_cubes_settle` | 3 to 5 | In the Nether, every magma cube near them stops bouncing at once and sits still, six seconds (`hold`). | In the Nether, a magma cube near them. |
+| `back_to_the_wall` | 4 to 5 | In a fortress, every wither skeleton near them stands with its back to them, facing away, thirty seconds, and does not turn as they pass or strike them (`hold`'s `at`, a point beyond each). | In the Nether, a wither skeleton near them. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).
