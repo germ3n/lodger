@@ -16137,4 +16137,27 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn in_bed_someone_snores_beside_them() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("snoring_beside").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(!made.is_empty(), "{made:?}");
+        assert!(
+            made.iter()
+                .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
+            "{made:?}"
+        );
+    }
 }

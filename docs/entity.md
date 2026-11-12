@@ -682,6 +682,7 @@ a dock or bridge), never over anything a player built (see the
 | `iron_door_below` | 4 | Underground, an iron door slams somewhere far under them, where there are no doors. | The target underground. |
 | `ice_cracks` | 3 | Walking in a frozen biome, something cracks under them, as ice splitting; nothing gives. | A snowy biome, the target walking outdoors. |
 | `bush_rustles` | 3 | Walking outdoors, something rustles hard in the green beside them, as if something in it moved; nothing comes out. | The target walking outdoors. |
+| `snoring_beside` | 4 | Lying in bed, someone snoring softly and slowly beside them; no one there. | The target in bed. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

@@ -186,7 +186,7 @@ scream, a ghast's cry, its lying down in their bed) were replaced. Twenty-seven 
 | 139 | `iron_door_below` | 4 | **Built.** Underground, an iron door slams somewhere under them, where there are no doors. | Underground. | `sound` (iron door close) below them. | S |
 | 140 | `ice_cracks` | 3 | **Built (in a snowy biome walking: the mind does not know the block under them).** Walking on ice, it cracks under them, the sound of it splitting; the ice holds. | On ice. | `sound` (glass break, low) at their feet. | S |
 | 141 | `bush_rustles` | 3 | **Built.** A bush beside them rustles hard as they pass, as if something in it moved; nothing comes out. | Outdoors, walking. | `sound` (berry bush, leaves) beside them. | S |
-| 142 | `snoring_beside` | 4 | They lie down in bed and someone is snoring beside them, soft and slow; no one there. | In bed. | `sound` (a sleeping fox's breath, pitched low) beside the bed. | S |
+| 142 | `snoring_beside` | 4 | **Built.** They lie down in bed and someone is snoring beside them, soft and slow; no one there. | In bed. | `sound` (a sleeping fox's breath, pitched low) beside the bed. | S |
 | 143 | `torches_turn` | 4 | Overnight every wall torch of the house is on another wall of its block, all pointing at their bed. | The target away or asleep, wall torches at home. | `swap_block` each wall torch's facing toward the bed. | S |
 | 144 | `red_trail` | 4 | A trail of red specks on the floor from the door to the bed, there a minute and gone. | Coming home. | A client hint of red dust along the way. | M |
 | 145 | `your_grave` | 5 | At its place, a grave: a stone and a sign with their own name on it and a day not come yet. | Its place, the target away or asleep. | `set_block` stone, `sign_at` with their name. | S |

@@ -5608,6 +5608,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.sweet_berry_bush.place"),
         true,
     ),
+    // docs/events_todo.md, 142.
+    row(
+        "snoring_beside",
+        4,
+        5,
+        &[TargetInBed],
+        3.0,
+        2,
+        Full,
+        Action::SoundAtTarget("minecraft:entity.fox.sleep"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6781,6 +6793,7 @@ impl Event {
             "iron_door_below" => "slam an iron door far under them",
             "ice_cracks" => "crack the ice under them",
             "bush_rustles" => "rustle a bush hard beside them",
+            "snoring_beside" => "snore softly beside them in bed",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

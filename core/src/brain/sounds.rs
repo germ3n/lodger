@@ -843,6 +843,48 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 142.
+        "snoring_beside" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.fox.sleep", 0),
+                        ("minecraft:entity.fox.sleep", 40),
+                        ("minecraft:entity.fox.sleep", 80),
+                        ("minecraft:entity.fox.sleep", 120),
+                        ("minecraft:entity.fox.sleep", 160),
+                    ],
+                    (0.5, 0.6),
+                    0.6,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.fox.sleep", 0),
+                        ("minecraft:entity.fox.sleep", 50),
+                        ("minecraft:entity.fox.sleep", 100),
+                        ("minecraft:entity.fox.sleep", 150),
+                    ],
+                    (0.45, 0.55),
+                    0.6,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.fox.sleep", 0),
+                        ("minecraft:entity.fox.sleep", 35),
+                        ("minecraft:entity.fox.sleep", 70),
+                        ("minecraft:entity.fox.sleep", 105),
+                        ("minecraft:entity.fox.sleep", 140),
+                        ("minecraft:entity.fox.sleep", 175),
+                    ],
+                    (0.55, 0.6),
+                    0.5,
+                    Beside,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1811,6 +1853,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "snoring_beside",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",
