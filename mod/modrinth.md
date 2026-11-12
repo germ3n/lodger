@@ -50,12 +50,13 @@ because what it does comes from what *you* did.
 - It never breaks what you built, and never takes anything for good: what it moves comes back,
   somewhere.
 - It never makes anything of value out of nothing. What it makes is its own work: the books it
-  writes, a potion of its brewing, a little more in your composter.
+  writes, a potion of its brewing, a little more in your composter. What would be loot is there
+  for your eyes alone, and gone when you reach for it.
 - It never harms another player. It can nip at you from the middle of a stay, and hit harder
   later. By default what it does can kill you, late in a stay; turn `events.kills` off in the
   settings and it never takes you below half a heart before the very end.
 - What it does to your house, it does while you look away.
-- It lives in the overworld. Past a portal, you are mostly on your own.
+- It lives in the overworld. Past a portal, you are not quite alone.
 
 ### Presets
 
@@ -175,6 +176,12 @@ operators, and you in your own singleplayer world) that shows what it knows, wha
 - Your senses go wrong. Sounds drag and echo. The screen fills with static. Something on the
   ceiling. A face as you wake.
 - Your most valuable things rise into the sky in front of you. Later, they come back down.
+- The Nether and the End are not empty either. Something there knows your name, knows the way
+  home, and is waiting by the portal you came through.
+- Things that are not there: on your doorstep, on your pillow, on the wall of your tunnel. Only
+  you see them.
+- One thing leads to the next, over days, and not the same way twice. Some come all at once:
+  a knock, then scratching, then a heavier knock, then the door will not open.
 - It has a temper. How you treat it changes how it treats you.
 - In the end, it leaves, it takes, or it stays, depending on how you treated it.
 

@@ -3303,6 +3303,15 @@ The `[x]` lines above, summed up by day:
   its own artifact; Homebrew's tools and cargo-xwin only on the Windows two. `jars` waits for all
   four as before. Was: one runner building the four in turn.
 
+- [x] **The README and the Modrinth page caught up** (owner: "does the modrinth description need
+  some updates? also ... the main readme ... theres just old info in there"): the README rewritten
+  for 0.1.3: what is in it (the stages, about six hundred events, 189 chains with forks and scenes,
+  the Nether and the End, the temper, the rules it keeps), how it decides, every model size and
+  license, the repository's folders, building and checking, craftkit's own repository; no more
+  `~/engine` or "working name". Modrinth: past a portal you are not quite alone now, what would be
+  loot is for your eyes alone, and three spoilers more (the Nether and the End, things only you
+  see, chains and scenes). Was: the README of before the SDK split and the newest models.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
