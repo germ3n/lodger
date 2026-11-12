@@ -881,6 +881,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TheDragonGrowls
         | Action::SecondWings
         | Action::PurpurKnock
+        | Action::ShipCreaks
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10051,6 +10052,79 @@ pub fn commands(
                 ),
             ]
         }
+        // docs/events_todo.md, 302.
+        Action::ShipCreaks => {
+            let b = memory.last.pos;
+            let way = facing_way(memory.last.yaw);
+            vec![
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.wood.step".to_string(),
+                        pos: [b[0] - way[0] as f64 * 5.0, b[1], b[2] - way[1] as f64 * 5.0],
+                        volume: 0.8,
+                        pitch: 0.6,
+                    },
+                    0,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.wood.step".to_string(),
+                        pos: [b[0] - way[0] as f64 * 4.0, b[1], b[2] - way[1] as f64 * 4.0],
+                        volume: 0.8,
+                        pitch: 0.6,
+                    },
+                    14,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.wood.step".to_string(),
+                        pos: [b[0] - way[0] as f64 * 3.0, b[1], b[2] - way[1] as f64 * 3.0],
+                        volume: 0.8,
+                        pitch: 0.6,
+                    },
+                    28,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.wood.step".to_string(),
+                        pos: [b[0] - way[0] as f64 * 2.0, b[1], b[2] - way[1] as f64 * 2.0],
+                        volume: 0.8,
+                        pitch: 0.6,
+                    },
+                    42,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.wood.step".to_string(),
+                        pos: [b[0] - way[0] as f64, b[1], b[2] - way[1] as f64],
+                        volume: 0.8,
+                        pitch: 0.6,
+                    },
+                    56,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:block.wood.step".to_string(),
+                        pos: [b[0], b[1], b[2]],
+                        volume: 0.8,
+                        pitch: 0.6,
+                    },
+                    70,
+                ),
+            ]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13933,6 +14007,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "ship_creaks"
                 || event.id == "purpur_knock"
                 || event.id == "second_wings"
                 || event.id == "the_dragon_growls"
@@ -22130,6 +22205,19 @@ mod tests {
         assert_eq!(event.effect(), "sounds");
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 3, "{made:?}");
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
+    }
+
+    #[test]
+    fn ship_creaks_is_heard_and_nothing_else() {
+        let mut memory = rich_memory();
+        memory.arrived_at = Some([3, 64, 3]);
+        let event = find("ship_creaks").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 6, "{made:?}");
         assert!(made
             .iter()
             .all(|(c, _)| matches!(c, Command::PlaySound { .. })));

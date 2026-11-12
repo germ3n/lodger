@@ -3017,6 +3017,10 @@ The `[x]` lines above, summed up by day:
   End with a shulker near (at an end city): three stone knocks a block and a half to their side, two
   fifths of a second apart, to them alone. Tests: one in `act`. Was: no such event.
 
+- [x] **The ship creaks** (`docs/events_todo.md`, 302): `ship_creaks`, stages 3 to 5, in the End
+  with a shulker near (at an end city or its ship): six low wooden steps coming up from five blocks
+  behind them, to them alone. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
