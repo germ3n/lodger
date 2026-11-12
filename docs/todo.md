@@ -2882,6 +2882,10 @@ The `[x]` lines above, summed up by day:
   very thing kept from despawning, and their cat moved beside it (a new passing need, `PetOf`).
   Tests: one in `act`. Was: no such event.
 
+- [x] **The armadillos curl** (`docs/events_todo.md`, 251): `armadillos_curl`, stages 3 to 5,
+  outdoors with armadillos near: every armadillo within sixteen blocks rolled up at once, each
+  unrolling in its own time (`curl_up`, ABI 56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

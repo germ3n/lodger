@@ -1228,6 +1228,8 @@ pub enum Action {
     HorseBalks,
     /// Their cat by their bed in the morning with a gift, as cats do: one thing of theirs, from their chest.
     CatGift,
+    /// Every armadillo near them curling up at once, as if something passed that they feared.
+    ArmadillosCurl,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7635,6 +7637,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CatGift,
         false,
     ),
+    // docs/events_todo.md, 251: every armadillo near them curls up at once.
+    row(
+        "armadillos_curl",
+        3,
+        5,
+        &[Creature("armadillo"), TargetOutdoors],
+        1.0,
+        3,
+        Half,
+        Action::ArmadillosCurl,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8256,6 +8270,7 @@ impl Event {
             | Action::OnThePeak
             | Action::CattleTurnAway
             | Action::HorseBalks
+            | Action::ArmadillosCurl
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8825,6 +8840,7 @@ impl Event {
             "cattle_turn_away" => "turn every cow near them away from them",
             "horse_balks" => "make the horse they ride balk at nothing",
             "cat_gift" => "lay a gift from their chest by the bed, their cat",
+            "armadillos_curl" => "curl every armadillo near them up at once",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -772,6 +772,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::CattleTurnAway
         | Action::HorseBalks
         | Action::CatGift
+        | Action::ArmadillosCurl
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9143,6 +9144,14 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // docs/events_todo.md, 251.
+        Action::ArmadillosCurl => vec![(
+            Command::CurlUp {
+                id: ids(),
+                player: target,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20726,6 +20735,18 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::TakeItem { keep, .. }, 0), (Command::DropItem { kept, .. }, 1), (Command::MoveEntity { entity: 302, .. }, 2)] if keep == "cat_gift" && kept == "cat_gift"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn armadillos_curl_where_they_see_it() {
+        let memory = rich_memory();
+        let event = find("armadillos_curl").unwrap();
+        assert!(!crate::rules::hidden_from_view(event.action));
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::CurlUp { .. }, 0)]),
             "{made:?}"
         );
     }

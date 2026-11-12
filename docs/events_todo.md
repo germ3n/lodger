@@ -307,7 +307,7 @@ things, and on the screen. Not built yet.
 | 248 | `cattle_turn_away` | 3 | **Built (every cow near them, forty-five seconds).** All their cows turn their backs to them at once. | Cows of theirs near. | The cows held facing away from them a while. | S |
 | 249 | `horse_balks` | 4 | **Built (five seconds, the horse under them, facing ahead).** Their horse will not move a few seconds, staring at nothing ahead. | Riding a horse. | The horse held still, facing ahead. | S |
 | 250 | `cat_gift` | 3 | **Built (one of the first stack in the chest they use, the very thing).** Their cat lies by their bed in the morning with a gift, as cats do: something of theirs, from their chest. | A cat of theirs, a chest, the target asleep. | `take_item`, `drop_item` by the bed, kept. | S |
-| 251 | `armadillos_curl` | 3 | Every armadillo near them curls up at once, as if something passed that they feared. | Armadillos near them. | The armadillos made to roll up. | S |
+| 251 | `armadillos_curl` | 3 | **Built (within sixteen blocks, each unrolling in its own time).** Every armadillo near them curls up at once, as if something passed that they feared. | Armadillos near them. | The armadillos made to roll up. | S |
 | 252 | `sniffer_at_its_place` | 4 | A sniffer snuffles at its place and digs up a seed, then is gone. | Its place. | `place_entity` a sniffer for a while at its place. | S |
 | 253 | `refuses_food` | 3 | Feeding one of their animals, it turns its head away and will not eat, once. | Feeding an animal of theirs. | The animal's feeding refused once, it turned away. | S |
 | 254 | `the_child_stares` | 4 | An animal born to theirs stares at them wherever they go while it is young. | Animals of theirs bred. | The baby held facing them while it grows. | S |

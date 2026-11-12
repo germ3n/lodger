@@ -733,6 +733,12 @@ pub enum Command {
         player: u32,
         from: Pos,
     },
+    /// Every armadillo within sixteen blocks of `player` rolled up at once, as if something it
+    /// feared passed; each unrolls on its own, as after any fright. Refused with none. ABI 56.
+    CurlUp {
+        id: u64,
+        player: u32,
+    },
     /// Every slot of the container at `pos` moved one on, the last to the first: a shelf's
     /// things in another order. Nothing taken or made; refused with fewer than two stacks.
     /// ABI 56.
@@ -1676,6 +1682,7 @@ impl Command {
             | Command::GhostBlock { id, .. }
             | Command::GhostNear { id, .. }
             | Command::RotateSlots { id, .. }
+            | Command::CurlUp { id, .. }
             | Command::DropBlock { id, .. }
             | Command::Fangs { id, .. }
             | Command::GuardianBeam { id, .. }

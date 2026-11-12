@@ -164,6 +164,17 @@ public final class Executors {
 				case "ghost_block" -> ghostBlock(level, command, id, context);
 				case "ghost_near" -> ghostNear(level, command, id, context);
 				case "rotate_slots" -> rotateSlots(level, command, id);
+				case "curl_up" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					// Every armadillo near them rolled up as if something it feared passed (ABI 56):
+					// it unrolls on its own, as after any fright.
+					var near = level.getEntitiesOfClass(net.minecraft.world.entity.animal.armadillo.Armadillo.class, player.getBoundingBox().inflate(16));
+					near.forEach(net.minecraft.world.entity.animal.armadillo.Armadillo::rollUp);
+					yield report(id, !near.isEmpty(), near.isEmpty() ? "no armadillo near them" : "");
+				}
 				case "drop_block" -> dropBlock(level, command, id);
 				case "ghost_item" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
