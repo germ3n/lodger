@@ -241,6 +241,8 @@ pub enum Need {
     Copper,
     /// The target riding a mob whose kind ends with this (`horse_balks`).
     Riding(&'static str),
+    /// A pet of theirs of this kind near (`cat_gift`).
+    PetOf(&'static str),
     /// Where they last died is in sight: twelve to sixty-four blocks from them.
     NearTheirDeath,
     /// Down a shaft of their ladders, six blocks or more below its top.
@@ -297,6 +299,7 @@ impl Need {
                 | Need::TargetOutdoors
                 | Need::TargetWalking
                 | Need::Riding(_)
+                | Need::PetOf(_)
                 | Need::TargetInBed
                 | Need::TargetSaid
                 | Need::Heard
@@ -479,6 +482,7 @@ impl Need {
             Need::LitUnderground => "happens only as they place a light underground".to_string(),
             Need::Copper => "no copper of theirs left to weather".to_string(),
             Need::Riding(kind) => format!("they ride no {}", kind.replace('_', " ")),
+            Need::PetOf(kind) => format!("no {} of theirs near", kind.replace('_', " ")),
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetSwimming => "the target is not swimming".to_string(),
@@ -1222,6 +1226,8 @@ pub enum Action {
     CattleTurnAway,
     /// The horse they ride standing still a few seconds, staring at nothing ahead, refusing them.
     HorseBalks,
+    /// Their cat by their bed in the morning with a gift, as cats do: one thing of theirs, from their chest.
+    CatGift,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7617,6 +7623,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::HorseBalks,
         false,
     ),
+    // docs/events_todo.md, 250: their cat lies by their bed in the morning with a gift from their chest.
+    row(
+        "cat_gift",
+        3,
+        5,
+        &[PetOf("cat"), Bed, UsedContainer, TargetInBed],
+        2.0,
+        2,
+        Half,
+        Action::CatGift,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7983,6 +8001,7 @@ impl Event {
             | Action::ToolsLaidOut
             | Action::BucketFishChanged
             | Action::ShelfShuffled
+            | Action::CatGift
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -8805,6 +8824,7 @@ impl Event {
             "on_the_peak" => "stand on the nearest peak at sunset, the figure",
             "cattle_turn_away" => "turn every cow near them away from them",
             "horse_balks" => "make the horse they ride balk at nothing",
+            "cat_gift" => "lay a gift from their chest by the bed, their cat",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

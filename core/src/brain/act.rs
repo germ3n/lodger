@@ -771,6 +771,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::OnThePeak
         | Action::CattleTurnAway
         | Action::HorseBalks
+        | Action::CatGift
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9091,6 +9092,57 @@ pub fn commands(
                 None => vec![],
             }
         }
+        // docs/events_todo.md, 250.
+        Action::CatGift => match (
+            memory.pets().find(|p| p.kind == "cat"),
+            memory.home.as_ref().and_then(|h| h.bed),
+            memory
+                .used_container()
+                .and_then(|c| c.contents.first().map(|s| (c.pos, s))),
+        ) {
+            (Some(cat), Some(bed), Some((chest, stack))) => {
+                let by = [
+                    bed[0] as f64 + 1.5,
+                    bed[1] as f64 + 0.1,
+                    bed[2] as f64 + 0.5,
+                ];
+                vec![
+                    (
+                        Command::TakeItem {
+                            id: ids(),
+                            from: chest,
+                            slot: stack.slot,
+                            expect: stack.id.clone(),
+                            count: 1,
+                            keep: "cat_gift".to_string(),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::DropItem {
+                            id: ids(),
+                            pos: by,
+                            item: ItemStack {
+                                id: stack.id.clone(),
+                                count: 1,
+                                slot: 0,
+                            },
+                            kept: "cat_gift".to_string(),
+                        },
+                        1,
+                    ),
+                    (
+                        Command::MoveEntity {
+                            id: ids(),
+                            entity: cat.id,
+                            to: [by[0] + 0.6, by[1], by[2]],
+                        },
+                        2,
+                    ),
+                ]
+            }
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -12957,6 +13009,8 @@ mod tests {
                 || event.id == "bare_trees"
                 // Riding a horse, which this memory is not: its own test.
                 || event.id == "horse_balks"
+                // A cat of theirs, which this memory has not: its own test.
+                || event.id == "cat_gift"
             {
                 continue;
             }
@@ -20653,6 +20707,25 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[0].0, Command::Hold { entity: 301, at: Some(_), seconds, .. } if *seconds == 5.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn cat_gift_lays_a_thing_of_theirs_by_the_bed_and_the_cat_beside_it() {
+        let mut memory = rich_memory();
+        memory.last.creatures_near.push(Creature {
+            id: 302,
+            kind: "cat".to_string(),
+            pos: [2.0, 64.0, 2.0],
+            pet: true,
+            named: false,
+            baby: false,
+        });
+        let event = find("cat_gift").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::TakeItem { keep, .. }, 0), (Command::DropItem { kept, .. }, 1), (Command::MoveEntity { entity: 302, .. }, 2)] if keep == "cat_gift" && kept == "cat_gift"),
             "{made:?}"
         );
     }

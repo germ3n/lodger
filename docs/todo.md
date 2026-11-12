@@ -2877,6 +2877,11 @@ The `[x]` lines above, summed up by day:
   blocks ahead, its heavy breath heard (a new passing need, `Riding`). Tests: one in `act`. Was: no
   such event.
 
+- [x] **The cat's gift** (`docs/events_todo.md`, 250): `cat_gift`, stages 3 to 5, asleep with a cat
+  of theirs near: one of the first stack in the chest they use taken and dropped by the bed, the
+  very thing kept from despawning, and their cat moved beside it (a new passing need, `PetOf`).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
