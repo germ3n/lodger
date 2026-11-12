@@ -5868,6 +5868,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.phantom.flap"),
         false,
     ),
+    // docs/events_todo.md, 184.
+    row(
+        "lava_in_the_wall",
+        4,
+        5,
+        &[TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:block.lava.pop"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7380,6 +7392,7 @@ impl Event {
             "digging_under_the_floor" => "dig and snuffle under the floor",
             "rustle_in_the_pack" => "rustle something in their pack as they open it",
             "wings_in_the_room" => "beat wings close round them in the room",
+            "lava_in_the_wall" => "pop lava inside the wall beside them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

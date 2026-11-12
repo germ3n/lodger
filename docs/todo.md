@@ -2516,6 +2516,9 @@ The `[x]` lines above, summed up by day:
 - [x] **Wings in the room** (`docs/events_todo.md`, 183): `wings_in_the_room`, stages 4 to 5: awake at night indoors, wings beating close round them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Lava in the wall** (`docs/events_todo.md`, 184): `lava_in_the_wall`, stages 4 to 5: indoors, lava popping inside the wall beside them. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

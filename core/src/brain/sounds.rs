@@ -1319,6 +1319,42 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 184.
+        "lava_in_the_wall" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.lava.pop", 0),
+                        ("minecraft:block.lava.pop", 9),
+                        ("minecraft:block.lava.pop", 20),
+                    ],
+                    (0.7, 0.8),
+                    0.7,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.lava.pop", 0),
+                        ("minecraft:block.lava.pop", 14),
+                    ],
+                    (0.65, 0.75),
+                    0.8,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.lava.pop", 0),
+                        ("minecraft:block.lava.pop", 6),
+                        ("minecraft:block.lava.pop", 12),
+                        ("minecraft:block.lava.pop", 25),
+                    ],
+                    (0.7, 0.8),
+                    0.6,
+                    Beside,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2303,6 +2339,7 @@ mod tests {
             "bulbs_clicking",
             "digging_under_the_floor",
             "wings_in_the_room",
+            "lava_in_the_wall",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",
