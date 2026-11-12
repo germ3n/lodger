@@ -151,6 +151,8 @@ As little as possible, because the mod is about not knowing:
   `ash_on_the_wind` (ash drifting down round them), `red_petals` (red falling petals round them),
   `sculk_trail` (sculk's charge along the floor from the door to the bed, as `red_trail`'s line),
   `souls_follow` (on soul sand or soil, a soul rising where they have just stepped),
+  `lava_still` (the lava round them still: no pop, spark or sound), `compass_steadies` (a plain
+  compass held on a place),
   `false_glint` (what is in their main hand drawn shimmering as if enchanted),
   `compass_spins` (a compass spinning as in the Nether),
   `enchant_six` (an enchanting table's offers drawn costing 6, the server's costs untouched),

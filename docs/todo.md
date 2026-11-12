@@ -3171,6 +3171,11 @@ The `[x]` lines above, summed up by day:
   goes out with it), then `light_portal` in its frame at ten seconds, and again at fifteen and
   thirty should one not take. Tests: one in `act`. Was: no such event.
 
+- [x] **The lava goes still** (`docs/events_todo.md`, 273): `lava_goes_still`, stages 4 and 5, in
+  the Nether: twenty seconds in which lava's pops, sparks and sounds stop on their client (the
+  `lava_still` hint, `LavaFluidMixin`; off with the glitches). Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

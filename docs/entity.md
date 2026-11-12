@@ -497,6 +497,7 @@ caves, from before.
 | `chorus_blooms` | 3 to 5 | In the End, every chorus plant within twelve blocks of them flowers at once, each stem a flower, forty seconds, on their screen alone (`ghost_near`); nothing grows. | In the End. |
 | `vines_reach` | 3 to 5 | In the Nether, the weeping vines within twelve blocks of them are a block longer down, and the twisting vines a block taller, out of their sight, and fifteen seconds on longer again, as vines grow, into air alone (`grow_vines`, ABI 56). | In the Nether. |
 | `portal_goes_out` | 5 | In the Nether, as they come within ten blocks of the portal they came in by, it goes out; ten seconds on it is lit again in its own frame, as flint and steel would, and again at fifteen and thirty seconds should the first not take, so they are never left there (`light_portal`). | In the Nether, near where they came in. |
+| `lava_goes_still` | 4 to 5 | In the Nether, the lava sea round them goes still: no pops, no rising sparks, no sound, twenty seconds, then all at once again, on their screen alone (the client's `lava_still` hint, a hook on lava's own ticking there, ABI 56). | In the Nether. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

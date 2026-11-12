@@ -21,6 +21,7 @@
 		"HudMixin",
 		"InventoryScreenMixin",
 		"ItemStackFoilMixin",
+		"LavaFluidMixin",
 		"LivingEntityRendererMixin",
 		"ModelFeatureRendererMixin",
 		"PaintingRendererMixin",

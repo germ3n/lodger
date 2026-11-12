@@ -172,6 +172,11 @@ public final class Glitches {
 		return false;
 	}
 
+	/** Whether the lava round them is still, no pop, spark or sound (`lava_still`, ABI 56). */
+	public static boolean lavaStill() {
+		return Hints.showing("lava_still");
+	}
+
 	/** Whether the thing in their hand shimmers as if enchanted (`false_glint`, ABI 56). */
 	public static boolean falseGlint() {
 		return Hints.showing("false_glint");
