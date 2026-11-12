@@ -913,6 +913,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BlazeRing
         | Action::EndermenAtTheEdge
         | Action::EndGoesQuiet
+        | Action::ChorusBlooms
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10582,6 +10583,19 @@ pub fn commands(
                 0,
             ),
         ],
+        // docs/events_todo.md, 303.
+        Action::ChorusBlooms => vec![(
+            Command::GhostNear {
+                id: ids(),
+                player: target,
+                radius: 12,
+                of: "minecraft:chorus_plant".to_string(),
+                block: "minecraft:chorus_flower".to_string(),
+                seconds: 40.0,
+                in_turn: false,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14464,6 +14478,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "chorus_blooms"
                 || event.id == "end_goes_quiet"
                 || event.id == "endermen_at_the_edge"
                 || event.id == "blaze_ring"
@@ -23021,6 +23036,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint: a, .. }, 0), (Command::Hint { hint: b, .. }, 0)] if a == "cut_music" && b == "silence"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn chorus_blooms_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("chorus_blooms").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostNear { of, block, .. }, 0)] if of == "minecraft:chorus_plant" && block == "minecraft:chorus_flower"),
             "{made:?}"
         );
     }

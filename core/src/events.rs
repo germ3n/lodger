@@ -1334,6 +1334,8 @@ pub enum Action {
     EndermenAtTheEdge,
     /// In the End, the music stopping and every enderman's sound with it a minute: only their own steps.
     EndGoesQuiet,
+    /// In the End, every chorus plant near them flowering at once, on their screen alone a while.
+    ChorusBlooms,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8425,6 +8427,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EndGoesQuiet,
         false,
     ),
+    // docs/events_todo.md, 303: every chorus plant near them flowers at once.
+    row(
+        "chorus_blooms",
+        3,
+        5,
+        &[InEnd],
+        1.5,
+        2,
+        Half,
+        Action::ChorusBlooms,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9091,6 +9105,7 @@ impl Event {
             | Action::GatewayFlashes
             | Action::BlazeRing
             | Action::EndermenAtTheEdge
+            | Action::ChorusBlooms
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9718,6 +9733,7 @@ impl Event {
             "blaze_ring" => "ring them round with the blazes near them",
             "endermen_at_the_edge" => "stand the endermen near them in a row facing the void",
             "end_goes_quiet" => "hush the End round them a minute",
+            "chorus_blooms" => "flower every chorus plant near them at once",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

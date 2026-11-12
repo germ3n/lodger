@@ -494,6 +494,7 @@ caves, from before.
 | `blaze_ring` | 4 to 5 | In a Nether fortress, the blazes near them (eight at most) are suddenly in a ring round them, five blocks out and a block and a half up, and hang there facing them, firing nothing, six seconds; then they are themselves again (`move_entity`, `hold`). | In the Nether, a blaze near them. |
 | `endermen_at_the_edge` | 4 to 5 | In the End, the endermen near them (six at most) stand in a row ten blocks out from them, away from the End's middle toward the island's edge, three blocks apart, all facing out over the void, thirty seconds (`move_entity`, `hold`'s `at`). | In the End, an enderman near them. |
 | `end_goes_quiet` | 4 to 5 | In the End, the music stops and so does every enderman's and hostile's sound, a minute: only their own steps (the client's `cut_music` and `silence` hints together). | In the End. |
+| `chorus_blooms` | 3 to 5 | In the End, every chorus plant within twelve blocks of them flowers at once, each stem a flower, forty seconds, on their screen alone (`ghost_near`); nothing grows. | In the End. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).
