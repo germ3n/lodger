@@ -747,6 +747,36 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 139.
+        "iron_door_below" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:block.iron_door.close", 0)],
+                    (0.7, 0.8),
+                    2.5,
+                    Deep,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.iron_door.close", 0),
+                        ("minecraft:block.iron_door.close", 15),
+                    ],
+                    (0.7, 0.8),
+                    2.0,
+                    Deep,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.iron_door.open", 0),
+                        ("minecraft:block.iron_door.close", 25),
+                    ],
+                    (0.6, 0.7),
+                    2.0,
+                    Deep,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1715,6 +1745,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "iron_door_below",
             "panting_behind",
             "the_bell_in_the_chest",
             "bubbling_under",
