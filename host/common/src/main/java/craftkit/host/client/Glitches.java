@@ -491,7 +491,31 @@ public final class Glitches {
 				// Red specks from the door to the bed, on the floor, every half second.
 				case "red_trail" -> {
 					if (minecraft.level.getGameTime() % 10 == 0) {
-						hint.pos().ifPresent(from -> redTrail(minecraft, from, hint.detail()));
+						hint.pos().ifPresent(from -> trail(minecraft, from, hint.detail(), new net.minecraft.core.particles.DustParticleOptions(0x8A0A0A, 0.5f)));
+					}
+				}
+				// Sculk's charge creeping along the floor from the door to their bed (ABI 56).
+				case "sculk_trail" -> {
+					if (minecraft.level.getGameTime() % 8 == 0) {
+						hint.pos().ifPresent(from -> trail(minecraft, from, hint.detail(), new net.minecraft.core.particles.SculkChargeParticleOptions(0f)));
+					}
+				}
+				// Ash drifting down round them out of a clear sky (ABI 56).
+				case "ash_on_the_wind" -> {
+					var random = minecraft.level.getRandom();
+					for (int i = 0; i < 4; i++) {
+						minecraft.level.addParticle(random.nextBoolean() ? net.minecraft.core.particles.ParticleTypes.ASH : net.minecraft.core.particles.ParticleTypes.WHITE_ASH,
+								minecraft.player.getX() + random.nextDouble() * 12 - 6, minecraft.player.getY() + 3 + random.nextDouble() * 3,
+								minecraft.player.getZ() + random.nextDouble() * 12 - 6, 0.02, -0.03, 0.01);
+					}
+				}
+				// Red petals falling round them where there are no trees (ABI 56).
+				case "red_petals" -> {
+					var random = minecraft.level.getRandom();
+					if (random.nextInt(2) == 0) {
+						minecraft.level.addParticle(net.minecraft.core.particles.ColorParticleOption.create(net.minecraft.core.particles.ParticleTypes.TINTED_LEAVES, 0xB01818),
+								minecraft.player.getX() + random.nextDouble() * 10 - 5, minecraft.player.getY() + 3 + random.nextDouble() * 2,
+								minecraft.player.getZ() + random.nextDouble() * 10 - 5, 0, 0, 0);
 					}
 				}
 				case "spyglass_figure" -> {
@@ -765,7 +789,7 @@ public final class Glitches {
 	}
 
 	/** Red specks on the floor along the way from `from` to the place in `to` ("x,y,z"). */
-	private static void redTrail(Minecraft minecraft, net.minecraft.core.BlockPos from, String to) {
+	private static void trail(Minecraft minecraft, net.minecraft.core.BlockPos from, String to, net.minecraft.core.particles.ParticleOptions particle) {
 		String[] parts = to.split(",");
 		if (parts.length != 3) {
 			return;
@@ -785,7 +809,7 @@ public final class Glitches {
 			double z = at.z + random.nextDouble() * 0.3 - 0.15;
 			double ground = groundAt(minecraft.level, x, at.y, z);
 			if (!Double.isNaN(ground)) {
-				minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x8A0A0A, 0.5f), x, ground + 0.02, z, 0, 0, 0);
+				minecraft.level.addParticle(particle, x, ground + 0.02, z, 0, 0, 0);
 			}
 		}
 	}

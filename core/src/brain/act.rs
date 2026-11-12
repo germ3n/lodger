@@ -4055,7 +4055,7 @@ pub fn commands(
                     .and_then(|h| h.doors.first())
                     .map(|d| format!("{},{},{}", d[0], d[1], d[2]))
                     .unwrap_or_default(),
-                "red_trail" => memory
+                "red_trail" | "sculk_trail" => memory
                     .home
                     .as_ref()
                     .and_then(|h| h.bed)
@@ -4086,7 +4086,9 @@ pub fn commands(
                 // Four blocks behind them, where the subtitle's arrow points.
                 "name_called" => Some(behind(memory, 4.0)),
                 // From the door of the house to the bed: the detail names the bed.
-                "red_trail" => memory.home.as_ref().and_then(|h| h.doors.first().copied()),
+                "red_trail" | "sculk_trail" => {
+                    memory.home.as_ref().and_then(|h| h.doors.first().copied())
+                }
                 // To over the bed: the detail names the door they start from.
                 "prints_on_the_ceiling" => memory.home.as_ref().and_then(|h| h.bed),
                 // Far off toward its place (or the home), sixty-four blocks from them.
@@ -21110,6 +21112,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::PushPlayer { toward_drop: true, velocity, .. }, 0)] if velocity[0] <= 0.15),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn ash_on_the_wind_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("ash_on_the_wind").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "ash_on_the_wind" && *seconds == 60.0),
             "{made:?}"
         );
     }
