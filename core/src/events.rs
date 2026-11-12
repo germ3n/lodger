@@ -1278,6 +1278,8 @@ pub enum Action {
     EndermenTurnAway,
     /// In the Nether, the zombified piglins near them coming a step nearer each time they look away, silent, and back the moment they look.
     ZombifiedFollow,
+    /// In the Nether, where it never rains, the sound of rain round them, as at home, a while.
+    RainInTheNether,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7973,6 +7975,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ZombifiedFollow,
         false,
     ),
+    // docs/events_todo.md, 271: in the nether, where it never rains, the sound of rain falls round them, as at home, half a minute, on their ears alone.
+    row(
+        "rain_in_the_nether",
+        3,
+        5,
+        &[InNether],
+        1.0,
+        3,
+        Half,
+        Action::RainInTheNether,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8273,6 +8287,7 @@ impl Event {
             | Action::SoundWarp
             | Action::BranchSnaps
             | Action::OreCounted
+            | Action::RainInTheNether
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -9205,6 +9220,7 @@ impl Event {
             "back_to_the_wall" => "turn the wither skeletons near them to the wall",
             "endermen_turn_away" => "turn every enderman near them away from them",
             "zombified_follow" => "make the zombified piglins near them follow when unwatched",
+            "rain_in_the_nether" => "rain on them in the Nether, the sound alone",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

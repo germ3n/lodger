@@ -23,6 +23,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("back_to_the_wall", "minecraft:the_nether"),
     ("endermen_turn_away", "minecraft:the_end"),
     ("zombified_follow", "minecraft:the_nether"),
+    ("rain_in_the_nether", "minecraft:the_nether"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
@@ -252,6 +253,8 @@ mod tests {
             "no block of theirs: no enderman"
         );
         assert_eq!(shared.target, Some(0));
+        // The ghasts' alone, among the Nether's many.
+        shared.allowed = vec!["ghast_name"];
 
         // In the Nether, the target there: now and then, their name in the ghasts' cries.
         let mut nether = stay("minecraft:the_nether");

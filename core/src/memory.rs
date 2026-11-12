@@ -605,6 +605,10 @@ pub struct Memory {
     /// saved.
     #[serde(skip)]
     pub diamond_mined_now: Option<BlockPos>,
+    /// Where the target last came into this world from another: where they stood as the
+    /// crossing was told (a portal's mouth, the End's platform).
+    #[serde(default)]
+    pub arrived_at: Option<BlockPos>,
     /// Where `the_offer`'s figure stands holding out what it took, until it is gone.
     pub offer_waiting: Option<BlockPos>,
     /// They came to it: where, taken by the brain on its next tick, which gives it. Not saved.
@@ -1824,6 +1828,7 @@ impl Memory {
                 }
                 EventKind::ChangedDimension => {
                     self.milestone("crossed", day, event.pos, &event.detail);
+                    self.arrived_at = Some(block(self.last.pos));
                     if let Some(since) = self.elsewhere_since.take() {
                         self.back_after = Some(day - since);
                     }
@@ -4501,6 +4506,20 @@ mod tests {
             0.0,
         );
         assert_eq!(memory.lit_underground_now, None);
+    }
+
+    #[test]
+    fn where_they_came_into_this_world_is_kept() {
+        let mut memory = Memory::default();
+        let them = player(0, [40.0, 70.0, -8.0], 0.0);
+        let crossed = Event {
+            player: 0,
+            kind: EventKind::ChangedDimension,
+            detail: "minecraft:the_nether".to_string(),
+            ..Event::default()
+        };
+        memory.observe(&obs(vec![them], vec![crossed]), 0.0);
+        assert_eq!(memory.arrived_at, Some([40, 70, -8]));
     }
 
     #[test]

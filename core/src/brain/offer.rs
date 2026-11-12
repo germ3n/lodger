@@ -309,7 +309,8 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::Footsteps
         | Action::HandOnShoulder
         | Action::ChestAnswers
-        | Action::OreCounted => config.events.sounds,
+        | Action::OreCounted
+        | Action::RainInTheNether => config.events.sounds,
         // Their name in the ghasts' cries is a hint too: off with the glitches.
         // The lost hour begins with their screen black: a glitch too.
         // The sound gone wrong and the creeper only they see (its bang muffles their hearing):
@@ -422,7 +423,8 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::PetGrowl
         | Action::Footsteps
         | Action::HandOnShoulder
-        | Action::OreCounted => Some("sound"),
+        | Action::OreCounted
+        | Action::RainInTheNether => Some("sound"),
         Action::Hint(_, _)
         | Action::BossBarIt
         | Action::CracksInTheWall

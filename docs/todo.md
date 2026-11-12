@@ -2988,6 +2988,10 @@ The `[x]` lines above, summed up by day:
   the Nether with zombified piglins near: every one held a minute creeping a step nearer each moment
   unwatched, back when looked at (`hold`'s `creep`). Tests: one in `act`. Was: no such event.
 
+- [x] **Rain in the Nether** (`docs/events_todo.md`, 271): `rain_in_the_nether`, stages 3 to 5, in
+  the Nether: the sound of rain over them twelve times two and a half seconds apart, to them alone.
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

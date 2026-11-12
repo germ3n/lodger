@@ -874,6 +874,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BackToTheWall
         | Action::EndermenTurnAway
         | Action::ZombifiedFollow
+        | Action::RainInTheNether
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9478,6 +9479,193 @@ pub fn commands(
                 )
             })
             .collect(),
+        // docs/events_todo.md, 271.
+        Action::RainInTheNether => {
+            let b = memory.last.pos;
+            let way = facing_way(memory.last.yaw);
+            vec![
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    0,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    50,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    100,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    150,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    200,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    250,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    300,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    350,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    400,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    450,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    500,
+                ),
+                (
+                    Command::PlaySound {
+                        id: ids(),
+                        player: target,
+                        sound: "minecraft:weather.rain".to_string(),
+                        pos: [
+                            b[0] + way[0] as f64 * 0.0 - way[1] as f64 * 0.0,
+                            b[1] + 3.0,
+                            b[2] + way[1] as f64 * 0.0 + way[0] as f64 * 0.0,
+                        ],
+                        volume: 0.6,
+                        pitch: 1.0,
+                    },
+                    550,
+                ),
+            ]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13360,6 +13548,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "rain_in_the_nether"
                 || event.id == "zombified_follow"
                 || event.id == "endermen_turn_away"
                 || event.id == "back_to_the_wall"
@@ -21462,5 +21651,18 @@ mod tests {
             matches!(&made[..], [(Command::Hold { entity: 410, seconds, creep: true, .. }, 0)] if *seconds == 60.0),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn rain_in_the_nether_is_heard_and_nothing_else() {
+        let mut memory = rich_memory();
+        memory.arrived_at = Some([3, 64, 3]);
+        let event = find("rain_in_the_nether").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 12, "{made:?}");
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
     }
 }
