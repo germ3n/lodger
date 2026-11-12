@@ -16,6 +16,7 @@
 		"LivingEntityRendererMixin",
 		"ModelFeatureRendererMixin",
 		"PaintingRendererMixin",
+		"PauseScreenMixin",
 		"ScreenshotMixin",
 		"SkyRendererMixin",
 		"SubtitleOverlayMixin",

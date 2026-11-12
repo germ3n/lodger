@@ -2120,6 +2120,11 @@ The `[x]` lines above, summed up by day:
   (`bare_tree`, ABI 54; `Memory::stand_of_trees`). In view or not; overnight was not needed, since the
   stand is off to the side. Tests: one in `act`. Was: no such event.
 
+- [x] **The menu freaks out** (`docs/events_todo.md`, 115, owner's): `menu_freaks`, stages 4 and 5:
+  armed ten minutes, the next pause menu's buttons shake and settle over four seconds, the first
+  reading `stay` a moment (the `menu_freaks` hint; `PauseScreenMixin`, `MenuFreaks`). The pause menu,
+  not the title screen: the mod is in a world. Tests: `MenuFreakTest`, one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

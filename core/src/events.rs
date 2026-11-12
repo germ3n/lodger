@@ -4924,6 +4924,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 115 (owner's): "opening the main menu it kinda freaks out, like
+    // buttons vibrate"; armed ten minutes, the next time they open it.
+    row(
+        "menu_freaks",
+        4,
+        5,
+        &[TargetOnline],
+        2.0,
+        3,
+        Full,
+        Action::Hint("menu_freaks", 600.0),
+        false,
+    ),
     // docs/events_todo.md, 112 (owner's): "some trees dont have leaves? or like have all of the
     // logs stripped".
     row(
@@ -6438,6 +6451,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "menu_freaks" => "make the game's menu go wrong the next time they open it",
             "bare_trees" => "strip a stand of trees near them bare, or skin their bark",
             "out_of_place" => "set out something that does not belong where they will come on it",
             "cave_torches_flicker" => {

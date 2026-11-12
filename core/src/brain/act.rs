@@ -15398,4 +15398,15 @@ mod tests {
         }
         assert_eq!(ways, vec![(true, false), (false, true), (true, true)]);
     }
+
+    #[test]
+    fn the_menu_is_armed_to_go_wrong_the_next_time_it_opens() {
+        let memory = rich_memory();
+        let event = find("menu_freaks").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, _)] if hint == "menu_freaks" && *seconds >= 300.0),
+            "{made:?}"
+        );
+    }
 }
