@@ -653,6 +653,14 @@ pub enum Command {
         outside: Pos,
         inside: Pos,
     },
+    /// Every wall torch among `torches` turned on its block to point as nearly at `toward` as a
+    /// wall there lets it, lit or not as it was; anything else among them left as it is. Reports
+    /// `turned <n>`. ABI 55.
+    TurnTorches {
+        id: u64,
+        torches: Vec<BlockPos>,
+        toward: BlockPos,
+    },
     /// A creeper at `pos` on `player`'s screen alone: it hisses and swells and goes off, the
     /// flash, the bang and the jolt, and harms no one, breaking nothing. ABI 54.
     FakeCreeper {
@@ -1499,6 +1507,7 @@ impl Command {
             | Command::FakeDeath { id, .. }
             | Command::Circle { id, .. }
             | Command::FakeCreeper { id, .. }
+            | Command::TurnTorches { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }
             | Command::DropKept { id, .. }

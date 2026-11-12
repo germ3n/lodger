@@ -147,6 +147,7 @@ public final class Executors {
 							new Vec3(in.get(0).getAsDouble(), in.get(1).getAsDouble(), in.get(2).getAsDouble()));
 					yield report(id, placed, placed ? "" : "no villager could be made");
 				}
+				case "turn_torches" -> turnTorches(level, command, id);
 				case "fake_creeper" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -2823,6 +2824,38 @@ public final class Executors {
 		}
 
 		return report(id, placed > 0, "base " + y + " placed " + placed);
+	}
+
+	/**
+	 * Each wall torch among {@code torches} turned on its block to point as nearly at
+	 * {@code toward} as a wall there lets it (ABI 55): its facing alone changed, lit as it was.
+	 */
+	private static JsonObject turnTorches(ServerLevel level, JsonObject command, long id) {
+		BlockPos toward = blockPos(command.getAsJsonArray("toward"));
+		Direction[] sides = {Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
+		int turned = 0;
+		for (JsonElement element : command.getAsJsonArray("torches")) {
+			BlockPos pos = blockPos(element.getAsJsonArray());
+			if (!level.isLoaded(pos)) {
+				continue;
+			}
+			BlockState state = level.getBlockState(pos);
+			if (!(state.getBlock() instanceof net.minecraft.world.level.block.WallTorchBlock)) {
+				continue;
+			}
+			boolean[] holds = new boolean[4];
+			for (int i = 0; i < 4; i++) {
+				holds[i] = net.minecraft.world.level.block.WallTorchBlock.canSurvive(level, pos, sides[i]);
+			}
+			int best = Facing.nearestSide(toward.getX() - pos.getX(), toward.getZ() - pos.getZ(), holds);
+			if (best < 0 || sides[best] == state.getValue(net.minecraft.world.level.block.WallTorchBlock.FACING)) {
+				continue;
+			}
+			level.setBlock(pos, state.setValue(net.minecraft.world.level.block.WallTorchBlock.FACING, sides[best]), Block.UPDATE_ALL);
+			turned++;
+		}
+
+		return report(id, turned > 0, "turned " + turned);
 	}
 
 	/** A place from a command, on the ground there (a block and a half up) when its y is below -1000. */

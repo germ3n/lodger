@@ -1117,6 +1117,14 @@ pub enum Action {
     Vexes(u32, f32),
     /// A creeper right behind them that always goes off, and harms no one.
     CreeperBehind,
+    /// Every wall torch of the house turned on its block to point at their bed.
+    TorchesTurn,
+    /// A grave at its place with their own name on it and a day not come yet.
+    YourGrave,
+    /// Cobwebs in the upper corners of their house, gone in a day.
+    Cobwebs,
+    /// A door against an inside wall of theirs, the wall behind it, gone in a day.
+    FalseDoor,
     /// Far from any village, a villager bangs on their door, runs in and drops dead.
     VillagerFleesIn,
     /// Every sound they hear goes wrong a while, one way of four.
@@ -6206,6 +6214,105 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("lightning_silent", 0.4),
         true,
     ),
+    // docs/events_todo.md, 143: overnight every wall torch of the house on another wall of its
+    // block, all pointing at their bed.
+    row(
+        "torches_turn",
+        4,
+        5,
+        &[Home, Bed, Light, TargetAwayOrAsleep],
+        2.0,
+        2,
+        Half,
+        Action::TorchesTurn,
+        false,
+    ),
+    // docs/events_todo.md, 145: at its place, a grave with their own name and a day not come.
+    row(
+        "your_grave",
+        5,
+        5,
+        &[Home, TargetAwayOrAsleep],
+        3.0,
+        1,
+        Full,
+        Action::YourGrave,
+        false,
+    ),
+    // docs/events_todo.md, 151: overnight their house hung with cobwebs, gone in a day.
+    row(
+        "cobwebs",
+        3,
+        5,
+        &[Home, Walls, TargetAwayOrAsleep],
+        2.0,
+        2,
+        Half,
+        Action::Cobwebs,
+        false,
+    ),
+    // docs/events_todo.md, 157: overnight a door on an inside wall, the wall behind it.
+    row(
+        "false_door",
+        4,
+        5,
+        &[Home, Walls, TargetAwayOrAsleep],
+        2.0,
+        2,
+        Half,
+        Action::FalseDoor,
+        false,
+    ),
+    // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
+    row(
+        "static",
+        4,
+        5,
+        &[TargetAwake],
+        1.0,
+        4,
+        Half,
+        Action::Hint("static", 1.0),
+        true,
+    ),
+    // docs/events_todo.md, 165: the elder guardian's face and cry, far from any ocean, no curse.
+    row(
+        "elder_face",
+        5,
+        5,
+        &[TargetAwake],
+        2.0,
+        2,
+        Full,
+        Action::Hint("elder_face", 2.0),
+        false,
+    ),
+    // docs/events_todo.md, 127: a deep rumble under them, the view shaking, dust from the
+    // ceiling indoors; nothing breaks.
+    row(
+        "rumble",
+        4,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Hint("rumble", 3.0),
+        false,
+    ),
+    // docs/events_todo.md, 133: at night a far explosion from the way of its place, a flash on
+    // the sky there; nothing harmed.
+    row(
+        "boom_far",
+        4,
+        5,
+        &[TargetOutdoors, Night, Home],
+        2.0,
+        3,
+        Half,
+        Action::Hint("boom_far", 4.0),
+        true,
+    ),
     row(
         "red_rain",
         4,
@@ -6529,6 +6636,10 @@ impl Event {
             | Action::Cairn
             | Action::Sapling
             | Action::Grave
+            | Action::YourGrave
+            | Action::Cobwebs
+            | Action::FalseDoor
+            | Action::TorchesTurn
             | Action::PathWorn
             | Action::CarpetShift
             | Action::Cauldron
@@ -7206,6 +7317,14 @@ impl Event {
             "lights_fail" => "put the lights out for a while",
             "sun_blink" => "make the sun blink out",
             "lightning_silent" => "flash lightning with no thunder",
+            "rumble" => "shake the ground under them with a deep rumble",
+            "torches_turn" => "turn every wall torch of the house toward their bed",
+            "your_grave" => "dig a grave at its place with their name on it",
+            "cobwebs" => "hang their house with cobwebs overnight",
+            "false_door" => "set a door on an inside wall that opens on the wall",
+            "static" => "cover their screen in static a moment",
+            "elder_face" => "show them the elder guardian's face",
+            "boom_far" => "set off a far explosion from the way of its place",
             "red_rain" => "turn the rain red",
             "eyes_in_the_dark" => "show two eyes ahead of them in the dark",
             "hearts_drop" => "show half their hearts empty a moment",

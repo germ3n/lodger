@@ -93,6 +93,128 @@ pub(crate) fn spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     ])
 }
 
+/// A Minecraft day, in ticks: what it hangs in their house for a day stays this long.
+const DAY_TICKS: u64 = 24_000;
+
+/// The cells just inside the walls they built near the home, `low` to `high` blocks over its
+/// floor, the highest first, at most `most`, three blocks apart or more: a wall block's
+/// neighbour toward the home's middle along the nearer axis. Into air alone, as the host keeps.
+fn inside_walls(memory: &Memory, low: i32, high: i32, most: usize) -> Vec<BlockPos> {
+    let Some(home) = memory.home.as_ref() else {
+        return vec![];
+    };
+    let mut walls: Vec<BlockPos> = memory
+        .walls
+        .iter()
+        .filter(|(_, id)| is_wall_block(id))
+        .map(|(p, _)| *p)
+        .filter(|p| {
+            let (dx, dz) = (p[0] - home.center[0], p[2] - home.center[2]);
+            (dx != 0 || dz != 0)
+                && dx.abs() <= 12
+                && dz.abs() <= 12
+                && (home.floor_y + low..=home.floor_y + high).contains(&p[1])
+        })
+        .collect();
+    walls.sort_by_key(|p| (-p[1], p[0], p[2]));
+    let mut cells: Vec<BlockPos> = Vec::new();
+    for wall in walls {
+        let (dx, dz) = (wall[0] - home.center[0], wall[2] - home.center[2]);
+        let inward = if dx.abs() >= dz.abs() {
+            [-dx.signum(), 0]
+        } else {
+            [0, -dz.signum()]
+        };
+        let cell = [wall[0] + inward[0], wall[1], wall[2] + inward[1]];
+        let is_wall = memory.walls.iter().any(|(p, _)| *p == cell);
+        if !is_wall && cells.iter().all(|c| distance(*c, cell) >= 3.0) {
+            cells.push(cell);
+        }
+        if cells.len() >= most {
+            break;
+        }
+    }
+    cells
+}
+
+/// Whether a block they placed is a piece of wall: a full block, not a light, a pane, a door or
+/// the like hung on or set in one (a cobweb went beside a torch, a door against a pane).
+fn is_wall_block(id: &str) -> bool {
+    const NOT: &[&str] = &[
+        "torch",
+        "candle",
+        "lantern",
+        "pane",
+        "door",
+        "carpet",
+        "sign",
+        "button",
+        "pressure_plate",
+        "lever",
+        "rail",
+        "ladder",
+        "flower_pot",
+        "_bed",
+        "banner",
+        "fence",
+        "gate",
+        "slab",
+        "stairs",
+        "wall",
+        "bars",
+        "chain",
+        "frame",
+        "head",
+        "skull",
+    ];
+    !NOT.iter().any(|n| id.contains(n)) && id != "minecraft:glass"
+}
+
+/// The way from a cell to the wall of theirs beside it, as a door's facing: the one it was put
+/// in by, away from the home's middle.
+fn facing_toward_wall(memory: &Memory, cell: BlockPos) -> &'static str {
+    // The wall of theirs beside it, at either half's height, first.
+    for (way, name) in [
+        ([1, 0], "east"),
+        ([-1, 0], "west"),
+        ([0, 1], "south"),
+        ([0, -1], "north"),
+    ] {
+        let wall = |dy: i32| [cell[0] + way[0], cell[1] + dy, cell[2] + way[1]];
+        if memory
+            .walls
+            .iter()
+            .any(|(p, id)| (*p == wall(0) || *p == wall(1)) && is_wall_block(id))
+        {
+            return name;
+        }
+    }
+    let center = memory.home.as_ref().map(|h| h.center).unwrap_or(cell);
+    let (dx, dz) = (cell[0] - center[0], cell[2] - center[2]);
+    match (dx.abs() >= dz.abs(), dx >= 0, dz >= 0) {
+        (true, true, _) => "east",
+        (true, false, _) => "west",
+        (false, _, true) => "south",
+        (false, _, false) => "north",
+    }
+}
+
+/// `blocks` from them toward `to`, at their height: where a far thing is set.
+fn far_toward(memory: &Memory, to: Option<BlockPos>, blocks: f64) -> Option<BlockPos> {
+    let to = to?;
+    let at = memory.last.pos;
+    let (dx, dz) = (to[0] as f64 + 0.5 - at[0], to[2] as f64 + 0.5 - at[2]);
+    let length = (dx * dx + dz * dz).sqrt();
+    if length < 1.0 {
+        return None;
+    }
+    Some(block_of([
+        at[0] + dx / length * blocks,
+        at[1],
+        at[2] + dz / length * blocks,
+    ]))
+}
+
 /// A y the host counts from the ground in its column (ABI 55): `GROUND_Y` the ground's own block,
 /// `GROUND_Y + 1` the air on it, `GROUND_Y - 1` the block under it. Other commands take any y below
 /// -1000 as "on the ground there".
@@ -426,6 +548,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         Action::VillagerFleesIn => memory.usual_door(),
         // Right behind them.
         Action::CreeperBehind => Some(block_of(memory.last.pos)),
+        // At its place, its spot's column.
+        Action::YourGrave => spot(memory, rng),
+        // The house: its lights, walls and bed are what change.
+        Action::TorchesTurn | Action::Cobwebs | Action::FalseDoor => home.map(|h| h.center),
         // Over them.
         Action::Vexes(..) => Some(block_of(memory.last.pos)),
         // Twenty blocks behind them, on the ground: it walks at them out of the dark.
@@ -3381,6 +3507,12 @@ pub fn commands(
                     .and_then(|h| windows(memory, h.center).first().copied()),
                 // Four blocks behind them, where the subtitle's arrow points.
                 "name_called" => Some(behind(memory, 4.0)),
+                // Far off toward its place (or the home), sixty-four blocks from them.
+                "boom_far" => far_toward(
+                    memory,
+                    memory.place.or(memory.home.as_ref().map(|h| h.center)),
+                    64.0,
+                ),
                 _ => None,
             };
             vec![(
@@ -6844,6 +6976,109 @@ pub fn commands(
                 )]
             }
             _ => Vec::new(),
+        },
+        // Every wall torch of theirs at home pointed at the bed: the host turns each onto the
+        // side of its block that points most nearly at it and has a wall to hold it.
+        Action::TorchesTurn => match memory.home.as_ref() {
+            Some(home) if home.bed.is_some() && !home.lights.is_empty() => vec![(
+                Command::TurnTorches {
+                    id: ids(),
+                    torches: home.lights.clone(),
+                    toward: home.bed.unwrap_or(home.center),
+                },
+                0,
+            )],
+            _ => vec![],
+        },
+        // A stone at its place and a sign beside it with their own name and a day three on.
+        Action::YourGrave => pos
+            .map(grounded)
+            .map(|p| {
+                let mut made = vec![(
+                    on_ground(ids, [p[0], p[1] + 1, p[2]], "minecraft:mossy_cobblestone"),
+                    0,
+                )];
+                let name = if memory.target_name.is_empty() {
+                    "you".to_string()
+                } else {
+                    memory.target_name.clone()
+                };
+                made.extend(
+                    sign_at(
+                        ids,
+                        [p[0] + 1, p[1] + 1, p[2]],
+                        vec![
+                            "here lies".to_string(),
+                            name,
+                            format!("day {}", now.day + 3),
+                        ],
+                    )
+                    .into_iter()
+                    .map(|(c, d)| (c, d + 10)),
+                );
+                made
+            })
+            .unwrap_or_default(),
+        // In the air inside their upper walls, up to six a few blocks apart; a day on each is
+        // taken away again (only a cobweb, so nothing of theirs).
+        Action::Cobwebs => {
+            let mut made = Vec::new();
+            for cell in inside_walls(memory, 1, 4, 6) {
+                made.push((fill(ids, cell, "minecraft:cobweb"), 0));
+                made.push((
+                    Command::SwapBlock {
+                        id: ids(),
+                        pos: cell,
+                        block: "minecraft:air".to_string(),
+                        only: vec!["minecraft:cobweb".to_string()],
+                    },
+                    DAY_TICKS,
+                ));
+            }
+            made
+        }
+        // A door against an inside wall of theirs, facing it, both halves into air alone; a day
+        // on it is gone again.
+        Action::FalseDoor => match (memory.home.as_ref(), inside_walls(memory, 0, 1, 1).first()) {
+            (Some(home), Some(cell)) => {
+                let base = [cell[0], home.floor_y, cell[2]];
+                let facing = facing_toward_wall(memory, base);
+                let door = |half: &str| craftkit::world::BlueprintPart {
+                    at: [0, if half == "lower" { 0 } else { 1 }, 0],
+                    block: "minecraft:spruce_door".to_string(),
+                    state: format!("facing={facing},half={half}"),
+                };
+                vec![
+                    (
+                        Command::PlaceBlueprint {
+                            id: ids(),
+                            at: base,
+                            parts: vec![door("lower"), door("upper")],
+                            replace: vec![],
+                        },
+                        0,
+                    ),
+                    (
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: [base[0], base[1] + 1, base[2]],
+                            block: "minecraft:air".to_string(),
+                            only: vec!["minecraft:spruce_door".to_string()],
+                        },
+                        DAY_TICKS,
+                    ),
+                    (
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: base,
+                            block: "minecraft:air".to_string(),
+                            only: vec!["minecraft:spruce_door".to_string()],
+                        },
+                        DAY_TICKS + 1,
+                    ),
+                ]
+            }
+            _ => vec![],
         },
         // Two blocks behind them, on the ground they stand on, on their screen alone: the hiss,
         // the swell, the bang; nothing harmed, nothing broken.
@@ -10819,6 +11054,69 @@ mod tests {
             [30, 70, 30],
             "a real height is kept"
         );
+    }
+
+    #[test]
+    fn a_far_boom_is_set_sixty_four_blocks_off_toward_its_place() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 70.0, 0.5];
+        memory.place = Some([200, 64, 0]);
+        let event = find("boom_far").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, pos: Some(p), .. }, 0)] if hint == "boom_far" && p[0] == 64 && p[2] == 0 && p[1] == 70),
+            "{made:?}"
+        );
+        // No place and no home: nowhere to set it.
+        memory.place = None;
+        memory.home = None;
+        assert_eq!(far_toward(&memory, None, 64.0), None);
+    }
+
+    #[test]
+    fn the_house_overnight_torches_turned_cobwebs_a_false_door_and_their_grave() {
+        let mut memory = rich_memory();
+        memory.target_name = "Alex".to_string();
+        let now = Now {
+            day: 9,
+            ..Default::default()
+        };
+        let made_by = |id: &str, memory: &Memory| {
+            let event = find(id).unwrap();
+            let pos = place(event, memory, &mut Rng::new(1));
+            commands(event, pos, memory, &mut ids(), &now, None)
+        };
+
+        let turned = made_by("torches_turn", &memory);
+        assert!(
+            matches!(&turned[..], [(Command::TurnTorches { torches, toward, .. }, 0)] if torches == &vec![[1, 65, 1]] && *toward == [0, 64, 0]),
+            "{turned:?}"
+        );
+
+        // Their grave: on the ground at its place, their name and a day not come.
+        let grave = made_by("your_grave", &memory);
+        assert!(grave.iter().any(|(c, _)| matches!(c, Command::SetSign { lines, pos, .. } if lines[1] == "Alex" && lines[2] == "day 12" && pos[1] == GROUND_Y + 1)));
+
+        // Cobwebs just inside their wall at (5,65,5), taken away a day on, cobwebs alone.
+        let webs = made_by("cobwebs", &memory);
+        assert!(webs.iter().any(|(c, d)| *d == 0 && matches!(c, Command::SetBlock { pos, block, replace, .. } if *pos == [4, 65, 5] && block == "minecraft:cobweb" && replace.is_empty())));
+        assert!(webs.iter().any(|(c, d)| *d == DAY_TICKS && matches!(c, Command::SwapBlock { only, block, .. } if block == "minecraft:air" && only == &["minecraft:cobweb".to_string()])));
+
+        // The door against that wall, facing it, both halves, gone a day on.
+        let door = made_by("false_door", &memory);
+        assert!(
+            matches!(&door[0].0, Command::PlaceBlueprint { at, parts, replace, .. } if *at == [4, 64, 5] && parts.len() == 2 && parts[0].state == "facing=east,half=lower" && replace.is_empty()),
+            "{:?}",
+            door[0].0
+        );
+        assert!(door[1..]
+            .iter()
+            .all(|(c, d)| *d >= DAY_TICKS && matches!(c, Command::SwapBlock { .. })));
+
+        // Without walls of theirs near the home there is nowhere for them.
+        memory.walls.clear();
+        assert!(made_by("cobwebs", &memory).is_empty());
+        assert!(made_by("false_door", &memory).is_empty());
     }
 
     #[test]

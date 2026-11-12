@@ -19,4 +19,14 @@ class FacingTest {
 		assertEquals(45, Facing.pitch(0, -4, 4), 1e-4);
 		assertEquals(0, Facing.pitch(10, 0, 0), 1e-4);
 	}
+
+	@Test
+	void a_torch_points_the_nearest_way_to_the_bed_a_wall_lets_it() {
+		boolean[] all = {true, true, true, true};
+		assertEquals(3, Facing.nearestSide(5, 1, all), "east, the bed mostly east");
+		assertEquals(0, Facing.nearestSide(1, -5, all), "north");
+		// No wall to hold it east: south, the next nearest.
+		assertEquals(1, Facing.nearestSide(5, 2, new boolean[] {true, true, true, false}));
+		assertEquals(-1, Facing.nearestSide(5, 2, new boolean[] {false, false, false, false}));
+	}
 }

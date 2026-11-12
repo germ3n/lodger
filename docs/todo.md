@@ -2310,6 +2310,16 @@ The `[x]` lines above, summed up by day:
   nearest entity of each kind are written `(x,y,z)`, the mind's "forced" note says where, and the
   line at the top links its spot (`Coordinates.findAll`, `words`, `placeOf`, with tests).
 
+- [x] **Eight more of the fifty** (`docs/events_todo.md` 127, 133, 143, 145, 151, 157, 164, 165).
+  Was: no such events. Now `rumble` (a deep boom under them, the view shaking and dying away,
+  `Rumble`, dust from the ceiling indoors), `boom_far` (at night a burst seen sixty-four blocks off
+  toward its place, the boom from that way, a glow on the screen), `torches_turn` (the house's
+  wall torches pointed at the bed, `turn_torches`, ABI 55), `your_grave` (a stone and a sign with
+  their name and a day not come, at its place on the ground), `cobwebs` (up to six inside their
+  upper walls, gone a day on), `false_door` (a door against an inside wall, gone a day on),
+  `static` (a second of noise and a hiss) and `elder_face` (the elder guardian's face and cry, no
+  curse). Tests: in `act`, `RumbleTest`, `FacingTest`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

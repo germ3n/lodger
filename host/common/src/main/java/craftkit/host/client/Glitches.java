@@ -56,6 +56,13 @@ import java.util.Set;
  *       wash, "You Died!" twice the size and their score, no buttons; then the game as it was.</li>
  *   <li>{@code inventory_stare}: in the inventory, their figure stares straight out instead of
  *       following the mouse, while it lasts ({@code InventoryScreenMixin}).</li>
+ *   <li>{@code rumble}: a deep boom under them, the view shaking and dying away ({@link Rumble}),
+ *       dust falling from the ceiling over them indoors.</li>
+ *   <li>{@code static}: a second of grey noise over the screen and a hiss.</li>
+ *   <li>{@code elder_face}: the elder guardian's face over the screen and its cry, as the game
+ *       shows it, no curse.</li>
+ *   <li>{@code boom_far}: an explosion at the hint's place, far off: the burst seen there, the
+ *       boom from that way, a flash on the screen.</li>
  * </ul>
  */
 public final class Glitches {
@@ -82,6 +89,9 @@ public final class Glitches {
 	private static Float saturationBefore;
 	private static Integer fovBefore;
 	private static long lastSeen;
+	/** The rumble's offset on their view now, taken back as it changes and when it ends. */
+	private static float shakenYaw;
+	private static float shakenPitch;
 
 	private Glitches() {
 	}
@@ -147,6 +157,7 @@ public final class Glitches {
 		boolean behind = false;
 		boolean pullingFov = false;
 		boolean shaking = false;
+		boolean rumbling = false;
 		long now = System.currentTimeMillis();
 		for (Hints.Active active : Hints.active()) {
 			HintPayload hint = active.hint();
@@ -356,6 +367,40 @@ public final class Glitches {
 				}
 				// Not while a screen is open: the options save the field of view as it stands, and
 				// a narrowed one would be kept for good (until now it could be).
+				// A deep boom under them, the view shaking, dust from the ceiling indoors.
+				case "rumble" -> {
+					rumbling = true;
+					once(active, () -> minecraft.level.playLocalSound(minecraft.player.getX(), minecraft.player.getY() - 4, minecraft.player.getZ(),
+							net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(), SoundSource.AMBIENT, 1.4f, 0.3f, false));
+					float[] shake = Rumble.offset(active.progress(now), minecraft.level.getGameTime());
+					minecraft.player.setYRot(minecraft.player.getYRot() - shakenYaw + shake[0]);
+					minecraft.player.setXRot(net.minecraft.util.Mth.clamp(minecraft.player.getXRot() - shakenPitch + shake[1], -90f, 90f));
+					shakenYaw = shake[0];
+					shakenPitch = shake[1];
+					rumbleDust(minecraft, active.progress(now));
+				}
+				// Far off, the burst seen where the hint is and the boom from that way.
+				case "boom_far" -> once(active, () -> hint.pos().ifPresent(pos -> {
+					Vec3 at = Vec3.atCenterOf(pos);
+					Vec3 way = at.subtract(minecraft.player.position());
+					Vec3 heard = minecraft.player.position().add(new Vec3(way.x, 0, way.z).normalize().scale(14));
+					minecraft.level.playLocalSound(heard.x, heard.y, heard.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(), SoundSource.AMBIENT, 1.6f, 0.55f, false);
+					minecraft.level.addAlwaysVisibleParticle(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, true, at.x, at.y + 3, at.z, 0, 0, 0);
+					for (int i = 0; i < 12; i++) {
+						var random = minecraft.level.getRandom();
+						minecraft.level.addAlwaysVisibleParticle(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, true,
+								at.x + random.nextDouble() * 4 - 2, at.y + 3 + random.nextDouble() * 3, at.z + random.nextDouble() * 4 - 2, 0, 0.1, 0);
+					}
+				}));
+				case "static" -> once(active, () -> minecraft.level.playLocalSound(minecraft.player.getX(), minecraft.player.getEyeY(), minecraft.player.getZ(),
+						net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH, SoundSource.AMBIENT, 0.6f, 0.5f, false));
+				// The face and the cry the game shows for an elder guardian's curse; no curse.
+				case "elder_face" -> once(active, () -> {
+					minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.ELDER_GUARDIAN,
+							minecraft.player.getX(), minecraft.player.getY(), minecraft.player.getZ(), 0, 0, 0);
+					minecraft.level.playLocalSound(minecraft.player.getX(), minecraft.player.getY(), minecraft.player.getZ(),
+							net.minecraft.sounds.SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.HOSTILE, 1f, 1f, false);
+				});
 				case "fov_pull" -> {
 					if (minecraft.gui.screen() != null) {
 						break;
@@ -374,6 +419,12 @@ public final class Glitches {
 
 		if (!behind) {
 			BehindFigure.clear(minecraft);
+		}
+		if (!rumbling && (shakenYaw != 0 || shakenPitch != 0)) {
+			minecraft.player.setYRot(minecraft.player.getYRot() - shakenYaw);
+			minecraft.player.setXRot(net.minecraft.util.Mth.clamp(minecraft.player.getXRot() - shakenPitch, -90f, 90f));
+			shakenYaw = 0;
+			shakenPitch = 0;
 		}
 		if (!pullingFov && fovBefore != null) {
 			minecraft.options.fov().set(fovBefore);
@@ -469,10 +520,46 @@ public final class Glitches {
 					}
 				}
 				case "lightning_silent" -> fill(graphics, width, height, 0xFFFFFF, progress < 0.3f ? 0.8f : 0.8f * (1 - progress));
+				// Grey noise, new each frame, in blocks of four.
+				case "static" -> {
+					var random = java.util.concurrent.ThreadLocalRandom.current();
+					for (int y = 0; y < height; y += 4) {
+						for (int x = 0; x < width; x += 4) {
+							int grey = random.nextInt(256);
+							graphics.fill(x, y, x + 4, y + 4, 0x90000000 | grey << 16 | grey << 8 | grey);
+						}
+					}
+				}
+				// The far burst's glow on the sky, a moment.
+				case "boom_far" -> {
+					if (progress < 0.12f) {
+						fill(graphics, width, height, 0xFFB060, 0.18f * (1 - progress / 0.12f));
+					}
+				}
 				// Dusk at noon drains the light from what fog cannot reach: a grey veil, eased.
 				case "dusk_noon" -> fill(graphics, width, height, 0x14121A, 0.35f * Atmospheres.weightOf("dusk_noon"));
 				default -> {
 				}
+			}
+		}
+	}
+
+	/** Dust down from the ceiling over them, while the rumble is strong: indoors alone. */
+	private static void rumbleDust(Minecraft minecraft, float progress) {
+		if (progress > 0.7f || minecraft.level.getGameTime() % 2 != 0) {
+			return;
+		}
+		net.minecraft.core.BlockPos head = minecraft.player.blockPosition().above(2);
+		var random = minecraft.level.getRandom();
+		for (int up = 0; up < 6; up++) {
+			net.minecraft.core.BlockPos ceiling = head.above(up);
+			var state = minecraft.level.getBlockState(ceiling);
+			if (!state.isAir()) {
+				for (int i = 0; i < 3; i++) {
+					minecraft.level.addParticle(new net.minecraft.core.particles.BlockParticleOption(net.minecraft.core.particles.ParticleTypes.FALLING_DUST, state),
+							minecraft.player.getX() + random.nextDouble() * 6 - 3, ceiling.getY() - 0.05, minecraft.player.getZ() + random.nextDouble() * 6 - 3, 0, 0, 0);
+				}
+				return;
 			}
 		}
 	}

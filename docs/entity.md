@@ -242,6 +242,10 @@ The senses report every mob the target hits and kills, and the memory keeps a ta
 | --- | --- | --- | --- |
 | `kill_sign` | 2 | A sign two blocks out from the door: `14 cows`, or `14 so far`. The count is the memory's. | Three or more kills of one kind, a door. |
 | `grave` | 3 | Two cobblestone stacked at the lodger's place with a sign beside them naming the kind they kill most: `cow`, or `rest`. | Three or more kills of one kind, a home. |
+| `your_grave` | 5 | At its place, on the ground there, a mossy stone and a sign beside it: "here lies", their own name, and a day three days on, not come yet. | A home, the target away or asleep. |
+| `torches_turn` | 4 | Overnight every wall torch of the house is on another wall of its block, each pointing as nearly at their bed as a wall there lets it, lit as it was (`turn_torches`, ABI 55). | A home with a bed and lights, the target away or asleep. |
+| `cobwebs` | 3 | Overnight the upper corners of their house are hung with cobwebs, up to six, in the air just inside the walls they built, as if no one had lived there for years; a day on they are gone. | A home, their building, the target away or asleep. |
+| `false_door` | 4 | Overnight, a spruce door on an inside wall of their house where there was none, flat against the wall they built; open it and there is their wall behind it. A day on it is gone. | A home, their building, the target away or asleep. |
 | `kill_line` | 3 | A chat line in the target's own name about it, at night: `i saw what you did to the cows`, `the cows remember`, `14 cows`. | Three or more kills of one kind, night. |
 
 ### The house, changed
@@ -551,6 +555,10 @@ seconds and then stops; `events.glitches` turns the group off, with [The screen]
 | `sun_blink` | 3 | The sun is gone, and the sky night-dark, for one to three seconds in the middle of the day. Then it is back and the time is right. | The target outdoors by day. |
 | `moon_wrong` | 3 | The moon is full when it is not, for a few seconds (the sky's hook; twice its size is beyond the hook). | The target outdoors at night. |
 | `stars_out` | 3 | The stars fade out for a minute and back. | A clear night, the target outdoors. |
+| `static` | 4 | A second of grey static over their whole screen, new each frame, a hiss with it; then nothing (`static`, a client hint). | The target awake. |
+| `elder_face` | 5 | Wherever they are, far from any ocean, the elder guardian's face fills their screen with its cry, as the game shows its curse, and no curse after (`elder_face`, a client hint). | The target awake. |
+| `rumble` | 4 | A deep rumble under them, three seconds: the view shakes, hard at first and dying away, and indoors dust falls from the ceiling over them; nothing breaks (`rumble`, a client hint). | The target awake. |
+| `boom_far` | 4 | At night in the open, a far explosion from the way of its place: a flash low on the sky there, the burst seen sixty-four blocks off, the boom coming to them muffled; nothing is harmed (`boom_far`, a client hint at the place it is seen). | Night, the target outdoors, a home. |
 | `night_early` | 4 | The sun, moon and stars stand two hours later than they are, the sky dimmed, for a minute, eased in and out, then right. | The target outdoors by day. |
 | `red_rain` | 4 | While it rains, the drops themselves are red (the rain's colour hook), red within eight seconds, for two to five minutes; no screen cast. The brain may pair it with `red_mist`. | Rain, the target outdoors or at a window. |
 | `compass_points` | 3 | A compass the target holds points at the lodger's place for two minutes (a hook on the compass's target). | The target holding a compass. |
