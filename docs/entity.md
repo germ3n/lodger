@@ -668,6 +668,7 @@ a dock or bridge), never over anything a player built (see the
 | `gasp_when_turning` | 4 | Walking at night, a sharp breath in right behind them, as if something there were startled. | Night, the target walking. |
 | `water_where_none` | 3 | In the house, the slosh and splash of something moving in water beside them, or water running under the floor; there is no water. | The target indoors. |
 | `doors_slam_far` | 4 | At night, far off, door after door slamming at once, one great crash. | Night, a village known. |
+| `the_count` | 4 | At dusk a bell rings at their house: the first time once, the next twice, each time once more, nine at most, counting. | Dusk, a home. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

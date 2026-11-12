@@ -2201,6 +2201,9 @@ The `[x]` lines above, summed up by day:
 - [x] **Doors slam far off** (`docs/events_todo.md`, 125): `doors_slam_far`, stages 4 and 5, at night, a village known: doors slamming at once, far off. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **The count** (`docs/events_todo.md`, 126): `the_count`, stages 4 and 5, at dusk: a bell at the house rung once more each time, nine at most. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

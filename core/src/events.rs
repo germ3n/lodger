@@ -5438,6 +5438,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundFar("minecraft:block.wooden_door.close"),
         false,
     ),
+    // docs/events_todo.md, 126.
+    row(
+        "the_count",
+        4,
+        5,
+        &[Dusk, Home],
+        0.8,
+        9,
+        Full,
+        Action::Sound("minecraft:block.bell.use"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6597,6 +6609,7 @@ impl Event {
             "gasp_when_turning" => "gasp behind them, as if startled",
             "water_where_none" => "splash water in a dry corner of their house",
             "doors_slam_far" => "slam every door far off at once",
+            "the_count" => "ring the bell at their house once more than last time",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

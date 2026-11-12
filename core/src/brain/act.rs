@@ -219,6 +219,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "breath" {
         return Some(block_of(memory.last.pos));
     }
+    // The bell that counts rings at their house.
+    if event.id == "the_count" {
+        return home.map(|h| h.center);
+    }
     // A cold furnace's crackle comes from their furnace.
     if event.id == "cold_crackle" {
         return memory.furnace().map(|f| f.pos);
@@ -2309,6 +2313,22 @@ pub fn commands(
         .map(|p| (p[0] + p[2]).unsigned_abs() as usize)
         .unwrap_or(0);
     let seed = place_seed + memory.done.len();
+    // The count (`the_count`): the bell at their house rung once more each time, nine at most.
+    if event.id == "the_count" {
+        return pos
+            .map(|home| {
+                let n = (memory.times(event.id) + 1).min(9);
+                (0..n)
+                    .map(|i| {
+                        (
+                            sound_at(ids, target, "minecraft:block.bell.use", at(home), 2.0),
+                            i as u64 * 30,
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+    }
     // A sound event plays one of its ways to sound, the next after the last: from the house's
     // door or chest, from far off, or around the target as it moves.
     if let Some(ways) = super::sounds::variants(event.id) {
@@ -15649,5 +15669,26 @@ mod tests {
                 .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn at_dusk_a_bell_at_their_house_rings_once_more_each_time() {
+        let mut memory = rich_memory();
+        let event = find("the_count").unwrap();
+        let bells = |memory: &Memory| {
+            commands(
+                event,
+                place(event, memory, &mut Rng::new(1)),
+                memory,
+                &mut ids(),
+                &Now::default(),
+                None,
+            )
+            .len()
+        };
+        assert_eq!(bells(&memory), 1);
+        memory.record("the_count", None, 0.0, true, "");
+        memory.record("the_count", None, 1.0, true, "");
+        assert_eq!(bells(&memory), 3, "once more each time");
     }
 }
