@@ -108,6 +108,31 @@ const SNOW_BODY: &[[i32; 2]] = &[[0, 0], [0, 1], [0, 2], [-1, 1], [1, 1], [-1, 3
 /// How long `wither_rose_in_pot`'s rose shows, ticks: ten minutes of their morning.
 const ROSE_SHOWN_TICKS: u64 = 12_000;
 
+/// The cell below and before the lowest step of their stairs, where one more would go, and the
+/// way it faces: the way up, read from the step above it. None with no two steps in a flight.
+fn staircase_foot(memory: &Memory) -> Option<(BlockPos, &'static str)> {
+    let steps: Vec<BlockPos> = memory.fixtures("stairs").map(|f| f.pos).collect();
+    let mut feet: Vec<(BlockPos, [i32; 2])> = steps
+        .iter()
+        .filter_map(|s| {
+            [[1, 0], [-1, 0], [0, 1], [0, -1]]
+                .into_iter()
+                .find(|d| steps.contains(&[s[0] + d[0], s[1] + 1, s[2] + d[1]]))
+                .filter(|d| !steps.contains(&[s[0] - d[0], s[1] - 1, s[2] - d[1]]))
+                .map(|d| (*s, d))
+        })
+        .collect();
+    feet.sort_by_key(|(s, _)| (s[1], s[0], s[2]));
+    let (s, d) = feet.first()?;
+    let facing = match d {
+        [1, 0] => "east",
+        [-1, 0] => "west",
+        [0, 1] => "south",
+        _ => "north",
+    };
+    Some(([s[0] - d[0], s[1] - 1, s[2] - d[1]], facing))
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -510,6 +535,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SignWithCoords
         | Action::TridentPlanted
         | Action::SlamCrater
+        | Action::OneStepMore
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7984,6 +8010,32 @@ pub fn commands(
                 made
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 214.
+        Action::OneStepMore => match staircase_foot(memory) {
+            Some((foot, facing)) => vec![
+                (
+                    Command::GhostBlock {
+                        id: ids(),
+                        player: target,
+                        pos: foot,
+                        block: "minecraft:oak_stairs".to_string(),
+                        state: format!("facing={facing}"),
+                    },
+                    0,
+                ),
+                (
+                    Command::GhostBlock {
+                        id: ids(),
+                        player: target,
+                        pos: foot,
+                        block: String::new(),
+                        state: String::new(),
+                    },
+                    ROSE_SHOWN_TICKS,
+                ),
+            ],
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -11249,6 +11301,8 @@ mod tests {
             .push(("spruce_door".to_string(), [66, 64, 58]));
         for (kind, pos) in [
             ("stairs", [4, 65, 3]),
+            // The flight's next step up, for `one_step_more`.
+            ("stairs", [5, 66, 3]),
             ("banner", [0, 66, 3]),
             ("piston", [-3, 64, 3]),
             ("jukebox", [-3, 64, -3]),
@@ -18931,5 +18985,17 @@ mod tests {
             .collect();
         assert_eq!(dug.len(), 10, "{made:?}");
         assert_eq!(dug[0][1], GROUND_Y - 1, "the middle's under block first");
+    }
+
+    #[test]
+    fn one_step_more_shows_below_the_foot_of_their_flight_facing_up_it() {
+        let memory = rich_memory();
+        assert_eq!(staircase_foot(&memory), Some(([3, 64, 3], "east")));
+        let event = find("one_step_more").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostBlock { pos, state, .. }, 0), (Command::GhostBlock { block, .. }, _)] if *pos == [3, 64, 3] && state == "facing=east" && block.is_empty()),
+            "{made:?}"
+        );
     }
 }

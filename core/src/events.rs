@@ -1157,6 +1157,8 @@ pub enum Action {
     TridentPlanted,
     /// A mace's smash booming near the house at night, and a small bowl dug in the ground there.
     SlamCrater,
+    /// One more step at the foot of their staircase as they wake, down into the floor, on their screen alone a while.
+    OneStepMore,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7111,6 +7113,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SlamCrater,
         false,
     ),
+    // docs/events_todo.md, 214: one more step at the bottom of their staircase, into the floor.
+    row(
+        "one_step_more",
+        4,
+        5,
+        &[Fixtures("stairs", 2), JustWoke],
+        1.0,
+        3,
+        Half,
+        Action::OneStepMore,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7706,6 +7720,7 @@ impl Event {
             | Action::ShulkerLidPeeks
             | Action::TridentPlanted
             | Action::SlamCrater
+            | Action::OneStepMore
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8233,6 +8248,7 @@ impl Event {
             "sign_with_coords" => "put a sign by their door saying where they sleep",
             "trident_planted" => "plant a trident upright in the ground at its place",
             "slam_crater" => "boom a mace's smash near the house and leave a crater",
+            "one_step_more" => "add one more step to the foot of their stairs",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

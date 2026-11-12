@@ -2700,6 +2700,11 @@ The `[x]` lines above, summed up by day:
   natural ground, the middle two deep and the eight round it one. Tests: one in `act`. Was: no such
   event.
 
+- [x] **One step more** (`docs/events_todo.md`, 214): `one_step_more`, stages 4 and 5, as they wake:
+  one more step shown at the foot of their staircase, a block down and before the lowest, facing up
+  the flight, to their client alone ten minutes (`ghost_block`; the floor itself never cut). Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
