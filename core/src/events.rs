@@ -1264,6 +1264,8 @@ pub enum Action {
     EdgeTug,
     /// In the Nether, every piglin near them stopping to watch them a few seconds; none turns on them.
     PiglinsStare,
+    /// In the Nether, the strider they ride stopping, deaf to the rod, facing the way their house would be.
+    StriderTurnsHome,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7875,6 +7877,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PiglinsStare,
         false,
     ),
+    // docs/events_todo.md, 268: in the Nether, the strider they ride turns the way their house would be.
+    row(
+        "strider_turns_home",
+        4,
+        5,
+        &[InNether, Riding("strider")],
+        1.0,
+        3,
+        Half,
+        Action::StriderTurnsHome,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8508,6 +8522,7 @@ impl Event {
             | Action::ArrowReturned
             | Action::EdgeTug
             | Action::PiglinsStare
+            | Action::StriderTurnsHome
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9093,6 +9108,7 @@ impl Event {
             "sculk_trail" => "creep sculk's charge along the floor to their bed",
             "false_glint" => "make the thing in their hand shimmer as if enchanted",
             "piglins_stare" => "make every piglin near them stop and watch them",
+            "strider_turns_home" => "turn the strider they ride toward their house",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

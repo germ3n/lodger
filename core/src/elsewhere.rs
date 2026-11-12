@@ -9,17 +9,28 @@
 use crate::config::Config;
 use crate::events;
 use crate::stay::Stay;
-use craftkit::world::{Command, Now};
+use craftkit::world::{BlockPos, Command, Now};
 
 /// The other dimensions' events, and the world each is done in.
 pub const ROWS: &[(&str, &str)] = &[
     ("ghast_name", "minecraft:the_nether"),
     ("ender_holds", "minecraft:the_end"),
     ("piglins_stare", "minecraft:the_nether"),
+    ("strider_turns_home", "minecraft:the_nether"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
 pub const CHANCE_A_SECOND: f64 = 1.0 / 300.0;
+
+/// The overworld's home as another world has it: an eighth as far in the Nether, as its portals
+/// go; the same in the End.
+pub fn home_here(world: &str, home: BlockPos) -> BlockPos {
+    if world == "minecraft:the_nether" {
+        [home[0].div_euclid(8), home[1], home[2].div_euclid(8)]
+    } else {
+        home
+    }
+}
 
 /// What the overworld's stay tells the others, and what they did.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -31,6 +42,8 @@ pub struct Elsewhere {
     pub name: String,
     /// The block they build with most at home, for `ender_holds`.
     pub block: Option<String>,
+    /// The home's middle in the overworld, for what the other worlds do toward it.
+    pub home: Option<BlockPos>,
     /// Of [`ROWS`], what the overworld's rules allow at this moment.
     pub allowed: Vec<&'static str>,
     /// Done in another dimension since the overworld last looked, with where.
@@ -57,6 +70,7 @@ impl Stay {
         shared.target = self.memory.target;
         shared.target_uuid = self.memory.target_uuid.clone();
         shared.name = self.memory.target_name.clone();
+        shared.home = self.memory.home.as_ref().map(|h| h.center);
         // The block they build with most, when it has one of its own (from its digging) to
         // give: until now it was made from nothing.
         shared.block = self
@@ -134,7 +148,10 @@ impl Stay {
             next += 1;
             next
         };
-        let pos = crate::brain::act::place(event, &self.memory, &mut self.brain.rng);
+        // Where it has no place of its own here, the home's, as this world has it: an eighth as far
+        // in the Nether, as a portal's way is.
+        let pos = crate::brain::act::place(event, &self.memory, &mut self.brain.rng)
+            .or_else(|| shared.home.map(|h| home_here(&world, h)));
         let made = crate::brain::act::commands(
             event,
             pos,

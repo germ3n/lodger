@@ -2959,6 +2959,11 @@ The `[x]` lines above, summed up by day:
   keeping their waits; a new passing need, `MobNear`). Tests: one in `act`, one in `elsewhere`. Was:
   no such event.
 
+- [x] **The strider turns home** (`docs/events_todo.md`, 268): `strider_turns_home`, stages 4 and 5,
+  riding a strider in the Nether: the strider under them held eight seconds facing their home's
+  middle as the Nether has it (an eighth as far; the overworld now shares the home's middle with the
+  other worlds, `home_here`). Tests: one in `act` (with `home_here`). Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -833,6 +833,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ArrowReturned
         | Action::EdgeTug
         | Action::PiglinsStare
+        | Action::StriderTurnsHome
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9388,6 +9389,28 @@ pub fn commands(
         )],
         // docs/events_todo.md, 266.
         Action::PiglinsStare => hold_kind(ids, memory, target, "piglin", 8.0),
+        // docs/events_todo.md, 268.
+        Action::StriderTurnsHome => {
+            let me = memory.last.pos;
+            let ridden = mobs_near(memory, "strider")
+                .min_by(|a, b| distance_pos(a.pos, me).total_cmp(&distance_pos(b.pos, me)))
+                .filter(|s| distance_pos(s.pos, me) < 2.5);
+            match (ridden, pos) {
+                (Some(strider), Some(home)) => vec![(
+                    Command::Hold {
+                        id: ids(),
+                        entity: strider.id,
+                        player: target,
+                        seconds: 8.0,
+                        at: Some(block_center(home)),
+                        creep: false,
+                        spin: false,
+                    },
+                    0,
+                )],
+                _ => vec![],
+            }
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13270,6 +13293,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "strider_turns_home"
             {
                 continue;
             }
@@ -21232,6 +21256,35 @@ mod tests {
                     0
                 )]
             ),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn strider_turns_home_faces_the_home_as_the_nether_has_it() {
+        let mut memory = rich_memory();
+        let at = memory.last.pos;
+        memory.last.hostiles_near.push(Creature {
+            id: 402,
+            kind: "strider".to_string(),
+            pos: [at[0], at[1] - 0.5, at[2]],
+            ..Creature::default()
+        });
+        assert_eq!(
+            crate::elsewhere::home_here("minecraft:the_nether", [80, 64, -17]),
+            [10, 64, -3]
+        );
+        let event = find("strider_turns_home").unwrap();
+        let made = commands(
+            event,
+            Some([10, 64, -3]),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Hold { entity: 402, at: Some(to), .. }, 0)] if *to == block_center([10, 64, -3])),
             "{made:?}"
         );
     }
