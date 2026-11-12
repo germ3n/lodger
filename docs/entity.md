@@ -882,45 +882,69 @@ Some chains, with the stages they span:
 - **The sky.** `taken_up` → `sky_gives_back`. [4 to 5]
 - **The night.** `drawn_to_the_light` → `while_unseen` → `wolves_circle` → `zombie_in_your_gear`.
   [4 to 5]
-- **The visitor.** `villager_flees_in` → `prints_around_the_house` → `wall_bursts`. [4 to 5]
-- **The glitches.** `dead_redstone` → `sound_warp`, once they noticed the redstone → `menu_freaks`.
+- **The visitor.** `villager_flees_in` → `prints_around_the_house`, `red_trail` or `boots_at_the_door` → `wall_bursts`. [4 to 5]
+- **The glitches.** `dead_redstone` or `crafter_clicks` → `sound_warp`, once they noticed the redstone → `menu_freaks`.
   [3 to 5]
 - **The knock.** `knock` → `door_scratch` → `knock_heavy` → `door_wont_open`.
 - **The bed.** `egg_on_bed` → `sheets_changed` → `under_the_bed` → `foot_of_bed` → `lies_beside`.
 - **The hands.** `by_the_bed` → `choke` → `burned_in_bed` or `shot_in_bed`.
 - **The voice.** `says_back` → `repeats_you` → `says_first` → `whisper_from_you`.
-- **The lights.** `flicker` → `lights_fail` → `candles_lit` → `lights_out`.
-- **The sky wrong.** `thunder_clear` → `moon_wrong` → `stars_out` → `red_rain` → `night_early`.
-- **The screen.** `hotbar_slip` → `crosshair_gone` → `inventory_stare` → `f3_line`.
+- **The lights.** `flicker` → `lights_fail` → `candles_lit` or `torches_turn` → `lights_out`.
+- **The sky wrong.** `thunder_clear` → `moon_wrong` or `clock_wrong` → `stars_out` → `red_rain` → `night_early`.
+- **The screen.** `hotbar_slip` → `crosshair_gone` → `inventory_stare`, `phantom_item` or `rustle_in_the_pack` → `f3_line` or `static` → `border_closes` or `boss_bar_it`.
 - **The village.** `villager_at_door` → `golem_turned` → `village_doors` → `village_abandoned`.
 - **The kills.** `kill_sign` → `count_up` → `head_on_post` → `grave_each`.
-- **The water.** `ripples` → `boat_waiting` → `on_the_water` → `swims_beneath` → `pulled_under`.
-- **The cave.** `lantern_ahead` → `cave_lit` → `cave_torches_flicker` → `drops_from_the_ceiling`.
+- **The water.** `ripples` → `boat_waiting` → `on_the_water` → `swims_beneath` or `bell_underwater` → `pulled_under`.
+- **The cave.** `lantern_ahead` → `cave_lit` or `humming_ahead` → `cave_torches_flicker` → `drops_from_the_ceiling` or `in_the_lava`.
 - **The figures.** `crossing_ahead` → `in_a_line` → `ring_of_figures` → `every_window`.
-- **The mirror.** `figure_mirror` → `reflection` → `wears_your_face` → `mirror_in_the_window`.
-- **The death.** `death_light` → `where_you_died` → `death_message` → `false_death`.
-- **The animals.** `stare` → `slow_approach` → `warped_animal` → `animals_turn`.
+- **The mirror.** `figure_mirror` → `reflection` or `shadow_on_the_wall` → `wears_your_face` → `mirror_in_the_window`.
+- **The death.** `death_light` → `where_you_died` → `death_message` → `false_death` or `your_grave`.
+- **The animals.** `stare` → `slow_approach` → `warped_animal` or `axolotls_play_dead` → `animals_turn`.
 - **The field.** `scarecrow` → `row_withered` → `field_word` → `face_the_house`.
-- **The chest.** `shuffle_chest` → `tidy_chest` → `chest_answers` → `chest_rattles` → `chest_wont_open`.
-- **The steps.** `late_steps` → `footsteps_follow` → `breath` → `hand_on_shoulder` → `breath_close`.
-- **The bow.** `arrow_near` → `arrow_in_the_door` → `arrow_grazes` → `arrow_hits`.
+- **The chest.** `shuffle_chest` → `tidy_chest` → `chest_answers`, `breath_in_the_chest` or `the_bell_in_the_chest` → `chest_rattles` → `chest_wont_open`.
+- **The steps.** `late_steps` → `footsteps_follow`, `steps_counted` or `armour_behind` → `breath` or `panting_behind` → `hand_on_shoulder` → `breath_close`.
+- **The bow.** `arrow_near` or `crossbow_click` → `arrow_in_the_door` → `arrow_grazes` → `arrow_hits`.
+
+And thirteen over the newest events (owner: "update chains, like tie the new events into existing ones
+where appropriate and add more"):
+
+- **The walls.** `breathing_in_the_wall` → `eating_in_the_wall` or `lava_in_the_wall` →
+  `scream_indoors` → `cracks_in_the_wall`.
+- **The below.** `bubbling_under` → `digging_under_the_floor` → `ominous_hum` → `shriek_below` →
+  `sculk_creeps`.
+- **The pale garden.** `creaking_behind` → `pale_moss_creeps` → `creaking_in_the_field`.
+- **The neglect.** `cobwebs` → `cold_house` → `frost_on_the_glass` or `window_tinted` →
+  `stairs_up_to_nowhere`.
+- **The round.** `rattling_round_the_house` → `hoofbeats_circling` → `ram_on_the_wall` →
+  `sigh_at_the_door`.
+- **The night in bed.** `vault_opens_by_the_bed` → `snoring_beside` → `nightmare`.
+- **The ceiling.** `wings_in_the_room` → `prints_on_the_ceiling` → `ceiling_crawl`.
+- **The far off.** `witch_laughs` → `doors_slam_far` → `boom_far` → `rider_on_the_ridge` →
+  `happy_ghast_overhead`.
+- **The set on you.** `creeper_behind` → `the_killer_rabbit` → `vex_single` or `vex_wave` →
+  `vex_strikes`.
+- **The unseen one.** `gust_from_nowhere` → `teleport_beside` → `blow_on_the_shield`.
+- **The quiet house.** `sweeping_next_room` → `pot_shatters` → `bulbs_clicking` →
+  `water_where_none`.
+- **The hunt.** `bush_rustles` → `sniffing` → `gasp_when_turning`.
+- **The snow.** `ice_cracks` → `snow_shape`.
 
 A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
 menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
 tests check that a stay with the rule brain walks at least two chains end to end and that no
 follow-up is ever offered with its needs unmet.
 
-**As coded (`core/src/chains.rs`).** Thirty-five, no event in two: the seven of the newer events
-and the nineteen over the rest of the catalogue, as listed above, and the nine of the design, with
+**As coded (`core/src/chains.rs`).** Forty-eight, no event in two: the seven of the newer events,
+the nineteen over the rest of the catalogue and the thirteen over the newest, as listed above, and the nine of the design, with
 the catalogue's events: the thing (`take`,
-`place_taken` or `return_taken`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
-`mined_out`), the tunnel (`mining_sounds`, `mine_beside`, `tunnel_toward`, `cave_room`), the
+`place_taken`, `return_taken`, `sand_gives_back` or `pot_of_returns`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
+`mined_out`), the tunnel (`mining_sounds`, `mine_beside` or `cart_overhead`, `tunnel_toward` or `iron_door_below`, `cave_room`), the
 place (`light_path`, `hole`, `pillar`, `sign`, `house_near`; its house grows in the ending's
-script), the watcher (`far_figure`, then `behind_you` once they looked at a figure two seconds
+script), the watcher (`far_figure` or `spyglass_figure`, then `behind_you` once they looked at a figure two seconds
 or more, `on_the_roof`, `in_doorway`, `in_your_bed`, `copy_crouch`, `figure_waves`; chased, it
 ends), the copy (`copy_build`, `copy_house`, `second_bed`), the house (`open_door`, then
-`door_hinge`, `door_held` and `window_bars`, each once they noticed the last), the diary
-(`diary_sold`, `diary_brought`), the pet (`pet_growl`, `pet_moved`, `pet_outside`). A chain opens when its first event lands; its steps
+`door_hinge` or `false_door`, `door_held` and `window_bars`, each once they noticed the last), the diary
+(`diary_sold`, `diary_brought`), the pet (`pet_growl`, `pet_moved` or `bark_from_home`, `pet_outside` or `pet_whines_at_door`). A chain opens when its first event lands; its steps
 count in any order; its next step is four times likelier on the menu and in the rule brain's
 pick for the days it waits (three to five; the diary's eight), its days held while its stage has not come; once
 every step has landed it is walked; once a stay each. Not exclusive, and nothing carried from

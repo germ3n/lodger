@@ -2601,6 +2601,17 @@ The `[x]` lines above, summed up by day:
   indoors: the game's breaking cracks over the wall block nearest them, a stage each half second,
   then gone, the wall untouched (`crack_block`, ABI 55). Tests: one in `act`. Was: no such event.
 
+- [x] **The newest events in the chains** (owner: "dont forget to update chains, like tie the new
+  events into existing ones where appropriate and add more"). Was: thirty-five chains, none of
+  events 116 to 205 in any. Now seventy-six of the ninety are a chain's step: some as another way to take
+  a step of an old chain (the sand and the pot give back what `take` took, the spyglass is where
+  the watcher first stands, the inventory's tricks join the screen's, the counted steps and the
+  armour join the steps, and so on), and thirteen new chains over the rest: the walls, the below,
+  the pale garden, the neglect, the round, the night in bed, the ceiling, the far off, the set on
+  you, the unseen one, the quiet house, the hunt, the snow. No event in two; the rest (the count,
+  the elder's face, the rumble...) stand alone. Tests changed (owner told): the count, 35 to 48; two expected
+  next steps now name their alternatives.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
