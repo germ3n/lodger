@@ -148,6 +148,17 @@ public final class Glitches {
 		}
 	}
 
+	/** Whether every stack in their hotbar shows a count of 0 (`count_shows_zero`, ABI 56). */
+	public static boolean countsZero() {
+		for (Hints.Active active : Hints.active()) {
+			if (active.hint().hint().equals("count_shows_zero")) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	/** Whether their figure in the inventory stares straight out (`inventory_stare`). */
 	public static boolean inventoryStare() {
 		for (Hints.Active active : Hints.active()) {

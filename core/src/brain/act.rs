@@ -20166,4 +20166,15 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn count_shows_zero_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("count_shows_zero").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "count_shows_zero" && *seconds == 3.0),
+            "{made:?}"
+        );
+    }
 }

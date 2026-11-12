@@ -2810,6 +2810,11 @@ The `[x]` lines above, summed up by day:
   named "you" (the client's `recipe_toast` hint; off with the glitches). Tests: one in `act`. Was:
   no such event.
 
+- [x] **Every count a 0** (`docs/events_todo.md`, 236): `count_shows_zero`, stages 3 to 5, awake:
+  three seconds of every hotbar stack drawn with a count of 0 on their client (the
+  `count_shows_zero` hint, `HudMixin` on the hotbar's slot drawing; off with the glitches). Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

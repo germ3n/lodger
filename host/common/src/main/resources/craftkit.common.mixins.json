@@ -13,6 +13,7 @@
 		"CompassAngleStateMixin",
 		"DebugEntryPositionMixin",
 		"FogRendererMixin",
+		"HudMixin",
 		"InventoryScreenMixin",
 		"LivingEntityRendererMixin",
 		"ModelFeatureRendererMixin",
