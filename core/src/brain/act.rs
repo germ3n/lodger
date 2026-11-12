@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // At them: the villagers they go to.
+        Action::TradesRefused | Action::VillagerStabs(_) => Some(block_of(memory.last.pos)),
         // The village's bell, else its middle.
         Action::VillagersFleeYou => memory
             .scanned("bell")
@@ -6386,6 +6388,28 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // A day of the game's of every villager refusing them, a shake of the head and a no.
+        Action::TradesRefused => vec![(
+            Command::HoldTrades {
+                id: ids(),
+                player: target,
+                seconds: 1200.0,
+                how: "refuse".to_string(),
+                damage: 0.0,
+            },
+            0,
+        )],
+        // The next villager they go to trade with, within the day, a blade and a stab.
+        Action::VillagerStabs(damage) => vec![(
+            Command::HoldTrades {
+                id: ids(),
+                player: target,
+                seconds: 1200.0,
+                how: "stab".to_string(),
+                damage,
+            },
+            0,
+        )],
         // Every villager near runs from them in a panic, as from a zombie, a minute; the bell
         // rung, last, so they go in to hide.
         Action::VillagersFleeYou => pos
@@ -14277,6 +14301,35 @@ mod tests {
             matches!(&made[..], [(Command::Panic { entities, .. }, 0), (Command::ToggleBlock { pos, .. }, 10)]
                 if entities == &vec![9] && *pos == [20, 64, 3]),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn the_villagers_refuse_them_a_day_or_the_next_one_stabs() {
+        let memory = rich_memory();
+        let refuse = commands(
+            find("trades_refused").unwrap(),
+            None,
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&refuse[..], [(Command::HoldTrades { how, seconds, .. }, 0)] if how == "refuse" && *seconds >= 600.0),
+            "{refuse:?}"
+        );
+        let stab = commands(
+            find("villager_stabs").unwrap(),
+            None,
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&stab[..], [(Command::HoldTrades { how, damage, .. }, 0)] if how == "stab" && *damage == 4.0),
+            "{stab:?}"
         );
     }
 }

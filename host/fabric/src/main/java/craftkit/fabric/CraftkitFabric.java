@@ -72,6 +72,13 @@ public final class CraftkitFabric implements ModInitializer {
 			}
 			return InteractionResult.PASS;
 		});
+		net.fabricmc.fabric.api.event.player.UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			// A villager's trades held (`hold_trades`): the use refused, a no or a blade.
+			if (player instanceof ServerPlayer serverPlayer && senses.refusedEntityUse(serverPlayer, entity)) {
+				return InteractionResult.FAIL;
+			}
+			return InteractionResult.PASS;
+		});
 		AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) -> {
 			if (player instanceof ServerPlayer serverPlayer) {
 				senses.noticedStruckBlock(serverPlayer, pos);

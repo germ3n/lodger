@@ -2007,6 +2007,14 @@ The `[x]` lines above, summed up by day:
   minute (`panic`, ABI 54: the memory of a hurt alone, no gossip, no golem) and the bell rings, last.
   Tests: one in `act`. Was: no such event.
 
+- [x] **The villagers refuse them, or one stabs** (`docs/events_todo.md`, 92 and 111, 111 the
+  owner's): `trades_refused`, stages 3 to 5, a day of every villager shaking its head with a no as
+  they go to trade; `villager_stabs`, stages 4 and 5, the next villager they go to trade with shows
+  a blade and stabs them, two hearts by the harm stages, never a kill (`hold_trades`, ABI 54: the
+  loaders refuse the villager's use, Fabric's `UseEntityCallback`, NeoForge's `EntityInteract`).
+  The trades are refused, not shown crossed out: the game's own head shake says it. Tests: one in
+  `act`. Was: no such events.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

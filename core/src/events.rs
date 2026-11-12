@@ -1073,6 +1073,10 @@ pub enum Action {
     CirclesATree,
     /// Coming into the village, every villager runs from them; the bell rings.
     VillagersFleeYou,
+    /// A day of every villager refusing them, a shake of the head and a no.
+    TradesRefused,
+    /// The next villager they go to trade with stabs them: this much harm, never a kill.
+    VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
     TakenUp,
     /// What it took up falls out of the sky in front of their door.
@@ -4868,6 +4872,31 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 92.
+    row(
+        "trades_refused",
+        3,
+        5,
+        &[Creature("villager")],
+        3.0,
+        2,
+        Full,
+        Action::TradesRefused,
+        false,
+    ),
+    // docs/events_todo.md, 111 (owner's): the stab by the harm stages, two hearts as
+    // `figure_swing`'s.
+    row(
+        "villager_stabs",
+        4,
+        5,
+        &[Creature("villager")],
+        4.0,
+        2,
+        Full,
+        Action::VillagerStabs(4.0),
+        false,
+    ),
     // docs/events_todo.md, 91.
     row(
         "villagers_flee_you",
@@ -6023,6 +6052,8 @@ impl Event {
             | Action::TheTreeLine
             | Action::AnimalsFleeTheWoods
             | Action::VillagersFleeYou
+            | Action::TradesRefused
+            | Action::VillagerStabs(_)
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6106,6 +6137,8 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "trades_refused" => "have every villager refuse them for a day",
+            "villager_stabs" => "have the next villager they trade with stab them",
             "villagers_flee_you" => {
                 "make every villager run from them as they come into the village"
             }

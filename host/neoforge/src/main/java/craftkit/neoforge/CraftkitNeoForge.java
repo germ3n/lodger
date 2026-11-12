@@ -124,6 +124,13 @@ public final class CraftkitNeoForge {
 				senses.noticedUsedBlock(player, event.getPos());
 			}
 		});
+		NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.EntityInteract event) -> {
+			// A villager's trades held (`hold_trades`): the use refused, a no or a blade.
+			if (event.getEntity() instanceof ServerPlayer player && senses.refusedEntityUse(player, event.getTarget())) {
+				event.setCanceled(true);
+				event.setCancellationResult(net.minecraft.world.InteractionResult.FAIL);
+			}
+		});
 		NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.LeftClickBlock event) -> {
 			if (event.getEntity() instanceof ServerPlayer player && event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START) {
 				senses.noticedStruckBlock(player, event.getPos());

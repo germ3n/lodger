@@ -725,6 +725,18 @@ pub enum Command {
         pos: BlockPos,
         seconds: f32,
     },
+    /// For `seconds` (a day of the game's at most), every villager `player` goes to trade with
+    /// refuses them: no trade opens. `how` `refuse`: it shakes its head with a no, as one with
+    /// nothing to sell. `how` `stab`: a blade in its crossed hands a moment, and they are hit for
+    /// `damage` (half hearts), never below half a heart; once, the hold over then. ABI 54.
+    HoldTrades {
+        id: u64,
+        player: u32,
+        seconds: f32,
+        how: String,
+        #[serde(default, skip_serializing_if = "is_zero_f32")]
+        damage: f32,
+    },
     /// The door at `pos` (either half) will not open for `seconds` (ten at most), as if held
     /// from the other side: a player's use of it is refused, the door rattling shut on their
     /// screen, and each try heard as a blow on it. ABI 54.
@@ -1406,6 +1418,7 @@ impl Command {
             | Command::SnapBranch { id, .. }
             | Command::FellTree { id, .. }
             | Command::Panic { id, .. }
+            | Command::HoldTrades { id, .. }
             | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }

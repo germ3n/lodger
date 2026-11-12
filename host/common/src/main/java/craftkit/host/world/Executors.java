@@ -154,6 +154,15 @@ public final class Executors {
 					context.senses().holdContainer(level, pos, command.get("seconds").getAsFloat());
 					yield report(id, true, "");
 				}
+				case "hold_trades" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					context.senses().holdTrades(player, command.get("seconds").getAsFloat(), command.get("how").getAsString(),
+							command.has("damage") ? command.get("damage").getAsFloat() : 0);
+					yield report(id, true, "");
+				}
 				case "push_player" -> pushPlayer(level, command, id, context);
 				case "set_respawn" -> setRespawn(level, command, id, context);
 				case "put_ender_chest" -> putEnderChest(level, command, id, context, data);

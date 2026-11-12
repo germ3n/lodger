@@ -165,6 +165,76 @@ public final class Senses {
 	/** A block used: if it holds a container, that is a container opened, with its contents. */
 	/** The doors held shut (`hold_door`, ABI 54): each door's lower half, and the tick it lets go. */
 	private final Map<BlockPos, Long> heldDoors = new HashMap<>();
+	/** A player's trades held (`hold_trades`, ABI 54): until which tick, how, and the hit's harm. */
+	private record TradesHeld(long until, String how, float damage) {
+	}
+
+	private final Map<java.util.UUID, TradesHeld> heldTrades = new HashMap<>();
+	/** A villager's blade to be put away, and the tick it is. */
+	private final Map<net.minecraft.world.entity.npc.villager.AbstractVillager, Long> blades = new java.util.WeakHashMap<>();
+	/** The longest trades are held: a day of the game's. */
+	static final float MOST_TRADES_HELD_SECONDS = 1200;
+
+	/** Every villager {@code player} goes to trade with refuses them, so, for {@code seconds}. */
+	public void holdTrades(ServerPlayer player, float seconds, String how, float damage) {
+		heldTrades.put(player.getUUID(), new TradesHeld(tick + (long) (Math.min(seconds, MOST_TRADES_HELD_SECONDS) * MovementTracker.TPS), how, damage));
+	}
+
+	/**
+	 * Whether a player's use of an entity is refused, a villager's trades held: it shakes its
+	 * head with a no, or stabs them once with a blade shown in its hands. The loaders cancel the
+	 * use when it is.
+	 */
+	public boolean refusedEntityUse(ServerPlayer player, net.minecraft.world.entity.Entity entity) {
+		if (!(entity instanceof net.minecraft.world.entity.npc.villager.AbstractVillager villager) || heldTrades.isEmpty()) {
+			return false;
+		}
+		TradesHeld held = heldTrades.get(player.getUUID());
+		if (held == null) {
+			return false;
+		}
+		if (tick > held.until()) {
+			heldTrades.remove(player.getUUID());
+			return false;
+		}
+		if (held.how().equals("stab") && player.level() instanceof net.minecraft.server.level.ServerLevel level) {
+			heldTrades.remove(player.getUUID());
+			// A blade in its crossed hands, on their screen alone, put away a breath later.
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket(villager.getId(), java.util.List.of(
+					com.mojang.datafixers.util.Pair.of(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_SWORD)))));
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket(villager.getId(),
+					net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
+			blades.put(villager, tick + 30);
+			float harm = craftkit.host.world.Spare.harm(held.damage(), player.getHealth(), 1f);
+			player.level().playSound(null, player.blockPosition(), net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_STRONG, net.minecraft.sounds.SoundSource.HOSTILE, 1f, 0.8f);
+			if (harm > 0) {
+				player.hurtServer(level, level.damageSources().generic(), harm);
+			}
+			return true;
+		}
+		// No trade, the head shaken, a no: as a villager with nothing to sell.
+		villager.setUnhappyCounter(40);
+		villager.playSound(net.minecraft.sounds.SoundEvents.VILLAGER_NO, 1f, villager.getVoicePitch());
+		return true;
+	}
+
+	/** The blades shown put away when their time is up: each villager's own hand shown again. */
+	private void putBladesAway(net.minecraft.server.MinecraftServer server) {
+		var it = blades.entrySet().iterator();
+		while (it.hasNext()) {
+			var each = it.next();
+			if (tick < each.getValue()) {
+				continue;
+			}
+			var villager = each.getKey();
+			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket(villager.getId(), java.util.List.of(
+						com.mojang.datafixers.util.Pair.of(net.minecraft.world.entity.EquipmentSlot.MAINHAND, villager.getMainHandItem()))));
+			}
+			it.remove();
+		}
+	}
+
 	/** The containers held shut (`hold_container`, ABI 54), each block, and the tick it lets go. */
 	private final Map<BlockPos, Long> heldContainers = new HashMap<>();
 
@@ -411,6 +481,7 @@ public final class Senses {
 	/** Everything seen in this level since the last call, as the SDK's {@code Observations}. */
 	public JsonObject observe(ServerLevel level, long serverTick) {
 		tick = serverTick;
+		putBladesAway(level.getServer());
 		JsonObject observations = new JsonObject();
 		JsonArray players = new JsonArray();
 		List<ServerPlayer> present = level.players();
