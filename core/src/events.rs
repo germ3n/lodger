@@ -1288,6 +1288,8 @@ pub enum Action {
     HomeThroughThePortal,
     /// In the End, the dragon's growl from the central island, far off, long after it died.
     TheDragonGrowls,
+    /// In the End, the beat of a second pair of wings just behind them, keeping pace.
+    SecondWings,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8043,6 +8045,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TheDragonGrowls,
         true,
     ),
+    // docs/events_todo.md, 297: in the end, the beat of a second pair of wings three blocks behind them, keeping pace with them, six beats, and gone when they turn.
+    row(
+        "second_wings",
+        4,
+        5,
+        &[InEnd],
+        1.0,
+        3,
+        Half,
+        Action::SecondWings,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8348,6 +8362,7 @@ impl Event {
             | Action::NetherRoofSteps
             | Action::HomeThroughThePortal
             | Action::TheDragonGrowls
+            | Action::SecondWings
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -9285,6 +9300,7 @@ impl Event {
             "nether_roof_steps" => "walk steps across the rock over them",
             "home_through_the_portal" => "let the sounds of home through their portal",
             "the_dragon_growls" => "growl the dragon's growl from the empty island",
+            "second_wings" => "beat a second pair of wings behind them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

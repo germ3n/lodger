@@ -472,6 +472,7 @@ caves, from before.
 | `nether_roof_steps` | 4 to 5 | In the Nether, slow steps on the rock six blocks over their heads, crossing from behind them to right above, and stopping there; nothing is up there. | In the Nether. |
 | `home_through_the_portal` | 3 to 5 | In the Nether, where they came through, the sounds of home come through the portal, faint: a hen, a door shutting, a cow, rain; with nowhere they arrived known, nothing. | In the Nether, where they came in known. |
 | `the_dragon_growls` | 4 to 5 | In the End, far off, the dragon's growl from the central island, as if it were there still; heard from the island's middle, or forty-eight blocks toward it when farther. | In the End. |
+| `second_wings` | 4 to 5 | In the End, the beat of a second pair of wings three blocks behind them, keeping pace with them, six beats, and gone when they turn; nothing is there. | In the End. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

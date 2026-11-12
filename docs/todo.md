@@ -3009,6 +3009,10 @@ The `[x]` lines above, summed up by day:
   the End: the dragon's growl heard from the central island (the world's middle), or forty-eight
   blocks toward it when they are farther, to them alone. Tests: one in `act`. Was: no such event.
 
+- [x] **A second pair of wings** (`docs/events_todo.md`, 297): `second_wings`, stages 4 and 5, in
+  the End: six wingbeats three blocks behind them four fifths of a second apart, to them alone.
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
