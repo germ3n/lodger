@@ -8097,6 +8097,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("souls_follow", 60.0),
         false,
     ),
+    // docs/events_todo.md, 288: in the heat of the nether their breath shows before their face, in puffs, as on a winter night, twenty seconds.
+    row(
+        "breath_in_the_nether",
+        3,
+        5,
+        &[InNether],
+        1.0,
+        3,
+        Half,
+        Action::Hint("cold_breath", 20.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9346,6 +9358,7 @@ impl Event {
             "purpur_knock" => "knock on the purpur wall beside them",
             "ship_creaks" => "creak the deck as if someone walked it",
             "souls_follow" => "raise the souls only where they have just stepped",
+            "breath_in_the_nether" => "show their breath in the heat of the Nether",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

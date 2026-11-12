@@ -14007,6 +14007,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "breath_in_the_nether"
                 || event.id == "souls_follow"
                 || event.id == "ship_creaks"
                 || event.id == "purpur_knock"
@@ -22231,6 +22232,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "souls_follow" && *seconds == 60.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn breath_in_the_nether_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("breath_in_the_nether").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "cold_breath" && *seconds == 20.0),
             "{made:?}"
         );
     }
