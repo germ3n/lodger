@@ -61,6 +61,9 @@ pub const ROWS: &[(&str, &str)] = &[
     ("on_the_exit_portal", "minecraft:the_end"),
     ("the_poem_knows", "minecraft:the_end"),
 ];
+/// The chance a second of an open scene's next step, when one is ready: about once in
+/// twenty-five seconds, a scene's pace.
+pub const SCENE_CHANCE_A_SECOND: f64 = 1.0 / 25.0;
 /// How often the other worlds choose an open chain's next step when one is ready.
 pub const CHAIN_FIRST: f64 = 0.8;
 /// The chance a second, while one is allowed and the target is there: about once in five
@@ -96,6 +99,8 @@ pub struct Elsewhere {
     pub frame: Option<u32>,
     /// What the overworld's open chains offer next: the other worlds choose them first.
     pub chain_next: Vec<&'static str>,
+    /// The open scenes' next steps: done at a scene's pace, and at half their cost.
+    pub scene_next: Vec<&'static str>,
     /// Of [`ROWS`], what the overworld's rules allow at this moment.
     pub allowed: Vec<&'static str>,
     /// Done in another dimension since the overworld last looked, with where.
@@ -109,8 +114,14 @@ impl Stay {
         let day = self.day(now);
         for (id, world) in shared.done.drain(..) {
             if let Some(event) = events::find(id) {
+                // A scene's step at half its cost, as at home (`chains::SCENE_COST`).
+                let share = if shared.scene_next.contains(&id) {
+                    crate::chains::SCENE_COST
+                } else {
+                    1.0
+                };
                 self.memory.record(id, None, day, true, &world);
-                self.arc.spend(event.cost_in(config), now.day);
+                self.arc.spend(event.cost_in(config) * share, now.day);
                 // The enderman's block came out of what it holds, never from nothing.
                 if id == "ender_holds" {
                     if let Some(block) = &shared.block {
@@ -131,6 +142,7 @@ impl Stay {
         });
         shared.frame = self.memory.decor("item_frame").next().map(|d| d.id);
         shared.chain_next = self.memory.chain_next();
+        shared.scene_next = self.memory.scene_next();
         // The block they build with most, when it has one of its own (from its digging) to
         // give: until now it was made from nothing.
         shared.block = self
@@ -207,6 +219,19 @@ impl Stay {
             })
             .map(|(id, _)| *id)
             .collect();
+        // An open scene's next step comes at a scene's pace: within half a minute or so, not five.
+        let scene: Vec<&'static str> = ready
+            .iter()
+            .copied()
+            .filter(|id| shared.scene_next.contains(id))
+            .collect();
+        if !scene.is_empty() {
+            if self.brain.rng.next_f64() < SCENE_CHANCE_A_SECOND {
+                let id = scene[(self.brain.rng.next_u64() % scene.len() as u64) as usize];
+                return self.do_elsewhere(id, now, shared, out);
+            }
+            return out;
+        }
         if ready.is_empty() || self.brain.rng.next_f64() >= CHANCE_A_SECOND {
             return out;
         }
@@ -577,6 +602,36 @@ mod tests {
         assert_eq!(
             shared.done,
             vec![("on_the_exit_portal", "minecraft:the_end".to_string())]
+        );
+    }
+
+    #[test]
+    fn an_open_scene_s_next_step_comes_at_a_scene_s_pace_there() {
+        let mut nether = stay("minecraft:the_nether");
+        let mut shared = Elsewhere {
+            target: Some(0),
+            allowed: vec!["their_door_behind", "rain_in_the_nether"],
+            scene_next: vec!["their_door_behind"],
+            ..Elsewhere::default()
+        };
+        nether.memory.set_target(0, "", "");
+        let seen = player_at([0.0, 70.0, 0.0]);
+        let mut seconds = 0;
+        while shared.done.is_empty() && seconds < 400 {
+            nether.observe(&seen, 0.0);
+            nether.tick_elsewhere(
+                &Now {
+                    tick: 20 + seconds * 20,
+                    ..Now::default()
+                },
+                &mut shared,
+            );
+            seconds += 1;
+        }
+        assert_eq!(
+            shared.done.first().map(|(id, _)| *id),
+            Some("their_door_behind"),
+            "the scene's, soon: {seconds}s"
         );
     }
 

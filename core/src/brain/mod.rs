@@ -159,6 +159,10 @@ pub struct Brain {
     pub next_plan_id: u64,
     pub pending: Vec<Pending>,
     pub later: Vec<Later>,
+    /// Scenes whose next step was rolled straight on, with the tick it comes at. Not saved: a
+    /// quit leaves the scene at its own pace.
+    #[serde(skip)]
+    pub scene_due: Vec<(u64, String)>,
     /// What the events under way took and keep, until each is over.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub taken: Vec<Taken>,
@@ -1104,6 +1108,24 @@ impl Brain {
             }
         }
 
+        // A scene's step landed: its next rolled straight on, ten seconds to a minute away.
+        for chain in std::mem::take(&mut memory.scene_moved) {
+            if !held_back && self.rng.next_f64() < crate::chains::SCENE_CHANCE {
+                let span = crate::chains::SCENE_MOST_TICKS - crate::chains::SCENE_LEAST_TICKS;
+                let wait = crate::chains::SCENE_LEAST_TICKS + self.rng.next_u64() % span;
+                self.scene_due.push((now.tick + wait, chain.to_string()));
+            }
+        }
+        let (due, kept): (Vec<_>, Vec<_>) = std::mem::take(&mut self.scene_due)
+            .into_iter()
+            .partition(|(at, _)| *at <= now.tick);
+        self.scene_due = kept;
+        for (_, chain) in due {
+            if !held_back {
+                self.consider_scene(&chain, now, day, memory, arc, config, log);
+            }
+        }
+
         // A chorus fruit eaten near home: perhaps it sets them down on their doorstep.
         if std::mem::take(&mut memory.chorus_eaten_now) && !held_back {
             self.consider_started(
@@ -1864,6 +1886,39 @@ impl Brain {
                 command,
                 while_still,
             });
+        }
+    }
+
+    /// A scene's next step, its roll won: one of its events, tried in a random order until one
+    /// lands, each passing its rules and needs as a moment's would, at half its cost of the day's
+    /// budget (`chains::SCENE_COST`); none affordable or able, the scene goes on at its own pace.
+    #[allow(clippy::too_many_arguments)]
+    fn consider_scene(
+        &mut self,
+        chain: &str,
+        now: &Now,
+        day: f32,
+        memory: &mut Memory,
+        arc: &mut Arc,
+        config: &Config,
+        log: &mut log::Log,
+    ) {
+        let mut next = memory.chain_next_of(chain);
+        while !next.is_empty() {
+            let id = next.swap_remove((self.rng.next_u64() % next.len() as u64) as usize);
+            let Some(event) = events::find(id) else {
+                continue;
+            };
+            let share = event.cost_in(config) * crate::chains::SCENE_COST;
+            if !arc.affords(share, now.day, config) {
+                return;
+            }
+            let before = memory.times(id);
+            self.consider_started(id, 1.0, now, day, memory, arc, config, log);
+            if memory.times(id) > before {
+                arc.spend(share, now.day);
+                return;
+            }
         }
     }
 
@@ -4864,6 +4919,58 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn a_scene_s_next_step_comes_straight_on_at_half_its_cost() {
+        let config = Config::default();
+        let mut memory = home_memory();
+        memory.last.online = true;
+        memory.last.indoors = true;
+        // Indoors at night, as the knock's beats need.
+        let night = Now {
+            day_time: 18_000,
+            ..Now::default()
+        };
+        memory.target = Some(0);
+        let mut log = log::Log::new(None, 16, false);
+        let mut brain = Brain::new(1);
+        let mut arc = Arc {
+            stage: 4,
+            ..Arc::default()
+        };
+        memory.chain_landed("knock", 1.0);
+        let event = events::find("door_scratch").unwrap();
+        brain.consider_scene(
+            "the_knock",
+            &night,
+            1.0,
+            &mut memory,
+            &mut arc,
+            &config,
+            &mut log,
+        );
+        assert_eq!(memory.times("door_scratch"), 1, "the scene's next beat");
+        assert!(
+            (arc.spent_today - event.cost_in(&config) * crate::chains::SCENE_COST).abs() < 1e-6,
+            "half its cost: {}",
+            arc.spent_today
+        );
+        // Its own beat noted, the next rolled at the brain's next tick.
+        assert_eq!(memory.scene_moved, vec!["the_knock", "the_knock"]);
+        // None left to afford: nothing.
+        arc.spent_today = 1e6;
+        memory.scene_moved.clear();
+        brain.consider_scene(
+            "the_knock",
+            &night,
+            1.0,
+            &mut memory,
+            &mut arc,
+            &config,
+            &mut log,
+        );
+        assert_eq!(memory.times("knock_heavy"), 0);
     }
 
     #[test]

@@ -1082,6 +1082,16 @@ places.
 - **The city.** `shulkers_open` or `gateway_flashes` → `purpur_knock` or `ship_creaks` or `chorus_blooms` → `elytra_at_home`.
 - **The island.** `the_dragon_growls` or `on_the_exit_portal` → `end_goes_quiet` or `end_sky_face` → `the_poem_knows`.
 
+**Scenes.** Twelve are scenes, beats that work only one straight after another: the knock, the
+steps, the round, the bow, the hunt, the walls, the below, the ceiling, the set on you, the screen,
+the Nether and the End (owner: "would it make sense to have some chains where the next decision
+is rolled immediatly?"). Once a step of a scene lands, its next is rolled at once, six times in
+ten, and won, it comes ten seconds to a minute on, by the rule brain, not the model: still its
+needs, rules, cooldown and stage, and half its cost of the day's budget, a scene being one thing.
+Lost, or nothing of it able or affordable, the scene goes on at its own pace, so one can stop
+halfway and come back. In the Nether and the End an open scene's next step comes about every
+twenty-five seconds rather than five minutes, at half its cost when counted at home.
+
 A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
 menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
 tests check that a stay with the rule brain walks at least two chains end to end and that no

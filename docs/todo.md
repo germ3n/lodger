@@ -3249,6 +3249,17 @@ The `[x]` lines above, summed up by day:
   off and the hints with `events.glitches` off, wherever the brain makes an event's commands.
   Tests: one in `act`, and the stays test as it was. Was: heard with sounds off.
 
+- [x] **Scenes** (owner: "would it make sense to have some chains where the next decision is
+  rolled immediatly?" then "yes build it please"): twelve chains marked `scene` (the knock, the
+  steps, the round, the bow, the hunt, the walls, the below, the ceiling, the set on you, the
+  screen, the Nether, the End). A step of one landing is noted (`Memory::scene_moved`); the brain
+  rolls the next at once (`chains::SCENE_CHANCE`, six in ten) and, won, tries its events ten
+  seconds to a minute on (`Brain::consider_scene`), each through its needs and rules as a
+  moment's event, at half its cost (`SCENE_COST`); lost, the chain goes at its own pace. The
+  other worlds take an open scene's next step about every twenty-five seconds
+  (`SCENE_CHANCE_A_SECOND`, `Elsewhere::scene_next`), half its cost at home. Tests: one in
+  `chains`, one in the brain, one in `elsewhere`. Was: every chain at the menu's pace.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

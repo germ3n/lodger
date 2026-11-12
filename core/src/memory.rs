@@ -609,6 +609,10 @@ pub struct Memory {
     /// Not saved.
     #[serde(skip)]
     pub chorus_eaten_now: bool,
+    /// The scenes a step of which just landed, taken by the brain on its next tick to roll the
+    /// next straight on (`chains::SCENE_CHANCE`). Not saved.
+    #[serde(skip)]
+    pub scene_moved: Vec<&'static str>,
     /// Where the target last came into this world from another: where they stood as the
     /// crossing was told (a portal's mouth, the End's platform).
     #[serde(default)]
