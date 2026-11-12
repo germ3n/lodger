@@ -267,6 +267,8 @@ pub enum Need {
     EnteringVillage,
     /// Dusk: the sun going down.
     Dusk,
+    /// No village within 160 blocks of the home.
+    NoVillageNear,
 }
 
 impl Need {
@@ -346,6 +348,7 @@ impl Need {
                 | Need::SnowyHere
                 | Need::EnteringVillage
                 | Need::Dusk
+                | Need::NoVillageNear
         )
     }
 
@@ -471,6 +474,7 @@ impl Need {
             Need::SnowyHere => "no snow where they are".to_string(),
             Need::EnteringVillage => "the target is not walking into a village".to_string(),
             Need::Dusk => "not dusk".to_string(),
+            Need::NoVillageNear => "a village is near the home".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -1099,6 +1103,8 @@ pub enum Action {
     Vexes(u32, f32),
     /// A creeper right behind them that always goes off, and harms no one.
     CreeperBehind,
+    /// Far from any village, a villager bangs on their door, runs in and drops dead.
+    VillagerFleesIn,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4896,6 +4902,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 105 (owner's): "a villager appear in front of their house (away from a
+    // village), then it bangs on the door, runs in and dies".
+    row(
+        "villager_flees_in",
+        4,
+        5,
+        &[NoVillageNear, Home, Door, TargetIndoors],
+        6.0,
+        1,
+        Full,
+        Action::VillagerFleesIn,
+        false,
+    ),
     // docs/events_todo.md, 104 (owner's): "a fake creeper ... that explodes always but does no
     // damage".
     row(
@@ -6232,6 +6251,7 @@ impl Event {
             | Action::ZombieInYourGear(_)
             | Action::Vexes(..)
             | Action::CreeperBehind
+            | Action::VillagerFleesIn
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6315,6 +6335,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "villager_flees_in" => "send a villager banging at their door, to run in and die",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

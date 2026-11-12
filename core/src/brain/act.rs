@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The door they use.
+        Action::VillagerFleesIn => memory.usual_door(),
         // Right behind them.
         Action::CreeperBehind => Some(block_of(memory.last.pos)),
         // Over them.
@@ -6486,6 +6488,29 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Two blocks out from the door it bangs, then runs in, and two blocks in it drops dead.
+        Action::VillagerFleesIn => match (pos, memory.home.as_ref()) {
+            (Some(door), Some(home)) => {
+                let out = out_of_door(memory, home.center, door);
+                let spot = |k: i32| {
+                    [
+                        (door[0] + out[0] * k) as f64 + 0.5,
+                        door[1] as f64,
+                        (door[2] + out[1] * k) as f64 + 0.5,
+                    ]
+                };
+                vec![(
+                    Command::VillagerFleesIn {
+                        id: ids(),
+                        door,
+                        outside: spot(2),
+                        inside: spot(-2),
+                    },
+                    0,
+                )]
+            }
+            _ => Vec::new(),
+        },
         // Two blocks behind them, on the ground they stand on, on their screen alone: the hiss,
         // the swell, the bang; nothing harmed, nothing broken.
         Action::CreeperBehind => {
@@ -14958,5 +14983,40 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::FakeCreeper { pos, .. }, 0)] if pos[2] < 0.0 && pos[2] > -2.0)
         );
+    }
+
+    #[test]
+    fn a_villager_bangs_on_their_door_runs_in_and_drops_dead() {
+        let mut memory = rich_memory();
+        let door = memory.usual_door().unwrap();
+        memory.home.as_mut().unwrap().outs = vec![(door, [1, 0])];
+        let event = find("villager_flees_in").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let [(
+            Command::VillagerFleesIn {
+                door: d,
+                outside,
+                inside,
+                ..
+            },
+            0,
+        )] = &made[..]
+        else {
+            panic!("{made:?}");
+        };
+        assert_eq!(*d, door);
+        assert!(
+            outside[0] > door[0] as f64 + 1.0,
+            "out before the door: {outside:?}"
+        );
+        assert!(inside[0] < door[0] as f64, "in the house: {inside:?}");
+        assert!(event.needs.contains(&crate::events::Need::NoVillageNear));
     }
 }

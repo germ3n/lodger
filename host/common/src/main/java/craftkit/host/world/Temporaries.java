@@ -72,6 +72,70 @@ public final class Temporaries {
 		due.add(mob, tick + (long) (Math.min(seconds, MOST_SECONDS) * 20));
 	}
 
+	/** A villager running in at a door (`villager_flees_in`, ABI 54): it, the door, where it falls, and its time. */
+	private record FleeingIn(net.minecraft.world.entity.npc.villager.Villager villager, ServerLevel level, net.minecraft.core.BlockPos door,
+			net.minecraft.world.phys.Vec3 inside, long fromTick) {
+	}
+
+	private final java.util.List<FleeingIn> fleeing = new java.util.ArrayList<>();
+	/** When it bangs, when the door opens, and how long it may take to get in. */
+	static final int[] BANGS = {0, 12, 24};
+	static final int OPENS = 40;
+	static final int GETS_IN_BY = 140;
+
+	/**
+	 * A villager out of nowhere at {@code outside}, banging on the door at {@code door} as if
+	 * something were after it; the door opens, it runs in, and at {@code inside} it drops dead.
+	 * No one's to blame (no killer, no gossip), and it drops nothing (ABI 54).
+	 */
+	public boolean fleeIn(ServerLevel level, net.minecraft.core.BlockPos door, net.minecraft.world.phys.Vec3 outside, net.minecraft.world.phys.Vec3 inside) {
+		if (!(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(net.minecraft.resources.Identifier.parse("minecraft:villager")).create(level, net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED)
+				instanceof net.minecraft.world.entity.npc.villager.Villager villager)) {
+			return false;
+		}
+		net.minecraft.world.phys.Vec3 to = net.minecraft.world.phys.Vec3.atCenterOf(door).subtract(outside);
+		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+		villager.snapTo(outside.x, outside.y, outside.z, yaw, 0);
+		villager.setYHeadRot(yaw);
+		villager.skipDropExperience();
+		level.addFreshEntity(villager);
+		fleeing.add(new FleeingIn(villager, level, door.immutable(), inside, tick));
+		return true;
+	}
+
+	private void tickFleeing() {
+		java.util.Iterator<FleeingIn> it = fleeing.iterator();
+		while (it.hasNext()) {
+			FleeingIn f = it.next();
+			var villager = f.villager();
+			if (villager.isRemoved()) {
+				it.remove();
+				continue;
+			}
+			long t = tick - f.fromTick();
+			for (int bang : BANGS) {
+				if (t == bang) {
+					f.level().playSound(null, f.door(), net.minecraft.sounds.SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR, net.minecraft.sounds.SoundSource.BLOCKS, 0.8f, 1.3f);
+					f.level().playSound(null, villager.blockPosition(), net.minecraft.sounds.SoundEvents.VILLAGER_HURT, net.minecraft.sounds.SoundSource.NEUTRAL, 1f, 1.1f);
+				}
+			}
+			if (t == OPENS) {
+				var state = f.level().getBlockState(f.door());
+				if (state.getBlock() instanceof net.minecraft.world.level.block.DoorBlock door) {
+					door.setOpen(null, f.level(), state, f.door(), true);
+				}
+			}
+			if (t >= OPENS && t % 10 == 0) {
+				villager.getNavigation().moveTo(f.inside().x, f.inside().y, f.inside().z, 1.4);
+			}
+			boolean there = villager.position().distanceTo(f.inside()) < 1.3;
+			if (t >= OPENS && (there || t >= GETS_IN_BY)) {
+				villager.kill(f.level());
+				it.remove();
+			}
+		}
+	}
+
 	/** A pack circling a player ({@link Ring}): who, its mobs, and its time. */
 	private record Circling(net.minecraft.server.level.ServerPlayer player, java.util.List<net.minecraft.world.entity.Mob> pack, long fromTick, long ticks) {
 	}
@@ -175,6 +239,7 @@ public final class Temporaries {
 	public void tick(MinecraftServer server) {
 		tick++;
 		tickCircling();
+		tickFleeing();
 		for (Entity entity : due.due(tick)) {
 			active.remove(entity);
 			// Removed already (killed, or unloaded with its chunk and seen again as another

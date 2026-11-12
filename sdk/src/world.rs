@@ -633,6 +633,15 @@ pub enum Command {
         most: u32,
         keep: String,
     },
+    /// A villager out of nowhere at `outside`, banging on the door at `door` as if something
+    /// were after it; the door opens, it runs in, and at `inside` it drops dead: no one's to
+    /// blame, nothing dropped. The door is left open. ABI 54.
+    VillagerFleesIn {
+        id: u64,
+        door: BlockPos,
+        outside: Pos,
+        inside: Pos,
+    },
     /// A creeper at `pos` on `player`'s screen alone: it hisses and swells and goes off, the
     /// flash, the bang and the jolt, and harms no one, breaking nothing. ABI 54.
     FakeCreeper {
@@ -1466,6 +1475,7 @@ impl Command {
             | Command::FakeDeath { id, .. }
             | Command::Circle { id, .. }
             | Command::FakeCreeper { id, .. }
+            | Command::VillagerFleesIn { id, .. }
             | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }

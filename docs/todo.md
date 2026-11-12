@@ -2064,6 +2064,12 @@ The `[x]` lines above, summed up by day:
   explosion's flash, sound and jolt, no harm and nothing broken (`fake_creeper`, ABI 54). Tests: one
   in `act`. Was: no such event.
 
+- [x] **A villager flees in and dies** (`docs/events_todo.md`, 105, owner's): `villager_flees_in`,
+  stages 4 and 5, once a stay, no village near the home: a villager made before their door bangs on
+  it, the door opens, it runs in and drops dead inside (`villager_flees_in`, ABI 54: the host walks
+  it in and kills it with no killer, so no gossip and no drops). Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

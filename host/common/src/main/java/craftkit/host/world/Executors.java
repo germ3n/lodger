@@ -127,6 +127,14 @@ public final class Executors {
 				case "snap_branch" -> snapBranch(level, command, id, context);
 				case "fell_tree" -> fellTree(level, command, id, context);
 				case "panic" -> panic(level, command, id, context);
+				case "villager_flees_in" -> {
+					JsonArray out = command.getAsJsonArray("outside");
+					JsonArray in = command.getAsJsonArray("inside");
+					boolean placed = context.temporaries().fleeIn(level, blockPos(command.getAsJsonArray("door")),
+							new Vec3(out.get(0).getAsDouble(), out.get(1).getAsDouble(), out.get(2).getAsDouble()),
+							new Vec3(in.get(0).getAsDouble(), in.get(1).getAsDouble(), in.get(2).getAsDouble()));
+					yield report(id, placed, placed ? "" : "no villager could be made");
+				}
 				case "fake_creeper" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
