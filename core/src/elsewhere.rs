@@ -61,6 +61,8 @@ pub const ROWS: &[(&str, &str)] = &[
     ("on_the_exit_portal", "minecraft:the_end"),
     ("the_poem_knows", "minecraft:the_end"),
 ];
+/// How often the other worlds choose an open chain's next step when one is ready.
+pub const CHAIN_FIRST: f64 = 0.8;
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
 pub const CHANCE_A_SECOND: f64 = 1.0 / 300.0;
@@ -92,6 +94,8 @@ pub struct Elsewhere {
     pub chest: Option<(BlockPos, u32, String)>,
     /// An item frame of theirs at home, for `elytra_at_home`.
     pub frame: Option<u32>,
+    /// What the overworld's open chains offer next: the other worlds choose them first.
+    pub chain_next: Vec<&'static str>,
     /// Of [`ROWS`], what the overworld's rules allow at this moment.
     pub allowed: Vec<&'static str>,
     /// Done in another dimension since the overworld last looked, with where.
@@ -126,6 +130,7 @@ impl Stay {
                 .map(|s| (c.pos, s.slot, s.id.clone()))
         });
         shared.frame = self.memory.decor("item_frame").next().map(|d| d.id);
+        shared.chain_next = self.memory.chain_next();
         // The block they build with most, when it has one of its own (from its digging) to
         // give: until now it was made from nothing.
         shared.block = self
@@ -205,7 +210,18 @@ impl Stay {
         if ready.is_empty() || self.brain.rng.next_f64() >= CHANCE_A_SECOND {
             return out;
         }
-        let id = ready[(self.brain.rng.next_u64() % ready.len() as u64) as usize];
+        // A chain's next step first, four times in five, as the overworld's menu weighs them.
+        let next: Vec<&'static str> = ready
+            .iter()
+            .copied()
+            .filter(|id| shared.chain_next.contains(id))
+            .collect();
+        let from = if !next.is_empty() && self.brain.rng.next_f64() < CHAIN_FIRST {
+            &next
+        } else {
+            &ready
+        };
+        let id = from[(self.brain.rng.next_u64() % from.len() as u64) as usize];
         self.do_elsewhere(id, now, shared, out)
     }
 

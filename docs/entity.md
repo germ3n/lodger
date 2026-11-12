@@ -1057,13 +1057,33 @@ where appropriate and add more"):
 - **The hunt.** `bush_rustles` → `sniffing` → `gasp_when_turning`.
 - **The snow.** `ice_cracks` → `snow_shape`.
 
+Over 206 to 320 (owner: "tie the new events into existing ones where appropriate and add more"),
+the new events go beside a step they belong with (`trapdoor_to_nothing` beside `false_door`,
+`egg_on_the_pillow` beside `egg_on_bed`, `count_shows_zero` beside `hotbar_slip`, fifty-two
+such, the four begun by a moment the menu never offers as first steps), after the chain they
+end (`sculk_trail` after the below, `title_splash` after the glitches, `eyeblossoms_open` after
+the pale garden, ten), or in ten chains of their own, the
+Nether's and the End's done there by way of `elsewhere`, which chooses an open chain's next step
+four times in five when one is ready:
+
+- **The lectern.** `golem_statue_turns` → `figure_at_the_lectern` → `figure_digging`.
+- **The nether.** `piglins_stare` or `ghast_watches` → `their_door_behind` or `rain_in_the_nether` → `name_in_netherrack` or `nether_roof_steps` → `standing_in_the_portal` → `portal_goes_out`.
+- **The fortress.** `back_to_the_wall` → `their_torch_ahead` → `blaze_ring` or `zombified_follow` → `far_end_of_the_bridge`.
+- **The heat.** `lava_goes_still` or `breath_in_the_nether` → `souls_follow` or `prints_in_soul_sand` → `vines_reach` or `hoglins_part` or `magma_cubes_settle` → `lightning_below` or `splash_in_the_nether`.
+- **The way home.** `home_through_the_portal` or `compass_steadies` or `strider_turns_home` → `portal_weeps` → `barter_from_home`.
+- **The end.** `endermen_turn_away` → `name_from_the_void` or `second_wings` → `endermen_at_the_edge` or `prints_off_the_edge` → `standing_on_the_void`.
+- **The city.** `shulkers_open` or `gateway_flashes` → `purpur_knock` or `ship_creaks` or `chorus_blooms` → `elytra_at_home`.
+- **The island.** `the_dragon_growls` or `on_the_exit_portal` → `end_goes_quiet` or `end_sky_face` → `the_poem_knows`.
+- **The crossing.** `prints_from_the_portal` or `came_back_wrong_hour` or `chorus_lands_home` → `someone_went_through` or `lodestone_wrong` or `ruined_portal_glows`.
+- **The potion.** `potion_at_the_window` → `their_own_potion` → `pearl_turned`.
+
 A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
 menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
 tests check that a stay with the rule brain walks at least two chains end to end and that no
 follow-up is ever offered with its needs unmet.
 
-**As coded (`core/src/chains.rs`).** Forty-eight, no event in two: the seven of the newer events,
-the nineteen over the rest of the catalogue and the thirteen over the newest, as listed above, and the nine of the design, with
+**As coded (`core/src/chains.rs`).** Fifty-eight, no event in two: the seven of the newer events,
+the nineteen over the rest of the catalogue, the thirteen over 116 to 205 and the ten over 206 to 320, as listed above, and the nine of the design, with
 the catalogue's events: the thing (`take`,
 `place_taken`, `return_taken`, `sand_gives_back` or `pot_of_returns`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
 `mined_out`), the tunnel (`mining_sounds`, `mine_beside` or `cart_overhead`, `tunnel_toward` or `iron_door_below`, `cave_room`), the

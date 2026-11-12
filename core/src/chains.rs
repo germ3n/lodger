@@ -43,8 +43,11 @@ const fn step(events: &'static [&'static str], within_days: f32, when: When) -> 
 use When::*;
 
 /// The nine chains of the design, with the catalogue's events, seven of the newer events',
-/// nineteen more over the rest of the catalogue, and thirteen over the newest (116 to 205) (owner: "make new chains out of all the events
-/// where it makes sense ... where it doesnt conflict/duplicate another chain"): no event is in two.
+/// nineteen more over the rest of the catalogue, thirteen over 116 to 205 (owner: "make new chains out of all the events
+/// where it makes sense ... where it doesnt conflict/duplicate another chain"), and ten over 206
+/// to 320, the Nether's and the End's among them, their other events beside the steps they fit
+/// (owner: "tie the new events into existing ones where appropriate and add more"): no event is
+/// in two.
 pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_thing",
@@ -67,7 +70,7 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_vein",
         steps: &[
-            step(&["ore_marked"], 0.0, Always),
+            step(&["ore_marked", "ore_counted"], 0.0, Always),
             step(&["mined_out"], 3.0, Always),
         ],
     },
@@ -76,8 +79,12 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["mining_sounds"], 0.0, Always),
             step(&["mine_beside", "cart_overhead"], 3.0, Always),
-            step(&["tunnel_toward", "iron_door_below"], 4.0, Always),
-            step(&["cave_room"], 4.0, Always),
+            step(
+                &["tunnel_toward", "iron_door_below", "dripstone_in_tunnel"],
+                4.0,
+                Always,
+            ),
+            step(&["cave_room", "skull_in_the_tunnel"], 4.0, Always),
         ],
     },
     Chain {
@@ -85,22 +92,27 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["light_path"], 0.0, Always),
             step(&["hole"], 3.0, Always),
-            step(&["pillar"], 3.0, Always),
-            step(&["sign"], 3.0, Always),
+            step(&["pillar", "empty_lead"], 3.0, Always),
+            step(&["sign", "sign_with_coords"], 3.0, Always),
             // Its house grows in the ending's script, not as an event: the chain ends at the house.
             step(&["house_near"], 4.0, Always),
+            step(&["anchor_charged"], 3.0, Always),
         ],
     },
     Chain {
         id: "the_watcher",
         steps: &[
-            step(&["far_figure", "spyglass_figure"], 0.0, Always),
+            step(
+                &["far_figure", "on_the_peak", "spyglass_figure"],
+                0.0,
+                Always,
+            ),
             step(&["behind_you"], 3.0, LookedLong),
             step(&["on_the_roof"], 3.0, Always),
             step(&["in_doorway"], 3.0, Always),
             step(&["in_your_bed"], 3.0, Always),
             step(&["copy_crouch"], 3.0, Always),
-            step(&["figure_waves"], 3.0, Always),
+            step(&["figure_waves", "figure_bows"], 3.0, Always),
         ],
     },
     Chain {
@@ -115,7 +127,11 @@ pub const CHAINS: &[Chain] = &[
         id: "the_house",
         steps: &[
             step(&["open_door"], 0.0, Always),
-            step(&["door_hinge", "false_door"], 3.0, Noticed),
+            step(
+                &["door_hinge", "false_door", "trapdoor_to_nothing"],
+                3.0,
+                Noticed,
+            ),
             step(&["door_held"], 3.0, Noticed),
             step(&["window_bars"], 4.0, Noticed),
         ],
@@ -131,8 +147,16 @@ pub const CHAINS: &[Chain] = &[
         id: "the_pet",
         steps: &[
             step(&["pet_growl"], 0.0, Always),
-            step(&["pet_moved", "bark_from_home"], 3.0, Always),
-            step(&["pet_outside", "pet_whines_at_door"], 3.0, Always),
+            step(&["pet_moved", "cat_gift", "bark_from_home"], 3.0, Always),
+            step(
+                &[
+                    "pet_outside",
+                    "pet_whines_at_door",
+                    "pale_horse_in_your_pen",
+                ],
+                3.0,
+                Always,
+            ),
         ],
     },
     // The woods: it peeks, it comes nearer, it is heard, and as they leave it is all along the
@@ -191,7 +215,13 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["villager_flees_in"], 0.0, Always),
             step(
-                &["prints_around_the_house", "red_trail", "boots_at_the_door"],
+                &[
+                    "prints_around_the_house",
+                    "red_trail",
+                    "trial_key_left",
+                    "boots_at_the_door",
+                    "dried_ghast_on_doorstep",
+                ],
                 3.0,
                 Always,
             ),
@@ -202,9 +232,14 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_glitches",
         steps: &[
-            step(&["dead_redstone", "crafter_clicks"], 0.0, Always),
-            step(&["sound_warp"], 3.0, Noticed),
+            step(
+                &["dead_redstone", "crafter_clicks", "enchant_six"],
+                0.0,
+                Always,
+            ),
+            step(&["sound_warp", "false_glint"], 3.0, Noticed),
             step(&["menu_freaks"], 3.0, Always),
+            step(&["title_splash"], 3.0, Always),
         ],
     },
     // At the door, softly, then scratching, then heavy, then it will not open.
@@ -221,10 +256,10 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_bed",
         steps: &[
-            step(&["egg_on_bed"], 0.0, Always),
-            step(&["sheets_changed"], 3.0, Always),
+            step(&["egg_on_bed", "egg_on_the_pillow"], 0.0, Always),
+            step(&["sheets_changed", "bed_fenced"], 3.0, Always),
             step(&["under_the_bed"], 3.0, Always),
-            step(&["foot_of_bed"], 3.0, Always),
+            step(&["foot_of_bed", "head_on_the_pillow"], 3.0, Always),
             step(&["lies_beside"], 3.0, Always),
         ],
     },
@@ -251,7 +286,7 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_lights",
         steps: &[
-            step(&["flicker"], 0.0, Always),
+            step(&["flicker", "fireflies_go_out"], 0.0, Always),
             step(&["lights_fail"], 3.0, Always),
             step(&["candles_lit", "torches_turn"], 3.0, Always),
             step(&["lights_out"], 3.0, Always),
@@ -262,9 +297,9 @@ pub const CHAINS: &[Chain] = &[
         id: "the_sky_wrong",
         steps: &[
             step(&["thunder_clear"], 0.0, Always),
-            step(&["moon_wrong", "clock_wrong"], 3.0, Always),
-            step(&["stars_out"], 3.0, Always),
-            step(&["red_rain"], 3.0, Always),
+            step(&["moon_wrong", "clock_wrong", "compass_spins"], 3.0, Always),
+            step(&["stars_out", "red_petals"], 3.0, Always),
+            step(&["red_rain", "ash_on_the_wind"], 3.0, Always),
             step(&["night_early"], 3.0, Always),
         ],
     },
@@ -272,15 +307,25 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_screen",
         steps: &[
-            step(&["hotbar_slip"], 0.0, Always),
-            step(&["crosshair_gone"], 3.0, Always),
+            step(&["hotbar_slip", "count_shows_zero"], 0.0, Always),
+            step(&["crosshair_gone", "held_name_wrong"], 3.0, Always),
             step(
-                &["inventory_stare", "phantom_item", "rustle_in_the_pack"],
+                &[
+                    "inventory_stare",
+                    "recipe_toast",
+                    "phantom_item",
+                    "slot_barred",
+                    "rustle_in_the_pack",
+                ],
                 3.0,
                 Always,
             ),
             step(&["f3_line", "static"], 3.0, Always),
-            step(&["border_closes", "boss_bar_it"], 3.0, Always),
+            step(
+                &["border_closes", "boss_bar_it", "title_your_name"],
+                3.0,
+                Always,
+            ),
         ],
     },
     // The village turned toward them, then emptied.
@@ -310,7 +355,11 @@ pub const CHAINS: &[Chain] = &[
             step(&["ripples"], 0.0, Always),
             step(&["boat_waiting"], 3.0, Always),
             step(&["on_the_water"], 3.0, Always),
-            step(&["swims_beneath", "bell_underwater"], 3.0, Always),
+            step(
+                &["swims_beneath", "bell_underwater", "beam_from_the_water"],
+                3.0,
+                Always,
+            ),
             step(&["pulled_under"], 3.0, Always),
         ],
     },
@@ -319,9 +368,13 @@ pub const CHAINS: &[Chain] = &[
         id: "the_cave",
         steps: &[
             step(&["lantern_ahead"], 0.0, Always),
-            step(&["cave_lit", "humming_ahead"], 3.0, Always),
+            step(&["cave_lit", "humming_ahead", "late_drop"], 3.0, Always),
             step(&["cave_torches_flicker"], 3.0, Always),
-            step(&["drops_from_the_ceiling", "in_the_lava"], 3.0, Always),
+            step(
+                &["drops_from_the_ceiling", "dripstone_falls", "in_the_lava"],
+                3.0,
+                Always,
+            ),
         ],
     },
     // Figures nearer and more: across their way, in a line, round the house, in every window.
@@ -342,6 +395,7 @@ pub const CHAINS: &[Chain] = &[
             step(&["reflection", "shadow_on_the_wall"], 3.0, Always),
             step(&["wears_your_face"], 3.0, Always),
             step(&["mirror_in_the_window"], 3.0, Always),
+            step(&["figure_in_your_armour"], 3.0, Always),
         ],
     },
     // Where they died: a light, a body, the game's own line, a death that was not.
@@ -358,10 +412,19 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_animals",
         steps: &[
-            step(&["stare"], 0.0, Always),
-            step(&["slow_approach"], 3.0, Always),
-            step(&["warped_animal", "axolotls_play_dead"], 3.0, Always),
-            step(&["animals_turn"], 3.0, Always),
+            step(&["stare", "cattle_turn_away"], 0.0, Always),
+            step(&["slow_approach", "the_child_stares"], 3.0, Always),
+            step(
+                &[
+                    "warped_animal",
+                    "horse_balks",
+                    "axolotls_play_dead",
+                    "armadillos_curl",
+                ],
+                3.0,
+                Always,
+            ),
+            step(&["animals_turn", "refuses_food"], 3.0, Always),
         ],
     },
     // Their field: a scarecrow, a row withered, a word in it, every animal facing the house.
@@ -372,24 +435,28 @@ pub const CHAINS: &[Chain] = &[
             step(&["row_withered"], 3.0, Always),
             step(&["field_word"], 3.0, Always),
             step(&["face_the_house"], 3.0, Always),
+            step(&["trident_planted", "sniffer_at_its_place"], 3.0, Always),
         ],
     },
     // Their chest: moved about, tidied, answering, rattling, and shut to them.
     Chain {
         id: "the_chest",
         steps: &[
-            step(&["shuffle_chest"], 0.0, Always),
-            step(&["tidy_chest"], 3.0, Always),
+            step(&["shuffle_chest", "shelf_shuffled"], 0.0, Always),
+            step(&["tidy_chest", "tools_laid_out"], 3.0, Always),
             step(
                 &[
                     "chest_answers",
+                    "leather_dyed",
                     "breath_in_the_chest",
+                    "bucket_fish_changed",
                     "the_bell_in_the_chest",
+                    "bundle_gains",
                 ],
                 3.0,
                 Always,
             ),
-            step(&["chest_rattles"], 3.0, Always),
+            step(&["chest_rattles", "shulker_lid_peeks"], 3.0, Always),
             step(&["chest_wont_open"], 3.0, Always),
         ],
     },
@@ -404,7 +471,7 @@ pub const CHAINS: &[Chain] = &[
                 Always,
             ),
             step(&["breath", "panting_behind"], 3.0, Always),
-            step(&["hand_on_shoulder"], 3.0, Always),
+            step(&["hand_on_shoulder", "edge_tug"], 3.0, Always),
             step(&["breath_close"], 3.0, Always),
         ],
     },
@@ -412,7 +479,11 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_bow",
         steps: &[
-            step(&["arrow_near", "crossbow_click"], 0.0, Always),
+            step(
+                &["arrow_near", "arrow_returned", "crossbow_click"],
+                0.0,
+                Always,
+            ),
             step(&["arrow_in_the_door"], 3.0, Always),
             step(&["arrow_grazes"], 3.0, Always),
             step(&["arrow_hits"], 3.0, Always),
@@ -437,6 +508,7 @@ pub const CHAINS: &[Chain] = &[
             step(&["ominous_hum"], 3.0, Always),
             step(&["shriek_below"], 3.0, Always),
             step(&["sculk_creeps"], 4.0, Always),
+            step(&["sculk_trail"], 3.0, Always),
         ],
     },
     Chain {
@@ -445,15 +517,26 @@ pub const CHAINS: &[Chain] = &[
             step(&["creaking_behind"], 0.0, Always),
             step(&["pale_moss_creeps"], 3.0, Always),
             step(&["creaking_in_the_field"], 4.0, Always),
+            step(&["eyeblossoms_open"], 3.0, Always),
         ],
     },
     Chain {
         id: "the_neglect",
         steps: &[
-            step(&["cobwebs"], 0.0, Always),
+            step(&["cobwebs", "mushrooms_in_corners"], 0.0, Always),
             step(&["cold_house"], 3.0, Always),
-            step(&["frost_on_the_glass", "window_tinted"], 3.0, Always),
-            step(&["stairs_up_to_nowhere"], 4.0, Always),
+            step(
+                &[
+                    "frost_on_the_glass",
+                    "wither_rose_in_pot",
+                    "window_tinted",
+                    "copper_ages",
+                ],
+                3.0,
+                Always,
+            ),
+            step(&["stairs_up_to_nowhere", "one_step_more"], 4.0, Always),
+            step(&["room_closes_in"], 3.0, Always),
         ],
     },
     Chain {
@@ -463,6 +546,7 @@ pub const CHAINS: &[Chain] = &[
             step(&["hoofbeats_circling"], 3.0, Always),
             step(&["ram_on_the_wall"], 3.0, Always),
             step(&["sigh_at_the_door"], 3.0, Always),
+            step(&["climbing_the_house"], 3.0, Always),
         ],
     },
     Chain {
@@ -486,7 +570,7 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["witch_laughs"], 0.0, Always),
             step(&["doors_slam_far"], 3.0, Always),
-            step(&["boom_far"], 3.0, Always),
+            step(&["boom_far", "slam_crater"], 3.0, Always),
             step(&["rider_on_the_ridge"], 3.0, Always),
             step(&["happy_ghast_overhead"], 4.0, Always),
         ],
@@ -496,7 +580,7 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["creeper_behind"], 0.0, Always),
             step(&["the_killer_rabbit"], 3.0, Always),
-            step(&["vex_single", "vex_wave"], 3.0, Always),
+            step(&["vex_single", "fangs_in_a_line", "vex_wave"], 3.0, Always),
             step(&["vex_strikes"], 4.0, Always),
         ],
     },
@@ -530,6 +614,127 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["ice_cracks"], 0.0, Always),
             step(&["snow_shape"], 4.0, Always),
+            step(&["snowball_comes_back"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_lectern",
+        steps: &[
+            step(&["golem_statue_turns"], 0.0, Always),
+            step(&["figure_at_the_lectern"], 3.0, Always),
+            step(&["figure_digging"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_nether",
+        steps: &[
+            step(&["piglins_stare", "ghast_watches"], 0.0, Always),
+            step(&["their_door_behind", "rain_in_the_nether"], 3.0, Always),
+            step(&["name_in_netherrack", "nether_roof_steps"], 3.0, Always),
+            step(&["standing_in_the_portal"], 3.0, Always),
+            step(&["portal_goes_out"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_fortress",
+        steps: &[
+            step(&["back_to_the_wall"], 0.0, Always),
+            step(&["their_torch_ahead"], 3.0, Always),
+            step(&["blaze_ring", "zombified_follow"], 3.0, Always),
+            step(&["far_end_of_the_bridge"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_heat",
+        steps: &[
+            step(&["lava_goes_still", "breath_in_the_nether"], 0.0, Always),
+            step(&["souls_follow", "prints_in_soul_sand"], 3.0, Always),
+            step(
+                &["vines_reach", "hoglins_part", "magma_cubes_settle"],
+                3.0,
+                Always,
+            ),
+            step(&["lightning_below", "splash_in_the_nether"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_way_home",
+        steps: &[
+            step(
+                &[
+                    "home_through_the_portal",
+                    "compass_steadies",
+                    "strider_turns_home",
+                ],
+                0.0,
+                Always,
+            ),
+            step(&["portal_weeps"], 3.0, Always),
+            step(&["barter_from_home"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_end",
+        steps: &[
+            step(&["endermen_turn_away"], 0.0, Always),
+            step(&["name_from_the_void", "second_wings"], 3.0, Always),
+            step(
+                &["endermen_at_the_edge", "prints_off_the_edge"],
+                3.0,
+                Always,
+            ),
+            step(&["standing_on_the_void"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_city",
+        steps: &[
+            step(&["shulkers_open", "gateway_flashes"], 0.0, Always),
+            step(
+                &["purpur_knock", "ship_creaks", "chorus_blooms"],
+                3.0,
+                Always,
+            ),
+            step(&["elytra_at_home"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_island",
+        steps: &[
+            step(&["the_dragon_growls", "on_the_exit_portal"], 0.0, Always),
+            step(&["end_goes_quiet", "end_sky_face"], 3.0, Always),
+            step(&["the_poem_knows"], 3.0, Always),
+        ],
+    },
+    Chain {
+        id: "the_crossing",
+        steps: &[
+            step(
+                &[
+                    "prints_from_the_portal",
+                    "came_back_wrong_hour",
+                    "chorus_lands_home",
+                ],
+                0.0,
+                Always,
+            ),
+            step(
+                &[
+                    "someone_went_through",
+                    "lodestone_wrong",
+                    "ruined_portal_glows",
+                ],
+                3.0,
+                Always,
+            ),
+        ],
+    },
+    Chain {
+        id: "the_potion",
+        steps: &[
+            step(&["potion_at_the_window"], 0.0, Always),
+            step(&["their_own_potion"], 3.0, Always),
+            step(&["pearl_turned"], 3.0, Always),
         ],
     },
 ];
@@ -765,8 +970,9 @@ mod tests {
             }
         }
         // The design's eight, the diary (sold, then brought if not bought), the newer events'
-        // seven and the rest of the catalogue's nineteen.
-        assert_eq!(CHAINS.len(), 48);
+        // seven, the rest of the catalogue's nineteen, thirteen over 116 to 205 and ten over 206
+        // to 320 (the Nether's and the End's among them).
+        assert_eq!(CHAINS.len(), 58);
         let mut seen: Vec<&str> = Vec::new();
         for chain in CHAINS {
             for step in chain.steps {
@@ -822,7 +1028,7 @@ mod tests {
         assert_eq!(memory.chains.len(), 1, "it waited for its stage");
         assert_eq!(
             memory.chain_next(),
-            vec!["door_hinge", "false_door"],
+            vec!["door_hinge", "false_door", "trapdoor_to_nothing"],
             "the noticing before still counts"
         );
     }

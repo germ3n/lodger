@@ -3203,6 +3203,17 @@ The `[x]` lines above, summed up by day:
   their house, once (the `the_poem_knows` hint, `WinScreenMixin`; off with the glitches). Tests: one
   in `act`. Was: no such event.
 
+- [x] **Chains over 206 to 320** (owner: "dont forget to do the chain stuff at the end"; "tie the
+  new events into existing ones where appropriate and add more"): every new event in a chain
+  but `cloud_at_the_door`, which was `door_cloud` already: fifty-two beside a step they fit (the
+  four begun by a moment the menu never offers, `ore_counted`, `on_the_exit_portal`,
+  `chorus_lands_home` and `came_back_wrong_hour`, as first steps), ten after the chain they end,
+  and ten chains of their own (the lectern, the Nether, the fortress, the heat, the way home, the
+  End, the city, the island, the crossing, the potion). The other worlds choose an open chain's
+  next step four times in five when one is ready (`Elsewhere::chain_next`, `CHAIN_FIRST`). Tests:
+  the chains' own, the count now 58 and one next step's list with `trapdoor_to_nothing` in it.
+  Was: forty-eight chains, none of the new events in them.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
