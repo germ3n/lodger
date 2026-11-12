@@ -267,6 +267,8 @@ pub enum Need {
     EnteringVillage,
     /// Dusk: the sun going down.
     Dusk,
+    /// The target running, past a walk's pace.
+    TargetRunning,
     /// No village within 160 blocks of the home.
     NoVillageNear,
     /// A pressure plate, button or lever of theirs at the home.
@@ -352,6 +354,7 @@ impl Need {
                 | Need::SnowyHere
                 | Need::EnteringVillage
                 | Need::Dusk
+                | Need::TargetRunning
                 | Need::NoVillageNear
                 | Need::RedstoneAtHome
                 | Need::TheirCaveLights
@@ -480,6 +483,7 @@ impl Need {
             Need::SnowyHere => "no snow where they are".to_string(),
             Need::EnteringVillage => "the target is not walking into a village".to_string(),
             Need::Dusk => "not dusk".to_string(),
+            Need::TargetRunning => "the target is not running".to_string(),
             Need::NoVillageNear => "a village is near the home".to_string(),
             Need::TheirCaveLights => {
                 "fewer than three lights of theirs near them underground".to_string()

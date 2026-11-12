@@ -187,6 +187,9 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         }
         Need::Noon => (5_000..7_000).contains(&now.day_time),
         Need::Dusk => (11_500..13_500).contains(&now.day_time),
+        Need::TargetRunning => {
+            last.online && !last.sleeping && last.pace >= crate::memory::RUNNING_PACE
+        }
         // The surroundings read 96 blocks round the home: a village in them is near.
         Need::TheirCaveLights => {
             last.online && last.underground && memory.cave_lights_near().len() >= 3

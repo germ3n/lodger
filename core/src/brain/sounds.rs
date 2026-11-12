@@ -26,6 +26,10 @@ pub enum Moves {
     Rising,
     /// At their ear: half a block behind, at head height.
     Ear,
+    /// Under the floor they stand on, two and a half blocks down.
+    Below,
+    /// Far under them, sixteen blocks down.
+    Deep,
 }
 
 /// One way an event can sound: its beats (a sound and the tick it plays at), a pitch drawn
@@ -859,7 +863,7 @@ pub fn commands(
         .map(|(i, (sound, tick))| {
             let along = i as f64 / (n - 1.0).max(1.0);
             let distance = match variant.moves {
-                Still | Above | Beside => 0.0,
+                Still | Above | Beside | Below | Deep => 0.0,
                 Behind | Rising => 3.0,
                 Closer => 8.0 - 6.0 * along,
                 Away => 2.0 + 6.0 * along,
@@ -884,6 +888,8 @@ pub fn commands(
                     at[2] + back[1] * 2.0,
                 ],
                 (Ear, _) => [at[0] + back[0] * 0.5, at[1] + 1.6, at[2] + back[1] * 0.5],
+                (Below, _) => [at[0], at[1] - 2.5, at[2]],
+                (Deep, _) => [at[0], at[1] - 16.0, at[2]],
                 _ => [
                     at[0] + back[0] * distance,
                     at[1],
@@ -1224,5 +1230,34 @@ mod tests {
         let door = crate::events::find("door_sound").unwrap();
         let made = crate::brain::act::commands(door, None, &memory, &mut || 1, &now, None);
         assert!(made.is_empty(), "no spot, no sound: {made:?}");
+    }
+
+    #[test]
+    fn below_is_under_their_floor_and_deep_far_under() {
+        let mut memory = Memory::default();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let below = v(
+            &[("minecraft:block.water.ambient", 0)],
+            (1.0, 1.0),
+            1.0,
+            Below,
+        );
+        let deep = v(
+            &[("minecraft:block.water.ambient", 0)],
+            (1.0, 1.0),
+            1.0,
+            Deep,
+        );
+        let mut n = 0;
+        let mut ids = || {
+            n += 1;
+            n
+        };
+        let at = |made: Vec<(Command, u64)>| match &made[0].0 {
+            Command::PlaySound { pos, .. } => *pos,
+            other => panic!("{other:?}"),
+        };
+        assert_eq!(at(commands(&below, None, &memory, 0, 0, &mut ids))[1], 61.5);
+        assert_eq!(at(commands(&deep, None, &memory, 0, 0, &mut ids))[1], 48.0);
     }
 }
