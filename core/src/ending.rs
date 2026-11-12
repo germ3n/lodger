@@ -792,6 +792,7 @@ fn figure(
         peeks: None,
         while_unseen: None,
         drawn_to_light: false,
+        then_at: Vec::new(),
     }
 }
 

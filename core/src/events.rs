@@ -1040,6 +1040,8 @@ pub enum Action {
     WhileUnseen(f32),
     /// Far off, a figure drawn to the light they run with, lost when they hold none.
     DrawnToTheLight,
+    /// In the woods, a figure behind a trunk one tree nearer each time they look back.
+    TreeToTree,
     /// Their most valuable things, carried and in their chests, up into the sky.
     TakenUp,
     /// What it took up falls out of the sky in front of their door.
@@ -4822,6 +4824,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 82.
+    row(
+        "tree_to_tree",
+        4,
+        5,
+        &[InTheWoods],
+        1.5,
+        3,
+        Full,
+        Action::TreeToTree,
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -5847,6 +5861,7 @@ impl Event {
             | Action::PeeksFromTheTrees
             | Action::WhileUnseen(_)
             | Action::DrawnToTheLight
+            | Action::TreeToTree
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -5930,6 +5945,9 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "tree_to_tree" => {
+                "set the figure behind the trees, a tree nearer each time they look back"
+            }
             "taken_up" => "take their most valuable things up into the sky before their eyes",
             "sky_gives_back" => "let what it took up fall out of the sky before their door",
             "lantern_in_the_woods" => "walk a figure with a lantern through the dark far off",

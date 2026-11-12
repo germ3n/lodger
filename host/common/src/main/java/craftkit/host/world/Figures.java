@@ -75,6 +75,9 @@ public final class Figures {
 		Vec3 hidesAt;
 		/** Coming at its player only while unseen, striking for this when it reaches them, spared (ABI 54); below 0 for none. */
 		float unseenStrike = -1;
+		/** Where it stands next, each time it is seen and looked away from (ABI 54); a crack where it last stood once they run out. */
+		java.util.ArrayDeque<Vec3> thenAt = new java.util.ArrayDeque<>();
+		boolean cracks;
 		/** Drawn to the light its player carries ({@link Drawn}, ABI 54); and the tick it lost them, -1 before. */
 		boolean drawn;
 		long lostAt = -1;
@@ -292,6 +295,19 @@ public final class Figures {
 			boolean approached = figure.vanishWithin > 0 && figure.player.position().distanceTo(figure.at) < figure.vanishWithin;
 			boolean lookedAway = figure.onceSeen && figure.seen && !looked;
 			boolean timed = tick > figure.untilTick;
+			// Seen and looked away from, with somewhere next: there now, not gone.
+			if (lookedAway && !left && !figure.thenAt.isEmpty() && figure.player.level() instanceof ServerLevel next) {
+				figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
+				figure.at = ground(next, figure.thenAt.poll());
+				figure.seen = false;
+				sendEntity(figure);
+				continue;
+			}
+			if (lookedAway && figure.cracks && figure.thenAt.isEmpty()) {
+				figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+						net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.WOOD_BREAK), net.minecraft.sounds.SoundSource.HOSTILE,
+						figure.at.x, figure.at.y + 2.5, figure.at.z, 1f, 0.6f, figure.player.getRandom().nextLong()));
+			}
 			if (left || timed || approached || lookedAway) {
 				unsend(figure);
 				it.remove();
@@ -714,6 +730,16 @@ public final class Figures {
 	private static void soundAt(ServerPlayer player, Vec3 at, net.minecraft.sounds.SoundEvent sound, float pitch) {
 		player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.core.Holder.direct(sound),
 				net.minecraft.sounds.SoundSource.HOSTILE, at.x, at.y, at.z, 0.9f, pitch, player.getRandom().nextLong()));
+	}
+
+	/** The figure {@code number} shown to {@code player} stands at each of {@code spots} in turn, seen and looked away from at each (ABI 54). */
+	public void thenAt(ServerPlayer player, int number, List<Vec3> spots) {
+		Figure figure = find(player, number);
+		if (figure != null && !spots.isEmpty()) {
+			figure.thenAt = new java.util.ArrayDeque<>(spots);
+			figure.cracks = true;
+			figure.onceSeen = true;
+		}
 	}
 
 	/** The figure {@code number} shown to {@code player} is drawn to the light they carry (ABI 54). */

@@ -862,6 +862,14 @@ public final class Executors {
 			JsonArray faces = command.getAsJsonArray("faces");
 			context.figures().face(skinOf, command.get("figure").getAsInt(), new Vec3(faces.get(0).getAsDouble(), faces.get(1).getAsDouble(), faces.get(2).getAsDouble()));
 		}
+		if (command.has("then_at") && command.get("then_at").isJsonArray() && !command.getAsJsonArray("then_at").isEmpty()) {
+			List<Vec3> spots = new ArrayList<>();
+			for (JsonElement spot : command.getAsJsonArray("then_at")) {
+				JsonArray p = spot.getAsJsonArray();
+				spots.add(new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble()));
+			}
+			context.figures().thenAt(skinOf, command.get("figure").getAsInt(), spots);
+		}
 		if (command.has("drawn_to_light") && command.get("drawn_to_light").getAsBoolean()) {
 			context.figures().drawnToLight(skinOf, command.get("figure").getAsInt());
 		}

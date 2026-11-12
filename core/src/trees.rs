@@ -94,6 +94,26 @@ impl Memory {
                 >= WOODS_TRUNKS
     }
 
+    /// The trunks behind them, more than 110 degrees from where they look, from `near` to `far`
+    /// blocks off along the ground, farthest first.
+    pub fn trunks_behind(&self, near: f64, far: f64) -> Vec<BlockPos> {
+        let at = self.last.pos;
+        let yaw = (self.last.yaw as f64).to_radians();
+        let (fx, fz) = (-yaw.sin(), yaw.cos());
+        let mut behind: Vec<(f64, BlockPos)> = self
+            .trunks
+            .iter()
+            .filter_map(|t| {
+                let (dx, dz) = (t[0] as f64 + 0.5 - at[0], t[2] as f64 + 0.5 - at[2]);
+                let d = (dx * dx + dz * dz).sqrt();
+                let cos = (dx * fx + dz * fz) / d.max(0.01);
+                (d >= near && d <= far && cos <= 110f64.to_radians().cos()).then_some((d, *t))
+            })
+            .collect();
+        behind.sort_by(|a, b| b.0.total_cmp(&a.0));
+        behind.into_iter().map(|(_, t)| t).collect()
+    }
+
     /// The trunks ahead of where they look, within 55 degrees of it, from `near` to `far`
     /// blocks off along the ground, nearest first.
     pub fn trunks_ahead(&self, near: f64, far: f64) -> Vec<BlockPos> {
@@ -115,9 +135,52 @@ impl Memory {
     }
 }
 
+/// From the trunks behind them, farthest first, a way nearer and nearer: each four blocks or more
+/// nearer than the last, at most `most`.
+pub fn nearer_and_nearer(behind: &[BlockPos], at: Pos, most: usize) -> Vec<BlockPos> {
+    let away = |t: &BlockPos| {
+        let (dx, dz) = (t[0] as f64 + 0.5 - at[0], t[2] as f64 + 0.5 - at[2]);
+        (dx * dx + dz * dz).sqrt()
+    };
+    let mut way: Vec<BlockPos> = Vec::new();
+    for trunk in behind {
+        if way.len() >= most {
+            break;
+        }
+        if way.last().is_none_or(|l| away(trunk) <= away(l) - 4.0) {
+            way.push(*trunk);
+        }
+    }
+    way
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn behind_them_a_way_of_trunks_nearer_and_nearer() {
+        let mut memory = Memory::default();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        // Looking south (+z): behind is north.
+        memory.trunks = vec![
+            [0, 64, -24],
+            [1, 64, -20],
+            [0, 64, -15],
+            [0, 64, -9],
+            [0, 64, 10],
+        ];
+        let behind = memory.trunks_behind(6.0, 30.0);
+        assert_eq!(behind.first(), Some(&[0, 64, -24]), "farthest first");
+        assert!(!behind.contains(&[0, 64, 10]), "none ahead");
+        let way = nearer_and_nearer(&behind, memory.last.pos, 4);
+        assert_eq!(
+            way,
+            vec![[0, 64, -24], [0, 64, -15], [0, 64, -9]],
+            "four nearer each"
+        );
+    }
 
     #[test]
     fn a_column_of_three_logs_is_a_trunk_and_a_wall_of_theirs_is_not() {

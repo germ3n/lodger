@@ -1950,6 +1950,12 @@ The `[x]` lines above, summed up by day:
   start and a reset give it back too (`crate::taken_up`). Tests: `WorthTest`, `taken_up`'s, one in
   `act`, one in `ending`. Was: the lodger took one thing at a time, from a chest alone.
 
+- [x] **From tree to tree** (`docs/events_todo.md`, 82): `tree_to_tree`, stages 4 and 5, in the
+  woods: a figure behind a trunk behind them that is a tree nearer each time they look back and away
+  (the trunks behind them, `Memory::trunks_behind`, four blocks nearer each), gone after the nearest
+  with a branch's crack (`figure`'s `then_at`, ABI 54). Tests: one in `trees`, one in `act`. Was: no
+  such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

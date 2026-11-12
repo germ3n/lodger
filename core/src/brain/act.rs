@@ -378,6 +378,12 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The farthest trunk of a way behind them, nearer and nearer.
+        Action::TreeToTree => {
+            let behind = memory.trunks_behind(8.0, 30.0);
+            let way = crate::trees::nearer_and_nearer(&behind, memory.last.pos, 4);
+            (way.len() >= 2).then(|| way[0])
+        }
         // Where they stand: it is their things, before their eyes.
         Action::TakenUp => Some(block_of(memory.last.pos)),
         // Before the door they use, where the home is.
@@ -1690,6 +1696,8 @@ const HUNTED_FROM: f64 = 36.0;
 const RING_BLOCKS: f64 = 20.0;
 /// The ring's figures are numbered from here, apart from the one figure (1).
 const RING_FIRST: u32 = 11;
+/// The figure that comes from tree to tree (`tree_to_tree`).
+const TREE_FIGURE: u32 = 63;
 /// The figure drawn to their light (`drawn_to_the_light`), and how far off it starts.
 const DRAWN_FIGURE: u32 = 62;
 const DRAWN_FROM: f64 = 45.0;
@@ -1754,6 +1762,7 @@ fn figure_shown(
         peeks: None,
         while_unseen: None,
         drawn_to_light: false,
+        then_at: Vec::new(),
     }
 }
 
@@ -6330,6 +6339,41 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Half out from behind the farthest trunk of the way, facing them; seen and looked away
+        // from, behind the next nearer; after the nearest, gone, and a branch cracks.
+        Action::TreeToTree => pos
+            .map(|first| {
+                let at = memory.last.pos;
+                let behind = memory.trunks_behind(8.0, 30.0);
+                let way = crate::trees::nearer_and_nearer(&behind, at, 4);
+                let start = way.iter().position(|t| *t == first).unwrap_or(0);
+                let peek = |t: &BlockPos, i: usize| {
+                    crate::trees::peek_spots(*t, at, if i.is_multiple_of(2) { 1.0 } else { -1.0 }).0
+                };
+                let mut shown = figure_shown(ids, memory, target, first, 120.0, false);
+                if let Command::Figure {
+                    figure,
+                    pos,
+                    held,
+                    once_seen,
+                    then_at,
+                    ..
+                } = &mut shown
+                {
+                    *figure = TREE_FIGURE;
+                    *pos = peek(&first, 0);
+                    *held = ItemStack::default();
+                    *once_seen = true;
+                    *then_at = way
+                        .iter()
+                        .enumerate()
+                        .skip(start + 1)
+                        .map(|(i, t)| peek(t, i))
+                        .collect();
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         // A random number of their most valuable things, from what they carry and their chests,
         // up into the sky before them; the host picks and keeps them.
         Action::TakenUp => pos
@@ -7858,6 +7902,7 @@ pub fn commands(
                         peeks: None,
                         while_unseen: None,
                         drawn_to_light: false,
+                        then_at: Vec::new(),
                     },
                     0,
                 )]
@@ -13645,5 +13690,44 @@ mod tests {
                 <= 2.5,
             "before the door: {pos:?}"
         );
+    }
+
+    #[test]
+    fn in_the_woods_the_figure_is_a_tree_nearer_each_time_they_look_back() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        // Looking south (+z): the rings of trees north of them are behind.
+        memory.last.yaw = 0.0;
+        let event = find("tree_to_tree").unwrap();
+        let first = place(event, &memory, &mut Rng::new(1)).unwrap();
+        assert!(first[2] < 0, "behind them: {first:?}");
+        let made = commands(
+            event,
+            Some(first),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let [(
+            Command::Figure {
+                once_seen: true,
+                then_at,
+                pos,
+                ..
+            },
+            0,
+        )] = &made[..]
+        else {
+            panic!("{made:?}");
+        };
+        assert!(!then_at.is_empty(), "somewhere nearer next");
+        let away = |p: &[f64; 3]| (p[0] - 0.5).hypot(p[2] - 0.5);
+        let mut last = away(pos);
+        for next in then_at {
+            assert!(away(next) < last, "nearer each time");
+            last = away(next);
+        }
     }
 }

@@ -1327,6 +1327,11 @@ pub enum Command {
         /// `rushes` does. ABI 54.
         #[serde(default, skip_serializing_if = "is_false")]
         drawn_to_light: bool,
+        /// Where it stands next, in turn: each time it has been seen and looked away from, it is
+        /// at the next of these instead of gone (with `once_seen`); gone after the last, a
+        /// branch's crack where it stood. ABI 54.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        then_at: Vec<Pos>,
     },
     RemoveFigure {
         id: u64,
