@@ -2891,6 +2891,11 @@ The `[x]` lines above, summed up by day:
   sniffing and digging heard (`place_entity`'s `minecraft:sniffer`, for a while only, and
   `place_entity`'s y counted from the ground, ABI 56). Tests: one in `act`. Was: no such event.
 
+- [x] **It refuses food** (`docs/events_todo.md`, 253): `refuses_food`, stages 3 to 5, outdoors with
+  animals: the next feeding they try within ten minutes refused once, the animal's head turned away
+  and the food kept (`refuse_food`, ABI 56: `Refusals` and `AnimalFeedMixin`, a JUnit test). Tests:
+  one in `act`, two in JUnit (`RefusalsTest`). Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

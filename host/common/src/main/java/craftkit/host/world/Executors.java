@@ -164,6 +164,14 @@ public final class Executors {
 				case "ghost_block" -> ghostBlock(level, command, id, context);
 				case "ghost_near" -> ghostNear(level, command, id, context);
 				case "rotate_slots" -> rotateSlots(level, command, id);
+				case "refuse_food" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					Refusals.arm(player.getUUID(), level.getGameTime() + (long) (Math.min(600, command.get("seconds").getAsFloat()) * 20));
+					yield report(id, true, "");
+				}
 				case "curl_up" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {

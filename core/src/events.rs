@@ -1232,6 +1232,8 @@ pub enum Action {
     ArmadillosCurl,
     /// A sniffer at its place a while, snuffling and digging at the ground, then gone.
     SnifferAtItsPlace,
+    /// The next animal they feed turning its head away, eating nothing, once.
+    RefusesFood,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7663,6 +7665,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SnifferAtItsPlace,
         false,
     ),
+    // docs/events_todo.md, 253: the next animal they feed turns its head away and will not eat.
+    row(
+        "refuses_food",
+        3,
+        5,
+        &[Animals, TargetOutdoors],
+        1.0,
+        3,
+        Half,
+        Action::RefusesFood,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8286,6 +8300,7 @@ impl Event {
             | Action::HorseBalks
             | Action::ArmadillosCurl
             | Action::SnifferAtItsPlace
+            | Action::RefusesFood
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8857,6 +8872,7 @@ impl Event {
             "cat_gift" => "lay a gift from their chest by the bed, their cat",
             "armadillos_curl" => "curl every armadillo near them up at once",
             "sniffer_at_its_place" => "stand a sniffer snuffling at its place",
+            "refuses_food" => "make the next animal they feed refuse it",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

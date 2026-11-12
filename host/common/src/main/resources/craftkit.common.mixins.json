@@ -3,6 +3,7 @@
 	"package": "craftkit.host.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"AnimalFeedMixin",
 		"ButtonSignalMixin",
 		"LeverSignalMixin",
 		"PressurePlateSignalMixin"

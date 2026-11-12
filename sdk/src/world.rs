@@ -733,6 +733,13 @@ pub enum Command {
         player: u32,
         from: Pos,
     },
+    /// The next animal `player` tries to feed within `seconds` (ten minutes at most) refuses,
+    /// once: it turns its head away and eats nothing, the food left in their hand. ABI 56.
+    RefuseFood {
+        id: u64,
+        player: u32,
+        seconds: f32,
+    },
     /// Every armadillo within sixteen blocks of `player` rolled up at once, as if something it
     /// feared passed; each unrolls on its own, as after any fright. Refused with none. ABI 56.
     CurlUp {
@@ -1683,6 +1690,7 @@ impl Command {
             | Command::GhostNear { id, .. }
             | Command::RotateSlots { id, .. }
             | Command::CurlUp { id, .. }
+            | Command::RefuseFood { id, .. }
             | Command::DropBlock { id, .. }
             | Command::Fangs { id, .. }
             | Command::GuardianBeam { id, .. }

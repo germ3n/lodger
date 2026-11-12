@@ -778,6 +778,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::CatGift
         | Action::ArmadillosCurl
         | Action::SnifferAtItsPlace
+        | Action::RefusesFood
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9202,6 +9203,15 @@ pub fn commands(
                 made
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 253.
+        Action::RefusesFood => vec![(
+            Command::RefuseFood {
+                id: ids(),
+                player: target,
+                seconds: 600.0,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20813,5 +20823,16 @@ mod tests {
             "{made:?}"
         );
         assert_eq!(made.len(), 9);
+    }
+
+    #[test]
+    fn refuses_food_arms_their_next_feeding() {
+        let memory = rich_memory();
+        let event = find("refuses_food").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::RefuseFood { seconds, .. }, 0)] if *seconds == 600.0),
+            "{made:?}"
+        );
     }
 }
