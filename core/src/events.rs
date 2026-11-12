@@ -1350,6 +1350,8 @@ pub enum Action {
     TheirOwnPotion,
     /// In the Nether, the vines near them a block longer each time they look back, reaching toward them.
     VinesReach,
+    /// In the Nether, their portal going out as they reach it, and lit again ten seconds on; they are never left there.
+    PortalGoesOut,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8513,6 +8515,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::VinesReach,
         false,
     ),
+    // docs/events_todo.md, 284: their portal goes out as they reach it, lit again ten seconds on.
+    row(
+        "portal_goes_out",
+        5,
+        5,
+        &[InNether],
+        3.0,
+        1,
+        Full,
+        Action::PortalGoesOut,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9185,6 +9199,7 @@ impl Event {
             | Action::PearlTurned
             | Action::TheirOwnPotion
             | Action::VinesReach
+            | Action::PortalGoesOut
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9818,6 +9833,7 @@ impl Event {
             "pearl_turned" => "turn them round where their next pearl lands them",
             "their_own_potion" => "throw one of their own potions at their feet from the dark",
             "vines_reach" => "grow the vines near them toward them",
+            "portal_goes_out" => "put out their portal as they reach it, and light it again",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

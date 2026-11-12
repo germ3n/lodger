@@ -3166,6 +3166,11 @@ The `[x]` lines above, summed up by day:
   of their sight, and again fifteen seconds on (`grow_vines`, ABI 56; refused with none). Tests: one
   in `act`. Was: no such event.
 
+- [x] **The portal goes out** (`docs/events_todo.md`, 284): `portal_goes_out`, stage 5, in the
+  Nether within ten blocks of where they came in: the portal's block there taken away (the portal
+  goes out with it), then `light_portal` in its frame at ten seconds, and again at fifteen and
+  thirty should one not take. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

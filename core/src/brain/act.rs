@@ -381,6 +381,9 @@ const NAME_CUT_MOST: usize = 8;
 /// How long after `vines_reach`'s first growing its second, ticks.
 const VINE_AGAIN_TICKS: u64 = 300;
 
+/// How long `portal_goes_out`'s portal stays out, ticks: ten seconds.
+const PORTAL_OUT_TICKS: u64 = 200;
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -922,6 +925,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PearlTurned
         | Action::TheirOwnPotion
         | Action::VinesReach
+        | Action::PortalGoesOut
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10712,6 +10716,48 @@ pub fn commands(
                 VINE_AGAIN_TICKS,
             ),
         ],
+        // docs/events_todo.md, 284.
+        Action::PortalGoesOut => match memory.arrived_at {
+            Some(portal) if distance(portal, block_of(memory.last.pos)) <= 10.0 => vec![
+                (
+                    Command::SetBlock {
+                        id: ids(),
+                        pos: portal,
+                        block: "minecraft:air".to_string(),
+                        state: String::new(),
+                        replace: vec!["minecraft:nether_portal".to_string()],
+                        settle: 0,
+                        wall: String::new(),
+                        rest: false,
+                        only: true,
+                    },
+                    0,
+                ),
+                (
+                    Command::LightPortal {
+                        id: ids(),
+                        near: portal,
+                    },
+                    PORTAL_OUT_TICKS,
+                ),
+                // Again, should the first not take: they are never left in the Nether.
+                (
+                    Command::LightPortal {
+                        id: ids(),
+                        near: portal,
+                    },
+                    PORTAL_OUT_TICKS + 100,
+                ),
+                (
+                    Command::LightPortal {
+                        id: ids(),
+                        near: portal,
+                    },
+                    PORTAL_OUT_TICKS + 400,
+                ),
+            ],
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14594,6 +14640,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "portal_goes_out"
                 || event.id == "vines_reach"
                 // A dragon egg of theirs, which this memory has not: its own test.
                 || event.id == "egg_on_the_pillow"
@@ -23247,5 +23294,25 @@ mod tests {
             ),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn portal_goes_out_and_is_lit_again_more_than_once() {
+        let mut memory = rich_memory();
+        memory.arrived_at = Some(block_of(memory.last.pos));
+        let event = find("portal_goes_out").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { replace, only: true, .. } if replace == &vec!["minecraft:nether_portal".to_string()]),
+            "{made:?}"
+        );
+        assert_eq!(
+            made.iter()
+                .filter(|(c, _)| matches!(c, Command::LightPortal { .. }))
+                .count(),
+            3,
+            "lit again, and again should it not take"
+        );
+        assert!(made.iter().all(|(_, d)| *d <= PORTAL_OUT_TICKS + 400));
     }
 }
