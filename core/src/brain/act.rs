@@ -897,6 +897,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PortalWeeps
         | Action::StandingInThePortal
         | Action::FarEndOfTheBridge
+        | Action::NameFromTheVoid
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10288,6 +10289,25 @@ pub fn commands(
             }
             vec![(shown, 0)]
         }
+        // docs/events_todo.md, 295.
+        Action::NameFromTheVoid => {
+            let at = block_of(memory.last.pos);
+            vec![(
+                Command::Hint {
+                    id: ids(),
+                    player: target,
+                    hint: "name_called".to_string(),
+                    pos: Some([at[0], at[1] - 24, at[2]]),
+                    seconds: 4.0,
+                    detail: if memory.target_name.is_empty() {
+                        "you".to_string()
+                    } else {
+                        memory.target_name.clone()
+                    },
+                },
+                0,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14170,6 +14190,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "name_from_the_void"
                 || event.id == "far_end_of_the_bridge"
                 || event.id == "standing_in_the_portal"
                 || event.id == "compass_steadies"
@@ -22530,6 +22551,19 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Figure { pos, once_seen: true, .. }, 0)] if pos[2] == 24.5 && pos[1] == 70.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn name_from_the_void_comes_from_below_them() {
+        let mut memory = rich_memory();
+        memory.target_name = "Steve".to_string();
+        memory.last.pos = [0.5, 60.0, 0.5];
+        let event = find("name_from_the_void").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, pos: Some(p), detail, .. }, 0)] if hint == "name_called" && p[1] == 36 && detail == "Steve"),
             "{made:?}"
         );
     }

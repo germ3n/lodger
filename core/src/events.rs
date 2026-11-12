@@ -1310,6 +1310,8 @@ pub enum Action {
     StandingInThePortal,
     /// In a Nether fortress, the figure at the far end of the bridge ahead of them, still.
     FarEndOfTheBridge,
+    /// In the End, their name from the void below them in the subtitles, once.
+    NameFromTheVoid,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8233,6 +8235,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FarEndOfTheBridge,
         false,
     ),
+    // docs/events_todo.md, 295: their name from the void below them in the subtitles.
+    row(
+        "name_from_the_void",
+        4,
+        5,
+        &[InEnd],
+        2.0,
+        2,
+        Half,
+        Action::NameFromTheVoid,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8894,6 +8908,7 @@ impl Event {
             | Action::GhastName
             | Action::BossBarIt
             | Action::TitleYourName
+            | Action::NameFromTheVoid
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -9500,6 +9515,7 @@ impl Event {
             "compass_steadies" => "steady their compass on where they came in",
             "standing_in_the_portal" => "stand the figure in the portal they came through",
             "far_end_of_the_bridge" => "stand the figure at the far end of the fortress bridge",
+            "name_from_the_void" => "call their name from the void below them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

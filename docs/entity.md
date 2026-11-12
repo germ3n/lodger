@@ -485,6 +485,7 @@ caves, from before.
 | `compass_steadies` | 3 to 5 | In the Nether, where a compass spins, theirs stops and points steady at where they came in, a minute, on their screen alone (the client's `compass_steadies` hint, on the compass hook). | In the Nether, holding a compass. |
 | `standing_in_the_portal` | 4 to 5 | In the Nether, the figure stands just inside the portal's purple where they came in, facing them, empty-handed; a minute, or gone once they come within five blocks. The figure in the Nether, the owner's call. | In the Nether, where they came in known. |
 | `far_end_of_the_bridge` | 4 to 5 | In a Nether fortress (a wither skeleton near them), twenty-four blocks straight ahead of them, at their height, the figure stands still at the far end of the bridge; forty seconds, or gone once seen and looked away from. The figure in the Nether, the owner's call. | In the Nether, a wither skeleton near them. |
+| `name_from_the_void` | 4 to 5 | In the End, their own name in the subtitles, once, from twenty-four blocks below them, out of the void (the client's `name_called` hint, from there). | In the End. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

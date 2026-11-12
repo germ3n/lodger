@@ -3076,6 +3076,10 @@ The `[x]` lines above, summed up by day:
   of them at their height, forty seconds or until seen and looked away from (the owner's call).
   Tests: one in `act`. Was: no such event.
 
+- [x] **A name from the void** (`docs/events_todo.md`, 295): `name_from_the_void`, stages 4 and 5,
+  in the End: their name in the subtitles from twenty-four blocks below them (the `name_called`
+  hint; off with the glitches). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
