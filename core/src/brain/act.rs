@@ -609,6 +609,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }
         Action::SnowShape => spot(memory, rng),
         Action::StairsToNowhere => home.map(|h| h.center),
+        // The middle of their field.
+        Action::CreakingInTheField => {
+            let field = &memory.field;
+            (!field.is_empty()).then(|| field[field.len() / 2])
+        }
         // Two blocks out from the door they use.
         Action::CopperGolemAtDoor => memory.doorway_spot().map(block_of),
         // Where they are: the ceiling over them, or the host finds the lava or the cliff.
@@ -7479,6 +7484,28 @@ pub fn commands(
             }
             made
         }
+        // In their field, a creaking two minutes: the game's own creaking, still while they watch
+        // it and coming while they do not; a nick if it reaches them, never a kill; killed it
+        // leaves nothing.
+        Action::CreakingInTheField => pos
+            .map(|p| {
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:creaking".to_string(),
+                        pos: [p[0] as f64 + 0.5, p[1] as f64 + 1.0, p[2] as f64 + 0.5],
+                        yaw: 0.0,
+                        seconds: 120.0,
+                        kept: String::new(),
+                        face: None,
+                        targets: Some(target),
+                        harm: 1.0,
+                        wears: vec![],
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         // Outside the door they use, a copper golem still, facing them in the house, five
         // minutes, then gone; nothing dropped.
         Action::CopperGolemAtDoor => pos
@@ -17880,6 +17907,27 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::PlaceEntity { of, pos, face: Some(_), seconds, targets: None, .. }, 0)]
                 if of == "minecraft:copper_golem" && pos[0] == spot[0] && pos[2] == spot[2] && *seconds > 0.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn at_night_a_creaking_stands_in_their_field_and_only_nicks() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.field = vec![[10, 63, 10], [11, 63, 10], [12, 63, 10]];
+        let event = find("creaking_in_the_field").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::PlaceEntity { of, pos, targets: Some(_), harm, seconds, .. }, 0)]
+                if of == "minecraft:creaking" && pos[0] == 11.5 && *harm <= 1.0 && *seconds > 0.0),
             "{made:?}"
         );
     }

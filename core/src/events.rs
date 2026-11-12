@@ -1127,6 +1127,8 @@ pub enum Action {
     BossBarIt,
     /// A copper golem standing outside their door at night, facing in.
     CopperGolemAtDoor,
+    /// A creaking in their field at night: still while watched, nearer while not.
+    CreakingInTheField,
     /// A grave at its place with their own name on it and a day not come yet.
     YourGrave,
     /// Cobwebs in the upper corners of their house, gone in a day.
@@ -6835,6 +6837,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CopperGolemAtDoor,
         false,
     ),
+    // docs/events_todo.md, 194: a creaking in their field at night, nearer each time they look away.
+    row(
+        "creaking_in_the_field",
+        5,
+        5,
+        &[Field, Night],
+        2.0,
+        2,
+        Full,
+        Action::CreakingInTheField,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7371,6 +7385,7 @@ impl Event {
             | Action::Vexes(..)
             | Action::KillerRabbit(_)
             | Action::CopperGolemAtDoor
+            | Action::CreakingInTheField
             | Action::CreeperBehind
             | Action::VillagerFleesIn
             | Action::SnowballThrown
@@ -7931,6 +7946,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "creaking_in_the_field" => "stand a creaking in their field that comes while unwatched",
             "copper_golem_at_door" => "stand a copper golem outside their door",
             "boss_bar_it" => "fill a boss bar named for it over their screen",
             "recovery_compass_lies" => "turn their recovery compass to its place",

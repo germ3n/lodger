@@ -2552,6 +2552,11 @@ The `[x]` lines above, summed up by day:
   and 5, at night: a copper golem still outside the door they use, facing them, five minutes
   (`place_entity` may place a copper golem, ABI 55). Tests: one in `act`. Was: no such event.
 
+- [x] **A creaking in the field** (`docs/events_todo.md`, 194): `creaking_in_the_field`, stage 5,
+  at night: the game's creaking in their field two minutes, still while watched, coming while not,
+  a nick of half a heart if it reaches them (`place_entity` may set a creaking, spared, ABI 55).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

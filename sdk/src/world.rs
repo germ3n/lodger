@@ -466,7 +466,7 @@ pub enum Command {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         face: Option<u32>,
         /// A hostile one set on this player (a silverfish, a cave spider, a wolf, a zombie, a
-        /// vex, a phantom): it may be killed, and is gone with nothing dropped; its hits never
+        /// vex, a phantom, a creaking from ABI 55): it may be killed, and is gone with nothing dropped; its hits never
         /// kill (the player is left at half a heart). With `seconds` above 0 only. ABI 54.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         targets: Option<u32>,
