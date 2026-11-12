@@ -2096,6 +2096,14 @@ The `[x]` lines above, summed up by day:
   of dust rather than a block, so nothing is left in the world. Tests: `prints`'s two,
   `FootPrintTest`, one in `act`. Was: prints were snow's alone, gone with the next fall.
 
+- [x] **The sound warp on top of Sound Physics** (owner: "apply it on top more carefully"): with Sound
+  Physics Remastered loaded, `sound_warp` is set after it (the channel hook at the tail of play and of
+  each move, a later priority) and takes only what it needs: the muffled way's filter over its own
+  while the warp lasts, the hall by lengthening its four reverbs and putting them back after, the
+  broken way's distortion on its first send alone. Was: the warp set the sends and the filter as
+  the sound started, and Sound Physics set its own over them, so the hall, the muffled and the broken
+  ways were lost with it.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

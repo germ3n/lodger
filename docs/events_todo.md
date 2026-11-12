@@ -1,6 +1,6 @@
 # Events to come
 
-A hundred event ideas not yet in the catalogue (forty at first, forty more after, then thirty-four) (`core/src/events.rs`, `docs/entity.md`), none of
+A hundred event ideas not yet in the catalogue (forty at first, forty more after, then thirty-five) (`core/src/events.rs`, `docs/entity.md`), none of
 them a copy of one there or of a line in `docs/ideas.md`. Each says the stage it fits, what the
 target must be doing, what it would take (the commands there are today, or what the host would
 need), and a rough size: **S** (the mind alone, today's commands), **M** (a small host change),
@@ -104,7 +104,7 @@ villagers behaving erratically, and things that attack or spook the target; then
 only while unseen, and one that notices them running about at night with a light; then one that takes their most
 valuable things up into the sky; then a creeper that always goes off and harms no one; then a villager that comes to their
 door from nowhere; then the sound itself going wrong; then their redstone going dead; then prints round the house that stay; then the caves' torches flickering, and things that
-do not belong where they are found; then a villager that stabs them; then trees gone bare or skinned; then vexes, and the ledge's fall by the stage. Checked against the
+do not belong where they are found; then a villager that stabs them; then trees gone bare or skinned; then vexes, and the ledge's fall by the stage; then the menu going wrong. Checked against the
 catalogue, `docs/ideas.md` and the eighty above. Most of the forest ones need the trunks near the
 target, which the mind does not know today: a scan of logs around them (`scan` exists; a trunk is
 a column of logs with leaves over it), which would also let `crouched_behind_a_tree` hide behind
@@ -147,4 +147,5 @@ dark forest).
 | 112 | `bare_trees` | 4 | Overnight a stand of trees near them, three to six together, is wrong: every leaf gone from them, bare trunks and branches among the green; or every log of them stripped, pale and skinned; or both. The trees around them as they were. (Asked for by the owner: "some trees dont have leaves? or like have all of the logs stripped".) | In the woods or by the home's trees, the target away or asleep, or out of view. | A host command on a tree from its trunk: its own leaves (never placed ones) taken away, its logs (the trunk and every log joined to it) swapped to stripped ones. | M |
 | 113 | `vex_single`, `vex_wave` | 4 | **Built** (and `vex_strikes`, stage five's single). A vex out of nowhere, alone, that comes at them and strikes by the stage's harm rules; or a wave of them, a dozen or so, swarming at them, each hit a nick. Never a kill, as always; they go as they came, and drop nothing. (Asked for by the owner: "a vex (single), or a wave? single should do damage based on stage, wave should be a bunch coming at the player but dealing little damage, and never killing as always".) | The target online, stage four or five. | `place_entity` vexes for a time, their hits held to the harm asked and spared (never below half a heart), nothing dropped. | M |
 | 114 | `shove` by stage | 4 | **Built** (`shove_far`, stage five). The ledge push: the fall it may give grows with the stage, two or three blocks in stage four, up to six in stage five, never fatal. (Asked for by the owner: "for the ledge event, depending on the stage higher falls are okay".) | As `shove`. | `shove`'s `most_drop` by the stage. | S |
+| 115 | `menu_freaks` | 4 | They open the game's menu (Escape) and it goes wrong: the buttons shiver and jitter in place, the title shakes, a button's words flicker to something else a moment ("Back to Game" reading "stay"), and it settles after a few seconds as if nothing were wrong. (Asked for by the owner: "opening the main menu it kinda freaks out, like buttons vibrate, etc".) | The target in a world, opening the pause menu while it is armed. | A client hint arming it; a hook on the pause screen's drawing that shakes its widgets and swaps a label a moment. | M |
 
