@@ -3214,6 +3214,14 @@ The `[x]` lines above, summed up by day:
   the chains' own, the count now 58 and one next step's list with `trapdoor_to_nothing` in it.
   Was: forty-eight chains, none of the new events in them.
 
+- [x] **The waking and crouching events reached** (found building the chains): an event that
+  needs a moment the menu never offers happens only when the brain's trigger for that moment names
+  it, and six were named by none: `wither_rose_in_pot`, `one_step_more`, `room_closes_in`,
+  `head_on_the_pillow`, `trial_key_left` and the older `nightmare` (waking), and `edge_tug`
+  (crouching still). Now `WOKE_EVENTS` holds the six, and `CROUCH_EVENTS` (`breath`, `edge_tug`)
+  is picked from by stage as waking is. Tests: one in the brain, every event behind such a moment
+  named by its trigger. Was: never happening.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

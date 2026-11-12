@@ -304,7 +304,19 @@ pub const CHORUS_HOME_CHANCE: f64 = 0.4;
 pub const RUN_LIT_TICKS: u64 = 5 * TPS;
 pub const DRAWN_CHANCE: f64 = 0.35;
 /// The events a waking may start, one of those the stage offers picked.
-pub const WOKE_EVENTS: &[&str] = &["foot_of_bed", "upside_down"];
+pub const WOKE_EVENTS: &[&str] = &[
+    "foot_of_bed",
+    "upside_down",
+    "wither_rose_in_pot",
+    "one_step_more",
+    "room_closes_in",
+    "head_on_the_pillow",
+    "trial_key_left",
+    // As they wake, the figure's face a frame (it was never woken: no trigger named it).
+    "nightmare",
+];
+/// The events crouching still may bring, one picked whose stage it is (`breath`, `edge_tug`).
+pub const CROUCH_EVENTS: &[&str] = &["breath", "edge_tug"];
 /// The chance crouching still ten seconds brings the breathing at their ear (`breath`).
 pub const BREATH_CHANCE: f64 = 0.3;
 /// The bold things that may have happened at home while they were in another dimension
@@ -1035,7 +1047,20 @@ impl Brain {
 
         // They crouch still: perhaps breathing at their ear, until they move.
         if std::mem::take(&mut memory.crouched_now) && !held_back {
-            self.consider_started("breath", BREATH_CHANCE, now, day, memory, arc, config, log);
+            let crouched: Vec<&str> = CROUCH_EVENTS
+                .iter()
+                .copied()
+                .filter(|id| {
+                    events::find(id)
+                        .is_some_and(|e| (e.from_stage..=e.to_stage).contains(&arc.stage))
+                })
+                .collect();
+            let pick = if crouched.is_empty() {
+                "breath"
+            } else {
+                crouched[(self.rng.next_f64() * crouched.len() as f64) as usize % crouched.len()]
+            };
+            self.consider_started(pick, BREATH_CHANCE, now, day, memory, arc, config, log);
         }
 
         // They woke: perhaps the figure at the foot of the bed for half a second, or hanging
@@ -4805,6 +4830,28 @@ mod tests {
             .count();
         assert_eq!(given, 3, "the three it held");
         assert_eq!(memory.stored("minecraft:dirt"), 0, "and holds none now");
+    }
+
+    #[test]
+    fn every_event_behind_a_moment_the_menu_never_offers_has_its_trigger() {
+        // A need met only at a moment (waking, crouching still) is never met on the menu: an
+        // event needing one that no trigger names never happens (five of 206 to 265 were so).
+        for event in crate::events::CATALOGUE {
+            if event.needs.contains(&events::Need::JustWoke) {
+                assert!(
+                    WOKE_EVENTS.contains(&event.id),
+                    "{} needs waking and is not woken",
+                    event.id
+                );
+            }
+            if event.needs.contains(&events::Need::CrouchedStill) {
+                assert!(
+                    CROUCH_EVENTS.contains(&event.id),
+                    "{} needs a crouch and none brings it",
+                    event.id
+                );
+            }
+        }
     }
 
     #[test]
