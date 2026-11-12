@@ -5700,6 +5700,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.minecart.riding"),
         false,
     ),
+    // docs/events_todo.md, 170.
+    row(
+        "ram_on_the_wall",
+        4,
+        5,
+        &[Home, TargetIndoors, Night],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.goat.ram_impact"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7198,6 +7210,7 @@ impl Event {
             "humming_ahead" => "hum a few notes in the tunnel ahead",
             "steps_counted" => "count their steps in notes, one higher each",
             "cart_overhead" => "roll a minecart through the rock over them",
+            "ram_on_the_wall" => "ram the outside of their wall three times",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

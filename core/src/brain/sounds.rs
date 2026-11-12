@@ -975,6 +975,41 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 170.
+        "ram_on_the_wall" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.goat.ram_impact", 0),
+                        ("minecraft:entity.goat.ram_impact", 30),
+                        ("minecraft:entity.goat.ram_impact", 60),
+                    ],
+                    (0.6, 0.7),
+                    1.0,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.goat.ram_impact", 0),
+                        ("minecraft:entity.goat.ram_impact", 20),
+                        ("minecraft:entity.goat.ram_impact", 70),
+                    ],
+                    (0.55, 0.65),
+                    1.0,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.goat.ram_impact", 0),
+                        ("minecraft:entity.goat.ram_impact", 40),
+                    ],
+                    (0.5, 0.6),
+                    1.2,
+                    Beside,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1948,6 +1983,7 @@ mod tests {
             "sigh_at_the_door",
             "humming_ahead",
             "cart_overhead",
+            "ram_on_the_wall",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

@@ -712,6 +712,7 @@ a dock or bridge), never over anything a player built (see the
 | `humming_ahead` | 3 | In a tunnel, a few notes hummed somewhere ahead of them, low, a tune, then quiet. | The target underground, walking. |
 | `steps_counted` | 4 | Walking at night, behind them a note at each step's time, each one higher up the scale, eight of them, as if something counted their steps; then nothing. | Night, the target walking. |
 | `cart_overhead` | 3 | Underground, a minecart rolls across the rock over their head and away; there are no rails. | The target underground. |
+| `ram_on_the_wall` | 4 | At night, three heavy thuds against a wall of the house, as of a goat ramming it, then nothing. | Night, a home, the target indoors. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

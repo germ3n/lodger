@@ -2471,6 +2471,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A cart overhead** (`docs/events_todo.md`, 169): `cart_overhead`, stages 3 to 5: underground, a minecart rolling across the rock above them. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **A ram on the wall** (`docs/events_todo.md`, 170): `ram_on_the_wall`, stages 4 to 5: at night, three heavy thuds against a wall of the house. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
