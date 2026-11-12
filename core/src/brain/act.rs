@@ -267,7 +267,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::Pack
         | Action::MobComes(_)
         | Action::HostilesClose
-        | Action::Shove
+        | Action::Shove(_)
         | Action::FramesShow
         | Action::BobberUnder
         | Action::GhastName
@@ -8502,14 +8502,14 @@ pub fn commands(
                 )
             })
             .collect(),
-        // A push at the next edge they stand at, within two minutes, never more than three
-        // blocks down.
-        Action::Shove => vec![(
+        // A push at the next edge they stand at, within two minutes, never more than its drop
+        // (three in stage four, six in five: owner).
+        Action::Shove(most) => vec![(
             Command::Shove {
                 id: ids(),
                 player: target,
                 seconds: 120.0,
-                most_drop: 3,
+                most_drop: most,
             },
             0,
         )],
@@ -13456,10 +13456,14 @@ mod tests {
         assert!(close
             .iter()
             .all(|(c, _)| matches!(c, Command::Hold { creep: true, .. })));
-        // A push armed, three blocks at most.
+        // A push armed, three blocks at most; stage five's six.
         assert!(matches!(
             &made("shove", &mut rng)[0].0,
             Command::Shove { most_drop: 3, .. }
+        ));
+        assert!(matches!(
+            &made("shove_far", &mut rng)[0].0,
+            Command::Shove { most_drop: 6, .. }
         ));
         // A step right behind them, then the view turned a little toward a point ahead.
         let hand = made("hand_on_shoulder", &mut rng);

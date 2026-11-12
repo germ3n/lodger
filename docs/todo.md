@@ -1995,6 +1995,13 @@ The `[x]` lines above, summed up by day:
   rings (`trees::round_a_trunk`, each side long enough for prints). Tests: one in `trees`, one in
   `act`. Was: no such event.
 
+- [x] **Higher falls by the stage** (`docs/events_todo.md`, 114, owner: "for the ledge event,
+  depending on the stage higher falls are okay"): `shove` is stage four's, three blocks at most;
+  `shove_far`, new, stage five's, up to six, a fall that harms; the host's push needs the health
+  for the fall and a heart over (`Edge.healthFor`), its highest edge six now. Tests: one more in
+  `EdgeTest`, the batch-16 test checks `shove_far`'s six. Was: one push for stages four and five,
+  three blocks at most.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

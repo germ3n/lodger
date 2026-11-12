@@ -22,12 +22,14 @@ import java.util.UUID;
  * moment the player stands at a drop of two to three blocks onto solid ground, or on a ladder
  * with ground that near below, not crouching, with more than two hearts and not flying, they
  * are pushed off it once, and a step sounds right behind them. The fall is never more than
- * {@code most} blocks ({@link Edge}), so it never harms, let alone kills.
+ * {@code most} blocks ({@link Edge}), six at the most; past three it harms, and they must have
+ * the health for it and a heart over ({@link Edge#healthFor}), so it never kills.
  */
 public final class Shoves {
 	/** The longest a push waits for its edge, whatever a mod asks. */
 	public static final float MOST_SECONDS = 300;
-	private static final int MOST_DROP = 3;
+	/** The highest edge, whatever a mod asks: stage five's push, which may harm, never kill. */
+	private static final int MOST_DROP = 6;
 	/** How hard: a stumble, enough to clear the edge, no more. */
 	private static final double PUSH = 0.45;
 
@@ -52,7 +54,7 @@ public final class Shoves {
 				it.remove();
 				continue;
 			}
-			if (tick % 5 != 0 || player.isShiftKeyDown() || player.getHealth() <= 4 || player.getAbilities().flying
+			if (tick % 5 != 0 || player.isShiftKeyDown() || player.getHealth() <= Edge.healthFor(each.most) || player.getAbilities().flying
 					|| player.isSpectator() || player.isPassenger() || player.isInWater()
 					|| !(player.onGround() || player.onClimbable())) {
 				continue;

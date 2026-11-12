@@ -28,6 +28,15 @@ class EdgeTest {
 	}
 
 	@Test
+	void a_higher_push_wants_more_health_and_never_leaves_less_than_a_heart() {
+		assertEquals(4f, Edge.healthFor(3), "two hearts, as ever");
+		for (int most = 2; most <= 6; most++) {
+			float fall = Math.max(0, most - 3);
+			assertEquals(true, Edge.healthFor(most) - fall >= 2, "a heart left after a fall of " + most);
+		}
+	}
+
+	@Test
 	void two_or_three_blocks_down_is_a_safe_edge() {
 		// Out from their feet: the feet's level open, the block they stand on's level open, one
 		// more open, then ground: they land two blocks down.

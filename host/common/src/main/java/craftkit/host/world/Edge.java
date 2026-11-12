@@ -20,6 +20,15 @@ public final class Edge {
 	}
 
 	/**
+	 * The health a player must have more than to be pushed off an edge of up to {@code most}
+	 * blocks: the game's fall harm (a point a block past three) and a heart left after it, two
+	 * hearts at the least, so a push never kills.
+	 */
+	public static float healthFor(int most) {
+		return Math.max(4, Math.max(0, most - 3) + 2);
+	}
+
+	/**
 	 * The drop off the edge, 2 to {@code most}, or -1 when it is no safe edge: the way blocked
 	 * at the feet or the head, no fall (ground at once), or too far, or water or something that
 	 * is neither below (the column ends at a block neither open nor ground).

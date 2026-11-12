@@ -1205,7 +1205,8 @@ pub enum Command {
     /// For `seconds`, the first moment `player` stands at an edge (a drop of two to `most_drop`
     /// blocks to solid ground just past it) or on a ladder with ground that near below, not
     /// crouching and with more than two hearts, they are pushed off it, once, with a step
-    /// behind them. Never a fall of more than `most_drop`, never fatal. ABI 37.
+    /// behind them. Never a fall of more than `most_drop` (six at most, ABI 54), never fatal: past
+    /// three blocks it harms, and they must have that and a heart over.
     Shove {
         id: u64,
         player: u32,

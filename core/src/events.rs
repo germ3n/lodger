@@ -820,7 +820,7 @@ pub enum Action {
     /// they stood when looked at.
     HostilesClose,
     /// A push at the next edge or ladder they stand on, never a fall of more than three.
-    Shove,
+    Shove(u32),
     /// Every frame of the house shows the one thing, to them alone, for a while.
     FramesShow,
     /// Their bobber pulled under and kept under, nothing on it.
@@ -2072,12 +2072,25 @@ pub const CATALOGUE: &[Event] = &[
     row(
         "shove",
         4,
+        4,
+        &[TargetAwake],
+        3.0,
+        2,
+        Full,
+        Action::Shove(3),
+        false,
+    ),
+    // docs/events_todo.md, 114 (owner: "depending on the stage higher falls are okay"): stage
+    // five's push may drop them six blocks, a fall that harms, never one that kills.
+    row(
+        "shove_far",
+        5,
         5,
         &[TargetAwake],
         3.0,
         2,
         Full,
-        Action::Shove,
+        Action::Shove(6),
         false,
     ),
     // Batch 15, building (owner: every one; materials gathered first, topped up
@@ -6027,7 +6040,7 @@ impl Event {
             | Action::Pack
             | Action::MobComes(_)
             | Action::HostilesClose
-            | Action::Shove
+            | Action::Shove(_)
             | Action::BobberUnder
             | Action::Shoot(_)
             | Action::SplashDark
@@ -6271,6 +6284,7 @@ impl Event {
             "fish_on_line" => "pull their bobber under with nothing on it",
             "hostiles_close" => "bring the monsters closer whenever they look away",
             "shove" => "push them at the next edge, a short fall",
+            "shove_far" => "push them at the next edge, a long fall",
             "breath" => "breathe at their ear while they crouch still",
             "footsteps_follow" => "walk a step behind them in the dark",
             "name_called" => "say their name where only the subtitles hear it",
