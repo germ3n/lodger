@@ -55,6 +55,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("vines_reach", "minecraft:the_nether"),
     ("portal_goes_out", "minecraft:the_nether"),
     ("lava_goes_still", "minecraft:the_nether"),
+    ("end_sky_face", "minecraft:the_end"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.

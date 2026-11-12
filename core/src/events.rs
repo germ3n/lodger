@@ -8539,6 +8539,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("lava_still", 20.0),
         false,
     ),
+    // docs/events_todo.md, 304: in the end, as they look up, for a moment the sky makes a face, two eyes and a mouth of its own dark purple, faint, swelling and gone, on their screen alone.
+    row(
+        "end_sky_face",
+        4,
+        5,
+        &[InEnd],
+        1.0,
+        3,
+        Half,
+        Action::Hint("end_sky_face", 8.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9847,6 +9859,7 @@ impl Event {
             "vines_reach" => "grow the vines near them toward them",
             "portal_goes_out" => "put out their portal as they reach it, and light it again",
             "lava_goes_still" => "still the lava round them a moment",
+            "end_sky_face" => "make a face in the End's sky",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

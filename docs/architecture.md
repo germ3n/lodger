@@ -151,6 +151,7 @@ As little as possible, because the mod is about not knowing:
   `ash_on_the_wind` (ash drifting down round them), `red_petals` (red falling petals round them),
   `sculk_trail` (sculk's charge along the floor from the door to the bed, as `red_trail`'s line),
   `souls_follow` (on soul sand or soil, a soul rising where they have just stepped),
+  `end_sky_face` (while they look up, a face of the sky's dark faint over it a second),
   `lava_still` (the lava round them still: no pop, spark or sound), `compass_steadies` (a plain
   compass held on a place),
   `false_glint` (what is in their main hand drawn shimmering as if enchanted),

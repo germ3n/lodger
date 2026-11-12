@@ -634,6 +634,24 @@ public final class Glitches {
 		for (Hints.Active active : Hints.active()) {
 			float progress = active.progress(now);
 			switch (active.hint().hint()) {
+				// A face in the End's sky (ABI 56): while they look up, two eyes and a mouth of the
+				// sky's own dark purple over it, faint, swelling and gone with the hint's second.
+				case "end_sky_face" -> {
+					var player = Minecraft.getInstance().player;
+					if (player == null || player.getXRot() > -20) {
+						break;
+					}
+					int a = (int) (Math.sin(progress * Math.PI) * 0.45f * 255);
+					int colour = (Math.max(0, a) << 24) | 0x1A0F24;
+					int cx = width / 2;
+					int cy = height / 3;
+					int unit = Math.max(4, height / 12);
+					graphics.fill(cx - unit * 3, cy - unit, cx - unit, cy + unit, colour);
+					graphics.fill(cx + unit, cy - unit, cx + unit * 3, cy + unit, colour);
+					graphics.fill(cx - unit * 3, cy + unit * 3, cx + unit * 3, cy + unit * 4, colour);
+					graphics.fill(cx - unit * 4, cy + unit * 2, cx - unit * 3, cy + unit * 3, colour);
+					graphics.fill(cx + unit * 3, cy + unit * 2, cx + unit * 4, cy + unit * 3, colour);
+				}
 				// The right five of their hearts drawn as empty containers over them; no harm.
 				case "hearts_drop" -> {
 					var player = Minecraft.getInstance().player;
