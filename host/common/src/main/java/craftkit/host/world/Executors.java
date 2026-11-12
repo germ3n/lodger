@@ -210,7 +210,12 @@ public final class Executors {
 						yield report(id, false, "the player is not here");
 					}
 					String what = command.get("what").getAsString();
-					Returns.Kind back = what.equals("snowball") ? Returns.Kind.SNOWBALL : what.equals("arrow") ? Returns.Kind.ARROW : null;
+					Returns.Kind back = switch (what) {
+						case "snowball" -> Returns.Kind.SNOWBALL;
+						case "arrow" -> Returns.Kind.ARROW;
+						case "pearl" -> Returns.Kind.PEARL;
+						default -> null;
+					};
 					if (back == null) {
 						yield report(id, false, "nothing called " + what + " comes back");
 					}

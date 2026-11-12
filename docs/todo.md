@@ -3150,6 +3150,11 @@ The `[x]` lines above, summed up by day:
   brain, two in five times): moved onto the step outside the door they use (`move_player`). Tests:
   one in `act`, one in `memory`. Was: no such event.
 
+- [x] **The pearl turns them** (`docs/events_todo.md`, 298): `pearl_turned`, stages 3 to 5, holding
+  an ender pearl: the next one thrown within two minutes turns them round where it lands them, the
+  tick after (`throw_back`'s `pearl`, ABI 56: `Returns` and `EnderpearlMixin`). Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

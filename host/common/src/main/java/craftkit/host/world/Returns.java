@@ -17,13 +17,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * `throw_back` (ABI 56): what a player next throws or shoots comes back. A snowball of theirs, where
  * it lands, a snowball thrown back at them a moment on; an arrow of theirs that sticks, taken out
  * and dropped at their feet a moment on, the very arrow, and only one they could have picked up,
- * so nothing is had from nothing. Armed by player and kind until a game time; once.
+ * so nothing is had from nothing; an ender pearl of theirs, landed, turns them round where it
+ * set them, facing back the way they came. Armed by player and kind until a game time; once.
  */
 public final class Returns {
 	/** How long after it lands it comes back, ticks. */
 	static final long BACK_TICKS = 30;
 
-	public enum Kind { SNOWBALL, ARROW }
+	public enum Kind { SNOWBALL, ARROW, PEARL }
 
 	private record Armed(Kind kind, long until) {
 	}
@@ -52,7 +53,9 @@ public final class Returns {
 			return false;
 		}
 		synchronized (DUE) {
-			DUE.add(new Due(level, owner, kind, at, arrow == null ? ItemStack.EMPTY : arrow.copy(), level.getGameTime() + BACK_TICKS));
+			// A pearl's turn the tick after it sets them down; the rest a moment on.
+			long after = kind == Kind.PEARL ? 1 : BACK_TICKS;
+			DUE.add(new Due(level, owner, kind, at, arrow == null ? ItemStack.EMPTY : arrow.copy(), level.getGameTime() + after));
 		}
 		return true;
 	}
@@ -71,7 +74,9 @@ public final class Returns {
 				if (!(due.level().getPlayerByUUID(due.player()) instanceof ServerPlayer player) || player.level() != due.level()) {
 					continue;
 				}
-				if (due.kind() == Kind.SNOWBALL) {
+				if (due.kind() == Kind.PEARL) {
+					player.connection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot() + 180f, player.getXRot());
+				} else if (due.kind() == Kind.SNOWBALL) {
 					Vec3 from = due.from().add(0, 0.5, 0);
 					var ball = new net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball(due.level(), from.x, from.y, from.z,
 							new ItemStack(net.minecraft.world.item.Items.SNOWBALL));

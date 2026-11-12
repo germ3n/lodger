@@ -916,6 +916,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ChorusBlooms
         | Action::EggOnThePillow
         | Action::ChorusLandsHome
+        | Action::PearlTurned
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10638,6 +10639,16 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // docs/events_todo.md, 298.
+        Action::PearlTurned => vec![(
+            Command::ThrowBack {
+                id: ids(),
+                player: target,
+                what: "pearl".to_string(),
+                seconds: 120.0,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -23132,6 +23143,17 @@ mod tests {
         assert!(
             commands(event, None, &memory, &mut ids(), &Now::default(), None).is_empty(),
             "too far"
+        );
+    }
+
+    #[test]
+    fn pearl_turned_arms_their_next_pearl() {
+        let memory = rich_memory();
+        let event = find("pearl_turned").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::ThrowBack { what, .. }, 0)] if what == "pearl"),
+            "{made:?}"
         );
     }
 }

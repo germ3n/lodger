@@ -6,6 +6,7 @@
 		"AbstractArrowMixin",
 		"AnimalFeedMixin",
 		"ButtonSignalMixin",
+		"EnderpearlMixin",
 		"LeverSignalMixin",
 		"PopResourceMixin",
 		"SnowballMixin",

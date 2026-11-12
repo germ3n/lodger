@@ -752,7 +752,8 @@ pub enum Command {
     /// What `player` next throws or shoots within `seconds` (ten minutes at most) comes back,
     /// once: `what` a `snowball` (where it lands, one thrown back at them a moment on) or an
     /// `arrow` (one that sticks, which they could pick up, taken out and dropped at their feet a
-    /// moment on, the very arrow). ABI 56.
+    /// moment on, the very arrow) or a `pearl` (where it sets them down, they are turned round,
+    /// facing back the way they came). ABI 56.
     ThrowBack {
         id: u64,
         player: u32,
