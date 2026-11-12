@@ -1097,6 +1097,8 @@ pub enum Action {
     ZombieInYourGear(f32),
     /// Vexes out of nowhere at them: this many, each hit this much harm, never a kill.
     Vexes(u32, f32),
+    /// A creeper right behind them that always goes off, and harms no one.
+    CreeperBehind,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4894,6 +4896,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 104 (owner's): "a fake creeper ... that explodes always but does no
+    // damage".
+    row(
+        "creeper_behind",
+        3,
+        5,
+        &[TargetAwake],
+        2.0,
+        3,
+        Full,
+        Action::CreeperBehind,
+        false,
+    ),
     // docs/events_todo.md, 113 (owner's): "single should do damage based on stage, wave should
     // be a bunch coming at the player but dealing little damage, and never killing as always".
     row(
@@ -6216,6 +6231,7 @@ impl Event {
             | Action::WolvesCircle
             | Action::ZombieInYourGear(_)
             | Action::Vexes(..)
+            | Action::CreeperBehind
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6299,6 +6315,9 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "creeper_behind" => {
+                "set a creeper hissing right behind them, that goes off and harms no one"
+            }
             "vex_single" => "send a vex at them out of nowhere",
             "vex_strikes" => "send a vex at them out of nowhere to strike hard",
             "vex_wave" => "send a swarm of vexes at them",

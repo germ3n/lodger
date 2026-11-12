@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // Right behind them.
+        Action::CreeperBehind => Some(block_of(memory.last.pos)),
         // Over them.
         Action::Vexes(..) => Some(block_of(memory.last.pos)),
         // Twenty blocks behind them, on the ground: it walks at them out of the dark.
@@ -6484,6 +6486,20 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Two blocks behind them, on the ground they stand on, on their screen alone: the hiss,
+        // the swell, the bang; nothing harmed, nothing broken.
+        Action::CreeperBehind => {
+            let at = memory.last.pos;
+            let yaw = (memory.last.yaw as f64).to_radians();
+            vec![(
+                Command::FakeCreeper {
+                    id: ids(),
+                    player: target,
+                    pos: [at[0] + yaw.sin() * 2.0, at[1], at[2] - yaw.cos() * 2.0],
+                },
+                0,
+            )]
+        }
         // Out of nowhere round them, a few blocks up and behind, at them half a minute: each hit
         // the harm asked, never a kill; killed they leave nothing.
         Action::Vexes(count, harm) => {
@@ -14923,5 +14939,24 @@ mod tests {
         assert!(wave.iter().all(|h| *h <= 1.0), "a nick each");
         assert_eq!(find("vex_single").unwrap().to_stage, 4);
         assert_eq!(find("vex_strikes").unwrap().from_stage, 5);
+    }
+
+    #[test]
+    fn a_creeper_right_behind_them_goes_off_and_harms_no_one() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("creeper_behind").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::FakeCreeper { pos, .. }, 0)] if pos[2] < 0.0 && pos[2] > -2.0)
+        );
     }
 }

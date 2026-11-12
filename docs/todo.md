@@ -2059,6 +2059,11 @@ The `[x]` lines above, summed up by day:
   each; all spared, never a kill, nothing dropped, gone in half a minute. Tests: one in `act`. Was:
   no such events.
 
+- [x] **A creeper behind them** (`docs/events_todo.md`, 104, owner's): `creeper_behind`, stages 3 to 5:
+  a creeper sent to their client alone, two blocks behind them, swelling and hissing, then the
+  explosion's flash, sound and jolt, no harm and nothing broken (`fake_creeper`, ABI 54). Tests: one
+  in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -633,6 +633,13 @@ pub enum Command {
         most: u32,
         keep: String,
     },
+    /// A creeper at `pos` on `player`'s screen alone: it hisses and swells and goes off, the
+    /// flash, the bang and the jolt, and harms no one, breaking nothing. ABI 54.
+    FakeCreeper {
+        id: u64,
+        player: u32,
+        pos: Pos,
+    },
     /// `count` (eight at most) of `of` (`minecraft:wolf`) placed round `player` twelve blocks
     /// out, circling them for `seconds` (a minute at most), nearer each round, a growl now and
     /// then; then they break off and run into the dark, and are gone. They hurt no one. ABI 54.
@@ -1458,6 +1465,7 @@ impl Command {
             | Command::HoldTrades { id, .. }
             | Command::FakeDeath { id, .. }
             | Command::Circle { id, .. }
+            | Command::FakeCreeper { id, .. }
             | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }

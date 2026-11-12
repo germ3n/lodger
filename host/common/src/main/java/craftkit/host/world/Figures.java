@@ -137,6 +137,7 @@ public final class Figures {
 		digs.clear();
 		chokes.clear();
 		risings.clear();
+		creepers.clear();
 	}
 
 	/** The figures gone since the last ask, each with how it was looked at. */
@@ -260,6 +261,7 @@ public final class Figures {
 		tickDigs();
 		tickChokes();
 		tickRisings();
+		tickCreepers();
 		List<Figure> gone = new ArrayList<>();
 		tickFigures(gone);
 		// A group goes with any of it: the rest of each gone figure's group, told as theirs.
@@ -636,6 +638,68 @@ public final class Figures {
 		player.connection.send(net.minecraft.network.protocol.game.ClientboundSetPassengersPacket.STREAM_CODEC.decode(buf));
 
 		return true;
+	}
+
+	/** A creeper on one player's screen alone (`fake_creeper`, ABI 54): its entity there, where, and when. */
+	private record FakeCreeper(ServerPlayer player, int entityId, Vec3 at, long fromTick) {
+	}
+
+	private final List<FakeCreeper> creepers = new ArrayList<>();
+	/** How long it hisses and swells before it goes off, ticks: a real one's fuse and a half. */
+	static final int FUSE_TICKS = 30;
+
+	/**
+	 * A creeper right behind {@code player}, on their screen alone, at {@code at}: it hisses and
+	 * swells as a real one does and goes off, the flash, the bang, the jolt; no harm, not a block
+	 * broken, nothing there after (ABI 54).
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean fakeCreeper(ServerPlayer player, Vec3 at) {
+		var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(net.minecraft.resources.Identifier.parse("minecraft:creeper"));
+		if (type.isEmpty()) {
+			return false;
+		}
+		int entityId = nextId++;
+		Vec3 to = player.position().subtract(at);
+		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+		player.connection.send(new ClientboundAddEntityPacket(entityId, UUID.randomUUID(), at.x, at.y, at.z, 0, yaw, type.get().value(), 0, Vec3.ZERO, yaw));
+		try {
+			var swell = net.minecraft.world.entity.monster.Creeper.class.getDeclaredField("DATA_SWELL_DIR");
+			swell.setAccessible(true);
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(entityId, List.of(
+					net.minecraft.network.syncher.SynchedEntityData.DataValue.create((net.minecraft.network.syncher.EntityDataAccessor<Integer>) swell.get(null), 1))));
+		} catch (ReflectiveOperationException ignored) {
+			// It stands unswollen, hissing, and goes off all the same.
+		}
+		soundAt(player, at, net.minecraft.sounds.SoundEvents.CREEPER_PRIMED, 1f);
+		creepers.add(new FakeCreeper(player, entityId, at, tick));
+		return true;
+	}
+
+	private void tickCreepers() {
+		Iterator<FakeCreeper> it = creepers.iterator();
+		while (it.hasNext()) {
+			FakeCreeper c = it.next();
+			if (c.player().isRemoved()) {
+				it.remove();
+				continue;
+			}
+			if (tick - c.fromTick() < FUSE_TICKS) {
+				continue;
+			}
+			ServerPlayer player = c.player();
+			player.connection.send(new ClientboundRemoveEntitiesPacket(c.entityId()));
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER,
+					true, true, c.at().x, c.at().y + 0.5, c.at().z, 0, 0, 0, 0, 1));
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket(net.minecraft.core.particles.ParticleTypes.POOF,
+					true, true, c.at().x, c.at().y + 0.5, c.at().z, 1.2f, 0.8f, 1.2f, 0.05f, 40));
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE,
+					net.minecraft.sounds.SoundSource.HOSTILE, c.at().x, c.at().y, c.at().z, 4f, 0.9f, player.getRandom().nextLong()));
+			// The jolt of it, as a hurt's: no harm.
+			Vec3 from = player.position().subtract(c.at());
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket(player.getId(), (float) Math.toDegrees(Math.atan2(-from.x, from.z)) - player.getYRot()));
+			it.remove();
+		}
 	}
 
 	/** A taken stack shown rising: to whom, its entity there, when it shows, and where. */

@@ -127,6 +127,15 @@ public final class Executors {
 				case "snap_branch" -> snapBranch(level, command, id, context);
 				case "fell_tree" -> fellTree(level, command, id, context);
 				case "panic" -> panic(level, command, id, context);
+				case "fake_creeper" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					JsonArray p = command.getAsJsonArray("pos");
+					boolean shown = context.figures().fakeCreeper(player, new Vec3(p.get(0).getAsDouble(), p.get(1).getAsDouble(), p.get(2).getAsDouble()));
+					yield report(id, shown, shown ? "" : "no creeper to show");
+				}
 				case "circle" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					String of = command.get("of").getAsString();
