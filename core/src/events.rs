@@ -1332,6 +1332,8 @@ pub enum Action {
     BlazeRing,
     /// In the End, the endermen near them standing in a row out toward the island's edge, spaced, all facing the void.
     EndermenAtTheEdge,
+    /// In the End, the music stopping and every enderman's sound with it a minute: only their own steps.
+    EndGoesQuiet,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8411,6 +8413,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::EndermenAtTheEdge,
         false,
     ),
+    // docs/events_todo.md, 301: the End goes quiet, the music and the endermen, a minute.
+    row(
+        "end_goes_quiet",
+        4,
+        5,
+        &[InEnd],
+        2.0,
+        2,
+        Half,
+        Action::EndGoesQuiet,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9083,6 +9097,7 @@ impl Event {
             | Action::BossBarIt
             | Action::TitleYourName
             | Action::NameFromTheVoid
+            | Action::EndGoesQuiet
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -9702,6 +9717,7 @@ impl Event {
             "gateway_flashes" => "flash the end gateway near them as if used",
             "blaze_ring" => "ring them round with the blazes near them",
             "endermen_at_the_edge" => "stand the endermen near them in a row facing the void",
+            "end_goes_quiet" => "hush the End round them a minute",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

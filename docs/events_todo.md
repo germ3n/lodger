@@ -371,7 +371,7 @@ yet.
 | 298 | `pearl_turned` | 3 | An ender pearl they throw lands them where it should, turned round, facing the way they came. | Throwing an ender pearl. | The landing's trigger; their facing set back. | M |
 | 299 | `prints_off_the_edge` | 4 | **Built (outward from the End's middle, twenty-four blocks).** Prints across the end stone lead to the island's edge and off it. | In the End, on end stone, an edge near. | `prints` toward the edge, by way of `elsewhere`. | S |
 | 300 | `purpur_knock` | 3 | **Built (at an end city, a shulker near them standing for it).** Inside an end city, a knock from the other side of a purpur wall; behind it is solid. | In the End, in an end city. | `sound` of a knock in the wall beside them. | S |
-| 301 | `end_goes_quiet` | 4 | The End's music stops and so does every enderman's sound, a minute: only their own steps. | In the End. | A client hint muting the music and the endermen's sounds. | M |
+| 301 | `end_goes_quiet` | 4 | **Built (the music and the hostile sounds, a minute).** The End's music stops and so does every enderman's sound, a minute: only their own steps. | In the End. | A client hint muting the music and the endermen's sounds. | M |
 | 302 | `ship_creaks` | 3 | **Built (by a shulker, coming up behind them).** On the end ship, the deck creaks under weight, step by step, as if someone walked it. | In the End, on an end ship. | `sound` of creaking along the deck. | S |
 | 303 | `chorus_blooms` | 3 | Every chorus plant near them flowers at once. | In the End, chorus plants near. | The plants' flower blocks set to bloom. | M |
 | 304 | `end_sky_face` | 4 | For a second the End's sky, its static, makes a face. | In the End. | The sky hook drawing a face into the End's sky texture. | M |

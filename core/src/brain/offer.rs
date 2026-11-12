@@ -327,6 +327,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         Action::Hint(_, _)
         | Action::BossBarIt
         | Action::CracksInTheWall
+        | Action::EndGoesQuiet
         | Action::NameFromTheVoid
         | Action::PrintsFromThePortal
         | Action::PrintsOffTheEdge
@@ -453,6 +454,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         Action::Hint(_, _)
         | Action::BossBarIt
         | Action::CracksInTheWall
+        | Action::EndGoesQuiet
         | Action::NameFromTheVoid
         | Action::PrintsFromThePortal
         | Action::PrintsOffTheEdge

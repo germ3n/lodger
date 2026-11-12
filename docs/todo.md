@@ -3133,6 +3133,10 @@ The `[x]` lines above, summed up by day:
   End's middle, three apart, held thirty seconds facing outward (`move_entity`, `hold`'s `at`).
   Tests: one in `act`. Was: no such event.
 
+- [x] **The End goes quiet** (`docs/events_todo.md`, 301): `end_goes_quiet`, stages 4 and 5, in the
+  End: a minute of `cut_music` and `silence` on their client together, the music and every hostile's
+  sound gone (off with the glitches). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

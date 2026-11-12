@@ -912,6 +912,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::GatewayFlashes
         | Action::BlazeRing
         | Action::EndermenAtTheEdge
+        | Action::EndGoesQuiet
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10556,6 +10557,31 @@ pub fn commands(
             }
             made
         }
+        // docs/events_todo.md, 301.
+        Action::EndGoesQuiet => vec![
+            (
+                Command::Hint {
+                    id: ids(),
+                    player: target,
+                    hint: "cut_music".to_string(),
+                    pos: None,
+                    seconds: 60.0,
+                    detail: String::new(),
+                },
+                0,
+            ),
+            (
+                Command::Hint {
+                    id: ids(),
+                    player: target,
+                    hint: "silence".to_string(),
+                    pos: None,
+                    seconds: 60.0,
+                    detail: String::new(),
+                },
+                0,
+            ),
+        ],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14438,6 +14464,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "end_goes_quiet"
                 || event.id == "endermen_at_the_edge"
                 || event.id == "blaze_ring"
                 || event.id == "gateway_flashes"
@@ -22985,5 +23012,16 @@ mod tests {
             "{made:?}"
         );
         assert!(matches!(&made[1].0, Command::Hold { at: Some(a), .. } if a[0] > 120.0));
+    }
+
+    #[test]
+    fn end_goes_quiet_stops_the_music_and_the_endermen() {
+        let memory = rich_memory();
+        let event = find("end_goes_quiet").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint: a, .. }, 0), (Command::Hint { hint: b, .. }, 0)] if a == "cut_music" && b == "silence"),
+            "{made:?}"
+        );
     }
 }
