@@ -834,6 +834,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::EdgeTug
         | Action::PiglinsStare
         | Action::StriderTurnsHome
+        | Action::GhastWatches
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9411,6 +9412,8 @@ pub fn commands(
                 _ => vec![],
             }
         }
+        // docs/events_todo.md, 269.
+        Action::GhastWatches => hold_kind(ids, memory, target, "ghast", 60.0),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13293,6 +13296,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "ghast_watches"
                 || event.id == "strider_turns_home"
             {
                 continue;
@@ -21285,6 +21289,23 @@ mod tests {
         );
         assert!(
             matches!(&made[..], [(Command::Hold { entity: 402, at: Some(to), .. }, 0)] if *to == block_center([10, 64, -3])),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn ghast_watches_holds_every_ghast_near_them() {
+        let mut memory = rich_memory();
+        memory.last.hostiles_near.push(Creature {
+            id: 410,
+            kind: "ghast".to_string(),
+            pos: [6.0, 64.0, 2.0],
+            ..Creature::default()
+        });
+        let event = find("ghast_watches").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hold { entity: 410, seconds, .. }, 0)] if *seconds == 60.0),
             "{made:?}"
         );
     }

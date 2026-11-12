@@ -2964,6 +2964,10 @@ The `[x]` lines above, summed up by day:
   middle as the Nether has it (an eighth as far; the overworld now shares the home's middle with the
   other worlds, `home_here`). Tests: one in `act` (with `home_here`). Was: no such event.
 
+- [x] **The ghast watches** (`docs/events_todo.md`, 269): `ghast_watches`, stages 3 to 5, in the
+  Nether with a ghast near: every ghast near them held a minute facing them, firing nothing
+  (`hold`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
