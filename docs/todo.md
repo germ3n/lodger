@@ -2939,6 +2939,10 @@ The `[x]` lines above, summed up by day:
   a minute of grey and white ash drifting down round them on their client (the `ash_on_the_wind`
   hint; off with the glitches). Tests: one in `act`. Was: no such event.
 
+- [x] **Red petals** (`docs/events_todo.md`, 263): `red_petals`, stages 3 to 5, outdoors: forty-five
+  seconds of red petals (the game's tinted falling leaves) round them on their client (the
+  `red_petals` hint; off with the glitches). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
