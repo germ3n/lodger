@@ -3234,6 +3234,13 @@ The `[x]` lines above, summed up by day:
   alike), one in `offer` (many open, the menu still holds others). Was: fifty-eight, an event in
   one alone.
 
+- [x] **Seventy-five chains, all drawn again** (owner: "make 75 total chains then but redo all of
+  them with the new rules"): the five the code names kept as they were (the thing, the place, the
+  watcher, the house, the diary), seventy drawn again over the whole catalogue, an event in
+  several where it fits, no two alike, an event only a moment brings only as a first step
+  (`trial_key_left` moved there), every step reachable at the stage of the one before. Tests: the
+  chains' own, the count now 75. Was: a hundred and thirty-four, added in three goes.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
