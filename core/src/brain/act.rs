@@ -20155,4 +20155,15 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn recipe_toast_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("recipe_toast").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "recipe_toast" && *seconds == 1.0),
+            "{made:?}"
+        );
+    }
 }

@@ -7417,6 +7417,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TitleYourName,
         false,
     ),
+    // docs/events_todo.md, 235: the game's own toast pops up, new recipes unlocked, and the thing unlocked is their own head, named "you".
+    row(
+        "recipe_toast",
+        3,
+        5,
+        &[TargetAwake],
+        1.0,
+        3,
+        Half,
+        Action::Hint("recipe_toast", 1.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8582,6 +8594,7 @@ impl Event {
             "fireflies_go_out" => "put out the fireflies near them one by one",
             "trial_key_left" => "leave a trial key on their doorstep",
             "title_your_name" => "fill their screen with their own name a second",
+            "recipe_toast" => "pop up a recipe toast for them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

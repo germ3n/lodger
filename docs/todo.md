@@ -2805,6 +2805,11 @@ The `[x]` lines above, summed up by day:
   awake at night: their own name as a title over their screen, dark red, a second (`game_message`'s
   `title`, ABI 56; off with the glitches). Tests: one in `act`. Was: no such event.
 
+- [x] **A recipe for you** (`docs/events_todo.md`, 235): `recipe_toast`, stages 3 to 5, awake: the
+  game's recipe toast shown on their client, the recipe's thing a player head with their own face
+  named "you" (the client's `recipe_toast` hint; off with the glitches). Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

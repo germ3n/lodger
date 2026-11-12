@@ -148,6 +148,7 @@ As little as possible, because the mod is about not knowing:
   `menu_freaks` (armed: the next time the pause menu opens its buttons shake and settle, the first reading `stay` a moment),
   `footprints` (the prints round the house, `x,y,z,yaw` each, `;` between, dark dust on the ground under each within 24 blocks),
   `sound_warp` (every sound slowed, in a hall's echo, muffled or broken a while, through OpenAL's effects; `slow`, `hall`, `muffled`, `broken`),
+  `recipe_toast` (the game's recipe toast, the thing unlocked their own head named `you`),
   `eyes_open` (lying in bed, the game's fade to sleep held off: sent by the host with `choke`
   itself, not by the mind, so `events.glitches` never holds it back);
 - whether this player is the target, so a witness's client drops sounds and figures aimed at

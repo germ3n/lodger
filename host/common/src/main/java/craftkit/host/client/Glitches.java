@@ -355,6 +355,18 @@ public final class Glitches {
 						minecraft.gui.toastManager().addToast(new net.minecraft.client.gui.components.toasts.AdvancementToast(holder));
 					}
 				});
+				// The game's own recipe toast, the thing unlocked their own head named "you" (ABI 56).
+				case "recipe_toast" -> once(active, () -> {
+					var head = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.PLAYER_HEAD);
+					head.set(net.minecraft.core.component.DataComponents.PROFILE,
+							net.minecraft.world.item.component.ResolvableProfile.createResolved(minecraft.player.getGameProfile()));
+					head.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("you"));
+					var display = new net.minecraft.world.item.crafting.display.ShapelessCraftingRecipeDisplay(java.util.List.of(),
+							new net.minecraft.world.item.crafting.display.SlotDisplay.ItemStackSlotDisplay(
+									net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(head)),
+							new net.minecraft.world.item.crafting.display.SlotDisplay.ItemSlotDisplay(net.minecraft.world.item.Items.CRAFTING_TABLE));
+					net.minecraft.client.gui.components.toasts.RecipeToast.addOrUpdate(minecraft.gui.toastManager(), display);
+				});
 				case "silence" -> {
 					minecraft.getSoundManager().stop(null, SoundSource.AMBIENT);
 					minecraft.getSoundManager().stop(null, SoundSource.WEATHER);
