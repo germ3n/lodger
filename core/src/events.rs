@@ -269,6 +269,8 @@ pub enum Need {
     Dusk,
     /// No village within 160 blocks of the home.
     NoVillageNear,
+    /// A pressure plate, button or lever of theirs at the home.
+    RedstoneAtHome,
 }
 
 impl Need {
@@ -349,6 +351,7 @@ impl Need {
                 | Need::EnteringVillage
                 | Need::Dusk
                 | Need::NoVillageNear
+                | Need::RedstoneAtHome
         )
     }
 
@@ -475,6 +478,7 @@ impl Need {
             Need::EnteringVillage => "the target is not walking into a village".to_string(),
             Need::Dusk => "not dusk".to_string(),
             Need::NoVillageNear => "a village is near the home".to_string(),
+            Need::RedstoneAtHome => "no plate, button or lever of theirs at the home".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -1107,6 +1111,8 @@ pub enum Action {
     VillagerFleesIn,
     /// Every sound they hear goes wrong a while, one way of four.
     SoundWarp,
+    /// Their redstone by the house dead a while: plates, buttons and levers power nothing.
+    DeadRedstone,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4904,6 +4910,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 107 (owner's): "their pressure plates dont work, or like redstone
+    // doesnt fire".
+    row(
+        "dead_redstone",
+        3,
+        5,
+        &[Home, RedstoneAtHome],
+        2.0,
+        3,
+        Full,
+        Action::DeadRedstone,
+        false,
+    ),
     // docs/events_todo.md, 106 (owner's): "sound distortion effects, like DSP".
     row(
         "sound_warp",
@@ -6203,6 +6222,7 @@ impl Event {
             | Action::ItsBanner
             | Action::BlazedTrees
             | Action::TreesCloseBehind
+            | Action::DeadRedstone
             | Action::TreeComesDown
             | Action::CirclesATree
             | Action::PathThroughTheTrees
@@ -6350,6 +6370,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "dead_redstone" => "make their redstone by the house dead a while",
             "sound_warp" => "make every sound they hear go wrong a while",
             "villager_flees_in" => "send a villager banging at their door, to run in and die",
             "creeper_behind" => {

@@ -239,6 +239,7 @@ public final class Temporaries {
 	public void tick(MinecraftServer server) {
 		tick++;
 		tickCircling();
+		DeadRedstone.tick(server);
 		tickFleeing();
 		for (Entity entity : due.due(tick)) {
 			active.remove(entity);

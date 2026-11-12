@@ -127,6 +127,10 @@ public final class Executors {
 				case "snap_branch" -> snapBranch(level, command, id, context);
 				case "fell_tree" -> fellTree(level, command, id, context);
 				case "panic" -> panic(level, command, id, context);
+				case "dead_redstone" -> {
+					DeadRedstone.hold(level, blockPos(command.getAsJsonArray("min")), blockPos(command.getAsJsonArray("max")), command.get("seconds").getAsFloat());
+					yield report(id, true, "");
+				}
 				case "villager_flees_in" -> {
 					JsonArray out = command.getAsJsonArray("outside");
 					JsonArray in = command.getAsJsonArray("inside");

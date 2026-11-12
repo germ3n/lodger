@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // A plate, button or lever of theirs at the home.
+        Action::DeadRedstone => redstone_at_home(memory),
         // At them.
         Action::SoundWarp => Some(block_of(memory.last.pos)),
         // The door they use.
@@ -1803,6 +1805,20 @@ const TREE_FIGURE: u32 = 63;
 /// The figure drawn to their light (`drawn_to_the_light`), and how far off it starts.
 const DRAWN_FIGURE: u32 = 62;
 const DRAWN_FROM: f64 = 45.0;
+/// A pressure plate, button or lever they placed at the home (`dead_redstone`), within sixteen
+/// blocks of its middle.
+pub(crate) fn redstone_at_home(memory: &Memory) -> Option<BlockPos> {
+    let home = memory.home.as_ref()?;
+    ["pressure_plate", "button", "lever"]
+        .iter()
+        .find_map(|kind| {
+            memory
+                .fixtures(kind)
+                .map(|f| f.pos)
+                .find(|p| distance(*p, home.center) <= 16.0)
+        })
+}
+
 /// The wall block that bursts (`wall_bursts`): one they placed, two to six blocks from them, at
 /// their feet's height or a block over, a building block, not glass; with its id.
 fn bursting_wall(memory: &Memory) -> Option<(BlockPos, &str)> {
@@ -6488,6 +6504,24 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Every plate, button and lever of the house dead a minute and a half: they press, click
+        // and flip, and nothing opens, lights or moves.
+        Action::DeadRedstone => memory
+            .home
+            .as_ref()
+            .map(|home| {
+                let c = home.center;
+                vec![(
+                    Command::DeadRedstone {
+                        id: ids(),
+                        min: [c[0] - 16, home.floor_y - 6, c[2] - 16],
+                        max: [c[0] + 16, home.floor_y + 10, c[2] + 16],
+                        seconds: 90.0,
+                    },
+                    0,
+                )]
             })
             .unwrap_or_default(),
         // Every sound they hear wrong half a minute to a minute, a way of four, by the time.
@@ -15085,5 +15119,30 @@ mod tests {
         ways.sort();
         ways.dedup();
         assert_eq!(ways.len(), 4, "each way in turn: {ways:?}");
+    }
+
+    #[test]
+    fn their_redstone_by_the_house_goes_dead_a_while() {
+        let mut memory = rich_memory();
+        memory
+            .fixtures
+            .retain(|f| !["pressure_plate", "button", "lever"].contains(&f.kind.as_str()));
+        let event = find("dead_redstone").unwrap();
+        assert_eq!(
+            place(event, &memory, &mut Rng::new(1)),
+            None,
+            "no redstone, nothing to kill"
+        );
+        memory.fixtures.push(crate::memory::Fixture {
+            kind: "button".to_string(),
+            pos: [2, 65, 0],
+        });
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, Some([2, 65, 0]));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::DeadRedstone { min, max, seconds, .. }, 0)]
+            if min[0] <= 2 && max[0] >= 2 && *seconds > 0.0)
+        );
     }
 }

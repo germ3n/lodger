@@ -2077,6 +2077,11 @@ The `[x]` lines above, summed up by day:
   without EFX keeps the slowed way). `creeper_behind` muffles their hearing after its bang. Tests:
   `SoundWarpTest`, one in `act`. Was: no such event.
 
+- [x] **Dead redstone** (`docs/events_todo.md`, 107, owner's): `dead_redstone`, stages 3 to 5: a minute
+  and a half of every plate, button and lever by the house giving no power (`dead_redstone`, ABI 54:
+  `DeadRedstone.java` and the signal mixins on the three, `ownSignal` and `getDirectSignal`; their
+  neighbours told as it begins and ends). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

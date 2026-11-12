@@ -2,6 +2,11 @@
 	"required": true,
 	"package": "craftkit.host.mixin",
 	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"ButtonSignalMixin",
+		"LeverSignalMixin",
+		"PressurePlateSignalMixin"
+	],
 	"client": [
 		"ChannelMixin",
 		"CompassAngleStateMixin",

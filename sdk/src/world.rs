@@ -633,6 +633,15 @@ pub enum Command {
         most: u32,
         keep: String,
     },
+    /// Every pressure plate, button and lever between `min` and `max` gives no power for
+    /// `seconds` (five minutes at most): it still presses, clicks and flips; what it powers is
+    /// told at once, and again after. ABI 54.
+    DeadRedstone {
+        id: u64,
+        min: BlockPos,
+        max: BlockPos,
+        seconds: f32,
+    },
     /// A villager out of nowhere at `outside`, banging on the door at `door` as if something
     /// were after it; the door opens, it runs in, and at `inside` it drops dead: no one's to
     /// blame, nothing dropped. The door is left open. ABI 54.
@@ -1476,6 +1485,7 @@ impl Command {
             | Command::Circle { id, .. }
             | Command::FakeCreeper { id, .. }
             | Command::VillagerFleesIn { id, .. }
+            | Command::DeadRedstone { id, .. }
             | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }

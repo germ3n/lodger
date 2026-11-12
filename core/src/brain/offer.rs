@@ -188,6 +188,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::Noon => (5_000..7_000).contains(&now.day_time),
         Need::Dusk => (11_500..13_500).contains(&now.day_time),
         // The surroundings read 96 blocks round the home: a village in them is near.
+        Need::RedstoneAtHome => crate::brain::act::redstone_at_home(memory).is_some(),
         Need::NoVillageNear => memory.surroundings.is_some() && memory.feature("village").is_none(),
         Need::FieldWord => memory
             .field_word()
