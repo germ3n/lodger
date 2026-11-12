@@ -210,3 +210,115 @@ scream, a ghast's cry, its lying down in their bed) were replaced. Twenty-seven 
 | 163 | `nightmare` | 5 | **Built.** As they wake, a single frame of the figure's face fills their screen. | Waking. | A client hint drawing the figure's face over the wake. | M |
 | 164 | `static` | 4 | **Built.** A second of static over their screen, a hiss with it, then nothing. | The target awake. | A client hint of noise drawn on the screen, a hiss sound. | M |
 | 165 | `elder_face` | 5 | **Built.** Far from any ocean, the elder guardian's face fills their screen with its cry, no curse after. | The target awake. | The elder guardian's particle and sound to them alone. | S |
+
+## A hundred more
+
+The owner, once 116 to 165 were built: "can you generate like 100 more events? make sure they dont
+overlap with others, no duplicates". Checked against the catalogue (470 events), every earlier row
+here and every name in `docs/ideas.md`, by name and by what happens: none repeats one of them.
+Leaning on what the game added lately (the creaking, pale moss, copper golems, the happy ghast,
+trial chambers, the crafter, shelves, firefly bushes, eyeblossoms), on what they do with their
+things, and on the screen. Not built yet.
+
+| # | Event | Stage | What happens | Needs | Takes | Size |
+| --- | --- | --- | --- | --- | --- | --- |
+| 166 | `sigh_at_the_door` | 3 | As they open their door from inside, a long sigh just outside it; no one there. | A home with a door, the target indoors. | `sound` (a breath, slowed) one block out from the door. | S |
+| 167 | `humming_ahead` | 3 | In a tunnel, a few notes hummed somewhere ahead, a tune, then quiet when they stop to listen. | Underground, walking. | `sound` (villager hum, pitched low) ahead of them in the tunnel. | S |
+| 168 | `steps_counted` | 4 | In the dark, each step they take plays a note one higher, eight notes, then nothing, as if something counted them. | Night or underground, walking. | The movement's steps; `sound` (note block harp) a step higher each. | M |
+| 169 | `cart_overhead` | 3 | Underground, a minecart rolls across the rock over their head and away; there are no rails. | Underground. | `sound` (minecart rolling) moving along above them. | S |
+| 170 | `ram_on_the_wall` | 4 | At night, three heavy thuds against an outside wall, as of a goat ramming it, then nothing. | Indoors at night, a home. | `sound` (goat ram impact) at a wall of theirs, three times, spaced. | S |
+| 171 | `bell_underwater` | 4 | Swimming, a bell rings once below them, muffled by the water. | The target swimming. | `sound` (bell, low, quiet) under them. | S |
+| 172 | `bark_from_home` | 3 | Out with their dog, a dog barks from inside their empty house. | A tamed wolf with them, near home, the target outdoors. | `sound` (wolf bark) inside the house. | S |
+| 173 | `hoofbeats_circling` | 4 | At night, hoofbeats gallop a loop around the house and away; no horse. | Indoors at night, a home. | `sound` (horse gallop steps) at points round the walls in turn. | S |
+| 174 | `snipping_in_the_dark` | 3 | Near their sheep at night, the snip of shears, again and again; the sheep keep their wool. | Sheep of theirs near, night. | `sound` (shears) beside the sheep. | S |
+| 175 | `eating_in_the_wall` | 4 | Chewing, wet and slow, from inside a wall of the house. | Indoors. | `sound` (eating, pitched low) at their nearest wall block. | S |
+| 176 | `ominous_hum` | 4 | From under the floor, the low hum of a trial spawner turning ominous; there is no spawner. | A home, the target at home. | `sound` (trial spawner ominous activate) below the floor. | S |
+| 177 | `vault_opens_by_the_bed` | 4 | Lying down, the clunk and chime of a vault unlocking beside the bed. | In bed. | `sound` (vault unlock) at the bed's side. | S |
+| 178 | `creaking_behind` | 5 | In the woods, the groan and steps of a creaking behind them, coming only while they do not look. | In the woods, walking. | `sound` (creaking step and ambient) behind them, nearer while unwatched. | M |
+| 179 | `bulbs_clicking` | 3 | In a dark room of the house, the click of copper bulbs switching, one after another; there are none. | Indoors. | `sound` (copper bulb toggle) at points in the room. | S |
+| 180 | `gust_from_nowhere` | 4 | A wind charge's burst right beside them and a soft push, as from a breeze no one sent. | The target awake. | `sound` (wind charge burst), particles, `push_player` gently. | S |
+| 181 | `digging_under_the_floor` | 4 | Under the floor, the snuffle and scrape of something digging, as a sniffer digs; it stops when they kneel. | Indoors. | `sound` (sniffer digging) under them, stopped when they crouch. | S |
+| 182 | `rustle_in_the_pack` | 3 | As they open their inventory, something rustles in it, as a bundle does, though they carry none. | The target awake. | A client hint on opening the inventory: the bundle's insert sound. | S |
+| 183 | `wings_in_the_room` | 4 | Awake at night, wings beat inside the room, close, circling, and stop. | Indoors at night, awake. | `sound` (phantom flap) moving round them. | S |
+| 184 | `lava_in_the_wall` | 4 | From inside a stone wall of theirs, the pop and gloop of lava; the wall is cold. | Indoors or underground, stone walls of theirs. | `sound` (lava pop) at a stone wall block. | S |
+| 185 | `crossbow_click` | 4 | Behind them, the click of a crossbow being loaded; nothing follows. | The target awake. | `sound` (crossbow loading end) behind them. | S |
+| 186 | `blow_on_the_shield` | 4 | With their shield raised, a hit lands on it, the block's sound and a shove back; nothing is there. | Holding a shield up. | The use trigger; `sound` (shield block) and a small push. | S |
+| 187 | `teleport_beside` | 4 | Twice, the warp of a chorus fruit right beside them, as if something kept stepping closer. | The target awake. | `sound` (chorus fruit teleport) beside them, then nearer. | S |
+| 188 | `sweeping_next_room` | 3 | From the next room, the soft strokes of a brush sweeping, as at a dig; it stops when they come in. | Indoors, a home of more than one room. | `sound` (brush) at a room's anchor, stopped as they near. | S |
+| 189 | `pot_shatters` | 3 | In the house, a decorated pot shatters loudly; nothing of theirs is broken. | Indoors. | `sound` (decorated pot shatter) in another part of the house. | S |
+| 190 | `spyglass_figure` | 4 | Looking through a spyglass, far off on the horizon, the figure looks back; lower it and it is not there. | Using a spyglass outdoors. | A client hint: the figure drawn only while they scope. | M |
+| 191 | `recovery_compass_lies` | 3 | Their recovery compass points not at where they died but at its place. | Holding a recovery compass. | A hook on the recovery compass's target, as `compass_points`. | S |
+| 192 | `boss_bar_it` | 5 | A boss bar at the top of the screen reads only "it", filling slowly over a minute, then gone. | The target awake. | A host boss bar shown to them alone for a while. | M |
+| 193 | `copper_golem_at_door` | 4 | At night a copper golem stands still outside their door, facing in, and is gone at dawn. | A home with a door, night. | `place_entity` a copper golem for a while, held facing the door. | S |
+| 194 | `creaking_in_the_field` | 5 | A creaking stands in their field at night, frozen while watched, a step closer each time they look away; it never strikes, and is gone at dawn. | A field of theirs, night. | `place_entity` a creaking for a while, spared, nothing dropped. | M |
+| 195 | `pale_moss_creeps` | 4 | Pale moss creeps across their floor overnight, a few blocks a night, from one corner. | A home, the target away or asleep. | `set_block` pale moss carpet into air on the floor, more each night. | S |
+| 196 | `sand_gives_back` | 4 | Near the house, a patch of suspicious sand; brushed, it gives up the thing it took from them. | Something of theirs held by it, sand near the home. | `set_block` suspicious sand holding the kept stack. | M |
+| 197 | `pot_of_returns` | 4 | A decorated pot stands at its place; broken, it gives back what it took. | Something of theirs held by it. | `set_block` a decorated pot holding the kept stack. | M |
+| 198 | `crafter_clicks` | 3 | Their crafter clicks and crafts once by itself, its item dropped out of it. | A crafter of theirs with a recipe in it. | A redstone pulse to their crafter. | S |
+| 199 | `happy_ghast_overhead` | 4 | At dusk a happy ghast drifts silently over the house, the figure riding it, and away. | Dusk, a home, the target outdoors. | `figure` riding a happy ghast placed for a while. | M |
+| 200 | `window_tinted` | 4 | Overnight one window of the house is tinted glass: from inside, night outside is black. | A home with a pane window, the target away or asleep. | `swap_block` a pane to tinted glass for a day, then back. | S |
+| 201 | `prints_on_the_ceiling` | 4 | Dark footprints walk across the ceiling of their room, from the wall to over the bed. | Indoors. | Decals drawn as the footprints are, upside down on the ceiling. | M |
+| 202 | `dripleaf_steps` | 3 | The big dripleaves by their pond tip one after another, as if something walked across them. | Big dripleaf near them. | Their tilt set in turn, the step sound with each. | S |
+| 203 | `axolotls_play_dead` | 3 | Every axolotl in their water floats still, playing dead, all at once, a while. | Axolotls of theirs near. | The axolotls held still for a while. | S |
+| 204 | `sculk_creeps` | 5 | Sculk veins spread over the walls of their basement overnight, a little more each night. | A home with a room below ground, the target away or asleep. | `set_block` sculk veins on their walls, into air, more each night. | S |
+| 205 | `cracks_in_the_wall` | 4 | Cracks spread across a block of their wall, as if something were breaking it from the other side, then vanish; the wall is whole. | Indoors. | The block-breaking cracks sent to their client alone, growing, then cleared. | M |
+| 206 | `anchor_charged` | 5 | At its place, a respawn anchor, fully charged, glowing in the dark. | Its place, the target away or asleep. | `set_block` a charged respawn anchor at its place. | S |
+| 207 | `dripstone_falls` | 4 | In a cave, pointed dripstone falls from the ceiling right beside them and shatters; it never hits. | Underground. | A falling dripstone block a block off, spared. | S |
+| 208 | `wither_rose_in_pot` | 4 | One of their potted flowers is a wither rose in the morning. | A potted flower of theirs. | `swap_block` the pot's flower to a wither rose. | S |
+| 209 | `mushrooms_in_corners` | 3 | Overnight, mushrooms grow in the dark corners of their house, as in a house left empty for years. | A home, the target away or asleep. | `set_block` mushrooms in dark floor corners, into air. | S |
+| 210 | `shulker_lid_peeks` | 4 | Their shulker box opens a crack by itself and shuts again when they look at it. | A shulker box of theirs. | Its lid opened a moment, shut once looked at. | S |
+| 211 | `sign_with_coords` | 4 | A sign by their door with three numbers on it: where they sleep. | A home with a bed and a door. | `sign_at` by the door with the bed's coordinates. | S |
+| 212 | `trident_planted` | 4 | At its place, a trident stands upright in the ground, as if thrown from the sky. | Its place. | A trident entity stuck in the ground there, never picked up, gone in a day. | S |
+| 213 | `slam_crater` | 5 | At night a mace's smash booms near the house; in the morning there is a small bowl dug in the ground there. | A home, night. | `sound` (mace smash), blocks of natural ground made air in a shallow bowl. | M |
+| 214 | `one_step_more` | 4 | Their staircase has one more step at the bottom each night, into the floor. | Stairs of theirs indoors, the target away or asleep. | `set_block` a stair below the last, into air, a night at a time. | S |
+| 215 | `room_closes_in` | 5 | Overnight one inside wall of a room is a block further in, the room smaller. | A home, their building, the target away or asleep. | Their wall's blocks copied a block inward, from its own store. | M |
+| 216 | `trapdoor_to_nothing` | 4 | A new trapdoor in their floor; open it and there is a pit two deep with a torch at the bottom. | A home, the target away or asleep. | A trapdoor set into their floor over a dug pit. | S |
+| 217 | `bed_fenced` | 4 | In the morning, a ring of fences stands around their bed, a gap only where they lie. | A home with a bed, the target asleep. | `place_blueprint` fences round the bed, into air, gone in a day. | S |
+| 218 | `tools_laid_out` | 4 | Their tools from the chest lie on the floor in a neat row, as if laid out for inspection. | Tools in a chest of theirs. | `take_item` each, `drop_item` in a row, kept so they never despawn. | M |
+| 219 | `dripstone_in_tunnel` | 4 | Overnight a column of dripstone grows across their tunnel, floor to ceiling. | A tunnel of theirs, the target away. | `set_block` dripstone into air across the tunnel. | S |
+| 220 | `skull_in_the_tunnel` | 4 | A skeleton skull set into the wall of their tunnel, facing them as they come. | A tunnel of theirs. | `set_block` a skeleton skull in the tunnel wall, facing back along it. | S |
+| 221 | `copper_ages` | 3 | Their copper blocks are a stage more weathered in the morning, as if years had passed. | Copper blocks of theirs, the target away or asleep. | `swap_block` each copper block to its next oxidation. | S |
+| 222 | `pale_horse_in_your_pen` | 4 | One night a skeleton horse stands among the animals in their pen, still, facing the house; gone at dawn. | A pen of theirs, night. | `place_entity` a skeleton horse for a while, held facing the house. | S |
+| 223 | `fangs_in_a_line` | 5 | A line of evoker fangs snaps up out of the ground toward them and stops a block short. | Outdoors. | Evoker fangs placed in a line toward them, spared, the last short. | M |
+| 224 | `beam_from_the_water` | 5 | Near water, a guardian's beam lines from the water to them, charging; it never fires. | Water near them. | A client hint drawing a guardian beam from the water to them. | M |
+| 225 | `bucket_fish_changed` | 3 | The fish in their bucket is another kind in the morning. | A fish bucket of theirs. | The bucket's fish variant changed in their chest. | S |
+| 226 | `head_on_the_pillow` | 5 | In the morning, a head with their own face rests on their pillow. | A home with a bed, the target away. | `set_block` a player head with their skin on the bed's head end, gone in a day. | S |
+| 227 | `empty_lead` | 3 | A lead is knotted on a fence post at its place, nothing on the other end. | Its place, a fence near it. | A leash knot on a fence post, gone in a day. | S |
+| 228 | `dried_ghast_on_doorstep` | 4 | A dried ghast sits on their doorstep, weeping. | A home with a door, the target away. | `set_block` a dried ghast before the door. | S |
+| 229 | `eyeblossoms_open` | 3 | By day, the eyeblossoms near them open their orange eyes, all at once, looking. | Eyeblossoms near them, day. | Their open state set, closed again a minute later. | S |
+| 230 | `golem_statue_turns` | 4 | A copper golem statue stands by their door, and each time they look away it has turned to face them. | A home with a door. | A copper golem statue placed, turned toward them when unwatched. | M |
+| 231 | `shelf_shuffled` | 3 | The things on their shelves sit in another order in the morning. | A shelf of theirs, the target away or asleep. | The shelf's slots rearranged. | S |
+| 232 | `fireflies_go_out` | 3 | At night, the firefly bushes near them go dark one by one toward them, as if something passed. | Firefly bushes near them, night. | Each bush hidden a moment in turn, as `cave_torches_flicker`. | S |
+| 233 | `trial_key_left` | 3 | A trial key lies on their doorstep in the morning. | A home with a door. | `drop_item` a trial key at the door, kept so it never despawns. | S |
+| 234 | `title_your_name` | 4 | Their own name fills the screen in big letters for a second, at night. | The target awake, night. | A title sent to them alone. | S |
+| 235 | `recipe_toast` | 3 | A recipe toast pops up for an item called "you". | The target awake. | A client hint showing a recipe toast with that name. | S |
+| 236 | `count_shows_zero` | 3 | For a moment every stack in their hotbar shows a count of 0. | The target awake. | A client hint over the hotbar's counts. | S |
+| 237 | `slot_barred` | 4 | One slot of their inventory shows a barrier a while; nothing can go in it. | Opening the inventory. | A client hint drawing a barrier over one empty slot. | S |
+| 238 | `held_name_wrong` | 3 | Switching item, the name that pops up over the hotbar reads "its" a moment. | The target awake, switching item. | A client hint on the held item's name. | S |
+| 239 | `title_splash` | 4 | The title screen's yellow splash text reads a line about them: "we watched you sleep". | The game's title screen, after a stay has begun. | A hook on the splash text while the hint is armed. | M |
+| 240 | `enchant_six` | 4 | At the enchanting table, the three offers cost 6, 6 and 6, and their glyphs read the same. | Using an enchanting table. | A client hint on the enchanting screen's costs. | S |
+| 241 | `compass_spins` | 3 | Their compass spins as it does in the Nether, a minute, here in the overworld. | Holding a compass. | A hook on the compass's angle, spinning. | S |
+| 242 | `figure_digging` | 4 | Far off at its place the figure digs, the sound of a shovel carrying; when they get there, a fresh hole. | Its place, the target outdoors. | `figure` swinging at its place, `sound` of digging, a hole dug as they come. | M |
+| 243 | `figure_bows` | 4 | Far off, the figure bows to them, slowly, and straightens, and is gone. | The target outdoors. | `figure` crouching and standing once, then gone. | S |
+| 244 | `climbing_the_house` | 5 | At night, the figure is on the outside wall of the house, climbing it like a spider; gone once looked at. | Indoors at night, a home with a window. | `figure` on the wall outside a window, `once_seen`. | M |
+| 245 | `figure_at_the_lectern` | 4 | Through the window, the figure stands at their lectern, reading their book. | A lectern of theirs with a book, the target outside the house. | `figure` at the lectern, facing it, gone when they come in. | M |
+| 246 | `figure_in_your_armour` | 4 | The figure far off wears exactly the armour they wear, the enchantment's shimmer and all. | Wearing armour, outdoors. | `figure` wearing their armour's pieces. | S |
+| 247 | `on_the_peak` | 4 | At sunset, the figure stands on the top of the nearest mountain, against the sky. | Dusk, outdoors, high ground near. | `figure` on the highest ground within reach. | S |
+| 248 | `cattle_turn_away` | 3 | All their cows turn their backs to them at once. | Cows of theirs near. | The cows held facing away from them a while. | S |
+| 249 | `horse_balks` | 4 | Their horse will not move a few seconds, staring at nothing ahead. | Riding a horse. | The horse held still, facing ahead. | S |
+| 250 | `cat_gift` | 3 | Their cat lies by their bed in the morning with a gift, as cats do: something of theirs, from their chest. | A cat of theirs, a chest, the target asleep. | `take_item`, `drop_item` by the bed, kept. | S |
+| 251 | `armadillos_curl` | 3 | Every armadillo near them curls up at once, as if something passed that they feared. | Armadillos near them. | The armadillos made to roll up. | S |
+| 252 | `sniffer_at_its_place` | 4 | A sniffer snuffles at its place and digs up a seed, then is gone. | Its place. | `place_entity` a sniffer for a while at its place. | S |
+| 253 | `refuses_food` | 3 | Feeding one of their animals, it turns its head away and will not eat, once. | Feeding an animal of theirs. | The animal's feeding refused once, it turned away. | S |
+| 254 | `the_child_stares` | 4 | An animal born to theirs stares at them wherever they go while it is young. | Animals of theirs bred. | The baby held facing them while it grows. | S |
+| 255 | `late_drop` | 3 | The ore they mine drops its item a moment late, as if held. | Mining. | The break's drop held a beat before it lands. | S |
+| 256 | `bundle_gains` | 3 | Their bundle holds one thing more than they put in it: a pebble of cobblestone. | A bundle of theirs. | One cobblestone added to their bundle. | S |
+| 257 | `leather_dyed` | 4 | Their leather armour in the chest is dyed black overnight. | Leather armour in a chest of theirs. | Its dye colour set black. | S |
+| 258 | `ore_counted` | 4 | Each diamond they mine, a soft chime, one more each time, as if counted. | Mining diamonds. | The break trigger; a chime, pitched one higher each. | S |
+| 259 | `snowball_comes_back` | 3 | A snowball they throw into the dark comes flying back. | Throwing a snowball at night. | The throw trigger; `snowball` thrown back from where theirs fell. | S |
+| 260 | `arrow_returned` | 4 | An arrow they shoot into the dark lands at their feet a moment later, their own. | Shooting a bow at night. | The shot's arrow picked up and dropped at their feet, theirs again. | S |
+| 261 | `edge_tug` | 4 | Crouched at a ledge's edge, a tug toward the drop, a little; never over. | Crouching at an edge. | A small push toward the edge, held by their crouch. | S |
+| 262 | `ash_on_the_wind` | 4 | Ash drifts down around them out of a clear sky, for them alone. | Outdoors. | A client hint of ash particles around them. | S |
+| 263 | `red_petals` | 3 | Petals fall around them, red, where there are no trees. | Outdoors. | A client hint of red petal particles around them. | S |
+| 264 | `sculk_trail` | 5 | Sculk charge crawls along the floor from the door to their bed. | A home with a bed and a door, the target indoors. | A client hint of sculk charge particles along the way. | S |
+| 265 | `false_glint` | 3 | The tool in their hand shimmers as if enchanted, a while; it is not. | Holding a tool. | A client hint drawing the glint on their held item. | S |
