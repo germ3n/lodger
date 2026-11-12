@@ -2655,6 +2655,13 @@ The `[x]` lines above, summed up by day:
   colourless rain texture taking the tint cleanly; otherwise theirs goes on as it was. Snow stays
   white.
 
+- [x] **The mirroring figure moves smoothly** (owner: "figure_mirror moves chopily"). Was: a
+  quarter second at a time it was taken away and sent again where the player's move put it,
+  which the client draws as a jump, and moves under a fifth of a block were never sent. Now it
+  moves every tick as a move the client eases, facing them, any step over a centimetre sent
+  (`Mirror`, `MirrorTest`), so it walks as they walk; `figure_mirror` and `mirror_in_the_window`
+  both.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

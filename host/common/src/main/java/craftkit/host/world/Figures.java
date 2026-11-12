@@ -362,15 +362,15 @@ public final class Figures {
 						net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
 			}
 
-			// Mirroring: where it was shown, moved as far as the player has moved, a quarter
-			// second at a time.
-			if (figure.mirror && tick % 5 == 0) {
-				Vec3 moved = figure.player.position().subtract(figure.playerAt);
-				Vec3 to = figure.shownAt.add(moved.x, 0, moved.z);
-				if (to.distanceToSqr(figure.at) > 0.04 && figure.player.level() instanceof ServerLevel level) {
-					figure.player.connection.send(new ClientboundRemoveEntitiesPacket(figure.entityId));
-					figure.at = ground(level, new Vec3(to.x, -10_000, to.z));
-					sendEntity(figure);
+			// Mirroring: where it was shown, moved as far as the player has moved, every tick, as
+			// a move the client eases (it was removed and sent again a quarter second at a time,
+			// which jumped).
+			if (figure.mirror && figure.player.level() instanceof ServerLevel level) {
+				Vec3 now = figure.player.position();
+				double[] to = Mirror.to(figure.shownAt.x, figure.shownAt.z, figure.playerAt.x, figure.playerAt.z, now.x, now.z);
+				if (Mirror.moves(figure.at.x, figure.at.z, to[0], to[1])) {
+					figure.at = ground(level, new Vec3(to[0], -10_000, to[1]));
+					faceMoved(figure);
 				}
 			}
 
@@ -989,6 +989,19 @@ public final class Figures {
 				: figure.player.position().subtract(figure.at);
 		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
 		float pitch = way ? 0 : (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
+		figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
+				net.minecraft.world.entity.PositionPath.of(figure.at), yaw, pitch, true));
+		var head = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+		head.writeVarInt(figure.entityId);
+		head.writeByte(net.minecraft.util.Mth.floor(yaw * 256f / 360f));
+		figure.player.connection.send(net.minecraft.network.protocol.game.ClientboundRotateHeadPacket.STREAM_CODEC.decode(head));
+	}
+
+	/** The figure moved to where it is now, facing its player, eased by the client. */
+	private static void faceMoved(Figure figure) {
+		Vec3 to = figure.player.getEyePosition().subtract(figure.at.add(0, 1.62, 0));
+		float yaw = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+		float pitch = (float) -Math.toDegrees(Math.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)));
 		figure.player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(figure.entityId,
 				net.minecraft.world.entity.PositionPath.of(figure.at), yaw, pitch, true));
 		var head = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
