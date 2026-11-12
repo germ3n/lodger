@@ -164,6 +164,7 @@ pub fn hidden_from_view(action: crate::events::Action) -> bool {
             | crate::events::Action::DrawnToTheLight
             | crate::events::Action::TreeToTree
             | crate::events::Action::TheTreeLine
+            | crate::events::Action::AnimalsFleeTheWoods
             | crate::events::Action::LanternInTheWoods
             | crate::events::Action::RidesTheCart
             | crate::events::Action::InTheTreetops

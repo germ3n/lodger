@@ -241,6 +241,50 @@ impl Memory {
     }
 }
 
+/// The animals of the woods and fields that run from what comes: never a pet, a villager or a
+/// golem.
+pub const FLEEING: &[&str] = &[
+    "cow",
+    "pig",
+    "sheep",
+    "chicken",
+    "rabbit",
+    "fox",
+    "wolf",
+    "goat",
+    "horse",
+    "donkey",
+    "llama",
+    "panda",
+    "frog",
+    "armadillo",
+    "camel",
+    "mooshroom",
+];
+
+impl Memory {
+    /// Up to four animals within twenty-four blocks of them that would run: not theirs, not pets.
+    pub fn animals_to_flee(&self) -> Vec<&crate::memory::Creature> {
+        let at = block_of(self.last.pos);
+        let mut near: Vec<&crate::memory::Creature> = self
+            .last
+            .creatures_near
+            .iter()
+            .filter(|c| {
+                FLEEING.contains(&c.kind.as_str())
+                    && !c.pet
+                    && !c.named
+                    && distance(block_of(c.pos), at) <= 24.0
+            })
+            .collect();
+        near.sort_by(|a, b| {
+            distance(block_of(a.pos), at).total_cmp(&distance(block_of(b.pos), at))
+        });
+        near.truncate(4);
+        near
+    }
+}
+
 /// A trail of blazes ahead of them: trunks close to the line straight ahead (within 25 degrees),
 /// each five blocks or more past the last, nearest first, at most `most`.
 pub fn blaze_line(ahead: &[BlockPos], at: Pos, yaw: f32, most: usize) -> Vec<BlockPos> {

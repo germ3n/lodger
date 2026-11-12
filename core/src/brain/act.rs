@@ -378,6 +378,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // Far back among the trees behind them, thirty blocks: where the figure walks.
+        Action::AnimalsFleeTheWoods => (!memory.animals_to_flee().is_empty()).then(|| {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            [
+                at[0] + (yaw.sin() * 30.0).round() as i32,
+                -10_000,
+                at[2] - (yaw.cos() * 30.0).round() as i32,
+            ]
+        }),
         // A trunk beside them ahead, five to nine blocks off.
         Action::TreeComesDown => memory.trunks_ahead(5.0, 9.0).first().copied(),
         // On their trail where they came in, behind them.
@@ -6367,6 +6377,68 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Every animal near them runs past them away from behind, a run, as from something; far
+        // back, a figure walks across among the trees, its back to them, and is gone.
+        Action::AnimalsFleeTheWoods => pos
+            .map(|back| {
+                let at = memory.last.pos;
+                let yaw = (memory.last.yaw as f64).to_radians();
+                let (fx, fz) = (-yaw.sin(), yaw.cos());
+                let mut made: Vec<(Command, u64)> = memory
+                    .animals_to_flee()
+                    .iter()
+                    .enumerate()
+                    .map(|(i, animal)| {
+                        let side = (i as f64 - 1.5) * 3.0;
+                        (
+                            Command::Approach {
+                                id: ids(),
+                                entities: vec![animal.id],
+                                player: target,
+                                stop: 0.0,
+                                seconds: 20.0,
+                                pace: Some(1.8),
+                                then: String::new(),
+                                damage: 0.0,
+                                kept: String::new(),
+                                to: Some([
+                                    at[0] + fx * 24.0 + fz * side,
+                                    -10_000.0,
+                                    at[2] + fz * 24.0 - fx * side,
+                                ]),
+                            },
+                            i as u64 * 6,
+                        )
+                    })
+                    .collect();
+                let from = [
+                    back[0] as f64 + 0.5 - fz * 8.0,
+                    -10_000.0,
+                    back[2] as f64 + 0.5 + fx * 8.0,
+                ];
+                let to = [
+                    back[0] as f64 + 0.5 + fz * 8.0,
+                    -10_000.0,
+                    back[2] as f64 + 0.5 - fx * 8.0,
+                ];
+                let mut shown = figure_shown(ids, memory, target, back, 40.0, false);
+                if let Command::Figure {
+                    held,
+                    walks,
+                    pos,
+                    path,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack::default();
+                    *walks = true;
+                    *pos = from;
+                    *path = vec![from, to];
+                }
+                made.push((shown, 30));
+                made
             })
             .unwrap_or_default(),
         // Down across their way: toward the ground six blocks ahead of them.
@@ -14054,5 +14126,52 @@ mod tests {
                 if *trunk == [3, 64, 6] && toward[2] > 6.0 - 1e-9),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn the_animals_run_out_of_the_woods_past_them_and_a_figure_walks_far_back() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.last.creatures_near = vec![
+            crate::memory::Creature {
+                id: 5,
+                kind: "rabbit".to_string(),
+                pos: [2.5, 64.0, -6.5],
+                ..Default::default()
+            },
+            crate::memory::Creature {
+                id: 6,
+                kind: "wolf".to_string(),
+                pos: [0.5, 64.0, -8.5],
+                pet: true,
+                ..Default::default()
+            },
+        ];
+        let event = find("animals_flee_the_woods").unwrap();
+        let back = place(event, &memory, &mut Rng::new(1)).unwrap();
+        assert!(back[2] <= -29, "far back behind them: {back:?}");
+        let made = commands(
+            event,
+            Some(back),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let runs: Vec<&Command> = made
+            .iter()
+            .map(|(c, _)| c)
+            .filter(|c| matches!(c, Command::Approach { .. }))
+            .collect();
+        assert_eq!(runs.len(), 1, "the rabbit, not their wolf: {made:?}");
+        assert!(
+            matches!(runs[0], Command::Approach { entities, to: Some(to), pace: Some(p), .. }
+            if entities == &vec![5] && to[2] > 20.0 && *p > 1.0)
+        );
+        assert!(made
+            .iter()
+            .any(|(c, _)| matches!(c, Command::Figure { walks: true, .. })));
     }
 }

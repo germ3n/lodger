@@ -1058,6 +1058,8 @@ pub enum Action {
     TreesCloseBehind,
     /// A tree beside them comes down across their way.
     TreeComesDown,
+    /// The animals run out of the woods past them; far back, a figure walking.
+    AnimalsFleeTheWoods,
     /// Their most valuable things, carried and in their chests, up into the sky.
     TakenUp,
     /// What it took up falls out of the sky in front of their door.
@@ -4840,6 +4842,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 89.
+    row(
+        "animals_flee_the_woods",
+        4,
+        5,
+        &[InTheWoods, AnimalsNearTarget],
+        2.0,
+        2,
+        Full,
+        Action::AnimalsFleeTheWoods,
+        false,
+    ),
     // docs/events_todo.md, 88.
     row(
         "tree_comes_down",
@@ -5956,6 +5970,7 @@ impl Event {
             | Action::DrawnToTheLight
             | Action::TreeToTree
             | Action::TheTreeLine
+            | Action::AnimalsFleeTheWoods
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6039,6 +6054,9 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "animals_flee_the_woods" => {
+                "send the animals running out of the woods past them, from something"
+            }
             "tree_comes_down" => "bring a tree down across their way",
             "trees_close_behind" => "grow a tree in the way they came into the woods",
             "the_tree_line" => {

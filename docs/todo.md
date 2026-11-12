@@ -1986,6 +1986,10 @@ The `[x]` lines above, summed up by day:
   blocks, the stump left (`fell_tree`, ABI 54; `Felled.java`, never a log within two blocks of them,
   never one landed on anything but air). Tests: `FelledTest`, one in `act`. Was: no such event.
 
+- [x] **The animals flee the woods** (`docs/events_todo.md`, 89): `animals_flee_the_woods`, stages 4
+  and 5: the animals near them run past them away from behind, and far back a figure walks across
+  (`Memory::animals_to_flee`, never pets or named ones). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
