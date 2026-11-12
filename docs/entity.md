@@ -722,6 +722,7 @@ a dock or bridge), never over anything a player built (see the
 | `vault_opens_by_the_bed` | 4 | Lying down, the clunk and chime of a vault unlocking beside the bed. | The target in bed. |
 | `creaking_behind` | 4 | In the woods, the groan and steps of a creaking behind them, close, gone when they turn. | In the woods, the target walking. |
 | `bulbs_clicking` | 3 | Indoors, the click of copper bulbs switching, one after another round the room; there are none. | The target indoors. |
+| `gust_from_nowhere` | 4 | A wind charge's burst right beside them and a soft push away from it, as from a breeze no one sent; no harm (`push_player`, a nudge). | The target awake. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

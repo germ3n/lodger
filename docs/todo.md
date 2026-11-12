@@ -2502,6 +2502,10 @@ The `[x]` lines above, summed up by day:
 - [x] **Bulbs clicking** (`docs/events_todo.md`, 179): `bulbs_clicking`, stages 3 to 5: indoors, copper bulbs clicking on and off round the room. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **A gust from nowhere** (`docs/events_todo.md`, 180): `gust_from_nowhere`, stages 4 and 5:
+  a wind charge's burst beside them and a soft push away from it. Tests: one in `act`. Was: no
+  such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

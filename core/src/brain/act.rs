@@ -105,6 +105,9 @@ fn craftkit_yaw(dx: f64, dz: f64) -> f32 {
 /// A body lying with its arms out, its head at the spot: the cells its shape takes off the snow.
 const SNOW_BODY: &[[i32; 2]] = &[[0, 0], [0, 1], [0, 2], [-1, 1], [1, 1], [-1, 3], [1, 3]];
 
+/// How hard `gust_from_nowhere` pushes them, blocks a tick: a nudge, never a fall.
+const GUST_PUSH: f64 = 0.35;
+
 /// The notes `steps_counted` counts in: a major scale up an octave, from the harp's lowest.
 const STEPS_COUNTED: [f32; 8] = [0.5, 0.561, 0.63, 0.667, 0.749, 0.841, 0.944, 1.0];
 
@@ -2569,6 +2572,41 @@ pub fn commands(
                     .collect()
             })
             .unwrap_or_default();
+    }
+    // A gust from nowhere (`gust_from_nowhere`): a wind charge's burst beside them and a soft
+    // push away from it, as from a breeze no one sent; no harm.
+    if event.id == "gust_from_nowhere" {
+        let at = memory.last.pos;
+        let side = facing_way(memory.last.yaw + 90.0);
+        let burst = [
+            at[0] + side[0] as f64 * 1.5,
+            at[1] + 1.0,
+            at[2] + side[1] as f64 * 1.5,
+        ];
+        return vec![
+            (
+                sound_at(
+                    ids,
+                    target,
+                    "minecraft:entity.wind_charge.wind_burst",
+                    burst,
+                    0.9,
+                ),
+                0,
+            ),
+            (
+                Command::PushPlayer {
+                    id: ids(),
+                    player: target,
+                    velocity: [
+                        -side[0] as f64 * GUST_PUSH,
+                        0.15,
+                        -side[1] as f64 * GUST_PUSH,
+                    ],
+                },
+                1,
+            ),
+        ];
     }
     // Their steps counted (`steps_counted`): a note behind them a step's time apart, each one
     // higher up the scale, eight, as if something counted them, then nothing.
@@ -17457,6 +17495,39 @@ mod tests {
             made.iter()
                 .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_gust_bursts_beside_them_and_pushes_them_softly_away() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("gust_from_nowhere").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let Some((Command::PlaySound { pos: burst, .. }, 0)) = made.first() else {
+            panic!("{made:?}");
+        };
+        let Some((Command::PushPlayer { velocity, .. }, _)) = made.get(1) else {
+            panic!("{made:?}");
+        };
+        // Away from the burst, and only a nudge.
+        let toward = [burst[0] - 0.5, burst[2] - 0.5];
+        assert!(
+            velocity[0] * toward[0] + velocity[2] * toward[1] < 0.0,
+            "away: {velocity:?} from {burst:?}"
+        );
+        assert!(
+            velocity.iter().all(|v| v.abs() <= 0.5),
+            "a nudge: {velocity:?}"
         );
     }
 }
