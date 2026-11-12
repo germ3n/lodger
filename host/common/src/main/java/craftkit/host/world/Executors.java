@@ -1008,6 +1008,36 @@ public final class Executors {
 	 * side), the first column whose ground stands eight or more over them with the one before it
 	 * lower, a face of rock between; its top, for a `sunk` figure. Null for none.
 	 */
+	/**
+	 * The top of the highest ground 24 to 64 blocks from the player, looked over every four
+	 * blocks, at least twelve over their feet (ABI 56): a mountain's peak against the sky. Null
+	 * with none so high.
+	 */
+	private static Vec3 peakNear(ServerLevel level, ServerPlayer player) {
+		double feet = player.getY();
+		Vec3 best = null;
+		int bestTop = (int) feet + 11;
+		for (int dx = -64; dx <= 64; dx += 4) {
+			for (int dz = -64; dz <= 64; dz += 4) {
+				double far = Math.sqrt(dx * dx + dz * dz);
+				if (far < 24 || far > 64) {
+					continue;
+				}
+				BlockPos column = BlockPos.containing(player.getX() + dx, 0, player.getZ() + dz);
+				if (!level.isLoaded(column)) {
+					continue;
+				}
+				int top = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column).getY();
+				if (top > bestTop) {
+					bestTop = top;
+					best = new Vec3(column.getX() + 0.5, top, column.getZ() + 0.5);
+				}
+			}
+		}
+
+		return best;
+	}
+
 	private static Vec3 cliffTopAhead(ServerLevel level, ServerPlayer player) {
 		Vec3 look = player.getViewVector(1f);
 		Vec3 ahead = new Vec3(look.x, 0, look.z).normalize();
@@ -1066,6 +1096,7 @@ public final class Executors {
 			Vec3 found = switch (finds) {
 				case "lava" -> lavaNear(level, skinOf);
 				case "cliff_top" -> cliffTopAhead(level, skinOf);
+				case "peak" -> peakNear(level, skinOf);
 				default -> null;
 			};
 			if (found == null) {

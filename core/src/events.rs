@@ -1212,6 +1212,8 @@ pub enum Action {
     FigureAtTheLectern,
     /// Far off, the figure wearing exactly the armour they wear, its shimmer and all.
     FigureInYourArmour,
+    /// At sunset, the figure on top of the nearest mountain, against the sky.
+    OnThePeak,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7571,6 +7573,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FigureInYourArmour,
         false,
     ),
+    // docs/events_todo.md, 247: at sunset the figure stands on the top of the nearest mountain.
+    row(
+        "on_the_peak",
+        4,
+        5,
+        &[Dusk, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::OnThePeak,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8188,6 +8202,7 @@ impl Event {
             | Action::ClimbingTheHouse
             | Action::FigureAtTheLectern
             | Action::FigureInYourArmour
+            | Action::OnThePeak
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8753,6 +8768,7 @@ impl Event {
             "climbing_the_house" => "climb the outside of their house past a window",
             "figure_at_the_lectern" => "stand at their lectern reading, the figure",
             "figure_in_your_armour" => "stand far off in the armour they wear, the figure",
+            "on_the_peak" => "stand on the nearest peak at sunset, the figure",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

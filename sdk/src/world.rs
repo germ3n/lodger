@@ -1600,8 +1600,9 @@ pub enum Command {
         then_at: Vec<Pos>,
         /// Where it stands found by the host near the player instead of `pos` (ABI 55): `lava`,
         /// in the surface of the nearest lava six to sixteen blocks off; `cliff_top`, at the top
-        /// edge of high ground straight ahead of them, eight blocks over them or more. Refused
-        /// when there is none.
+        /// edge of high ground straight ahead of them, eight blocks over them or more; `peak`
+        /// (ABI 56), on the highest ground 24 to 64 blocks from them, twelve over them or more.
+        /// Refused when there is none.
         #[serde(default, skip_serializing_if = "String::is_empty")]
         finds: String,
         /// Sitting on a mount of this kind placed under it for its time, standing still

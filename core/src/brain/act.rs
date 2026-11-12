@@ -763,6 +763,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ClimbingTheHouse
         | Action::FigureAtTheLectern
         | Action::FigureInYourArmour
+        | Action::OnThePeak
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8998,6 +8999,19 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 247.
+        Action::OnThePeak => {
+            let mut shown =
+                figure_shown(ids, memory, target, block_of(memory.last.pos), 40.0, false);
+            if let Command::Figure {
+                finds, once_seen, ..
+            } = &mut shown
+            {
+                *finds = "peak".to_string();
+                *once_seen = true;
+            }
+            vec![(shown, 0)]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20495,6 +20509,17 @@ mod tests {
                     0
                 )]
             ),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn on_the_peak_asks_the_host_for_the_highest_ground_near() {
+        let memory = rich_memory();
+        let event = find("on_the_peak").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { finds, once_seen: true, .. }, 0)] if finds == "peak"),
             "{made:?}"
         );
     }

@@ -258,7 +258,8 @@ dropping nothing, from under the ceiling beside a place when asked; one that can
 lands breaks there), and `open_lid` on a shulker box as on a chest; `fangs` (evoker fangs on one player's screen alone, a line from a place snapping
 up toward them, the last short of them, nothing in the world to bite); `game_message`'s `title` (the text over one player's screen in big letters, a second);
 the figure's `bows` (once, a moment after it is shown, down two seconds and up) and
-`wears_theirs` (its player's armour as they wear it, copies on their screen alone);
+`wears_theirs` (its player's armour as they wear it, copies on their screen alone), and its
+`finds`' `peak` (the highest ground 24 to 64 blocks off, twelve over them or more);
 `ghost_item` (an item lying on one player's screen alone, gone as they come within two
 blocks, never theirs); `guardian_beam` (a guardian's beam charging from water at one player, on their screen
 alone, gone before it would fire); `place_entity`'s `minecraft:skeleton_horse`, `minecraft:leash_knot` (on the fence post in the

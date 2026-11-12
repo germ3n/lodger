@@ -2863,6 +2863,11 @@ The `[x]` lines above, summed up by day:
   their screen alone, twenty seconds or until seen and looked away from (the figure's
   `wears_theirs`, ABI 56). Tests: one in `act`. Was: no such event.
 
+- [x] **On the peak** (`docs/events_todo.md`, 247): `on_the_peak`, stages 4 and 5, outdoors at dusk:
+  the figure on the highest ground 24 to 64 blocks from them, twelve over them or more, forty
+  seconds or until seen and looked away from (the figure's `finds`' `peak`, ABI 56: refused with
+  none so high). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
