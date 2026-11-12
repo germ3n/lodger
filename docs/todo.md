@@ -2677,6 +2677,11 @@ The `[x]` lines above, summed up by day:
   ten minutes, then what it holds (`ghost_block`; the pot's own flower untouched). Tests: one in
   `act`. Was: no such event.
 
+- [x] **Mushrooms in the corners** (`docs/events_todo.md`, 209): `mushrooms_in_corners`, stages 3 to
+  5, the target away or asleep: up to four mushrooms, brown and red, on the floor along the walls
+  they built, the corners first, into air standing on a floor; a day on, gone. Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

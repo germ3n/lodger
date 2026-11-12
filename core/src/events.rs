@@ -1147,6 +1147,8 @@ pub enum Action {
     DripstoneFalls,
     /// A wither rose in one of their flower pots as they wake, on their screen alone a while.
     WitherRoseInPot,
+    /// Mushrooms grown overnight on the floor of their house along its walls, the corners first, gone in a day.
+    MushroomsInCorners,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7041,6 +7043,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::WitherRoseInPot,
         false,
     ),
+    // docs/events_todo.md, 209: mushrooms in the dark corners of their house overnight.
+    row(
+        "mushrooms_in_corners",
+        3,
+        5,
+        &[Home, Walls, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Half,
+        Action::MushroomsInCorners,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7638,7 +7652,7 @@ impl Event {
             | Action::BossBarIt
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
-            Action::WhileAway => "house",
+            Action::WhileAway | Action::MushroomsInCorners => "house",
             Action::HandOnShoulder => "seen",
             // Their sleep: refused, broken, someone in their bed.
             Action::RefuseRest
@@ -8154,6 +8168,7 @@ impl Event {
             "anchor_charged" => "show a charged respawn anchor at its place",
             "dripstone_falls" => "drop pointed dripstone from the ceiling beside them",
             "wither_rose_in_pot" => "put a wither rose in one of their flower pots",
+            "mushrooms_in_corners" => "grow mushrooms in the corners of their house",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

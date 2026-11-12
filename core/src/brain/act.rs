@@ -108,6 +108,9 @@ const SNOW_BODY: &[[i32; 2]] = &[[0, 0], [0, 1], [0, 2], [-1, 1], [1, 1], [-1, 3
 /// How long `wither_rose_in_pot`'s rose shows, ticks: ten minutes of their morning.
 const ROSE_SHOWN_TICKS: u64 = 12_000;
 
+/// How many mushrooms `mushrooms_in_corners` grows.
+const MUSHROOMS_MOST: usize = 4;
+
 /// How long `anchor_charged`'s anchor shows, ticks: five minutes of the night.
 const ANCHOR_SHOWN_TICKS: u64 = 6000;
 
@@ -476,6 +479,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::AnchorCharged
         | Action::DripstoneFalls
         | Action::WitherRoseInPot
+        | Action::MushroomsInCorners
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7831,6 +7835,59 @@ pub fn commands(
                 ]
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 209.
+        Action::MushroomsInCorners => {
+            let walls: std::collections::HashSet<BlockPos> =
+                memory.walls.iter().map(|(p, _)| *p).collect();
+            // On the floor beside the walls they built, whatever height the wall was read at.
+            let floor = memory.home.as_ref().map(|h| h.floor_y).unwrap_or(0);
+            let mut cells: Vec<BlockPos> = inside_walls(memory, 0, 3, 12)
+                .into_iter()
+                .map(|c| [c[0], floor, c[2]])
+                .collect();
+            cells.dedup();
+            // The corners first: a cell with walls on two sides.
+            cells.sort_by_key(|c| {
+                let wall = |dx: i32, dz: i32| {
+                    (0..=3).any(|dy| walls.contains(&[c[0] + dx, c[1] + dy, c[2] + dz]))
+                };
+                let x = wall(1, 0) || wall(-1, 0);
+                let z = wall(0, 1) || wall(0, -1);
+                !(x && z)
+            });
+            let mut made = Vec::new();
+            for (i, cell) in cells.into_iter().take(MUSHROOMS_MOST).enumerate() {
+                let kind = if i % 2 == 0 {
+                    "minecraft:brown_mushroom"
+                } else {
+                    "minecraft:red_mushroom"
+                };
+                made.push((
+                    Command::SetBlock {
+                        id: ids(),
+                        pos: cell,
+                        block: kind.to_string(),
+                        state: String::new(),
+                        replace: vec![],
+                        settle: 0,
+                        wall: String::new(),
+                        rest: true,
+                        only: false,
+                    },
+                    0,
+                ));
+                made.push((
+                    Command::SwapBlock {
+                        id: ids(),
+                        pos: cell,
+                        block: "minecraft:air".to_string(),
+                        only: vec![kind.to_string()],
+                    },
+                    DAY_TICKS,
+                ));
+            }
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -18678,5 +18735,36 @@ mod tests {
             matches!(&made[..], [(Command::GhostBlock { block, .. }, 0), (Command::GhostBlock { block: back, .. }, ROSE_SHOWN_TICKS)] if block == "minecraft:potted_wither_rose" && back.is_empty()),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn mushrooms_grow_in_the_corners_first_and_go_in_a_day() {
+        let mut memory = rich_memory();
+        let floor = memory.home.as_ref().unwrap().floor_y;
+        let c = memory.home.as_ref().unwrap().center;
+        // A corner: walls east and north of the cell west-in from them.
+        memory
+            .walls
+            .push(([c[0] + 5, floor, c[2]], "minecraft:oak_planks".to_string()));
+        memory.walls.push((
+            [c[0] + 5, floor, c[2] + 1],
+            "minecraft:oak_planks".to_string(),
+        ));
+        memory.walls.push((
+            [c[0] + 4, floor, c[2] + 1],
+            "minecraft:oak_planks".to_string(),
+        ));
+        let event = find("mushrooms_in_corners").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            !made.is_empty() && made.len() <= MUSHROOMS_MOST * 2,
+            "{made:?}"
+        );
+        assert!(
+            matches!(&made[0].0, Command::SetBlock { block, rest: true, .. } if block == "minecraft:brown_mushroom"),
+            "{:?}",
+            made[0].0
+        );
+        assert_eq!(made[1].1, DAY_TICKS, "gone in a day");
     }
 }
