@@ -1,6 +1,6 @@
 # Events to come
 
-A hundred event ideas not yet in the catalogue (forty at first, forty more after, then thirty-five, then fifty more) (`core/src/events.rs`, `docs/entity.md`), none of
+A hundred event ideas not yet in the catalogue (forty at first, forty more after, then thirty-five, then fifty more, then fifty of the Nether and the End) (`core/src/events.rs`, `docs/entity.md`), none of
 them a copy of one there or of a line in `docs/ideas.md`. Each says the stage it fits, what the
 target must be doing, what it would take (the commands there are today, or what the host would
 need), and a rough size: **S** (the mind alone, today's commands), **M** (a small host change),
@@ -322,3 +322,67 @@ things, and on the screen. Not built yet.
 | 263 | `red_petals` | 3 | Petals fall around them, red, where there are no trees. | Outdoors. | A client hint of red petal particles around them. | S |
 | 264 | `sculk_trail` | 5 | Sculk charge crawls along the floor from the door to their bed. | A home with a bed and a door, the target indoors. | A client hint of sculk charge particles along the way. | S |
 | 265 | `false_glint` | 3 | The tool in their hand shimmers as if enchanted, a while; it is not. | Holding a tool. | A client hint drawing the glint on their held item. | S |
+
+## The Nether and the End
+
+The owner: "add more nether/end events ... generate like 50 of them". Checked against the
+catalogue, every earlier row here, `docs/ideas.md`, `docs/todo.md` and `docs/entity.md`, by
+name and by what happens: none repeats one of them. Done there by way of `elsewhere` (the
+overworld's stay says what its rules allow; the other world's stay does it), as `ghast_name`
+and `ender_holds` are; a few are at home and tied to the other worlds. Four put the figure in
+the Nether or the End, which `ideas.md` sets aside ("the figure stays on this side"): they say
+so, and are the owner's call. None makes an item from nothing, spawns a mob, or harms. Not built
+yet.
+
+| # | Event | Stage | What happens | Needs | Takes | Size |
+| --- | --- | --- | --- | --- | --- | --- |
+| 266 | `piglins_stare` | 3 | Every piglin near them stops what it is doing and turns to watch them, a few seconds, and goes back to it; none turns on them. | In the Nether, piglins near. | An `elsewhere` row; the piglins held facing them (the hold `cattle_turn_away` would use). | M |
+| 267 | `barter_from_home` | 4 | A piglin they barter with throws back, among its usual things, one thing of theirs from their chest at home; it is gone from the chest. | In the Nether, bartering, a chest of theirs at home with something in it. | The bartered drop's trigger; `take_item` from the home chest by way of `elsewhere`, the item dropped by the piglin. | L |
+| 268 | `strider_turns_home` | 4 | The strider they ride stops answering the rod and walks a while the way their house would be, scaled to the Nether, then answers again. | In the Nether, riding a strider. | The strider steered toward home's x and z over eight, a few seconds, against their rod. | M |
+| 269 | `ghast_watches` | 3 | A ghast near them stops firing and goes quiet, drifting at the same distance, looking at them, a minute. | In the Nether, a ghast near. | The ghast's attack held and its sounds muted, facing them. | M |
+| 270 | `souls_follow` | 3 | Walking the soul sand valley, the souls that rise from the sand rise only where they have just stepped, a trail of them behind. | In the Nether, on soul sand or soul soil. | A client hint of soul particles at their last steps. | S |
+| 271 | `rain_in_the_nether` | 3 | In the Nether, where it never rains, the sound of rain on leaves, as at home, a minute. | In the Nether. | `sound` of rain looped near them, for them alone. | S |
+| 272 | `their_door_behind` | 3 | Behind them in the Nether, the sound of their own door, the kind it is, opening and shutting. | In the Nether, a home with a door. | `sound` of their door's kind a few blocks behind them. | S |
+| 273 | `lava_goes_still` | 4 | The lava sea around them goes still: no pops, no rising sparks, no sound, for twenty seconds, then all at once again. | In the Nether, lava near. | A client hint muting lava's sounds and stopping its particles near them. | M |
+| 274 | `their_torch_ahead` | 4 | In a fortress corridor ahead of them, a torch, placed as they place them: the same side, the same spacing. They did not place it. | In the Nether, in a fortress, a torch in its store. | `place` a torch of its own ahead of them, by way of `elsewhere`; their torch habit from the memory. | M |
+| 275 | `name_in_netherrack` | 4 | A netherrack wall they passed has their name cut into it, a block deep, when they turn back. | In the Nether, netherrack near. | Air set in letter shapes in natural netherrack behind them. | M |
+| 276 | `portal_weeps` | 4 | Their portal on the Nether side renders as crying obsidian, purple tears and all, until they come within five blocks. | In the Nether, near the portal they came through. | A client hint drawing the frame's blocks as crying obsidian. | M |
+| 277 | `hoglins_part` | 3 | A herd of hoglins in the crimson forest parts around them, as round something walking beside them, and does not charge. | In the Nether, hoglins near. | The hoglins' targets cleared and moved aside along their way. | M |
+| 278 | `back_to_the_wall` | 4 | A wither skeleton in the fortress stands with its face to the wall and does not turn as they pass, unless they strike it. | In the Nether, in a fortress, a wither skeleton near. | The skeleton's target cleared, held facing the wall. | M |
+| 279 | `compass_steadies` | 3 | Their compass, which spins in the Nether, stops and points steady at where their portal is, for a minute. | In the Nether, holding a compass. | The compass hook of `compass_spins` the other way: a fixed angle toward the portal. | M |
+| 280 | `prints_in_soul_sand` | 4 | Prints in the soul sand ahead of them, their size, leading away into the dark. | In the Nether, on soul sand. | `prints` on the soul sand ahead, by way of `elsewhere`. | S |
+| 281 | `nether_roof_steps` | 4 | Steps on the ceiling above them, slow, crossing over and stopping right overhead. | In the Nether, under a rock ceiling. | `sound` of steps moved along the ceiling's underside above them. | S |
+| 282 | `magma_cubes_settle` | 3 | Every magma cube near them stops bouncing at once and sits, a few seconds. | In the Nether, magma cubes near. | The cubes held still. | M |
+| 283 | `vines_reach` | 3 | The weeping vines near them are a block longer each time they look back, reaching toward them. | In the Nether, weeping or twisting vines near. | A vine block added at each vine's tip while they look away (growth the vine would do). | M |
+| 284 | `portal_goes_out` | 5 | Walking back to their portal in the Nether, it goes out as they reach it; ten seconds later it is lit again. They are never left there. | In the Nether, walking to their portal. | The frame's portal blocks cleared, then `light_portal` again, never longer than ten seconds. | M |
+| 285 | `home_through_the_portal` | 3 | Standing by their portal on the Nether side, the sounds of home come through it: their animals, their door, rain if it rains there. | In the Nether, by the portal they came through. | `sound` of home's things at the portal. | S |
+| 286 | `blaze_ring` | 4 | The blazes about a spawner drift into a ring around them and hang there, not firing, a few seconds, then scatter. | In the Nether, in a fortress, blazes near. | The blazes moved into a ring and their attack held. | M |
+| 287 | `zombified_follow` | 4 | The zombified piglins near them turn and follow at a distance, silent, and stop whenever they turn round. | In the Nether, zombified piglins near. | The piglins walked after them, held while they look (the hold of `while_unseen`). | M |
+| 288 | `breath_in_the_nether` | 3 | In the heat of the Nether their breath shows for a moment, as on a winter night. | In the Nether. | The `cold_breath` hint of `cold_house`, there. | S |
+| 289 | `standing_in_the_portal` | 4 | On the Nether side, a figure stands just inside their portal's purple, facing them, gone when they come within five blocks. (Past the line in `ideas.md`: the figure in the Nether. The owner's call.) | In the Nether, near the portal they came through. | `figure` in the Nether, `vanish_within`, by way of `elsewhere`. | M |
+| 290 | `far_end_of_the_bridge` | 4 | On a long fortress bridge, a figure at its far end, still; gone once seen and looked away from. (Past the line: the figure in the Nether.) | In the Nether, on a fortress bridge. | `figure` at the bridge's far end, `once_seen`. | M |
+| 291 | `shulkers_open` | 3 | Every shulker on the end city's wall opens its shell at once, and shuts it at once. | In the End, at an end city, shulkers near. | The shulkers' peek set open, then shut. | M |
+| 292 | `endermen_turn_away` | 3 | Every enderman near them turns its back to them at once, a minute, so there is nothing to look at. | In the End, endermen near. | The endermen held facing away. | M |
+| 293 | `endermen_at_the_edge` | 4 | Endermen stand along the island's edge, spaced out evenly, all facing the void. | In the End, endermen near, an island edge near. | The endermen there moved to the edge and held facing out. | M |
+| 294 | `the_dragon_growls` | 4 | Long after the dragon died, its growl from the empty central island, far off. | In the End, the dragon dead. | `sound` of the dragon from the central island. | S |
+| 295 | `name_from_the_void` | 4 | At the island's edge, looking down, their name from below in the subtitles, once. | In the End, at an edge, looking down. | The subtitle hook of `ghast_name`, a sound from under them. | S |
+| 296 | `gateway_flashes` | 3 | An end gateway near them flashes its beam as if someone just went through. No one is near. | In the End, an end gateway near. | A client hint of the gateway's beam; its sound. | M |
+| 297 | `second_wings` | 4 | Gliding, the rustle of a second pair of wings just behind them, keeping pace, gone when they turn. | In the End, gliding with elytra. | `sound` of elytra moved with them, a few blocks behind. | S |
+| 298 | `pearl_turned` | 3 | An ender pearl they throw lands them where it should, turned round, facing the way they came. | Throwing an ender pearl. | The landing's trigger; their facing set back. | M |
+| 299 | `prints_off_the_edge` | 4 | Prints across the end stone lead to the island's edge and off it. | In the End, on end stone, an edge near. | `prints` toward the edge, by way of `elsewhere`. | S |
+| 300 | `purpur_knock` | 3 | Inside an end city, a knock from the other side of a purpur wall; behind it is solid. | In the End, in an end city. | `sound` of a knock in the wall beside them. | S |
+| 301 | `end_goes_quiet` | 4 | The End's music stops and so does every enderman's sound, a minute: only their own steps. | In the End. | A client hint muting the music and the endermen's sounds. | M |
+| 302 | `ship_creaks` | 3 | On the end ship, the deck creaks under weight, step by step, as if someone walked it. | In the End, on an end ship. | `sound` of creaking along the deck. | S |
+| 303 | `chorus_blooms` | 3 | Every chorus plant near them flowers at once. | In the End, chorus plants near. | The plants' flower blocks set to bloom. | M |
+| 304 | `end_sky_face` | 4 | For a second the End's sky, its static, makes a face. | In the End. | The sky hook drawing a face into the End's sky texture. | M |
+| 305 | `elytra_at_home` | 5 | In the end ship, the item frame is empty; back home, the elytra hangs in an item frame on their wall. | At an end ship with its elytra, an item frame at home. | The elytra taken from the frame by way of `elsewhere`, set in a frame at home. | L |
+| 306 | `standing_on_the_void` | 5 | Off the island's edge, a figure stands on nothing in the void, facing them; gone once seen and looked away from. (Past the line: the figure in the End.) | In the End, at an edge. | `figure` over the void, `once_seen`. | M |
+| 307 | `on_the_exit_portal` | 5 | As the dragon dies, a figure stands on the exit portal's bedrock, facing them; gone as the portal opens. (Past the line: the figure in the End.) | In the End, the dragon dying. | The dragon's death trigger; `figure` at the portal. | L |
+| 308 | `egg_on_the_pillow` | 4 | The dragon egg on its plinth at home is on their pillow in the morning. | A dragon egg at home, a bed, the target asleep or away. | `move_block` of the egg onto the bed's head. | S |
+| 309 | `chorus_lands_home` | 4 | A chorus fruit eaten within sixty-four blocks of home sets them down on their doorstep, once. | Eating a chorus fruit near home. | The teleport's trigger; `move_player` to the door. | M |
+| 310 | `came_back_wrong_hour` | 4 | Back from another dimension, for a moment the sky says another hour, then the right one. | Coming back from another dimension. | The sky hook on `CameBack`, a few seconds. | S |
+| 311 | `someone_went_through` | 3 | Walking away from their portal at home, the sound of someone going through it, behind them. | Near their portal in the overworld. | `sound` of a portal's travel at the portal. | S |
+| 312 | `prints_from_the_portal` | 4 | Back from another dimension, prints already lead out of their portal toward the house. | Coming back through their portal. | `prints` from the portal toward the door on `CameBack`. | S |
+| 313 | `lodestone_wrong` | 3 | Their lodestone compass points to their bed instead, a minute. | Holding a lodestone compass. | The compass hook set toward the bed. | M |
+| 314 | `ruined_portal_glows` | 3 | A ruined portal near them renders whole and lit, until they come within ten blocks. | A ruined portal near them. | A client hint drawing the missing frame and the portal. | M |
+| 315 | `the_poem_knows` | 5 | After the dragon, the poem at the end has a line in it about them, their name and their house. | Leaving the End after the dragon. | A client hook on the end poem's text, the line from the phrase bank. | L |
