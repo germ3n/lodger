@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // On their trail where they came in, behind them.
+        Action::TreesCloseBehind => memory.way_they_came(),
         // The first place between two trees of the edge behind them.
         Action::TheTreeLine => {
             let spots = crate::trees::between_trunks(&memory.trunks_behind(6.0, 24.0), 6);
@@ -6365,6 +6367,29 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // A sapling of the woods' own kind set in the way they came, and grown at once: a tree
+        // standing where there was none.
+        Action::TreesCloseBehind => pos
+            .map(|spot| {
+                let log = memory
+                    .trunk_logs
+                    .iter()
+                    .min_by(|a, b| distance(a.0, spot).total_cmp(&distance(b.0, spot)))
+                    .map(|(_, log)| log.as_str())
+                    .unwrap_or("minecraft:oak_log");
+                vec![
+                    (on_ground(ids, spot, &crate::trees::sapling_of(log)), 0),
+                    (
+                        Command::Grow {
+                            id: ids(),
+                            pos: spot,
+                            tries: 40,
+                        },
+                        2,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         // A figure between each two trees of the edge behind them, still, facing them, empty-
         // handed; seen and looked away from, all gone at once.
         Action::TheTreeLine => pos
@@ -9590,6 +9615,8 @@ mod tests {
                 || event.id == "ender_holds"
                 // Runs another event in its stead: the brain's test.
                 || event.id == "busy_away"
+                // A trail behind them in the woods, which this memory has not: its own test.
+                || event.id == "trees_close_behind"
             {
                 continue;
             }
@@ -13966,5 +13993,30 @@ mod tests {
         assert!(made.len() >= 3, "{made:?}");
         assert!(made.iter().all(|(c, _)| matches!(c,
             Command::Figure { together, once_seen: true, .. } if *together == TREE_LINE_FIRST)));
+    }
+
+    #[test]
+    fn deep_in_the_woods_a_tree_stands_in_the_way_they_came() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.trail = (0..10).map(|i| [0, 64, -20 + i * 2]).collect();
+        memory.trunk_logs = vec![([3, 64, -11], "minecraft:spruce_log".to_string())];
+        memory.trunks = vec![[3, 64, -11]];
+        let event = find("trees_close_behind").unwrap();
+        let spot = place(event, &memory, &mut Rng::new(1)).unwrap();
+        let made = commands(
+            event,
+            Some(spot),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::SetBlock { block, .. }, 0), (Command::Grow { pos, .. }, 2)]
+                if block == "minecraft:spruce_sapling" && *pos == spot),
+            "{made:?}"
+        );
     }
 }

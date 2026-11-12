@@ -210,6 +210,37 @@ pub fn between_trunks(behind: &[BlockPos], most: usize) -> Vec<BlockPos> {
     spots
 }
 
+/// The sapling that grows a log's tree alone: `minecraft:birch_log` a birch sapling; the woods
+/// that need four (dark oak, pale oak) an oak's; a mangrove's propagule.
+pub fn sapling_of(log: &str) -> String {
+    let (space, name) = log.split_once(':').unwrap_or(("minecraft", log));
+    let wood = name
+        .trim_start_matches("stripped_")
+        .trim_end_matches("_log")
+        .trim_end_matches("_wood");
+    match wood {
+        "dark_oak" | "pale_oak" => "minecraft:oak_sapling".to_string(),
+        "mangrove" => "minecraft:mangrove_propagule".to_string(),
+        _ => format!("{space}:{wood}_sapling"),
+    }
+}
+
+impl Memory {
+    /// Where they came in by: the point of their trail eight to fourteen blocks back along it,
+    /// clear of every trunk by two.
+    pub fn way_they_came(&self) -> Option<BlockPos> {
+        let at = block_of(self.last.pos);
+        self.trail
+            .iter()
+            .rev()
+            .find(|p| {
+                let d = distance(**p, at);
+                (8.0..=14.0).contains(&d) && self.trunks.iter().all(|t| distance(*t, **p) >= 2.0)
+            })
+            .copied()
+    }
+}
+
 /// A trail of blazes ahead of them: trunks close to the line straight ahead (within 25 degrees),
 /// each five blocks or more past the last, nearest first, at most `most`.
 pub fn blaze_line(ahead: &[BlockPos], at: Pos, yaw: f32, most: usize) -> Vec<BlockPos> {
@@ -247,6 +278,26 @@ mod tests {
         memory.trunks.push([0, 64, 8]);
         memory.trunks.push([3, 64, 12]);
         assert!(!memory.leaving_the_woods(), "still among trees ahead");
+    }
+
+    #[test]
+    fn a_tree_grows_where_they_came_in_of_the_woods_own_kind() {
+        assert_eq!(sapling_of("minecraft:birch_log"), "minecraft:birch_sapling");
+        assert_eq!(
+            sapling_of("minecraft:dark_oak_log"),
+            "minecraft:oak_sapling"
+        );
+        assert_eq!(
+            sapling_of("minecraft:mangrove_log"),
+            "minecraft:mangrove_propagule"
+        );
+        let mut memory = Memory::default();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.trail = (0..10).map(|i| [0, 64, -20 + i * 2]).collect();
+        memory.trunks = vec![[0, 64, -9]];
+        let came = memory.way_they_came().unwrap();
+        assert!(came[2] <= -8 && came[2] >= -14, "{came:?}");
+        assert!(distance(came, [0, 64, -9]) >= 2.0, "not on a trunk");
     }
 
     #[test]

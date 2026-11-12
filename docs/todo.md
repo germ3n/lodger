@@ -1976,6 +1976,11 @@ The `[x]` lines above, summed up by day:
   (`trees::between_trunks`), gone together once seen and looked away from. Tests: one in `trees`,
   one in `act`. Was: no such event.
 
+- [x] **The trees close behind** (`docs/events_todo.md`, 87): `trees_close_behind`, stages 4 and 5,
+  walking in the woods: the woods' own sapling set on their trail behind them and grown at once
+  (`trees::sapling_of`, `Memory::way_they_came`). Tests: one in `trees`, one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
