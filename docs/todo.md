@@ -2037,6 +2037,10 @@ The `[x]` lines above, summed up by day:
   killed they vanish with nothing dropped (both loaders' death hooks). Tests: one in `act`. Was: a
   placed entity was a farm animal or a stand, unhurtable; no hostile could be set on anyone.
 
+- [x] **A phantom at noon** (`docs/events_todo.md`, 97): `daylight_phantom`, stages 4 and 5: a spared
+  phantom set on them out of the noon sun, burning, a nip, gone in fifteen seconds. Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

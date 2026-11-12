@@ -378,6 +378,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // High over them and a little ahead, out of the sun.
+        Action::DaylightPhantom => {
+            let at = block_of(memory.last.pos);
+            let yaw = (memory.last.yaw as f64).to_radians();
+            Some([
+                at[0] + (-yaw.sin() * 8.0).round() as i32,
+                at[1] + 22,
+                at[2] + (yaw.cos() * 8.0).round() as i32,
+            ])
+        }
         // A block of their own wall near them, two to six blocks, at their feet's height or a
         // block over: never glass, a door, a light.
         Action::WallBursts => bursting_wall(memory).map(|(pos, _)| pos),
@@ -6455,6 +6465,26 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // A phantom set on them, burning in the sun as it swoops, a nip at most, gone fifteen
+        // seconds on with nothing dropped.
+        Action::DaylightPhantom => pos
+            .map(|sky| {
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:phantom".to_string(),
+                        pos: [sky[0] as f64 + 0.5, sky[1] as f64, sky[2] as f64 + 0.5],
+                        yaw: 0.0,
+                        seconds: 15.0,
+                        kept: String::new(),
+                        face: None,
+                        targets: Some(target),
+                        harm: 1.0,
+                    },
+                    0,
+                )]
             })
             .unwrap_or_default(),
         // The block breaks, its sound, and is gone ten minutes; out of the hole, five silverfish at
@@ -14646,5 +14676,20 @@ mod tests {
             .filter(|c| matches!(c, Command::PlaceEntity { of, targets: Some(0), seconds, .. } if of == "minecraft:silverfish" && *seconds > 0.0))
             .collect();
         assert_eq!(fish.len(), 5);
+    }
+
+    #[test]
+    fn at_noon_a_phantom_out_of_the_sun_swoops_at_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("daylight_phantom").unwrap();
+        assert!(event.needs.contains(&crate::events::Need::Noon));
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert!(pos.is_some_and(|p| p[1] >= 80), "{pos:?}");
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PlaceEntity { of, targets: Some(0), harm, seconds, .. }, 0)]
+            if of == "minecraft:phantom" && *harm <= 1.0 && *seconds <= 20.0)
+        );
     }
 }
