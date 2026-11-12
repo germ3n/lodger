@@ -73,6 +73,21 @@ impl Memory {
         )
     }
 
+    /// Their lights underground within twenty-four blocks of them, farthest first (up to eight).
+    pub fn cave_lights_near(&self) -> Vec<BlockPos> {
+        let at = crate::memory::block_of(self.last.pos);
+        let mut near: Vec<BlockPos> = self
+            .habits
+            .cave_lights
+            .iter()
+            .copied()
+            .filter(|l| distance(*l, at) <= 24.0)
+            .collect();
+        near.sort_by(|a, b| distance(*b, at).total_cmp(&distance(*a, at)));
+        near.truncate(8);
+        near
+    }
+
     /// The spacing they light their own tunnels at: the middle of each underground light's
     /// distance to its nearest, from four blocks to fourteen; eight before two lights.
     pub fn torch_spacing(&self) -> f64 {

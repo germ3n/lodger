@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The nearest of their lights underground.
+        Action::CaveTorchesFlicker => memory.cave_lights_near().last().copied(),
         // Round the house.
         Action::PrintsAroundTheHouse => memory.home.as_ref().map(|h| h.center),
         // A plate, button or lever of theirs at the home.
@@ -1816,6 +1818,19 @@ const TREE_FIGURE: u32 = 63;
 /// The figure drawn to their light (`drawn_to_the_light`), and how far off it starts.
 const DRAWN_FIGURE: u32 = 62;
 const DRAWN_FROM: f64 = 45.0;
+/// The lights a flicker may hide a moment and put back: torches and lanterns of every kind.
+const LIGHTS: &[&str] = &[
+    "minecraft:torch",
+    "minecraft:wall_torch",
+    "minecraft:soul_torch",
+    "minecraft:soul_wall_torch",
+    "minecraft:copper_torch",
+    "minecraft:copper_wall_torch",
+    "minecraft:lantern",
+    "minecraft:soul_lantern",
+    "minecraft:copper_lantern",
+];
+
 /// The footprints round the house as the hint that draws them, for its time.
 pub(crate) fn prints_hint(
     ids: &mut impl FnMut() -> u64,
@@ -6533,6 +6548,29 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // Down the line of their lights toward them, farthest first: each flickers three times, a
+        // blink each, as if something passed it; the nearest goes dark a moment last of all.
+        Action::CaveTorchesFlicker => {
+            let lights = memory.cave_lights_near();
+            let only: Vec<String> = LIGHTS.iter().map(|l| l.to_string()).collect();
+            let mut made = Vec::new();
+            for (i, light) in lights.iter().enumerate() {
+                let start = i as u64 * 14;
+                let last = i + 1 == lights.len();
+                for (k, seconds) in [0.15f32, 0.1, 0.2].iter().enumerate() {
+                    made.push((
+                        Command::HideBlock {
+                            id: ids(),
+                            pos: *light,
+                            seconds: if last && k == 2 { 1.5 } else { *seconds },
+                            only: only.clone(),
+                        },
+                        start + [0u64, 6, 12][k],
+                    ));
+                }
+            }
+            made
+        }
         // The night's prints with every one before, on their screen when they are near: the
         // memory keeps the night's as it lands.
         Action::PrintsAroundTheHouse => {
@@ -15212,6 +15250,38 @@ mod tests {
         assert!(
             detail.split(';').count() > first,
             "the night's added to those before"
+        );
+    }
+
+    #[test]
+    fn underground_their_torches_flicker_down_the_line_toward_them() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.underground = true;
+        memory.last.pos = [0.5, 30.0, 0.5];
+        memory.habits.cave_lights = vec![[0, 31, 4], [0, 31, 12], [0, 31, 20], [0, 31, 60]];
+        let event = find("cave_torches_flicker").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, Some([0, 31, 4]), "the nearest");
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 9, "three lights, three blinks each: {made:?}");
+        let Command::HideBlock { pos: first, .. } = &made[0].0 else {
+            panic!()
+        };
+        assert_eq!(*first, [0, 31, 20], "farthest first");
+        let Some((
+            Command::HideBlock {
+                pos: last, seconds, ..
+            },
+            _,
+        )) = made.last()
+        else {
+            panic!()
+        };
+        assert_eq!(
+            (*last, *seconds),
+            ([0, 31, 4], 1.5),
+            "the nearest dark a moment, last"
         );
     }
 }

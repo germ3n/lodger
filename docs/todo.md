@@ -2104,6 +2104,11 @@ The `[x]` lines above, summed up by day:
   the sound started, and Sound Physics set its own over them, so the hall, the muffled and the broken
   ways were lost with it.
 
+- [x] **Their cave torches flicker** (`docs/events_todo.md`, 109, owner's): `cave_torches_flicker`,
+  stages 3 to 5, underground: their lights near them blink down the line toward them, the nearest
+  dark a moment last (`hide_block` a few ticks at a time; `Memory::cave_lights_near`). Tests: one in
+  `act`. Was: `flicker` was a light indoors alone.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

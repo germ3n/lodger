@@ -271,6 +271,8 @@ pub enum Need {
     NoVillageNear,
     /// A pressure plate, button or lever of theirs at the home.
     RedstoneAtHome,
+    /// Underground, three lights of theirs or more within twenty-four blocks.
+    TheirCaveLights,
 }
 
 impl Need {
@@ -352,6 +354,7 @@ impl Need {
                 | Need::Dusk
                 | Need::NoVillageNear
                 | Need::RedstoneAtHome
+                | Need::TheirCaveLights
         )
     }
 
@@ -478,6 +481,9 @@ impl Need {
             Need::EnteringVillage => "the target is not walking into a village".to_string(),
             Need::Dusk => "not dusk".to_string(),
             Need::NoVillageNear => "a village is near the home".to_string(),
+            Need::TheirCaveLights => {
+                "fewer than three lights of theirs near them underground".to_string()
+            }
             Need::RedstoneAtHome => "no plate, button or lever of theirs at the home".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
@@ -1115,6 +1121,8 @@ pub enum Action {
     DeadRedstone,
     /// Footprints round the house, more each night, that stay.
     PrintsAroundTheHouse,
+    /// Underground, their torches flicker one after another down the line toward them.
+    CaveTorchesFlicker,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4912,6 +4920,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 109 (owner's): "in a cave their torches flicker".
+    row(
+        "cave_torches_flicker",
+        3,
+        5,
+        &[TargetUnderground, TheirCaveLights],
+        1.0,
+        4,
+        Full,
+        Action::CaveTorchesFlicker,
+        false,
+    ),
     // docs/events_todo.md, 108 (owner's): "persistent footsteps around the house that appear over
     // time".
     row(
@@ -6238,6 +6258,7 @@ impl Event {
             | Action::BlazedTrees
             | Action::TreesCloseBehind
             | Action::DeadRedstone
+            | Action::CaveTorchesFlicker
             | Action::PrintsAroundTheHouse
             | Action::TreeComesDown
             | Action::CirclesATree
@@ -6386,6 +6407,9 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "cave_torches_flicker" => {
+                "flicker their torches in the cave, one after another toward them"
+            }
             "prints_around_the_house" => "leave more footprints round their house, that stay",
             "dead_redstone" => "make their redstone by the house dead a while",
             "sound_warp" => "make every sound they hear go wrong a while",
