@@ -64,6 +64,8 @@ import java.util.Set;
  *   <li>{@code clock_wrong}: a clock shows the time half a day off ({@code ClockTimeMixin}).</li>
  *   <li>{@code phantom_item}: the first time they open their inventory while it lasts, a paper
  *       named "behind you" in an empty slot for three seconds ({@code InventoryScreenMixin}).</li>
+ *   <li>{@code spyglass_figure}: while they scope, far off where they look, a figure looking back,
+ *       gone when they lower the glass ({@link SpyglassFigure}).</li>
  *   <li>{@code rustle_in_the_pack}: the first time they open their inventory while it lasts,
  *       a bundle's rustle, once, though they carry none ({@code InventoryScreenMixin}).</li>
  *   <li>{@code border_closes}: the world border on their client drawn close round them, then
@@ -176,6 +178,7 @@ public final class Glitches {
 		boolean shaking = false;
 		boolean rumbling = false;
 		boolean bordered = false;
+		boolean spying = false;
 		long now = System.currentTimeMillis();
 		for (Hints.Active active : Hints.active()) {
 			HintPayload hint = active.hint();
@@ -422,6 +425,10 @@ public final class Glitches {
 						hint.pos().ifPresent(from -> redTrail(minecraft, from, hint.detail()));
 					}
 				}
+				case "spyglass_figure" -> {
+					spying = true;
+					SpyglassFigure.tick(minecraft, active.id());
+				}
 				// A puff of breath before their face every two seconds.
 				case "cold_breath" -> {
 					if (minecraft.level.getGameTime() % 40 == 0) {
@@ -470,6 +477,9 @@ public final class Glitches {
 
 		if (!behind) {
 			BehindFigure.clear(minecraft);
+		}
+		if (!spying) {
+			SpyglassFigure.clear(minecraft);
 		}
 		if (!bordered && borderBefore != null) {
 			var border = minecraft.level.getWorldBorder();

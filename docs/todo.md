@@ -2535,6 +2535,11 @@ The `[x]` lines above, summed up by day:
   a shield in either hand (`HoldsShield`): the block's sound in front of them and a shove back.
   Tests: one in `act`. Was: no such event.
 
+- [x] **The figure in the spyglass** (`docs/events_todo.md`, 190): `spyglass_figure`, stages 4
+  and 5: for five minutes, through a spyglass, the figure far off where they look, gone when they
+  lower it and not again (`SpyglassFigure`, on their client alone). Tests: one in `act`. Was: no
+  such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

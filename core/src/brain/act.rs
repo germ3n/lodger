@@ -17765,4 +17765,23 @@ mod tests {
             "back: {made:?}"
         );
     }
+
+    #[test]
+    fn through_a_spyglass_the_figure_looks_back_from_far_off() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("spyglass_figure").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "spyglass_figure" && *seconds >= 60.0),
+            "{made:?}"
+        );
+    }
 }

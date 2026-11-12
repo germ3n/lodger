@@ -6783,6 +6783,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::RiderOnTheRidge,
         false,
     ),
+    // docs/events_todo.md, 190: through a spyglass, far off, the figure looks back.
+    row(
+        "spyglass_figure",
+        4,
+        5,
+        &[TargetOutdoors, TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::Hint("spyglass_figure", 300.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7878,6 +7890,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "spyglass_figure" => "stand far off where they look through a spyglass",
             "red_trail" => "leave red specks from their door to their bed",
             "snow_shape" => "press the shape of a body into the snow by the house",
             "clock_wrong" => "turn the clock in their hand to night",
