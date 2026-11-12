@@ -2840,6 +2840,11 @@ The `[x]` lines above, summed up by day:
   `CompassAngleStateMixin` gives it no target; a recovery compass left alone; off with the
   glitches). Tests: one in `act`. Was: no such event.
 
+- [x] **The figure digging** (`docs/events_todo.md`, 242): `figure_digging`, stages 4 and 5,
+  outdoors: the figure at its digging spot with an iron shovel, swinging, a minute or until they
+  come within sixteen blocks, twelve spadefuls heard two and a half seconds apart, then a hole two
+  deep beside it in natural ground. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -285,6 +285,9 @@ const FANGS_FROM: f64 = 14.0;
 const STATUE_TURNS: u64 = 5;
 const STATUE_TURN_TICKS: u64 = 400;
 
+/// How many spadefuls `figure_digging` is heard digging, two and a half seconds apart.
+const DIG_SOUNDS: u64 = 12;
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -697,6 +700,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             rng,
         );
     }
+    // The figure digs at its digging spot, away from what they built.
+    if event.id == "figure_digging" {
+        return dig_spot(memory, rng);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -740,6 +747,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FirefliesGoOut
         | Action::TrialKeyLeft
         | Action::TitleYourName
+        | Action::FigureDigging
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8824,6 +8832,55 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 242.
+        Action::FigureDigging => pos
+            .map(|p| {
+                let mut shown = figure_shown(ids, memory, target, grounded(p), 60.0, false);
+                if let Command::Figure {
+                    held,
+                    swinging,
+                    vanish_within,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack {
+                        id: "minecraft:iron_shovel".to_string(),
+                        count: 1,
+                        slot: 0,
+                    };
+                    *swinging = true;
+                    *vanish_within = 16.0;
+                }
+                let beside = [p[0] + 1, GROUND_Y, p[2]];
+                let mut made = vec![(shown, 0)];
+                for i in 0..DIG_SOUNDS {
+                    made.push((
+                        sound_at(
+                            ids,
+                            target,
+                            "minecraft:block.rooted_dirt.break",
+                            at(guessed(memory, beside)),
+                            1.5,
+                        ),
+                        20 + i * 50,
+                    ));
+                }
+                made.push((
+                    set(
+                        ids,
+                        [beside[0], beside[1] - 1, beside[2]],
+                        "minecraft:air",
+                        GROUND,
+                    ),
+                    20 + DIG_SOUNDS * 50,
+                ));
+                made.push((
+                    set(ids, beside, "minecraft:air", GROUND),
+                    20 + DIG_SOUNDS * 50,
+                ));
+                made
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20231,5 +20288,25 @@ mod tests {
             matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "compass_spins" && *seconds == 60.0),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn figure_digging_swings_a_shovel_and_leaves_a_hole() {
+        let memory = rich_memory();
+        let event = find("figure_digging").unwrap();
+        assert!(!crate::rules::hidden_from_view(event.action));
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::Figure { swinging: true, held, .. } if held.id == "minecraft:iron_shovel"),
+            "{made:?}"
+        );
+        assert_eq!(
+            made.iter()
+                .filter(|(c, _)| matches!(c, Command::PlaySound { .. }))
+                .count() as u64,
+            DIG_SOUNDS
+        );
+        assert_eq!(made.iter().filter(|(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:air")).count(), 2);
     }
 }

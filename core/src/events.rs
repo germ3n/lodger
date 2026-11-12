@@ -1202,6 +1202,8 @@ pub enum Action {
     TrialKeyLeft,
     /// Their own name over their screen in big letters for a second, at night.
     TitleYourName,
+    /// Far off at its place the figure digging, the shovel's sound carrying; there, a fresh hole.
+    FigureDigging,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7501,6 +7503,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("compass_spins", 60.0),
         false,
     ),
+    // docs/events_todo.md, 242: the figure digs at its place, a fresh hole there after.
+    row(
+        "figure_digging",
+        4,
+        5,
+        &[Home, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::FigureDigging,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8113,6 +8127,7 @@ impl Event {
             | Action::GolemStatueTurns
             | Action::FirefliesGoOut
             | Action::TrialKeyLeft
+            | Action::FigureDigging
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8673,6 +8688,7 @@ impl Event {
             "title_splash" => "put a line about them in the title screen's splash",
             "enchant_six" => "make every enchanting offer cost 6",
             "compass_spins" => "spin their compass as in the Nether",
+            "figure_digging" => "dig at its place, the figure with a shovel",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
