@@ -2639,6 +2639,14 @@ The `[x]` lines above, summed up by day:
   [Model](model.md#the-gpu-and-the-games-frames). Tests: one in `model`; the timing test in
   `frames.rs` (ignored).
 
+- [x] **The snow cleared from the door outward** (owner: "clear_snow mightve failed"; the log
+  said `snow_cleared: not done, the place holds minecraft:spruce_planks`). Was: the path went from
+  the door straight toward its place, back through the house or over their porch, at the door's
+  height, so on a step or a slope it met their planks and nothing was cleared. Now it starts a
+  block out of the door the way the door opens, two blocks straight out, then toward its place,
+  the snow layer on the ground taken off in each column (counted from the ground, over snow
+  alone). Tests: one in `act`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

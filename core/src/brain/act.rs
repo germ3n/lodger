@@ -4345,6 +4345,11 @@ pub fn commands(
             ],
             _ => vec![],
         },
+        // A path cleared through the snow out of their door: out the way the door opens, two
+        // blocks, then toward its place, the snow layer on the ground taken off in each column
+        // and nothing else. It went from the door straight toward its place, through the house
+        // or over their porch, and at the door's height: the owner's said "the place holds
+        // minecraft:spruce_planks".
         Action::SnowCleared => match (pos, memory.home.as_ref()) {
             (Some(door), Some(home)) => {
                 let spot = memory.place.unwrap_or([
@@ -4352,18 +4357,33 @@ pub fn commands(
                     home.floor_y,
                     home.center[2] + 10,
                 ]);
-                let mut p = door;
+                let out = out_of_door(memory, home.center, door);
+                let mut p = [door[0] + out[0], door[1], door[2] + out[1]];
                 let mut made = Vec::new();
-                for i in 0..8 {
-                    let step = step_toward(p, [spot[0], p[1], spot[2]]);
+                for i in 0..8u64 {
+                    made.push((
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: [p[0], GROUND_Y + 1, p[2]],
+                            block: "minecraft:air".to_string(),
+                            state: String::new(),
+                            replace: vec!["minecraft:snow".to_string()],
+                            settle: 1,
+                            wall: String::new(),
+                            rest: false,
+                            only: true,
+                        },
+                        i * 8,
+                    ));
+                    let step = if i < 1 {
+                        out
+                    } else {
+                        step_toward(p, [spot[0], p[1], spot[2]])
+                    };
                     if step == [0, 0] {
                         break;
                     }
                     p = [p[0] + step[0], p[1], p[2] + step[1]];
-                    made.push((
-                        set(ids, p, "minecraft:air", &["minecraft:snow"]),
-                        i as u64 * 8,
-                    ));
                 }
                 made
             }
@@ -18454,6 +18474,60 @@ mod tests {
             made.iter()
                 .all(|(c, _)| !matches!(c, Command::SetBlock { .. } | Command::BreakBlock { .. })),
             "the wall untouched"
+        );
+    }
+
+    #[test]
+    fn the_snow_is_cleared_from_the_door_outward_on_the_ground() {
+        let memory = rich_memory();
+        let home = memory.home.as_ref().unwrap();
+        let door = home.doors[0];
+        let out = out_of_door(&memory, home.center, door);
+        let event = find("snow_cleared").unwrap();
+        let made = commands(
+            event,
+            Some(door),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(!made.is_empty());
+        let cells: Vec<BlockPos> = made
+            .iter()
+            .map(|(c, _)| match c {
+                Command::SetBlock {
+                    pos,
+                    block,
+                    replace,
+                    only: true,
+                    settle,
+                    ..
+                } if block == "minecraft:air"
+                    && replace == &["minecraft:snow".to_string()]
+                    && *settle >= 1 =>
+                {
+                    *pos
+                }
+                other => panic!("only snow, counted from the ground: {other:?}"),
+            })
+            .collect();
+        assert_eq!(
+            cells[0],
+            [door[0] + out[0], GROUND_Y + 1, door[2] + out[1]],
+            "a block out of the door, the way it opens"
+        );
+        assert_eq!(
+            cells[1],
+            [door[0] + out[0] * 2, GROUND_Y + 1, door[2] + out[1] * 2],
+            "straight out again"
+        );
+        assert!(
+            cells.iter().all(
+                |c| distance([c[0], 0, c[2]], [home.center[0], 0, home.center[2]])
+                    >= distance([door[0], 0, door[2]], [home.center[0], 0, home.center[2]]) - 1.0
+            ),
+            "never back into the house: {cells:?}"
         );
     }
 }
