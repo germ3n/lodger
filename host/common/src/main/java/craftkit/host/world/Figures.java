@@ -931,14 +931,17 @@ public final class Figures {
 		Vec3 side;
 		long toBed;
 
-		/** A crossbow loaded and one shot, and they burn, instead of the squeezes (ABI 54). */
+		/** A crossbow loaded at the bed's foot and one shot from there, instead of the squeezes (ABI 54). */
 		final boolean shoot;
+		/** A flint and steel looked at, then struck at them from the pillow: they burn (ABI 54). */
+		final boolean light;
 		/** It lies down on the floor beside the bed, facing them, and does nothing else (ABI 54). */
 		final boolean lies;
 		boolean shot;
 
 		Choke(ServerPlayer player, int number, ItemStack item, long fromTick, long untilTick, float damage, boolean spare, String how) {
 			this.shoot = how.equals("shoot");
+			this.light = how.equals("light");
 			this.lies = how.equals("lie");
 			this.player = player;
 			this.number = number;
@@ -974,8 +977,10 @@ public final class Figures {
 		// To the bed's foot first, where it looks at what it holds and at them, in their sight down
 		// the bed; then round to the pillow (owner: it walked straight to the bedside, and the
 		// looking could not be seen). Lying down, or no room at the foot: straight to the side.
-		Vec3 side = bedside(level, player, figure.at);
 		Vec3 foot = how.equals("lie") ? null : foot(level, player);
+		// The crossbow shoots from the foot (owner: "crossbow should just shoot you from the end of
+		// the bed, others look and walk around").
+		Vec3 side = how.equals("shoot") && foot != null ? foot : bedside(level, player, figure.at);
 		Vec3 first = foot != null ? foot : side;
 		figure.path = walkOf(figure.at, first);
 		figure.pathIndex = 0;
@@ -983,7 +988,7 @@ public final class Figures {
 		figure.glides = true;
 		// It glides from the next tick on; it looks once at the foot, walks round, and squeezes.
 		long arrives = tick + 1 + ChokeWay.ticks(ChokeWay.walk(figure.at.x, figure.at.y, figure.at.z, first.x, first.y, first.z));
-		long toBed = foot == null ? 0 : ChokeWay.ticks(ChokeWay.walk(foot.x, foot.y, foot.z, side.x, side.y, side.z));
+		long toBed = foot == null || side == foot ? 0 : ChokeWay.ticks(ChokeWay.walk(foot.x, foot.y, foot.z, side.x, side.y, side.z));
 		long squeezes = Math.round(Math.max(1, Math.min(seconds, MOST_CHOKE_SECONDS)) * 20) + ChokeWay.BEFORE_SQUEEZING + toBed;
 		figure.untilTick = Math.max(figure.untilTick, arrives + squeezes + 40);
 		chokes.removeIf(choke -> choke.player == player);
@@ -1075,7 +1080,7 @@ public final class Figures {
 				untie(player, choke);
 				// Shot, they woke: it stands and watches them burn its last seconds, then goes.
 				// Otherwise out of bed by Leave Bed or anything else: it lets go, and it is gone.
-				if (!(choke.shoot && choke.shot)) {
+				if (!((choke.shoot || choke.light) && choke.shot)) {
 					remove(player, choke.number);
 				}
 				it.remove();
@@ -1103,7 +1108,7 @@ public final class Figures {
 				if (figure != null) {
 					begin(level, player, figure, choke, beat);
 				}
-				if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && !choke.lies) {
+				if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && !choke.light && !choke.lies) {
 					player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DARKNESS,
 							(int) (choke.untilTick - tick) + 40, 0, false, false));
 				}
@@ -1116,10 +1121,14 @@ public final class Figures {
 				player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(choke.knot,
 						net.minecraft.world.entity.PositionPath.of(new Vec3(hand[0], hand[1], hand[2])), 0, 0, false));
 			}
-			if (beat == ChokeWay.Beat.CHOKES && choke.shoot && !choke.shot) {
+			if (beat == ChokeWay.Beat.CHOKES && (choke.shoot || choke.light) && !choke.shot) {
 				choke.shot = true;
-				shoot(level, player, figure, choke);
-			} else if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && !choke.lies && (since - ChokeWay.BEFORE_SQUEEZING - choke.toBed) % 20 == 0) {
+				if (choke.shoot) {
+					shoot(level, player, figure, choke);
+				} else {
+					strike(level, player, figure, choke);
+				}
+			} else if (beat == ChokeWay.Beat.CHOKES && !choke.shoot && !choke.light && !choke.lies && (since - ChokeWay.BEFORE_SQUEEZING - choke.toBed) % 20 == 0) {
 				squeeze(level, player, figure, choke);
 			}
 		}
@@ -1156,9 +1165,12 @@ public final class Figures {
 				player.connection.send(new ClientboundSetEquipmentPacket(figure.entityId, List.of(com.mojang.datafixers.util.Pair.of(EquipmentSlot.MAINHAND, figure.held))));
 				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket(figure.entityId,
 						net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
-				double[] hand = ChokeWay.otherHand(figure.at.x, figure.at.y, figure.at.z, facing);
-				choke.knot = nextId++;
-				tie(player, figure, choke.knot, new Vec3(hand[0], hand[1], hand[2]));
+				// A lead's rope between its hands; a flint and steel held alone.
+				if (!choke.light) {
+					double[] hand = ChokeWay.otherHand(figure.at.x, figure.at.y, figure.at.z, facing);
+					choke.knot = nextId++;
+					tie(player, figure, choke.knot, new Vec3(hand[0], hand[1], hand[2]));
+				}
 				// Its head down at what it holds, turned a little to its right hand.
 				turn(player, figure, facing, facing + 15, 55);
 			}
@@ -1243,9 +1255,32 @@ public final class Figures {
 			// Nothing left to spare: woken all the same.
 			player.stopSleepInBed(true, true);
 		}
-		float burn = choke.spare ? Spare.fireSeconds(player.getHealth(), 4) : 4;
+		if (figure != null) {
+			figure.untilTick = Math.min(figure.untilTick, Math.max(0, choke.untilTick - 1));
+		}
+	}
+
+	/** How long a struck flint and steel sets them burning, before it is spared. */
+	static final float STRUCK_BURN_SECONDS = 5;
+
+	/**
+	 * The flint and steel struck at them from the pillow: its arm, its sound, and they burn,
+	 * which wakes them; spared, never below half a heart through the fire ({@link
+	 * Spare#fireSeconds}). With nothing left to spare, woken all the same.
+	 */
+	private static void strike(ServerLevel level, ServerPlayer player, Figure figure, Choke choke) {
+		if (figure != null) {
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSwingAnimationPacket(figure.entityId,
+					net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT));
+			sound(player, figure, net.minecraft.sounds.SoundEvents.FLINTANDSTEEL_USE);
+		}
+		float burn = choke.spare ? Spare.fireSeconds(player.getHealth(), STRUCK_BURN_SECONDS) : STRUCK_BURN_SECONDS;
 		if (burn > 0) {
 			player.igniteForSeconds(burn);
+			// The first lick of it now, which wakes them, not the next second's.
+			player.hurtServer(level, level.damageSources().onFire(), choke.spare ? Spare.harm(1, player.getHealth(), 1f) : 1);
+		} else {
+			player.stopSleepInBed(true, true);
 		}
 		if (figure != null) {
 			figure.untilTick = Math.min(figure.untilTick, Math.max(0, choke.untilTick - 1));

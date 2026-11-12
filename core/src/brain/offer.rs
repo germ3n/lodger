@@ -288,6 +288,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::IntoTheDark
         | Action::Choke(_)
         | Action::ShotInBed(_)
+        | Action::BurnedInBed
         | Action::LiesBeside
         | Action::RingOfFigures(_)
         | Action::UpsideDown
@@ -589,7 +590,13 @@ mod tests {
     fn with_the_figures_off_none_comes_to_the_bed_or_stands_round_the_house() {
         let mut config = Config::default();
         config.events.figure = false;
-        for id in ["choke", "shot_in_bed", "ring_of_figures", "far_figure"] {
+        for id in [
+            "choke",
+            "shot_in_bed",
+            "burned_in_bed",
+            "ring_of_figures",
+            "far_figure",
+        ] {
             let event = crate::events::find(id).unwrap();
             assert!(!switched_on(event, &config), "{id} with the figures off");
             assert!(switched_on(event, &Config::default()), "{id} with them on");

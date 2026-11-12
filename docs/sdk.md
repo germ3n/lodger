@@ -219,8 +219,9 @@ takes `item` out and looks at it and at them there, walks round to the bed's sid
 found by the host; straight to the side when the foot has no room), the lead's rope to their neck, and squeezes once
 a second for `seconds`, the harm taken without waking them; Leave Bed ends it; `door` opened as it
 begins and left open, passed over when it is no door; their eyes kept open by the host itself, the
-`eyes_open` hint sent with it; `how` `shoot`: a crossbow loaded, aimed and shot once instead, and
-they burn, spared through the fire; `how` `lie`: it lies down on the floor beside the bed facing
+`eyes_open` hint sent with it; `how` `shoot`: a crossbow loaded at the bed's foot, aimed and shot
+once from there instead; `how` `light`: a flint and steel looked at at the foot, then struck at them
+from the pillow, and they burn, spared through the fire; `how` `lie`: it lies down on the floor beside the bed facing
 them, nothing more); `figure`'s `crawls` (on its belly along its path, gliding, gone at its end), `rushes` (running
 at the player after them, gone two blocks short with a hit's jolt, no harm), `rides_behind` (in the
 seat behind them in their boat, on their client alone, gone with the boat left), `together` (a

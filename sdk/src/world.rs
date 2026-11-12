@@ -558,17 +558,21 @@ pub enum Command {
     },
     /// `player`, asleep, is kept lying in bed, the night not passing meanwhile, while the figure
     /// `figure` walks slowly (a glide, its legs moving) from where it stands (seven blocks off at
-    /// most) to their bed's side by the pillow, the side nearer it with room to stand; there it
-    /// takes `item` into its hand, a lead's rope drawn from it to their neck, and for `seconds`
+    /// most) to the foot of their bed, where it takes `item` into its hand and looks at it, then
+    /// at them; then it walks round to their bed's side by the pillow, the side nearer it with room
+    /// to stand (straight there when the foot has none); there a lead's rope goes from its hand to
+    /// their neck, and for `seconds`
     /// (six at most) squeezes once a second: its arm moves, and `damage` (half hearts) is taken
     /// without waking them, with a drowning gasp, the hurt's jolt and the dark closing in; with
     /// `spare` never below half a heart. Leaving the bed ends it at once, the figure gone; at its
     /// end they wake. `door`, when it is still a door, opens as it begins, with its sound, and is
     /// left open (anything else there is left alone). With `how` `shoot` it takes out a crossbow
-    /// (`item`) instead, loads it looking down at it, aims it at them, and shoots once: `damage`,
-    /// which wakes them, and they burn a few seconds, `spare` keeping them above half a heart
-    /// through the fire too; it watches them `seconds` and is gone. Refused when they are not
-    /// asleep. ABI 54.
+    /// (`item`) instead at the bed's foot, loads it looking down at it, aims it at them, and
+    /// shoots once from there: `damage`, which wakes them, `spare` keeping them above half a heart;
+    /// it watches them `seconds` and is gone. With `how` `light` it looks at a flint and steel
+    /// (`item`) at the foot, walks round to the pillow and strikes it at them: they burn five
+    /// seconds and wake, `spare` keeping them above half a heart through the fire. Refused when they
+    /// are not asleep. ABI 54.
     Choke {
         id: u64,
         player: u32,
@@ -580,7 +584,7 @@ pub enum Command {
         spare: bool,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         door: Option<BlockPos>,
-        /// `choke` (empty), `shoot`, or `lie`: it lies down on the floor beside the bed facing
+        /// `choke` (empty), `shoot`, `light`, or `lie`: it lies down on the floor beside the bed facing
         /// them, and does nothing more until they wake as it ends.
         #[serde(default, skip_serializing_if = "String::is_empty")]
         how: String,

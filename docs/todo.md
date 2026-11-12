@@ -1922,6 +1922,15 @@ The `[x]` lines above, summed up by day:
   straight to the bedside and did its looking there, beside their head, where it could not be
   seen.
 
+- [x] **Three bed events: the choke, the fire, the crossbow** (owner: "a choke event, a fire event,
+  and a crossbow event. crossbow should just shoot you from the end of the bed, others look and walk
+  around ... use flint and steel for the fire one"): `burned_in_bed`, new, looks at a flint and
+  steel at the bed's foot, walks round to the pillow and strikes it at them, and they burn five
+  seconds, spared (`choke`'s `how` `light`); `shot_in_bed` shoots from the bed's foot, no walk round
+  and no fire now. Calm leaves the new one out with the other sleep events. Tests: one in `act`,
+  the figures switch's test names it. Was: one fire-and-crossbow event, the crossbow's bolt setting
+  them burning, shot from the pillow.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

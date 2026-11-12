@@ -304,7 +304,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }
         Action::BedBreaks => home.and_then(|h| h.bed),
         // Their door: where the figure comes in from.
-        Action::Choke(_) | Action::ShotInBed(_) | Action::LiesBeside => memory.usual_door(),
+        Action::Choke(_) | Action::ShotInBed(_) | Action::BurnedInBed | Action::LiesBeside => {
+            memory.usual_door()
+        }
         // The middle of the house: the ring stands round it.
         Action::RingOfFigures(_) => home.map(|h| h.center),
         Action::UpsideDown => home.and_then(|h| h.bed),
@@ -1396,11 +1398,16 @@ fn bedside(
                     figure: 1,
                     item: match how {
                         "shoot" => "minecraft:crossbow",
+                        "light" => "minecraft:flint_and_steel",
                         "lie" => "",
                         _ => "minecraft:lead",
                     }
                     .to_string(),
-                    seconds: if how == "shoot" { 2.0 } else { 5.0 },
+                    seconds: if how == "shoot" || how == "light" {
+                        2.0
+                    } else {
+                        5.0
+                    },
                     damage,
                     spare: true,
                     door: Some(door),
@@ -7690,6 +7697,7 @@ pub fn commands(
             .unwrap_or_default(),
         // Asleep, a figure comes to the bed (`bedside`): a lead, or a crossbow and a shot.
         Action::ShotInBed(damage) => bedside(ids, memory, target, pos, damage, "shoot"),
+        Action::BurnedInBed => bedside(ids, memory, target, pos, 0.0, "light"),
         Action::Choke(damage) => bedside(ids, memory, target, pos, damage, ""),
         // The same walk; it lies down on the floor beside the bed, facing them, until they wake.
         Action::LiesBeside => bedside(ids, memory, target, pos, 0.0, "lie"),
@@ -13444,5 +13452,28 @@ mod tests {
             "{made:?}"
         );
         assert!(event.needs.contains(&crate::events::Need::Night));
+    }
+
+    #[test]
+    fn asleep_the_figure_looks_at_a_flint_and_steel_and_sets_them_alight() {
+        let memory = rich_memory();
+        let door = memory.usual_door().unwrap();
+        let event = find("burned_in_bed").unwrap();
+        assert_eq!(event.effect(), "night");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(2)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 2, "{made:?}");
+        assert!(
+            matches!(&made[1], (Command::Choke { item, how, spare: true, door: Some(d), .. }, 1)
+                if item == "minecraft:flint_and_steel" && how == "light" && *d == door),
+            "{:?}",
+            made[1]
+        );
     }
 }

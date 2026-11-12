@@ -884,9 +884,12 @@ pub enum Action {
     /// side, takes out a lead and chokes them for a few seconds, this much harm a squeeze, never
     /// below half a heart.
     Choke(f32),
-    /// The same walk to the bed, a crossbow loaded instead and a shot: this much harm, and they
-    /// wake burning, never below half a heart.
+    /// The same walk to the bed's foot, a crossbow loaded there instead and a shot from there:
+    /// this much harm, which wakes them, never below half a heart.
     ShotInBed(f32),
+    /// The same walk, looking at a flint and steel at the bed's foot, then round to the pillow to
+    /// strike it at them: they wake burning, never below half a heart.
+    BurnedInBed,
     /// At night, figures in a ring round the house, this many, each gone once seen and looked
     /// away from.
     RingOfFigures(u32),
@@ -3950,6 +3953,19 @@ pub const CATALOGUE: &[Event] = &[
         Action::ShotInBed(4.0),
         false,
     ),
+    // The owner: "a choke event, a fire event, and a crossbow event ... use flint and steel for
+    // the fire one".
+    row(
+        "burned_in_bed",
+        4,
+        5,
+        &[TargetInBed, Bed, Door, Night],
+        6.0,
+        2,
+        Full,
+        Action::BurnedInBed,
+        false,
+    ),
     // The owner: "while we are inside our house, we get multiple figures standing in a circle
     // around our home" (docs/events_todo.md, 1).
     row(
@@ -5833,6 +5849,7 @@ impl Event {
             | Action::BedBreaks
             | Action::Choke(_)
             | Action::ShotInBed(_)
+            | Action::BurnedInBed
             | Action::Sleepwalk
             | Action::LiesBeside
             | Action::BedOccupied => "night",
@@ -6149,7 +6166,8 @@ impl Event {
             "window_bars" => "turn a window pane to iron bars",
             "bed_breaks" => "break the bed under them as they lie down",
             "choke" => "walk to their bed as they sleep and choke them with a lead",
-            "shot_in_bed" => "walk to their bed as they sleep and shoot them with a burning bolt",
+            "shot_in_bed" => "walk to the foot of their bed as they sleep and shoot them",
+            "burned_in_bed" => "walk to their bed as they sleep and set them alight",
             "ring_of_figures" => "stand figures in a ring round the house while they are inside",
             "upside_down" => "hang the figure from the ceiling over their bed as they wake",
             "the_crawl" => "have the figure crawl from their door to their bed while they are in",

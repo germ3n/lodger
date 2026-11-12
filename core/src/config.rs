@@ -88,6 +88,7 @@ impl Preset {
                     "bed_breaks",
                     "choke",
                     "shot_in_bed",
+                    "burned_in_bed",
                     "sleepwalk",
                     "lies_beside",
                     "foot_of_bed",
