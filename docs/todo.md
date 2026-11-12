@@ -2204,6 +2204,14 @@ The `[x]` lines above, summed up by day:
 - [x] **The count** (`docs/events_todo.md`, 126): `the_count`, stages 4 and 5, at dusk: a bell at the house rung once more each time, nine at most. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **The face under the water, the worn path** (owner: "nothing happens when i go to water";
+  "path_worn ... set_block not done, the place holds jungle_planks"): `reflection` stays up to six
+  seconds, gone once seen and looked away from; `path_worn` passes over the blocks they built (a
+  porch's planks refused stopped the whole path, a refused block ending its event) and finds the
+  grass two blocks up or down, only ever over grass. Tests: the reflection test checks its time
+  and its going once seen too; one more for the path. Was: the face a second long, gone before it
+  was found; the path stopped at their porch.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

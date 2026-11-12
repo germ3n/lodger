@@ -3470,8 +3470,25 @@ pub fn commands(
                         break;
                     }
                     p = [p[0] + step[0], p[1], p[2] + step[1]];
+                    // Never over what they built (their porch's planks stopped the whole path:
+                    // a block refused ends the event), and the grass found two blocks up or down
+                    // where the ground slopes, never into the air.
+                    let theirs = memory.placed.iter().any(|b| b[0] == p[0] && b[2] == p[2]);
+                    if theirs {
+                        continue;
+                    }
                     made.push((
-                        set(ids, p, "minecraft:dirt_path", &["minecraft:grass_block"]),
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: p,
+                            block: "minecraft:dirt_path".to_string(),
+                            state: String::new(),
+                            replace: vec!["minecraft:grass_block".to_string()],
+                            settle: 2,
+                            wall: String::new(),
+                            rest: false,
+                            only: true,
+                        },
                         i as u64 * 10,
                     ));
                 }
@@ -8824,7 +8841,7 @@ pub fn commands(
                         seconds,
                         vanish_within: vanish,
                         mirror: matches!(where_, FigureWhere::Mirror),
-                        once_seen: matches!(where_, FigureWhere::Crowd),
+                        once_seen: matches!(where_, FigureWhere::Crowd | FigureWhere::UnderWater),
                         copy_crouch: matches!(where_, FigureWhere::FarCopying),
                         swinging: matches!(where_, FigureWhere::FarWorking),
                         upside_down: false,
@@ -13824,6 +13841,12 @@ mod tests {
         let p = place(event, &memory, &mut Rng::new(1)).expect("a spot under the water");
         // The figure stands one above its spot: feet two below the water's top, head under.
         assert_eq!(p[1], water[1] - 3);
+        // Long enough to be found, and gone once seen.
+        let made = commands(event, Some(p), &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { seconds, once_seen: true, .. }, 0)] if *seconds >= 5.0),
+            "{made:?}"
+        );
     }
 
     #[test]
@@ -15690,5 +15713,42 @@ mod tests {
         memory.record("the_count", None, 0.0, true, "");
         memory.record("the_count", None, 1.0, true, "");
         assert_eq!(bells(&memory), 3, "once more each time");
+    }
+
+    #[test]
+    fn the_worn_path_passes_over_what_they_built_and_finds_the_grass() {
+        let mut memory = rich_memory();
+        let door = memory.usual_door().unwrap();
+        let home = memory.home.as_ref().unwrap().center;
+        let out = out_of_door(&memory, home, door);
+        // Their porch: the block just out of the door, and the one after.
+        let porch = [door[0] + out[0], door[1] - 1, door[2] + out[1]];
+        memory.placed.push(porch);
+        let event = find("path_worn").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(!made.is_empty());
+        for (command, _) in &made {
+            let Command::SetBlock {
+                pos, only, settle, ..
+            } = command
+            else {
+                panic!("{command:?}")
+            };
+            assert!(
+                *only && *settle >= 1,
+                "on the grass alone, found up or down"
+            );
+            assert!(
+                !(pos[0] == porch[0] && pos[2] == porch[2]),
+                "never on their porch"
+            );
+        }
     }
 }

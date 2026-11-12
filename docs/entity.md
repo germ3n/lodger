@@ -221,7 +221,7 @@ Blocks the target placed, moved within reach, never broken for good.
 | `ladder_gap` | 3 | One rung from the middle of the home's tallest ladder is missing, and is set on top of the ladder. | A ladder of four rungs or more. |
 | `flowers_potted` | 2 | Up to three flowers around the house are picked and are in the home's empty pots. | Flowers around the home, an empty flower pot. |
 | `flowers_wilted` | 3 | While they are away or asleep, each flower they planted (six at most) is a dead bush; a day on, each is the flower it was again (`swap_block` there and back, each over its own kind only). | Flowers of theirs, the target away or asleep. |
-| `path_worn` | 3 | A line of dirt path from the door toward the lodger's place, as if walked a hundred times. | Grass between the door and the spot. |
+| `path_worn` | 3 | A line of dirt path from the door toward the lodger's place, as if walked a hundred times: on the grass alone, found a block or two up or down where the ground slopes, passing over anything they built (a porch). | Grass between the door and the spot. |
 | `cairn` | 3 | A small stack of cobblestone at the end of the target's route, from the lodger's own digging. | A route and held stone. |
 | `stone_circle` | 4 | While they are away or asleep, fifty blocks from the house, any way, a ring of eight stone-brick pillars three high, five blocks out, stands on the ground; only into air. Once a stay. | The home known, the target away or asleep. |
 | `path_through_the_trees` | 5 | While they are away or asleep, a straight line two blocks wide is cut through the leaves from forty-five blocks out to fifteen from the house, pointing at it: every leaf three to fourteen blocks over the ground along it taken away, leaves only, nothing else. Once a stay. | The home known, the target away or asleep. |
@@ -554,7 +554,7 @@ seconds and then stops; `events.glitches` turns the group off, with [The screen]
 | `night_early` | 4 | The sun, moon and stars stand two hours later than they are, the sky dimmed, for a minute, eased in and out, then right. | The target outdoors by day. |
 | `red_rain` | 4 | While it rains, the drops themselves are red (the rain's colour hook), for two to five minutes; no screen cast. The brain may pair it with `red_mist`. | Rain, the target outdoors or at a window. |
 | `compass_points` | 3 | A compass the target holds points at the lodger's place for two minutes (a hook on the compass's target). | The target holding a compass. |
-| `reflection` | 4 | Water reflects nothing in the game, so a face under it instead (owner): the figure just under the surface of still water near them, its head below the top, for one second. | Water within 24 blocks, the target outdoors. |
+| `reflection` | 4 | Water reflects nothing in the game, so a face under it instead (owner): the figure just under the surface of still water near them, its head below the top, up to six seconds, gone once seen and looked away from. | Water within 24 blocks, the target outdoors. |
 
 #### The atmospheres
 

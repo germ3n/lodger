@@ -2656,7 +2656,9 @@ pub const CATALOGUE: &[Event] = &[
         3.0,
         2,
         Full,
-        Action::Figure(FigureWhere::UnderWater, 1.0, 0.0),
+        // Six seconds at most, gone once seen and looked away from: a second, it was gone before
+        // anyone found it under the water (owner: "nothing happens when i go to water").
+        Action::Figure(FigureWhere::UnderWater, 6.0, 0.0),
         false,
     ),
     // Batch 10 (owner): prints in the snow, the boat ahead, ripples, a bobber with
