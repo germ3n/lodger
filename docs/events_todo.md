@@ -1,6 +1,6 @@
 # Events to come
 
-A hundred event ideas not yet in the catalogue (forty at first, forty more after, then thirty-five) (`core/src/events.rs`, `docs/entity.md`), none of
+A hundred event ideas not yet in the catalogue (forty at first, forty more after, then thirty-five, then fifty more) (`core/src/events.rs`, `docs/entity.md`), none of
 them a copy of one there or of a line in `docs/ideas.md`. Each says the stage it fits, what the
 target must be doing, what it would take (the commands there are today, or what the host would
 need), and a rough size: **S** (the mind alone, today's commands), **M** (a small host change),
@@ -149,3 +149,64 @@ dark forest).
 | 114 | `shove` by stage | 4 | **Built** (`shove_far`, stage five). The ledge push: the fall it may give grows with the stage, two or three blocks in stage four, up to six in stage five, never fatal. (Asked for by the owner: "for the ledge event, depending on the stage higher falls are okay".) | As `shove`. | `shove`'s `most_drop` by the stage. | S |
 | 115 | `menu_freaks` | 4 | **Built.** They open the game's menu (Escape) and it goes wrong: the buttons shiver and jitter in place, the title shakes, a button's words flicker to something else a moment ("Back to Game" reading "stay"), and it settles after a few seconds as if nothing were wrong. (Asked for by the owner: "opening the main menu it kinda freaks out, like buttons vibrate, etc".) | The target in a world, opening the pause menu while it is armed. | A client hint arming it; a hook on the pause screen's drawing that shakes its widgets and swaps a label a moment. | M |
 
+## Fifty more
+
+The owner, once 81 to 115 were built: fifty more, leaning on sound ("there should be more sound
+events"), anything creepy ("dont limit yourself with forest and villagers, come up with anything
+creepy/unsettling/scary"). Checked against the catalogue, `docs/ideas.md` and every row above; ten
+first drafts that `ideas.md` already had (a parrot's mimicry, elytra over the roof, lightning on its
+place, drowned staring, a cat purring, knocks under the floor, a hollow in the floor, an enderman's
+scream, a ghast's cry, its lying down in their bed) were replaced. Twenty-seven are sounds.
+
+| # | Event | Stage | What happens | Needs | Takes | Size |
+| --- | --- | --- | --- | --- | --- | --- |
+| 116 | `breathing_in_the_wall` | 3 | In the house, slow breathing from inside a wall, moving along it as they walk the room, always the wall nearest them; it stops when they press against it. | Indoors. | `sound` at the nearest wall block of theirs, moved as they move; a breath sound pitched low. | S |
+| 117 | `scream_indoors` | 4 | At night a goat's scream from the next room of their house, where no goat is; once, then nothing. | Indoors at night, a room of the house not theirs to stand in. | `sound` at a room's anchor (`room_of`). | S |
+| 118 | `item_break_behind` | 3 | The snap of a tool breaking, right behind them; nothing of theirs is broken. | The target awake. | `sound` (item break) behind them. | S |
+| 119 | `armour_behind` | 4 | In the dark, the clank of armour walking a few steps behind them, stopping when they stop; no one there. | Night or underground, walking. | `footsteps` with armour's equip sound instead of the ground's. | M |
+| 120 | `breath_in_the_chest` | 3 | They open their chest and a breath comes out of it, close, as the lid lifts. | Opening a chest of theirs. | The chest opening trigger (`consider_echo`'s), a breath sound at the chest. | S |
+| 121 | `rain_on_the_roof` | 3 | Indoors under a clear sky, rain drums on the roof for half a minute; outside it is dry. | Indoors, no rain. | A client hint playing rain's sound on the roof over them. | M |
+| 122 | `sniffing` | 4 | Crouched still in a hiding place, sniffing close behind them, as of something hunting by smell; it moves off. | Crouching still. | The crouch trigger; a sniffer's sniff sound behind them, then further off. | S |
+| 123 | `gasp_when_turning` | 4 | For a while, each time they turn round fast, a sharp breath in behind them, as if something there was startled to be seen. | Walking, turning back. | A look-back trigger (the movement's look-backs), a breath sound behind them. | M |
+| 124 | `water_where_none` | 3 | In a dry corner of their house, the slosh and splash of something moving in water; there is no water. | Indoors. | `sound` (swim, splash) at a corner of the house. | S |
+| 125 | `doors_slam_far` | 4 | At night, far off where the village is, every door slams at once, one great crash. | Night, a village known. | `sound` (doors closing) many at once at the village. | S |
+| 126 | `the_count` | 4 | A bell rings once at dusk; the next night twice; each night once more, the nights of the stage counted out. | Dusk, a home. | `sound` (bell) rung the stage's nights so far. | S |
+| 127 | `rumble` | 4 | A deep rumble under them and the screen shakes; dust falls from the ceiling indoors; nothing breaks. | The target awake. | A rumble sound, the camera's hurt jolt (no harm), falling dust particles on their client. | M |
+| 128 | `rattling_round_the_house` | 4 | At night, bones rattling round the outside of the house, a skeleton's steps circling it, a loop and back; no skeleton. | Indoors at night. | `sound` (skeleton step) at points round the walls, in turn. | S |
+| 129 | `chains_dragging` | 4 | In a tunnel, chains dragging along the stone behind them, nearer, then gone. | Underground. | `sound` (chain step) behind them, nearer each time. | S |
+| 130 | `shriek_below` | 5 | From deep under the house, a sculk shrieker's shriek, once, and the darkness on their screen a moment. | A home, the target at home. | `sound` far below, the darkness effect briefly. | S |
+| 131 | `witch_laughs` | 3 | At night in the open, a witch's laugh far off, from the way of its place; no witch. | Night, outdoors. | `sound` (witch celebrate) far off. | S |
+| 132 | `pet_whines_at_door` | 3 | All night their dog sits at the door and whines at it, at nothing outside. | A tamed wolf of theirs at home, night. | `hold` the dog facing the door; whine sounds from it. | S |
+| 133 | `boom_far` | 4 | At night, a far explosion from the way of its place, a flash on the sky there; nothing is harmed. | Night, outdoors, its place. | An explosion's sound and particles far off on their client alone. | M |
+| 134 | `glass_rubbed` | 3 | At night a finger drags slowly across the window glass from outside, a long squeak. | Indoors at night, a window. | `sound` (glass step, slowed) at a pane. | S |
+| 135 | `bones_underfoot` | 4 | For a minute, every step they take in one room crunches like bone. | Indoors. | A client hint swapping their step sounds for bone's in that room. | M |
+| 136 | `bubbling_under` | 3 | Water bubbling under the floor of the house, as from a deep spring, a minute; there is no water. | Indoors. | `sound` (bubble column) under the floor. | S |
+| 137 | `the_bell_in_the_chest` | 4 | They open their chest and a bell rings inside it, once. | Opening a chest of theirs. | The chest opening trigger; a bell sound at the chest. | S |
+| 138 | `panting_behind` | 4 | Running, panting right behind them, matching theirs; when they stop it stops a breath later. | Running. | A breath sound behind them each second they run (the movement's pace). | M |
+| 139 | `iron_door_below` | 4 | Underground, an iron door slams somewhere under them, where there are no doors. | Underground. | `sound` (iron door close) below them. | S |
+| 140 | `ice_cracks` | 3 | Walking on ice, it cracks under them, the sound of it splitting; the ice holds. | On ice. | `sound` (glass break, low) at their feet. | S |
+| 141 | `bush_rustles` | 3 | A bush beside them rustles hard as they pass, as if something in it moved; nothing comes out. | Outdoors, walking. | `sound` (berry bush, leaves) beside them. | S |
+| 142 | `snoring_beside` | 4 | They lie down in bed and someone is snoring beside them, soft and slow; no one there. | In bed. | `sound` (a sleeping fox's breath, pitched low) beside the bed. | S |
+| 143 | `torches_turn` | 4 | Overnight every wall torch of the house is on another wall of its block, all pointing at their bed. | The target away or asleep, wall torches at home. | `swap_block` each wall torch's facing toward the bed. | S |
+| 144 | `red_trail` | 4 | A trail of red specks on the floor from the door to the bed, there a minute and gone. | Coming home. | A client hint of red dust along the way. | M |
+| 145 | `your_grave` | 5 | At its place, a grave: a stone and a sign with their own name on it and a day not come yet. | Its place, the target away or asleep. | `set_block` stone, `sign_at` with their name. | S |
+| 146 | `snow_shape` | 4 | In the snow by the house, a hollow the shape of a person lying down, as if one lay there all night. | Snow by the home, the target away or asleep. | Snow layers taken off in a body's outline. | S |
+| 147 | `clock_wrong` | 3 | The clock in their hand shows night at noon, a while. | A clock held. | A client hint on the clock's face (as the compass's). | M |
+| 148 | `shadow_on_the_wall` | 4 | In the house, a dark shape of a person on the wall behind them, cast by their own torch, gone when they turn. | Indoors, a light held. | Dark dust in a figure's outline on the wall behind them, their client alone. | M |
+| 149 | `cold_house` | 4 | The house goes cold: their breath shows in puffs indoors, the fire gives no warmth, frost on the floor a while. | Indoors. | Breath particles at their mouth, a snow layer on a few floor blocks for a while. | M |
+| 150 | `the_killer_rabbit` | 4 | A white rabbit sits watching them, then comes at them, red-eyed, fast; a nip, never a kill. | Outdoors, a rabbit's biome. | `place_entity` the game's killer rabbit, spared, for a while. | S |
+| 151 | `cobwebs` | 3 | Overnight the corners of their house are hung with cobwebs, as if no one had lived there for years; gone in a day. | The target away or asleep. | `set_block` cobwebs at the upper corners, taken away later. | S |
+| 152 | `phantom_item` | 4 | A moment, a strange item sits in an empty slot of their inventory, a paper named "behind you"; looked at again, it is gone. | Opening the inventory. | A client hint drawing an item in an empty slot (as `inventory_stare`). | M |
+| 153 | `border_closes` | 5 | The world border's red edge shows close round them a moment, as if the world were ending a block away. | The target awake. | A client world-border packet, near, then back. | M |
+| 154 | `ceiling_crawl` | 5 | At night in the house, a figure crawls across the ceiling over them, upside down, and through the wall. | Indoors at night. | `figure` upside down along a path under the ceiling. | M |
+| 155 | `in_the_lava` | 4 | Underground, a figure stands in a lava lake, unburnt, facing them; gone once seen and looked away from. | Lava near them. | `figure` on the lava's surface. | S |
+| 156 | `over_the_edge` | 4 | At the foot of a cliff, a head peeks over the top edge high above them, watching; gone when they look up. | At a cliff's foot. | `figure` sunk at the edge above, `once_seen`. | M |
+| 157 | `false_door` | 4 | Overnight, a door on an inside wall of their house where there was none; open it and there is stone behind it. | The target away or asleep. | `set_block` a door against a wall of theirs. | S |
+| 158 | `stairs_up_to_nowhere` | 4 | Overnight, a flight of stairs up from their floor into the ceiling, going nowhere. | The target away or asleep. | `place_blueprint` stairs from what it dug. | S |
+| 159 | `face_in_the_canopy` | 4 | In a tree by their house, the leaves are cut away to make two eyes and a mouth, facing their door. | A tree near home, the target away or asleep. | Leaf blocks taken away in a face. | M |
+| 160 | `rider_on_the_ridge` | 4 | At dusk, on the ridge far off, a figure on a skeleton horse sits still, watching; gone when looked at. | Dusk, outdoors. | `figure` riding a skeleton horse placed for a while. | M |
+| 161 | `boots_at_the_door` | 4 | Inside their door, a pair of boots like theirs, standing as if someone just took them off and came in. | Coming home. | An invisible armour stand wearing boots, placed for a while. | S |
+| 162 | `frost_on_the_glass` | 3 | Their windows frost over from the inside, white, a while, though it is not cold. | Indoors. | Panes swapped to frosted ice a while, then back. | S |
+| 163 | `nightmare` | 5 | As they wake, a single frame of the figure's face fills their screen. | Waking. | A client hint drawing the figure's face over the wake. | M |
+| 164 | `static` | 4 | A second of static over their screen, a hiss with it, then nothing. | The target awake. | A client hint of noise drawn on the screen, a hiss sound. | M |
+| 165 | `elder_face` | 5 | Far from any ocean, the elder guardian's face fills their screen with its cry, no curse after. | The target awake. | The elder guardian's particle and sound to them alone. | S |
