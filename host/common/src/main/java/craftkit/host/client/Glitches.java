@@ -172,6 +172,11 @@ public final class Glitches {
 		return false;
 	}
 
+	/** Whether the thing in their hand shimmers as if enchanted (`false_glint`, ABI 56). */
+	public static boolean falseGlint() {
+		return Hints.showing("false_glint");
+	}
+
 	/** Whether the held item's name over the hotbar reads "its" (`held_name_wrong`, ABI 56). */
 	public static boolean heldNameWrong() {
 		for (Hints.Active active : Hints.active()) {

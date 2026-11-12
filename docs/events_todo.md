@@ -321,7 +321,7 @@ things, and on the screen. Not built yet.
 | 262 | `ash_on_the_wind` | 4 | **Built (a minute, grey and white).** Ash drifts down around them out of a clear sky, for them alone. | Outdoors. | A client hint of ash particles around them. | S |
 | 263 | `red_petals` | 3 | **Built (forty-five seconds, the game's falling leaves tinted red).** Petals fall around them, red, where there are no trees. | Outdoors. | A client hint of red petal particles around them. | S |
 | 264 | `sculk_trail` | 5 | **Built (door to bed, thirty seconds, on their screen alone).** Sculk charge crawls along the floor from the door to their bed. | A home with a bed and a door, the target indoors. | A client hint of sculk charge particles along the way. | S |
-| 265 | `false_glint` | 3 | The tool in their hand shimmers as if enchanted, a while; it is not. | Holding a tool. | A client hint drawing the glint on their held item. | S |
+| 265 | `false_glint` | 3 | **Built (a minute and a half, what is in their main hand).** The tool in their hand shimmers as if enchanted, a while; it is not. | Holding a tool. | A client hint drawing the glint on their held item. | S |
 
 ## The Nether and the End
 

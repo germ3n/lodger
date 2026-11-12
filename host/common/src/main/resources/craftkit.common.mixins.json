@@ -19,6 +19,7 @@
 		"FogRendererMixin",
 		"HudMixin",
 		"InventoryScreenMixin",
+		"ItemStackFoilMixin",
 		"LivingEntityRendererMixin",
 		"ModelFeatureRendererMixin",
 		"PaintingRendererMixin",

@@ -7845,6 +7845,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("sculk_trail", 30.0),
         false,
     ),
+    // docs/events_todo.md, 265: for a minute and a half the thing in their hand shimmers as if enchanted.
+    row(
+        "false_glint",
+        3,
+        5,
+        &[TargetAwake],
+        1.0,
+        3,
+        Half,
+        Action::Hint("false_glint", 90.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9060,6 +9072,7 @@ impl Event {
             "ash_on_the_wind" => "drift ash down round them from a clear sky",
             "red_petals" => "let red petals fall round them",
             "sculk_trail" => "creep sculk's charge along the floor to their bed",
+            "false_glint" => "make the thing in their hand shimmer as if enchanted",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

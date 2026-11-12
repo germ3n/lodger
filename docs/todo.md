@@ -2948,6 +2948,11 @@ The `[x]` lines above, summed up by day:
   `sculk_trail` hint, drawn as `red_trail`'s line; off with the glitches). Tests: one in `act`. Was:
   no such event.
 
+- [x] **A false glint** (`docs/events_todo.md`, 265): `false_glint`, stages 3 to 5, awake: a minute
+  and a half in which what they hold in their main hand is drawn with the enchantment's shimmer on
+  their client (the `false_glint` hint, `ItemStackFoilMixin`; off with the glitches). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

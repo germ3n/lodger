@@ -150,6 +150,7 @@ As little as possible, because the mod is about not knowing:
   `sound_warp` (every sound slowed, in a hall's echo, muffled or broken a while, through OpenAL's effects; `slow`, `hall`, `muffled`, `broken`),
   `ash_on_the_wind` (ash drifting down round them), `red_petals` (red falling petals round them),
   `sculk_trail` (sculk's charge along the floor from the door to the bed, as `red_trail`'s line),
+  `false_glint` (what is in their main hand drawn shimmering as if enchanted),
   `compass_spins` (a compass spinning as in the Nether),
   `enchant_six` (an enchanting table's offers drawn costing 6, the server's costs untouched),
   `title_splash` (armed: the next title screen's splash reads `we watched you sleep`, once),
