@@ -1289,6 +1289,19 @@ pub enum Command {
         /// or at the frame when absent; never lost. ABI 40.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         drop_at: Option<Pos>,
+        /// The very stack kept under this name (`take_item`'s or `take_frame_item`'s `keep`) into
+        /// the frame instead, only an empty one. ABI 56.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        kept: String,
+    },
+    /// From the item frame nearest `player` within twenty-four blocks holding `item`, the stack
+    /// taken out and kept under `keep`, the very stack, for `set_frame_item`'s `kept`; refused
+    /// with none. ABI 56.
+    TakeFrameItem {
+        id: u64,
+        player: u32,
+        item: String,
+        keep: String,
     },
     /// Put a piece of armour or a held item on an entity that wears it: an armour stand.
     EquipEntity {
@@ -1764,6 +1777,7 @@ impl Command {
             | Command::RotateSlots { id, .. }
             | Command::CurlUp { id, .. }
             | Command::InWorld { id, .. }
+            | Command::TakeFrameItem { id, .. }
             | Command::GrowVines { id, .. }
             | Command::Lightning { id, .. }
             | Command::ShulkersPeek { id, .. }

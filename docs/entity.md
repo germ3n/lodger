@@ -500,6 +500,7 @@ caves, from before.
 | `lava_goes_still` | 4 to 5 | In the Nether, the lava sea round them goes still: no pops, no rising sparks, no sound, twenty seconds, then all at once again, on their screen alone (the client's `lava_still` hint, a hook on lava's own ticking there, ABI 56). | In the Nether. |
 | `end_sky_face` | 4 to 5 | In the End, as they look up, for a moment the sky makes a face, two eyes and a mouth of its own dark purple, faint, swelling and gone, on their screen alone (the client's `end_sky_face` hint over the screen, ABI 56). | In the End. |
 | `barter_from_home` | 4 to 5 | In the Nether, a piglin near them drops at its feet one thing of theirs, the very thing, taken from the chest they use at home, never a favourite of theirs; the chest at home is one short (`in_world` running `take_item` in the overworld, then `drop_item` here; the thing the overworld's stay tells the Nether's). Not on their bartering, but while a piglin is near. | In the Nether, a piglin near them, a thing in the chest they use at home. |
+| `elytra_at_home` | 5 | At an end ship (a shulker near them), its elytra is gone from its frame, and at home it hangs in an item frame of theirs, the very elytra; with their frame full it lies on the floor at home instead, never lost (`take_frame_item` here, `in_world` running `set_frame_item`'s `kept` at home, ABI 56). | In the End, a shulker near them, an item frame of theirs at home. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

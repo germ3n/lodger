@@ -111,7 +111,25 @@ public final class Executors {
 				case "push_entity" -> pushEntity(level, command, id);
 				case "rotate_block" -> rotateBlock(level, blockPos(command.getAsJsonArray("pos")), id);
 				case "break_block" -> breakBlock(level, blockPos(command.getAsJsonArray("pos")), id);
-				case "set_frame_item" -> setFrameItem(level, command, id);
+				case "set_frame_item" -> setFrameItem(level, command, id, data);
+				case "take_frame_item" -> {
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					// From the nearest frame within twenty-four holding it, kept under a name (ABI 56):
+					// the end ship's elytra taken to be given back elsewhere, the very stack.
+					String want = command.get("item").getAsString();
+					var frames = level.getEntitiesOfClass(net.minecraft.world.entity.decoration.ItemFrame.class, player.getBoundingBox().inflate(24),
+							f -> !f.getItem().isEmpty() && Senses.itemId(f.getItem()).equals(want));
+					var nearest = frames.stream().min(java.util.Comparator.comparingDouble(f -> f.distanceToSqr(player)));
+					if (nearest.isEmpty()) {
+						yield report(id, false, "no frame near them holds " + want);
+					}
+					data.keep(command.get("keep").getAsString(), nearest.get().getItem().copy());
+					nearest.get().setItem(ItemStack.EMPTY);
+					yield report(id, true, "");
+				}
 				case "equip_entity" -> equipEntity(level, command, id, data);
 				case "damage_item" -> damageItem(level, command, id);
 				case "figure" -> figure(level, command, id, context);
@@ -1639,9 +1657,22 @@ public final class Executors {
 		return report(id, true, "");
 	}
 
-	private static JsonObject setFrameItem(ServerLevel level, JsonObject command, long id) {
+	private static JsonObject setFrameItem(ServerLevel level, JsonObject command, long id, WorldData data) {
 		if (!(level.getEntity(command.get("entity").getAsInt()) instanceof net.minecraft.world.entity.decoration.ItemFrame frame)) {
 			return report(id, false, "no item frame with that id here");
+		}
+
+		// The very stack kept under a name (ABI 56), only into an empty frame: nothing given back is lost.
+		if (command.has("kept") && !command.get("kept").getAsString().isEmpty()) {
+			if (!frame.getItem().isEmpty()) {
+				return report(id, false, "the frame holds something");
+			}
+			ItemStack kept = data.giveBack(command.get("kept").getAsString());
+			if (kept == null || kept.isEmpty()) {
+				return report(id, false, "nothing kept under that name");
+			}
+			frame.setItem(kept);
+			return report(id, true, "");
 		}
 
 		// The very stack from a container's slot, only into an empty frame (ABI 28), or traded

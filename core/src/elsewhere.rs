@@ -57,6 +57,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("lava_goes_still", "minecraft:the_nether"),
     ("end_sky_face", "minecraft:the_end"),
     ("barter_from_home", "minecraft:the_nether"),
+    ("elytra_at_home", "minecraft:the_end"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
@@ -143,7 +144,7 @@ impl Stay {
                 && self.arc.affords(event.cost_in(config), now.day, config)
                 && (*id != "ender_holds" || shared.block.is_some())
                 && (*id != "barter_from_home" || shared.chest.is_some())
-                && (*id != "elytra_at_home" || shared.frame.is_some())
+                && (*id != "elytra_at_home" || (shared.frame.is_some() && shared.home.is_some()))
             {
                 shared.allowed.push(id);
             }
@@ -212,7 +213,10 @@ impl Stay {
                 .chest
                 .as_ref()
                 .map(|(p, slot, item)| format!("{},{},{},{slot},{item}", p[0], p[1], p[2])),
-            "elytra_at_home" => shared.frame.map(|f| f.to_string()),
+            "elytra_at_home" => shared
+                .frame
+                .zip(shared.home)
+                .map(|(f, h)| format!("{f};{},{},{}", h[0], h[1], h[2])),
             _ => shared.block.clone(),
         };
         let made = crate::brain::act::commands(

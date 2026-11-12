@@ -927,6 +927,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::VinesReach
         | Action::PortalGoesOut
         | Action::BarterFromHome
+        | Action::ElytraAtHome
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -5262,6 +5263,7 @@ pub fn commands(
                         bed[1] as f64 + 0.7,
                         bed[2] as f64 + 0.5,
                     ]),
+                    kept: String::new(),
                 },
                 0,
             )],
@@ -5286,6 +5288,7 @@ pub fn commands(
                         item: ItemStack::default(),
                         swap: true,
                         drop_at: None,
+                        kept: String::new(),
                     },
                     0,
                 )]
@@ -10810,6 +10813,71 @@ pub fn commands(
                 _ => vec![],
             }
         }
+        // docs/events_todo.md, 305.
+        Action::ElytraAtHome => {
+            // Their frame and the home's middle, as the overworld told them: frame;x,y,z.
+            let told = written.unwrap_or_default();
+            let parsed = told.split_once(';').and_then(|(f, h)| {
+                let h: Vec<i32> = h.split(',').filter_map(|n| n.parse().ok()).collect();
+                Some((
+                    f.parse::<u32>().ok()?,
+                    (h.len() == 3).then(|| [h[0], h[1], h[2]])?,
+                ))
+            });
+            match parsed {
+                Some((frame, home)) => vec![
+                    (
+                        Command::TakeFrameItem {
+                            id: ids(),
+                            player: target,
+                            item: "minecraft:elytra".to_string(),
+                            keep: "elytra_at_home".to_string(),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::InWorld {
+                            id: ids(),
+                            dimension: "minecraft:overworld".to_string(),
+                            command: Box::new(Command::SetFrameItem {
+                                id: ids(),
+                                entity: frame,
+                                item: ItemStack::default(),
+                                from: None,
+                                slot: 0,
+                                swap: false,
+                                drop_at: None,
+                                kept: "elytra_at_home".to_string(),
+                            }),
+                        },
+                        20,
+                    ),
+                    // Their frame full or gone: the elytra at home all the same, never lost.
+                    (
+                        Command::InWorld {
+                            id: ids(),
+                            dimension: "minecraft:overworld".to_string(),
+                            command: Box::new(Command::DropItem {
+                                id: ids(),
+                                pos: [
+                                    home[0] as f64 + 0.5,
+                                    home[1] as f64 + 0.5,
+                                    home[2] as f64 + 0.5,
+                                ],
+                                item: ItemStack {
+                                    id: "minecraft:elytra".to_string(),
+                                    count: 1,
+                                    slot: 0,
+                                },
+                                kept: "elytra_at_home".to_string(),
+                            }),
+                        },
+                        40,
+                    ),
+                ],
+                None => vec![],
+            }
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -12467,6 +12535,7 @@ pub fn commands(
                     item: weapon.clone(),
                     swap: false,
                     drop_at: None,
+                    kept: String::new(),
                 },
                 0,
             )],
@@ -14692,6 +14761,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "elytra_at_home"
                 || event.id == "barter_from_home"
                 || event.id == "end_sky_face"
                 || event.id == "lava_goes_still"
@@ -23422,5 +23492,30 @@ mod tests {
             commands(event, None, &memory, &mut ids(), &Now::default(), None).is_empty(),
             "nothing told: nothing"
         );
+    }
+
+    #[test]
+    fn elytra_at_home_is_taken_and_hung_at_home_or_dropped_there() {
+        let memory = rich_memory();
+        let event = find("elytra_at_home").unwrap();
+        let made = commands(
+            event,
+            None,
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            Some("101;0,64,0"),
+        );
+        assert!(
+            matches!(&made[0].0, Command::TakeFrameItem { item, keep, .. } if item == "minecraft:elytra" && keep == "elytra_at_home"),
+            "{made:?}"
+        );
+        assert!(
+            matches!(&made[1].0, Command::InWorld { command, .. } if matches!(command.as_ref(), Command::SetFrameItem { entity: 101, kept, .. } if kept == "elytra_at_home"))
+        );
+        assert!(
+            matches!(&made[2].0, Command::InWorld { command, .. } if matches!(command.as_ref(), Command::DropItem { kept, .. } if kept == "elytra_at_home"))
+        );
+        assert!(commands(event, None, &memory, &mut ids(), &Now::default(), None).is_empty());
     }
 }

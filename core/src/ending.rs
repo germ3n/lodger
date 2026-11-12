@@ -1137,6 +1137,7 @@ pub fn commands(
                                 bed[1] as f64 + 0.7,
                                 bed[2] as f64 + 0.5 + dz / length * along,
                             ]),
+                            kept: String::new(),
                         },
                         i as u64 * 2,
                     )

@@ -3187,6 +3187,12 @@ The `[x]` lines above, summed up by day:
   thing (`in_world`, ABI 56: a command done in another dimension, what it keeps kept with the world
   that sent it). Tests: one in `act`, one in `elsewhere`. Was: no such event.
 
+- [x] **The elytra at home** (`docs/events_todo.md`, 305): `elytra_at_home`, stage 5, in the End
+  near a shulker with an item frame of theirs at home: the elytra taken from the nearest frame
+  holding one and kept, hung in their frame at home a second on (`in_world`), or dropped at home's
+  middle should the frame be full, never lost (`take_frame_item`, `set_frame_item`'s `kept`, ABI
+  56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

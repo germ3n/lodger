@@ -1354,6 +1354,8 @@ pub enum Action {
     PortalGoesOut,
     /// In the Nether, a piglin near them dropping one thing of theirs from their chest at home; the chest is one short.
     BarterFromHome,
+    /// The end ship's elytra gone from its frame, hung instead in an item frame of theirs at home.
+    ElytraAtHome,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8565,6 +8567,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BarterFromHome,
         false,
     ),
+    // docs/events_todo.md, 305: the end ship's elytra is gone, and hangs in their frame at home.
+    row(
+        "elytra_at_home",
+        5,
+        5,
+        &[InEnd, MobNear("shulker")],
+        10.0,
+        1,
+        Full,
+        Action::ElytraAtHome,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8947,6 +8961,7 @@ impl Event {
             | Action::LeatherDyed
             | Action::EggOnThePillow
             | Action::BarterFromHome
+            | Action::ElytraAtHome
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -9876,6 +9891,7 @@ impl Event {
             "lava_goes_still" => "still the lava round them a moment",
             "end_sky_face" => "make a face in the End's sky",
             "barter_from_home" => "give a piglin near them one thing from their chest at home",
+            "elytra_at_home" => "take the ship's elytra and hang it at their home",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
