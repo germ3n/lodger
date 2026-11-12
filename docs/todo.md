@@ -2801,6 +2801,10 @@ The `[x]` lines above, summed up by day:
   when they come within two blocks or ten minutes on (`ghost_item`, ABI 56: an item entity on one
   player's screen, nothing in the world). Tests: one in `act`. Was: no such event.
 
+- [x] **Their name, the title** (`docs/events_todo.md`, 234): `title_your_name`, stages 4 and 5,
+  awake at night: their own name as a title over their screen, dark red, a second (`game_message`'s
+  `title`, ABI 56; off with the glitches). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

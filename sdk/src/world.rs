@@ -1230,7 +1230,8 @@ pub enum Command {
     },
     /// A line in one player's chat or action bar in the game's own words: `joined` and `left`
     /// (`<name> joined the game`), `says` (`<name> text`, as if they typed it), `whisper`
-    /// (`<name> whispers to you: text`), `sleepers` (`1/2 players sleeping` on the action bar).
+    /// (`<name> whispers to you: text`), `sleepers` (`1/2 players sleeping` on the action bar),
+    /// `title` (`text` over their screen in big dark red letters, a second; ABI 56).
     GameMessage {
         id: u64,
         player: u32,

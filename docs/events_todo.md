@@ -290,7 +290,7 @@ things, and on the screen. Not built yet.
 | 231 | `shelf_shuffled` | 3 | **Built (each one place along: nothing taken).** The things on their shelves sit in another order in the morning. | A shelf of theirs, the target away or asleep. | The shelf's slots rearranged. | S |
 | 232 | `fireflies_go_out` | 3 | **Built (the farthest first, toward them, twenty seconds, on their screen alone).** At night, the firefly bushes near them go dark one by one toward them, as if something passed. | Firefly bushes near them, night. | Each bush hidden a moment in turn, as `cave_torches_flicker`. | S |
 | 233 | `trial_key_left` | 3 | **Built (on their screen alone, gone as they reach it: no key made from nothing).** A trial key lies on their doorstep in the morning. | A home with a door. | `drop_item` a trial key at the door, kept so it never despawns. | S |
-| 234 | `title_your_name` | 4 | Their own name fills the screen in big letters for a second, at night. | The target awake, night. | A title sent to them alone. | S |
+| 234 | `title_your_name` | 4 | **Built (dark red, a second).** Their own name fills the screen in big letters for a second, at night. | The target awake, night. | A title sent to them alone. | S |
 | 235 | `recipe_toast` | 3 | A recipe toast pops up for an item called "you". | The target awake. | A client hint showing a recipe toast with that name. | S |
 | 236 | `count_shows_zero` | 3 | For a moment every stack in their hotbar shows a count of 0. | The target awake. | A client hint over the hotbar's counts. | S |
 | 237 | `slot_barred` | 4 | One slot of their inventory shows a barrier a while; nothing can go in it. | Opening the inventory. | A client hint drawing a barrier over one empty slot. | S |

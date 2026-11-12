@@ -739,6 +739,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ShelfShuffled
         | Action::FirefliesGoOut
         | Action::TrialKeyLeft
+        | Action::TitleYourName
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8809,6 +8810,20 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // docs/events_todo.md, 234.
+        Action::TitleYourName => vec![(
+            Command::GameMessage {
+                id: ids(),
+                player: target,
+                message: "title".to_string(),
+                text: if memory.target_name.is_empty() {
+                    "you".to_string()
+                } else {
+                    memory.target_name.clone()
+                },
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -20125,6 +20140,18 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::GhostItem { item, pos, .. }, 0)] if item == "minecraft:trial_key" && pos[0] == (door[0] + step[0]) as f64 + 0.5 && pos[1] == (GROUND_Y + 1) as f64),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn title_your_name_shows_their_own_name_big() {
+        let mut memory = rich_memory();
+        memory.target_name = "Steve".to_string();
+        let event = find("title_your_name").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GameMessage { message, text, .. }, 0)] if message == "title" && text == "Steve"),
             "{made:?}"
         );
     }

@@ -1200,6 +1200,8 @@ pub enum Action {
     FirefliesGoOut,
     /// A trial key lying on their doorstep in the morning, on their screen alone: gone as they reach for it.
     TrialKeyLeft,
+    /// Their own name over their screen in big letters for a second, at night.
+    TitleYourName,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7403,6 +7405,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TrialKeyLeft,
         false,
     ),
+    // docs/events_todo.md, 234: their own name fills their screen for a second at night.
+    row(
+        "title_your_name",
+        4,
+        5,
+        &[TargetAwake, Night],
+        2.0,
+        2,
+        Half,
+        Action::TitleYourName,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8019,6 +8033,7 @@ impl Event {
             Action::Hint(_, _)
             | Action::GhastName
             | Action::BossBarIt
+            | Action::TitleYourName
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -8566,6 +8581,7 @@ impl Event {
             "shelf_shuffled" => "shuffle the things on their shelf",
             "fireflies_go_out" => "put out the fireflies near them one by one",
             "trial_key_left" => "leave a trial key on their doorstep",
+            "title_your_name" => "fill their screen with their own name a second",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

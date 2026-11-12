@@ -1641,6 +1641,12 @@ public final class Executors {
 				}
 				player.sendSystemMessage(Component.translatable(text, name));
 			}
+			// The text over their screen as a title, a second, in dark red (ABI 56).
+			case "title" -> {
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(0, 20, 10));
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(
+						Component.literal(text).withStyle(net.minecraft.ChatFormatting.DARK_RED)));
+			}
 			// Their own entry in the list shows no connection for a minute.
 			case "no_ping" -> {
 				player.connection.send(latency(player, -1));
