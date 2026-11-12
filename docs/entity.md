@@ -719,6 +719,7 @@ a dock or bridge), never over anything a player built (see the
 | `snipping_in_the_dark` | 3 | Near their sheep at night, the snip of shears, again and again; the sheep keep their wool. | Sheep near, night. |
 | `eating_in_the_wall` | 3 | Indoors, chewing, wet and slow, from inside the wall beside them. | The target indoors. |
 | `ominous_hum` | 4 | At home, from under the floor, the low hum of a trial spawner turning ominous; there is no spawner. | A home, the target indoors. |
+| `vault_opens_by_the_bed` | 4 | Lying down, the clunk and chime of a vault unlocking beside the bed. | The target in bed. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

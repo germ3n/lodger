@@ -1157,6 +1157,33 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 177.
+        "vault_opens_by_the_bed" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:block.vault.open_shutter", 0)],
+                    (0.7, 0.8),
+                    0.6,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.vault.activate", 0),
+                        ("minecraft:block.vault.open_shutter", 15),
+                    ],
+                    (0.7, 0.8),
+                    0.6,
+                    Beside,
+                ),
+                v(
+                    &[("minecraft:block.vault.open_shutter", 0)],
+                    (0.6, 0.7),
+                    0.7,
+                    Ear,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2136,6 +2163,7 @@ mod tests {
             "snipping_in_the_dark",
             "eating_in_the_wall",
             "ominous_hum",
+            "vault_opens_by_the_bed",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",

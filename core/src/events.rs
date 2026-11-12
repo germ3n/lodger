@@ -5784,6 +5784,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.trial_spawner.ominous_activate"),
         false,
     ),
+    // docs/events_todo.md, 177.
+    row(
+        "vault_opens_by_the_bed",
+        4,
+        5,
+        &[TargetInBed],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:block.vault.open_shutter"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7289,6 +7301,7 @@ impl Event {
             "snipping_in_the_dark" => "snip shears beside their sheep in the dark",
             "eating_in_the_wall" => "chew slowly inside the wall beside them",
             "ominous_hum" => "hum like a trial spawner under the floor",
+            "vault_opens_by_the_bed" => "unlock a vault beside their bed",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
