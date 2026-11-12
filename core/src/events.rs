@@ -5500,6 +5500,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundFar("minecraft:entity.witch.celebrate"),
         true,
     ),
+    // docs/events_todo.md, 132.
+    row(
+        "pet_whines_at_door",
+        3,
+        5,
+        &[Pet, Door, Night],
+        3.0,
+        2,
+        Full,
+        Action::SoundAtTarget("minecraft:entity.wolf.whine"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6664,6 +6676,7 @@ impl Event {
             "chains_dragging" => "drag chains along the stone behind them",
             "shriek_below" => "shriek from deep under their house",
             "witch_laughs" => "laugh like a witch far off in the dark",
+            "pet_whines_at_door" => "set their dog whining at the door all night",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

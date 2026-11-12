@@ -2224,6 +2224,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A witch laughs** (`docs/events_todo.md`, 131): `witch_laughs`, stages 3 to 5, at night outdoors: a witch's laugh far off. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **The dog whines at the door** (`docs/events_todo.md`, 132): `pet_whines_at_door`, stages 3 to 5, at night: their dog held facing the door, whining. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

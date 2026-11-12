@@ -2372,6 +2372,36 @@ pub fn commands(
         ));
         return made;
     }
+    // Their dog at the door (`pet_whines_at_door`): held facing it, whining now and then.
+    if event.id == "pet_whines_at_door" {
+        return match (
+            memory.pets().find(|p| p.kind == "wolf"),
+            memory.usual_door(),
+        ) {
+            (Some(dog), Some(door)) => {
+                let mut made = vec![(
+                    Command::Hold {
+                        id: ids(),
+                        entity: dog.id,
+                        player: target,
+                        seconds: 90.0,
+                        at: Some(at(door)),
+                        creep: false,
+                        spin: false,
+                    },
+                    0,
+                )];
+                for i in 0..6u64 {
+                    made.push((
+                        sound_at(ids, target, "minecraft:entity.wolf.whine", dog.pos, 0.8),
+                        20 + i * 300,
+                    ));
+                }
+                made
+            }
+            _ => Vec::new(),
+        };
+    }
     // A sound event plays one of its ways to sound, the next after the last: from the house's
     // door or chest, from far off, or around the target as it moves.
     if let Some(ways) = super::sounds::variants(event.id) {
@@ -15889,5 +15919,38 @@ mod tests {
                 .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn at_night_their_dog_whines_at_the_door() {
+        let mut memory = rich_memory();
+        memory.last.creatures_near = vec![crate::memory::Creature {
+            id: 31,
+            kind: "wolf".to_string(),
+            pos: [2.5, 64.0, 0.5],
+            pet: true,
+            ..Default::default()
+        }];
+        let event = find("pet_whines_at_door").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(
+                &made[0].0,
+                Command::Hold {
+                    entity: 31,
+                    at: Some(_),
+                    ..
+                }
+            ),
+            "{made:?}"
+        );
+        assert!(made[1..].iter().all(|(c, _)| matches!(c, Command::PlaySound { sound, .. } if sound == "minecraft:entity.wolf.whine")));
     }
 }
