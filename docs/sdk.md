@@ -434,10 +434,16 @@ craftkit docs to point there"), which the crate's `repository` and its README na
 `sdk/`, `host/`, this guide, the license and the toolchain, and builds and tests on its own: the
 host's tests about the lodger (its jar, its manifest, its docs and CI) skip there
 (`Repo.assumeLodger`). It is exported from here, which stays the source, so the lodger always
-builds against the very SDK and host published:
+builds against the very SDK and host published. After a change to `sdk/`, `host/` or this guide
+(owner: "when something changes here is it possible to update it in the repo as well?"; a
+script, the owner's pick):
 
 ```sh
-python3 scripts/export_craftkit.py ~/craftkit   # write the export (its .git is kept)
-cd ~/craftkit && git add -A && git commit -m "..." && git push
+scripts/sync_craftkit.sh            # re-export into ~/craftkit, commit with lodger's last SDK or host commit's subject, push
+scripts/sync_craftkit.sh ~/elsewhere   # another clone; cloned first when it is not one yet
 ```
+
+It commits nothing when nothing changed, and refuses while `sdk/`, `host/` or this guide has changes
+lodger has not committed, so only committed work goes over. `scripts/export_craftkit.py <destination>` alone writes
+the export without committing.
 

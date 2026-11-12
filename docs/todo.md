@@ -2384,6 +2384,12 @@ The `[x]` lines above, summed up by day:
   `homepage` and README point there. The host's five tests about the lodger skip where it is not
   beside the host (`Repo.assumeLodger`); here they run as ever.
 
+- [x] **Keeping craftkit's repository up to date** (owner: "when something changes here is it
+  possible to update it in the repo as well? (on the sdk side)"; a script, the owner's pick over
+  a GitHub Action or a standing rule). Was: re-exporting, committing and pushing by hand. Now
+  `scripts/sync_craftkit.sh` does all three, with lodger's last SDK or host commit's subject,
+  cloning craftkit first where there is no clone, and committing nothing when nothing changed.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
