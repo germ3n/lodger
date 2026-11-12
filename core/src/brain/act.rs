@@ -414,6 +414,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "bark_from_home" {
         return home.map(|h| h.center);
     }
+    // Shears snip beside their sheep.
+    if event.id == "snipping_in_the_dark" {
+        return memory.creatures("sheep").next().map(|c| block_of(c.pos));
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -17311,5 +17315,33 @@ mod tests {
             None,
         );
         assert!(made[1].1 < bones[1].1);
+    }
+
+    #[test]
+    fn at_night_shears_snip_beside_their_sheep() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.creatures_near.push(crate::memory::Creature {
+            kind: "sheep".to_string(),
+            pos: [6.0, 64.0, 6.0],
+            ..Default::default()
+        });
+        let event = find("snipping_in_the_dark").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(!made.is_empty(), "{made:?}");
+        assert!(
+            made.iter()
+                .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
+            "{made:?}"
+        );
     }
 }

@@ -2484,6 +2484,9 @@ The `[x]` lines above, summed up by day:
   and 5, at night indoors: a horse's gallop once round the walls and away, on the bones' way round
   (`round_the_house`, now shared). Tests: one in `act`. Was: no such event.
 
+- [x] **Snipping in the dark** (`docs/events_todo.md`, 174): `snipping_in_the_dark`, stages 3 to 5: near their sheep at night, shears snipping again and again. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

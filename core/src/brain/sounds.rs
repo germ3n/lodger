@@ -1058,6 +1058,42 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 174.
+        "snipping_in_the_dark" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.sheep.shear", 0),
+                        ("minecraft:entity.sheep.shear", 12),
+                        ("minecraft:entity.sheep.shear", 24),
+                    ],
+                    (0.8, 0.9),
+                    0.9,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.sheep.shear", 0),
+                        ("minecraft:entity.sheep.shear", 18),
+                    ],
+                    (0.75, 0.85),
+                    0.9,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.sheep.shear", 0),
+                        ("minecraft:entity.sheep.shear", 10),
+                        ("minecraft:entity.sheep.shear", 20),
+                        ("minecraft:entity.sheep.shear", 30),
+                    ],
+                    (0.7, 0.8),
+                    0.8,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2034,6 +2070,7 @@ mod tests {
             "ram_on_the_wall",
             "bell_underwater",
             "bark_from_home",
+            "snipping_in_the_dark",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",
