@@ -1302,6 +1302,8 @@ pub enum Action {
     PrintsInSoulSand,
     /// In the End, prints across the end stone from them toward the island's edge and off it.
     PrintsOffTheEdge,
+    /// Back from another dimension, prints already leading out of their portal toward the house.
+    PrintsFromThePortal,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8165,6 +8167,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PrintsOffTheEdge,
         false,
     ),
+    // docs/events_todo.md, 312: back through their portal, prints already lead from it toward the house.
+    row(
+        "prints_from_the_portal",
+        4,
+        5,
+        &[Home, CameBack],
+        2.0,
+        2,
+        Half,
+        Action::PrintsFromThePortal,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8817,6 +8831,7 @@ impl Event {
             | Action::NameInNetherrack
             | Action::PrintsInSoulSand
             | Action::PrintsOffTheEdge
+            | Action::PrintsFromThePortal
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9423,6 +9438,7 @@ impl Event {
             "name_in_netherrack" => "cut their name into the netherrack behind them",
             "prints_in_soul_sand" => "lay prints ahead of them leading away",
             "prints_off_the_edge" => "lay prints from them to the island's edge",
+            "prints_from_the_portal" => "lay prints from their portal to their door",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

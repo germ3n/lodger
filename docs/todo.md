@@ -3051,6 +3051,11 @@ The `[x]` lines above, summed up by day:
   middle, on their client (the `footprints` hint; off with the glitches). Tests: one in `act`. Was:
   no such event.
 
+- [x] **Prints from the portal** (`docs/events_todo.md`, 312): `prints_from_the_portal`, stages 4
+  and 5, as they come back from another dimension (the brain, a quarter of the times, beside
+  `waits_at_the_portal`): footprints from where they came out to the door they use, on their client
+  (the `footprints` hint). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

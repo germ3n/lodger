@@ -889,6 +889,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::NameInNetherrack
         | Action::PrintsInSoulSand
         | Action::PrintsOffTheEdge
+        | Action::PrintsFromThePortal
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10203,6 +10204,22 @@ pub fn commands(
                 0,
             )]
         }
+        // docs/events_todo.md, 312.
+        Action::PrintsFromThePortal => match (memory.arrived_at, memory.usual_door()) {
+            (Some(portal), Some(door)) => {
+                let from = [portal[0] as f64 + 0.5, portal[2] as f64 + 0.5];
+                let to = [door[0] as f64 + 0.5, door[2] as f64 + 0.5];
+                vec![(
+                    prints_hint(
+                        ids,
+                        target,
+                        &crate::prints::walk(from, to, portal[1] as f64),
+                    ),
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14085,6 +14102,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "prints_from_the_portal"
                 || event.id == "prints_off_the_edge"
                 || event.id == "prints_in_soul_sand"
                 || event.id == "name_in_netherrack"
@@ -22376,6 +22394,18 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, .. }, 0)] if hint == "footprints"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn prints_from_the_portal_walk_to_their_door() {
+        let mut memory = rich_memory();
+        memory.arrived_at = Some([30, 64, 30]);
+        let event = find("prints_from_the_portal").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, detail, .. }, 0)] if hint == "footprints" && !detail.is_empty()),
             "{made:?}"
         );
     }
