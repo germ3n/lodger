@@ -329,6 +329,14 @@ pub fn tick(
     if arc.stage != 5 {
         return Vec::new();
     }
+    // Whichever ending it is, what it took up into the sky falls back as it begins: nothing of
+    // theirs is kept for good.
+    if memory.taken_up_day.take().is_some() {
+        return vec![(
+            crate::taken_up::fall_back(ids(), crate::taken_up::fall_spot(memory)),
+            0,
+        )];
+    }
     let ending = match Ending::named(&arc.ending) {
         Some(ending) => ending,
         None => {
@@ -835,19 +843,29 @@ pub fn commands(
     let target = memory.target.unwrap_or(0);
     let at = memory.last.pos;
     match beat {
-        Beat::ReturnHeld => match (&memory.held, crate::events::find("return_taken")) {
-            (Some(_), Some(event)) => {
-                let pos = memory.held.as_ref().map(|h| h.from);
-                let made = crate::brain::act::commands(event, pos, memory, ids, now, None);
-                // Given back is no longer held: a beat has no report to clear it by, and it
-                // used to stay "held" for the rest of the stay.
-                if !made.is_empty() {
-                    memory.held = None;
+        Beat::ReturnHeld => {
+            let mut made = match (&memory.held, crate::events::find("return_taken")) {
+                (Some(_), Some(event)) => {
+                    let pos = memory.held.as_ref().map(|h| h.from);
+                    let made = crate::brain::act::commands(event, pos, memory, ids, now, None);
+                    // Given back is no longer held: a beat has no report to clear it by, and it
+                    // used to stay "held" for the rest of the stay.
+                    if !made.is_empty() {
+                        memory.held = None;
+                    }
+                    made
                 }
-                made
+                _ => Vec::new(),
+            };
+            // What it took up into the sky, out of it too.
+            if memory.taken_up_day.take().is_some() {
+                made.push((
+                    crate::taken_up::fall_back(ids(), crate::taken_up::fall_spot(memory)),
+                    0,
+                ));
             }
-            _ => Vec::new(),
-        },
+            made
+        }
         Beat::TorchesOut => {
             let home = memory.home.as_ref().map(|h| h.center).unwrap_or([0, 0, 0]);
             let mut lights = memory.its_lights.clone();
@@ -2003,5 +2021,42 @@ mod tests {
         // The arc never cuts a running ending short.
         assert_eq!(arc.tick(400.0, &memory, &config), None);
         assert_eq!(arc.stage, 5);
+    }
+
+    #[test]
+    fn what_it_took_up_falls_back_as_any_ending_begins_and_on_a_give_back() {
+        let mut memory = Memory {
+            taken_up_day: Some(2.0),
+            ..Memory::default()
+        };
+        let mut arc = Arc {
+            stage: 5,
+            ending: "take".to_string(),
+            ..Arc::default()
+        };
+        let mut n = 0;
+        let mut ids = || {
+            n += 1;
+            n
+        };
+        let made = tick(
+            &mut arc,
+            &mut memory,
+            &Config::default(),
+            &Now::default(),
+            &mut ids,
+        );
+        assert!(
+            matches!(&made[..], [(Command::DropKept { prefix, .. }, 0)] if prefix == "taken_up_"),
+            "{made:?}"
+        );
+        assert_eq!(memory.taken_up_day, None);
+
+        memory.taken_up_day = Some(2.0);
+        let made = commands(Beat::ReturnHeld, &mut memory, &Now::default(), &mut ids);
+        assert!(made
+            .iter()
+            .any(|(c, _)| matches!(c, Command::DropKept { .. })));
+        assert_eq!(memory.taken_up_day, None);
     }
 }

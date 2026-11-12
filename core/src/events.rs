@@ -256,6 +256,8 @@ pub enum Need {
     InTheWoods,
     /// They have run a while at night with a light in hand: met only then.
     RanLit,
+    /// Its things taken up have been up there half a day or more (`Memory::taken_up_due`).
+    TakenUpDue,
 }
 
 impl Need {
@@ -330,6 +332,7 @@ impl Need {
                 | Need::TargetUnderwater
                 | Need::InTheWoods
                 | Need::RanLit
+                | Need::TakenUpDue
         )
     }
 
@@ -450,6 +453,7 @@ impl Need {
             Need::TargetUnderwater => "the target is not under water".to_string(),
             Need::InTheWoods => "the target is not among trees".to_string(),
             Need::RanLit => "happens only as they run about at night with a light".to_string(),
+            Need::TakenUpDue => "nothing of theirs up there long enough".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -1036,6 +1040,10 @@ pub enum Action {
     WhileUnseen(f32),
     /// Far off, a figure drawn to the light they run with, lost when they hold none.
     DrawnToTheLight,
+    /// Their most valuable things, carried and in their chests, up into the sky.
+    TakenUp,
+    /// What it took up falls out of the sky in front of their door.
+    SkyGivesBack,
     /// A snowball hits their back; no one is there.
     SnowballThrown,
     /// While they are out, an arrow struck in their front door.
@@ -4790,6 +4798,30 @@ pub const CATALOGUE: &[Event] = &[
         Action::DrawnToTheLight,
         false,
     ),
+    // docs/events_todo.md, 103 (owner's): "consider chests as well, and a random number of
+    // items".
+    row(
+        "taken_up",
+        4,
+        5,
+        &[TargetOutdoors],
+        1.0,
+        3,
+        Full,
+        Action::TakenUp,
+        false,
+    ),
+    row(
+        "sky_gives_back",
+        4,
+        5,
+        &[TakenUpDue, Home],
+        0.0,
+        6,
+        Full,
+        Action::SkyGivesBack,
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -5655,6 +5687,8 @@ impl Event {
             | Action::EggOnBed
             | Action::Take
             | Action::ReturnTaken
+            | Action::TakenUp
+            | Action::SkyGivesBack
             | Action::PlaceTaken
             | Action::ReturnUsed
             | Action::HopperEmptied
@@ -5896,6 +5930,8 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "taken_up" => "take their most valuable things up into the sky before their eyes",
+            "sky_gives_back" => "let what it took up fall out of the sky before their door",
             "lantern_in_the_woods" => "walk a figure with a lantern through the dark far off",
             "rides_the_cart" => "roll their minecart past with a figure in it",
             "path_through_the_trees" => "cut a straight line through the trees toward their house",

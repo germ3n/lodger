@@ -378,6 +378,12 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // Where they stand: it is their things, before their eyes.
+        Action::TakenUp => Some(block_of(memory.last.pos)),
+        // Before the door they use, where the home is.
+        Action::SkyGivesBack => memory
+            .usual_door()
+            .or(memory.home.as_ref().map(|h| h.center)),
         // Eighteen blocks behind them, on the ground: out of their view.
         Action::WhileUnseen(_) => {
             let at = block_of(memory.last.pos);
@@ -1953,6 +1959,10 @@ fn step_toward(from: BlockPos, to: BlockPos) -> [i32; 2] {
 /// it, else the side away from the house's middle. The middle is where they stand still, and
 /// beside a door in a long wall that guess pointed along the wall: the sleepwalker was put
 /// into it, and the sign and the head went in beside the door, not before it.
+pub(crate) fn out_of(memory: &Memory, center: BlockPos, door: BlockPos) -> [i32; 2] {
+    out_of_door(memory, center, door)
+}
+
 fn out_of_door(memory: &Memory, center: BlockPos, door: BlockPos) -> [i32; 2] {
     memory
         .door_out(door)
@@ -6320,6 +6330,33 @@ pub fn commands(
                 vec![(shown, 0)]
             })
             .unwrap_or_default(),
+        // A random number of their most valuable things, from what they carry and their chests,
+        // up into the sky before them; the host picks and keeps them.
+        Action::TakenUp => pos
+            .map(|at| {
+                let times = memory.times(event.id);
+                vec![(
+                    Command::TakeUp {
+                        id: ids(),
+                        player: target,
+                        chests: memory
+                            .containers
+                            .iter()
+                            .filter(|c| c.theirs())
+                            .map(|c| c.pos)
+                            .collect(),
+                        most: crate::taken_up::how_many(times, at),
+                        keep: format!("{}{times}", crate::taken_up::KEEP),
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // All of it, out of the sky, before their door.
+        Action::SkyGivesBack => vec![(
+            crate::taken_up::fall_back(ids(), crate::taken_up::fall_spot(memory)),
+            0,
+        )],
         // Behind them, empty-handed, facing them: still while they look, a step nearer each moment
         // they do not, and at arm's length it strikes and is gone. Three minutes at most.
         Action::WhileUnseen(damage) => pos
@@ -13559,6 +13596,54 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Figure { drawn_to_light: true, held, .. }, 0)] if held.id.is_empty()),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn their_most_valuable_things_go_up_from_them_and_their_chests_and_fall_back_at_the_door() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [4.5, 64.0, 4.5];
+        let up = find("taken_up").unwrap();
+        let made = commands(
+            up,
+            place(up, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let [(
+            Command::TakeUp {
+                chests, most, keep, ..
+            },
+            0,
+        )] = &made[..]
+        else {
+            panic!("{made:?}");
+        };
+        let theirs: Vec<BlockPos> = memory
+            .containers
+            .iter()
+            .filter(|c| c.theirs())
+            .map(|c| c.pos)
+            .collect();
+        assert_eq!(chests, &theirs, "their chests too");
+        assert!((1..=crate::taken_up::MOST).contains(most));
+        assert_eq!(keep, "taken_up_0");
+
+        let back = find("sky_gives_back").unwrap();
+        assert!(back.needs.contains(&crate::events::Need::TakenUpDue));
+        let made = commands(back, None, &memory, &mut ids(), &Now::default(), None);
+        let door = memory.usual_door().unwrap();
+        let [(Command::DropKept { prefix, pos, .. }, 0)] = &made[..] else {
+            panic!("{made:?}");
+        };
+        assert_eq!(prefix, "taken_up_");
+        assert!(
+            (pos[0] - (door[0] as f64 + 0.5)).abs() + (pos[2] - (door[2] as f64 + 0.5)).abs()
+                <= 2.5,
+            "before the door: {pos:?}"
         );
     }
 }

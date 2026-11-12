@@ -466,6 +466,9 @@ pub struct Memory {
     /// Item ids and how often they were in the target's main hand, most first.
     pub favourites: Vec<(String, u32)>,
     pub held: Option<Held>,
+    /// The day it first took their things up into the sky (`taken_up`), while any are up there;
+    /// none once they fell back (`sky_gives_back`, or an ending, or a reset).
+    pub taken_up_day: Option<f32>,
     pub done: Vec<Done>,
     pub last: Snapshot,
     /// Coarse cells the target stood still in, and for how many ticks: the home's center comes

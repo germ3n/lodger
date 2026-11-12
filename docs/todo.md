@@ -1939,6 +1939,17 @@ The `[x]` lines above, summed up by day:
   (`figure`'s `drawn_to_light`, ABI 54; `Drawn.java`). Tests: `DrawnTest`'s two, one in `act`.
   Was: no such event.
 
+- [x] **Taken up into the sky** (`docs/events_todo.md`, 103, owner's): `taken_up`, stages 4 and 5,
+  outdoors: one to four of their most valuable stacks (`Worth.java`: netherite, elytra, totems,
+  diamonds, enchanted things first; never under the worth of a stack of iron's tenth), from their
+  inventory but what they wear and hold, and from their chests (owner: "consider chests as well,
+  and a random number of items"), kept with the world and shown to them alone hanging in front of
+  them and flying up into the sky (`take_up`, ABI 54; the picture is on their client, so no hopper
+  can catch a copy). `sky_gives_back`, half a day on at the earliest: all of it falls out of the sky
+  before their door (`drop_kept`, ABI 54, which does nothing when nothing is kept). Every ending's
+  start and a reset give it back too (`crate::taken_up`). Tests: `WorthTest`, `taken_up`'s, one in
+  `act`, one in `ending`. Was: the lodger took one thing at a time, from a chest alone.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

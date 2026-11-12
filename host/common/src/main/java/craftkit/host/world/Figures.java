@@ -133,6 +133,7 @@ public final class Figures {
 		sightings.clear();
 		digs.clear();
 		chokes.clear();
+		risings.clear();
 	}
 
 	/** The figures gone since the last ask, each with how it was looked at. */
@@ -255,6 +256,7 @@ public final class Figures {
 		tick++;
 		tickDigs();
 		tickChokes();
+		tickRisings();
 		List<Figure> gone = new ArrayList<>();
 		tickFigures(gone);
 		// A group goes with any of it: the rest of each gone figure's group, told as theirs.
@@ -618,6 +620,100 @@ public final class Figures {
 		player.connection.send(net.minecraft.network.protocol.game.ClientboundSetPassengersPacket.STREAM_CODEC.decode(buf));
 
 		return true;
+	}
+
+	/** A taken stack shown rising: to whom, its entity there, when it shows, and where. */
+	private static final class Rising {
+		final ServerPlayer player;
+		final int entityId;
+		final long fromTick;
+		final ItemStack stack;
+		Vec3 at;
+		boolean sent;
+
+		Rising(ServerPlayer player, int entityId, long fromTick, ItemStack stack) {
+			this.player = player;
+			this.entityId = entityId;
+			this.fromTick = fromTick;
+			this.stack = stack;
+		}
+	}
+
+	private final List<Rising> risings = new ArrayList<>();
+	/** How long a taken stack hangs in front of them, turning, then how long it flies up, ticks. */
+	static final int HANGS_TICKS = 40;
+	static final int RISES_TICKS = 50;
+
+	/**
+	 * A stack taken up shown to {@code player} alone ({@code take_up}, ABI 54): in the air in front
+	 * of them after {@code delay} ticks, turning as a dropped item turns, then flying up faster and
+	 * faster into the sky and gone. Only a picture: the stack itself is kept.
+	 */
+	public void showRising(ServerPlayer player, ItemStack stack, int delay) {
+		risings.add(new Rising(player, nextId++, tick + delay, stack.copy()));
+	}
+
+	@SuppressWarnings("unchecked")
+	private void tickRisings() {
+		Iterator<Rising> it = risings.iterator();
+		while (it.hasNext()) {
+			Rising r = it.next();
+			if (r.player.isRemoved()) {
+				it.remove();
+				continue;
+			}
+			long t = tick - r.fromTick;
+			if (t < 0) {
+				continue;
+			}
+			if (!r.sent) {
+				Vec3 look = r.player.getViewVector(1f);
+				r.at = r.player.getEyePosition().add(look.x * 2.2, -0.3, look.z * 2.2);
+				var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(net.minecraft.resources.Identifier.parse("minecraft:item"));
+				if (type.isEmpty()) {
+					it.remove();
+					continue;
+				}
+				r.player.connection.send(new ClientboundAddEntityPacket(r.entityId, UUID.randomUUID(), r.at.x, r.at.y, r.at.z, 0, 0, type.get().value(), 0, Vec3.ZERO, 0));
+				try {
+					var item = net.minecraft.world.entity.item.ItemEntity.class.getDeclaredField("DATA_ITEM");
+					item.setAccessible(true);
+					var gravity = net.minecraft.world.entity.Entity.class.getDeclaredField("DATA_NO_GRAVITY");
+					gravity.setAccessible(true);
+					r.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(r.entityId, List.of(
+							net.minecraft.network.syncher.SynchedEntityData.DataValue.create((net.minecraft.network.syncher.EntityDataAccessor<ItemStack>) item.get(null), r.stack),
+							net.minecraft.network.syncher.SynchedEntityData.DataValue.create((net.minecraft.network.syncher.EntityDataAccessor<Boolean>) gravity.get(null), true))));
+				} catch (ReflectiveOperationException e) {
+					// The fields moved: nothing shown; the stack is kept all the same.
+					r.player.connection.send(new ClientboundRemoveEntitiesPacket(r.entityId));
+					it.remove();
+					continue;
+				}
+				r.sent = true;
+				soundAt(r.player, r.at, net.minecraft.sounds.SoundEvents.AMETHYST_BLOCK_CHIME, 0.6f);
+				continue;
+			}
+			if (t > HANGS_TICKS) {
+				// Up, faster and faster, into the sky.
+				long up = t - HANGS_TICKS;
+				r.at = r.at.add(0, 0.04 * up, 0);
+				r.player.connection.send(new net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket(r.entityId,
+						net.minecraft.world.entity.PositionPath.of(r.at), 0, 0, false));
+				if (up == 1) {
+					soundAt(r.player, r.at, net.minecraft.sounds.SoundEvents.ENDER_EYE_LAUNCH, 0.7f);
+				}
+			}
+			if (t > HANGS_TICKS + RISES_TICKS) {
+				r.player.connection.send(new ClientboundRemoveEntitiesPacket(r.entityId));
+				it.remove();
+			}
+		}
+	}
+
+	/** A sound at a place, to one player alone. */
+	private static void soundAt(ServerPlayer player, Vec3 at, net.minecraft.sounds.SoundEvent sound, float pitch) {
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(net.minecraft.core.Holder.direct(sound),
+				net.minecraft.sounds.SoundSource.HOSTILE, at.x, at.y, at.z, 0.9f, pitch, player.getRandom().nextLong()));
 	}
 
 	/** The figure {@code number} shown to {@code player} is drawn to the light they carry (ABI 54). */

@@ -151,6 +151,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::InTheWoods => memory.in_the_woods(),
         // `drawn_to_the_light` starts from their running lit (`Brain::tick`), never the menu.
         Need::RanLit => false,
+        Need::TakenUpDue => memory.taken_up_due(),
         Need::LookingUp => last.online && !last.indoors && !last.underground && last.pitch <= -35.0,
         Need::ItsHouseNear => memory.its_house().is_some_and(|house| {
             let at = [

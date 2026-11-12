@@ -29,6 +29,7 @@ pub mod people;
 pub mod places;
 pub mod rules;
 pub mod stay;
+pub mod taken_up;
 pub mod temper;
 pub mod trees;
 pub mod tunnels;

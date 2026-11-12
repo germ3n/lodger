@@ -123,6 +123,8 @@ public final class Executors {
 				case "take_item" -> takeItem(level, command, id, data);
 				case "put_item" -> putItem(level, command, id, data);
 				case "drop_item" -> dropItem(level, command, id, data);
+				case "take_up" -> takeUp(level, command, id, data, context);
+				case "drop_kept" -> dropKept(level, command, id, data);
 				case "rename_item" -> renameItem(level, command, id);
 				case "sign_book" -> signBook(level, command, id);
 				case "mark_map" -> markMap(level, command, id);
@@ -1884,6 +1886,90 @@ public final class Executors {
 		into.setChanged();
 
 		return report(id, true, "");
+	}
+
+	/** A stack to take up: where it is, and what it is worth. */
+	private record Valued(Container in, int slot, int worth) {
+	}
+
+	/**
+	 * Their most valuable stacks taken up (ABI 54): from their inventory but what they wear and
+	 * hold, and from the chests named, most valuable first, up to {@code most}, each kept under
+	 * {@code keep_i} and shown to them rising into the sky ({@link Figures#showRising}).
+	 */
+	private static JsonObject takeUp(ServerLevel level, JsonObject command, long id, WorldData data, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null || data == null) {
+			return report(id, false, "the player is not here");
+		}
+		List<Valued> stacks = new ArrayList<>();
+		var inventory = player.getInventory();
+		// The inventory's own slots, 0 to 35: armour and the other hand are apart; the one they hold is left.
+		for (int slot = 0; slot < 36; slot++) {
+			if (slot == inventory.getSelectedSlot()) {
+				continue;
+			}
+			ItemStack stack = inventory.getItem(slot);
+			if (!stack.isEmpty()) {
+				stacks.add(new Valued(inventory, slot, Worth.of(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(), stack.isEnchanted())));
+			}
+		}
+		for (JsonElement at : command.getAsJsonArray("chests")) {
+			Container chest = container(level, blockPos(at.getAsJsonArray()));
+			if (chest == null) {
+				continue;
+			}
+			for (int slot = 0; slot < chest.getContainerSize(); slot++) {
+				ItemStack stack = chest.getItem(slot);
+				if (!stack.isEmpty()) {
+					stacks.add(new Valued(chest, slot, Worth.of(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(), stack.isEnchanted())));
+				}
+			}
+		}
+		stacks.removeIf(v -> v.worth() < Worth.LEAST);
+		stacks.sort((a, b) -> Integer.compare(b.worth(), a.worth()));
+		int most = Math.min(command.get("most").getAsInt(), 8);
+		String keep = command.get("keep").getAsString();
+		int taken = 0;
+		for (Valued valued : stacks) {
+			if (taken >= most) {
+				break;
+			}
+			ItemStack stack = valued.in().removeItem(valued.slot(), valued.in().getItem(valued.slot()).getCount());
+			if (stack.isEmpty()) {
+				continue;
+			}
+			valued.in().setChanged();
+			// Kept first, shown after: what is shown is a picture of it, on their screen alone.
+			data.keep(keep + "_" + taken, stack.copy());
+			context.figures().showRising(player, stack, taken * 15);
+			taken++;
+		}
+
+		return taken > 0 ? report(id, true, "took " + taken) : report(id, false, "nothing of worth on them or in their chests");
+	}
+
+	/** Every stack kept under a name beginning with the prefix, dropped high over a place, a moment apart (ABI 54). */
+	private static JsonObject dropKept(ServerLevel level, JsonObject command, long id, WorldData data) {
+		if (data == null) {
+			return report(id, true, "");
+		}
+		JsonArray pos = command.getAsJsonArray("pos");
+		int n = 0;
+		for (String key : data.keysStarting(command.get("prefix").getAsString())) {
+			ItemStack stack = data.giveBack(key);
+			if (stack == null || stack.isEmpty()) {
+				continue;
+			}
+			// Out of the sky: high over the place, each a little apart, so they come down one by one.
+			ItemEntity entity = new ItemEntity(level, pos.get(0).getAsDouble() + (n % 3 - 1) * 0.4, pos.get(1).getAsDouble() + 24 + n * 3,
+					pos.get(2).getAsDouble() + (n / 3 % 3 - 1) * 0.4, stack, 0, 0, 0);
+			entity.setUnlimitedLifetime();
+			level.addFreshEntity(entity);
+			n++;
+		}
+
+		return report(id, true, n == 0 ? "none kept" : "");
 	}
 
 	private static JsonObject dropItem(ServerLevel level, JsonObject command, long id, WorldData data) {

@@ -608,6 +608,26 @@ pub enum Command {
         id: u64,
         player: u32,
     },
+    /// Up to `most` of `player`'s most valuable stacks, from their inventory (never what they
+    /// wear or hold) and the containers `chests`, taken and kept with the world under `keep_0`,
+    /// `keep_1` and on, most valuable first; each shown to them alone in the air in front of
+    /// them, turning a moment, then flying up into the sky and gone. Refused when nothing of worth
+    /// is there. ABI 54.
+    TakeUp {
+        id: u64,
+        player: u32,
+        chests: Vec<BlockPos>,
+        most: u32,
+        keep: String,
+    },
+    /// Every stack kept under a name beginning `prefix` dropped at `pos` (high over it, they fall
+    /// from the sky), a moment apart, as items that do not despawn. Done, doing nothing, when
+    /// none is kept. ABI 54.
+    DropKept {
+        id: u64,
+        prefix: String,
+        pos: Pos,
+    },
     /// A firework launched from `pos`: `flight` (1 to 3) how high, bursting as `shape`
     /// (`small_ball`, `large_ball`, `star`, `creeper`, `burst`) in `colors` (RGB). ABI 54.
     Firework {
@@ -1348,6 +1368,8 @@ impl Command {
             | Command::MapMark { id, .. }
             | Command::Firework { id, .. }
             | Command::DropHeld { id, .. }
+            | Command::TakeUp { id, .. }
+            | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }
             | Command::Snowball { id, .. }

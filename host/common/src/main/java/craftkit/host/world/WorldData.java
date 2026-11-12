@@ -95,9 +95,9 @@ public final class WorldData extends SavedData {
 		return stack;
 	}
 
-	/** The keys kept that begin with {@code prefix}. */
+	/** The keys kept that begin with {@code prefix}, in order. */
 	public java.util.List<String> keysStarting(String prefix) {
-		return kept.keySet().stream().filter(k -> k.startsWith(prefix)).toList();
+		return kept.keySet().stream().filter(k -> k.startsWith(prefix)).sorted().toList();
 	}
 
 	public void set(String base64) {

@@ -2832,6 +2832,13 @@ impl Brain {
                 if report.done && pending.puts_held {
                     memory.held = None;
                 }
+                // Up there from now, as far as it knows; fallen back, no longer.
+                if report.done && pending.event == "taken_up" && memory.taken_up_day.is_none() {
+                    memory.taken_up_day = Some(memory.today);
+                }
+                if report.done && pending.event == "sky_gives_back" {
+                    memory.taken_up_day = None;
+                }
                 if report.done && pending.event == "take" {
                     // The host took it; the memory holds it from here, what the command took.
                     match &pending.took {
