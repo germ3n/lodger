@@ -11,6 +11,10 @@ mod wants done (set a block, play a sound, show a figure, hint the client). The 
 touches Minecraft's classes, so it is tested with the bundled harness in plain `cargo test`, and
 survives the Minecraft versions the host is updated for.
 
+The crate and the host live together in [github.com/germ3n/craftkit](https://github.com/germ3n/craftkit):
+the host is its `host/` Gradle project, and players need its jar in the game beside a craftkit
+mod, or nested inside the mod's own jar.
+
 The first mod written on it is [lodger](https://github.com/germ3n/lodger), a horror mod whose
 mind is a craftkit crate.
 
@@ -124,8 +128,8 @@ fn main() {
   `ABI_VERSION`. A host refuses a library built against another ABI.
 - **The harness** (`harness`): loads a mod as the host does, without a game, for tests.
 
-The protocol, the ABI and the host are described in full in the repository's
-[SDK guide](https://github.com/germ3n/lodger/blob/master/docs/sdk.md).
+The protocol, the ABI and the host are described in full in the
+[SDK guide](https://github.com/germ3n/craftkit/blob/master/docs/sdk.md).
 
 ## Versions
 

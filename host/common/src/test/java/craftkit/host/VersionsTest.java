@@ -47,6 +47,7 @@ class VersionsTest {
 
 	@Test
 	void the_lodger_s_jar_and_its_mind_carry_one_version() throws IOException {
+		Repo.assumeLodger();
 		String core = Files.readString(Repo.root().resolve("core/Cargo.toml"));
 
 		assertEquals(properties("mod/gradle.properties").getProperty("version"), group(core, "(?m)^version = \"([^\"]+)\""));
@@ -54,6 +55,7 @@ class VersionsTest {
 
 	@Test
 	void the_lodger_s_jar_builds_for_the_minecraft_the_host_does() throws IOException {
+		Repo.assumeLodger();
 		Properties host = properties("host/gradle.properties");
 		Properties mod = properties("mod/gradle.properties");
 
@@ -64,6 +66,7 @@ class VersionsTest {
 
 	@Test
 	void the_docs_name_the_versions_gradle_builds_with() throws IOException {
+		Repo.assumeLodger();
 		Properties host = properties("host/gradle.properties");
 		String development = Files.readString(Repo.root().resolve("docs/development.md"));
 		String readme = Files.readString(Repo.root().resolve("README.md"));
@@ -80,6 +83,7 @@ class VersionsTest {
 
 	@Test
 	void the_ci_uses_the_same_rust_as_the_toolchain_file_and_java_25() throws IOException {
+		Repo.assumeLodger();
 		Path root = Repo.root();
 		String toolchain = group(Files.readString(root.resolve("rust-toolchain.toml")), "channel = \"([^\"]+)\"");
 		String ci = Files.readString(root.resolve(".github/workflows/ci.yml"));

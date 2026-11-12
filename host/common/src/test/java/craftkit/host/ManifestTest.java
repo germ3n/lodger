@@ -40,6 +40,7 @@ class ManifestTest {
 
 	@Test
 	void the_lodger_s_own_manifest_parses_and_names_its_crate() throws IOException {
+		Repo.assumeLodger();
 		String json = Files.readString(Repo.root().resolve("mod/src/main/resources/META-INF/craftkit.json"));
 		Manifest manifest = Manifest.parse(json);
 

@@ -2375,6 +2375,15 @@ The `[x]` lines above, summed up by day:
   the upload to the crate, and the repository `github.com/germ3n/lodger`. How to publish is in
   [The SDK](sdk.md#versions-and-publishing). Not published: the owner uploads it.
 
+- [x] **craftkit's own repository** (owner: "make a git project folder kind of thing for the host,
+  upload to github, update the craftkit docs to point there"; the SDK and the host together,
+  owner's pick). Was: the host lived only here, and the crate named the lodger's repository. Now
+  `scripts/export_craftkit.py` writes `sdk/`, `host/`, the SDK guide (its links to the lodger's
+  pages made absolute), the license, the toolchain, a workspace, a README and a .gitignore to
+  github.com/germ3n/craftkit, which builds and tests on its own; the crate's `repository`,
+  `homepage` and README point there. The host's five tests about the lodger skip where it is not
+  beside the host (`Repo.assumeLodger`); here they run as ever.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

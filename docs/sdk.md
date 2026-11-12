@@ -425,3 +425,19 @@ cargo publish -p craftkit
 
 A version goes up once: bump `sdk/Cargo.toml` and `host/gradle.properties` together before the
 next. The host jars go to Modrinth on their own.
+
+### The craftkit repository
+
+The SDK and the host have a repository of their own, [github.com/germ3n/craftkit](https://github.com/germ3n/craftkit)
+(owner: "make a git project folder kind of thing for the host, upload to github, update the
+craftkit docs to point there"), which the crate's `repository` and its README name. It holds
+`sdk/`, `host/`, this guide, the license and the toolchain, and builds and tests on its own: the
+host's tests about the lodger (its jar, its manifest, its docs and CI) skip there
+(`Repo.assumeLodger`). It is exported from here, which stays the source, so the lodger always
+builds against the very SDK and host published:
+
+```sh
+python3 scripts/export_craftkit.py ~/craftkit   # write the export (its .git is kept)
+cd ~/craftkit && git add -A && git commit -m "..." && git push
+```
+
