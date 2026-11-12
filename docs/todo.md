@@ -2125,6 +2125,12 @@ The `[x]` lines above, summed up by day:
   reading `stay` a moment (the `menu_freaks` hint; `PauseScreenMixin`, `MenuFreaks`). The pause menu,
   not the title screen: the mod is in a world. Tests: `MenuFreakTest`, one in `act`. Was: no such event.
 
+- [x] **Chains for the newer events** (owner: "remember the chain functionality, so chain events,
+  where possible"): seven chains in `chains.rs`, the woods, the marked trees, the village wrong,
+  the sky, the night, the visitor and the glitches (docs/entity.md, Chains). Tests: the chains test
+  counts sixteen now (it counted nine) and checks each id is its own. Was: none of the newer events
+  led to another.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -784,13 +784,25 @@ Some chains, with the stages they span:
   it). [1 to 4]
 - **The pet.** `pet_growl` at a corner → `pet_watching_spot` → `pet_follows_figure` → the pet
   sits beside the figure, far off, then comes back. [2 to 4]
+- **The woods.** `peeks_from_the_trees` → `tree_to_tree` → `branch_snaps` or `knocks_on_wood` →
+  `the_tree_line` as they leave. [4 to 5]
+- **The marked trees.** `blazed_trees` → `bare_trees` → `trees_close_behind`. [3 to 5]
+- **The village wrong.** `trades_refused` → `villager_spins` → `villager_collapses` →
+  `villagers_walk_out` → `villagers_flee_you` or `villager_stabs`. [3 to 5]
+- **The sky.** `taken_up` → `sky_gives_back`. [4 to 5]
+- **The night.** `drawn_to_the_light` → `while_unseen` → `wolves_circle` → `zombie_in_your_gear`.
+  [4 to 5]
+- **The visitor.** `villager_flees_in` → `prints_around_the_house` → `wall_bursts`. [4 to 5]
+- **The glitches.** `dead_redstone` → `sound_warp`, once they noticed the redstone → `menu_freaks`.
+  [3 to 5]
 
 A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
 menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
 tests check that a stay with the rule brain walks at least two chains end to end and that no
 follow-up is ever offered with its needs unmet.
 
-**As coded (`core/src/chains.rs`).** The nine, with the catalogue's events: the thing (`take`,
+**As coded (`core/src/chains.rs`).** Sixteen: the seven of the newer events as listed above, and
+the nine of the design, with the catalogue's events: the thing (`take`,
 `place_taken` or `return_taken`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
 `mined_out`), the tunnel (`mining_sounds`, `mine_beside`, `tunnel_toward`, `cave_room`), the
 place (`light_path`, `hole`, `pillar`, `sign`, `house_near`; its house grows in the ending's

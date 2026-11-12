@@ -42,7 +42,8 @@ const fn step(events: &'static [&'static str], within_days: f32, when: When) -> 
 
 use When::*;
 
-/// The nine chains of the design, with the catalogue's events.
+/// The nine chains of the design, with the catalogue's events, and seven of the newer events'
+/// (owner: "remember the chain functionality, so chain events, where possible").
 pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_thing",
@@ -122,6 +123,74 @@ pub const CHAINS: &[Chain] = &[
             step(&["pet_growl"], 0.0, Always),
             step(&["pet_moved"], 3.0, Always),
             step(&["pet_outside"], 3.0, Always),
+        ],
+    },
+    // The woods: it peeks, it comes nearer, it is heard, and as they leave it is all along the
+    // edge.
+    Chain {
+        id: "the_woods",
+        steps: &[
+            step(&["peeks_from_the_trees"], 0.0, Always),
+            step(&["tree_to_tree"], 3.0, Always),
+            step(&["branch_snaps", "knocks_on_wood"], 3.0, Always),
+            step(&["the_tree_line"], 4.0, Always),
+        ],
+    },
+    // The trees marked: a trail, knocks along it, a stand gone wrong, and the way out shut.
+    Chain {
+        id: "the_marked_trees",
+        steps: &[
+            step(&["blazed_trees"], 0.0, Always),
+            step(&["bare_trees"], 3.0, Always),
+            step(&["trees_close_behind"], 4.0, Always),
+        ],
+    },
+    // The village going wrong, by degrees, to its fleeing them, or its stab.
+    Chain {
+        id: "the_village_wrong",
+        steps: &[
+            step(&["trades_refused"], 0.0, Always),
+            step(&["villager_spins"], 3.0, Always),
+            step(&["villager_collapses"], 3.0, Always),
+            step(&["villagers_walk_out"], 3.0, Always),
+            step(&["villagers_flee_you", "villager_stabs"], 4.0, Always),
+        ],
+    },
+    // Their things up into the sky, and back out of it.
+    Chain {
+        id: "the_sky",
+        steps: &[
+            step(&["taken_up"], 0.0, Always),
+            step(&["sky_gives_back"], 3.0, Always),
+        ],
+    },
+    // The night after them: drawn to their light, then nearer each time unseen, the pack, and at
+    // the last something in their own gear.
+    Chain {
+        id: "the_night",
+        steps: &[
+            step(&["drawn_to_the_light"], 0.0, Always),
+            step(&["while_unseen"], 3.0, Always),
+            step(&["wolves_circle"], 3.0, Always),
+            step(&["zombie_in_your_gear"], 4.0, Always),
+        ],
+    },
+    // The visitor: one that ran in and died, then prints round the house, then the wall gives.
+    Chain {
+        id: "the_visitor",
+        steps: &[
+            step(&["villager_flees_in"], 0.0, Always),
+            step(&["prints_around_the_house"], 3.0, Always),
+            step(&["wall_bursts"], 4.0, Always),
+        ],
+    },
+    // The house's own things wrong: the redstone dead, the sound, the menu.
+    Chain {
+        id: "the_glitches",
+        steps: &[
+            step(&["dead_redstone"], 0.0, Always),
+            step(&["sound_warp"], 3.0, Noticed),
+            step(&["menu_freaks"], 3.0, Always),
         ],
     },
 ];
@@ -356,8 +425,11 @@ mod tests {
                 }
             }
         }
-        // The design's eight, and the diary (sold, then brought if not bought).
-        assert_eq!(CHAINS.len(), 9);
+        // The design's eight, the diary (sold, then brought if not bought), and the newer
+        // events' seven.
+        assert_eq!(CHAINS.len(), 16);
+        let ids: std::collections::HashSet<&str> = CHAINS.iter().map(|c| c.id).collect();
+        assert_eq!(ids.len(), CHAINS.len(), "each chain its own id");
     }
 
     #[test]
