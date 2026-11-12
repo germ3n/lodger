@@ -2082,6 +2082,12 @@ The `[x]` lines above, summed up by day:
   `DeadRedstone.java` and the signal mixins on the three, `ownSignal` and `getDirectSignal`; their
   neighbours told as it begins and ends). Tests: one in `act`. Was: no such event.
 
+- [x] **The debug panel can pause** (owner: "an option to the ingame debug menu where it pauses
+  the game when its open, should be toggleable"): a Pause button beside HUD in the panel's header,
+  off at first; on, the open panel pauses a singleplayer world as the game's own pause does
+  (`DebugPause`, kept in `config/craftkit/debug.properties`). Tests: `DebugPauseTest`. Was: the
+  panel never paused.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

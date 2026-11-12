@@ -101,7 +101,9 @@ A stay takes weeks of play by design. For development:
   rebindable under Controls, Miscellaneous), or
   `/craftkit lodger debug`: a strip down the right third of the screen at three quarters of the
   GUI's text size, see-through, that neither pauses the game nor blurs it, so the world stays
-  in view beside it (owner: the full screen hid the events it was there to watch);
+  in view beside it (owner: the full screen hid the events it was there to watch); its **Pause**
+  button, beside HUD, makes it pause a singleplayer world while open instead (owner), kept in
+  `config/craftkit/debug.properties`;
   it opens on the Mind tab. Hovering an event shows what it does and needs (the catalogue's
   own row, built into the mind from `docs/entity.md`), its cooldown and cap, and how it went
   last; any line or plan with a spot in it, `(x,y,z)` or `(x,ground,z)`, is a link that

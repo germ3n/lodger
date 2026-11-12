@@ -24,7 +24,8 @@ import java.util.function.Consumer;
  * offered right now and why not, a filter, and a Fire button on each. <b>Log</b> is the last
  * events the senses took in and the last commands carried out. Opened with the debug key (F8
  * unless rebound; fn+F8 on a Mac keyboard) or {@code /craftkit <mod> debug}; operators and the
- * owner of a singleplayer world alone.
+ * owner of a singleplayer world alone. It pauses a singleplayer world while open when its
+ * Pause button is on ({@link DebugPause}), off at first.
  *
  * <p>Everything in the panel is drawn by hand at {@link PanelLayout#SCALE} into the panel's own
  * coordinates ({@link #pw} by {@link #ph} units), with hit testing on the rows in those units,
@@ -178,9 +179,10 @@ public final class DebugScreen extends Screen {
 		filter.visible = tab == Tab.EVENTS;
 	}
 
+	/** Not at first, so the world goes on beside it; when they have toggled it on, it pauses ({@link DebugPause}). */
 	@Override
 	public boolean isPauseScreen() {
-		return false;
+		return DebugPause.on();
 	}
 
 	/** No blur and no darkening: the world beside the panel is what is being watched. */
@@ -266,7 +268,8 @@ public final class DebugScreen extends Screen {
 				scroll = 0;
 			});
 		}
-		button(graphics, x, tabY, DebugHud.enabled() ? "HUD on" : "HUD off", DebugHud.enabled() ? YELLOW : GREY, BUTTON, () -> DebugHud.toggle(mod));
+		x = button(graphics, x, tabY, DebugHud.enabled() ? "HUD on" : "HUD off", DebugHud.enabled() ? YELLOW : GREY, BUTTON, () -> DebugHud.toggle(mod));
+		button(graphics, x, tabY, DebugPause.on() ? "Pause on" : "Pause off", DebugPause.on() ? YELLOW : GREY, BUTTON, DebugPause::toggle);
 
 		// The body scrolls under a clip, set in GUI pixels while the pose is still plain.
 		int top = bodyTop();
