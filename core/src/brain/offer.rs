@@ -153,6 +153,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::RanLit => false,
         Need::TakenUpDue => memory.taken_up_due(),
         Need::LeavingTheWoods => memory.leaving_the_woods(),
+        Need::SnowyHere => last.online && crate::trees::snowy(&last.biome),
         Need::LookingUp => last.online && !last.indoors && !last.underground && last.pitch <= -35.0,
         Need::ItsHouseNear => memory.its_house().is_some_and(|house| {
             let at = [

@@ -260,6 +260,8 @@ pub enum Need {
     TakenUpDue,
     /// Walking out of the woods (`Memory::leaving_the_woods`).
     LeavingTheWoods,
+    /// The biome they stand in lies under snow (`trees::snowy`).
+    SnowyHere,
 }
 
 impl Need {
@@ -336,6 +338,7 @@ impl Need {
                 | Need::RanLit
                 | Need::TakenUpDue
                 | Need::LeavingTheWoods
+                | Need::SnowyHere
         )
     }
 
@@ -458,6 +461,7 @@ impl Need {
             Need::RanLit => "happens only as they run about at night with a light".to_string(),
             Need::TakenUpDue => "nothing of theirs up there long enough".to_string(),
             Need::LeavingTheWoods => "the target is not walking out of the woods".to_string(),
+            Need::SnowyHere => "no snow where they are".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -1060,6 +1064,8 @@ pub enum Action {
     TreeComesDown,
     /// The animals run out of the woods past them; far back, a figure walking.
     AnimalsFleeTheWoods,
+    /// In snowy woods, footprints round and round one trunk.
+    CirclesATree,
     /// Their most valuable things, carried and in their chests, up into the sky.
     TakenUp,
     /// What it took up falls out of the sky in front of their door.
@@ -4842,6 +4848,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 90.
+    row(
+        "circles_a_tree",
+        3,
+        5,
+        &[InTheWoods, SnowyHere],
+        2.0,
+        2,
+        Full,
+        Action::CirclesATree,
+        false,
+    ),
     // docs/events_todo.md, 89.
     row(
         "animals_flee_the_woods",
@@ -5923,6 +5941,7 @@ impl Event {
             | Action::BlazedTrees
             | Action::TreesCloseBehind
             | Action::TreeComesDown
+            | Action::CirclesATree
             | Action::PathThroughTheTrees
             | Action::ArrowInTheDoor
             | Action::WallSwap(..) => "house",
@@ -6054,6 +6073,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "circles_a_tree" => "leave footprints round and round a tree in the snow",
             "animals_flee_the_woods" => {
                 "send the animals running out of the woods past them, from something"
             }

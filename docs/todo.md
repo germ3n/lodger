@@ -1990,6 +1990,11 @@ The `[x]` lines above, summed up by day:
   and 5: the animals near them run past them away from behind, and far back a figure walks across
   (`Memory::animals_to_flee`, never pets or named ones). Tests: one in `act`. Was: no such event.
 
+- [x] **Round and round a tree** (`docs/events_todo.md`, 90): `circles_a_tree`, stages 3 to 5, in
+  snowy woods (the biome they stand in, `trees::snowy`): prints round a trunk behind them, two square
+  rings (`trees::round_a_trunk`, each side long enough for prints). Tests: one in `trees`, one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

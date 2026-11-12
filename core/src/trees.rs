@@ -285,6 +285,25 @@ impl Memory {
     }
 }
 
+/// Whether a biome lies under snow: its id says snowy, frozen, ice or a grove.
+pub fn snowy(biome: &str) -> bool {
+    ["snow", "frozen", "ice", "grove"]
+        .iter()
+        .any(|w| biome.contains(w))
+}
+
+/// Round a trunk: the sides of a square `r` blocks out from it, each from corner to corner, so
+/// each side is long enough for prints (`r` of three or more).
+pub fn round_a_trunk(trunk: BlockPos, r: i32) -> Vec<(BlockPos, BlockPos)> {
+    let c = |dx: i32, dz: i32| [trunk[0] + dx, trunk[1], trunk[2] + dz];
+    vec![
+        (c(-r, -r), c(r, -r)),
+        (c(r, -r), c(r, r)),
+        (c(r, r), c(-r, r)),
+        (c(-r, r), c(-r, -r)),
+    ]
+}
+
 /// A trail of blazes ahead of them: trunks close to the line straight ahead (within 25 degrees),
 /// each five blocks or more past the last, nearest first, at most `most`.
 pub fn blaze_line(ahead: &[BlockPos], at: Pos, yaw: f32, most: usize) -> Vec<BlockPos> {
@@ -342,6 +361,17 @@ mod tests {
         let came = memory.way_they_came().unwrap();
         assert!(came[2] <= -8 && came[2] >= -14, "{came:?}");
         assert!(distance(came, [0, 64, -9]) >= 2.0, "not on a trunk");
+    }
+
+    #[test]
+    fn round_a_trunk_the_sides_join_and_snow_is_read_from_the_biome() {
+        let sides = round_a_trunk([10, 64, 10], 3);
+        assert_eq!(sides.len(), 4);
+        for (i, (_, to)) in sides.iter().enumerate() {
+            assert_eq!(*to, sides[(i + 1) % 4].0, "joined corner to corner");
+        }
+        assert!(snowy("minecraft:snowy_taiga") && snowy("minecraft:grove"));
+        assert!(!snowy("minecraft:birch_forest"));
     }
 
     #[test]

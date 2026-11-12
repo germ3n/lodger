@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The nearest trunk behind them, eight to twenty blocks: they turn and find it.
+        Action::CirclesATree => memory.trunks_behind(8.0, 20.0).last().copied(),
         // Far back among the trees behind them, thirty blocks: where the figure walks.
         Action::AnimalsFleeTheWoods => (!memory.animals_to_flee().is_empty()).then(|| {
             let at = block_of(memory.last.pos);
@@ -6377,6 +6379,26 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Prints round and round the trunk, two rings of them, going from nowhere to nowhere.
+        Action::CirclesATree => pos
+            .map(|trunk| {
+                [3, 4]
+                    .into_iter()
+                    .flat_map(|r| crate::trees::round_a_trunk(trunk, r))
+                    .enumerate()
+                    .map(|(i, (from, to))| {
+                        (
+                            Command::Prints {
+                                id: ids(),
+                                from,
+                                to,
+                            },
+                            i as u64 * 2,
+                        )
+                    })
+                    .collect()
             })
             .unwrap_or_default(),
         // Every animal near them runs past them away from behind, a run, as from something; far
@@ -14173,5 +14195,22 @@ mod tests {
         assert!(made
             .iter()
             .any(|(c, _)| matches!(c, Command::Figure { walks: true, .. })));
+    }
+
+    #[test]
+    fn in_the_snow_prints_go_round_and_round_a_tree_behind_them() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.trunks = vec![[0, 64, -12], [0, 64, 12]];
+        let event = find("circles_a_tree").unwrap();
+        let trunk = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(trunk, Some([0, 64, -12]), "behind them");
+        let made = commands(event, trunk, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 8, "two rings of four sides: {made:?}");
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::Prints { .. })));
     }
 }
