@@ -2580,6 +2580,11 @@ The `[x]` lines above, summed up by day:
   lets a pane, bars or a fence it puts down join its neighbours afresh (ABI 55): a pane put back
   stood alone as a post. Tests: one in `act`. Was: no such event.
 
+- [x] **Prints on the ceiling** (`docs/events_todo.md`, 201): `prints_on_the_ceiling`, stages 4
+  and 5, indoors: dark footprints across the ceiling from over the door to over the bed, a minute
+  (a client hint; `CeilingPrints` lays the steps). Tests: one in `act`, `CeilingPrintsTest`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

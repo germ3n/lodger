@@ -64,6 +64,8 @@ import java.util.Set;
  *   <li>{@code clock_wrong}: a clock shows the time half a day off ({@code ClockTimeMixin}).</li>
  *   <li>{@code phantom_item}: the first time they open their inventory while it lasts, a paper
  *       named "behind you" in an empty slot for three seconds ({@code InventoryScreenMixin}).</li>
+ *   <li>{@code prints_on_the_ceiling}: dark footprints upside down on the ceiling, from the
+ *       place in its detail to the hint's ({@link CeilingPrints}), renewed while it lasts.</li>
  *   <li>{@code spyglass_figure}: while they scope, far off where they look, a figure looking back,
  *       gone when they lower the glass ({@link SpyglassFigure}).</li>
  *   <li>{@code rustle_in_the_pack}: the first time they open their inventory while it lasts,
@@ -419,6 +421,12 @@ public final class Glitches {
 						shadow(minecraft, active);
 					}
 				}
+				// Footprints walking the ceiling, from the door to over the bed, every half second.
+				case "prints_on_the_ceiling" -> {
+					if (minecraft.level.getGameTime() % 10 == 0) {
+						hint.pos().ifPresent(to -> ceilingPrints(minecraft, hint.detail(), to));
+					}
+				}
 				// Red specks from the door to the bed, on the floor, every half second.
 				case "red_trail" -> {
 					if (minecraft.level.getGameTime() % 10 == 0) {
@@ -657,6 +665,41 @@ public final class Glitches {
 		for (double[] p : Silhouette.points()) {
 			minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x050505, 0.9f),
 					wall.x + across.x * p[0], feet.y + p[1], wall.z + across.z * p[0], 0, 0, 0);
+		}
+	}
+
+	/** The ceiling prints from the place in `from` ("x,y,z") to `to`, each under the first solid block over it. */
+	private static void ceilingPrints(Minecraft minecraft, String from, net.minecraft.core.BlockPos to) {
+		String[] parts = from.split(",");
+		if (parts.length != 3) {
+			return;
+		}
+		int fx;
+		int fy;
+		int fz;
+		try {
+			fx = Integer.parseInt(parts[0]);
+			fy = Integer.parseInt(parts[1]);
+			fz = Integer.parseInt(parts[2]);
+		} catch (NumberFormatException e) {
+			return;
+		}
+		for (CeilingPrints.Step step : CeilingPrints.steps(fx + 0.5, fz + 0.5, to.getX() + 0.5, to.getZ() + 0.5)) {
+			double ceiling = Double.NaN;
+			for (int up = 1; up <= 8; up++) {
+				net.minecraft.core.BlockPos at = net.minecraft.core.BlockPos.containing(step.x(), fy + up, step.z());
+				if (!minecraft.level.getBlockState(at).getCollisionShape(minecraft.level, at).isEmpty()) {
+					ceiling = at.getY() - 0.02;
+					break;
+				}
+			}
+			if (Double.isNaN(ceiling)) {
+				continue;
+			}
+			for (double[] d : FootPrint.dots(step.yaw())) {
+				minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x2E2218, 0.4f),
+						step.x() + d[0], ceiling, step.z() + d[1], 0, 0, 0);
+			}
 		}
 	}
 

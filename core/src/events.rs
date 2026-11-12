@@ -6931,6 +6931,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::WindowTinted,
         false,
     ),
+    // docs/events_todo.md, 201: dark footprints across the ceiling, from the door to over the bed.
+    row(
+        "prints_on_the_ceiling",
+        4,
+        5,
+        &[Home, Bed, Door, TargetIndoors],
+        2.0,
+        2,
+        Half,
+        Action::Hint("prints_on_the_ceiling", 60.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8032,6 +8044,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "prints_on_the_ceiling" => "walk dark footprints across their ceiling to the bed",
             "window_tinted" => "tint one of their windows black for a day",
             "happy_ghast_overhead" => "ride a happy ghast over their house",
             "crafter_clicks" => "make their crafter craft once by itself",

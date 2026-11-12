@@ -3695,6 +3695,12 @@ pub fn commands(
                     .map(|(id, _)| id.clone())
                     .unwrap_or_default(),
                 "name_called" => memory.target_name.clone(),
+                "prints_on_the_ceiling" => memory
+                    .home
+                    .as_ref()
+                    .and_then(|h| h.doors.first())
+                    .map(|d| format!("{},{},{}", d[0], d[1], d[2]))
+                    .unwrap_or_default(),
                 "red_trail" => memory
                     .home
                     .as_ref()
@@ -3727,6 +3733,8 @@ pub fn commands(
                 "name_called" => Some(behind(memory, 4.0)),
                 // From the door of the house to the bed: the detail names the bed.
                 "red_trail" => memory.home.as_ref().and_then(|h| h.doors.first().copied()),
+                // To over the bed: the detail names the door they start from.
+                "prints_on_the_ceiling" => memory.home.as_ref().and_then(|h| h.bed),
                 // Far off toward its place (or the home), sixty-four blocks from them.
                 "boom_far" => far_toward(
                     memory,
@@ -18205,6 +18213,28 @@ mod tests {
                 |(c, _)| matches!(c, Command::SwapBlock { pos, .. } if distance(*pos, first) <= 2.0)
             ),
             "one window alone"
+        );
+    }
+
+    #[test]
+    fn footprints_walk_the_ceiling_from_the_door_to_the_bed() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let home = memory.home.as_ref().unwrap();
+        let (door, bed) = (home.doors[0], home.bed.unwrap());
+        let event = find("prints_on_the_ceiling").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        let want = format!("{},{},{}", door[0], door[1], door[2]);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, pos: Some(p), detail, .. }, 0)] if hint == "prints_on_the_ceiling" && *p == bed && *detail == want),
+            "{made:?}"
         );
     }
 }
