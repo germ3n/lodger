@@ -468,6 +468,7 @@ caves, from before.
 | `endermen_turn_away` | 3 to 5 | In the End, every enderman near them turns its back on them at once and stands so a minute, facing away, so there is no face to meet (`hold`'s `at`, a point beyond each). | In the End, an enderman near them. |
 | `zombified_follow` | 4 to 5 | In the Nether, the zombified piglins near them come a step nearer each moment they look away, silent, to six blocks, and stand back where they were the moment they look round; a minute (`hold`'s `creep`). | In the Nether, a zombified piglin near them. |
 | `rain_in_the_nether` | 3 to 5 | In the Nether, where it never rains, the sound of rain falls round them, as at home, half a minute, on their ears alone; nothing is wet. | In the Nether. |
+| `their_door_behind` | 3 to 5 | In the Nether, four blocks behind them, the sound of a wooden door like the one at home opening, and a moment on shutting; there is no door. | In the Nether. |
 
 The figure follows them there only in the events that say so (the owner's call, against the old
 line that it stays on this side).

@@ -24,6 +24,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("endermen_turn_away", "minecraft:the_end"),
     ("zombified_follow", "minecraft:the_nether"),
     ("rain_in_the_nether", "minecraft:the_nether"),
+    ("their_door_behind", "minecraft:the_nether"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
