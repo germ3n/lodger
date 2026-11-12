@@ -7550,7 +7550,7 @@ pub fn commands(
         // comes (the first three, then six, nine...), into air on the floor alone.
         Action::PaleMossCreeps => match memory.home.as_ref() {
             Some(home) => {
-                let reach = (memory.times(event.id) as usize + 1) * 3;
+                let reach = (memory.times(event.id) + 1) * 3;
                 moss_cells(home.center, home.floor_y)
                     .into_iter()
                     .take(reach)
@@ -11354,6 +11354,9 @@ mod tests {
                 || event.id == "firework_over_its_house"
                 // What it took, which this memory holds not: its own test.
                 || event.id == "chicken_lays"
+                // What it took, which this memory holds not: their own test.
+                || event.id == "sand_gives_back"
+                || event.id == "pot_of_returns"
                 // A minecart of theirs, which this memory may not have: its own test.
                 || event.id == "rides_the_cart"
                 // Down a shaft, which this memory is not: its own test.
