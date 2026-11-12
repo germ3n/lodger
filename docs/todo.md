@@ -3000,6 +3000,11 @@ The `[x]` lines above, summed up by day:
   the Nether: eight netherrack steps six blocks over them, from behind to over them, three fifths of
   a second apart, to them alone. Tests: one in `act`. Was: no such event.
 
+- [x] **Home through the portal** (`docs/events_todo.md`, 285): `home_through_the_portal`, stages 3
+  to 5, in the Nether: a hen, a door shutting, a cow and rain heard faint, seven seconds in all,
+  from where they came into the Nether (the memory keeps `arrived_at`, where they stood as the
+  crossing was told). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

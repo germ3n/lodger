@@ -1284,6 +1284,8 @@ pub enum Action {
     TheirDoorBehind,
     /// In the Nether, steps on the rock overhead, slow, crossing over them and stopping right above.
     NetherRoofSteps,
+    /// In the Nether, at the portal they came through, the sounds of home coming through it.
+    HomeThroughThePortal,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8015,6 +8017,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::NetherRoofSteps,
         true,
     ),
+    // docs/events_todo.md, 285: in the nether, where they came through, the sounds of home come through the portal, faint: a hen, a door shutting, a cow, rain.
+    row(
+        "home_through_the_portal",
+        3,
+        5,
+        &[InNether],
+        1.0,
+        3,
+        Half,
+        Action::HomeThroughThePortal,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8318,6 +8332,7 @@ impl Event {
             | Action::RainInTheNether
             | Action::TheirDoorBehind
             | Action::NetherRoofSteps
+            | Action::HomeThroughThePortal
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -9253,6 +9268,7 @@ impl Event {
             "rain_in_the_nether" => "rain on them in the Nether, the sound alone",
             "their_door_behind" => "open and shut a door behind them in the Nether",
             "nether_roof_steps" => "walk steps across the rock over them",
+            "home_through_the_portal" => "let the sounds of home through their portal",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
