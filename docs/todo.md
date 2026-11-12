@@ -2513,6 +2513,9 @@ The `[x]` lines above, summed up by day:
   the first time they open their inventory in the next two minutes, a bundle's rustle, once (a
   client hint on the inventory screen). Tests: one in `act`. Was: no such event.
 
+- [x] **Wings in the room** (`docs/events_todo.md`, 183): `wings_in_the_room`, stages 4 to 5: awake at night indoors, wings beating close round them. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

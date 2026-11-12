@@ -5856,6 +5856,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("rustle_in_the_pack", 120.0),
         true,
     ),
+    // docs/events_todo.md, 183.
+    row(
+        "wings_in_the_room",
+        4,
+        5,
+        &[TargetIndoors, Night, TargetAwake],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.phantom.flap"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7367,6 +7379,7 @@ impl Event {
             "gust_from_nowhere" => "burst a gust of wind beside them that pushes them",
             "digging_under_the_floor" => "dig and snuffle under the floor",
             "rustle_in_the_pack" => "rustle something in their pack as they open it",
+            "wings_in_the_room" => "beat wings close round them in the room",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

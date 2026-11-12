@@ -1283,6 +1283,42 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 183.
+        "wings_in_the_room" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.phantom.flap", 0),
+                        ("minecraft:entity.phantom.flap", 6),
+                        ("minecraft:entity.phantom.flap", 12),
+                    ],
+                    (0.8, 0.9),
+                    0.6,
+                    Above,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.phantom.flap", 0),
+                        ("minecraft:entity.phantom.flap", 8),
+                    ],
+                    (0.75, 0.85),
+                    0.6,
+                    Ear,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.phantom.flap", 0),
+                        ("minecraft:entity.phantom.flap", 5),
+                        ("minecraft:entity.phantom.flap", 10),
+                        ("minecraft:entity.phantom.flap", 15),
+                    ],
+                    (0.8, 0.9),
+                    0.5,
+                    Behind,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2266,6 +2302,7 @@ mod tests {
             "creaking_behind",
             "bulbs_clicking",
             "digging_under_the_floor",
+            "wings_in_the_room",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",
