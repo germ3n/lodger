@@ -1167,6 +1167,8 @@ pub enum Action {
     BedFenced,
     /// Their tools from their chests laid on the floor in a neat row, the very stacks, kept from despawning.
     ToolsLaidOut,
+    /// A column of pointed dripstone grown overnight across their tunnel, floor to ceiling, gone in a day.
+    DripstoneInTunnel,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7181,6 +7183,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ToolsLaidOut,
         false,
     ),
+    // docs/events_todo.md, 219: a column of dripstone across their tunnel overnight.
+    row(
+        "dripstone_in_tunnel",
+        4,
+        5,
+        &[Tunnel, TargetAwayOrAsleep],
+        3.0,
+        2,
+        Half,
+        Action::DripstoneInTunnel,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7779,6 +7793,7 @@ impl Event {
             | Action::SlamCrater
             | Action::OneStepMore
             | Action::RoomClosesIn
+            | Action::DripstoneInTunnel
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8314,6 +8329,7 @@ impl Event {
             "trapdoor_to_nothing" => "set a trapdoor in their floor over a lit pit",
             "bed_fenced" => "fence their bed round while they sleep",
             "tools_laid_out" => "lay their tools out on the floor in a row",
+            "dripstone_in_tunnel" => "grow a column of dripstone across their tunnel",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

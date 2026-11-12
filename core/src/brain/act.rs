@@ -203,6 +203,27 @@ fn is_laid_tool(id: &str) -> bool {
     .any(|t| id.ends_with(t))
 }
 
+/// The state of the `i`th of `n` pointed dripstones in a column floor to ceiling, from the
+/// bottom: the lower half (the larger, when odd) rising, the rest hanging, the two that meet
+/// merged at their tips, the ends their bases; one alone a tip.
+fn dripstone_state(i: usize, n: usize) -> String {
+    let rising = n.div_ceil(2);
+    let up = i < rising;
+    let thickness = if n == 1 {
+        "tip"
+    } else if i + 1 == rising || i == rising {
+        "tip_merge"
+    } else if i == 0 || i + 1 == n {
+        "base"
+    } else {
+        "middle"
+    };
+    format!(
+        "vertical_direction={},thickness={thickness}",
+        if up { "up" } else { "down" }
+    )
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -614,6 +635,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TrapdoorToNothing
         | Action::BedFenced
         | Action::ToolsLaidOut
+        | Action::DripstoneInTunnel
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8258,6 +8280,51 @@ pub fn commands(
                             kept: keep,
                         },
                         1,
+                    ));
+                }
+                made
+            }
+            None => vec![],
+        },
+        // docs/events_todo.md, 219.
+        Action::DripstoneInTunnel => match memory.newest_tunnel() {
+            Some(tunnel) => {
+                let columns = tunnel.columns();
+                let Some(middle) = columns.get(columns.len() / 2) else {
+                    return vec![];
+                };
+                let mut cells: Vec<BlockPos> = tunnel
+                    .blocks
+                    .iter()
+                    .filter(|b| b[0] == middle[0] && b[2] == middle[2])
+                    .copied()
+                    .collect();
+                cells.sort_by_key(|c| c[1]);
+                cells.dedup();
+                let mut made = Vec::new();
+                for (i, cell) in cells.iter().enumerate() {
+                    made.push((
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: *cell,
+                            block: "minecraft:pointed_dripstone".to_string(),
+                            state: dripstone_state(i, cells.len()),
+                            replace: vec![],
+                            settle: 0,
+                            wall: String::new(),
+                            rest: false,
+                            only: false,
+                        },
+                        0,
+                    ));
+                    made.push((
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: *cell,
+                            block: "minecraft:air".to_string(),
+                            only: vec!["minecraft:pointed_dripstone".to_string()],
+                        },
+                        DAY_TICKS,
                     ));
                 }
                 made
@@ -19312,5 +19379,49 @@ mod tests {
                 .all(|w| (w[1][0] - w[0][0] - 1.0).abs() < 1e-9 && w[0][2] == w[1][2]),
             "a row: {drops:?}"
         );
+    }
+
+    #[test]
+    fn dripstone_in_tunnel_meets_tip_to_tip_across_its_middle() {
+        assert_eq!(
+            dripstone_state(0, 2),
+            "vertical_direction=up,thickness=tip_merge"
+        );
+        assert_eq!(
+            dripstone_state(1, 2),
+            "vertical_direction=down,thickness=tip_merge"
+        );
+        assert_eq!(
+            dripstone_state(1, 3),
+            "vertical_direction=up,thickness=tip_merge"
+        );
+        assert_eq!(dripstone_state(0, 1), "vertical_direction=up,thickness=tip");
+        assert_eq!(
+            dripstone_state(0, 4),
+            "vertical_direction=up,thickness=base"
+        );
+        assert_eq!(
+            dripstone_state(3, 4),
+            "vertical_direction=down,thickness=base"
+        );
+        assert_eq!(
+            dripstone_state(1, 4),
+            "vertical_direction=up,thickness=tip_merge"
+        );
+        assert_eq!(
+            dripstone_state(2, 4),
+            "vertical_direction=down,thickness=tip_merge"
+        );
+        let memory = rich_memory();
+        let event = find("dripstone_in_tunnel").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        let set: Vec<BlockPos> = made
+            .iter()
+            .filter_map(|(c, _)| match c {
+                Command::SetBlock { pos, .. } => Some(*pos),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(set, vec![[1, 0, 0], [1, 1, 0]], "{made:?}");
     }
 }

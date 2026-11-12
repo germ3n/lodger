@@ -2724,6 +2724,11 @@ The `[x]` lines above, summed up by day:
   taken from their chests and dropped a block apart in a row across the house's middle, the very
   stacks kept so they never despawn. Tests: one in `act`. Was: no such event.
 
+- [x] **Dripstone across the tunnel** (`docs/events_todo.md`, 219): `dripstone_in_tunnel`, stages 4
+  and 5, the target away or asleep: pointed dripstone in every dug cell of the middle column of
+  their newest tunnel, the lower half rising and the upper hanging, merged at the tips, into air
+  alone; gone a day on. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
