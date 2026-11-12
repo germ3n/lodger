@@ -808,6 +808,41 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 141.
+        "bush_rustles" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:block.sweet_berry_bush.place", 0)],
+                    (0.8, 0.9),
+                    0.8,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.azalea_leaves.step", 0),
+                        ("minecraft:block.azalea_leaves.step", 3),
+                        ("minecraft:block.azalea_leaves.step", 6),
+                        ("minecraft:block.azalea_leaves.step", 9),
+                    ],
+                    (0.8, 0.9),
+                    0.8,
+                    Beside,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.grass.step", 0),
+                        ("minecraft:block.grass.step", 2),
+                        ("minecraft:block.grass.step", 4),
+                        ("minecraft:block.grass.step", 6),
+                        ("minecraft:block.grass.step", 8),
+                    ],
+                    (0.7, 0.8),
+                    0.8,
+                    Beside,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1776,6 +1811,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "bush_rustles",
             "ice_cracks",
             "iron_door_below",
             "panting_behind",

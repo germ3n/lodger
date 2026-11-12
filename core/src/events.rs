@@ -5596,6 +5596,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:block.glass.break"),
         true,
     ),
+    // docs/events_todo.md, 141.
+    row(
+        "bush_rustles",
+        3,
+        5,
+        &[TargetOutdoors, TargetWalking],
+        1.0,
+        4,
+        Half,
+        Action::SoundAtTarget("minecraft:block.sweet_berry_bush.place"),
+        true,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6768,6 +6780,7 @@ impl Event {
             "panting_behind" => "pant right behind them as they run",
             "iron_door_below" => "slam an iron door far under them",
             "ice_cracks" => "crack the ice under them",
+            "bush_rustles" => "rustle a bush hard beside them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
