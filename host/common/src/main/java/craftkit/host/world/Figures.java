@@ -83,6 +83,8 @@ public final class Figures {
 		long lostAt = -1;
 		/** Jumping in place, from where it stands (ABI 54); null for none. */
 		Vec3 jumpsFrom;
+		/** The tick it bows at, crouching two seconds and standing again (ABI 56); -1 none. */
+		long bowsAt = -1;
 		/** Its group: when one of a group is gone, the rest go with it (ABI 54); 0 for none. */
 		int together;
 		/** The boat it sits in behind its player, or the mount it rides, on their client alone (ABI 54); null on foot. */
@@ -352,6 +354,13 @@ public final class Figures {
 				figure.speed = PEEK_PER_TICK;
 			}
 
+			// Bowing once: down, a while, and up again.
+			if (figure.bowsAt >= 0 && tick == figure.bowsAt) {
+				pose(figure, net.minecraft.world.entity.Pose.CROUCHING);
+			} else if (figure.bowsAt >= 0 && tick == figure.bowsAt + BOW_TICKS) {
+				pose(figure, net.minecraft.world.entity.Pose.STANDING);
+				figure.bowsAt = -1;
+			}
 			// Crouching as they crouch; swinging at the rock now and then.
 			if (figure.copyCrouch && figure.player.isShiftKeyDown() != figure.crouched) {
 				figure.crouched = figure.player.isShiftKeyDown();
@@ -494,6 +503,18 @@ public final class Figures {
 			using(player, figure, true);
 		}
 	}
+
+	/** The figure {@code number} shown to {@code player} bows to them once, slowly, a moment on (ABI 56). */
+	public void bow(ServerPlayer player, int number) {
+		Figure figure = find(player, number);
+		if (figure != null) {
+			figure.bowsAt = tick + BOW_AFTER;
+		}
+	}
+
+	/** When a figure bows after it is shown, and how long it stays bowed, ticks. */
+	static final long BOW_AFTER = 30;
+	static final long BOW_TICKS = 40;
 
 	/** The figure {@code number} shown to {@code player} jumps in place, again and again (ABI 54). */
 	public void jump(ServerPlayer player, int number) {

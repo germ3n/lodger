@@ -2845,6 +2845,10 @@ The `[x]` lines above, summed up by day:
   come within sixteen blocks, twelve spadefuls heard two and a half seconds apart, then a hole two
   deep beside it in natural ground. Tests: one in `act`. Was: no such event.
 
+- [x] **The figure bows** (`docs/events_todo.md`, 243): `figure_bows`, stages 4 and 5, outdoors: the
+  figure far off, empty-handed, bowing once a moment after it is shown, two seconds down and up
+  again, gone at six seconds (the figure's `bows`, ABI 56). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

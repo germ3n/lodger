@@ -795,6 +795,7 @@ fn figure(
         then_at: Vec::new(),
         finds: String::new(),
         mount: String::new(),
+        bows: false,
     }
 }
 

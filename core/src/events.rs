@@ -1204,6 +1204,8 @@ pub enum Action {
     TitleYourName,
     /// Far off at its place the figure digging, the shovel's sound carrying; there, a fresh hole.
     FigureDigging,
+    /// Far off, the figure bowing to them, slowly, and straightening, and gone.
+    FigureBows,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7515,6 +7517,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FigureDigging,
         false,
     ),
+    // docs/events_todo.md, 243: far off, the figure bows to them and is gone.
+    row(
+        "figure_bows",
+        4,
+        5,
+        &[TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::FigureBows,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8128,6 +8142,7 @@ impl Event {
             | Action::FirefliesGoOut
             | Action::TrialKeyLeft
             | Action::FigureDigging
+            | Action::FigureBows
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8689,6 +8704,7 @@ impl Event {
             "enchant_six" => "make every enchanting offer cost 6",
             "compass_spins" => "spin their compass as in the Nether",
             "figure_digging" => "dig at its place, the figure with a shovel",
+            "figure_bows" => "bow to them far off, the figure",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

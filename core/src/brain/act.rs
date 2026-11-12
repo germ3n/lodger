@@ -704,6 +704,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "figure_digging" {
         return dig_spot(memory, rng);
     }
+    // Far off, where they would see the figure.
+    if event.id == "figure_bows" {
+        return far_spot(memory, rng);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -748,6 +752,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TrialKeyLeft
         | Action::TitleYourName
         | Action::FigureDigging
+        | Action::FigureBows
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2552,6 +2557,7 @@ fn figure_shown(
         then_at: Vec::new(),
         finds: String::new(),
         mount: String::new(),
+        bows: false,
     }
 }
 
@@ -8881,6 +8887,17 @@ pub fn commands(
                 made
             })
             .unwrap_or_default(),
+        // docs/events_todo.md, 243.
+        Action::FigureBows => pos
+            .map(|p| {
+                let mut shown = figure_shown(ids, memory, target, p, 6.0, false);
+                if let Command::Figure { bows, held, .. } = &mut shown {
+                    *bows = true;
+                    *held = ItemStack::default();
+                }
+                vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -11147,6 +11164,7 @@ pub fn commands(
                         then_at: Vec::new(),
                         finds: String::new(),
                         mount: String::new(),
+                        bows: false,
                     },
                     0,
                 )]
@@ -20308,5 +20326,17 @@ mod tests {
             DIG_SOUNDS
         );
         assert_eq!(made.iter().filter(|(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:air")).count(), 2);
+    }
+
+    #[test]
+    fn figure_bows_once_far_off_and_empty_handed() {
+        let memory = rich_memory();
+        let event = find("figure_bows").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { bows: true, held, seconds, .. }, 0)] if held.id.is_empty() && *seconds == 6.0),
+            "{made:?}"
+        );
     }
 }

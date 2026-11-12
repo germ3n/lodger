@@ -1609,6 +1609,10 @@ pub enum Command {
         /// `minecraft:happy_ghast`, held in the air where it is set; ABI 55).
         #[serde(default, skip_serializing_if = "String::is_empty")]
         mount: String,
+        /// Bows to its player once, a moment after it is shown: down two seconds, and up
+        /// again. ABI 56.
+        #[serde(default, skip_serializing_if = "is_false")]
+        bows: bool,
     },
     RemoveFigure {
         id: u64,
