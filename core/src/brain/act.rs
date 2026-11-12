@@ -299,6 +299,9 @@ fn distance_pos(a: Pos, b: Pos) -> f64 {
 /// The black `leather_dyed` dyes their leather, as a black dye would.
 const LEATHER_BLACK: u32 = 0x1D1D21;
 
+/// How hard `edge_tug` tugs them toward the drop, blocks a tick: a nudge their crouch holds.
+const EDGE_TUG: f64 = 0.12;
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -789,6 +792,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::OreCounted
         | Action::SnowballComesBack
         | Action::ArrowReturned
+        | Action::EdgeTug
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2966,6 +2970,7 @@ pub fn commands(
                     id: ids(),
                     player: target,
                     velocity: [-way[0] as f64 * GUST_PUSH, 0.1, -way[1] as f64 * GUST_PUSH],
+                    toward_drop: false,
                 },
                 1,
             ),
@@ -3001,6 +3006,7 @@ pub fn commands(
                         0.15,
                         -side[1] as f64 * GUST_PUSH,
                     ],
+                    toward_drop: false,
                 },
                 1,
             ),
@@ -6119,6 +6125,7 @@ pub fn commands(
                         id: ids(),
                         player: target,
                         velocity: [0.0, -0.9, 0.0],
+                        toward_drop: false,
                     },
                     0,
                 ),
@@ -6131,6 +6138,7 @@ pub fn commands(
                         id: ids(),
                         player: target,
                         velocity: [0.0, -0.7, 0.0],
+                        toward_drop: false,
                     },
                     6,
                 ),
@@ -9323,6 +9331,16 @@ pub fn commands(
                 player: target,
                 what: "arrow".to_string(),
                 seconds: 120.0,
+            },
+            0,
+        )],
+        // docs/events_todo.md, 261.
+        Action::EdgeTug => vec![(
+            Command::PushPlayer {
+                id: ids(),
+                player: target,
+                velocity: [EDGE_TUG, 0.0, 0.0],
+                toward_drop: true,
             },
             0,
         )],
@@ -21081,6 +21099,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::ThrowBack { what, .. }, 0)] if what == "arrow"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn edge_tug_nudges_them_toward_the_drop_only() {
+        let memory = rich_memory();
+        let event = find("edge_tug").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PushPlayer { toward_drop: true, velocity, .. }, 0)] if velocity[0] <= 0.15),
             "{made:?}"
         );
     }

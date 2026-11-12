@@ -3109,12 +3109,42 @@ public final class Executors {
 	static final double MOST_PUSH = 1;
 
 	/** A player pushed, once, as a hit or a current would (ABI 54): each axis at most a block a tick. */
+	/** The most `push_player`'s `toward_drop` nudges them, blocks a tick. */
+	private static final double EDGE_NUDGE = 0.15;
+
 	private static JsonObject pushPlayer(ServerLevel level, JsonObject command, long id, Context context) {
 		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 		if (player == null) {
 			return report(id, false, "the player is not here");
 		}
 		JsonArray v = command.getAsJsonArray("velocity");
+		// Toward the drop beside a crouching player (ABI 56): the side where the ground falls three
+		// or more, a nudge at most, which their crouch holds them on the edge against.
+		if (command.has("toward_drop") && command.get("toward_drop").getAsBoolean()) {
+			if (!player.isShiftKeyDown()) {
+				return report(id, false, "they are not crouching");
+			}
+			BlockPos feet = player.blockPosition();
+			Direction drop = null;
+			for (Direction side : Direction.Plane.HORIZONTAL) {
+				BlockPos beside = feet.relative(side);
+				boolean open = true;
+				for (int down = 0; down < 3 && open; down++) {
+					open = level.getBlockState(beside.below(down)).getCollisionShape(level, beside.below(down)).isEmpty();
+				}
+				if (open) {
+					drop = side;
+					break;
+				}
+			}
+			if (drop == null) {
+				return report(id, false, "no drop beside them");
+			}
+			double nudge = Math.min(EDGE_NUDGE, Math.abs(v.get(0).getAsDouble()));
+			player.push(drop.getStepX() * nudge, 0, drop.getStepZ() * nudge);
+			player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(player));
+			return report(id, true, "");
+		}
 		double x = Math.clamp(v.get(0).getAsDouble(), -MOST_PUSH, MOST_PUSH);
 		double y = Math.clamp(v.get(1).getAsDouble(), -MOST_PUSH, MOST_PUSH);
 		double z = Math.clamp(v.get(2).getAsDouble(), -MOST_PUSH, MOST_PUSH);

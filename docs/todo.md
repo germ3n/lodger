@@ -2930,6 +2930,11 @@ The `[x]` lines above, summed up by day:
   (`throw_back`, ABI 56: `Returns` and `AbstractArrowMixin`). Tests: one in `act`. Was: no such
   event.
 
+- [x] **A tug at the edge** (`docs/events_todo.md`, 261): `edge_tug`, stages 4 and 5, crouched still
+  outdoors: a nudge of 0.12 toward the side where the ground falls three or more, only while they
+  crouch, which holds them on the edge (`push_player`'s `toward_drop`, ABI 56; refused standing or
+  with no drop). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

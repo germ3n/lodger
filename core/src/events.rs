@@ -1256,6 +1256,8 @@ pub enum Action {
     SnowballComesBack,
     /// An arrow they shoot into the dark landing at their feet a moment later, their own.
     ArrowReturned,
+    /// Crouched at a ledge's edge, a tug toward the drop, a little; never over.
+    EdgeTug,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7795,6 +7797,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ArrowReturned,
         false,
     ),
+    // docs/events_todo.md, 261: crouched at an edge, a tug toward the drop.
+    row(
+        "edge_tug",
+        4,
+        5,
+        &[CrouchedStill, TargetOutdoors],
+        1.0,
+        3,
+        Half,
+        Action::EdgeTug,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8426,6 +8440,7 @@ impl Event {
             | Action::LateDrop
             | Action::SnowballComesBack
             | Action::ArrowReturned
+            | Action::EdgeTug
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9005,6 +9020,7 @@ impl Event {
             "ore_counted" => "count each diamond they mine with a chime",
             "snowball_comes_back" => "throw back the next snowball they throw",
             "arrow_returned" => "bring back the next arrow they shoot",
+            "edge_tug" => "tug them toward the drop as they crouch at an edge",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

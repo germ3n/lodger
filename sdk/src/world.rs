@@ -982,6 +982,11 @@ pub enum Command {
         id: u64,
         player: u32,
         velocity: Pos,
+        /// Toward the drop beside them instead, `velocity`'s x the strength (0.15 at most): the
+        /// side where the ground falls three or more, only while they crouch, which holds them on
+        /// the edge; refused standing, or with no drop beside them. ABI 56.
+        #[serde(default, skip_serializing_if = "is_false")]
+        toward_drop: bool,
     },
     /// The container at `pos` (a double chest both halves) will not open for `seconds` (ten
     /// at most): a player's use of it refused, a locked chest's rattle heard each try. ABI 54.
