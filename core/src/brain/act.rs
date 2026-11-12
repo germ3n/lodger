@@ -810,6 +810,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "compass_steadies" {
         return memory.arrived_at;
     }
+    // Their compass turns to their bed.
+    if event.id == "lodestone_wrong" {
+        return memory.home.as_ref().and_then(|h| h.bed);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -22681,5 +22685,18 @@ mod tests {
         assert!(made
             .iter()
             .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
+    }
+
+    #[test]
+    fn lodestone_wrong_points_their_compass_at_their_bed() {
+        let memory = rich_memory();
+        let bed = memory.home.as_ref().unwrap().bed;
+        let event = find("lodestone_wrong").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, pos: p, .. }, 0)] if hint == "compass_points" && *p == bed),
+            "{made:?}"
+        );
     }
 }

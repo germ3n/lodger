@@ -8289,6 +8289,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SomeoneWentThrough,
         true,
     ),
+    // docs/events_todo.md, 313: their compass points to their bed instead.
+    row(
+        "lodestone_wrong",
+        3,
+        5,
+        &[Home, Bed, Holding("minecraft:compass")],
+        2.0,
+        2,
+        Half,
+        Action::Hint("compass_points", 60.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9564,6 +9576,7 @@ impl Event {
             "standing_on_the_void" => "stand the figure on nothing over the void",
             "splash_in_the_nether" => "throw a splash potion at their feet from the Nether's dark",
             "someone_went_through" => "sound someone going through their portal",
+            "lodestone_wrong" => "turn their compass to their bed",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

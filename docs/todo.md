@@ -3094,6 +3094,10 @@ The `[x]` lines above, summed up by day:
   outdoors within forty-eight blocks of the portal they built: a portal's crossing heard from its
   frame, to them alone. Tests: one in `act`. Was: no such event.
 
+- [x] **The lodestone lies** (`docs/events_todo.md`, 313): `lodestone_wrong`, stages 3 to 5, holding
+  a compass: a minute of it pointing at their bed on their client, a lodestone's as any (the
+  `compass_points` hint at the bed; off with the glitches). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
