@@ -2952,6 +2952,7 @@ const NOT_DUG: &[&str] = &[
     "village_lantern",
     "flowers_potted",
     "harvest_one",
+    "snow_shape",
 ];
 
 /// Whether a planned moment can ever hold together with the event's needs: "as they come home"

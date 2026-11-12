@@ -2320,6 +2320,15 @@ The `[x]` lines above, summed up by day:
   `static` (a second of noise and a hiss) and `elder_face` (the elder guardian's face and cry, no
   curse). Tests: in `act`, `RumbleTest`, `FacingTest`.
 
+- [x] **Eight more of the fifty** (`docs/events_todo.md` 144, 146, 147, 149, 150, 152, 153, 162).
+  Was: no such events. Now `red_trail` (red specks from the door to the bed as they come home),
+  `snow_shape` (a body's hollow in the snow by the house), `clock_wrong` (a clock showing night at
+  noon, `ClockTimeMixin`), `cold_house` (their breath showing, frost on the floor a minute),
+  `the_killer_rabbit` (the game's killer rabbit at them, spared; `minecraft:killer_bunny`, ABI 55),
+  `phantom_item` (a paper named "behind you" in an empty slot for three seconds),
+  `border_closes` (the world border close round them on their client a moment) and
+  `frost_on_the_glass` (their panes white from inside a minute and a half). Tests: in `act`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

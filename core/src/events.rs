@@ -1125,6 +1125,14 @@ pub enum Action {
     Cobwebs,
     /// A door against an inside wall of theirs, the wall behind it, gone in a day.
     FalseDoor,
+    /// A hollow in the snow by the house the shape of a person lying down.
+    SnowShape,
+    /// The house cold a while: their breath shows, frost on the floor.
+    ColdHouse,
+    /// The killer rabbit at them: this much harm a bite, never a kill.
+    KillerRabbit(f32),
+    /// Their windows frosted white from inside a while.
+    FrostOnGlass,
     /// Far from any village, a villager bangs on their door, runs in and drops dead.
     VillagerFleesIn,
     /// Every sound they hear goes wrong a while, one way of four.
@@ -6263,6 +6271,102 @@ pub const CATALOGUE: &[Event] = &[
         Action::FalseDoor,
         false,
     ),
+    // docs/events_todo.md, 144: coming home, red specks on the floor from the door to the bed.
+    row(
+        "red_trail",
+        4,
+        5,
+        &[Home, Bed, Door, TargetApproachingDoor],
+        2.0,
+        2,
+        Half,
+        Action::Hint("red_trail", 60.0),
+        false,
+    ),
+    // docs/events_todo.md, 146: a hollow in the snow by the house the shape of a person lying.
+    row(
+        "snow_shape",
+        4,
+        5,
+        &[Home, SnowyHere, TargetAwayOrAsleep],
+        2.0,
+        2,
+        Half,
+        Action::SnowShape,
+        false,
+    ),
+    // docs/events_todo.md, 147: the clock in their hand shows night at noon a while.
+    row(
+        "clock_wrong",
+        3,
+        5,
+        &[Holding("minecraft:clock"), Day],
+        1.0,
+        3,
+        Half,
+        Action::Hint("clock_wrong", 90.0),
+        true,
+    ),
+    // docs/events_todo.md, 149: the house goes cold, their breath shows, frost on the floor.
+    row(
+        "cold_house",
+        4,
+        5,
+        &[Home, TargetIndoors],
+        2.0,
+        2,
+        Half,
+        Action::ColdHouse,
+        false,
+    ),
+    // docs/events_todo.md, 150: a white rabbit watching them comes at them red-eyed; a nip.
+    row(
+        "the_killer_rabbit",
+        4,
+        5,
+        &[TargetOutdoors, TargetAwake],
+        2.0,
+        2,
+        Full,
+        Action::KillerRabbit(2.0),
+        false,
+    ),
+    // docs/events_todo.md, 152: a paper named "behind you" in an empty slot of their inventory.
+    row(
+        "phantom_item",
+        4,
+        5,
+        &[TargetAwake],
+        1.0,
+        2,
+        Half,
+        Action::Hint("phantom_item", 120.0),
+        false,
+    ),
+    // docs/events_todo.md, 153: the world border's red edge close round them a moment.
+    row(
+        "border_closes",
+        5,
+        5,
+        &[TargetAwake],
+        2.0,
+        2,
+        Full,
+        Action::Hint("border_closes", 2.5),
+        false,
+    ),
+    // docs/events_todo.md, 162: their windows frosted from inside a while, though not cold.
+    row(
+        "frost_on_the_glass",
+        3,
+        5,
+        &[Home, Pane, TargetIndoors],
+        1.0,
+        3,
+        Half,
+        Action::FrostOnGlass,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -6640,6 +6744,9 @@ impl Event {
             | Action::Cobwebs
             | Action::FalseDoor
             | Action::TorchesTurn
+            | Action::SnowShape
+            | Action::ColdHouse
+            | Action::FrostOnGlass
             | Action::PathWorn
             | Action::CarpetShift
             | Action::Cauldron
@@ -6787,6 +6894,7 @@ impl Event {
             | Action::WolvesCircle
             | Action::ZombieInYourGear(_)
             | Action::Vexes(..)
+            | Action::KillerRabbit(_)
             | Action::CreeperBehind
             | Action::VillagerFleesIn
             | Action::SnowballThrown
@@ -7323,6 +7431,14 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "red_trail" => "leave red specks from their door to their bed",
+            "snow_shape" => "press the shape of a body into the snow by the house",
+            "clock_wrong" => "turn the clock in their hand to night",
+            "cold_house" => "make their house cold enough to see their breath",
+            "the_killer_rabbit" => "set a red-eyed rabbit on them",
+            "phantom_item" => "slip a strange paper into their inventory a moment",
+            "border_closes" => "close the world's edge round them a moment",
+            "frost_on_the_glass" => "frost their windows over from inside",
             "elder_face" => "show them the elder guardian's face",
             "boom_far" => "set off a far explosion from the way of its place",
             "red_rain" => "turn the rain red",

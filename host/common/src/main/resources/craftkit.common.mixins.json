@@ -9,6 +9,7 @@
 	],
 	"client": [
 		"ChannelMixin",
+		"ClockTimeMixin",
 		"CompassAngleStateMixin",
 		"DebugEntryPositionMixin",
 		"FogRendererMixin",

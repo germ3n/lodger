@@ -93,6 +93,9 @@ pub(crate) fn spot(memory: &Memory, rng: &mut Rng) -> Option<BlockPos> {
     ])
 }
 
+/// A body lying with its arms out, its head at the spot: the cells its shape takes off the snow.
+const SNOW_BODY: &[[i32; 2]] = &[[0, 0], [0, 1], [0, 2], [-1, 1], [1, 1], [-1, 3], [1, 3]];
+
 /// A Minecraft day, in ticks: what it hangs in their house for a day stays this long.
 const DAY_TICKS: u64 = 24_000;
 
@@ -551,7 +554,17 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         // At its place, its spot's column.
         Action::YourGrave => spot(memory, rng),
         // The house: its lights, walls and bed are what change.
-        Action::TorchesTurn | Action::Cobwebs | Action::FalseDoor => home.map(|h| h.center),
+        Action::TorchesTurn | Action::Cobwebs | Action::FalseDoor | Action::ColdHouse => {
+            home.map(|h| h.center)
+        }
+        Action::SnowShape => spot(memory, rng),
+        Action::FrostOnGlass => windows_of(memory).first().copied(),
+        // Eight blocks ahead of them, where they see it sit.
+        Action::KillerRabbit(_) => {
+            let at = block_of(memory.last.pos);
+            let way = facing_way(memory.last.yaw);
+            Some([at[0] + way[0] * 8, at[1], at[2] + way[1] * 8])
+        }
         // Over them.
         Action::Vexes(..) => Some(block_of(memory.last.pos)),
         // Twenty blocks behind them, on the ground: it walks at them out of the dark.
@@ -3483,6 +3496,12 @@ pub fn commands(
                     .map(|(id, _)| id.clone())
                     .unwrap_or_default(),
                 "name_called" => memory.target_name.clone(),
+                "red_trail" => memory
+                    .home
+                    .as_ref()
+                    .and_then(|h| h.bed)
+                    .map(|b| format!("{},{},{}", b[0], b[1], b[2]))
+                    .unwrap_or_default(),
                 _ => String::new(),
             };
             let hint_pos = match kind {
@@ -3507,6 +3526,8 @@ pub fn commands(
                     .and_then(|h| windows(memory, h.center).first().copied()),
                 // Four blocks behind them, where the subtitle's arrow points.
                 "name_called" => Some(behind(memory, 4.0)),
+                // From the door of the house to the bed: the detail names the bed.
+                "red_trail" => memory.home.as_ref().and_then(|h| h.doors.first().copied()),
                 // Far off toward its place (or the home), sixty-four blocks from them.
                 "boom_far" => far_toward(
                     memory,
@@ -6977,6 +6998,126 @@ pub fn commands(
             }
             _ => Vec::new(),
         },
+        // A body's outline in the snow layer by the house, lying with its arms out: the snow
+        // taken off where it lay, nothing else.
+        Action::SnowShape => pos
+            .map(grounded)
+            .map(|p| {
+                SNOW_BODY
+                    .iter()
+                    .map(|[dx, dz]| {
+                        (
+                            Command::SetBlock {
+                                id: ids(),
+                                pos: [p[0] + dx, p[1] + 1, p[2] + dz],
+                                block: "minecraft:air".to_string(),
+                                state: String::new(),
+                                replace: vec!["minecraft:snow".to_string()],
+                                settle: 1,
+                                wall: String::new(),
+                                rest: false,
+                                only: true,
+                            },
+                            0,
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        // Their breath shows a minute, and frost lies on the floor round the house's middle,
+        // gone with it (only the snow it laid is taken away).
+        Action::ColdHouse => match memory.home.as_ref() {
+            Some(home) => {
+                let mut made = vec![(
+                    Command::Hint {
+                        id: ids(),
+                        player: target,
+                        hint: "cold_breath".to_string(),
+                        pos: None,
+                        seconds: 60.0,
+                        detail: String::new(),
+                    },
+                    0,
+                )];
+                for (i, [dx, dz]) in [[1, 0], [-1, 1], [2, -1], [0, -2], [-2, -1]]
+                    .iter()
+                    .enumerate()
+                {
+                    let cell = [home.center[0] + dx, home.floor_y, home.center[2] + dz];
+                    made.push((fill(ids, cell, "minecraft:snow"), i as u64 * 20));
+                    made.push((
+                        Command::SwapBlock {
+                            id: ids(),
+                            pos: cell,
+                            block: "minecraft:air".to_string(),
+                            only: vec!["minecraft:snow".to_string()],
+                        },
+                        1_200,
+                    ));
+                }
+                made
+            }
+            None => vec![],
+        },
+        // The game's own killer rabbit, at them half a minute: a bite the harm asked, never a
+        // kill; killed it leaves nothing.
+        Action::KillerRabbit(harm) => pos
+            .map(|p| {
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:killer_bunny".to_string(),
+                        pos: [p[0] as f64 + 0.5, memory.last.pos[1], p[2] as f64 + 0.5],
+                        yaw: memory.last.yaw + 180.0,
+                        seconds: 30.0,
+                        kept: String::new(),
+                        face: None,
+                        targets: Some(target),
+                        harm,
+                        wears: vec![],
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
+        // Every pane of the house's windows white, as frost from inside, a minute and a half;
+        // then each of those put back as it was.
+        Action::FrostOnGlass => {
+            let panes: Vec<BlockPos> = memory
+                .home
+                .as_ref()
+                .map(|h| {
+                    memory
+                        .fixtures("glass_pane")
+                        .map(|f| f.pos)
+                        .filter(|p| distance(*p, h.center) <= 12.0)
+                        .take(16)
+                        .collect()
+                })
+                .unwrap_or_default();
+            let mut made = Vec::new();
+            for pane in panes {
+                made.push((
+                    Command::SwapBlock {
+                        id: ids(),
+                        pos: pane,
+                        block: "minecraft:white_stained_glass_pane".to_string(),
+                        only: vec!["minecraft:glass_pane".to_string()],
+                    },
+                    0,
+                ));
+                made.push((
+                    Command::SwapBlock {
+                        id: ids(),
+                        pos: pane,
+                        block: "minecraft:glass_pane".to_string(),
+                        only: vec!["minecraft:white_stained_glass_pane".to_string()],
+                    },
+                    1_800,
+                ));
+            }
+            made
+        }
         // Every wall torch of theirs at home pointed at the bed: the host turns each onto the
         // side of its block that points most nearly at it and has a wall to hold it.
         Action::TorchesTurn => match memory.home.as_ref() {
@@ -11117,6 +11258,49 @@ mod tests {
         memory.walls.clear();
         assert!(made_by("cobwebs", &memory).is_empty());
         assert!(made_by("false_door", &memory).is_empty());
+    }
+
+    #[test]
+    fn a_trail_to_the_bed_a_body_in_the_snow_a_cold_house_and_the_killer_rabbit() {
+        let memory = rich_memory();
+        let now = Now::default();
+        let made_by = |id: &str| {
+            let event = find(id).unwrap();
+            let pos = place(event, &memory, &mut Rng::new(1));
+            commands(event, pos, &memory, &mut ids(), &now, None)
+        };
+        let home = memory.home.as_ref().unwrap();
+
+        let trail = made_by("red_trail");
+        assert!(
+            matches!(&trail[..], [(Command::Hint { hint, pos, detail, .. }, 0)] if hint == "red_trail" && *pos == home.doors.first().copied() && detail == "0,64,0"),
+            "from the door to the bed: {trail:?}"
+        );
+
+        // The body's seven cells, the snow layer alone taken, on the ground there.
+        let body = made_by("snow_shape");
+        assert_eq!(body.len(), SNOW_BODY.len());
+        assert!(body.iter().all(|(c, _)| matches!(c, Command::SetBlock { block, replace, only: true, pos, .. } if block == "minecraft:air" && replace == &["minecraft:snow".to_string()] && pos[1] == GROUND_Y + 1)));
+
+        // Their breath a minute, and the floor's frost taken away with it, snow alone.
+        let cold = made_by("cold_house");
+        assert!(
+            matches!(&cold[0].0, Command::Hint { hint, seconds, .. } if hint == "cold_breath" && *seconds == 60.0)
+        );
+        assert_eq!(cold.iter().filter(|(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:snow")).count(), 5);
+        assert!(cold.iter().filter(|(c, _)| matches!(c, Command::SwapBlock { .. })).all(|(c, d)| *d == 1_200 && matches!(c, Command::SwapBlock { only, .. } if only == &["minecraft:snow".to_string()])));
+
+        let rabbit = made_by("the_killer_rabbit");
+        assert!(
+            matches!(&rabbit[..], [(Command::PlaceEntity { of, targets: Some(_), harm, seconds, .. }, 0)] if of == "minecraft:killer_bunny" && *harm == 2.0 && *seconds > 0.0),
+            "{rabbit:?}"
+        );
+
+        // Each pane frosted, and the same pane cleared again a minute and a half on.
+        let frost = made_by("frost_on_the_glass");
+        let on: Vec<_> = frost.iter().filter(|(_, d)| *d == 0).collect();
+        let off: Vec<_> = frost.iter().filter(|(_, d)| *d == 1_800).collect();
+        assert!(!on.is_empty() && on.len() == off.len(), "{frost:?}");
     }
 
     #[test]

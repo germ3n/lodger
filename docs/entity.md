@@ -246,6 +246,10 @@ The senses report every mob the target hits and kills, and the memory keeps a ta
 | `torches_turn` | 4 | Overnight every wall torch of the house is on another wall of its block, each pointing as nearly at their bed as a wall there lets it, lit as it was (`turn_torches`, ABI 55). | A home with a bed and lights, the target away or asleep. |
 | `cobwebs` | 3 | Overnight the upper corners of their house are hung with cobwebs, up to six, in the air just inside the walls they built, as if no one had lived there for years; a day on they are gone. | A home, their building, the target away or asleep. |
 | `false_door` | 4 | Overnight, a spruce door on an inside wall of their house where there was none, flat against the wall they built; open it and there is their wall behind it. A day on it is gone. | A home, their building, the target away or asleep. |
+| `red_trail` | 4 | As they come home, a trail of red specks on the floor from the door to their bed, there a minute and gone (`red_trail`, a client hint). | A home with a bed and a door, the target coming to it. |
+| `snow_shape` | 4 | In the snow by the house, a hollow the shape of a person lying with their arms out, the snow layer taken off where it lay, as if one lay there all night. | A home in snow, the target away or asleep. |
+| `cold_house` | 4 | The house goes cold a minute: their breath shows in puffs before their face, and frost lies on a few blocks of the floor, gone with it (`cold_breath`, a client hint, and snow it lays and takes away again). | A home, the target indoors. |
+| `frost_on_the_glass` | 3 | Their windows frost over from inside, every pane white, a minute and a half, though it is not cold; then clear again, the very panes as they were. | A home with windows, the target indoors. |
 | `kill_line` | 3 | A chat line in the target's own name about it, at night: `i saw what you did to the cows`, `the cows remember`, `14 cows`. | Three or more kills of one kind, night. |
 
 ### The house, changed
@@ -557,6 +561,9 @@ seconds and then stops; `events.glitches` turns the group off, with [The screen]
 | `stars_out` | 3 | The stars fade out for a minute and back. | A clear night, the target outdoors. |
 | `static` | 4 | A second of grey static over their whole screen, new each frame, a hiss with it; then nothing (`static`, a client hint). | The target awake. |
 | `elder_face` | 5 | Wherever they are, far from any ocean, the elder guardian's face fills their screen with its cry, as the game shows its curse, and no curse after (`elder_face`, a client hint). | The target awake. |
+| `clock_wrong` | 3 | The clock in their hand shows night at noon, a minute and a half (a hook on the clock's face). | Holding a clock, by day. |
+| `phantom_item` | 4 | The first time they open their inventory in the next two minutes, a paper named "behind you" sits in an empty slot, its name under the mouse; three seconds on it is gone, as if it never was (a hook on the inventory screen). | The target awake. |
+| `border_closes` | 5 | The world border's striped red wall stands close round them, seven blocks off on every side, two seconds and a half, as if the world were ending; then it is where it was (on their client alone). | The target awake. |
 | `rumble` | 4 | A deep rumble under them, three seconds: the view shakes, hard at first and dying away, and indoors dust falls from the ceiling over them; nothing breaks (`rumble`, a client hint). | The target awake. |
 | `boom_far` | 4 | At night in the open, a far explosion from the way of its place: a flash low on the sky there, the burst seen sixty-four blocks off, the boom coming to them muffled; nothing is harmed (`boom_far`, a client hint at the place it is seen). | Night, the target outdoors, a home. |
 | `night_early` | 4 | The sun, moon and stars stand two hours later than they are, the sky dimmed, for a minute, eased in and out, then right. | The target outdoors by day. |
@@ -691,6 +698,7 @@ a dock or bridge), never over anything a player built (see the
 | `ice_cracks` | 3 | Walking in a frozen biome, something cracks under them, as ice splitting; nothing gives. | A snowy biome, the target walking outdoors. |
 | `bush_rustles` | 3 | Walking outdoors, something rustles hard in the green beside them, as if something in it moved; nothing comes out. | The target walking outdoors. |
 | `snoring_beside` | 4 | Lying in bed, someone snoring softly and slowly beside them; no one there. | The target in bed. |
+| `the_killer_rabbit` | 4 | Out in the open, a white rabbit eight blocks ahead of them, red-eyed, the game's own killer rabbit, comes at them fast, half a minute: each bite a heart, never a kill; killed it leaves nothing (`place_entity`'s `minecraft:killer_bunny`, ABI 55). | The target outdoors, awake. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

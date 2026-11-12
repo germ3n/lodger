@@ -2492,7 +2492,7 @@ public final class Executors {
 			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel", "minecraft:squid", "minecraft:bat");
 	/** The hostiles it may set on a player for a while, spared (ABI 54). */
 	private static final List<String> HOSTILE = List.of("minecraft:silverfish", "minecraft:cave_spider", "minecraft:wolf",
-			"minecraft:zombie", "minecraft:vex", "minecraft:phantom", "minecraft:creeper");
+			"minecraft:zombie", "minecraft:vex", "minecraft:phantom", "minecraft:creeper", "minecraft:killer_bunny");
 
 	/** An armour stand or a farm animal placed (ABI 27): for a while when seconds are given, wearing a kept stack when named. */
 	private static JsonObject placeEntity(ServerLevel level, JsonObject command, long id, Context context, WorldData data) {
@@ -2505,7 +2505,9 @@ public final class Executors {
 		if (HOSTILE.contains(of) && wanted <= 0) {
 			return report(id, false, "a hostile is only ever placed for a while");
 		}
-		Optional<Holder.Reference<net.minecraft.world.entity.EntityType<?>>> type = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(of));
+		// The killer bunny is the game's own rabbit of its evil kind (ABI 55).
+		boolean killer = of.equals("minecraft:killer_bunny");
+		Optional<Holder.Reference<net.minecraft.world.entity.EntityType<?>>> type = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(killer ? "minecraft:rabbit" : of));
 		if (type.isEmpty()) {
 			return report(id, false, "no such entity");
 		}
@@ -2522,6 +2524,9 @@ public final class Executors {
 		Entity entity = type.get().value().create(level, net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
 		if (entity == null) {
 			return report(id, false, "it could not be made");
+		}
+		if (killer) {
+			entity.setComponent(net.minecraft.core.component.DataComponents.RABBIT_VARIANT, net.minecraft.world.entity.animal.rabbit.Rabbit.Variant.EVIL);
 		}
 		float yaw = command.has("yaw") ? command.get("yaw").getAsFloat() : 0;
 		entity.snapTo(pos.x, pos.y, pos.z, yaw, 0);

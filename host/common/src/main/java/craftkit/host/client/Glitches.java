@@ -58,6 +58,14 @@ import java.util.Set;
  *       following the mouse, while it lasts ({@code InventoryScreenMixin}).</li>
  *   <li>{@code rumble}: a deep boom under them, the view shaking and dying away ({@link Rumble}),
  *       dust falling from the ceiling over them indoors.</li>
+ *   <li>{@code red_trail}: red specks on the floor from the hint's place to the one in its
+ *       detail (the door to the bed), renewed while it lasts.</li>
+ *   <li>{@code cold_breath}: their breath showing in puffs before their face.</li>
+ *   <li>{@code clock_wrong}: a clock shows the time half a day off ({@code ClockTimeMixin}).</li>
+ *   <li>{@code phantom_item}: the first time they open their inventory while it lasts, a paper
+ *       named "behind you" in an empty slot for three seconds ({@code InventoryScreenMixin}).</li>
+ *   <li>{@code border_closes}: the world border on their client drawn close round them, then
+ *       put back as it was.</li>
  *   <li>{@code static}: a second of grey noise over the screen and a hiss.</li>
  *   <li>{@code elder_face}: the elder guardian's face over the screen and its cry, as the game
  *       shows it, no curse.</li>
@@ -92,6 +100,10 @@ public final class Glitches {
 	/** The rumble's offset on their view now, taken back as it changes and when it ends. */
 	private static float shakenYaw;
 	private static float shakenPitch;
+	/** The world border as it was before `border_closes` drew it close, to put back. */
+	private static double[] borderBefore;
+	/** When each `phantom_item` was first seen in the inventory. */
+	private static final java.util.Map<Long, Long> PHANTOM_SHOWN = new java.util.HashMap<>();
 
 	private Glitches() {
 	}
@@ -158,6 +170,7 @@ public final class Glitches {
 		boolean pullingFov = false;
 		boolean shaking = false;
 		boolean rumbling = false;
+		boolean bordered = false;
 		long now = System.currentTimeMillis();
 		for (Hints.Active active : Hints.active()) {
 			HintPayload hint = active.hint();
@@ -392,6 +405,33 @@ public final class Glitches {
 								at.x + random.nextDouble() * 4 - 2, at.y + 3 + random.nextDouble() * 3, at.z + random.nextDouble() * 4 - 2, 0, 0.1, 0);
 					}
 				}));
+				// Red specks from the door to the bed, on the floor, every half second.
+				case "red_trail" -> {
+					if (minecraft.level.getGameTime() % 10 == 0) {
+						hint.pos().ifPresent(from -> redTrail(minecraft, from, hint.detail()));
+					}
+				}
+				// A puff of breath before their face every two seconds.
+				case "cold_breath" -> {
+					if (minecraft.level.getGameTime() % 40 == 0) {
+						Vec3 look = minecraft.player.getViewVector(1f);
+						Vec3 mouth = minecraft.player.getEyePosition().add(look.scale(0.4)).add(0, -0.1, 0);
+						for (int i = 0; i < 3; i++) {
+							minecraft.level.addParticle(net.minecraft.core.particles.ParticleTypes.WHITE_SMOKE, mouth.x, mouth.y, mouth.z,
+									look.x * 0.03, 0.005, look.z * 0.03);
+						}
+					}
+				}
+				// The world's edge close round them, its wall and its red, then as it was.
+				case "border_closes" -> {
+					bordered = true;
+					var border = minecraft.level.getWorldBorder();
+					if (borderBefore == null) {
+						borderBefore = new double[] {border.getCenterX(), border.getCenterZ(), border.getSize()};
+						border.setCenter(minecraft.player.getX(), minecraft.player.getZ());
+						border.setSize(14);
+					}
+				}
 				case "static" -> once(active, () -> minecraft.level.playLocalSound(minecraft.player.getX(), minecraft.player.getEyeY(), minecraft.player.getZ(),
 						net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH, SoundSource.AMBIENT, 0.6f, 0.5f, false));
 				// The face and the cry the game shows for an elder guardian's curse; no curse.
@@ -420,6 +460,12 @@ public final class Glitches {
 		if (!behind) {
 			BehindFigure.clear(minecraft);
 		}
+		if (!bordered && borderBefore != null) {
+			var border = minecraft.level.getWorldBorder();
+			border.setCenter(borderBefore[0], borderBefore[1]);
+			border.setSize(borderBefore[2]);
+			borderBefore = null;
+		}
 		if (!rumbling && (shakenYaw != 0 || shakenPitch != 0)) {
 			minecraft.player.setYRot(minecraft.player.getYRot() - shakenYaw);
 			minecraft.player.setXRot(net.minecraft.util.Mth.clamp(minecraft.player.getXRot() - shakenPitch, -90f, 90f));
@@ -443,6 +489,7 @@ public final class Glitches {
 			DONE_ONCE.retainAll(live);
 			LOOKED.keySet().retainAll(live);
 			PRINTS.keySet().retainAll(live);
+			PHANTOM_SHOWN.keySet().retainAll(live);
 		}
 	}
 
@@ -541,6 +588,74 @@ public final class Glitches {
 				default -> {
 				}
 			}
+		}
+	}
+
+	/** Red specks on the floor along the way from `from` to the place in `to` ("x,y,z"). */
+	private static void redTrail(Minecraft minecraft, net.minecraft.core.BlockPos from, String to) {
+		String[] parts = to.split(",");
+		if (parts.length != 3) {
+			return;
+		}
+		Vec3 a = Vec3.atBottomCenterOf(from);
+		Vec3 b;
+		try {
+			b = new Vec3(Integer.parseInt(parts[0]) + 0.5, Integer.parseInt(parts[1]), Integer.parseInt(parts[2]) + 0.5);
+		} catch (NumberFormatException e) {
+			return;
+		}
+		double length = Math.min(40, a.distanceTo(b));
+		var random = minecraft.level.getRandom();
+		for (double d = 0; d <= length; d += 0.7) {
+			Vec3 at = a.lerp(b, length == 0 ? 0 : d / length);
+			double x = at.x + random.nextDouble() * 0.3 - 0.15;
+			double z = at.z + random.nextDouble() * 0.3 - 0.15;
+			double ground = groundAt(minecraft.level, x, at.y, z);
+			if (!Double.isNaN(ground)) {
+				minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x8A0A0A, 0.5f), x, ground + 0.02, z, 0, 0, 0);
+			}
+		}
+	}
+
+	/** Whether a clock is to show the time half a day off (`clock_wrong`). */
+	public static boolean clockWrong() {
+		return Hints.showing("clock_wrong");
+	}
+
+	/**
+	 * `phantom_item`: in the inventory, the first time it is opened while the hint lasts, a
+	 * paper named "behind you" drawn in an empty slot of theirs for three seconds, its name
+	 * under the mouse; then gone, as if it never was.
+	 */
+	public static void phantomItem(GuiGraphicsExtractor graphics, net.minecraft.world.inventory.AbstractContainerMenu menu, int left, int top, int mouseX, int mouseY) {
+		long now = System.currentTimeMillis();
+		for (Hints.Active active : Hints.active()) {
+			if (!active.hint().hint().equals("phantom_item")) {
+				continue;
+			}
+			long shown = PHANTOM_SHOWN.computeIfAbsent(active.id(), id -> now);
+			if (now - shown > 3000) {
+				continue;
+			}
+			net.minecraft.world.inventory.Slot empty = null;
+			for (net.minecraft.world.inventory.Slot slot : menu.slots) {
+				if (slot.container instanceof net.minecraft.world.entity.player.Inventory && slot.getContainerSlot() >= 9
+						&& slot.getContainerSlot() < 36 && !slot.hasItem() && (empty == null || slot.getContainerSlot() == 22)) {
+					empty = slot;
+				}
+			}
+			if (empty == null) {
+				return;
+			}
+			var paper = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.PAPER);
+			paper.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("behind you"));
+			int x = left + empty.x;
+			int y = top + empty.y;
+			graphics.item(paper, x, y);
+			if (mouseX >= x && mouseX < x + 16 && mouseY >= y && mouseY < y + 16) {
+				graphics.setTooltipForNextFrame(Minecraft.getInstance().font, paper, mouseX, mouseY);
+			}
+			return;
 		}
 	}
 

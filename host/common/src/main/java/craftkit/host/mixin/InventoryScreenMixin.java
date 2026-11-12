@@ -17,6 +17,29 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(InventoryScreen.class)
 public abstract class InventoryScreenMixin {
+	/** The screen's left and top, read once: the game's own fields, not shadowed through the hierarchy. */
+	@Unique
+	private static java.lang.reflect.Field craftkit$left;
+	@Unique
+	private static java.lang.reflect.Field craftkit$top;
+
+	/** `phantom_item`: drawn over the slots once the screen is drawn. */
+	@Inject(method = "extractRenderState", at = @At("TAIL"))
+	private void craftkit$phantom(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+		var screen = (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) (Object) this;
+		try {
+			if (craftkit$left == null) {
+				craftkit$left = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("leftPos");
+				craftkit$top = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("topPos");
+				craftkit$left.setAccessible(true);
+				craftkit$top.setAccessible(true);
+			}
+			Glitches.phantomItem(graphics, screen.getMenu(), craftkit$left.getInt(screen), craftkit$top.getInt(screen), mouseX, mouseY);
+		} catch (ReflectiveOperationException ignored) {
+			// The screen moved its fields: no paper, nothing else lost.
+		}
+	}
+
 	/** Drawing it again here: the second draw is the game's own. */
 	@Unique
 	private static boolean craftkit$staring;
