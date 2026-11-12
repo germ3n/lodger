@@ -2972,6 +2972,10 @@ The `[x]` lines above, summed up by day:
   Nether with hoglins near: every hoglin near them held twelve seconds facing them, charging none
   (`hold`). Tests: one in `act`. Was: no such event.
 
+- [x] **The magma cubes settle** (`docs/events_todo.md`, 282): `magma_cubes_settle`, stages 3 to 5,
+  in the Nether with magma cubes near: every magma cube near them held six seconds (`hold`). Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

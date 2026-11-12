@@ -836,6 +836,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::StriderTurnsHome
         | Action::GhastWatches
         | Action::HoglinsPart
+        | Action::MagmaCubesSettle
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9417,6 +9418,8 @@ pub fn commands(
         Action::GhastWatches => hold_kind(ids, memory, target, "ghast", 60.0),
         // docs/events_todo.md, 277.
         Action::HoglinsPart => hold_kind(ids, memory, target, "hoglin", 12.0),
+        // docs/events_todo.md, 282.
+        Action::MagmaCubesSettle => hold_kind(ids, memory, target, "magma_cube", 6.0),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13299,6 +13302,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "magma_cubes_settle"
                 || event.id == "hoglins_part"
                 || event.id == "ghast_watches"
                 || event.id == "strider_turns_home"
@@ -21327,6 +21331,23 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hold { entity: 410, seconds, .. }, 0)] if *seconds == 12.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn magma_cubes_settle_holds_every_magma_cube_near_them() {
+        let mut memory = rich_memory();
+        memory.last.hostiles_near.push(Creature {
+            id: 410,
+            kind: "magma_cube".to_string(),
+            pos: [6.0, 64.0, 2.0],
+            ..Creature::default()
+        });
+        let event = find("magma_cubes_settle").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hold { entity: 410, seconds, .. }, 0)] if *seconds == 6.0),
             "{made:?}"
         );
     }
