@@ -134,7 +134,7 @@ The protocol, the ABI and the host are described in full in the
 ## Versions
 
 The crate and the host share a version; a mod's manifest names the least host it needs
-(`craftkit >= 0.1.1`). The ABI version moves more slowly and is what the host checks when it
+(`craftkit >= 0.1.2`). The ABI version moves more slowly and is what the host checks when it
 loads a library. Minecraft Java 26.3 on Java 25, Fabric or NeoForge.
 
 ## License

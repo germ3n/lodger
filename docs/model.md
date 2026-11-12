@@ -229,6 +229,30 @@ situations and choices) are the engine's, moved. The scoring itself is tested ag
 model only in the ignored `model::` tests, which need the file (see
 [Tests](development.md#tests)).
 
+## The GPU and the game's frames
+
+The owner: "whenever the model makes a decision the game stutters a bit. is there a way to
+optimize that somehow, without having like 0.5 on the cpu?" A decision decodes some five hundred to
+eleven hundred tokens (the situation, and the menu lettered in three orders); they went in chunks
+of 64, and a frame of the game waits behind each one the GPU is busy with. Measured on an M3 Pro
+(`core/tests/frames.rs`, `the_longest_burst_and_a_decision_s_time_by_chunk`), the longest a chunk
+held the GPU and a decision's time:
+
+| Chunk | 1.5B: longest | 1.5B: a decision | 4B: longest | 4B: a decision |
+| --- | --- | --- | --- | --- |
+| 64, as it was | 44 ms | 0.57 s | 109 ms | 1.36 s |
+| 32 | 29 ms | 0.68 s | 65 ms | 1.52 s |
+| 16 | 15 ms | 0.72 s | 39 ms | 1.70 s |
+| 8 | 11 ms | 0.90 s | 28 ms | 2.17 s |
+| tuned (now) | 14 ms | 0.89 s | 35 ms | 2.17 s |
+
+A frame at sixty a second is 17 ms. So the chunk now tunes itself as it goes (`model::CHUNK`,
+`tuned_chunk`): a quarter smaller after one that held the GPU past 12 ms (`BURST_TARGET`), two larger
+after one well under, between 8 tokens (`LEAST_CHUNK`: smaller only adds each token's overhead, and a
+4B that cannot get under 12 ms at all went to one token and ten-second decisions) and 64. The 1.5B
+settles under a frame; the 4B, whose single token takes some 25 ms on that GPU, a third of what it
+held before. The decision runs on its own thread, so its slower answer is never waited on.
+
 ## The worker and the queue
 
 `model/queue.rs`, the engine's `Worker`:

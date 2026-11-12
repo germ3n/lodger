@@ -2624,6 +2624,21 @@ The `[x]` lines above, summed up by day:
   redstone. Too few of theirs joined (a village house), the least box as before. Tests: two in
   `memory`.
 
+- [x] **Version 0.1.2** (owner: "bump the version number please", "no bump it to 0.1.2"): the
+  lodger (`mod/gradle.properties`, `core/Cargo.toml`) and craftkit (`host/gradle.properties`,
+  `sdk/Cargo.toml`) at 0.1.2, the lodger needing craftkit 0.1.2 or later (ABI 55: the ground
+  counted from below, the boss bar, `keep_in`, the dripleaves, the cracks, sparing as a setting,
+  and the rest). Was: 0.1.1.
+
+- [x] **No stutter as the model decides** (owner: "whenever the model makes a decision the game
+  stutters a bit. is there a way to optimize that somehow, without having like 0.5 on the cpu?").
+  Was: a decision's prompt went to the GPU in chunks of 64 tokens, each holding it 44 ms on the
+  1.5B and 109 on the 4B, two to six frames the game waited. Now the chunk tunes itself to hold it
+  about 12 ms at most, under a frame (`tuned_chunk`, between 8 and 64): measured, 14 ms on the
+  1.5B and 35 on the 4B, decisions a little slower and never waited on. The table in
+  [Model](model.md#the-gpu-and-the-games-frames). Tests: one in `model`; the timing test in
+  `frames.rs` (ignored).
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -54,6 +54,40 @@ pub struct Settings {
 /// How the prompt is fed to the model: this many tokens at a time, with a rest between, so a
 /// long situation is not one burst of GPU work the game's frames wait behind.
 pub const DECODE_CHUNK: usize = 64;
+/// The chunk the decodes use now, at most [`DECODE_CHUNK`]: tuned as it goes so one piece of
+/// the work holds the GPU no longer than [`BURST_TARGET`] (owner: "whenever the model makes a
+/// decision the game stutters a bit"; 64 tokens held it 43 ms on the 1.5B, 108 on the 4B, a
+/// frame being 17), and set by the timing test.
+pub static CHUNK: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(16);
+/// The longest one piece of the work should hold the GPU: under a frame at sixty a second.
+pub const BURST_TARGET: std::time::Duration = std::time::Duration::from_millis(12);
+/// Whether the chunk tunes itself (off for the timing test, which sets it).
+pub static CHUNK_TUNES: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+/// The least chunk it tunes down to: a larger model on a smaller GPU never holds it under the
+/// target at all (the 4B on an M3 Pro, about 25 ms a token), and below this every token only
+/// costs its own overhead (one at a time, a decision took ten seconds and bursts no shorter).
+pub const LEAST_CHUNK: usize = 8;
+
+/// The next chunk after one of `chunk` tokens held the GPU `took`: smaller by a quarter past
+/// [`BURST_TARGET`], larger by two well under it, between [`LEAST_CHUNK`] and [`DECODE_CHUNK`].
+pub fn tuned_chunk(chunk: usize, took: std::time::Duration) -> usize {
+    if took > BURST_TARGET {
+        (chunk * 3 / 4).max(LEAST_CHUNK)
+    } else if took < BURST_TARGET / 3 {
+        (chunk + 2).min(DECODE_CHUNK)
+    } else {
+        chunk
+    }
+}
+/// The longest one piece of the model's work held the GPU, in microseconds, since last taken
+/// (`take_longest_burst`): what a frame of the game may have waited behind.
+pub static LONGEST_BURST_US: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// The longest burst since the last call, and the count started again.
+pub fn take_longest_burst() -> std::time::Duration {
+    std::time::Duration::from_micros(LONGEST_BURST_US.swap(0, std::sync::atomic::Ordering::Relaxed))
+}
 pub const DECODE_REST: std::time::Duration = std::time::Duration::from_millis(1);
 /// How a choice is scored (`docs/model.md`, Scoring): 0 `plain`, its tokens' mean
 /// log-probability after `The answer is: `; 1 `spaced`, the same with the space where Qwen's
@@ -526,6 +560,44 @@ fn draw(weights: &[f32], u: f64) -> usize {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn the_chunk_shrinks_past_a_frame_s_share_of_the_gpu_and_grows_back_under_it() {
+        use std::time::Duration;
+        assert_eq!(
+            tuned_chunk(64, Duration::from_millis(43)),
+            48,
+            "a quarter smaller past the target"
+        );
+        assert_eq!(
+            tuned_chunk(16, Duration::from_millis(10)),
+            16,
+            "held near it"
+        );
+        assert_eq!(
+            tuned_chunk(16, Duration::from_millis(2)),
+            18,
+            "two larger well under it"
+        );
+        assert_eq!(
+            tuned_chunk(9, Duration::from_millis(30)),
+            LEAST_CHUNK,
+            "never below the least"
+        );
+        assert_eq!(
+            tuned_chunk(DECODE_CHUNK, Duration::from_millis(1)),
+            DECODE_CHUNK,
+            "never past the most"
+        );
+        // From a 64-token burst of 43 ms, a few bursts bring it under the target's share.
+        let mut chunk = 64;
+        for _ in 0..6 {
+            let took = Duration::from_micros((chunk as u64) * 43_000 / 64);
+            chunk = tuned_chunk(chunk, took);
+        }
+        assert!(chunk <= 18, "{chunk}");
+    }
+
     use super::*;
 
     fn settings() -> Settings {

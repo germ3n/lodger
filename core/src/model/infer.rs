@@ -293,9 +293,7 @@ fn decode_tokens(
     }
 
     // Chunks, with a rest between, so the GPU is not held for a whole situation at once.
-    let width = usize::try_from(ctx.n_batch())
-        .unwrap_or(1)
-        .clamp(1, super::DECODE_CHUNK);
+    let most = usize::try_from(ctx.n_batch()).unwrap_or(1).max(1);
     let mut offset = 0usize;
 
     // The rest the config asks for: between chunks always, and before each piece of work when
@@ -309,6 +307,10 @@ fn decode_tokens(
         if offset > 0 {
             std::thread::sleep(rest);
         }
+        let width = super::CHUNK
+            .load(std::sync::atomic::Ordering::Relaxed)
+            .clamp(1, super::DECODE_CHUNK)
+            .min(most);
         let count = (tokens.len() - offset).min(width);
         let last = offset + count == tokens.len();
         batch.clear();
@@ -321,7 +323,20 @@ fn decode_tokens(
                 .map_err(|err| err.to_string())?;
         }
 
+        let began = std::time::Instant::now();
         ctx.decode(batch).map_err(|err| err.to_string())?;
+        let took = began.elapsed();
+        super::LONGEST_BURST_US.fetch_max(
+            took.as_micros() as u64,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        // A burst of a full chunk tells how long one holds the GPU: the chunk tuned to it.
+        if count == width && super::CHUNK_TUNES.load(std::sync::atomic::Ordering::Relaxed) {
+            super::CHUNK.store(
+                super::tuned_chunk(width, took),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+        }
         offset += count;
     }
 

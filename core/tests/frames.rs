@@ -301,3 +301,75 @@ fn short_menu_words_against_long_on_situations_with_one_plain_fit() {
     }
     model.shutdown();
 }
+
+/// How long one piece of the model's work holds the GPU, and a decision's time, by chunk size:
+/// what a frame may wait behind (owner: "whenever the model makes a decision the game stutters a
+/// bit"). Ignored; `MODEL` and `GPU=1` as above.
+#[test]
+#[ignore = "needs the real model; prints the bursts"]
+fn the_longest_burst_and_a_decision_s_time_by_chunk() {
+    let path = std::env::var("MODEL")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("models")
+                .join("qwen-1.5b.gguf")
+        });
+    if !path.is_file() {
+        return;
+    }
+    let model = Model::new(Settings {
+        path,
+        threads: 4,
+        context: 1536,
+        temperature: 0.0,
+        seed: 7,
+        gpu_layers: if std::env::var("GPU").is_ok() { 999 } else { 0 },
+        pause_ms: 1,
+    });
+    model.warm().expect("the model loads");
+    let mut menu: Vec<String> = vec!["wait".to_string()];
+    for (loud, quiet) in LOUD.iter().zip(QUIET) {
+        menu.push(words(loud));
+        menu.push(words(quiet));
+    }
+    let questions = vec![
+        Question {
+            text: SOON.to_string(),
+            choices: SOON_CHOICES.iter().map(|c| c.to_string()).collect(),
+        },
+        Question {
+            text: WHAT.to_string(),
+            choices: menu,
+        },
+        Question {
+            text: WHEN.to_string(),
+            choices: WHEN_CHOICES.iter().map(|c| c.to_string()).collect(),
+        },
+    ];
+    let mut text = new_frame(4);
+    for line in &situations()[0] {
+        text.push_str(line);
+        text.push('\n');
+    }
+    lodger_core::model::CHUNK_TUNES.store(false, Ordering::Relaxed);
+    for chunk in [64usize, 32, 16, 8, 0] {
+        // 0: tuning itself, from 64, as the game runs it.
+        lodger_core::model::CHUNK_TUNES.store(chunk == 0, Ordering::Relaxed);
+        lodger_core::model::CHUNK.store(if chunk == 0 { 64 } else { chunk }, Ordering::Relaxed);
+        model.ask(&text, &questions).expect("answered");
+        lodger_core::model::take_longest_burst();
+        let began = std::time::Instant::now();
+        for _ in 0..3 {
+            model.ask(&text, &questions).expect("answered");
+        }
+        let each = began.elapsed() / 3;
+        let burst = lodger_core::model::take_longest_burst();
+        println!(
+            "CHUNK {chunk}: longest burst {:.1} ms, a decision {:.0} ms",
+            burst.as_secs_f64() * 1000.0,
+            each.as_secs_f64() * 1000.0
+        );
+    }
+    model.shutdown();
+}
