@@ -2171,6 +2171,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A scream in the house** (`docs/events_todo.md`, 117): `scream_indoors`, stages 4 and 5, indoors at night: a goat's scream from above or through the wall. Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **A tool snaps behind them** (`docs/events_todo.md`, 118): `item_break_behind`, stages 3 to 5: a tool's break heard behind them, nothing broken. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

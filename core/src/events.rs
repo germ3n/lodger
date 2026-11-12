@@ -5342,6 +5342,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.goat.screaming.ambient"),
         false,
     ),
+    // docs/events_todo.md, 118.
+    row(
+        "item_break_behind",
+        3,
+        5,
+        &[TargetAwake],
+        1.0,
+        4,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.item.break"),
+        true,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6493,6 +6505,7 @@ impl Event {
             "villager_flees_in" => "send a villager banging at their door, to run in and die",
             "breathing_in_the_wall" => "breathe slowly inside the wall beside them",
             "scream_indoors" => "scream like a goat from another room of their house",
+            "item_break_behind" => "snap a tool right behind them",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

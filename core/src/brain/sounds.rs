@@ -127,6 +127,28 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 118.
+        "item_break_behind" => {
+            const WAYS: &[Variant] = &[
+                v(&[("minecraft:entity.item.break", 0)], (1.0, 1.1), 0.8, Ear),
+                v(
+                    &[("minecraft:entity.item.break", 0)],
+                    (0.8, 0.9),
+                    0.9,
+                    Behind,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.item.break", 0),
+                        ("minecraft:entity.item.break", 6),
+                    ],
+                    (0.9, 1.0),
+                    0.7,
+                    Behind,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1089,6 +1111,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "item_break_behind",
             "scream_indoors",
             "breathing_in_the_wall",
         ] {
