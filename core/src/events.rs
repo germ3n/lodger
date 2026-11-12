@@ -5664,6 +5664,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.player.breath"),
         true,
     ),
+    // docs/events_todo.md, 167.
+    row(
+        "humming_ahead",
+        3,
+        5,
+        &[TargetUnderground, TargetWalking],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:entity.villager.ambient"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7159,6 +7171,7 @@ impl Event {
             "bush_rustles" => "rustle a bush hard beside them",
             "snoring_beside" => "snore softly beside them in bed",
             "sigh_at_the_door" => "sigh just outside their door",
+            "humming_ahead" => "hum a few notes in the tunnel ahead",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

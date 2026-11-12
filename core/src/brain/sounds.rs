@@ -912,6 +912,42 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 167.
+        "humming_ahead" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:entity.villager.ambient", 0),
+                        ("minecraft:entity.villager.ambient", 14),
+                        ("minecraft:entity.villager.ambient", 28),
+                    ],
+                    (0.5, 0.6),
+                    0.7,
+                    Away,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.villager.ambient", 0),
+                        ("minecraft:entity.villager.ambient", 20),
+                    ],
+                    (0.45, 0.55),
+                    0.6,
+                    Away,
+                ),
+                v(
+                    &[
+                        ("minecraft:entity.villager.ambient", 0),
+                        ("minecraft:entity.villager.ambient", 10),
+                        ("minecraft:entity.villager.ambient", 22),
+                        ("minecraft:entity.villager.ambient", 36),
+                    ],
+                    (0.5, 0.55),
+                    0.6,
+                    Away,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1883,6 +1919,7 @@ mod tests {
             "door_scratch",
             "snoring_beside",
             "sigh_at_the_door",
+            "humming_ahead",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",
