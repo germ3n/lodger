@@ -2600,7 +2600,8 @@ public final class Executors {
 	/** What {@code place_entity} may place: an armour stand, a farm animal, or a bat (`bats_in_the_house`, ABI 54). */
 	private static final List<String> PLACEABLE = List.of("minecraft:armor_stand", "minecraft:cow", "minecraft:pig", "minecraft:sheep",
 			"minecraft:chicken", "minecraft:goat", "minecraft:horse", "minecraft:donkey", "minecraft:mule", "minecraft:llama",
-			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel", "minecraft:squid", "minecraft:bat");
+			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel", "minecraft:squid", "minecraft:bat",
+			"minecraft:copper_golem");
 	/** The hostiles it may set on a player for a while, spared (ABI 54). */
 	private static final List<String> HOSTILE = List.of("minecraft:silverfish", "minecraft:cave_spider", "minecraft:wolf",
 			"minecraft:zombie", "minecraft:vex", "minecraft:phantom", "minecraft:creeper", "minecraft:killer_bunny");

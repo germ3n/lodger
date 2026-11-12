@@ -1125,6 +1125,8 @@ pub enum Action {
     TorchesTurn,
     /// A boss bar named for it at the top of their screen, filling a minute.
     BossBarIt,
+    /// A copper golem standing outside their door at night, facing in.
+    CopperGolemAtDoor,
     /// A grave at its place with their own name on it and a day not come yet.
     YourGrave,
     /// Cobwebs in the upper corners of their house, gone in a day.
@@ -6821,6 +6823,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BossBarIt,
         false,
     ),
+    // docs/events_todo.md, 193: at night a copper golem stands still outside their door.
+    row(
+        "copper_golem_at_door",
+        4,
+        5,
+        &[Home, Door, Night],
+        2.0,
+        2,
+        Half,
+        Action::CopperGolemAtDoor,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7356,6 +7370,7 @@ impl Event {
             | Action::ZombieInYourGear(_)
             | Action::Vexes(..)
             | Action::KillerRabbit(_)
+            | Action::CopperGolemAtDoor
             | Action::CreeperBehind
             | Action::VillagerFleesIn
             | Action::SnowballThrown
@@ -7916,6 +7931,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "copper_golem_at_door" => "stand a copper golem outside their door",
             "boss_bar_it" => "fill a boss bar named for it over their screen",
             "recovery_compass_lies" => "turn their recovery compass to its place",
             "spyglass_figure" => "stand far off where they look through a spyglass",

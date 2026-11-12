@@ -609,6 +609,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         }
         Action::SnowShape => spot(memory, rng),
         Action::StairsToNowhere => home.map(|h| h.center),
+        // Two blocks out from the door they use.
+        Action::CopperGolemAtDoor => memory.doorway_spot().map(block_of),
         // Where they are: the ceiling over them, or the host finds the lava or the cliff.
         Action::CeilingCrawl | Action::InTheLava | Action::OverTheEdge => {
             Some(block_of(memory.last.pos))
@@ -7477,6 +7479,27 @@ pub fn commands(
             }
             made
         }
+        // Outside the door they use, a copper golem still, facing them in the house, five
+        // minutes, then gone; nothing dropped.
+        Action::CopperGolemAtDoor => pos
+            .map(|p| {
+                vec![(
+                    Command::PlaceEntity {
+                        id: ids(),
+                        of: "minecraft:copper_golem".to_string(),
+                        pos: [p[0] as f64 + 0.5, p[1] as f64, p[2] as f64 + 0.5],
+                        yaw: 0.0,
+                        seconds: 300.0,
+                        kept: String::new(),
+                        face: Some(target),
+                        targets: None,
+                        harm: 0.0,
+                        wears: vec![],
+                    },
+                    0,
+                )]
+            })
+            .unwrap_or_default(),
         // At the top of their screen, a boss bar reading only "it", filling over a minute.
         Action::BossBarIt => vec![(
             Command::BossBar {
@@ -17837,6 +17860,27 @@ mod tests {
             event.effect(),
             "sky",
             "a screen thing, off with the glitches"
+        );
+    }
+
+    #[test]
+    fn at_night_a_copper_golem_stands_outside_their_door_facing_in() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("copper_golem_at_door").unwrap();
+        let spot = memory.doorway_spot().expect("a door");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::PlaceEntity { of, pos, face: Some(_), seconds, targets: None, .. }, 0)]
+                if of == "minecraft:copper_golem" && pos[0] == spot[0] && pos[2] == spot[2] && *seconds > 0.0),
+            "{made:?}"
         );
     }
 }
