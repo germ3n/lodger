@@ -1192,6 +1192,10 @@ pub enum Command {
         /// and back where it was held the moment they look at it; back there when let go. ABI 37.
         #[serde(default, skip_serializing_if = "is_false")]
         creep: bool,
+        /// Turning round and round where it stands, fast, until the player comes within five
+        /// blocks: then it stops facing them, a few seconds, and is let go. ABI 54.
+        #[serde(default, skip_serializing_if = "is_false")]
+        spin: bool,
     },
     /// The mobs `entities` walk toward `player` together, as they walk, and stop `stop` blocks
     /// off, facing them, until `seconds` have passed; then they are as they were. Their AI is
@@ -1595,6 +1599,7 @@ mod tests {
             seconds: 250.0,
             at: None,
             creep: false,
+            spin: false,
         };
         let text = serde_json::to_string(&hold).unwrap();
         assert_eq!(

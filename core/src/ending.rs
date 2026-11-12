@@ -936,6 +936,7 @@ pub fn commands(
                             seconds: 600.0,
                             at: Some(center(house)),
                             creep: false,
+                            spin: false,
                         },
                         0,
                     )

@@ -2345,6 +2345,9 @@ public final class Executors {
 		}
 		boolean creep = command.has("creep") && command.get("creep").getAsBoolean();
 		context.holds().add(mob, player, command.get("seconds").getAsFloat(), at, 0, creep);
+		if (command.has("spin") && command.get("spin").getAsBoolean()) {
+			context.holds().spin(mob);
+		}
 
 		return report(id, true, "");
 	}

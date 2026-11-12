@@ -47,6 +47,9 @@ public final class Holds {
 		final Vec3 from;
 		float health;
 		int hits;
+		/** Turning round and round, until its player comes near (ABI 54). */
+		boolean spins;
+		long untilTick2 = -1;
 
 		Hold(Mob mob, UUID player, long untilTick, Vec3 at, double turnWithin, boolean creep) {
 			this.mob = mob;
@@ -109,6 +112,15 @@ public final class Holds {
 		active.add(new Hold(mob, player.getUUID(), tick + (long) (Math.min(seconds, MOST_SECONDS) * 20), at, turnWithin, creep));
 	}
 
+	/** How fast a spinning mob turns, degrees a tick, and how near they come before it stops, blocks. */
+	static final float SPIN_PER_TICK = 36;
+	static final double SPIN_STOPS_WITHIN = 5;
+
+	/** The mob held spins where it stands until {@code player} comes near ({@code spin}, ABI 54). */
+	public void spin(Mob mob) {
+		active.stream().filter(h -> h.mob() == mob).findFirst().ifPresent(h -> h.spins = true);
+	}
+
 	public void tick(MinecraftServer server) {
 		tick++;
 		Iterator<Hold> it = active.iterator();
@@ -125,7 +137,8 @@ public final class Holds {
 				hold.hits++;
 			}
 			hold.health = mob.getHealth();
-			if (hold.untilTick < tick || hold.hits >= HITS_TO_WAKE) {
+			boolean done = hold.untilTick < tick || (hold.untilTick2 >= 0 && hold.untilTick2 < tick);
+			if (done || hold.hits >= HITS_TO_WAKE) {
 				release(mob);
 				it.remove();
 				continue;
@@ -142,6 +155,19 @@ public final class Holds {
 			}
 			if (hold.from != null && player != null && player.level() == mob.level()) {
 				creep(hold, mob, player);
+			}
+			// Spinning: round and round, fast; come near, it stops facing them, a few seconds more.
+			if (hold.spins) {
+				if (player != null && player.level() == mob.level() && player.distanceTo(mob) <= SPIN_STOPS_WITHIN) {
+					hold.spins = false;
+					hold.untilTick2 = tick + 60;
+				} else {
+					float yaw = (tick * SPIN_PER_TICK + mob.getId() * 37) % 360;
+					mob.setYRot(yaw);
+					mob.setYHeadRot(yaw);
+					mob.setYBodyRot(yaw);
+					mob.setXRot(0);
+				}
 			}
 		}
 

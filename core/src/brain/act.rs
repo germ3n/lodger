@@ -378,6 +378,8 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The villager nearest them, twelve to thirty blocks off, where it stands.
+        Action::VillagerSpins => spinning_villager(memory).map(|c| block_of(c.pos)),
         // At them: the villagers they go to.
         Action::TradesRefused | Action::VillagerStabs(_) => Some(block_of(memory.last.pos)),
         // The village's bell, else its middle.
@@ -1750,6 +1752,18 @@ const TREE_FIGURE: u32 = 63;
 /// The figure drawn to their light (`drawn_to_the_light`), and how far off it starts.
 const DRAWN_FIGURE: u32 = 62;
 const DRAWN_FROM: f64 = 45.0;
+/// The villager to spin (`villager_spins`): the nearest twelve to thirty blocks from them, off
+/// at a distance to be seen turning, not one at their elbow.
+fn spinning_villager(memory: &Memory) -> Option<&crate::memory::Creature> {
+    let at = block_of(memory.last.pos);
+    memory
+        .last
+        .creatures_near
+        .iter()
+        .filter(|c| c.kind == "villager" && (12.0..=30.0).contains(&distance(block_of(c.pos), at)))
+        .min_by(|a, b| distance(block_of(a.pos), at).total_cmp(&distance(block_of(b.pos), at)))
+}
+
 /// The figure that comes on while unseen (`while_unseen`), and how far behind them it starts.
 const UNSEEN_FIGURE: u32 = 61;
 const UNSEEN_BEHIND: f64 = 18.0;
@@ -3159,6 +3173,7 @@ pub fn commands(
                         player: target,
                         seconds: 10.0 + (seed % 21) as f32,
                         creep: false,
+                        spin: false,
                     },
                     0,
                 )
@@ -5412,6 +5427,7 @@ pub fn commands(
                             seconds: 3.0,
                             at: None,
                             creep: false,
+                            spin: false,
                         },
                         0,
                     )
@@ -5861,6 +5877,7 @@ pub fn commands(
                         wall[2] as f64 + 0.5,
                     ]),
                     creep: false,
+                    spin: false,
                 },
                 0,
             )],
@@ -6386,6 +6403,24 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Round and round where it stands, fast and silent, until they come near: then it stops
+        // facing them, and is a villager again. Two minutes at most.
+        Action::VillagerSpins => spinning_villager(memory)
+            .map(|villager| {
+                vec![(
+                    Command::Hold {
+                        id: ids(),
+                        entity: villager.id,
+                        player: target,
+                        seconds: 120.0,
+                        at: None,
+                        creep: false,
+                        spin: true,
+                    },
+                    0,
+                )]
             })
             .unwrap_or_default(),
         // A day of the game's of every villager refusing them, a shake of the head and a no.
@@ -7836,6 +7871,7 @@ pub fn commands(
                             seconds: 120.0,
                             at: Some(block_center(home.center)),
                             creep: false,
+                            spin: false,
                         },
                         0,
                     )
@@ -8552,6 +8588,7 @@ pub fn commands(
                         player: target,
                         seconds: 180.0,
                         creep: true,
+                        spin: false,
                     },
                     0,
                 )
@@ -8585,6 +8622,7 @@ pub fn commands(
                             player: target,
                             seconds,
                             creep: false,
+                            spin: false,
                         },
                         0,
                     )
@@ -9784,6 +9822,8 @@ mod tests {
                 || event.id == "busy_away"
                 // A trail behind them in the woods, which this memory has not: its own test.
                 || event.id == "trees_close_behind"
+                // A villager off a way, which this memory has not: its own test.
+                || event.id == "villager_spins"
             {
                 continue;
             }
@@ -14330,6 +14370,43 @@ mod tests {
         assert!(
             matches!(&stab[..], [(Command::HoldTrades { how, damage, .. }, 0)] if how == "stab" && *damage == 4.0),
             "{stab:?}"
+        );
+    }
+
+    #[test]
+    fn a_villager_off_a_way_spins_round_and_round() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.creatures_near = vec![
+            crate::memory::Creature {
+                id: 3,
+                kind: "villager".to_string(),
+                pos: [4.5, 64.0, 0.5],
+                ..Default::default()
+            },
+            crate::memory::Creature {
+                id: 4,
+                kind: "villager".to_string(),
+                pos: [18.5, 64.0, 0.5],
+                ..Default::default()
+            },
+        ];
+        let event = find("villager_spins").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(
+                &made[..],
+                [(
+                    Command::Hold {
+                        entity: 4,
+                        spin: true,
+                        ..
+                    },
+                    0
+                )]
+            ),
+            "the one off a way: {made:?}"
         );
     }
 }

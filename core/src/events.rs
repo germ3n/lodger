@@ -1075,6 +1075,8 @@ pub enum Action {
     VillagersFleeYou,
     /// A day of every villager refusing them, a shake of the head and a no.
     TradesRefused,
+    /// A villager turning round and round where it stands, till they come near.
+    VillagerSpins,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4872,6 +4874,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 93.
+    row(
+        "villager_spins",
+        4,
+        5,
+        &[Creature("villager")],
+        2.0,
+        3,
+        Full,
+        Action::VillagerSpins,
+        false,
+    ),
     // docs/events_todo.md, 92.
     row(
         "trades_refused",
@@ -6054,6 +6068,7 @@ impl Event {
             | Action::VillagersFleeYou
             | Action::TradesRefused
             | Action::VillagerStabs(_)
+            | Action::VillagerSpins
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6137,6 +6152,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "villager_spins" => "set a villager turning round and round where it stands",
             "trades_refused" => "have every villager refuse them for a day",
             "villager_stabs" => "have the next villager they trade with stab them",
             "villagers_flee_you" => {
