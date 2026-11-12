@@ -3205,9 +3205,9 @@ The `[x]` lines above, summed up by day:
 
 - [x] **Chains over 206 to 320** (owner: "dont forget to do the chain stuff at the end"; "tie the
   new events into existing ones where appropriate and add more"): every new event in a chain
-  but `cloud_at_the_door`, which was `door_cloud` already: fifty-two beside a step they fit (the
+  but `cloud_at_the_door`, which was `door_cloud` already: fifty-three beside a step they fit (the
   four begun by a moment the menu never offers, `ore_counted`, `on_the_exit_portal`,
-  `chorus_lands_home` and `came_back_wrong_hour`, as first steps), ten after the chain they end,
+  `chorus_lands_home` and `came_back_wrong_hour`, as first steps), nine after the chain they end,
   and ten chains of their own (the lectern, the Nether, the fortress, the heat, the way home, the
   End, the city, the island, the crossing, the potion). The other worlds choose an open chain's
   next step four times in five when one is ready (`Elsewhere::chain_next`, `CHAIN_FIRST`). Tests:

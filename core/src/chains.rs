@@ -95,8 +95,7 @@ pub const CHAINS: &[Chain] = &[
             step(&["pillar", "empty_lead"], 3.0, Always),
             step(&["sign", "sign_with_coords"], 3.0, Always),
             // Its house grows in the ending's script, not as an event: the chain ends at the house.
-            step(&["house_near"], 4.0, Always),
-            step(&["anchor_charged"], 3.0, Always),
+            step(&["house_near", "anchor_charged"], 4.0, Always),
         ],
     },
     Chain {

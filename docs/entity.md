@@ -1059,10 +1059,10 @@ where appropriate and add more"):
 
 Over 206 to 320 (owner: "tie the new events into existing ones where appropriate and add more"),
 the new events go beside a step they belong with (`trapdoor_to_nothing` beside `false_door`,
-`egg_on_the_pillow` beside `egg_on_bed`, `count_shows_zero` beside `hotbar_slip`, fifty-two
+`egg_on_the_pillow` beside `egg_on_bed`, `count_shows_zero` beside `hotbar_slip`, `anchor_charged` beside `house_near`, fifty-three
 such, the four begun by a moment the menu never offers as first steps), after the chain they
 end (`sculk_trail` after the below, `title_splash` after the glitches, `eyeblossoms_open` after
-the pale garden, ten), or in ten chains of their own, the
+the pale garden, nine), or in ten chains of their own, the
 Nether's and the End's done there by way of `elsewhere`, which chooses an open chain's next step
 four times in five when one is ready:
 
