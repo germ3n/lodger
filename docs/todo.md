@@ -2029,6 +2029,14 @@ The `[x]` lines above, summed up by day:
   ABI 54; the held mobs' tag and sweep keep one from being left frozen). Tests: one in `act`. Was:
   no such event.
 
+- [x] **The wall bursts** (`docs/events_todo.md`, 96): `wall_bursts`, stages 4 and 5, indoors: a
+  block of their wall breaks (hidden ten minutes, the most a hide lasts, not till morning) and five
+  silverfish come out at them. The spared hostiles, new (`place_entity`'s `targets` and `harm`, ABI
+  54; `Temporaries.addHostile`): set on a player for a while, hurt at the harm asked, never a kill
+  (a death they would cause is refused, the player left at half a heart, `Worlds.allowDeath`), and
+  killed they vanish with nothing dropped (both loaders' death hooks). Tests: one in `act`. Was: a
+  placed entity was a farm animal or a stand, unhurtable; no hostile could be set on anyone.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

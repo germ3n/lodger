@@ -378,6 +378,9 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // A block of their own wall near them, two to six blocks, at their feet's height or a
+        // block over: never glass, a door, a light.
+        Action::WallBursts => bursting_wall(memory).map(|(pos, _)| pos),
         // The villager nearest them, six to twenty-four blocks off: where it falls.
         Action::VillagerCollapses => collapsing_villager(memory).map(|c| block_of(c.pos)),
         // Forty blocks out of the village, toward its place, or away from the target's home.
@@ -1768,6 +1771,26 @@ const TREE_FIGURE: u32 = 63;
 /// The figure drawn to their light (`drawn_to_the_light`), and how far off it starts.
 const DRAWN_FIGURE: u32 = 62;
 const DRAWN_FROM: f64 = 45.0;
+/// The wall block that bursts (`wall_bursts`): one they placed, two to six blocks from them, at
+/// their feet's height or a block over, a building block, not glass; with its id.
+fn bursting_wall(memory: &Memory) -> Option<(BlockPos, &str)> {
+    let at = block_of(memory.last.pos);
+    memory
+        .walls
+        .iter()
+        .filter(|(p, id)| {
+            let d = distance(*p, at);
+            (2.0..=6.0).contains(&d)
+                && (p[1] == at[1] || p[1] == at[1] + 1)
+                && !id.contains("glass")
+                && !id.contains("door")
+                && !id.contains("torch")
+                && !id.contains("lantern")
+        })
+        .min_by(|a, b| distance(a.0, at).total_cmp(&distance(b.0, at)))
+        .map(|(p, id)| (*p, id.as_str()))
+}
+
 /// The villager to fall (`villager_collapses`): the nearest six to twenty-four blocks from them.
 fn collapsing_villager(memory: &Memory) -> Option<&crate::memory::Creature> {
     let at = block_of(memory.last.pos);
@@ -5928,6 +5951,8 @@ pub fn commands(
                             seconds: 60.0,
                             kept: String::new(),
                             face: None,
+                            targets: None,
+                            harm: 0.0,
                         },
                         0,
                     )
@@ -6430,6 +6455,57 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // The block breaks, its sound, and is gone ten minutes; out of the hole, five silverfish at
+        // them a minute, a nip each, never a kill, nothing dropped.
+        Action::WallBursts => bursting_wall(memory)
+            .map(|(block, id)| {
+                let hole = [
+                    block[0] as f64 + 0.5,
+                    block[1] as f64,
+                    block[2] as f64 + 0.5,
+                ];
+                let mut made = vec![
+                    (
+                        Command::BlockSound {
+                            id: ids(),
+                            player: target,
+                            block: id.to_string(),
+                            of: "break".to_string(),
+                            pos: hole,
+                            volume: 1.0,
+                            pitch: 0.8,
+                        },
+                        0,
+                    ),
+                    (
+                        Command::HideBlock {
+                            id: ids(),
+                            pos: block,
+                            seconds: 600.0,
+                            only: vec![id.to_string()],
+                        },
+                        0,
+                    ),
+                ];
+                for i in 0..5u64 {
+                    made.push((
+                        Command::PlaceEntity {
+                            id: ids(),
+                            of: "minecraft:silverfish".to_string(),
+                            pos: hole,
+                            yaw: 0.0,
+                            seconds: 60.0,
+                            kept: String::new(),
+                            face: None,
+                            targets: Some(target),
+                            harm: 1.0,
+                        },
+                        1 + i * 4,
+                    ));
+                }
+                made
             })
             .unwrap_or_default(),
         // It falls dead before them, the game's own death, on their screen alone; a minute on,
@@ -7477,6 +7553,8 @@ pub fn commands(
                         seconds: 20.0,
                         kept: String::new(),
                         face: Some(target),
+                        targets: None,
+                        harm: 0.0,
                     },
                     0,
                 )]
@@ -7867,6 +7945,8 @@ pub fn commands(
                             Command::PlaceEntity {
                                 id: ids(),
                                 face: None,
+                                targets: None,
+                                harm: 0.0,
                                 of: "minecraft:armor_stand".to_string(),
                                 pos: stand_at,
                                 yaw: yaw_toward(stand_at, house),
@@ -7961,6 +8041,8 @@ pub fn commands(
                     Command::PlaceEntity {
                         id: ids(),
                         face: None,
+                        targets: None,
+                        harm: 0.0,
                         of: format!("minecraft:{kind}"),
                         pos: [at[0] + 1.5, at[1], at[2] + 1.5],
                         yaw: (seed % 360) as f32,
@@ -9896,6 +9978,8 @@ mod tests {
                 // A villager off a way, which this memory has not: its own test.
                 || event.id == "villager_spins"
                 || event.id == "villager_collapses"
+                // A wall of theirs beside them, which this memory has not: its own test.
+                || event.id == "wall_bursts"
             {
                 continue;
             }
@@ -14531,5 +14615,36 @@ mod tests {
             matches!(&made[..], [(Command::FakeDeath { entity: 7, seconds, .. }, 0)] if *seconds == 60.0),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn a_block_of_their_wall_breaks_and_silverfish_pour_out_at_them() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.indoors = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.walls = vec![
+            ([3, 64, 0], "minecraft:glass".to_string()),
+            ([0, 64, 4], "minecraft:stone_bricks".to_string()),
+            ([0, 70, 2], "minecraft:stone_bricks".to_string()),
+        ];
+        let event = find("wall_bursts").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(
+            pos,
+            Some([0, 64, 4]),
+            "the bricks, not the glass or the roof"
+        );
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[1].0, Command::HideBlock { seconds, only, .. }
+            if *seconds == 600.0 && only == &["minecraft:stone_bricks".to_string()])
+        );
+        let fish: Vec<&Command> = made
+            .iter()
+            .map(|(c, _)| c)
+            .filter(|c| matches!(c, Command::PlaceEntity { of, targets: Some(0), seconds, .. } if of == "minecraft:silverfish" && *seconds > 0.0))
+            .collect();
+        assert_eq!(fish.len(), 5);
     }
 }

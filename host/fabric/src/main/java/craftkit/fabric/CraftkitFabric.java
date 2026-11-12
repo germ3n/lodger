@@ -98,8 +98,9 @@ public final class CraftkitFabric implements ModInitializer {
 			return null;
 		});
 		// A death during the fight with the lodger is its one death, keeping everything.
+		// A spared hostile killed vanishes, nothing dropped.
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) ->
-				!(entity instanceof ServerPlayer player) || worlds.allowDeath(player, source, false));
+				entity instanceof ServerPlayer player ? worlds.allowDeath(player, source, false) : !craftkit.host.world.Temporaries.vanishes(entity));
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof ServerPlayer serverPlayer) {
 				senses.noticedDied(serverPlayer);

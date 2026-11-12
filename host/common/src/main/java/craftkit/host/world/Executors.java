@@ -2369,12 +2369,20 @@ public final class Executors {
 	private static final List<String> PLACEABLE = List.of("minecraft:armor_stand", "minecraft:cow", "minecraft:pig", "minecraft:sheep",
 			"minecraft:chicken", "minecraft:goat", "minecraft:horse", "minecraft:donkey", "minecraft:mule", "minecraft:llama",
 			"minecraft:rabbit", "minecraft:mooshroom", "minecraft:camel", "minecraft:squid", "minecraft:bat");
+	/** The hostiles it may set on a player for a while, spared (ABI 54). */
+	private static final List<String> HOSTILE = List.of("minecraft:silverfish", "minecraft:cave_spider", "minecraft:wolf",
+			"minecraft:zombie", "minecraft:vex", "minecraft:phantom", "minecraft:creeper");
 
 	/** An armour stand or a farm animal placed (ABI 27): for a while when seconds are given, wearing a kept stack when named. */
 	private static JsonObject placeEntity(ServerLevel level, JsonObject command, long id, Context context, WorldData data) {
 		String of = command.get("of").getAsString();
-		if (!PLACEABLE.contains(of)) {
+		boolean targets = command.has("targets") && !command.get("targets").isJsonNull();
+		if (!PLACEABLE.contains(of) && !(HOSTILE.contains(of) && targets)) {
 			return report(id, false, "not something it places");
+		}
+		float wanted = command.has("seconds") ? command.get("seconds").getAsFloat() : 0;
+		if (HOSTILE.contains(of) && wanted <= 0) {
+			return report(id, false, "a hostile is only ever placed for a while");
 		}
 		Optional<Holder.Reference<net.minecraft.world.entity.EntityType<?>>> type = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(of));
 		if (type.isEmpty()) {
@@ -2405,7 +2413,14 @@ public final class Executors {
 		}
 		level.addFreshEntity(entity);
 		float seconds = command.has("seconds") ? command.get("seconds").getAsFloat() : 0;
-		if (seconds > 0) {
+		ServerPlayer prey = targets ? context.senses().player(level, command.get("targets").getAsInt()) : null;
+		if (HOSTILE.contains(of)) {
+			if (prey == null || !(entity instanceof net.minecraft.world.entity.Mob hostile)) {
+				entity.discard();
+				return report(id, false, "the player is not here");
+			}
+			context.temporaries().addHostile(hostile, prey, seconds, command.has("harm") ? command.get("harm").getAsFloat() : 0);
+		} else if (seconds > 0) {
 			context.temporaries().add(entity, seconds);
 		}
 		// Still, facing a player, for its time (ABI 30: the shape under the water).

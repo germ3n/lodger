@@ -119,6 +119,11 @@ public final class Worlds {
 
 	/** Whether a player's death may go ahead: during a fight, only the one that keeps everything. */
 	public boolean allowDeath(net.minecraft.server.level.ServerPlayer player, net.minecraft.world.damagesource.DamageSource source, boolean totemTried) {
+		// A spared hostile's hit never kills (ABI 54): left at half a heart.
+		if (Temporaries.spares(source)) {
+			player.setHealth(1f);
+			return false;
+		}
 		return fights.allowDeath(player, source, totemTried);
 	}
 

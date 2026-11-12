@@ -16,6 +16,8 @@ import net.minecraft.world.item.ItemStack;
  */
 public final class Temporaries {
 	public static final String TAG = "craftkit_temporary";
+	/** On a temporary hostile set on a player (ABI 54): its hits never kill, its death drops nothing. */
+	public static final String SPARES = "craftkit_spares";
 	/** The longest an entity stays, whatever a mod asks: ten minutes. */
 	public static final float MOST_SECONDS = 600;
 	private static final int SWEEP_EVERY = 100;
@@ -45,6 +47,48 @@ public final class Temporaries {
 		}
 		active.add(entity);
 		due.add(entity, tick + (long) (Math.min(seconds, MOST_SECONDS) * 20));
+	}
+
+	/**
+	 * A hostile placed for a while and set on {@code player} (ABI 54): it may be hurt and killed,
+	 * gone then with nothing dropped ({@link #vanishes}); its hits never kill ({@link #spares});
+	 * its attack at {@code harm} when above 0, before the difficulty's scaling.
+	 */
+	public void addHostile(net.minecraft.world.entity.Mob mob, net.minecraft.server.level.ServerPlayer player, float seconds, float harm) {
+		mob.addTag(TAG);
+		mob.addTag(SPARES);
+		mob.skipDropExperience();
+		mob.setPersistenceRequired();
+		var attack = mob.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+		if (attack != null && harm > 0) {
+			attack.setBaseValue(harm);
+		}
+		mob.setTarget(player);
+		if (mob instanceof net.minecraft.world.entity.NeutralMob neutral) {
+			neutral.setPersistentAngerTarget(net.minecraft.world.entity.EntityReference.of(player));
+			neutral.startPersistentAngerTimer();
+		}
+		active.add(mob);
+		due.add(mob, tick + (long) (Math.min(seconds, MOST_SECONDS) * 20));
+	}
+
+	/** Whether a hit from this source is a spared hostile's: such a hit never kills. */
+	public static boolean spares(net.minecraft.world.damagesource.DamageSource source) {
+		Entity by = source.getEntity();
+		return by != null && by.entityTags().contains(SPARES);
+	}
+
+	/**
+	 * Whether a dying entity is a spared hostile, to vanish rather than die: a puff, nothing
+	 * dropped, no experience. The loaders cancel its death when it is.
+	 */
+	public static boolean vanishes(Entity entity) {
+		if (!entity.entityTags().contains(SPARES) || !(entity.level() instanceof ServerLevel level)) {
+			return false;
+		}
+		level.broadcastEntityEvent(entity, (byte) 60);
+		entity.discard();
+		return true;
 	}
 
 	public void tick(MinecraftServer server) {

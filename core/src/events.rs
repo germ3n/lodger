@@ -1085,6 +1085,8 @@ pub enum Action {
     VillagersWalkOut,
     /// A villager drops dead on their screen, and is up again a minute on.
     VillagerCollapses,
+    /// A block of their wall breaks and silverfish pour out at them.
+    WallBursts,
     /// The next villager they go to trade with stabs them: this much harm, never a kill.
     VillagerStabs(f32),
     /// Their most valuable things, carried and in their chests, up into the sky.
@@ -4882,6 +4884,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 96.
+    row(
+        "wall_bursts",
+        4,
+        5,
+        &[TargetIndoors, Home],
+        3.0,
+        2,
+        Full,
+        Action::WallBursts,
+        false,
+    ),
     // docs/events_todo.md, 95.
     row(
         "villager_collapses",
@@ -6103,6 +6117,7 @@ impl Event {
             | Action::VillagerSpins
             | Action::VillagersWalkOut
             | Action::VillagerCollapses
+            | Action::WallBursts
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6186,6 +6201,7 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "wall_bursts" => "break a block of their wall and pour silverfish out of it at them",
             "villager_collapses" => "drop a villager dead before their eyes, for a minute",
             "villagers_walk_out" => "walk the villagers out of the village at dusk, single file",
             "villager_spins" => "set a villager turning round and round where it stands",

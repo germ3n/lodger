@@ -458,6 +458,15 @@ pub enum Command {
         /// Hold it still facing this player for its time: the shape under the water. ABI 30.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         face: Option<u32>,
+        /// A hostile one set on this player (a silverfish, a cave spider, a wolf, a zombie, a
+        /// vex, a phantom): it may be killed, and is gone with nothing dropped; its hits never
+        /// kill (the player is left at half a heart). With `seconds` above 0 only. ABI 54.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        targets: Option<u32>,
+        /// Its hits' harm, half hearts, before the difficulty's scaling: the game's own when 0.
+        /// ABI 54.
+        #[serde(default, skip_serializing_if = "is_zero_f32")]
+        harm: f32,
     },
     /// Footprints a player's size in the snow from `from` to `to`: a snow layer taken off at
     /// each step, left and right of the line, where there is snow; refused under three. ABI 30.

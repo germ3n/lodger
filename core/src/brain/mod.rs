@@ -4327,6 +4327,8 @@ mod tests {
                 seconds: 0.0,
                 kept: "scarecrow".to_string(),
                 face: None,
+                targets: None,
+                harm: 0.0,
             },
             while_still: false,
         });

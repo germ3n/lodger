@@ -166,6 +166,11 @@ public final class CraftkitNeoForge {
 				event.setCanceled(true);
 				return;
 			}
+			// A spared hostile killed vanishes, nothing dropped.
+			if (!(event.getEntity() instanceof ServerPlayer) && craftkit.host.world.Temporaries.vanishes(event.getEntity())) {
+				event.setCanceled(true);
+				return;
+			}
 			if (event.getEntity() instanceof ServerPlayer player) {
 				senses.noticedDied(player);
 			} else if (event.getSource().getEntity() instanceof ServerPlayer killer) {
