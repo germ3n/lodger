@@ -906,6 +906,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SplashInTheNether
         | Action::SomeoneWentThrough
         | Action::RuinedPortalGlows
+        | Action::PotionAtTheWindow
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10414,6 +10415,32 @@ pub fn commands(
                 0,
             ),
         ],
+        // docs/events_todo.md, 317.
+        Action::PotionAtTheWindow => match memory.fixtures("glass_pane").next() {
+            Some(pane) => vec![
+                (
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:entity.splash_potion.break",
+                        block_center(pane.pos),
+                        1.0,
+                    ),
+                    0,
+                ),
+                (
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:block.glass.break",
+                        block_center(pane.pos),
+                        0.4,
+                    ),
+                    1,
+                ),
+            ],
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -22736,5 +22763,18 @@ mod tests {
             "{made:?}"
         );
         assert!(matches!(&made[1].0, Command::PlaySound { .. }));
+    }
+
+    #[test]
+    fn potion_at_the_window_is_heard_and_nothing_else() {
+        let mut memory = rich_memory();
+        memory.arrived_at = Some([3, 64, 3]);
+        let event = find("potion_at_the_window").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 2, "{made:?}");
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
     }
 }

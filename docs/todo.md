@@ -3103,6 +3103,10 @@ The `[x]` lines above, summed up by day:
   farthest first, a minute, a portal's hum with it (`ghost_near`; the frame not drawn whole). Tests:
   one in `act`. Was: no such event.
 
+- [x] **A potion at the window** (`docs/events_todo.md`, 317): `potion_at_the_window`, stages 4 and
+  5, indoors at night: a splash potion's breaking and a glass crack heard at one of their windows,
+  to them alone. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

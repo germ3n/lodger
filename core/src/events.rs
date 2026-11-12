@@ -1320,6 +1320,8 @@ pub enum Action {
     SomeoneWentThrough,
     /// The obsidian near them, a ruined portal's, weeping as if it were lit, on their screen alone.
     RuinedPortalGlows,
+    /// Indoors at night, a splash potion shattering against the outside of their window; nothing comes in.
+    PotionAtTheWindow,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8315,6 +8317,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::RuinedPortalGlows,
         false,
     ),
+    // docs/events_todo.md, 317: indoors at night, a splash potion shatters against the outside of one of their windows, the glass's crack with it.
+    row(
+        "potion_at_the_window",
+        4,
+        5,
+        &[Night, TargetIndoors, Pane],
+        1.0,
+        3,
+        Half,
+        Action::PotionAtTheWindow,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8624,6 +8638,7 @@ impl Event {
             | Action::PurpurKnock
             | Action::ShipCreaks
             | Action::SomeoneWentThrough
+            | Action::PotionAtTheWindow
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -9593,6 +9608,7 @@ impl Event {
             "someone_went_through" => "sound someone going through their portal",
             "lodestone_wrong" => "turn their compass to their bed",
             "ruined_portal_glows" => "make the ruined portal near them weep",
+            "potion_at_the_window" => "shatter a splash potion against their window",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
