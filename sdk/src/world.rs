@@ -689,6 +689,18 @@ pub enum Command {
         pos: BlockPos,
         stage: i32,
     },
+    /// A block shown at `pos` to `player` alone, `block` with `state` (`charges=4`), the world's
+    /// own block untouched under it; `block` empty shows them what is really there again. Their
+    /// client forgets it when the chunk is sent afresh, so a quit never leaves it. A y below
+    /// -1000 counts from the ground, as `set_block`'s. ABI 56.
+    GhostBlock {
+        id: u64,
+        player: u32,
+        pos: BlockPos,
+        block: String,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        state: String,
+    },
     /// The big dripleaves near `player` (ten blocks), up to six, tipped one after another from
     /// the farthest in, as if something walked across them toward them, each with its sound, and
     /// up again a moment on; refused when there are none. ABI 55.
@@ -1574,6 +1586,7 @@ impl Command {
             | Command::KeepIn { id, .. }
             | Command::TipDripleaves { id, .. }
             | Command::CrackBlock { id, .. }
+            | Command::GhostBlock { id, .. }
             | Command::Spare { id, .. }
             | Command::VillagerFleesIn { id, .. }
             | Command::DeadRedstone { id, .. }

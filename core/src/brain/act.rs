@@ -105,6 +105,9 @@ fn craftkit_yaw(dx: f64, dz: f64) -> f32 {
 /// A body lying with its arms out, its head at the spot: the cells its shape takes off the snow.
 const SNOW_BODY: &[[i32; 2]] = &[[0, 0], [0, 1], [0, 2], [-1, 1], [1, 1], [-1, 3], [1, 3]];
 
+/// How long `anchor_charged`'s anchor shows, ticks: five minutes of the night.
+const ANCHOR_SHOWN_TICKS: u64 = 6000;
+
 /// How hard `gust_from_nowhere` pushes them, blocks a tick: a nudge, never a fall.
 const GUST_PUSH: f64 = 0.35;
 
@@ -442,6 +445,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "snipping_in_the_dark" {
         return memory.creatures("sheep").next().map(|c| block_of(c.pos));
     }
+    // A charged anchor glows at its place.
+    if event.id == "anchor_charged" {
+        return spot(memory, rng);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -456,6 +463,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LootGift
         | Action::Hint(_, _)
         | Action::BossBarIt
+        | Action::AnchorCharged
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -7745,6 +7753,34 @@ pub fn commands(
         // Sculk veins on the walls they built, the lowest first (a basement's, else the house's
         // own low down), stuck to the wall's face: two the first night, two more each night after,
         // twelve at most; into air alone.
+        // docs/events_todo.md, 206.
+        Action::AnchorCharged => pos
+            .map(|p| {
+                let cell = [p[0], GROUND_Y + 1, p[2]];
+                vec![
+                    (
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: cell,
+                            block: "minecraft:respawn_anchor".to_string(),
+                            state: "charges=4".to_string(),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: cell,
+                            block: String::new(),
+                            state: String::new(),
+                        },
+                        ANCHOR_SHOWN_TICKS,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -18529,5 +18565,32 @@ mod tests {
             ),
             "never back into the house: {cells:?}"
         );
+    }
+
+    #[test]
+    fn anchor_charged_shows_at_its_place_on_their_screen_and_goes() {
+        let mut memory = rich_memory();
+        memory.place = Some([30, 64, 30]);
+        let event = find("anchor_charged").unwrap();
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert_eq!(made.len(), 2, "{made:?}");
+        assert!(
+            matches!(&made[0].0, Command::GhostBlock { block, state, pos, .. } if block == "minecraft:respawn_anchor" && state == "charges=4" && *pos == [30, GROUND_Y + 1, 30]),
+            "{:?}",
+            made[0].0
+        );
+        assert!(
+            matches!(&made[1].0, Command::GhostBlock { block, .. } if block.is_empty()),
+            "then what is there: {:?}",
+            made[1].0
+        );
+        assert_eq!(made[1].1, ANCHOR_SHOWN_TICKS);
     }
 }

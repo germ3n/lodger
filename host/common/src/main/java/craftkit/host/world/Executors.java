@@ -161,6 +161,7 @@ public final class Executors {
 							blockPos(command.getAsJsonArray("pos")), stage < 0 ? -1 : Math.min(9, stage)));
 					yield report(id, true, "");
 				}
+				case "ghost_block" -> ghostBlock(level, command, id, context);
 				case "tip_dripleaves" -> tipDripleaves(level, command, id, context);
 				case "boss_bar" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
@@ -3029,6 +3030,37 @@ public final class Executors {
 			level.setBlock(pos, state.setValue(tilt, to), Block.UPDATE_CLIENTS);
 			level.playSound(null, pos, sound, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 0.9f);
 		}
+	}
+
+	/**
+	 * A block shown to one player alone, the world's own untouched (ABI 56): its state sent to their
+	 * client as if the block had changed, which the client keeps until the chunk is sent afresh.
+	 * An empty block shows them what is really there again.
+	 */
+	private static JsonObject ghostBlock(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		BlockPos pos = onGround(level, blockPos(command.getAsJsonArray("pos")));
+		if (pos == null) {
+			return report(id, false, "the place is not loaded");
+		}
+		String block = command.get("block").getAsString();
+		BlockState shown;
+		if (block.isEmpty()) {
+			shown = level.getBlockState(pos);
+		} else {
+			Optional<Holder.Reference<Block>> found = BuiltInRegistries.BLOCK.get(Identifier.parse(block));
+			if (found.isEmpty()) {
+				return report(id, false, "no such block");
+			}
+			String state = command.has("state") ? command.get("state").getAsString() : "";
+			shown = withState(found.get().value().defaultBlockState(), state);
+		}
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(pos, shown));
+
+		return report(id, true, "");
 	}
 
 	/** Whose cracks `crack_block`'s are, to the client: a number no entity has. */

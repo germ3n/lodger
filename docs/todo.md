@@ -2662,6 +2662,11 @@ The `[x]` lines above, summed up by day:
   (`Mirror`, `MirrorTest`), so it walks as they walk; `figure_mirror` and `mirror_in_the_window`
   both.
 
+- [x] **A charged anchor at its place** (`docs/events_todo.md`, 206): `anchor_charged`, stage 5, at
+  night with the target outdoors: a charged respawn anchor shown at its place to their client alone
+  five minutes, then what is really there shown again (`ghost_block`, ABI 56, a block on one
+  player's screen the world never holds). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

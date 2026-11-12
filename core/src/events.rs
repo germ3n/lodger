@@ -1141,6 +1141,8 @@ pub enum Action {
     SculkCreeps,
     /// Cracks spreading over a block of their wall, as if broken from the other side, then gone.
     CracksInTheWall,
+    /// A charged respawn anchor at its place, glowing, on their screen alone (no anchor made).
+    AnchorCharged,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -6999,6 +7001,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CracksInTheWall,
         false,
     ),
+    // docs/events_todo.md, 206: a charged respawn anchor glowing at its place, on their screen alone.
+    row(
+        "anchor_charged",
+        5,
+        5,
+        &[Home, Night, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::AnchorCharged,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7587,6 +7601,7 @@ impl Event {
             | Action::Shoot(_)
             | Action::SplashDark
             | Action::DoorCloud
+            | Action::AnchorCharged
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8106,6 +8121,7 @@ impl Event {
             "cobwebs" => "hang their house with cobwebs overnight",
             "false_door" => "set a door on an inside wall that opens on the wall",
             "static" => "cover their screen in static a moment",
+            "anchor_charged" => "show a charged respawn anchor at its place",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
