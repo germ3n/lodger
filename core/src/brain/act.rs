@@ -180,6 +180,17 @@ fn wall_closer(memory: &Memory) -> Vec<(BlockPos, String)> {
         .unwrap_or_default()
 }
 
+/// A cell of their floor beside a wall they built whose block underfoot is natural ground,
+/// none of theirs: the pit is dug there, never through a floor they laid.
+fn natural_floor(memory: &Memory) -> Option<BlockPos> {
+    let floor = memory.home.as_ref()?.floor_y;
+    let built: std::collections::HashSet<BlockPos> = memory.walls.iter().map(|(p, _)| *p).collect();
+    inside_walls(memory, 0, 3, 12)
+        .into_iter()
+        .map(|c| [c[0], floor, c[2]])
+        .find(|c| (1..=4).all(|d| !built.contains(&[c[0], floor - d, c[2]])))
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -560,6 +571,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "slam_crater" {
         return dig_spot(memory, rng);
     }
+    // A floor cell of theirs on natural ground, beside a wall.
+    if event.id == "trapdoor_to_nothing" {
+        return natural_floor(memory);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -584,6 +599,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SlamCrater
         | Action::OneStepMore
         | Action::RoomClosesIn
+        | Action::TrapdoorToNothing
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -8119,6 +8135,31 @@ pub fn commands(
             }
             made
         }
+        // docs/events_todo.md, 216.
+        Action::TrapdoorToNothing => pos
+            .map(|p| {
+                let pit = |y: i32| [p[0], y, p[2]];
+                vec![
+                    (set(ids, pit(p[1] - 3), "minecraft:air", GROUND), 0),
+                    (set(ids, pit(p[1] - 2), "minecraft:air", GROUND), 0),
+                    (torch(ids, pit(p[1] - 3), 0), 1),
+                    (
+                        Command::SetBlock {
+                            id: ids(),
+                            pos: pit(p[1] - 1),
+                            block: "minecraft:spruce_trapdoor".to_string(),
+                            state: "half=top,open=false".to_string(),
+                            replace: GROUND.iter().map(|g| g.to_string()).collect(),
+                            settle: 0,
+                            wall: String::new(),
+                            rest: false,
+                            only: true,
+                        },
+                        2,
+                    ),
+                ]
+            })
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -19107,5 +19148,28 @@ mod tests {
                 .any(|(c, _)| matches!(c, Command::GhostBlock { only_air: true, .. })),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn trapdoor_to_nothing_digs_a_lit_pit_under_a_trapdoor_in_natural_ground() {
+        let mut memory = rich_memory();
+        let event = find("trapdoor_to_nothing").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1)).expect("a natural floor");
+        let made = commands(event, Some(pos), &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 4, "{made:?}");
+        assert!(
+            matches!(&made[3].0, Command::SetBlock { block, only: true, pos: p, .. } if block == "minecraft:spruce_trapdoor" && p[1] == pos[1] - 1)
+        );
+        assert!(
+            matches!(&made[2].0, Command::SetBlock { block, pos: p, .. } if block == "minecraft:torch" && p[1] == pos[1] - 3)
+        );
+        // A floor they laid there: no pit through it.
+        let floor = memory.home.as_ref().unwrap().floor_y;
+        for c in inside_walls(&memory, 0, 3, 12) {
+            memory
+                .walls
+                .push(([c[0], floor - 1, c[2]], "minecraft:oak_planks".to_string()));
+        }
+        assert_eq!(natural_floor(&memory), None);
     }
 }

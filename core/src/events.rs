@@ -1161,6 +1161,8 @@ pub enum Action {
     OneStepMore,
     /// One wall of their house a block further in as they wake, the room smaller, on their screen alone a while.
     RoomClosesIn,
+    /// A new trapdoor in their floor over a pit two deep, a torch at its bottom; natural ground alone.
+    TrapdoorToNothing,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7139,6 +7141,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::RoomClosesIn,
         false,
     ),
+    // docs/events_todo.md, 216: a trapdoor in their floor over a pit with a torch at the bottom.
+    row(
+        "trapdoor_to_nothing",
+        4,
+        5,
+        &[Home, Walls, TargetAwayOrAsleep],
+        4.0,
+        1,
+        Full,
+        Action::TrapdoorToNothing,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -7742,7 +7756,7 @@ impl Event {
             | Action::BossBarIt
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
-            Action::WhileAway | Action::MushroomsInCorners => "house",
+            Action::WhileAway | Action::TrapdoorToNothing | Action::MushroomsInCorners => "house",
             Action::HandOnShoulder => "seen",
             // Their sleep: refused, broken, someone in their bed.
             Action::RefuseRest
@@ -8265,6 +8279,7 @@ impl Event {
             "slam_crater" => "boom a mace's smash near the house and leave a crater",
             "one_step_more" => "add one more step to the foot of their stairs",
             "room_closes_in" => "move one wall of their room a block further in",
+            "trapdoor_to_nothing" => "set a trapdoor in their floor over a lit pit",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
