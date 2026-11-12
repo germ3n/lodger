@@ -733,6 +733,14 @@ pub enum Command {
         player: u32,
         from: Pos,
     },
+    /// The dyeable thing (leather armour) in the container at `pos`, slot `slot`, dyed
+    /// `colour` (0xRRGGBB) where it lies; refused for anything else. ABI 56.
+    DyeItem {
+        id: u64,
+        pos: BlockPos,
+        slot: u32,
+        colour: u32,
+    },
     /// One `item` more in the bundle in the container at `pos`, slot `slot`, of what the mod
     /// holds (its digging): refused with no bundle there, or one full. ABI 56.
     PutInBundle {
@@ -1709,6 +1717,7 @@ impl Command {
             | Command::RefuseFood { id, .. }
             | Command::LateDrop { id, .. }
             | Command::PutInBundle { id, .. }
+            | Command::DyeItem { id, .. }
             | Command::DropBlock { id, .. }
             | Command::Fangs { id, .. }
             | Command::GuardianBeam { id, .. }

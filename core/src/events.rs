@@ -1244,6 +1244,8 @@ pub enum Action {
     LateDrop,
     /// Their bundle holding one thing more than they put in it: a pebble of cobblestone, of its digging.
     BundleGains,
+    /// Their leather armour in the chest dyed black overnight.
+    LeatherDyed,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7727,6 +7729,26 @@ pub const CATALOGUE: &[Event] = &[
         Action::BundleGains,
         false,
     ),
+    // docs/events_todo.md, 257: their leather armour in the chest is dyed black overnight.
+    row(
+        "leather_dyed",
+        4,
+        5,
+        &[
+            InChestAny(&[
+                "leather_helmet",
+                "leather_chestplate",
+                "leather_leggings",
+                "leather_boots",
+            ]),
+            TargetAwayOrAsleep,
+        ],
+        3.0,
+        1,
+        Half,
+        Action::LeatherDyed,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8095,6 +8117,7 @@ impl Event {
             | Action::ShelfShuffled
             | Action::CatGift
             | Action::BundleGains
+            | Action::LeatherDyed
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -8929,6 +8952,7 @@ impl Event {
             "the_child_stares" => "make the young animals near them stare at them",
             "late_drop" => "hold back what they next mine a moment",
             "bundle_gains" => "slip a pebble into their bundle",
+            "leather_dyed" => "dye their leather armour black overnight",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

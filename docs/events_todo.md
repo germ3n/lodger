@@ -313,7 +313,7 @@ things, and on the screen. Not built yet.
 | 254 | `the_child_stares` | 4 | **Built (every young one near them, ten minutes, facing them).** An animal born to theirs stares at them wherever they go while it is young. | Animals of theirs bred. | The baby held facing them while it grows. | S |
 | 255 | `late_drop` | 3 | **Built (the next block they break near them within five minutes, a second and a half late).** The ore they mine drops its item a moment late, as if held. | Mining. | The break's drop held a beat before it lands. | S |
 | 256 | `bundle_gains` | 3 | **Built (a cobblestone of its own digging).** Their bundle holds one thing more than they put in it: a pebble of cobblestone. | A bundle of theirs. | One cobblestone added to their bundle. | S |
-| 257 | `leather_dyed` | 4 | Their leather armour in the chest is dyed black overnight. | Leather armour in a chest of theirs. | Its dye colour set black. | S |
+| 257 | `leather_dyed` | 4 | **Built (every piece in the chest they use, black dye's black).** Their leather armour in the chest is dyed black overnight. | Leather armour in a chest of theirs. | Its dye colour set black. | S |
 | 258 | `ore_counted` | 4 | Each diamond they mine, a soft chime, one more each time, as if counted. | Mining diamonds. | The break trigger; a chime, pitched one higher each. | S |
 | 259 | `snowball_comes_back` | 3 | A snowball they throw into the dark comes flying back. | Throwing a snowball at night. | The throw trigger; `snowball` thrown back from where theirs fell. | S |
 | 260 | `arrow_returned` | 4 | An arrow they shoot into the dark lands at their feet a moment later, their own. | Shooting a bow at night. | The shot's arrow picked up and dropped at their feet, theirs again. | S |

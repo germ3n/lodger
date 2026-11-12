@@ -164,6 +164,22 @@ public final class Executors {
 				case "ghost_block" -> ghostBlock(level, command, id, context);
 				case "ghost_near" -> ghostNear(level, command, id, context);
 				case "rotate_slots" -> rotateSlots(level, command, id);
+				case "dye_item" -> {
+					// A dyeable thing of theirs dyed another colour where it lies (ABI 56).
+					net.minecraft.world.Container container = Senses.containerAt(level, blockPos(command.getAsJsonArray("pos")));
+					int slot = command.get("slot").getAsInt();
+					if (container == null || slot < 0 || slot >= container.getContainerSize()) {
+						yield report(id, false, "no such slot there");
+					}
+					ItemStack stack = container.getItem(slot);
+					if (!stack.is(net.minecraft.tags.ItemTags.CAULDRON_CAN_REMOVE_DYE)) {
+						yield report(id, false, "nothing dyeable in that slot");
+					}
+					stack.set(net.minecraft.core.component.DataComponents.DYED_COLOR,
+							new net.minecraft.world.item.component.DyedItemColor(command.get("colour").getAsInt() & 0xFFFFFF));
+					container.setChanged();
+					yield report(id, true, "");
+				}
 				case "put_in_bundle" -> {
 					// One thing more in a bundle of theirs (ABI 56), of what the mod holds: a pebble.
 					net.minecraft.world.Container container = Senses.containerAt(level, blockPos(command.getAsJsonArray("pos")));

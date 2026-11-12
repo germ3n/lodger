@@ -296,6 +296,9 @@ fn distance_pos(a: Pos, b: Pos) -> f64 {
     ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt()
 }
 
+/// The black `leather_dyed` dyes their leather, as a black dye would.
+const LEATHER_BLACK: u32 = 0x1D1D21;
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -782,6 +785,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TheChildStares
         | Action::LateDrop
         | Action::BundleGains
+        | Action::LeatherDyed
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9258,6 +9262,28 @@ pub fn commands(
             )],
             None => vec![],
         },
+        // docs/events_todo.md, 257.
+        Action::LeatherDyed => match memory.used_container() {
+            Some(chest) => chest
+                .contents
+                .iter()
+                .filter(|s| {
+                    s.id.starts_with("minecraft:leather_") && crate::brain::act::is_armour(&s.id)
+                })
+                .map(|s| {
+                    (
+                        Command::DyeItem {
+                            id: ids(),
+                            pos: chest.pos,
+                            slot: s.slot,
+                            colour: LEATHER_BLACK,
+                        },
+                        0,
+                    )
+                })
+                .collect(),
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -13136,6 +13162,8 @@ mod tests {
                 || event.id == "cat_gift"
                 // A bundle in the chest they use, which this memory has not: its own test.
                 || event.id == "bundle_gains"
+                // Leather armour in the chest they use, which this memory has not: its own test.
+                || event.id == "leather_dyed"
             {
                 continue;
             }
@@ -20935,6 +20963,31 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::PutInBundle { slot: 26, item, .. }, 0)] if item == "minecraft:cobblestone"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn leather_dyed_black_where_it_lies() {
+        let mut memory = rich_memory();
+        let used = memory.used_container().map(|c| c.pos);
+        if let Some(c) = memory.containers.iter_mut().find(|c| Some(c.pos) == used) {
+            c.contents.push(stack("minecraft:leather_boots", 1, 27));
+        }
+        let event = find("leather_dyed").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(
+                &made[..],
+                [(
+                    Command::DyeItem {
+                        slot: 27,
+                        colour: LEATHER_BLACK,
+                        ..
+                    },
+                    0
+                )]
+            ),
             "{made:?}"
         );
     }
