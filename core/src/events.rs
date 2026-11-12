@@ -1346,6 +1346,8 @@ pub enum Action {
     ChorusLandsHome,
     /// An ender pearl they throw landing them where it should, turned round, facing the way they came.
     PearlTurned,
+    /// From the dark, one of their own potions from the chest at home thrown at their feet; the chest is one short.
+    TheirOwnPotion,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8485,6 +8487,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PearlTurned,
         false,
     ),
+    // docs/events_todo.md, 318: one of their own potions is thrown at their feet from the dark.
+    row(
+        "their_own_potion",
+        4,
+        5,
+        &[Night, TargetOutdoors, InChest("minecraft:potion")],
+        2.0,
+        2,
+        Full,
+        Action::TheirOwnPotion,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9155,6 +9169,7 @@ impl Event {
             | Action::ChorusBlooms
             | Action::ChorusLandsHome
             | Action::PearlTurned
+            | Action::TheirOwnPotion
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9786,6 +9801,7 @@ impl Event {
             "egg_on_the_pillow" => "move their dragon egg onto their pillow",
             "chorus_lands_home" => "set them down on their doorstep as they eat a chorus fruit",
             "pearl_turned" => "turn them round where their next pearl lands them",
+            "their_own_potion" => "throw one of their own potions at their feet from the dark",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

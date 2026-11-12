@@ -917,6 +917,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::EggOnThePillow
         | Action::ChorusLandsHome
         | Action::PearlTurned
+        | Action::TheirOwnPotion
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10649,6 +10650,47 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 318.
+        Action::TheirOwnPotion => match memory.in_used_container(|id| id == "minecraft:potion") {
+            Some((chest, potion)) => {
+                let (effect, seconds) = [
+                    ("darkness", 10.0),
+                    ("slowness", 8.0),
+                    ("blindness", 5.0),
+                    ("nausea", 8.0),
+                ][seed % 4];
+                let at = memory.last.pos;
+                let way = facing_way(memory.last.yaw);
+                vec![
+                    (
+                        Command::TakeItem {
+                            id: ids(),
+                            from: chest.pos,
+                            slot: potion.slot,
+                            expect: potion.id.clone(),
+                            count: 1,
+                            keep: String::new(),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::SplashPotion {
+                            id: ids(),
+                            player: target,
+                            from: [
+                                at[0] + way[0] as f64 * 7.0,
+                                -10_000.0,
+                                at[2] + way[1] as f64 * 7.0,
+                            ],
+                            effect: effect.to_string(),
+                            seconds,
+                        },
+                        20,
+                    ),
+                ]
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -23153,6 +23195,17 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::ThrowBack { what, .. }, 0)] if what == "pearl"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn their_own_potion_is_taken_then_thrown() {
+        let memory = rich_memory();
+        let event = find("their_own_potion").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::TakeItem { expect, .. }, 0), (Command::SplashPotion { .. }, 20)] if expect == "minecraft:potion"),
             "{made:?}"
         );
     }

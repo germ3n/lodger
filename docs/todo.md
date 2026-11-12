@@ -3155,6 +3155,12 @@ The `[x]` lines above, summed up by day:
   tick after (`throw_back`'s `pearl`, ABI 56: `Returns` and `EnderpearlMixin`). Tests: one in `act`.
   Was: no such event.
 
+- [x] **Their own potion** (`docs/events_todo.md`, 318): `their_own_potion`, stages 4 and 5,
+  outdoors at night with a potion in the chest they use: the potion taken, then a second on a splash
+  of darkness, slowness, blindness or nausea at their feet from seven ahead (the take first, so a
+  failed take throws nothing). Owner: "can you also do like splash potion event?". Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
