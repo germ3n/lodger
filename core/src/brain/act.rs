@@ -888,6 +888,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TheirTorchAhead
         | Action::NameInNetherrack
         | Action::PrintsInSoulSand
+        | Action::PrintsOffTheEdge
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10190,6 +10191,18 @@ pub fn commands(
                 0,
             )]
         }
+        // docs/events_todo.md, 299.
+        Action::PrintsOffTheEdge => {
+            // Away from the End's middle, the way an island's edge lies.
+            let p = memory.last.pos;
+            let far = (p[0] * p[0] + p[2] * p[2]).sqrt().max(1.0);
+            let out = [p[0] / far, p[2] / far];
+            let at = |k: f64| [p[0] + out[0] * k, p[2] + out[1] * k];
+            vec![(
+                prints_hint(ids, target, &crate::prints::walk(at(2.0), at(24.0), p[1])),
+                0,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14072,6 +14085,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "prints_off_the_edge"
                 || event.id == "prints_in_soul_sand"
                 || event.id == "name_in_netherrack"
                 || event.id == "their_torch_ahead"
@@ -22350,6 +22364,18 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, detail, .. }, 0)] if hint == "footprints" && !detail.is_empty()),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn prints_off_the_edge_lead_outward_from_the_middle() {
+        let mut memory = rich_memory();
+        memory.last.pos = [100.0, 60.0, 0.0];
+        let event = find("prints_off_the_edge").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, .. }, 0)] if hint == "footprints"),
             "{made:?}"
         );
     }

@@ -36,6 +36,7 @@ pub const ROWS: &[(&str, &str)] = &[
     ("their_torch_ahead", "minecraft:the_nether"),
     ("name_in_netherrack", "minecraft:the_nether"),
     ("prints_in_soul_sand", "minecraft:the_nether"),
+    ("prints_off_the_edge", "minecraft:the_end"),
 ];
 /// The chance a second, while one is allowed and the target is there: about once in five
 /// minutes.
