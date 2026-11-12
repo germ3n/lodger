@@ -1274,6 +1274,8 @@ pub enum Action {
     MagmaCubesSettle,
     /// In the Nether, the wither skeletons near them standing with their backs to them, faces to the wall, striking none.
     BackToTheWall,
+    /// In the End, every enderman near them turning its back on them at once, so there is nothing to look at.
+    EndermenTurnAway,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7945,6 +7947,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BackToTheWall,
         false,
     ),
+    // docs/events_todo.md, 292: in the end, every enderman near them turns its back on them at once and stands so a minute, facing away, so there is no face to meet.
+    row(
+        "endermen_turn_away",
+        3,
+        5,
+        &[InEnd, MobNear("enderman")],
+        1.0,
+        3,
+        Half,
+        Action::EndermenTurnAway,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8583,6 +8597,7 @@ impl Event {
             | Action::HoglinsPart
             | Action::MagmaCubesSettle
             | Action::BackToTheWall
+            | Action::EndermenTurnAway
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9173,6 +9188,7 @@ impl Event {
             "hoglins_part" => "make the hoglins near them stand off and not charge",
             "magma_cubes_settle" => "make every magma cube near them stop bouncing",
             "back_to_the_wall" => "turn the wither skeletons near them to the wall",
+            "endermen_turn_away" => "turn every enderman near them away from them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
