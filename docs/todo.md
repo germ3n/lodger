@@ -2825,6 +2825,11 @@ The `[x]` lines above, summed up by day:
   "its" (the `held_name_wrong` hint, `HudMixin` on the selected item's name; off with the glitches).
   Tests: one in `act`. Was: no such event.
 
+- [x] **The title screen's splash** (`docs/events_todo.md`, 239): `title_splash`, stages 4 and 5:
+  armed on their client, the next title screen's yellow splash reads "we watched you sleep", once
+  (the `title_splash` hint, `SplashManagerMixin`; off with the glitches). Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

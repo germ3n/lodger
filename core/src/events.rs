@@ -7465,6 +7465,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("held_name_wrong", 60.0),
         false,
     ),
+    // docs/events_todo.md, 239: armed now, the next time the game's title screen comes up its yellow splash text reads "we watched you sleep", once.
+    row(
+        "title_splash",
+        4,
+        5,
+        &[TargetAwake],
+        5.0,
+        1,
+        Half,
+        Action::Hint("title_splash", 1.0),
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8634,6 +8646,7 @@ impl Event {
             "count_shows_zero" => "show every count in their hotbar as 0",
             "slot_barred" => "bar one slot of their inventory",
             "held_name_wrong" => "make their held item's name read its",
+            "title_splash" => "put a line about them in the title screen's splash",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

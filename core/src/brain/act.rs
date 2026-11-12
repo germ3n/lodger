@@ -20199,4 +20199,15 @@ mod tests {
             "{made:?}"
         );
     }
+
+    #[test]
+    fn title_splash_is_its_hint_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("title_splash").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, seconds, .. }, 0)] if hint == "title_splash" && *seconds == 1.0),
+            "{made:?}"
+        );
+    }
 }

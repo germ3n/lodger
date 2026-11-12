@@ -148,6 +148,19 @@ public final class Glitches {
 		}
 	}
 
+	/**
+	 * The title screen's next splash, armed by `title_splash` (ABI 56) and kept in the client's
+	 * memory alone until a title screen asks: once, then the game's own again.
+	 */
+	private static volatile String splashArmed;
+
+	/** The splash armed, taken: null when none is. */
+	public static String takeSplash() {
+		String line = splashArmed;
+		splashArmed = null;
+		return line;
+	}
+
 	/** Whether every stack in their hotbar shows a count of 0 (`count_shows_zero`, ABI 56). */
 	public static boolean countsZero() {
 		for (Hints.Active active : Hints.active()) {
@@ -389,6 +402,8 @@ public final class Glitches {
 							new net.minecraft.world.item.crafting.display.SlotDisplay.ItemSlotDisplay(net.minecraft.world.item.Items.CRAFTING_TABLE));
 					net.minecraft.client.gui.components.toasts.RecipeToast.addOrUpdate(minecraft.gui.toastManager(), display);
 				});
+				// Armed: the next title screen's splash reads about them (ABI 56).
+				case "title_splash" -> once(active, () -> splashArmed = "we watched you sleep");
 				case "silence" -> {
 					minecraft.getSoundManager().stop(null, SoundSource.AMBIENT);
 					minecraft.getSoundManager().stop(null, SoundSource.WEATHER);

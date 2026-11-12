@@ -21,6 +21,7 @@
 		"PauseScreenMixin",
 		"ScreenshotMixin",
 		"SkyRendererMixin",
+		"SplashManagerMixin",
 		"SubtitleOverlayMixin",
 		"WeatherEffectRendererMixin"
 	],
