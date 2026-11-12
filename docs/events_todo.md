@@ -305,7 +305,7 @@ things, and on the screen. Not built yet.
 | 246 | `figure_in_your_armour` | 4 | **Built (the very pieces as they are, copies on their screen alone).** The figure far off wears exactly the armour they wear, the enchantment's shimmer and all. | Wearing armour, outdoors. | `figure` wearing their armour's pieces. | S |
 | 247 | `on_the_peak` | 4 | **Built (the highest ground 24 to 64 blocks off, found by the host).** At sunset, the figure stands on the top of the nearest mountain, against the sky. | Dusk, outdoors, high ground near. | `figure` on the highest ground within reach. | S |
 | 248 | `cattle_turn_away` | 3 | **Built (every cow near them, forty-five seconds).** All their cows turn their backs to them at once. | Cows of theirs near. | The cows held facing away from them a while. | S |
-| 249 | `horse_balks` | 4 | Their horse will not move a few seconds, staring at nothing ahead. | Riding a horse. | The horse held still, facing ahead. | S |
+| 249 | `horse_balks` | 4 | **Built (five seconds, the horse under them, facing ahead).** Their horse will not move a few seconds, staring at nothing ahead. | Riding a horse. | The horse held still, facing ahead. | S |
 | 250 | `cat_gift` | 3 | Their cat lies by their bed in the morning with a gift, as cats do: something of theirs, from their chest. | A cat of theirs, a chest, the target asleep. | `take_item`, `drop_item` by the bed, kept. | S |
 | 251 | `armadillos_curl` | 3 | Every armadillo near them curls up at once, as if something passed that they feared. | Armadillos near them. | The armadillos made to roll up. | S |
 | 252 | `sniffer_at_its_place` | 4 | A sniffer snuffles at its place and digs up a seed, then is gone. | Its place. | `place_entity` a sniffer for a while at its place. | S |

@@ -291,6 +291,11 @@ const DIG_SOUNDS: u64 = 12;
 /// How many blocks `climbing_the_house`'s figure climbs, from two below the window.
 const CLIMB_STEPS: i32 = 7;
 
+/// The distance between two points.
+fn distance_pos(a: Pos, b: Pos) -> f64 {
+    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt()
+}
+
 /// How many mushrooms `mushrooms_in_corners` grows.
 const MUSHROOMS_MOST: usize = 4;
 
@@ -765,6 +770,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FigureInYourArmour
         | Action::OnThePeak
         | Action::CattleTurnAway
+        | Action::HorseBalks
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -9040,6 +9046,51 @@ pub fn commands(
                 })
                 .collect()
         }
+        // docs/events_todo.md, 249.
+        Action::HorseBalks => {
+            let me = memory.last.pos;
+            let ridden = memory
+                .last
+                .creatures_near
+                .iter()
+                .filter(|c| c.kind.ends_with("horse"))
+                .min_by(|a, b| distance_pos(a.pos, me).total_cmp(&distance_pos(b.pos, me)))
+                .filter(|c| distance_pos(c.pos, me) < 2.0);
+            match ridden {
+                Some(horse) => {
+                    let way = facing_way(memory.last.yaw);
+                    vec![
+                        (
+                            Command::Hold {
+                                id: ids(),
+                                entity: horse.id,
+                                player: target,
+                                seconds: 5.0,
+                                at: Some([
+                                    horse.pos[0] + way[0] as f64 * 12.0,
+                                    horse.pos[1] + 1.0,
+                                    horse.pos[2] + way[1] as f64 * 12.0,
+                                ]),
+                                creep: false,
+                                spin: false,
+                            },
+                            0,
+                        ),
+                        (
+                            sound_at(
+                                ids,
+                                target,
+                                "minecraft:entity.horse.breathe",
+                                horse.pos,
+                                1.0,
+                            ),
+                            10,
+                        ),
+                    ]
+                }
+                None => vec![],
+            }
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -12051,6 +12102,20 @@ mod tests {
     }
 
     /// The memory with everything the catalogue could ask for.
+    /// A horse under them, as if ridden: for `horse_balks`.
+    fn ridden(memory: &mut Memory) {
+        memory.last.riding = "minecraft:horse".to_string();
+        let at = memory.last.pos;
+        memory.last.creatures_near.push(Creature {
+            id: 301,
+            kind: "horse".to_string(),
+            pos: [at[0], at[1] - 0.5, at[2]],
+            pet: false,
+            named: false,
+            baby: false,
+        });
+    }
+
     fn rich_memory() -> Memory {
         let mut memory = memory();
         memory.store("minecraft:dirt", 5);
@@ -12890,6 +12955,8 @@ mod tests {
                 || event.id == "wall_bursts"
                 // Trees at their height off to one side, which this memory's are not: its own test.
                 || event.id == "bare_trees"
+                // Riding a horse, which this memory is not: its own test.
+                || event.id == "horse_balks"
             {
                 continue;
             }
@@ -20576,5 +20643,17 @@ mod tests {
             (cow.pos[0] * cow.pos[0] + cow.pos[2] * cow.pos[2]).sqrt(),
         );
         assert!(away > cow_off + 9.0, "beyond the cow, from them: {to:?}");
+    }
+
+    #[test]
+    fn horse_balks_holds_the_horse_under_them_facing_ahead() {
+        let mut memory = rich_memory();
+        ridden(&mut memory);
+        let event = find("horse_balks").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::Hold { entity: 301, at: Some(_), seconds, .. } if *seconds == 5.0),
+            "{made:?}"
+        );
     }
 }

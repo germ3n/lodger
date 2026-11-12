@@ -239,6 +239,8 @@ pub enum Need {
     LitUnderground,
     /// Copper of theirs that weathers and is not yet green through (`copper_ages`).
     Copper,
+    /// The target riding a mob whose kind ends with this (`horse_balks`).
+    Riding(&'static str),
     /// Where they last died is in sight: twelve to sixty-four blocks from them.
     NearTheirDeath,
     /// Down a shaft of their ladders, six blocks or more below its top.
@@ -294,6 +296,7 @@ impl Need {
                 | Need::TargetIndoors
                 | Need::TargetOutdoors
                 | Need::TargetWalking
+                | Need::Riding(_)
                 | Need::TargetInBed
                 | Need::TargetSaid
                 | Need::Heard
@@ -475,6 +478,7 @@ impl Need {
             Need::TargetInBoat => "the target is not in a boat with a seat to spare".to_string(),
             Need::LitUnderground => "happens only as they place a light underground".to_string(),
             Need::Copper => "no copper of theirs left to weather".to_string(),
+            Need::Riding(kind) => format!("they ride no {}", kind.replace('_', " ")),
             Need::NearTheirDeath => "they are not near where they last died".to_string(),
             Need::DownTheShaft => "they are not down a shaft of their ladders".to_string(),
             Need::TargetSwimming => "the target is not swimming".to_string(),
@@ -1216,6 +1220,8 @@ pub enum Action {
     OnThePeak,
     /// Every cow near them turning its back on them at once, a while.
     CattleTurnAway,
+    /// The horse they ride standing still a few seconds, staring at nothing ahead, refusing them.
+    HorseBalks,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -7599,6 +7605,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CattleTurnAway,
         false,
     ),
+    // docs/events_todo.md, 249: their horse will not move a few seconds, staring at nothing ahead.
+    row(
+        "horse_balks",
+        4,
+        5,
+        &[Riding("horse")],
+        1.0,
+        3,
+        Half,
+        Action::HorseBalks,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8218,6 +8236,7 @@ impl Event {
             | Action::FigureInYourArmour
             | Action::OnThePeak
             | Action::CattleTurnAway
+            | Action::HorseBalks
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -8785,6 +8804,7 @@ impl Event {
             "figure_in_your_armour" => "stand far off in the armour they wear, the figure",
             "on_the_peak" => "stand on the nearest peak at sunset, the figure",
             "cattle_turn_away" => "turn every cow near them away from them",
+            "horse_balks" => "make the horse they ride balk at nothing",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

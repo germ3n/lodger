@@ -2872,6 +2872,11 @@ The `[x]` lines above, summed up by day:
   outdoors with cows near: every cow held forty-five seconds facing a point ten blocks beyond it,
   straight away from where they stood (`hold`'s `at`). Tests: one in `act`. Was: no such event.
 
+- [x] **The horse balks** (`docs/events_todo.md`, 249): `horse_balks`, stages 4 and 5, riding a
+  horse: the horse under them (the one within two blocks of them) held five seconds facing twelve
+  blocks ahead, its heavy breath heard (a new passing need, `Riding`). Tests: one in `act`. Was: no
+  such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

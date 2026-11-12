@@ -145,6 +145,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
         Need::CameBack => false,
         Need::HoldsNothing => memory.held.is_none(),
         Need::LitUnderground => false,
+        Need::Riding(kind) => last.online && last.riding.ends_with(kind),
         Need::Copper => memory
             .walls
             .iter()
