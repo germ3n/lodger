@@ -5916,6 +5916,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:item.brush.brushing.generic"),
         true,
     ),
+    // docs/events_todo.md, 189.
+    row(
+        "pot_shatters",
+        3,
+        5,
+        &[TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::SoundAtTarget("minecraft:block.decorated_pot.shatter"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -7432,6 +7444,7 @@ impl Event {
             "crossbow_click" => "load a crossbow right behind them",
             "teleport_beside" => "warp twice beside them, nearer each time",
             "sweeping_next_room" => "sweep with a brush in the next room",
+            "pot_shatters" => "shatter a pot somewhere in the house",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

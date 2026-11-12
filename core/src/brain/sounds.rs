@@ -1452,6 +1452,30 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 189.
+        "pot_shatters" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[("minecraft:block.decorated_pot.shatter", 0)],
+                    (0.9, 1.0),
+                    1.0,
+                    Beside,
+                ),
+                v(
+                    &[("minecraft:block.decorated_pot.shatter", 0)],
+                    (0.85, 0.95),
+                    1.0,
+                    Above,
+                ),
+                v(
+                    &[("minecraft:block.decorated_pot.shatter", 0)],
+                    (0.8, 0.9),
+                    1.1,
+                    Behind,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -2440,6 +2464,7 @@ mod tests {
             "crossbow_click",
             "teleport_beside",
             "sweeping_next_room",
+            "pot_shatters",
             "bush_rustles",
             "ice_cracks",
             "iron_door_below",
