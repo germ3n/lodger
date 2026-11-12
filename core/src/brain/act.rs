@@ -15953,4 +15953,27 @@ mod tests {
         );
         assert!(made[1..].iter().all(|(c, _)| matches!(c, Command::PlaySound { sound, .. } if sound == "minecraft:entity.wolf.whine")));
     }
+
+    #[test]
+    fn at_night_something_drags_across_their_window() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("glass_rubbed").unwrap();
+        assert_eq!(event.effect(), "sounds");
+        let made = commands(
+            event,
+            place(event, &memory, &mut Rng::new(1)),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(!made.is_empty(), "{made:?}");
+        assert!(
+            made.iter()
+                .all(|(c, _)| matches!(c, Command::PlaySound { .. })),
+            "{made:?}"
+        );
+    }
 }

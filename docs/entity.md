@@ -674,6 +674,7 @@ a dock or bridge), never over anything a player built (see the
 | `shriek_below` | 5 | Once a stay, in the house, a sculk shrieker's shriek from far under it; or a heartbeat down there, then the shriek. | A home, the target indoors. |
 | `witch_laughs` | 3 | At night in the open, a witch's laugh far off; no witch. | Night, the target outdoors. |
 | `pet_whines_at_door` | 3 | At night their dog sits facing the door they use and whines at it, at nothing outside, now and then for a minute and a half (`hold` facing the door). | A tamed wolf of theirs near, a door, night. |
+| `glass_rubbed` | 3 | At night while they are in the house, a long squeak of something dragged slowly across a window's glass from outside. | A pane, the target indoors at night. |
 | `creeper_behind` | 3 | A creeper suddenly right behind them, two blocks back, on their screen alone: it hisses and swells as a real one does and, a moment and a half on, always goes off: the flash, the bang, the jolt as of a hit, and nothing harmed, not a block broken, nothing there after (`fake_creeper`, ABI 54). Owner's idea. | The target awake. |
 | `vex_single` | 4 | Out of nowhere, a vex a few blocks up behind them comes at them through walls and all, half a minute: its hits two hearts, never a kill; killed it leaves nothing (`place_entity`'s `targets` and `harm`). Stage four. Owner's idea. | The target awake. |
 | `vex_strikes` | 5 | `vex_single` in stage five: its hits three hearts, never a kill. | The target awake. |

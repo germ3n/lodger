@@ -538,6 +538,53 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 134.
+        "glass_rubbed" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:block.glass.step", 0),
+                        ("minecraft:block.glass.step", 4),
+                        ("minecraft:block.glass.step", 8),
+                        ("minecraft:block.glass.step", 12),
+                        ("minecraft:block.glass.step", 16),
+                        ("minecraft:block.glass.step", 20),
+                    ],
+                    (0.4, 0.5),
+                    0.5,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.glass.hit", 0),
+                        ("minecraft:block.glass.hit", 6),
+                        ("minecraft:block.glass.hit", 12),
+                        ("minecraft:block.glass.hit", 18),
+                    ],
+                    (0.5, 0.6),
+                    0.5,
+                    Still,
+                ),
+                v(
+                    &[
+                        ("minecraft:block.glass.step", 0),
+                        ("minecraft:block.glass.step", 3),
+                        ("minecraft:block.glass.step", 6),
+                        ("minecraft:block.glass.step", 9),
+                        ("minecraft:block.glass.step", 12),
+                        ("minecraft:block.glass.step", 15),
+                        ("minecraft:block.glass.step", 18),
+                        ("minecraft:block.glass.step", 21),
+                        ("minecraft:block.glass.step", 24),
+                        ("minecraft:block.glass.step", 27),
+                    ],
+                    (0.35, 0.45),
+                    0.4,
+                    Still,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1396,6 +1443,7 @@ pub fn commands(
 
 /// The events whose sound comes from a door, a chest or a window of a house.
 pub const HOUSE_SOUNDS: &[&str] = &[
+    "glass_rubbed",
     "breath_in_the_chest",
     "door_sound",
     "chest_sound",
@@ -1417,7 +1465,7 @@ pub const HOUSE_SOUNDS: &[&str] = &[
 /// client).
 pub fn house_spot(event: &str, memory: &Memory, seed: usize) -> Option<BlockPos> {
     let want_chest = matches!(event, "chest_sound" | "breath_in_the_chest");
-    let want_pane = event == "window_tap";
+    let want_pane = matches!(event, "window_tap" | "glass_rubbed");
     let home_near = memory.home.as_ref().is_some_and(|h| {
         let at = memory.last.pos;
         let dx = at[0] - h.center[0] as f64;
@@ -1501,6 +1549,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "glass_rubbed",
             "witch_laughs",
             "shriek_below",
             "chains_dragging",

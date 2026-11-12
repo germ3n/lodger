@@ -5512,6 +5512,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtTarget("minecraft:entity.wolf.whine"),
         false,
     ),
+    // docs/events_todo.md, 134.
+    row(
+        "glass_rubbed",
+        3,
+        5,
+        &[Pane, Night, TargetIndoors],
+        2.0,
+        3,
+        Full,
+        Action::Sound("minecraft:block.glass.step"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6677,6 +6689,7 @@ impl Event {
             "shriek_below" => "shriek from deep under their house",
             "witch_laughs" => "laugh like a witch far off in the dark",
             "pet_whines_at_door" => "set their dog whining at the door all night",
+            "glass_rubbed" => "drag a finger slowly across their window",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }
