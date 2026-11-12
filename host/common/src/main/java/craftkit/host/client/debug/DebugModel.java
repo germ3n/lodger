@@ -54,6 +54,23 @@ public final class DebugModel {
 	public final List<EventRow> events = new ArrayList<>();
 	public final List<ActionRow> actions = new ArrayList<>();
 
+	/**
+	 * Every plan held, a line each for the overlay (owner: "make the debug ui show all the
+	 * plans"): the plan as the panel names it, and what it waits for; none when it holds none.
+	 */
+	public List<String> planLines() {
+		List<String> lines = new ArrayList<>();
+		for (Section section : sections) {
+			if (!section.title().equals("Plans")) {
+				continue;
+			}
+			for (Item item : section.items()) {
+				lines.add(item.detail().isEmpty() ? item.text() : item.text() + ": " + item.detail());
+			}
+		}
+		return lines;
+	}
+
 	public static DebugModel parse(String json) {
 		DebugModel model = new DebugModel();
 		JsonObject root;

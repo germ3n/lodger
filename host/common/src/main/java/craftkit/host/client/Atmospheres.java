@@ -54,7 +54,8 @@ public final class Atmospheres {
 		float most = 0;
 		for (Hints.Active active : Hints.active()) {
 			if (active.hint().hint().equals(hint)) {
-				most = Math.max(most, Atmosphere.weight(seconds(active, now), total(active)));
+				float at = seconds(active, now);
+				most = Math.max(most, hint.equals("red_rain") ? Atmosphere.weightQuick(at, total(active)) : Atmosphere.weight(at, total(active)));
 			}
 		}
 

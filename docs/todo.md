@@ -2259,6 +2259,28 @@ The `[x]` lines above, summed up by day:
   faintest, come from stage one too. Not the seed: at the very start, nothing learned yet, the menu
   was `wait` and `cut_music` alone, every other stage-one event wanting a home, a chest or a door.
   Tests: one in `offer`. Was: the start's one choice was cutting the music.
+- [x] **Every plan in the overlay** (owner: "make the debug ui show all the plans"): the F9 overlay
+  lists every plan the brain holds, each with what it waits for, under its NEXT line
+  (`DebugModel.planLines`). The F8 panel's Mind tab listed them already. They wait side by side,
+  each sent the tick its own moment comes (`Brain::tick`, every plan on its own). Tests: one more in
+  `DebugModelTest`. Was: the overlay showed the next plan alone.
+
+- [x] **The mists seen with a shader pack on** (owner: "mist doesnt seem to do anything"): with Iris'
+  shader pack on, the pack draws its own fog and leaves the game's unused, which is what `mist`,
+  `fog_close` and `red_mist` move; so with one on they are drawn as a veil over the screen too, pale
+  (red for the red mist), as thick as they have grown (`MistVeil`); and every mist has banks of big
+  soft drifts low over the ground, seen with a pack or without. Tests: `MistVeilTest`. Was: with a
+  pack on, a mist was a few motes of ash and nothing else.
+
+- [x] **Red rain seen at once** (owner: "idk if the red rain is working"): it comes in over eight
+  seconds (`Atmosphere.weightQuick`), not most of a minute; the hint came, but the drops were still
+  barely pink when each new firing began it again. Tests: one more in `AtmosphereTest`.
+
+- [x] **The footprints no longer cut the client's hints short** (found by the performance review):
+  the `footprints` case left the whole client tick with a `return` seven ticks in eight, so every
+  hint after it in the list and the restores at the tick's end were skipped; it draws every eighth
+  tick now without leaving, and the prints read for a hint are let go when it ends. The mist veil's
+  check for a shader pack is asked every two seconds, not by reflection every frame.
 
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved

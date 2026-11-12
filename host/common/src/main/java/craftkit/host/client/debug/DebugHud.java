@@ -116,7 +116,8 @@ public final class DebugHud {
 		int lineHeight = 10;
 
 		// A measured pass first, so the backing fits.
-		int count = 1 + model.gauges.size() + 2 + Math.min(4, senseLines()) + 1 + Math.min(5, model.commands.size());
+		List<String> plans = model.planLines();
+		int count = 1 + model.gauges.size() + 2 + plans.size() + 1 + Math.min(4, senseLines()) + 1 + Math.min(5, model.commands.size());
 		graphics.fill(x - 4, 2, width - 2, 2 + count * lineHeight + 8, BACK);
 
 		String title = (mod.isEmpty() ? "craftkit" : mod) + " (F9 hides, F8 opens)";
@@ -136,6 +137,15 @@ public final class DebugHud {
 				.orElse("NEXT: ?");
 		graphics.text(font, trim(font, next, WIDTH), x, y[0], YELLOW);
 		y[0] += lineHeight;
+
+		// Every plan it holds, each with what it waits for: they wait side by side, and each
+		// goes when its own moment comes.
+		graphics.text(font, plans.isEmpty() ? "plans: none" : "plans:", x, y[0], DIM);
+		y[0] += lineHeight;
+		for (String plan : plans) {
+			graphics.text(font, trim(font, plan, WIDTH), x, y[0], GREY);
+			y[0] += lineHeight;
+		}
 
 		graphics.text(font, "you, as sensed:", x, y[0], DIM);
 		y[0] += lineHeight;

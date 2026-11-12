@@ -53,4 +53,12 @@ class AtmosphereTest {
 		assertEquals(Atmosphere.MIST, Atmosphere.of("fog_close"));
 		assertNull(Atmosphere.of("red_rain"), "red rain is the drops, not a fog");
 	}
+
+	@org.junit.jupiter.api.Test
+	void red_rain_is_seen_within_seconds_where_a_mist_takes_most_of_a_minute() {
+		org.junit.jupiter.api.Assertions.assertEquals(1f, Atmosphere.weightQuick(Atmosphere.QUICK_IN, 150), 1e-6);
+		org.junit.jupiter.api.Assertions.assertTrue(Atmosphere.weight(Atmosphere.QUICK_IN, 150) < 0.2f, "the slow way still slow");
+		org.junit.jupiter.api.Assertions.assertEquals(0f, Atmosphere.weightQuick(150, 150), 1e-6, "gone at its end");
+	}
 }
+

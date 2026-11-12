@@ -203,25 +203,11 @@ public final class Glitches {
 				});
 				// Footprints round the house, dark on the ground, renewed as the dust fades: those
 				// within twenty-four blocks, each on the ground found under it.
+				// Every eighth tick: never a `return` here, which left the whole tick, the hints
+				// after it in the list and the restores at its end, seven ticks in eight.
 				case "footprints" -> {
-					if (minecraft.level.getGameTime() % 8 != 0) {
-						return;
-					}
-					var eye = minecraft.player.position();
-					for (FootPrint.Print print : PRINTS.computeIfAbsent(active.id(), id -> FootPrint.read(hint.detail()))) {
-						double dx = print.x() - eye.x;
-						double dz = print.z() - eye.z;
-						if (dx * dx + dz * dz > 24 * 24) {
-							continue;
-						}
-						double ground = groundAt(minecraft.level, print.x(), print.y(), print.z());
-						if (Double.isNaN(ground)) {
-							continue;
-						}
-						for (double[] d : FootPrint.dots(print.yaw())) {
-							minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x2E2218, 0.4f),
-									print.x() + d[0], ground + 0.02, print.z() + d[1], 0, 0, 0);
-						}
+					if (minecraft.level.getGameTime() % 8 == 0) {
+						drawPrints(minecraft, active, hint);
 					}
 				}
 				// Two hands pressed on the glass from the house's side, renewed as the dust fades.
@@ -279,6 +265,16 @@ public final class Glitches {
 				case "mist", "fog_close", "red_mist" -> {
 					float w = Atmospheres.weightOf(hint.hint());
 					var random = minecraft.level.getRandom();
+					// Banks of it low over the ground, big soft drifts (seen with a shader pack on
+					// too, which hides the game's fog), and the motes in it.
+					int banks = (int) (w * 6);
+					for (int i = 0; i < banks; i++) {
+						double x = minecraft.player.getX() + random.nextDouble() * 28 - 14;
+						double y = minecraft.player.getY() + random.nextDouble() * 1.6 - 0.3;
+						double z = minecraft.player.getZ() + random.nextDouble() * 28 - 14;
+						int colour = hint.hint().equals("red_mist") ? 0x7A1A1A : 0xD8DCE0;
+						minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(colour, 4.0f), x, y, z, 0.02, 0, 0.02);
+					}
 					int count = (int) (w * 3);
 					for (int i = 0; i < count; i++) {
 						double x = minecraft.player.getX() + random.nextDouble() * 20 - 10;
@@ -395,6 +391,7 @@ public final class Glitches {
 			Hints.active().forEach(a -> live.add(a.id()));
 			DONE_ONCE.retainAll(live);
 			LOOKED.keySet().retainAll(live);
+			PRINTS.keySet().retainAll(live);
 		}
 	}
 
@@ -445,6 +442,15 @@ public final class Glitches {
 					graphics.centeredText(font, net.minecraft.network.chat.Component.translatable("deathScreen.score.value",
 							net.minecraft.network.chat.Component.literal(Integer.toString(score)).withStyle(net.minecraft.ChatFormatting.YELLOW)), width / 2, 100, 0xFFFFFFFF);
 				}
+				// With a shader pack on, which draws its own fog and leaves the game's unused, the
+				// mists are a veil over the screen instead (`MistVeil`), as thick as they have grown.
+				case "mist", "fog_close", "red_mist" -> {
+					String kind = active.hint().hint();
+					float alpha = MistVeil.alpha(kind, Atmospheres.weightOf(kind), shadersOn());
+					if (alpha > 0) {
+						fill(graphics, width, height, MistVeil.colour(kind), alpha);
+					}
+				}
 				case "flicker" -> {
 					// Dark for a few frames at a time, at an irregular beat.
 					long phase = (now / 40) % 7;
@@ -479,6 +485,51 @@ public final class Glitches {
 	/** Whether the vanilla crosshair is to be left out this frame. */
 	public static boolean hideCrosshair() {
 		return Hints.showing("crosshair_gone");
+	}
+
+	/** The footprints a `footprints` hint holds, dark dust on the ground under each within 24 blocks. */
+	private static void drawPrints(Minecraft minecraft, Hints.Active active, craftkit.host.net.HintPayload hint) {
+		var eye = minecraft.player.position();
+		for (FootPrint.Print print : PRINTS.computeIfAbsent(active.id(), id -> FootPrint.read(hint.detail()))) {
+			double dx = print.x() - eye.x;
+			double dz = print.z() - eye.z;
+			if (dx * dx + dz * dz > 24 * 24) {
+				continue;
+			}
+			double ground = groundAt(minecraft.level, print.x(), print.y(), print.z());
+			if (Double.isNaN(ground)) {
+				continue;
+			}
+			for (double[] d : FootPrint.dots(print.yaw())) {
+				minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x2E2218, 0.4f),
+						print.x() + d[0], ground + 0.02, print.z() + d[1], 0, 0, 0);
+			}
+		}
+	}
+
+	/** Whether Iris has a shader pack on, and when it was last asked. */
+	private static boolean shaders;
+	private static long shadersAsked;
+
+	/**
+	 * Whether Iris has a shader pack on, asked through its API when it is there (false without
+	 * it), at most every two seconds: a mist draws its veil every frame, and reflection each frame
+	 * cost for nothing.
+	 */
+	private static boolean shadersOn() {
+		long now = System.currentTimeMillis();
+		if (now - shadersAsked < 2000) {
+			return shaders;
+		}
+		shadersAsked = now;
+		try {
+			Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+			Object instance = api.getMethod("getInstance").invoke(null);
+			shaders = (boolean) api.getMethod("isShaderPackInUse").invoke(instance);
+		} catch (ReflectiveOperationException | LinkageError absent) {
+			shaders = false;
+		}
+		return shaders;
 	}
 
 	private static void fill(GuiGraphicsExtractor graphics, int width, int height, int rgb, float alpha) {

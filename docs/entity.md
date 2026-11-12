@@ -552,7 +552,7 @@ seconds and then stops; `events.glitches` turns the group off, with [The screen]
 | `moon_wrong` | 3 | The moon is full when it is not, for a few seconds (the sky's hook; twice its size is beyond the hook). | The target outdoors at night. |
 | `stars_out` | 3 | The stars fade out for a minute and back. | A clear night, the target outdoors. |
 | `night_early` | 4 | The sun, moon and stars stand two hours later than they are, the sky dimmed, for a minute, eased in and out, then right. | The target outdoors by day. |
-| `red_rain` | 4 | While it rains, the drops themselves are red (the rain's colour hook), for two to five minutes; no screen cast. The brain may pair it with `red_mist`. | Rain, the target outdoors or at a window. |
+| `red_rain` | 4 | While it rains, the drops themselves are red (the rain's colour hook), red within eight seconds, for two to five minutes; no screen cast. The brain may pair it with `red_mist`. | Rain, the target outdoors or at a window. |
 | `compass_points` | 3 | A compass the target holds points at the lodger's place for two minutes (a hook on the compass's target). | The target holding a compass. |
 | `reflection` | 4 | Water reflects nothing in the game, so a face under it instead (owner): the figure just under the surface of still water near them, its head below the top, up to six seconds, gone once seen and looked away from. | Water within 24 blocks, the target outdoors. |
 
@@ -566,7 +566,7 @@ it stands. A render hook at the end of the game's fog setup closes and tints it
 
 | Event | Stages | What happens | Needs |
 | --- | --- | --- | --- |
-| `mist` | 2 | Pale grey mist to thirteen blocks, motes drifting near the ground, four minutes. `fog_close` is this mist, a minute long. | The target awake. |
+| `mist` | 2 | Pale grey mist to thirteen blocks, banks of it drifting low over the ground and motes in it, four minutes. `fog_close` is this mist, a minute long. With a shader pack on (which draws its own fog), a pale veil over the screen as well. | The target awake. |
 | `dusk_noon` | 3 | At noon the light drains: the fog grey-violet to forty blocks, the sky dimmed, a grey veil, five minutes. | Day, the target awake. |
 | `red_mist` | 4 | Deep red mist to twenty blocks, a rust sky, red motes, four and a half minutes. | Night, the target awake. |
 | `darkness` | 4 | The dark closes to seven blocks, black, their own light still showing what is near, three minutes. | Night, the target awake. |

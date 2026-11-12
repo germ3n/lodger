@@ -53,6 +53,28 @@ public final class Atmosphere {
 		return 1;
 	}
 
+	/**
+	 * {@link #weight} for one that should be seen at once, red rain's: in over {@link #QUICK_IN}
+	 * seconds (owner: it eased in over most of a minute and seemed to do nothing), out as any.
+	 */
+	public static float weightQuick(float elapsed, float total) {
+		if (elapsed <= 0 || elapsed >= total) {
+			return 0;
+		}
+		float in = Math.min(QUICK_IN, total * 0.3f);
+		float out = Math.min(35, total * 0.25f);
+		if (elapsed < in) {
+			return smooth(elapsed / in);
+		}
+		if (elapsed > total - out) {
+			return smooth((total - elapsed) / out);
+		}
+		return 1;
+	}
+
+	/** How fast a quick atmosphere comes in, seconds. */
+	public static final float QUICK_IN = 8;
+
 	/** The slow breath of a held atmosphere: its edge comes and goes a tenth, over nine seconds. */
 	public static float breath(float elapsed) {
 		return 1 + 0.1f * (float) Math.sin(elapsed * Math.PI * 2 / 9);

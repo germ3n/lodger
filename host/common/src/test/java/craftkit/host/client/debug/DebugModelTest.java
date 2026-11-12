@@ -109,4 +109,18 @@ class DebugModelTest {
 		assertEquals("watchful", DebugModel.fearWords(0.3f));
 		assertEquals("uneasy", DebugModel.fearWords(0.5f));
 	}
+
+	@Test
+	void every_plan_is_a_line_with_what_it_waits_for() {
+		DebugModel model = new DebugModel();
+		model.sections.add(new DebugModel.Section("Story", java.util.List.of("NEXT: knock"), java.util.List.of()));
+		model.sections.add(new DebugModel.Section("Plans", java.util.List.of(), java.util.List.of(
+				new DebugModel.Item("#4 knock at the door", "in 30s", java.util.List.of()),
+				new DebugModel.Item("#5 sign at its place", "", java.util.List.of()),
+				new DebugModel.Item("#6 wake at the bed", "when they sleep", java.util.List.of()))));
+		org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of(
+				"#4 knock at the door: in 30s", "#5 sign at its place", "#6 wake at the bed: when they sleep"), model.planLines());
+		org.junit.jupiter.api.Assertions.assertTrue(new DebugModel().planLines().isEmpty());
+	}
 }
+
