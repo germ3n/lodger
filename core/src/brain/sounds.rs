@@ -223,6 +223,78 @@ pub fn variants(event: &str) -> Option<&'static [Variant]> {
             ];
             WAYS
         }
+        // docs/events_todo.md, 121.
+        "rain_on_the_roof" => {
+            const WAYS: &[Variant] = &[
+                v(
+                    &[
+                        ("minecraft:weather.rain.above", 0),
+                        ("minecraft:weather.rain.above", 20),
+                        ("minecraft:weather.rain.above", 40),
+                        ("minecraft:weather.rain.above", 60),
+                        ("minecraft:weather.rain.above", 80),
+                        ("minecraft:weather.rain.above", 100),
+                        ("minecraft:weather.rain.above", 120),
+                        ("minecraft:weather.rain.above", 140),
+                        ("minecraft:weather.rain.above", 160),
+                        ("minecraft:weather.rain.above", 180),
+                        ("minecraft:weather.rain.above", 200),
+                        ("minecraft:weather.rain.above", 220),
+                        ("minecraft:weather.rain.above", 240),
+                        ("minecraft:weather.rain.above", 260),
+                        ("minecraft:weather.rain.above", 280),
+                    ],
+                    (0.9, 1.0),
+                    0.6,
+                    Above,
+                ),
+                v(
+                    &[
+                        ("minecraft:weather.rain.above", 0),
+                        ("minecraft:weather.rain.above", 25),
+                        ("minecraft:weather.rain.above", 50),
+                        ("minecraft:weather.rain.above", 75),
+                        ("minecraft:weather.rain.above", 100),
+                        ("minecraft:weather.rain.above", 125),
+                        ("minecraft:weather.rain.above", 150),
+                        ("minecraft:weather.rain.above", 175),
+                        ("minecraft:weather.rain.above", 200),
+                        ("minecraft:weather.rain.above", 225),
+                    ],
+                    (0.8, 0.9),
+                    0.6,
+                    Above,
+                ),
+                v(
+                    &[
+                        ("minecraft:weather.rain.above", 0),
+                        ("minecraft:weather.rain.above", 15),
+                        ("minecraft:weather.rain.above", 30),
+                        ("minecraft:weather.rain.above", 45),
+                        ("minecraft:weather.rain.above", 60),
+                        ("minecraft:weather.rain.above", 75),
+                        ("minecraft:weather.rain.above", 90),
+                        ("minecraft:weather.rain.above", 105),
+                        ("minecraft:weather.rain.above", 120),
+                        ("minecraft:weather.rain.above", 135),
+                        ("minecraft:weather.rain.above", 150),
+                        ("minecraft:weather.rain.above", 165),
+                        ("minecraft:weather.rain.above", 180),
+                        ("minecraft:weather.rain.above", 195),
+                        ("minecraft:weather.rain.above", 210),
+                        ("minecraft:weather.rain.above", 225),
+                        ("minecraft:weather.rain.above", 240),
+                        ("minecraft:weather.rain.above", 255),
+                        ("minecraft:weather.rain.above", 270),
+                        ("minecraft:weather.rain.above", 285),
+                    ],
+                    (0.95, 1.05),
+                    0.5,
+                    Above,
+                ),
+            ];
+            WAYS
+        }
         "door_sound" => {
             const WAYS: &[Variant] = &[
                 v(&[(DOOR_OPEN, 0)], (0.9, 1.0), 0.8, Still),
@@ -1186,6 +1258,7 @@ mod tests {
             "answer_knock",
             "cave_air",
             "door_scratch",
+            "rain_on_the_roof",
             "breath_in_the_chest",
             "armour_behind",
             "item_break_behind",

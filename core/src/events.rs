@@ -5378,6 +5378,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Sound("minecraft:entity.player.breath"),
         false,
     ),
+    // docs/events_todo.md, 121.
+    row(
+        "rain_on_the_roof",
+        3,
+        5,
+        &[TargetIndoors, NotRaining],
+        2.0,
+        3,
+        Full,
+        Action::SoundAtTarget("minecraft:weather.rain.above"),
+        false,
+    ),
     // docs/events_todo.md, 81 (owner's).
     row(
         "peeks_from_the_trees",
@@ -6532,6 +6544,7 @@ impl Event {
             "item_break_behind" => "snap a tool right behind them",
             "armour_behind" => "clank like armour walking behind them",
             "breath_in_the_chest" => "breathe from inside the chest they use",
+            "rain_on_the_roof" => "drum rain on their roof under a clear sky",
             "creeper_behind" => {
                 "set a creeper hissing right behind them, that goes off and harms no one"
             }

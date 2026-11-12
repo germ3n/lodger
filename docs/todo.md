@@ -2180,6 +2180,9 @@ The `[x]` lines above, summed up by day:
 - [x] **A breath in the chest** (`docs/events_todo.md`, 120): `breath_in_the_chest`, stages 3 to 5, indoors: a breath from the chest they use (a house sound, from the chest). Tests: one in `act`, its ways in
   the sound variants test. Was: no such event.
 
+- [x] **Rain on the roof** (`docs/events_todo.md`, 121): `rain_on_the_roof`, stages 3 to 5, indoors with no rain: rain heard on the roof over them. Tests: one in `act`, its ways in
+  the sound variants test. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
