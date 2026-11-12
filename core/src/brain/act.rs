@@ -378,6 +378,11 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
                 at[2] + (yaw.cos() * DRAWN_FROM).round() as i32,
             ])
         }
+        // The village's bell, else its middle.
+        Action::VillagersFleeYou => memory
+            .scanned("bell")
+            .next()
+            .or_else(|| memory.feature("village").map(|v| v.pos)),
         // The nearest trunk behind them, eight to twenty blocks: they turn and find it.
         Action::CirclesATree => memory.trunks_behind(8.0, 20.0).last().copied(),
         // Far back among the trees behind them, thirty blocks: where the figure walks.
@@ -6379,6 +6384,32 @@ pub fn commands(
                     *drawn_to_light = true;
                 }
                 vec![(shown, 0)]
+            })
+            .unwrap_or_default(),
+        // Every villager near runs from them in a panic, as from a zombie, a minute; the bell
+        // rung, last, so they go in to hide.
+        Action::VillagersFleeYou => pos
+            .map(|bell| {
+                let mut made = vec![(
+                    Command::Panic {
+                        id: ids(),
+                        player: target,
+                        entities: memory.villagers_near(),
+                        seconds: 60.0,
+                    },
+                    0,
+                )];
+                if memory.scanned("bell").any(|b| b == bell) {
+                    made.push((
+                        Command::ToggleBlock {
+                            id: ids(),
+                            pos: bell,
+                            to: None,
+                        },
+                        10,
+                    ));
+                }
+                made
             })
             .unwrap_or_default(),
         // Prints round and round the trunk, two rings of them, going from nowhere to nowhere.
@@ -14216,5 +14247,36 @@ mod tests {
         assert!(made
             .iter()
             .all(|(c, _)| matches!(c, Command::Prints { .. })));
+    }
+
+    #[test]
+    fn coming_into_the_village_every_villager_runs_from_them_and_the_bell_rings() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.creatures_near = vec![
+            crate::memory::Creature {
+                id: 9,
+                kind: "villager".to_string(),
+                pos: [6.5, 64.0, 0.5],
+                ..Default::default()
+            },
+            crate::memory::Creature {
+                id: 10,
+                kind: "cow".to_string(),
+                pos: [4.5, 64.0, 0.5],
+                ..Default::default()
+            },
+        ];
+        memory.scanned = vec![("minecraft:bell".to_string(), [20, 64, 3])];
+        let event = find("villagers_flee_you").unwrap();
+        let bell = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(bell, Some([20, 64, 3]));
+        let made = commands(event, bell, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Panic { entities, .. }, 0), (Command::ToggleBlock { pos, .. }, 10)]
+                if entities == &vec![9] && *pos == [20, 64, 3]),
+            "{made:?}"
+        );
     }
 }

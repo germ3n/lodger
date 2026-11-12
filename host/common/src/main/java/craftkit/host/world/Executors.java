@@ -126,6 +126,7 @@ public final class Executors {
 				case "take_up" -> takeUp(level, command, id, data, context);
 				case "snap_branch" -> snapBranch(level, command, id, context);
 				case "fell_tree" -> fellTree(level, command, id, context);
+				case "panic" -> panic(level, command, id, context);
 				case "drop_kept" -> dropKept(level, command, id, data);
 				case "rename_item" -> renameItem(level, command, id);
 				case "sign_book" -> signBook(level, command, id);
@@ -1896,6 +1897,30 @@ public final class Executors {
 		into.setChanged();
 
 		return report(id, true, "");
+	}
+
+	/**
+	 * Villagers in a panic, running from the player (ABI 54): each remembers it was hurt by them
+	 * for the time, which their brain flees from as from a zombie. Only the memory: no hurt, so
+	 * no gossip and no golem's anger.
+	 */
+	private static JsonObject panic(ServerLevel level, JsonObject command, long id, Context context) {
+		ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+		if (player == null) {
+			return report(id, false, "the player is not here");
+		}
+		long ticks = (long) (Math.min(command.get("seconds").getAsFloat(), 120) * 20);
+		int panicked = 0;
+		for (JsonElement each : command.getAsJsonArray("entities")) {
+			if (level.getEntity(each.getAsInt()) instanceof net.minecraft.world.entity.npc.villager.AbstractVillager villager) {
+				var brain = villager.getBrain();
+				brain.setMemoryWithExpiry(net.minecraft.world.entity.ai.memory.MemoryModuleType.HURT_BY_ENTITY, player, ticks);
+				brain.setMemoryWithExpiry(net.minecraft.world.entity.ai.memory.MemoryModuleType.HURT_BY, level.damageSources().mobAttack(player), ticks);
+				panicked++;
+			}
+		}
+
+		return panicked > 0 ? report(id, true, "") : report(id, false, "none of them here");
 	}
 
 	/**

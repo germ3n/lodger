@@ -2002,6 +2002,11 @@ The `[x]` lines above, summed up by day:
   `EdgeTest`, the batch-16 test checks `shove_far`'s six. Was: one push for stages four and five,
   three blocks at most.
 
+- [x] **The villagers flee** (`docs/events_todo.md`, 91): `villagers_flee_you`, stages 4 and 5,
+  walking into the village (`Memory::entering_village`): every villager near runs from them a
+  minute (`panic`, ABI 54: the memory of a hurt alone, no gossip, no golem) and the bell rings, last.
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

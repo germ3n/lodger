@@ -620,6 +620,15 @@ pub enum Command {
         most: u32,
         keep: String,
     },
+    /// The villagers `entities` run from `player` for `seconds`, as from a zombie, in a panic
+    /// (they think it hurt them; no reputation is lost, no golem set on them). Refused with
+    /// none of them here. ABI 54.
+    Panic {
+        id: u64,
+        player: u32,
+        entities: Vec<u32>,
+        seconds: f32,
+    },
     /// The tree whose trunk rises from `trunk` comes down toward `toward`: each log above the
     /// stump (the lowest log, left standing) falls as a block, laid along the ground the way it
     /// falls, a crash as it goes; its leaves left to fall as leaves do. Never a log landed within
@@ -1396,6 +1405,7 @@ impl Command {
             | Command::TakeUp { id, .. }
             | Command::SnapBranch { id, .. }
             | Command::FellTree { id, .. }
+            | Command::Panic { id, .. }
             | Command::DropKept { id, .. }
             | Command::SkipTime { id, .. }
             | Command::HoldContainer { id, .. }

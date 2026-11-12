@@ -7,6 +7,24 @@ use craftkit::world::BlockPos;
 use crate::memory::{block_of, distance, Creature, Memory};
 
 impl Memory {
+    /// Whether they are walking into the village: its middle within forty blocks and nearer as
+    /// they go, a villager near them.
+    pub fn entering_village(&self) -> bool {
+        self.feature("village")
+            .is_some_and(|v| self.approaching(v.pos, 40.0))
+            && !self.villagers_near().is_empty()
+    }
+
+    /// The villagers within thirty-two blocks of them, by entity id.
+    pub fn villagers_near(&self) -> Vec<u32> {
+        self.last
+            .creatures_near
+            .iter()
+            .filter(|c| c.kind == "villager")
+            .map(|c| c.id)
+            .collect()
+    }
+
     /// The village's middle, from the surroundings.
     pub fn village_middle(&self) -> Option<BlockPos> {
         self.feature("village").map(|v| v.pos)

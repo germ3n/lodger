@@ -262,6 +262,9 @@ pub enum Need {
     LeavingTheWoods,
     /// The biome they stand in lies under snow (`trees::snowy`).
     SnowyHere,
+    /// Walking into the village: within forty blocks of its middle and coming nearer, villagers
+    /// near them.
+    EnteringVillage,
 }
 
 impl Need {
@@ -339,6 +342,7 @@ impl Need {
                 | Need::TakenUpDue
                 | Need::LeavingTheWoods
                 | Need::SnowyHere
+                | Need::EnteringVillage
         )
     }
 
@@ -462,6 +466,7 @@ impl Need {
             Need::TakenUpDue => "nothing of theirs up there long enough".to_string(),
             Need::LeavingTheWoods => "the target is not walking out of the woods".to_string(),
             Need::SnowyHere => "no snow where they are".to_string(),
+            Need::EnteringVillage => "the target is not walking into a village".to_string(),
             Need::TargetAte => "the target has not just eaten".to_string(),
             Need::TargetApproachingDoor => "the target is not walking up to a door".to_string(),
             Need::Scanned(kind) => format!("the scan found no {kind}"),
@@ -1066,6 +1071,8 @@ pub enum Action {
     AnimalsFleeTheWoods,
     /// In snowy woods, footprints round and round one trunk.
     CirclesATree,
+    /// Coming into the village, every villager runs from them; the bell rings.
+    VillagersFleeYou,
     /// Their most valuable things, carried and in their chests, up into the sky.
     TakenUp,
     /// What it took up falls out of the sky in front of their door.
@@ -4861,6 +4868,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkyGivesBack,
         false,
     ),
+    // docs/events_todo.md, 91.
+    row(
+        "villagers_flee_you",
+        4,
+        5,
+        &[EnteringVillage],
+        3.0,
+        2,
+        Full,
+        Action::VillagersFleeYou,
+        false,
+    ),
     // docs/events_todo.md, 90.
     row(
         "circles_a_tree",
@@ -6003,6 +6022,7 @@ impl Event {
             | Action::TreeToTree
             | Action::TheTreeLine
             | Action::AnimalsFleeTheWoods
+            | Action::VillagersFleeYou
             | Action::SnowballThrown
             | Action::RaisesTheirSword
             | Action::HostilesStare
@@ -6086,6 +6106,9 @@ impl Event {
             }
             "while_unseen" => "set the figure behind them, coming on only while they do not look",
             "drawn_to_the_light" => "draw a figure out of the dark to the light they carry",
+            "villagers_flee_you" => {
+                "make every villager run from them as they come into the village"
+            }
             "circles_a_tree" => "leave footprints round and round a tree in the snow",
             "animals_flee_the_woods" => {
                 "send the animals running out of the woods past them, from something"
