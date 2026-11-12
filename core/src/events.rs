@@ -1312,6 +1312,8 @@ pub enum Action {
     FarEndOfTheBridge,
     /// In the End, their name from the void below them in the subtitles, once.
     NameFromTheVoid,
+    /// In the End, the figure standing on nothing out over the void, facing them.
+    StandingOnTheVoid,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8247,6 +8249,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::NameFromTheVoid,
         false,
     ),
+    // docs/events_todo.md, 306: the figure stands on nothing over the void, facing them.
+    row(
+        "standing_on_the_void",
+        5,
+        5,
+        &[InEnd],
+        3.0,
+        2,
+        Full,
+        Action::StandingOnTheVoid,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8903,6 +8917,7 @@ impl Event {
             | Action::PortalWeeps
             | Action::StandingInThePortal
             | Action::FarEndOfTheBridge
+            | Action::StandingOnTheVoid
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -9516,6 +9531,7 @@ impl Event {
             "standing_in_the_portal" => "stand the figure in the portal they came through",
             "far_end_of_the_bridge" => "stand the figure at the far end of the fortress bridge",
             "name_from_the_void" => "call their name from the void below them",
+            "standing_on_the_void" => "stand the figure on nothing over the void",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

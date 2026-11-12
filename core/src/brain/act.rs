@@ -898,6 +898,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::StandingInThePortal
         | Action::FarEndOfTheBridge
         | Action::NameFromTheVoid
+        | Action::StandingOnTheVoid
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10308,6 +10309,27 @@ pub fn commands(
                 0,
             )]
         }
+        // docs/events_todo.md, 306.
+        Action::StandingOnTheVoid => {
+            // Outward from the End's middle, where an island's edge gives on to the void.
+            let p = memory.last.pos;
+            let far = (p[0] * p[0] + p[2] * p[2]).sqrt().max(1.0);
+            let out = [p[0] / far, p[2] / far];
+            let at = [
+                (p[0] + out[0] * 18.0).floor() as i32,
+                p[1].floor() as i32 - 1,
+                (p[2] + out[1] * 18.0).floor() as i32,
+            ];
+            let mut shown = figure_shown(ids, memory, target, at, 40.0, false);
+            if let Command::Figure {
+                once_seen, held, ..
+            } = &mut shown
+            {
+                *once_seen = true;
+                *held = ItemStack::default();
+            }
+            vec![(shown, 0)]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14190,6 +14212,7 @@ mod tests {
                 || event.id == "leather_dyed"
                 // In the Nether or the End, whose mobs this memory has not: their own tests.
                 || event.id == "piglins_stare"
+                || event.id == "standing_on_the_void"
                 || event.id == "name_from_the_void"
                 || event.id == "far_end_of_the_bridge"
                 || event.id == "standing_in_the_portal"
@@ -22564,6 +22587,18 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, pos: Some(p), detail, .. }, 0)] if hint == "name_called" && p[1] == 36 && detail == "Steve"),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn standing_on_the_void_stands_outward_from_the_middle() {
+        let mut memory = rich_memory();
+        memory.last.pos = [100.0, 60.0, 0.0];
+        let event = find("standing_on_the_void").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { pos, once_seen: true, .. }, 0)] if pos[0] == 118.5 && pos[1] == 60.0),
             "{made:?}"
         );
     }
