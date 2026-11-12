@@ -1092,6 +1092,58 @@ Lost, or nothing of it able or affordable, the scene goes on at its own pace, so
 halfway and come back. In the Nether and the End an open scene's next step comes about every
 twenty-five seconds rather than five minutes, at half its cost when counted at home.
 
+**Forks.** Chains whose first step holds the same event are branches of one trigger (owner:
+"multiple possible chains to go down per trigger ... yes yes a fork"): the trigger opens one of
+them, picked from those not yet run in the stay and varying with the day and how much has
+happened, none while one of them is open; landing again after, it may go down another. A branch
+that is a scene rolls its next step straight on, as any scene does. Forty-four branches go down
+other ways from the chains' triggers:
+
+- **The glass knock.** (a scene) `window_tap` → `knock` → `knock_heavy` → `door_wont_open`.
+- **The steps behind.** (a scene) `late_steps` → `item_break_behind` → `armour_behind` → `panting_behind`.
+- **The dragging.** (a scene) `rattling_round_the_house` → `chains_dragging` → `scratching` → `door_scratch`.
+- **The archer.** (a scene) `arrow_near` → `arrow_hit` → `arrow_in_the_door` → `raises_their_sword`.
+- **The stalker.** (a scene) `bush_rustles` → `snipping_in_the_dark` → `sniffing` → `hunted`.
+- **The wall breaks.** (a scene) `breathing_in_the_wall` → `digging_under_the_floor` → `bubbling_under` → `cracks_in_the_wall`.
+- **The flooding.** (a scene) `bubbling_under` → `water_where_none` → `ominous_hum` → `sculk_trail`.
+- **The loft.** (a scene) `steps_above` → `scratching` → `trapdoor_taps` → `ceiling_crawl`.
+- **The ambush.** (a scene) `creeper_behind` → `arrow_near` → `vex_single` → `vex_strikes`.
+- **The failing.** (a scene) `hotbar_slip` → `hearts_drop` → `xp_slips` → `false_death`.
+- **The nether watchers.** (a scene) `piglins_stare` → `nether_roof_steps` → `zombified_follow` → `far_end_of_the_bridge`.
+- **The end closes.** (a scene) `endermen_turn_away` → `the_dragon_growls` → `end_goes_quiet` → `standing_on_the_void`.
+- **The dark circuit.** (a scene) `lever_click` → `dead_redstone` → `lights_fail` → `lights_out`.
+- **The deep tunnel.** (a scene) `mining_sounds` → `echo_steps` → `humming_ahead` → `shriek_below`.
+- **The burning.** (a scene) `lava_goes_still` → `lightning_below` → `blaze_ring` → `portal_goes_out`.
+- **The mist figure.** `mist` → `fog_close` → `figure_window` → `in_doorway`.
+- **The storm.** `thunder_clear` → `lightning_silent` → `boom_far` → `falls_from_the_sky`.
+- **The meal.** `cook_one` → `late_eating` → `eats_at_their_chest` → `at_their_table`.
+- **The wilting.** `plant_flower` → `flowers_wilted` → `pumpkin_face` → `scarecrow`.
+- **The marked flock.** `sheep_dyed` → `named_animal` → `warped_animal` → `animals_turn`.
+- **The drift.** `boat_moved` → `boat_waiting` → `on_the_water` → `swims_beneath`.
+- **The still water.** `fish_on_line` → `ripples` → `across_water` → `reflection`.
+- **The reader.** `lectern_page` → `page_turn` → `lectern_notes` → `figure_at_the_lectern`.
+- **The counting.** `sign_word` → `sign_with_coords` → `kill_sign` → `head_on_post`.
+- **The guest.** `tab_entry` → `joined` → `says_first` → `your_voice`.
+- **The bells.** `disc_phantom` → `note_tune` → `bell_rings` → `the_count`.
+- **The thrown.** `brewing_done` → `splash_dark` → `potion_at_the_window` → `their_own_potion`.
+- **The paintings.** `frame_rotate` → `painting_flip` → `painting_change` → `frame_emptied`.
+- **The old portal.** `portal_sound` → `someone_went_through` → `ruined_portal_glows` → `portal_lit`.
+- **The snow prints.** `ice_cracks` → `snow_cleared` → `prints_around_the_house` → `snow_shape`.
+- **The canopy.** `peeks_from_the_trees` → `crouched_behind_a_tree` → `face_in_the_canopy` → `path_through_the_trees`.
+- **The blazed way.** `blazed_trees` → `trail` → `trail_in` → `prints_to_the_cave`.
+- **The shunned.** `trades_refused` → `villager_word` → `villager_named` → `villagers_flee_you`.
+- **The empty village.** `village_lantern` → `village_doors` → `village_abandoned` → `villager_collapses`.
+- **The far sky.** `witch_laughs` → `boom_far` → `happy_ghast_overhead` → `falls_from_the_sky`.
+- **The bloom.** `eyeblossoms_open` → `fireflies_go_out` → `red_petals` → `creaking_behind`.
+- **The dust.** `cobwebs` → `bats_in_the_house` → `pet_stares_at_wall` → `cold_house`.
+- **The vault.** `vault_opens_by_the_bed` → `ominous_hum` → `bed_breaks` → `shot_in_bed`.
+- **The other room.** `sweeping_next_room` → `furniture_shifted` → `carpet_shift` → `water_where_none`.
+- **The wrong way.** `compass_points` → `figure_on_map` → `breadcrumbs` → `eye_turns_home`.
+- **The souls.** `home_through_the_portal` → `souls_follow` → `portal_weeps` → `standing_in_the_portal`.
+- **The ship.** `shulkers_open` → `chorus_blooms` → `end_sky_face` → `elytra_at_home`.
+- **The fortress halls.** `back_to_the_wall` → `zombified_follow` → `nether_roof_steps` → `standing_in_the_portal`.
+- **The long night.** `drawn_to_the_light` → `torch_ring` → `stone_circle` → `ring_of_figures`.
+
 A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
 menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
 tests check that a stay with the rule brain walks at least two chains end to end and that no

@@ -3260,6 +3260,14 @@ The `[x]` lines above, summed up by day:
   (`SCENE_CHANCE_A_SECOND`, `Elsewhere::scene_next`), half its cost at home. Tests: one in
   `chains`, one in the brain, one in `elsewhere`. Was: every chain at the menu's pace.
 
+- [x] **Forks** (owner: "add multiple possible chains to go down per trigger ... fork/branches
+  yes", and "have the re-roll be possible with forks, the immediate one"): chains sharing a first
+  event are branches; a trigger opens one of them (`Memory::open_branch`, `branch_pick`), none
+  while one is open, another when it lands again after; a scene branch rolls straight on. Forty-
+  four branches down the triggers' other ways, fifteen of them scenes. Tests: one in `chains`
+  (one branch, none while open, the other next, both over stays), the counts now 119 and 27
+  scenes. Was: every chain an event began opened at once.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

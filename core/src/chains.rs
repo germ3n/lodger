@@ -36,6 +36,16 @@ pub struct Chain {
     pub scene: bool,
 }
 
+/// Which of a trigger's branches opens: the event, the day and how much has happened mixed, so
+/// the same trigger goes down different branches in different stays and moments.
+fn branch_pick(event: &str, day: f32, done: usize) -> usize {
+    let mut h: u64 = (day.to_bits() as u64) ^ (done as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+    for b in event.bytes() {
+        h = h.wrapping_mul(0x0100_0000_01B3).wrapping_add(b as u64);
+    }
+    (h ^ (h >> 29)) as usize
+}
+
 /// The chance a scene's next step is rolled straight on, once a step of it lands.
 pub const SCENE_CHANCE: f64 = 0.6;
 /// How soon a scene's next step comes, the roll won: ten seconds to a minute, ticks.
@@ -912,6 +922,446 @@ pub const CHAINS: &[Chain] = &[
         ],
         scene: false,
     },
+    Chain {
+        id: "the_glass_knock",
+        steps: &[
+            step(&["window_tap"], 0.0, Always),
+            step(&["knock"], 3.0, Always),
+            step(&["knock_heavy"], 3.0, Always),
+            step(&["door_wont_open"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_steps_behind",
+        steps: &[
+            step(&["late_steps"], 0.0, Always),
+            step(&["item_break_behind"], 3.0, Always),
+            step(&["armour_behind"], 3.0, Always),
+            step(&["panting_behind"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_dragging",
+        steps: &[
+            step(&["rattling_round_the_house"], 0.0, Always),
+            step(&["chains_dragging"], 3.0, Always),
+            step(&["scratching"], 3.0, Always),
+            step(&["door_scratch"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_archer",
+        steps: &[
+            step(&["arrow_near"], 0.0, Always),
+            step(&["arrow_hit"], 3.0, Always),
+            step(&["arrow_in_the_door"], 3.0, Always),
+            step(&["raises_their_sword"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_stalker",
+        steps: &[
+            step(&["bush_rustles"], 0.0, Always),
+            step(&["snipping_in_the_dark"], 3.0, Always),
+            step(&["sniffing"], 3.0, Always),
+            step(&["hunted"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_wall_breaks",
+        steps: &[
+            step(&["breathing_in_the_wall"], 0.0, Always),
+            step(&["digging_under_the_floor"], 3.0, Always),
+            step(&["bubbling_under"], 3.0, Always),
+            step(&["cracks_in_the_wall"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_flooding",
+        steps: &[
+            step(&["bubbling_under"], 0.0, Always),
+            step(&["water_where_none"], 3.0, Always),
+            step(&["ominous_hum"], 3.0, Always),
+            step(&["sculk_trail"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_loft",
+        steps: &[
+            step(&["steps_above"], 0.0, Always),
+            step(&["scratching"], 3.0, Always),
+            step(&["trapdoor_taps"], 3.0, Always),
+            step(&["ceiling_crawl"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_ambush",
+        steps: &[
+            step(&["creeper_behind"], 0.0, Always),
+            step(&["arrow_near"], 3.0, Always),
+            step(&["vex_single"], 3.0, Always),
+            step(&["vex_strikes"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_failing",
+        steps: &[
+            step(&["hotbar_slip"], 0.0, Always),
+            step(&["hearts_drop"], 3.0, Always),
+            step(&["xp_slips"], 3.0, Always),
+            step(&["false_death"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_nether_watchers",
+        steps: &[
+            step(&["piglins_stare"], 0.0, Always),
+            step(&["nether_roof_steps"], 3.0, Always),
+            step(&["zombified_follow"], 3.0, Always),
+            step(&["far_end_of_the_bridge"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_end_closes",
+        steps: &[
+            step(&["endermen_turn_away"], 0.0, Always),
+            step(&["the_dragon_growls"], 3.0, Always),
+            step(&["end_goes_quiet"], 3.0, Always),
+            step(&["standing_on_the_void"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_dark_circuit",
+        steps: &[
+            step(&["lever_click"], 0.0, Always),
+            step(&["dead_redstone"], 3.0, Always),
+            step(&["lights_fail"], 3.0, Always),
+            step(&["lights_out"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_deep_tunnel",
+        steps: &[
+            step(&["mining_sounds"], 0.0, Always),
+            step(&["echo_steps"], 3.0, Always),
+            step(&["humming_ahead"], 3.0, Always),
+            step(&["shriek_below"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_burning",
+        steps: &[
+            step(&["lava_goes_still"], 0.0, Always),
+            step(&["lightning_below"], 3.0, Always),
+            step(&["blaze_ring"], 3.0, Always),
+            step(&["portal_goes_out"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_mist_figure",
+        steps: &[
+            step(&["mist"], 0.0, Always),
+            step(&["fog_close"], 3.0, Always),
+            step(&["figure_window"], 3.0, Always),
+            step(&["in_doorway"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_storm",
+        steps: &[
+            step(&["thunder_clear"], 0.0, Always),
+            step(&["lightning_silent"], 3.0, Always),
+            step(&["boom_far"], 3.0, Always),
+            step(&["falls_from_the_sky"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_meal",
+        steps: &[
+            step(&["cook_one"], 0.0, Always),
+            step(&["late_eating"], 3.0, Always),
+            step(&["eats_at_their_chest"], 3.0, Always),
+            step(&["at_their_table"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_wilting",
+        steps: &[
+            step(&["plant_flower"], 0.0, Always),
+            step(&["flowers_wilted"], 3.0, Always),
+            step(&["pumpkin_face"], 3.0, Always),
+            step(&["scarecrow"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_marked_flock",
+        steps: &[
+            step(&["sheep_dyed"], 0.0, Always),
+            step(&["named_animal"], 3.0, Always),
+            step(&["warped_animal"], 3.0, Always),
+            step(&["animals_turn"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_drift",
+        steps: &[
+            step(&["boat_moved"], 0.0, Always),
+            step(&["boat_waiting"], 3.0, Always),
+            step(&["on_the_water"], 3.0, Always),
+            step(&["swims_beneath"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_still_water",
+        steps: &[
+            step(&["fish_on_line"], 0.0, Always),
+            step(&["ripples"], 3.0, Always),
+            step(&["across_water"], 3.0, Always),
+            step(&["reflection"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_reader",
+        steps: &[
+            step(&["lectern_page"], 0.0, Always),
+            step(&["page_turn"], 3.0, Always),
+            step(&["lectern_notes"], 3.0, Always),
+            step(&["figure_at_the_lectern"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_counting",
+        steps: &[
+            step(&["sign_word"], 0.0, Always),
+            step(&["sign_with_coords"], 3.0, Always),
+            step(&["kill_sign"], 3.0, Always),
+            step(&["head_on_post"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_guest",
+        steps: &[
+            step(&["tab_entry"], 0.0, Always),
+            step(&["joined"], 3.0, Always),
+            step(&["says_first"], 3.0, Always),
+            step(&["your_voice"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_bells",
+        steps: &[
+            step(&["disc_phantom"], 0.0, Always),
+            step(&["note_tune"], 3.0, Always),
+            step(&["bell_rings"], 3.0, Always),
+            step(&["the_count"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_thrown",
+        steps: &[
+            step(&["brewing_done"], 0.0, Always),
+            step(&["splash_dark"], 3.0, Always),
+            step(&["potion_at_the_window"], 3.0, Always),
+            step(&["their_own_potion"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_paintings",
+        steps: &[
+            step(&["frame_rotate"], 0.0, Always),
+            step(&["painting_flip"], 3.0, Always),
+            step(&["painting_change"], 3.0, Always),
+            step(&["frame_emptied"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_old_portal",
+        steps: &[
+            step(&["portal_sound"], 0.0, Always),
+            step(&["someone_went_through"], 3.0, Always),
+            step(&["ruined_portal_glows"], 3.0, Always),
+            step(&["portal_lit"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_snow_prints",
+        steps: &[
+            step(&["ice_cracks"], 0.0, Always),
+            step(&["snow_cleared"], 3.0, Always),
+            step(&["prints_around_the_house"], 3.0, Always),
+            step(&["snow_shape"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_canopy",
+        steps: &[
+            step(&["peeks_from_the_trees"], 0.0, Always),
+            step(&["crouched_behind_a_tree"], 3.0, Always),
+            step(&["face_in_the_canopy"], 3.0, Always),
+            step(&["path_through_the_trees"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_blazed_way",
+        steps: &[
+            step(&["blazed_trees"], 0.0, Always),
+            step(&["trail"], 3.0, Always),
+            step(&["trail_in"], 3.0, Always),
+            step(&["prints_to_the_cave"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_shunned",
+        steps: &[
+            step(&["trades_refused"], 0.0, Always),
+            step(&["villager_word"], 3.0, Always),
+            step(&["villager_named"], 3.0, Always),
+            step(&["villagers_flee_you"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_empty_village",
+        steps: &[
+            step(&["village_lantern"], 0.0, Always),
+            step(&["village_doors"], 3.0, Always),
+            step(&["village_abandoned"], 3.0, Always),
+            step(&["villager_collapses"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_far_sky",
+        steps: &[
+            step(&["witch_laughs"], 0.0, Always),
+            step(&["boom_far"], 3.0, Always),
+            step(&["happy_ghast_overhead"], 3.0, Always),
+            step(&["falls_from_the_sky"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_bloom",
+        steps: &[
+            step(&["eyeblossoms_open"], 0.0, Always),
+            step(&["fireflies_go_out"], 3.0, Always),
+            step(&["red_petals"], 3.0, Always),
+            step(&["creaking_behind"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_dust",
+        steps: &[
+            step(&["cobwebs"], 0.0, Always),
+            step(&["bats_in_the_house"], 3.0, Always),
+            step(&["pet_stares_at_wall"], 3.0, Always),
+            step(&["cold_house"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_vault",
+        steps: &[
+            step(&["vault_opens_by_the_bed"], 0.0, Always),
+            step(&["ominous_hum"], 3.0, Always),
+            step(&["bed_breaks"], 3.0, Always),
+            step(&["shot_in_bed"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_other_room",
+        steps: &[
+            step(&["sweeping_next_room"], 0.0, Always),
+            step(&["furniture_shifted"], 3.0, Always),
+            step(&["carpet_shift"], 3.0, Always),
+            step(&["water_where_none"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_wrong_way",
+        steps: &[
+            step(&["compass_points"], 0.0, Always),
+            step(&["figure_on_map"], 3.0, Always),
+            step(&["breadcrumbs"], 3.0, Always),
+            step(&["eye_turns_home"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_souls",
+        steps: &[
+            step(&["home_through_the_portal"], 0.0, Always),
+            step(&["souls_follow"], 3.0, Always),
+            step(&["portal_weeps"], 3.0, Always),
+            step(&["standing_in_the_portal"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_ship",
+        steps: &[
+            step(&["shulkers_open"], 0.0, Always),
+            step(&["chorus_blooms"], 3.0, Always),
+            step(&["end_sky_face"], 3.0, Always),
+            step(&["elytra_at_home"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_fortress_halls",
+        steps: &[
+            step(&["back_to_the_wall"], 0.0, Always),
+            step(&["zombified_follow"], 3.0, Always),
+            step(&["nether_roof_steps"], 3.0, Always),
+            step(&["standing_in_the_portal"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_long_night",
+        steps: &[
+            step(&["drawn_to_the_light"], 0.0, Always),
+            step(&["torch_ring"], 3.0, Always),
+            step(&["stone_circle"], 3.0, Always),
+            step(&["ring_of_figures"], 3.0, Always),
+        ],
+        scene: false,
+    },
 ];
 
 /// How much likelier an open chain's next step is on the menu.
@@ -981,22 +1431,46 @@ impl Memory {
                 self.chains_done.push(id);
             }
         }
-        for chain in CHAINS {
-            let begun = self.chains.iter().any(|o| o.id == chain.id)
-                || self.chains_done.iter().any(|d| d == chain.id);
-            if !begun && chain.steps[0].events.contains(&event) {
-                if chain.scene {
-                    self.scene_moved.push(chain.id);
-                }
-                self.chains.push(Open {
-                    id: chain.id.to_string(),
-                    landed: vec![0],
-                    since: day,
-                    landed_day: day,
-                    last: 0,
-                });
-            }
+        self.open_branch(event, day, CHAINS);
+    }
+
+    /// The chain an event begins. The chains whose first step it is are branches of one trigger
+    /// (owner: "multiple possible chains to go down per trigger"): one of them opens, picked from
+    /// those not yet run this stay, and none while one of them is open; the trigger landing again
+    /// after, another may.
+    fn open_branch(&mut self, event: &str, day: f32, chains: &'static [Chain]) {
+        let begins_here = |c: &Chain| c.steps[0].events.contains(&event);
+        let branch_open = self.chains.iter().any(|o| {
+            chains
+                .iter()
+                .find(|c| c.id == o.id)
+                .is_some_and(&begins_here)
+        });
+        if branch_open {
+            return;
         }
+        let branches: Vec<&Chain> = chains
+            .iter()
+            .filter(|c| {
+                begins_here(c)
+                    && !self.chains.iter().any(|o| o.id == c.id)
+                    && !self.chains_done.iter().any(|d| d == c.id)
+            })
+            .collect();
+        if branches.is_empty() {
+            return;
+        }
+        let chain = branches[branch_pick(event, day, self.done.len()) % branches.len()];
+        if chain.scene {
+            self.scene_moved.push(chain.id);
+        }
+        self.chains.push(Open {
+            id: chain.id.to_string(),
+            landed: vec![0],
+            since: day,
+            landed_day: day,
+            last: 0,
+        });
     }
 
     /// The chains whose next step's moment has passed fall out; the watcher ends when they
@@ -1170,9 +1644,10 @@ mod tests {
                 }
             }
         }
-        // Five the code names (the thing, the place, the watcher, the house, the diary) and
-        // seventy drawn again over the whole catalogue (owner: "make 75 total chains").
-        assert_eq!(CHAINS.len(), 75);
+        // Five the code names (the thing, the place, the watcher, the house, the diary),
+        // seventy drawn again over the whole catalogue (owner: "make 75 total chains"), and the
+        // branches down the triggers' other ways (owner: "fork/branches yes").
+        assert_eq!(CHAINS.len(), 119);
         // No two chains alike (owner: "no duplicate chains, but an event that makes sense to be a
         // step in a chain if it already exists in another one is fine"): an event may be in
         // several, never two chains of the same events.
@@ -1198,7 +1673,7 @@ mod tests {
     #[test]
     fn the_scenes_are_the_short_beats_and_a_step_of_one_is_noted() {
         let scenes: Vec<&str> = CHAINS.iter().filter(|c| c.scene).map(|c| c.id).collect();
-        assert_eq!(scenes.len(), 12, "{scenes:?}");
+        assert_eq!(scenes.len(), 27, "{scenes:?}");
         assert!(CHAINS
             .iter()
             .filter(|c| c.scene)
@@ -1220,6 +1695,51 @@ mod tests {
             memory.scene_moved.is_empty(),
             "a chain at its own pace is not a scene"
         );
+    }
+
+    #[test]
+    fn a_trigger_opens_one_of_its_branches_and_another_when_it_comes_again() {
+        static BRANCHES: &[Chain] = &[
+            Chain {
+                id: "branch_a",
+                steps: &[
+                    step(&["knock"], 0.0, Always),
+                    step(&["door_scratch"], 3.0, Always),
+                ],
+                scene: false,
+            },
+            Chain {
+                id: "branch_b",
+                steps: &[
+                    step(&["knock"], 0.0, Always),
+                    step(&["knock_heavy"], 3.0, Always),
+                ],
+                scene: false,
+            },
+        ];
+        let mut memory = Memory::default();
+        memory.open_branch("knock", 1.0, BRANCHES);
+        assert_eq!(memory.chains.len(), 1, "one branch, not both");
+        let first = memory.chains[0].id.clone();
+        memory.open_branch("knock", 1.5, BRANCHES);
+        assert_eq!(memory.chains.len(), 1, "none while one is open");
+        memory.chains.clear();
+        memory.chains_done.push(first.clone());
+        memory.open_branch("knock", 2.0, BRANCHES);
+        assert_eq!(memory.chains.len(), 1);
+        assert_ne!(
+            memory.chains[0].id, first,
+            "the other, the trigger come again"
+        );
+        // Over many stays the trigger goes down both.
+        let picked: std::collections::HashSet<String> = (0..20)
+            .map(|d| {
+                let mut m = Memory::default();
+                m.open_branch("knock", d as f32 * 0.37, BRANCHES);
+                m.chains[0].id.clone()
+            })
+            .collect();
+        assert_eq!(picked.len(), 2, "{picked:?}");
     }
 
     #[test]
