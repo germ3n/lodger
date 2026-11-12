@@ -1096,8 +1096,9 @@ twenty-five seconds rather than five minutes, at half its cost when counted at h
 "multiple possible chains to go down per trigger ... yes yes a fork"): the trigger opens one of
 them, picked from those not yet run in the stay and varying with the day and how much has
 happened, none while one of them is open; landing again after, it may go down another. A branch
-that is a scene rolls its next step straight on, as any scene does. Forty-four branches go down
-other ways from the chains' triggers:
+that is a scene rolls its next step straight on, as any scene does. A hundred and fourteen
+branches (owner: "make like 150-200 total ... however many make sense"), a hundred and
+eighty-nine chains in all, seventy-five triggers going down two ways or three:
 
 - **The glass knock.** (a scene) `window_tap` → `knock` → `knock_heavy` → `door_wont_open`.
 - **The steps behind.** (a scene) `late_steps` → `item_break_behind` → `armour_behind` → `panting_behind`.
@@ -1143,13 +1144,83 @@ other ways from the chains' triggers:
 - **The ship.** `shulkers_open` → `chorus_blooms` → `end_sky_face` → `elytra_at_home`.
 - **The fortress halls.** `back_to_the_wall` → `zombified_follow` → `nether_roof_steps` → `standing_in_the_portal`.
 - **The long night.** `drawn_to_the_light` → `torch_ring` → `stone_circle` → `ring_of_figures`.
+- **The climber.** (a scene) `window_tap` → `handprints` → `eyes_in_the_dark` → `climbing_the_house`.
+- **The turn.** (a scene) `late_steps` → `footsteps_follow` → `hand_on_shoulder` → `gasp_when_turning`.
+- **The pack.** (a scene) `creeper_behind` → `the_killer_rabbit` → `wolves_circle` → `daylight_phantom`.
+- **The breakdown.** (a scene) `hotbar_slip` → `static` → `border_closes` → `in_the_screenshot`.
+- **The red fog.** `mist` → `red_mist` → `darkness` → `eyes_in_the_dark`.
+- **The cold hearth.** `cook_one` → `cold_furnace` → `cold_crackle` → `put_out_campfire`.
+- **The seedlings.** `plant_flower` → `replant_other` → `tree_grown` → `sapling`.
+- **The lost sheep.** `sheep_dyed` → `snipping_in_the_dark` → `animal_gone` → `pale_horse_in_your_pen`.
+- **The line pulled.** `fish_on_line` → `fishing_figure` → `bucket_fish_changed` → `beam_from_the_water`.
+- **The written.** `lectern_page` → `book_word` → `page_in_your_book` → `letter_in_chest`.
+- **The connection.** `tab_entry` → `tab_entry_stays` → `ping_fades` → `left`.
+- **The bats.** (a scene) `steps_above` → `wings_in_the_room` → `bats_in_the_house` → `prints_on_the_ceiling`.
+- **The wrong stars.** `thunder_clear` → `red_rain` → `stars_out` → `moon_wrong`.
+- **The howls.** `witch_laughs` → `doors_slam_far` → `wolf_far` → `rider_on_the_ridge`.
+- **The pale field.** `eyeblossoms_open` → `pale_moss_creeps` → `creaking_in_the_field` → `face_in_the_canopy`.
+- **The sleeper.** `vault_opens_by_the_bed` → `under_the_bed` → `snoring_beside` → `lies_beside`.
+- **The crossing over.** `portal_sound` → `portal_lit` → `standing_in_the_portal` → `name_in_netherrack`.
+- **The traded back.** `piglins_stare` → `their_door_behind` → `home_through_the_portal` → `barter_from_home`.
+- **The wings.** `endermen_turn_away` → `second_wings` → `prints_off_the_edge` → `elytra_at_home`.
+- **The slow lava.** (a scene) `lava_goes_still` → `souls_follow` → `vines_reach` → `magma_cubes_settle`.
+- **The fortress fire.** (a scene) `back_to_the_wall` → `their_torch_ahead` → `blaze_ring` → `lightning_below`.
+- **The stones.** `out_of_place` → `stone_circle` → `cairn` → `grave`.
+- **The frozen.** `stare` → `hostiles_stare` → `all_freeze` → `held_breath`.
+- **The eggs.** `egg_on_bed` → `chicken_lays` → `eggs_to_door` → `animal_indoors`.
+- **The last death.** `death_light` → `death_message` → `where_you_died` → `respawn_its_bed`.
+- **The wet.** `ripples` → `wet_steps` → `water_where_none` → `swims_beneath`.
+- **The old cave.** `lantern_ahead` → `cave_air` → `bones_underfoot` → `drops_from_the_ceiling`.
+- **The crossers.** `crossing_ahead` → `jumping_far` → `across_water` → `on_the_peak`.
+- **The copy moves.** `figure_mirror` → `copy_crouch` → `only_in_third_person` → `wears_your_face`.
+- **The crowd.** `scarecrow` → `pumpkin_face` → `animals_turn` → `figure_crowd`.
+- **The stacks.** `shuffle_chest` → `swap_stacks` → `stack_split` → `fill_gap`.
+- **The shrieking.** (a scene) `bubbling_under` → `bones_underfoot` → `shriek_below` → `sculk_creeps`.
+- **The dead wires.** `dead_redstone` → `piston_once` → `lamps_blink` → `bulbs_clicking`.
+- **The your voice.** `says_back` → `whisper_from_you` → `your_voice` → `tab_entry_stays`.
+- **The blinking.** (a scene) `flicker` → `sun_blink` → `lightning_silent` → `lights_fail`.
+- **The villager dying.** `villager_at_door` → `villager_word` → `villager_flees_in` → `villager_collapses`.
+- **The graves.** `kill_sign` → `grave` → `grave_each` → `your_grave`.
+- **The pet knows.** `pet_growl` → `pet_stares_at_wall` → `pet_follows` → `pet_whines_at_door`.
+- **The unwatched.** (a scene) `peeks_from_the_trees` → `while_unseen` → `tree_to_tree` → `the_tree_line`.
+- **The turned away.** `trades_refused` → `villager_spins` → `villagers_flee_you` → `villager_stabs`.
+- **The one inside.** `prints_around_the_house` → `footsteps_follow` → `door_scratch` → `in_doorway`.
+- **The named.** `named_animal` → `animal_follows` → `animal_indoors` → `the_child_stares`.
+- **The dug.** `hole` → `cairn` → `pillar` → `stone_circle`.
+- **The filled.** `hole` → `backfill` → `digging_under_the_floor` → `bones_underfoot`.
+- **The torches.** `add_torch` → `move_light` → `torches_turn` → `torch_blue`.
+- **The torch ring.** `add_torch` → `torch_ring` → `light_taken` → `lights_out`.
+- **The chest kept.** `open_chest` → `shuffle_chest` → `chest_rattles` → `chest_wont_open`.
+- **The chest alive.** `open_chest` → `breath_in_the_chest` → `the_bell_in_the_chest` → `a_face_in_the_chest`.
+- **The noon.** `dusk_noon` → `lamps_noon` → `sun_blink` → `night_early`.
+- **The lost day.** `dusk_noon` → `stars_out` → `moon_wrong` → `lost_hour`.
+- **The unrest.** `refuse_rest` → `sleepers_wrong` → `bed_occupied` → `sleepwalk`.
+- **The woken.** `refuse_rest` → `wake` → `woke_elsewhere` → `in_your_bed`.
+- **The body.** `hunger_shake` → `heart_skip` → `hearts_drop` → `xp_slips`.
+- **The eye.** `hunger_shake` → `camera_nudge` → `fov_pull` → `only_in_third_person`.
+- **The frost.** `frost_on_the_glass` → `snow_indoors` → `ice_path` → `snowman`.
+- **The breath on glass.** `frost_on_the_glass` → `glass_rubbed` → `handprints` → `figure_window`.
+- **The copper.** `copper_golem_at_door` → `copper_ages` → `golem_statue_turns` → `bulbs_clicking`.
+- **The golem.** `copper_golem_at_door` → `golem_turned` → `village_doors` → `crafter_clicks`.
+- **The harvest.** `harvest_one` → `row_withered` → `trample` → `field_word`.
+- **The supper.** `harvest_one` → `plate_laid` → `at_their_table` → `eats_at_their_chest`.
+- **The horse.** `horse_moved` → `rides_their_horse` → `horse_balks` → `pale_horse_in_your_pen`.
+- **The open gate.** `horse_moved` → `open_gate` → `animal_gone` → `hoofbeats_circling`.
+- **The map.** `map_marked` → `figure_on_map` → `breadcrumbs` → `prints_to_the_cave`.
+- **The ore map.** `map_marked` → `ore_marked` → `mined_out` → `cave_room`.
+- **The trees.** `tree_grown` → `sapling` → `circles_a_tree` → `tree_comes_down`.
+- **The treetops.** `tree_grown` → `in_the_treetops` → `face_in_the_canopy` → `branch_snaps`.
+- **The echoes.** `cave_air` → `echo_steps` → `bones_underfoot` → `shriek_below`.
+- **The dimming.** `cave_air` → `torches_far_end` → `cave_torches_flicker` → `lights_out`.
+- **The bell.** `bell` → `bell_rings` → `the_count` → `bell_underwater`.
+- **The bell calls.** `bell` → `villager_at_door` → `village_abandoned` → `villagers_walk_out`.
 
 A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
 menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
 tests check that a stay with the rule brain walks at least two chains end to end and that no
 follow-up is ever offered with its needs unmet.
 
-**As coded (`core/src/chains.rs`).** Seventy-five, no two alike, an event in several where it fits: the seventy listed above, and the nine of the design, with
+**As coded (`core/src/chains.rs`).** A hundred and eighty-nine, no two alike, an event in several where it fits, a trigger's chains its branches: the seventy and the branches listed above, and the nine of the design, with
 the catalogue's events: the thing (`take`,
 `place_taken`, `return_taken`, `sand_gives_back` or `pot_of_returns`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
 `mined_out`), the tunnel (`mining_sounds`, `mine_beside` or `cart_overhead`, `tunnel_toward` or `iron_door_below`, `cave_room`), the

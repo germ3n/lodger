@@ -3268,6 +3268,15 @@ The `[x]` lines above, summed up by day:
   (one branch, none while open, the other next, both over stays), the counts now 119 and 27
   scenes. Was: every chain an event began opened at once.
 
+- [x] **Seventy branches more** (owner: "make like 150-200 total possible chains/forks/branches
+  ... however many make sense"): a hundred and eighty-nine chains, seventy-five triggers going
+  down two ways or three, thirty-seven of them scenes; third branches on the forks there were,
+  second ones on other chains' triggers, and new pairs on triggers no chain began with (a hole,
+  a torch, a chest opened, dusk at noon, a refused rest, a hunger shake, frost, a copper golem, a
+  harvest, a horse, a map, a tree, cave air, a bell). The triggers the tests open as one chain
+  (`take`, `light_path`, `far_figure`, `open_door`, `diary_sold`, `knock`) still open that one.
+  Tests: the chains' own, counts 189 and 37. Was: 119.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
