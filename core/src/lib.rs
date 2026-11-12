@@ -168,7 +168,7 @@ fn settings(config: &Config) -> Vec<craftkit::Setting> {
             "preset",
             "Preset",
             "What it does",
-            &["calm", "balanced", "intense", "relentless"],
+            &["calm", "balanced", "intense", "relentless", "extreme"],
             &config.preset,
         ),
         toggle(

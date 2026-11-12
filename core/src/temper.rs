@@ -9,12 +9,13 @@ use crate::config::Config;
 use crate::memory::{distance, Memory};
 use craftkit::world::{BlockPos, Event, EventKind};
 
-/// Where temper rests, by preset: calm 0.2, balanced 0.3, intense 0.4, relentless 0.5.
+/// Where temper rests, by preset: calm 0.2, balanced 0.3, intense 0.4, relentless 0.5, extreme 0.6.
 pub fn resting(config: &Config) -> f32 {
     match config.preset.as_str() {
         "calm" => 0.2,
         "intense" => 0.4,
         "relentless" => 0.5,
+        "extreme" => 0.6,
         _ => 0.3,
     }
 }

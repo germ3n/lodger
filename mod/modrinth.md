@@ -65,6 +65,7 @@ because what it does comes from what *you* did.
 | `balanced` | A stay of a few in-game weeks that builds slowly. |
 | `intense` | The default: denser, bolder, sooner. |
 | `relentless` | It moves in the moment you open the world, and something happens every evening. For people who asked. |
+| `extreme` | Something nearly every few minutes from the moment you open the world, a stage a day or two, and the death at the end. Barely a moment's peace. |
 
 You can also switch whole groups off in the settings (sounds, screen effects, the figure, chat
 lines). The settings' **All keys** tab has every option, each explained when you hover it, with a

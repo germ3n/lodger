@@ -32,35 +32,38 @@ new model size is fetched at once.
 | Key | Default | What it changes |
 | --- | --- | --- |
 | `enabled` | `true` | Whether a lodger moves into new worlds and existing ones keep theirs. `false` ends the stay in every world, where `/craftkit lodger leave` ends one gently. |
-| `preset` | `"intense"` | `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below (see [Presets](#presets)). A key the file names wins over the preset; the file written back shows the preset's values filled in. Picking another preset (on the settings screen, or in this file) sets every key a preset sets to the new preset's value, those changed by hand too, and writes the file again with them; what no preset sets (the model, the log, multiplayer) stays as it was. |
+| `preset` | `"intense"` | `calm`, `balanced`, `intense`, `relentless` or `extreme`: a set of values for the keys below (see [Presets](#presets)). A key the file names wins over the preset; the file written back shows the preset's values filled in. Picking another preset (on the settings screen, or in this file) sets every key a preset sets to the new preset's value, those changed by hand too, and writes the file again with them; what no preset sets (the model, the log, multiplayer) stays as it was. |
 | `log.decisions` | `true` | Writes every decision to `config/lodger/decisions.log`. Keep it on while developing; see [The decision log](brain.md#the-decision-log). |
 | `log.keep_mb` | `16` | The log rotates past this size, keeping one older file. |
 
 ## Presets
 
-Four ways to play, as the owner asked: how much happens, how bold it is, and what
+Five ways to play, as the owner asked: how much happens, how bold it is, and what
 is left out. `balanced` is the design as the docs describe it, and `intense` the default (owner: "make the
 default preset be the intense one"), denser and sooner; the others change
 the keys below and nothing else. The hard rules in [What it never does](good-to-know.md#what-it-never-does)
 hold under every preset; a preset turns events off, never rules.
 
-| | `calm` | `balanced` | `intense` | `relentless` |
-| --- | --- | --- | --- | --- |
-| Events a day by stage | 0.5, 1, 1.5, 2, 1 | 1, 2, 4, 6, 3 | 2, 3, 5, 8, 4 | 4, 6, 8, 12, 6 |
-| Stage lengths, least to most days | 2 to 5, up to 4 to 9 | 1 to 3, up to 3 to 7 | 1 to 2, up to 2 to 6 | 1 to 1, up to 1 to 3 |
-| Move-in after | 3 days | 3 days | 3 days | at once, as the world opens |
-| Cooldowns | doubled | as written | three quarters | halved |
-| Keeps its distance (`events.min_distance`) | 80 blocks | 64 | 48 | 32 |
-| Menu offered | 8 | 8 | 8 | 12 |
-| A small event costs (`events.small_cost`) | a whole one | a quarter | a quarter | a quarter |
-| Acts at confidence | 0.5 | 0.4 | 0.3 | 0.25 |
-| Chat and player list | off | on | on | on |
-| Left out | the sleep events (`bed_breaks`, `foot_of_bed`, `choke`, `shot_in_bed`, `burned_in_bed`, `lies_beside` and `sleepwalk` among them), the near figures, every screen glitch (`events.glitches` off), `lights_fail`, `red_rain`, `your_voice`, `knock`, `stare`, `sign_word`, `tunnel_toward` | nothing | nothing | nothing |
-| Ending | `leave`, always | by difficulty | `take` on every difficulty | `take` on every difficulty |
+| | `calm` | `balanced` | `intense` | `relentless` | `extreme` |
+| --- | --- | --- | --- | --- | --- |
+| Events a day by stage | 0.5, 1, 1.5, 2, 1 | 1, 2, 4, 6, 3 | 2, 3, 5, 8, 4 | 4, 6, 8, 12, 6 | 10, 16, 24, 32, 16 |
+| Stage lengths, least to most days | 2 to 5, up to 4 to 9 | 1 to 3, up to 3 to 7 | 1 to 2, up to 2 to 6 | 1 to 1, up to 1 to 3 | 1 to 1, up to 1 to 2 |
+| Move-in after | 3 days | 3 days | 3 days | at once, as the world opens | at once |
+| Cooldowns | doubled | as written | three quarters | halved | a fifth |
+| Keeps its distance (`events.min_distance`) | 80 blocks | 64 | 48 | 32 | 24 |
+| Plans at once, asking every | 2, 90 s | 3, 90 s | 4, 90 s | 5, 45 s | 8, 15 s |
+| Menu offered | 8 | 8 | 8 | 12 | 12 |
+| A small event costs (`events.small_cost`) | a whole one | a quarter | a quarter | a quarter | a quarter |
+| Acts at confidence | 0.5 | 0.4 | 0.3 | 0.25 | 0.15 |
+| Chat and player list | off | on | on | on | on |
+| Temper rests at | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 |
+| Left out | the sleep events (`bed_breaks`, `foot_of_bed`, `choke`, `shot_in_bed`, `burned_in_bed`, `lies_beside` and `sleepwalk` among them), the near figures, every screen glitch (`events.glitches` off), `lights_fail`, `red_rain`, `your_voice`, `knock`, `stare`, `sign_word`, `tunnel_toward` | nothing | nothing | nothing | nothing |
+| Ending | `leave`, always | by difficulty | `take` on every difficulty | `take` on every difficulty | `take` on every difficulty |
 
 So `calm` is a presence that never touches your sleep, your screen or your chat, keeps 80 blocks
 off, and leaves at the end; `relentless` is a week of something every evening and the death at
-the end whatever the difficulty. The settings page picks the preset; the file written back shows what it set.
+the end whatever the difficulty; `extreme` (owner: "many many events and such per day") is
+dozens a day from the first hour, a stage a day or two. The settings page picks the preset; the file written back shows what it set.
 
 ## Model
 
@@ -82,7 +85,7 @@ the end whatever the difficulty. The settings page picks the preset; the file wr
 | --- | --- | --- |
 | `brain.plan_every` | `90` | Seconds of the target's play between planning asks, on top of the trigger asks; 15 at least. |
 | `brain.text_temperature` | `0.8` | How freely the model writes a sign or a line: 0 is the likeliest word every time (the same moment, the same line), higher draws among the likely ones (top 90 per cent). Lowered after lines repeated. |
-| `brain.most_plans` | `3` | How many plans it holds at once; it asks again every `plan_every` while below it (`calm` 2, `intense` 4, `relentless` 5; one before, owner: "one event at a time kinda gets slow"). |
+| `brain.most_plans` | `3` | How many plans it holds at once; it asks again every `plan_every` while below it (`calm` 2, `intense` 4, `relentless` 5, `extreme` 8; one before, owner: "one event at a time kinda gets slow"). |
 | `brain.event_threshold` | `0.4` | The confidence of the model's `Should it do something soon?` answer below which the decision is `wait`. Higher is a more patient lodger. Live. |
 | `brain.react_threshold` | `0.55` | The same for the model's `Should it answer this?` after a trigger (live): below it, no answer. Reactions are cheaper to get wrong than plans, so the bar is higher. |
 | `brain.queue` | `64` | Checked (1 at least) but not read: the queue holds 64 questions whatever this says (`MAX_QUEUED` in `model/queue.rs`). A full queue refuses; the rule brain answers. |
@@ -105,7 +108,7 @@ the end whatever the difficulty. The settings page picks the preset; the file wr
 | Key | Default | What it changes |
 | --- | --- | --- |
 | `events.temper` | `true` | Whether how they treat it moves its temper (chasing the figure, breaking its lights or house, lighting or flooding its place, cursing it in chat up; building or leaving a chest at its place, watching the figure from afar, kind words down; a tenth of the way back each day), and its temper the pace: the day's events half again at the top and half at the bottom, a stage's least days halved above 0.7 and most stretched by half below 0.2, the bolder events a stage early above 0.6 and late below 0.2, three quarters of `events.min_distance` above 0.8, a fiercer fight, and the ending. It rests at 0.2 on `calm`, 0.3 on `balanced`, 0.4 on `intense`, 0.5 on `relentless`. `false` keeps it at rest. See [Provocation and temper](entity.md#provocation-and-temper). |
-| `events.min_distance` | `64` | Blocks from the target within which nothing that changes a block happens while it is in view (`calm` 80, `intense` 48, `relentless` 32; 24 before, when the owner watched torches go up from farther off). Lowering it is the one way to make the lodger bolder, and it is still bounded by the rules. |
+| `events.min_distance` | `64` | Blocks from the target within which nothing that changes a block happens while it is in view (`calm` 80, `intense` 48, `relentless` 32, `extreme` 24; 24 before, when the owner watched torches go up from farther off). Lowering it is the one way to make the lodger bolder, and it is still bounded by the rules. |
 | `events.disabled` | `[]` | Event ids the brain never offers as choices. For servers that want, say, no `take` or no `sign_word`. See [Events](entity.md#events). |
 | `events.offered` | `8` | How many eligible events the brain is offered per plan. Fewer is a more predictable lodger; more is a longer prompt. |
 | `events.cooldown_scale` | `1.0` | Multiplies every event's cooldown. `2.0` is a lodger that repeats itself half as often and so does less. |

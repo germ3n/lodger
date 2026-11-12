@@ -2339,6 +2339,13 @@ The `[x]` lines above, summed up by day:
   hostile's hit. The stages still decide what may harm, and the fight keeps its own death. Tests:
   `SpareTest`, in `stay`.
 
+- [x] **An `extreme` preset** (owner: "please add another preset, EXTREME for many many events and
+  such per day"). Was: `relentless` the most, four to twelve events a day. Now `extreme`: 10, 16,
+  24, 32 and 16 a day by stage, moving in at once, stages a day or two, cooldowns a fifth, eight
+  plans held, asking every fifteen seconds, twelve offered (the most the menu holds), acting at 0.15, keeping 24 blocks
+  off, temper resting at 0.6, the death at the end on every difficulty. In the settings' preset
+  choice. Tests: in `config`.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

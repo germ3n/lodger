@@ -114,10 +114,10 @@ pub fn want_met(memory: &Memory) -> bool {
 }
 
 /// Whether the taking ending's one death is dealt: on hard; with `intense`, on normal too; with
-/// `relentless`, on every difficulty (`config.rs`'s presets say so).
+/// `relentless` and `extreme`, on every difficulty (`config.rs`'s presets say so).
 pub fn deals_death(config: &Config, memory: &Memory) -> bool {
     match config.preset.as_str() {
-        "relentless" => true,
+        "relentless" | "extreme" => true,
         "intense" => matches!(memory.difficulty.as_str(), "normal" | "hard"),
         _ => memory.difficulty == "hard",
     }

@@ -25,7 +25,7 @@ fn merge_into(base: &mut serde_json::Value, file: &serde_json::Value) {
     }
 }
 
-/// The four presets: what each sets. Everything not listed is `balanced`'s, which is
+/// The five presets: what each sets. Everything not listed is `balanced`'s, which is
 /// `Config::default()`; `balanced` sets nothing. A file that names no preset plays
 /// [`DEFAULT_PRESET`], `intense`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -40,6 +40,10 @@ pub enum Preset {
     /// Something every evening from the first day, every group on, short cooldowns, a stay of
     /// a week, the death on every difficulty. For people who asked.
     Relentless,
+    /// Past relentless (owner: "EXTREME for many many events and such per day"): dozens of
+    /// events a day from the moment the world opens, cooldowns a fifth, eight plans at once,
+    /// asking every fifteen seconds, the death at the end on every difficulty.
+    Extreme,
 }
 
 impl Preset {
@@ -49,6 +53,7 @@ impl Preset {
             "balanced" => Some(Self::Balanced),
             "intense" => Some(Self::Intense),
             "relentless" => Some(Self::Relentless),
+            "extreme" => Some(Self::Extreme),
             _ => None,
         }
     }
@@ -59,6 +64,7 @@ impl Preset {
             Self::Balanced => "balanced",
             Self::Intense => "intense",
             Self::Relentless => "relentless",
+            Self::Extreme => "extreme",
         }
     }
 
@@ -135,6 +141,22 @@ impl Preset {
                 config.brain.event_threshold = 0.25;
                 config.brain.react_threshold = 0.4;
                 config.brain.plan_every = 45;
+                config.stages.ending = "take".to_string();
+            }
+            Self::Extreme => {
+                config.stages.events_per_day = [10.0, 16.0, 24.0, 32.0, 16.0];
+                config.stages.least_days = [1, 1, 1, 1, 1];
+                config.stages.most_days = [1, 1, 2, 2, 2];
+                config.stages.start_after_days = 0;
+                config.events.cooldown_scale = 0.2;
+                config.events.min_distance = 24;
+                config.brain.most_plans = 8;
+                // The menu's most: more would not fit the model's question.
+                config.events.offered = 12;
+                config.brain.event_threshold = 0.15;
+                config.brain.react_threshold = 0.3;
+                // As often as the checks let it ask.
+                config.brain.plan_every = 15;
                 config.stages.ending = "take".to_string();
             }
         }
@@ -314,7 +336,7 @@ impl ModelSize {
 #[serde(default)]
 pub struct Config {
     pub enabled: bool,
-    /// `calm`, `balanced`, `intense` or `relentless`: a set of values for the keys below that
+    /// `calm`, `balanced`, `intense`, `relentless` or `extreme`: a set of values for the keys below that
     /// decide how much happens, how bold it is and what is left out. A key the file sets
     /// explicitly wins over the preset; the file written back shows the preset's values filled
     /// in, so a player sees what `balanced` means. See `docs/config.md`.
@@ -609,7 +631,7 @@ pub fn preset_keys() -> Vec<Vec<String>> {
     }
     let base = serde_json::to_value(Config::default()).unwrap_or_default();
     let mut out = Vec::new();
-    for name in ["calm", "intense", "relentless"] {
+    for name in ["calm", "intense", "relentless", "extreme"] {
         if let Some(preset) = Preset::named(name) {
             let theirs = serde_json::to_value(preset.config()).unwrap_or_default();
             walk(&base, &theirs, &mut Vec::new(), &mut out);
@@ -795,8 +817,9 @@ impl Config {
             .get("preset")
             .and_then(|p| p.as_str())
             .unwrap_or(DEFAULT_PRESET);
-        let preset = Preset::named(preset_name)
-            .ok_or_else(|| "preset must be calm, balanced, intense or relentless".to_string())?;
+        let preset = Preset::named(preset_name).ok_or_else(|| {
+            "preset must be calm, balanced, intense, relentless or extreme".to_string()
+        })?;
         let base = serde_json::to_value(preset.config()).map_err(|err| err.to_string())?;
         let mut merged = base.clone();
         merge_into(&mut merged, &file);
@@ -1159,6 +1182,7 @@ mod tests {
             Preset::Balanced,
             Preset::Intense,
             Preset::Relentless,
+            Preset::Extreme,
         ] {
             let text = preset.config().to_json();
             let parsed =
@@ -1171,6 +1195,13 @@ mod tests {
             Preset::Relentless.config().stages.events_per_day[0]
                 > Preset::Intense.config().stages.events_per_day[0]
         );
+        // Extreme is past relentless in every stage, and quicker to come back to an event.
+        let (extreme, relentless) = (Preset::Extreme.config(), Preset::Relentless.config());
+        for stage in 0..5 {
+            assert!(extreme.stages.events_per_day[stage] > relentless.stages.events_per_day[stage]);
+        }
+        assert!(extreme.events.cooldown_scale < relentless.events.cooldown_scale);
+        assert!(extreme.brain.most_plans > relentless.brain.most_plans);
         assert!(
             Preset::Intense.config().stages.events_per_day[0]
                 > Preset::Calm.config().stages.events_per_day[0]
