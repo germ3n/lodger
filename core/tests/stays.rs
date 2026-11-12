@@ -715,3 +715,78 @@ fn a_balanced_stay_walks_a_chain_end_to_end() {
 
     assert!(walked >= 2, "the place walked in {walked} of three stays");
 }
+
+/// The mind's time per server tick, observing and deciding, through the same C functions and
+/// JSON the host uses (docs/performance.md): four days of the scripted stay on the rule brain,
+/// every call timed. Run on demand: `cargo test --release -p lodger-core --test stays -- --ignored
+/// --nocapture the_mind_s_time_per_tick`.
+#[test]
+#[ignore = "prints the mind's time per tick; run with --release --ignored --nocapture"]
+fn the_mind_s_time_per_tick() {
+    let _turn = TURN.lock().unwrap_or_else(|err| err.into_inner());
+    let harness = craftkit::harness!().unwrap();
+    harness.init(r#"{ "stages": { "start_after_days": 0, "least_days": [0, 0, 0, 0, 0], "most_days": [1, 1, 1, 1, 1] } }"#);
+    let info = WorldInfo {
+        id: "minecraft:overworld".to_string(),
+        seed: 11,
+        name: "scripted".to_string(),
+    };
+    let world = harness.open_world(&info, &[]).unwrap();
+    let mut script = Script::new();
+    let mut times: Vec<u128> = Vec::new();
+    // A crowded world: three hundred entities round the player in every observation (the host
+    // sends those within 64 blocks once a second), the busiest a farm or a village makes it.
+    let crowd: Vec<craftkit::world::Entity> = (0..300)
+        .map(|i| craftkit::world::Entity {
+            id: 10_000 + i,
+            kind: if i % 3 == 0 {
+                "minecraft:zombie"
+            } else {
+                "minecraft:cow"
+            }
+            .to_string(),
+            pos: [(i % 40) as f64, 64.0, (i / 40) as f64],
+            hostile: i % 3 == 0,
+            ..Default::default()
+        })
+        .collect();
+    let crowded = std::env::var("CROWD").is_ok();
+    while script.tick < 4 * 24_000 {
+        let mut observations = script.observations();
+        if crowded {
+            observations.entities.extend(crowd.iter().cloned());
+        }
+        let start = std::time::Instant::now();
+        world.observe(&observations);
+        let commands = world.tick(&script.now());
+        let reports: Vec<Report> = commands
+            .iter()
+            .map(|command| Report {
+                id: command.id(),
+                done: true,
+                reason: String::new(),
+            })
+            .collect();
+        if !reports.is_empty() {
+            world.report(&reports);
+        }
+        times.push(start.elapsed().as_micros());
+        script.tick += 1;
+    }
+    times.sort_unstable();
+    let n = times.len();
+    let mean = times.iter().sum::<u128>() as f64 / n as f64;
+    println!(
+        "ticks {n}: mean {mean:.1} us, median {} us, p99 {} us, p99.9 {} us, worst {} us",
+        times[n / 2],
+        times[n * 99 / 100],
+        times[n * 999 / 1000],
+        times[n - 1]
+    );
+    // A server tick has 50 ms; the mind should take a small part of it even at its worst.
+    assert!(
+        times[n * 99 / 100] < 5_000,
+        "p99 {} us",
+        times[n * 99 / 100]
+    );
+}

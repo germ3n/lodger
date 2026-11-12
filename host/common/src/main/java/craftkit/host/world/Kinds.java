@@ -10,7 +10,12 @@ public final class Kinds {
 	/** An id asked for exactly, or one ending in what follows a leading {@code *} ({@code *_stairs}). */
 	public static boolean wanted(String block, List<String> kinds) {
 		for (String kind : kinds) {
-			if (kind.startsWith("*") ? block.endsWith(kind.substring(1)) : block.equals(kind)) {
+			// The suffix matched in place: a substring for every block and every kind was made,
+			// forty thousand blocks a scan.
+			boolean match = kind.startsWith("*")
+					? block.length() >= kind.length() - 1 && block.regionMatches(block.length() - (kind.length() - 1), kind, 1, kind.length() - 1)
+					: block.equals(kind);
+			if (match) {
 				return true;
 			}
 		}

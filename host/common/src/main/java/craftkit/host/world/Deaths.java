@@ -95,7 +95,7 @@ public final class Deaths {
 
 	/** What a world's data still holds of a player alive now (the server stopped before they respawned): given back. */
 	public void sweep(MinecraftServer server, WorldData data) {
-		if (tick % 100 != 0) {
+		if (!Sweeps.due(Sweeps.Sweep.DEATHS, tick)) {
 			return;
 		}
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {

@@ -2282,6 +2282,16 @@ The `[x]` lines above, summed up by day:
   tick now without leaving, and the prints read for a hint are let go when it ends. The mist veil's
   check for a shader pack is asked every two seconds, not by reflection every frame.
 
+- [x] **A performance pass** (owner: "do a performance scan to see where we can speed things up,
+  and if we even need to"): [Performance](performance.md) has the numbers. Was: nothing measured
+  the mind's time; block scans made a string for every block's id and every wildcard; six
+  entity sweeps and the saves all fell on one tick in a hundred; the hints were copied at every call
+  from the render, hundreds a frame in red rain; dead redstone's box had no limit. Now the mind is
+  timed by an ignored test (3.3 µs a tick, p99 5 µs), ids are kept per block, wildcards match in
+  place, `Sweeps` spreads the sweeps over their own ticks (with a test), the hints are a snapshot,
+  red rain's weight is read once in 30 ms, and a dead redstone box is no bigger than a scan. The
+  host does not need Rust for speed.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

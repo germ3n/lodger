@@ -124,7 +124,7 @@ public final class Gatherings {
 
 	public void tick(MinecraftServer server) {
 		tick++;
-		if (tick % 100 == 0) {
+		if (Sweeps.due(Sweeps.Sweep.GATHERINGS, tick)) {
 			sweep(server);
 		}
 		Iterator<Gathered> it = gathered.iterator();

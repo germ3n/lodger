@@ -20,7 +20,6 @@ public final class Temporaries {
 	public static final String SPARES = "craftkit_spares";
 	/** The longest an entity stays, whatever a mod asks: ten minutes. */
 	public static final float MOST_SECONDS = 600;
-	private static final int SWEEP_EVERY = 100;
 
 	private final Due<Entity> due = new Due<>();
 	private final java.util.Set<Entity> active = new java.util.HashSet<>();
@@ -250,7 +249,7 @@ public final class Temporaries {
 				gone(entity);
 			}
 		}
-		if (tick % SWEEP_EVERY == 0) {
+		if (Sweeps.due(Sweeps.Sweep.TEMPORARIES, tick)) {
 			active.removeIf(Entity::isRemoved);
 			for (ServerLevel level : server.getAllLevels()) {
 				// Gathered first, then taken: the level's entity list is live, and an entity

@@ -817,8 +817,11 @@ public final class Senses {
 		return array;
 	}
 
+	/** Each block's id, made once: a scan asks it of forty thousand blocks in a tick. */
+	private static final java.util.Map<net.minecraft.world.level.block.Block, String> BLOCK_IDS = new java.util.concurrent.ConcurrentHashMap<>();
+
 	public static String blockId(BlockState state) {
-		return BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+		return BLOCK_IDS.computeIfAbsent(state.getBlock(), block -> BuiltInRegistries.BLOCK.getKey(block).toString());
 	}
 
 	public static String entityId(Entity entity) {

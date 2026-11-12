@@ -21,5 +21,6 @@ The pages were the design before there was code, and are kept true as code lands
 | [Building](build.md) | The release build: the six natives (GPU always on, cross-compiled from a Mac), compressed into both jars, and the CI that does the same. |
 | [Hand-off](handoff.md) | For whoever picks this up next: what it is, how it is built, where things are, how to work in it, where it stands and where to start. Read once. |
 | [Upgrading](upgrading.md) | Taking the host to a new Minecraft, Fabric, NeoForge or Java version: where the game-facing edge is, the versions and where they are pinned, the step-by-step process, what usually breaks, and the history of bumps. |
+| [Performance](performance.md) | What the lodger costs a tick, measured, where the host's time goes, what was made cheaper, and why the host does not need Rust for speed. |
 | [Todo](todo.md) | What is done, what is next, in order, and known gaps. |
 | [Queue](queue.md) | Where the work stands and what the next session picks up, with the rules every session follows. |

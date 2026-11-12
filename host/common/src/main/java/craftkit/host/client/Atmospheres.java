@@ -113,9 +113,18 @@ public final class Atmospheres {
 		}
 	}
 
+	private static float redWeight;
+	private static long redAsked;
+
 	/** The rain hook: a drop's colour, red while red rain is on, its alpha kept. */
 	public static int rain(float alpha) {
-		float red = weightOf("red_rain");
+		// Asked once a frame or so: the rain asks this of every column it draws.
+		long now = System.currentTimeMillis();
+		if (now - redAsked > 30) {
+			redAsked = now;
+			redWeight = weightOf("red_rain");
+		}
+		float red = redWeight;
 		if (red <= 0) {
 			return ARGB.white(alpha);
 		}

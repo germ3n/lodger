@@ -292,7 +292,7 @@ public final class Fights {
 				senses.noticedFight(fight.level, fight.index, over);
 			}
 		}
-		if (tick % 100 == 0) {
+		if (Sweeps.due(Sweeps.Sweep.FIGHTS, tick)) {
 			for (ServerLevel level : server.getAllLevels()) {
 				// Gathered first, then discarded: the level's entity list is live.
 				List<Entity> left = new ArrayList<>();

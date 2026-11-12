@@ -129,7 +129,14 @@ public final class Executors {
 				case "fell_tree" -> fellTree(level, command, id, context);
 				case "panic" -> panic(level, command, id, context);
 				case "dead_redstone" -> {
-					DeadRedstone.hold(level, blockPos(command.getAsJsonArray("min")), blockPos(command.getAsJsonArray("max")), command.get("seconds").getAsFloat());
+					BlockPos min = blockPos(command.getAsJsonArray("min"));
+					BlockPos max = blockPos(command.getAsJsonArray("max"));
+					// Walked whole as it begins and ends: no bigger than a scan may read.
+					long volume = (long) (Math.abs(max.getX() - min.getX()) + 1) * (Math.abs(max.getY() - min.getY()) + 1) * (Math.abs(max.getZ() - min.getZ()) + 1);
+					if (volume > SCAN_LIMIT) {
+						yield report(id, false, "the box holds " + volume + " blocks; at most " + SCAN_LIMIT);
+					}
+					DeadRedstone.hold(level, min, max, command.get("seconds").getAsFloat());
 					yield report(id, true, "");
 				}
 				case "villager_flees_in" -> {

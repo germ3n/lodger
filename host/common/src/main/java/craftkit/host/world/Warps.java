@@ -32,7 +32,6 @@ public final class Warps {
 	/** It steps closer no nearer than this. */
 	private static final double CREEPS_TO = 8;
 	private static final int CREEP_EVERY = 30;
-	private static final int SWEEP_EVERY = 100;
 
 	private static final class Warp {
 		final Mob mob;
@@ -167,7 +166,7 @@ public final class Warps {
 			}
 		}
 
-		if (tick % SWEEP_EVERY == 0) {
+		if (Sweeps.due(Sweeps.Sweep.WARPS, tick)) {
 			for (ServerLevel level : server.getAllLevels()) {
 				for (Entity entity : level.getAllEntities()) {
 					if (entity instanceof Mob mob && mob.entityTags().contains(TAG) && active.stream().noneMatch(w -> w.mob == mob)) {

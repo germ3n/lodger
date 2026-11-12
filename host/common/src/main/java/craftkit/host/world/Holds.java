@@ -24,7 +24,6 @@ public final class Holds {
 	public static final String TAG_STILL = "craftkit_held_still";
 	/** The longest hold, whatever a mod asks: most of a night. */
 	public static final float MOST_SECONDS = 600;
-	private static final int SWEEP_EVERY = 100;
 
 	/** On a creeping mob: where it was held, `x,y,z`, so one saved mid-creep goes back there. */
 	public static final String FROM = "craftkit_held_from:";
@@ -235,7 +234,7 @@ public final class Holds {
 			}
 		}
 
-		if (tick % SWEEP_EVERY == 0) {
+		if (Sweeps.due(Sweeps.Sweep.HOLDS, tick)) {
 			for (ServerLevel level : server.getAllLevels()) {
 				for (Entity entity : level.getAllEntities()) {
 					if (entity instanceof Mob mob && mob.entityTags().contains(TAG) && active.stream().noneMatch(h -> h.mob() == mob) && !collapsed(mob)) {
