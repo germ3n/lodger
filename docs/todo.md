@@ -3431,6 +3431,10 @@ The `[x]` lines above, summed up by day:
   signal smoke over their campfire in nine puffs, short, long, short (`motes`). Tests: one in `act`.
   Was: no such event.
 
+- [x] **The cauldron ripples** (`docs/events_todo.md`, 357): `cauldron_ripples`, stages 1 to 5,
+  indoors: a splash over their cauldron, seen and heard (`motes`). Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

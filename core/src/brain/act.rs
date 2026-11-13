@@ -893,6 +893,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "smoke_signals" {
         return memory.fixtures("campfire").next().map(|f| f.pos);
     }
+    // Their cauldron.
+    if event.id == "cauldron_ripples" {
+        return memory.fixtures("cauldron").next().map(|f| f.pos);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1023,6 +1027,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LightBelowTheBoat
         | Action::LightsOverTheSwamp
         | Action::SmokeSignals
+        | Action::CauldronRipples
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11420,6 +11425,26 @@ pub fn commands(
                 }
                 made
             }
+            None => vec![],
+        },
+        // docs/events_todo.md, 357.
+        Action::CauldronRipples => match pos {
+            Some(c) => vec![
+                (
+                    motes(
+                        ids,
+                        target,
+                        Some(c),
+                        1.0,
+                        "p=minecraft:splash;n=6;r=0.3;h=0.1;v=0,0.1,0;o=0,0.4,0".to_string(),
+                    ),
+                    0,
+                ),
+                (
+                    sound_at(ids, target, "minecraft:entity.generic.splash", at(c), 0.4),
+                    0,
+                ),
+            ],
             None => vec![],
         },
         Action::SculkCreeps => {
@@ -24574,6 +24599,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("campfire_signal_smoke"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn cauldron_ripples_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("cauldron_ripples").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("minecraft:splash"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
     }
 }
