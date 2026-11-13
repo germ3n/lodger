@@ -440,7 +440,7 @@ standing still. Checked against the catalogue, `docs/ideas.md` and every row abo
 | # | Event | Stage | What happens | Needs | Takes | Size |
 | --- | --- | --- | --- | --- | --- | --- |
 | 352 | `bed_creaks` | 1 | **Built.** Indoors, the creak of someone sitting down on their bed, in the next room; no one is on it. | A bed in the home, the target indoors, not in the bed's room. | `sound` (a wood creak) at the bed. | S |
-| 353 | `stand_bubbles` | 1 | Their brewing stand bubbles as if brewing. It is empty and cold. | A brewing stand of theirs, empty, the target near. | `sound` (the brewing stand's brew) at the stand. | S |
+| 353 | `stand_bubbles` | 1 | **Built.** Their brewing stand bubbles as if brewing. It is empty and cold. | A brewing stand of theirs, empty, the target near. | `sound` (the brewing stand's brew) at the stand. | S |
 | 354 | `torch_gutters` | 1 | **Already there: `flicker` makes a light near them falter a few seconds; not built.** A torch on the wall beside them gutters: a puff of smoke, the flame low a moment, as if someone walked past it. | A placed torch near them indoors. | Smoke particles at the torch and its light dimmed a moment on their screen. | M |
 | 355 | `smoke_signals` | 2 | Their campfire's smoke rises in puffs: three short, three long, three short, then as ever. | A lit campfire of theirs, the target in sight of it. | Its `signal_fire` state toggled in the rhythm, or puffs drawn on their client. | S |
 | 356 | `pot_wobbles` | 1 | A decorated pot of theirs wobbles as if bumped, with the pot's own sound, and is still. | A decorated pot in the home, the target near. | The pot's wobble block event (the game's own animation). | S |

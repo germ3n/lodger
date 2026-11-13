@@ -24220,4 +24220,17 @@ mod tests {
             .iter()
             .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
     }
+
+    #[test]
+    fn stand_bubbles_is_heard_at_their_brewing_stand() {
+        let memory = rich_memory();
+        let event = find("stand_bubbles").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, Some([-3, 64, 2]));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PlaySound { sound, .. }, _)] if sound.contains("brewing_stand")),
+            "{made:?}"
+        );
+    }
 }

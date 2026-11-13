@@ -8829,6 +8829,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BedCreaks,
         true,
     ),
+    // docs/events_todo.md, 353: their brewing stand bubbles as if brewing; it is empty and cold.
+    row(
+        "stand_bubbles",
+        1,
+        5,
+        &[Fixture("brewing_stand"), TargetIndoors],
+        2.0,
+        4,
+        Half,
+        Action::SoundAtFixture("brewing_stand", "minecraft:block.brewing_stand.brew"),
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10172,6 +10184,7 @@ impl Event {
             "heartbeat_in_the_stone" => "beat a heart inside the rock ahead of them",
             "thunder_behind" => "strike lightning ahead and sound its thunder behind them",
             "bed_creaks" => "creak their bed as if someone sat on it",
+            "stand_bubbles" => "bubble their brewing stand",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
