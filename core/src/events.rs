@@ -1409,6 +1409,8 @@ pub enum Action {
     HeartbeatInTheStone,
     /// In a storm, a bolt far ahead of them and its thunder from right behind them.
     ThunderBehind,
+    /// The creak of someone sitting down on their bed, no one on it.
+    BedCreaks,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8815,6 +8817,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ThunderBehind,
         false,
     ),
+    // docs/events_todo.md, 352: indoors, the creak of someone sitting down on their bed; no one is on it.
+    row(
+        "bed_creaks",
+        1,
+        5,
+        &[Bed, TargetIndoors],
+        2.0,
+        4,
+        Half,
+        Action::BedCreaks,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9128,6 +9142,7 @@ impl Event {
             | Action::WrongFooting
             | Action::HeartbeatInTheStone
             | Action::ThunderBehind
+            | Action::BedCreaks
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -10156,6 +10171,7 @@ impl Event {
             "a_glint_on_the_hill" => "flash a glint at them from far off",
             "heartbeat_in_the_stone" => "beat a heart inside the rock ahead of them",
             "thunder_behind" => "strike lightning ahead and sound its thunder behind them",
+            "bed_creaks" => "creak their bed as if someone sat on it",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

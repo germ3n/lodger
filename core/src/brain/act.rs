@@ -881,6 +881,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             Some([door[0] - out[0], door[1], door[2] - out[1]])
         });
     }
+    // Their bed.
+    if event.id == "bed_creaks" {
+        return home.and_then(|h| h.bed);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1002,6 +1006,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::AGlintOnTheHill
         | Action::HeartbeatInTheStone
         | Action::ThunderBehind
+        | Action::BedCreaks
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11192,6 +11197,20 @@ pub fn commands(
                 ),
             ]
         }
+        // docs/events_todo.md, 352.
+        Action::BedCreaks => match pos {
+            Some(bed) => vec![
+                (
+                    sound_at(ids, target, "minecraft:block.wool.step", at(bed), 0.6),
+                    0,
+                ),
+                (
+                    sound_at(ids, target, "minecraft:block.wood.step", at(bed), 0.5),
+                    4,
+                ),
+            ],
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24187,5 +24206,18 @@ mod tests {
             matches!(&made[..], [(Command::Lightning { pos: a, .. }, 0), (Command::PlaySound { pos: b, .. }, 12)] if a[2] == 40.5 && b[2] == -2.5),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn bed_creaks_is_heard_at_their_bed() {
+        let memory = rich_memory();
+        let event = find("bed_creaks").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, memory.home.as_ref().unwrap().bed);
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 2);
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::PlaySound { .. })));
     }
 }
