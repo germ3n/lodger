@@ -885,6 +885,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "bed_creaks" {
         return home.and_then(|h| h.bed);
     }
+    // Their lightning rod.
+    if event.id == "lightning_rod_sparks" {
+        return memory.fixtures("lightning_rod").next().map(|f| f.pos);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1011,6 +1015,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ThunderCounts
         | Action::NameEchoes
         | Action::DustDevil
+        | Action::LightningRodSparks
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11305,6 +11310,42 @@ pub fn commands(
                 0,
             )]
         }
+        // docs/events_todo.md, 347.
+        Action::LightningRodSparks => match pos {
+            Some(rod) => vec![
+                (
+                    motes(
+                        ids,
+                        target,
+                        Some(rod),
+                        3.0,
+                        "p=minecraft:electric_spark;n=3;r=0.25;h=0.8;v=0,0.02,0".to_string(),
+                    ),
+                    0,
+                ),
+                (
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:block.copper_bulb.turn_on",
+                        at(rod),
+                        0.8,
+                    ),
+                    0,
+                ),
+                (
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:block.copper_bulb.turn_off",
+                        at(rod),
+                        0.8,
+                    ),
+                    18,
+                ),
+            ],
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14435,6 +14476,7 @@ mod tests {
             ("shelf", [-3, 66, 3]),
             ("head", [2, 64, -3]),
             ("chiseled_bookshelf", [-4, 65, 3]),
+            ("lightning_rod", [0, 70, 0]),
             // A plate by the door, for `plate_clicks`.
             ("pressure_plate", [1, 64, -1]),
         ] {
@@ -24401,5 +24443,22 @@ mod tests {
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("dust:C8B48A"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn lightning_rod_sparks_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("lightning_rod_sparks").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("electric_spark"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:lightning_rod"),
+            Some("lightning_rod")
+        );
     }
 }

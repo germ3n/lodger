@@ -1419,6 +1419,8 @@ pub enum Action {
     NameEchoes,
     /// A small whirl of dust crossing their field toward them, falling apart at their feet.
     DustDevil,
+    /// Their lightning rod sparking and crackling under a clear sky.
+    LightningRodSparks,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8900,6 +8902,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::DustDevil,
         false,
     ),
+    // docs/events_todo.md, 347: their lightning rod sparks and crackles under a clear sky, as if it had been struck.
+    row(
+        "lightning_rod_sparks",
+        2,
+        5,
+        &[Fixture("lightning_rod"), NotRaining],
+        2.0,
+        3,
+        Half,
+        Action::LightningRodSparks,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9598,6 +9612,7 @@ impl Event {
             | Action::AGlintOnTheHill
             | Action::NameEchoes
             | Action::DustDevil
+            | Action::LightningRodSparks
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10252,6 +10267,7 @@ impl Event {
             "thunder_counts" => "count the thunder down from five",
             "name_echoes" => "call their name across the mountains",
             "dust_devil" => "send a whirl of dust across the field at them",
+            "lightning_rod_sparks" => "spark their lightning rod",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
