@@ -3411,6 +3411,10 @@ The `[x]` lines above, summed up by day:
   the mountains: their name in the subtitles from far off, echoed twice from other sides
   (`name_called`). Tests: one in `act`. Was: no such event.
 
+- [x] **A dust devil** (`docs/events_todo.md`, 333): `dust_devil`, stages 2 to 5, by their field by
+  day: dust moving across to them ten seconds (`motes` with `to`). Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

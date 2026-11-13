@@ -1010,6 +1010,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::KnockFromBelow
         | Action::ThunderCounts
         | Action::NameEchoes
+        | Action::DustDevil
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2316,6 +2317,17 @@ pub fn light_near(memory: &Memory) -> Option<BlockPos> {
 }
 
 /// Two blocks behind the target, its feet at theirs (the figure stands one above the spot).
+/// The block `blocks` ahead of where the target faces, `side` to their right, `up` over them.
+fn ahead_of(memory: &Memory, blocks: i32, side: i32, up: i32) -> BlockPos {
+    let at = block_of(memory.last.pos);
+    let way = facing_way(memory.last.yaw);
+    [
+        at[0] + way[0] * blocks - way[1] * side,
+        at[1] + up,
+        at[2] + way[1] * blocks + way[0] * side,
+    ]
+}
+
 fn behind_close(memory: &Memory) -> BlockPos {
     let at = block_of(memory.last.pos);
     let yaw = (memory.last.yaw as f64).to_radians();
@@ -11274,6 +11286,24 @@ pub fn commands(
                     )
                 })
                 .collect()
+        }
+        // docs/events_todo.md, 333.
+        Action::DustDevil => {
+            let from = ahead_of(memory, 20, 0, 0);
+            let p = memory.last.pos;
+            vec![(
+                motes(
+                    ids,
+                    target,
+                    Some(from),
+                    10.0,
+                    format!(
+                        "p=dust:C8B48A:1.6;n=4;r=0.7;h=2.4;v=0,0.04,0;to={:.1},{:.1},{:.1}",
+                        p[0], p[1], p[2]
+                    ),
+                ),
+                0,
+            )]
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -24358,5 +24388,18 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 3);
         assert!(made.iter().all(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "name_called" && *detail == memory.target_name)));
+    }
+
+    #[test]
+    fn dust_devil_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("dust_devil").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("dust:C8B48A"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
     }
 }

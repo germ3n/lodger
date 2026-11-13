@@ -1417,6 +1417,8 @@ pub enum Action {
     ThunderCounts,
     /// In the mountains, their name called far off and its echo from the peaks, in the subtitles.
     NameEchoes,
+    /// A small whirl of dust crossing their field toward them, falling apart at their feet.
+    DustDevil,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8886,6 +8888,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::NameEchoes,
         false,
     ),
+    // docs/events_todo.md, 333: in the afternoon, a small whirl of dust crosses their field toward them and falls apart at their feet.
+    row(
+        "dust_devil",
+        2,
+        5,
+        &[Day, Field, TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::DustDevil,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9583,6 +9597,7 @@ impl Event {
             | Action::PaperOnTheFloor
             | Action::AGlintOnTheHill
             | Action::NameEchoes
+            | Action::DustDevil
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10236,6 +10251,7 @@ impl Event {
             "knock_from_below" => "knock from under the bedrock",
             "thunder_counts" => "count the thunder down from five",
             "name_echoes" => "call their name across the mountains",
+            "dust_devil" => "send a whirl of dust across the field at them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
