@@ -1042,6 +1042,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LightningRoundYou
         | Action::BoltsInALine
         | Action::DoorBangsInTheStorm
+        | Action::FigureInTheFlash
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11700,6 +11701,37 @@ pub fn commands(
             }
             None => vec![],
         },
+        // docs/events_todo.md, 344.
+        Action::FigureInTheFlash => {
+            // Four flashes three seconds apart, each a bolt far off and the figure ahead of them
+            // for half a second, thirty blocks out, then twenty-two, fourteen, eight.
+            let mut made = Vec::new();
+            for (i, far) in [30, 22, 14, 8].into_iter().enumerate() {
+                let later = i as u64 * 60;
+                let bolt = ahead_of(memory, 60, 30 - i as i32 * 20, 0);
+                made.push((
+                    Command::Lightning {
+                        id: ids(),
+                        pos: block_center(bolt),
+                    },
+                    later,
+                ));
+                let mut shown = figure_shown(
+                    ids,
+                    memory,
+                    target,
+                    grounded(ahead_of(memory, far, 0, 0)),
+                    0.6,
+                    false,
+                );
+                if let Command::Figure { held, figure, .. } = &mut shown {
+                    *held = ItemStack::default();
+                    *figure = 60 + i as u32;
+                }
+                made.push((shown, later + 1));
+            }
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -25020,6 +25052,29 @@ mod tests {
                 ))
             ),
             "shut at the end"
+        );
+    }
+
+    #[test]
+    fn figure_in_the_flash_comes_nearer_each_flash() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("figure_in_the_flash").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        let zs: Vec<f64> = made
+            .iter()
+            .filter_map(|(c, _)| match c {
+                Command::Figure { pos, .. } => Some(pos[2]),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(zs, vec![30.5, 22.5, 14.5, 8.5]);
+        assert_eq!(
+            made.iter()
+                .filter(|(c, _)| matches!(c, Command::Lightning { .. }))
+                .count(),
+            4
         );
     }
 }

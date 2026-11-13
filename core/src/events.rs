@@ -1449,6 +1449,8 @@ pub enum Action {
     BoltsInALine,
     /// In a storm, their door banging open and shut with each thunderclap.
     DoorBangsInTheStorm,
+    /// In a storm, each flash of lightning showing a figure in the field, nearer each time.
+    FigureInTheFlash,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9114,6 +9116,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::DoorBangsInTheStorm,
         false,
     ),
+    // docs/events_todo.md, 344: in a storm, each flash shows a figure in the field, nearer each time; between flashes there is no one.
+    row(
+        "figure_in_the_flash",
+        4,
+        5,
+        &[Thundering, TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::FigureInTheFlash,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9801,6 +9815,7 @@ impl Event {
             | Action::OnTheExitPortal
             | Action::LightningRoundYou
             | Action::BoltsInALine
+            | Action::FigureInTheFlash
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -10496,6 +10511,7 @@ impl Event {
             "lightning_round_you" => "strike lightning round them in a closing ring",
             "bolts_in_a_line" => "strike lightning in a line toward its place",
             "door_bangs_in_the_storm" => "bang their door with the thunder",
+            "figure_in_the_flash" => "show the figure in the lightning, nearer each flash",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
