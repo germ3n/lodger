@@ -14112,6 +14112,8 @@ mod tests {
             ("candle", [0, 65, 1]),
             ("crafter", [3, 64, -3]),
             ("shelf", [-3, 66, 3]),
+            // A plate by the door, for `plate_clicks`.
+            ("pressure_plate", [1, 64, -1]),
         ] {
             memory.fixtures.push(Fixture {
                 kind: kind.to_string(),
@@ -23778,5 +23780,18 @@ mod tests {
             "{made:?}"
         );
         assert_eq!(event.effect(), "sounds");
+    }
+
+    #[test]
+    fn plate_clicks_is_heard_at_their_plate_and_nothing_moves() {
+        let memory = rich_memory();
+        let event = find("plate_clicks").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, Some([1, 64, -1]));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PlaySound { sound, .. }, _)] if sound.contains("pressure_plate")),
+            "{made:?}"
+        );
     }
 }

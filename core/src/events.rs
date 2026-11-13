@@ -8667,6 +8667,21 @@ pub const CATALOGUE: &[Event] = &[
         Action::WrongFooting,
         true,
     ),
+    // docs/events_todo.md, 323: a pressure plate of theirs clicks down with no one on it; nothing it powers moves.
+    row(
+        "plate_clicks",
+        1,
+        5,
+        &[Fixture("pressure_plate"), TargetIndoors],
+        2.0,
+        4,
+        Half,
+        Action::SoundAtFixture(
+            "pressure_plate",
+            "minecraft:block.wooden_pressure_plate.click_on",
+        ),
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9989,6 +10004,7 @@ impl Event {
             "leaves_at_the_door" => "leave a little leaf litter on their doorstep",
             "smoke_from_the_roof" => "send smoke up from the top of their house",
             "wrong_footing" => "make their steps outside sound like their floorboards",
+            "plate_clicks" => "click one of their pressure plates down",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
