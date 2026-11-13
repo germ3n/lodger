@@ -135,6 +135,8 @@ moved.
     fight's warped animals bent as they are posed (`WarpedModels`).
   - `SubtitleOverlay.onPlaySound`: its `WeighedSoundEvents.getSubtitle()` call, redirected so
     a ghast's subtitle reads as a name for `ghast_name` (into `Glitches.subtitleOf`).
+  - `SoundManager.play(SoundInstance)` at its head: the sound about to play, swapped for
+    another while a `sound_swap` hint names it (`wrong_footing`, into `Glitches.swapSound`).
   The HUD's `heart_skip` and `subtitle` read `Hud`'s private `tickCount`, `healthBlinkTime` and
   `subtitleOverlay` by name, and `frames_show` and `bobber` the private `ItemFrame.DATA_ITEM`,
   `FishingHook.DATA_BITING`, `nibble`, `timeUntilHooked` and `timeUntilLured`; a renamed field

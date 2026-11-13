@@ -401,7 +401,7 @@ These thirty are aimed there.
 | # | Event | Stage | What happens | Needs | Takes | Size |
 | --- | --- | --- | --- | --- | --- | --- |
 | 321 | `leaves_at_the_door` | 1 | **Built.** In the morning a little leaf litter lies on their doorstep, as if blown in, though no tree is near the door. | A home with a door, dawn, the target away or asleep. | `place_block` of leaf litter on the step outside the door they use. | S |
-| 322 | `wrong_footing` | 1 | Walking outdoors, for a few steps their footsteps on the grass sound like their own floorboards, then like grass again. | The target walking outdoors. | A client hint swapping their step sound for the home floor's block sound a few seconds. | M |
+| 322 | `wrong_footing` | 1 | **Built.** Walking outdoors, for a few steps their footsteps on the grass sound like their own floorboards, then like grass again. | The target walking outdoors. | A client hint swapping their step sound for the home floor's block sound a few seconds. | M |
 | 323 | `plate_clicks` | 1 | A pressure plate in the house clicks down and up again, with no one on it; nothing it powers moves. | A pressure plate in the home, the target near. | The plate's click sound at the plate (`block_sound`). | S |
 | 324 | `book_moved_on_shelf` | 1 | On their chiseled bookshelf, one book stands in another slot than the one they put it in. | A chiseled bookshelf of theirs with a book in it, not in view. | Moving the book between two slots (the shelf's block state and its contents). | M |
 | 325 | `skull_turned` | 1 | A mob head or skull they set out faces another way when they come back: toward the bed. | A head or skull placed by them, not in view. | Its rotation set (`set_block` with the same head, a new rotation). | S |

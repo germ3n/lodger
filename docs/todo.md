@@ -3333,6 +3333,10 @@ The `[x]` lines above, summed up by day:
   walking home: campfire smoke over the middle of their house forty seconds, on their screen alone
   (`motes`). Tests: one in `act`. Was: no such event.
 
+- [x] **Wrong footing** (`docs/events_todo.md`, 322): `wrong_footing`, stages 1 to 5, walking
+  outdoors: six seconds of their steps sounding as wood (`sound_swap`, a new client hint,
+  `SoundManagerMixin`). Tests: one in `act`, `SoundSwapTest`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -1382,6 +1382,8 @@ pub enum Action {
     LeavesAtTheDoor,
     /// A thread of smoke over the top of their house, as from a chimney, on their screen alone.
     SmokeFromTheRoof,
+    /// A few seconds of their steps outdoors sounding like their own floorboards (the `sound_swap` hint).
+    WrongFooting,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8653,6 +8655,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SmokeFromTheRoof,
         true,
     ),
+    // docs/events_todo.md, 322: walking outdoors, for a few steps their footsteps sound like the boards of their floor.
+    row(
+        "wrong_footing",
+        1,
+        5,
+        &[TargetWalking, TargetOutdoors],
+        2.0,
+        4,
+        Half,
+        Action::WrongFooting,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -8963,6 +8977,7 @@ impl Event {
             | Action::ShipCreaks
             | Action::SomeoneWentThrough
             | Action::PotionAtTheWindow
+            | Action::WrongFooting
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -9973,6 +9988,7 @@ impl Event {
             "the_poem_knows" => "arm the end poem to know them",
             "leaves_at_the_door" => "leave a little leaf litter on their doorstep",
             "smoke_from_the_roof" => "send smoke up from the top of their house",
+            "wrong_footing" => "make their steps outside sound like their floorboards",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

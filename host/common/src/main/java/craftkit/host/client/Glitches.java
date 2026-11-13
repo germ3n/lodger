@@ -1049,6 +1049,32 @@ public final class Glitches {
 		graphics.fill(0, 0, width, height, (a << 24) | rgb);
 	}
 
+	/**
+	 * The sound to play for one about to play: another while a `sound_swap` hint names it and it
+	 * plays within three blocks of them (their own steps), else the same (`SoundManagerMixin`).
+	 */
+	public static net.minecraft.client.resources.sounds.SoundInstance swapSound(net.minecraft.client.resources.sounds.SoundInstance sound) {
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.player == null || sound == null) {
+			return sound;
+		}
+		for (Hints.Active active : Hints.active()) {
+			if (!active.hint().hint().equals("sound_swap")) {
+				continue;
+			}
+			String to = SoundSwap.swapped(sound.getIdentifier().getPath(), active.hint().detail());
+			var id = to == null ? null : net.minecraft.resources.Identifier.tryParse(to);
+			if (id != null && minecraft.player.distanceToSqr(sound.getX(), sound.getY(), sound.getZ()) <= 9) {
+				// Its volume and pitch are unknown until it is resolved; a step's own.
+				return new net.minecraft.client.resources.sounds.SimpleSoundInstance(
+						net.minecraft.sounds.SoundEvent.createVariableRangeEvent(id), sound.getSource(), 0.15f, 1f,
+						net.minecraft.client.resources.sounds.SoundInstance.createUnseededRandom(), sound.getX(), sound.getY(), sound.getZ());
+			}
+		}
+
+		return sound;
+	}
+
 	/** A mote's particle: dust of its colour, or any particle that takes no options; none for one it does not know. */
 	private static net.minecraft.core.particles.ParticleOptions moteParticle(Motes.Spec spec) {
 		if (spec.particle().equals("dust")) {

@@ -968,6 +968,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::OnTheExitPortal
         | Action::LeavesAtTheDoor
         | Action::SmokeFromTheRoof
+        | Action::WrongFooting
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10971,6 +10972,18 @@ pub fn commands(
             )],
             None => vec![],
         },
+        // docs/events_todo.md, 322.
+        Action::WrongFooting => vec![(
+            Command::Hint {
+                id: ids(),
+                player: target,
+                hint: "sound_swap".to_string(),
+                pos: None,
+                seconds: 6.0,
+                detail: "from=*.step;to=minecraft:block.wood.step".to_string(),
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -23752,5 +23765,18 @@ mod tests {
             "{made:?}"
         );
         assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn wrong_footing_swaps_their_steps_for_wood_a_few_seconds() {
+        let memory = rich_memory();
+        let event = find("wrong_footing").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, detail, seconds, .. }, 0)]
+            if hint == "sound_swap" && detail.contains("to=minecraft:block.wood.step") && *seconds == 6.0),
+            "{made:?}"
+        );
+        assert_eq!(event.effect(), "sounds");
     }
 }

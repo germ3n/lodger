@@ -28,6 +28,7 @@
 		"PauseScreenMixin",
 		"ScreenshotMixin",
 		"SkyRendererMixin",
+		"SoundManagerMixin",
 		"SplashManagerMixin",
 		"SubtitleOverlayMixin",
 		"WeatherEffectRendererMixin",
