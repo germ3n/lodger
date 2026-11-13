@@ -3535,6 +3535,10 @@ The `[x]` lines above, summed up by day:
   underground: their name cut into the natural stone behind them (`name_in_netherrack`'s cutting,
   now shared). Tests: one in `act`. Was: no such event.
 
+- [x] **A seat by the door** (`docs/events_todo.md`, 332): `seat_by_the_door`, stages 2 to 5, the
+  target away or asleep: an oak stair as a chair beside their door, facing out. Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

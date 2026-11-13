@@ -913,6 +913,18 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             })
             .copied();
     }
+    // Outside the door they use, two to its side.
+    if event.id == "seat_by_the_door" {
+        return home.and_then(|h| {
+            let door = memory.usual_door()?;
+            let out = out_of_door(memory, h.center, door);
+            Some([
+                door[0] + out[0] + out[1] * 2,
+                -10_000,
+                door[2] + out[1] + out[0] * 2,
+            ])
+        });
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1069,6 +1081,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ShipOnTheHorizon
         | Action::FigureInTheIce
         | Action::NameInTheStone
+        | Action::SeatByTheDoor
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12083,6 +12096,21 @@ pub fn commands(
                 "minecraft:tuff",
             ],
         ),
+        // docs/events_todo.md, 332.
+        Action::SeatByTheDoor => match (pos, memory.usual_door(), memory.home.as_ref()) {
+            (Some(seat), Some(door), Some(h)) => {
+                // A stair's back to the house: its facing is the way up the steps, toward the
+                // house, so one sitting on it looks out.
+                let out = out_of_door(memory, h.center, door);
+                let facing = crate::building::facing_name([-out[0], -out[1]]);
+                let mut chair = on_ground(ids, seat, "minecraft:oak_stairs");
+                if let Command::SetBlock { state, .. } = &mut chair {
+                    *state = format!("facing={facing}");
+                }
+                vec![(chair, 0)]
+            }
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -25601,5 +25629,22 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().all(|(c, _)| matches!(c, Command::SetBlock { block, replace, .. } if block == "minecraft:air" && replace.iter().any(|r| r == "minecraft:deepslate") && !replace.iter().any(|r| r == "minecraft:netherrack"))));
+    }
+
+    #[test]
+    fn seat_by_the_door_faces_out_beside_it() {
+        let memory = rich_memory();
+        let event = find("seat_by_the_door").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let door = memory.usual_door().unwrap();
+        assert!(
+            matches!(pos, Some(p) if p[1] == -10_000 && (p[0] - door[0]).abs() + (p[2] - door[2]).abs() == 3),
+            "{pos:?}"
+        );
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::SetBlock { block, state, .. }, 0)] if block == "minecraft:oak_stairs" && state.starts_with("facing=")),
+            "{made:?}"
+        );
     }
 }
