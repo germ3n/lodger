@@ -1407,6 +1407,8 @@ pub enum Action {
     AGlintOnTheHill,
     /// Underground, a slow heartbeat from inside the rock ahead of them.
     HeartbeatInTheStone,
+    /// In a storm, a bolt far ahead of them and its thunder from right behind them.
+    ThunderBehind,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8801,6 +8803,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::HeartbeatInTheStone,
         false,
     ),
+    // docs/events_todo.md, 345: in a storm, a flash ahead of them, and the thunder comes from right behind them.
+    row(
+        "thunder_behind",
+        3,
+        5,
+        &[Thundering, TargetOutdoors],
+        1.5,
+        3,
+        Half,
+        Action::ThunderBehind,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9113,6 +9127,7 @@ impl Event {
             | Action::PotionAtTheWindow
             | Action::WrongFooting
             | Action::HeartbeatInTheStone
+            | Action::ThunderBehind
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -10140,6 +10155,7 @@ impl Event {
             "paper_on_the_floor" => "leave a sheet of paper inside their door",
             "a_glint_on_the_hill" => "flash a glint at them from far off",
             "heartbeat_in_the_stone" => "beat a heart inside the rock ahead of them",
+            "thunder_behind" => "strike lightning ahead and sound its thunder behind them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -1001,6 +1001,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PaperOnTheFloor
         | Action::AGlintOnTheHill
         | Action::HeartbeatInTheStone
+        | Action::ThunderBehind
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11156,6 +11157,40 @@ pub fn commands(
                     )
                 })
                 .collect()
+        }
+        // docs/events_todo.md, 345.
+        Action::ThunderBehind => {
+            let p = memory.last.pos;
+            let way = facing_way(memory.last.yaw);
+            let ahead = [
+                p[0] + way[0] as f64 * 40.0,
+                p[1],
+                p[2] + way[1] as f64 * 40.0,
+            ];
+            let behind = [
+                p[0] - way[0] as f64 * 3.0,
+                p[1] + 1.0,
+                p[2] - way[1] as f64 * 3.0,
+            ];
+            vec![
+                (
+                    Command::Lightning {
+                        id: ids(),
+                        pos: ahead,
+                    },
+                    0,
+                ),
+                (
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:entity.lightning_bolt.thunder",
+                        behind,
+                        1.0,
+                    ),
+                    12,
+                ),
+            ]
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -24139,5 +24174,18 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 4);
         assert!(made.iter().all(|(c, _)| matches!(c, Command::PlaySound { sound, pos, .. } if sound.ends_with("heartbeat") && pos[2] == 6.5)), "{made:?}");
+    }
+
+    #[test]
+    fn thunder_behind_flashes_ahead_and_thunders_behind() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("thunder_behind").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Lightning { pos: a, .. }, 0), (Command::PlaySound { pos: b, .. }, 12)] if a[2] == 40.5 && b[2] == -2.5),
+            "{made:?}"
+        );
     }
 }

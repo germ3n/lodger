@@ -3389,6 +3389,10 @@ The `[x]` lines above, summed up by day:
   to 5, underground: four heartbeats from the rock ahead of them. Tests: one in `act`. Was: no such
   event.
 
+- [x] **Thunder behind** (`docs/events_todo.md`, 345): `thunder_behind`, stages 3 to 5, in a storm:
+  a bolt that only shows ahead, its thunder three blocks behind them. Tests: one in `act`. Was: no
+  such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
