@@ -1439,6 +1439,8 @@ pub enum Action {
     ACloudOfItsOwn,
     /// In a warm place, a few snowflakes falling on them out of a clear sky.
     SnowInTheHeat,
+    /// Just after the rain, it goes on raining a minute for them alone, the drops and the sound.
+    RainStays,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9044,6 +9046,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SnowInTheHeat,
         false,
     ),
+    // docs/events_todo.md, 346: the storm ends, the sky clears, and for them it goes on raining a minute.
+    row(
+        "rain_stays",
+        3,
+        5,
+        &[RainJustEnded],
+        2.0,
+        2,
+        Half,
+        Action::RainStays,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9752,6 +9766,7 @@ impl Event {
             | Action::TheGrassParts
             | Action::ACloudOfItsOwn
             | Action::SnowInTheHeat
+            | Action::RainStays
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10416,6 +10431,7 @@ impl Event {
             "the_grass_parts" => "part the grass in a line toward them",
             "a_cloud_of_its_own" => "rain on them alone under a clear sky",
             "snow_in_the_heat" => "snow on them in the heat",
+            "rain_stays" => "keep the rain on them after it stopped",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

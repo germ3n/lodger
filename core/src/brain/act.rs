@@ -1033,6 +1033,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TheGrassParts
         | Action::ACloudOfItsOwn
         | Action::SnowInTheHeat
+        | Action::RainStays
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11549,6 +11550,33 @@ pub fn commands(
             ),
             0,
         )],
+        // docs/events_todo.md, 346.
+        Action::RainStays => {
+            let mut made = vec![(
+                motes(
+                    ids,
+                    target,
+                    None,
+                    60.0,
+                    "p=minecraft:falling_water;n=9;r=7;h=0.2;at=player;o=0,7,0".to_string(),
+                ),
+                0,
+            )];
+            for i in 0..30u64 {
+                let p = memory.last.pos;
+                made.push((
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:weather.rain",
+                        [p[0], p[1] + 3.0, p[2]],
+                        0.3,
+                    ),
+                    i * 40,
+                ));
+            }
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24779,6 +24807,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("snowflake"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn rain_stays_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("rain_stays").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("falling_water"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
     }
 }

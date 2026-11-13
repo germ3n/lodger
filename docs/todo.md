@@ -3455,6 +3455,10 @@ The `[x]` lines above, summed up by day:
   somewhere warm: snowflakes over them half a minute (`motes` at them). Tests: one in `act`. Was: no
   such event.
 
+- [x] **The rain stays** (`docs/events_todo.md`, 346): `rain_stays`, stages 3 to 5, just after the
+  rain: drops round them and the rain's sound a minute (`motes` at them). Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
