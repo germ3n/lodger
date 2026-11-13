@@ -887,6 +887,11 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         return Some("furniture");
     }
     let name = id.rsplit(':').next().unwrap_or(id);
+    // A head or a skull, on the floor or the wall, any mob's (`skull_turned`); a piston's head
+    // is no head.
+    if (name.ends_with("_skull") || name.ends_with("_head")) && name != "piston_head" {
+        return Some("head");
+    }
 
     KINDS
         .iter()

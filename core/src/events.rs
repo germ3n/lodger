@@ -1386,6 +1386,8 @@ pub enum Action {
     WrongFooting,
     /// The books on their chiseled bookshelf each one slot along (`rotate_slots`).
     BookMovedOnShelf,
+    /// A head or skull they set on the floor turned to face their bed (its `rotation`).
+    SkullTurned,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8696,6 +8698,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BookMovedOnShelf,
         true,
     ),
+    // docs/events_todo.md, 325: a head or skull they set out faces their bed when they come back.
+    row(
+        "skull_turned",
+        1,
+        5,
+        &[Fixture("head"), Bed, TargetAwayOrAsleep],
+        2.0,
+        3,
+        Half,
+        Action::SkullTurned,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9385,6 +9399,7 @@ impl Event {
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
+            | Action::SkullTurned
             | Action::LeavesAtTheDoor
             | Action::CopperAges
             | Action::BedFenced
@@ -10021,6 +10036,7 @@ impl Event {
             "wrong_footing" => "make their steps outside sound like their floorboards",
             "plate_clicks" => "click one of their pressure plates down",
             "book_moved_on_shelf" => "move the books on their bookshelf one slot along",
+            "skull_turned" => "turn the head they set out to face their bed",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

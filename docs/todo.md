@@ -3355,6 +3355,10 @@ The `[x]` lines above, summed up by day:
   (`rotate_slots`); the chiseled bookshelf a fixture now, in the home read too. Tests: one in `act`.
   Was: no such event.
 
+- [x] **The skull turned** (`docs/events_todo.md`, 325): `skull_turned`, stages 1 to 5, the target
+  away or asleep: a head or skull of theirs turned to face the bed (`set_state` of `rotation`);
+  heads and skulls a fixture kind (`head`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

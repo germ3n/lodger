@@ -861,6 +861,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "book_moved_on_shelf" {
         return memory.fixtures("chiseled_bookshelf").next().map(|f| f.pos);
     }
+    // The first head or skull they set out.
+    if event.id == "skull_turned" {
+        return memory.fixtures("head").next().map(|f| f.pos);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -974,6 +978,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SmokeFromTheRoof
         | Action::WrongFooting
         | Action::BookMovedOnShelf
+        | Action::SkullTurned
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10993,6 +10998,25 @@ pub fn commands(
         Action::BookMovedOnShelf => pos
             .map(|p| vec![(Command::RotateSlots { id: ids(), pos: p }, 0)])
             .unwrap_or_default(),
+        // docs/events_todo.md, 325.
+        Action::SkullTurned => match (pos, memory.home.as_ref().and_then(|h| h.bed)) {
+            (Some(head), Some(bed)) => {
+                // The game's yaw toward the bed (0 south, 90 west), in sixteenths.
+                let (dx, dz) = ((bed[0] - head[0]) as f64, (bed[2] - head[2]) as f64);
+                let yaw = (-dx).atan2(dz).to_degrees().rem_euclid(360.0);
+                let rotation = ((yaw / 22.5).round() as i32).rem_euclid(16);
+                vec![(
+                    Command::SetState {
+                        id: ids(),
+                        pos: head,
+                        property: "rotation".to_string(),
+                        value: rotation.to_string(),
+                    },
+                    0,
+                )]
+            }
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14121,6 +14145,7 @@ mod tests {
             ("candle", [0, 65, 1]),
             ("crafter", [3, 64, -3]),
             ("shelf", [-3, 66, 3]),
+            ("head", [2, 64, -3]),
             ("chiseled_bookshelf", [-4, 65, 3]),
             // A plate by the door, for `plate_clicks`.
             ("pressure_plate", [1, 64, -1]),
@@ -23829,6 +23854,39 @@ mod tests {
                 )]
             ),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn skull_turned_faces_their_bed() {
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:skeleton_wall_skull"),
+            Some("head")
+        );
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:zombie_head"),
+            Some("head")
+        );
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:piston_head"),
+            None
+        );
+        let mut memory = rich_memory();
+        memory.home.as_mut().unwrap().bed = Some([2, 64, 5]);
+        let event = find("skull_turned").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, Some([2, 64, -3]));
+        // The bed straight south of it: rotation 0.
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::SetState { property, value, .. }, 0)] if property == "rotation" && value == "0"),
+            "{made:?}"
+        );
+        memory.home.as_mut().unwrap().bed = Some([-6, 64, -3]);
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::SetState { value, .. }, 0)] if value == "4"),
+            "west is a quarter: {made:?}"
         );
     }
 }
