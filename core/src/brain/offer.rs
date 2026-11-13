@@ -341,6 +341,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::ThunderBehind
         | Action::BedCreaks
         | Action::KnockFromBelow
+        | Action::ThunderCounts
         | Action::PotionAtTheWindow => config.events.sounds,
         // Their name in the ghasts' cries is a hint too: off with the glitches.
         // The lost hour begins with their screen black: a glitch too.
@@ -482,6 +483,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::ThunderBehind
         | Action::BedCreaks
         | Action::KnockFromBelow
+        | Action::ThunderCounts
         | Action::PotionAtTheWindow => Some("sound"),
         Action::Hint(_, _)
         | Action::BossBarIt

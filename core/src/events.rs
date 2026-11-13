@@ -1413,6 +1413,8 @@ pub enum Action {
     BedCreaks,
     /// At the bottom of the world, a knock from under the bedrock, then two.
     KnockFromBelow,
+    /// In a storm, five claps of thunder a beat apart, counting down, then none.
+    ThunderCounts,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8855,6 +8857,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::KnockFromBelow,
         false,
     ),
+    // docs/events_todo.md, 378: in a storm, the thunder comes in claps that count down: five, four, three, two, one; then nothing.
+    row(
+        "thunder_counts",
+        4,
+        5,
+        &[Thundering, TargetAwake],
+        2.0,
+        2,
+        Half,
+        Action::ThunderCounts,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9170,6 +9184,7 @@ impl Event {
             | Action::ThunderBehind
             | Action::BedCreaks
             | Action::KnockFromBelow
+            | Action::ThunderCounts
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -10201,6 +10216,7 @@ impl Event {
             "bed_creaks" => "creak their bed as if someone sat on it",
             "stand_bubbles" => "bubble their brewing stand",
             "knock_from_below" => "knock from under the bedrock",
+            "thunder_counts" => "count the thunder down from five",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

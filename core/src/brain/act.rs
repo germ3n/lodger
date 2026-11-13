@@ -1008,6 +1008,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ThunderBehind
         | Action::BedCreaks
         | Action::KnockFromBelow
+        | Action::ThunderCounts
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11222,6 +11223,32 @@ pub fn commands(
                     (
                         sound_at(ids, target, "minecraft:block.wooden_door.close", under, 1.0),
                         later,
+                    )
+                })
+                .collect()
+        }
+        // docs/events_todo.md, 378.
+        Action::ThunderCounts => {
+            // Five claps two seconds apart, each from another side of them, each nearer.
+            let p = memory.last.pos;
+            (0..5u64)
+                .map(|i| {
+                    let angle = i as f64 * 1.3;
+                    let far = 40.0 - i as f64 * 7.0;
+                    let at = [
+                        p[0] + angle.cos() * far,
+                        p[1] + 8.0,
+                        p[2] + angle.sin() * far,
+                    ];
+                    (
+                        sound_at(
+                            ids,
+                            target,
+                            "minecraft:entity.lightning_bolt.thunder",
+                            at,
+                            1.0,
+                        ),
+                        i * 40,
                     )
                 })
                 .collect()
@@ -24274,5 +24301,24 @@ mod tests {
             &memory,
             &Now::default()
         ));
+    }
+
+    #[test]
+    fn thunder_counts_five_claps_coming_nearer() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("thunder_counts").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(
+            made.iter().map(|(_, l)| *l).collect::<Vec<_>>(),
+            vec![0, 40, 80, 120, 160]
+        );
+        let far = |c: &Command| match c {
+            Command::PlaySound { pos, .. } => {
+                ((pos[0] - 0.5).powi(2) + (pos[2] - 0.5).powi(2)).sqrt()
+            }
+            _ => 0.0,
+        };
+        assert!(far(&made[0].0) > far(&made[4].0));
     }
 }
