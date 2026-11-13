@@ -3503,6 +3503,10 @@ The `[x]` lines above, summed up by day:
   the glow lichen near them shown dark twenty seconds, coming toward them (`ghost_near`). Tests: one
   in `act`. Was: no such event.
 
+- [x] **The lava breathes** (`docs/events_todo.md`, 373): `lava_breathes`, stages 3 to 5,
+  underground: the lava near them shown crusted twice (`ghost_near` to magma). Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

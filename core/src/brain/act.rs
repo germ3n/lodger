@@ -1061,6 +1061,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TheCityCandles
         | Action::GlowBerriesGoDark
         | Action::LichenDims
+        | Action::LavaBreathes
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11873,6 +11874,33 @@ pub fn commands(
             ),
             0,
         )],
+        // docs/events_todo.md, 373.
+        Action::LavaBreathes => vec![
+            (
+                ghost_near(
+                    ids,
+                    target,
+                    "minecraft:lava",
+                    "minecraft:magma_block",
+                    2.5,
+                    true,
+                    "",
+                ),
+                0,
+            ),
+            (
+                ghost_near(
+                    ids,
+                    target,
+                    "minecraft:lava",
+                    "minecraft:magma_block",
+                    2.5,
+                    true,
+                    "",
+                ),
+                120,
+            ),
+        ],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -25296,6 +25324,17 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::GhostNear { of, block, in_turn: true, .. }, 0)] if of == "minecraft:glow_lichen" && block == "minecraft:sculk_vein"),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn lava_breathes_twice() {
+        let memory = rich_memory();
+        let event = find("lava_breathes").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(
+            made.iter().map(|(_, l)| *l).collect::<Vec<_>>(),
+            vec![0, 120]
         );
     }
 }
