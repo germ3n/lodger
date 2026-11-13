@@ -1384,6 +1384,8 @@ pub enum Action {
     SmokeFromTheRoof,
     /// A few seconds of their steps outdoors sounding like their own floorboards (the `sound_swap` hint).
     WrongFooting,
+    /// The books on their chiseled bookshelf each one slot along (`rotate_slots`).
+    BookMovedOnShelf,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8682,6 +8684,18 @@ pub const CATALOGUE: &[Event] = &[
         ),
         true,
     ),
+    // docs/events_todo.md, 324: the books on their chiseled bookshelf stand each one slot along from where they put them.
+    row(
+        "book_moved_on_shelf",
+        1,
+        5,
+        &[Fixture("chiseled_bookshelf"), TargetAwayOrAsleep],
+        2.0,
+        3,
+        Half,
+        Action::BookMovedOnShelf,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9066,6 +9080,7 @@ impl Event {
             | Action::EggOnThePillow
             | Action::BarterFromHome
             | Action::ElytraAtHome
+            | Action::BookMovedOnShelf
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -10005,6 +10020,7 @@ impl Event {
             "smoke_from_the_roof" => "send smoke up from the top of their house",
             "wrong_footing" => "make their steps outside sound like their floorboards",
             "plate_clicks" => "click one of their pressure plates down",
+            "book_moved_on_shelf" => "move the books on their bookshelf one slot along",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

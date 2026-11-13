@@ -857,6 +857,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             .house_box()
             .map(|(min, max)| [(min[0] + max[0]) / 2, max[1] + 1, (min[2] + max[2]) / 2]);
     }
+    // Their chiseled bookshelf.
+    if event.id == "book_moved_on_shelf" {
+        return memory.fixtures("chiseled_bookshelf").next().map(|f| f.pos);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -969,6 +973,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LeavesAtTheDoor
         | Action::SmokeFromTheRoof
         | Action::WrongFooting
+        | Action::BookMovedOnShelf
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10984,6 +10989,10 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 324.
+        Action::BookMovedOnShelf => pos
+            .map(|p| vec![(Command::RotateSlots { id: ids(), pos: p }, 0)])
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14112,6 +14121,7 @@ mod tests {
             ("candle", [0, 65, 1]),
             ("crafter", [3, 64, -3]),
             ("shelf", [-3, 66, 3]),
+            ("chiseled_bookshelf", [-4, 65, 3]),
             // A plate by the door, for `plate_clicks`.
             ("pressure_plate", [1, 64, -1]),
         ] {
@@ -23791,6 +23801,33 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::PlaySound { sound, .. }, _)] if sound.contains("pressure_plate")),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn book_moved_on_shelf_turns_the_books_of_their_chiseled_shelf() {
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:chiseled_bookshelf"),
+            Some("chiseled_bookshelf")
+        );
+        assert_eq!(crate::memory::fixture_kind_of("minecraft:bookshelf"), None);
+        let memory = rich_memory();
+        let event = find("book_moved_on_shelf").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, Some([-4, 65, 3]));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(
+                &made[..],
+                [(
+                    Command::RotateSlots {
+                        pos: [-4, 65, 3],
+                        ..
+                    },
+                    0
+                )]
+            ),
             "{made:?}"
         );
     }

@@ -3341,6 +3341,20 @@ The `[x]` lines above, summed up by day:
   pressure plate of theirs heard clicking down, the sound alone. Tests: one in `act`. Was: no such
   event.
 
+- [ ] **Near-twin events as one event with variants** (owner: "variants would be cool"; after
+  321 to 401 and the chains): a scan found built events a player could not tell apart:
+  `turn_bed`/`bed_turned`, `wave`/`figure_waves`, `torch_blue`/`soul_swap`,
+  `answers_you`/`says_back`, `tab_entry`/`tab_twice`, `fog_close`/`mist`,
+  `through_the_hill`/`into_the_mountain`, `splash_dark`/`their_own_potion`,
+  `breath_close`/`breath`, `water_where_none`/`bubbling_under`, `animals_nip`/`quick_approach`;
+  each pair one event with its variants, the chains moved to it; and some only better names
+  (`bell`, a village's bell, and `bell_rings`, theirs).
+
+- [x] **A book moved on the shelf** (`docs/events_todo.md`, 324): `book_moved_on_shelf`, stages 1 to
+  5, the target away or asleep: the books on their chiseled bookshelf each one slot along
+  (`rotate_slots`); the chiseled bookshelf a fixture now, in the home read too. Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -129,6 +129,7 @@ const READ_FIXTURES: &[&str] = &[
     "redstone_lamp",
     "brewing_stand",
     "grindstone",
+    "chiseled_bookshelf",
 ];
 
 /// A door is two blocks; its lower half stands for it.
@@ -875,6 +876,8 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "ender_chest",
         // A crafter (`crafter_clicks`).
         "crafter",
+        // A chiseled bookshelf (`book_moved_on_shelf`).
+        "chiseled_bookshelf",
         // A shelf, any wood's (`shelf_shuffled`).
         "shelf",
         // Their dragon egg (`egg_on_the_pillow`).
