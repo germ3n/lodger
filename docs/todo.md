@@ -3419,6 +3419,10 @@ The `[x]` lines above, summed up by day:
   a clear sky: sparks over their lightning rod three seconds and a crackle (`motes`); the lightning
   rod a fixture kind. Tests: one in `act`. Was: no such event.
 
+- [x] **A light below the boat** (`docs/events_todo.md`, 349): `light_below_the_boat`, stages 3 to
+  5, in a boat on the ocean at night: a glow eight blocks under them forty seconds (`motes` at
+  them). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

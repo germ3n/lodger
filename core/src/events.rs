@@ -1421,6 +1421,8 @@ pub enum Action {
     DustDevil,
     /// Their lightning rod sparking and crackling under a clear sky.
     LightningRodSparks,
+    /// At night on the ocean, a pale light far under their boat keeping pace with them.
+    LightBelowTheBoat,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8914,6 +8916,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LightningRodSparks,
         false,
     ),
+    // docs/events_todo.md, 349: in a boat over deep ocean at night, a pale light far below keeps pace with the boat.
+    row(
+        "light_below_the_boat",
+        3,
+        5,
+        &[Night, TargetInBoat, InBiome(&["ocean"])],
+        2.0,
+        2,
+        Half,
+        Action::LightBelowTheBoat,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9613,6 +9627,7 @@ impl Event {
             | Action::NameEchoes
             | Action::DustDevil
             | Action::LightningRodSparks
+            | Action::LightBelowTheBoat
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10268,6 +10283,7 @@ impl Event {
             "name_echoes" => "call their name across the mountains",
             "dust_devil" => "send a whirl of dust across the field at them",
             "lightning_rod_sparks" => "spark their lightning rod",
+            "light_below_the_boat" => "keep a light under their boat",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

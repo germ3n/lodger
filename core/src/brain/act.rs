@@ -1016,6 +1016,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::NameEchoes
         | Action::DustDevil
         | Action::LightningRodSparks
+        | Action::LightBelowTheBoat
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11346,6 +11347,17 @@ pub fn commands(
             ],
             None => vec![],
         },
+        // docs/events_todo.md, 349.
+        Action::LightBelowTheBoat => vec![(
+            motes(
+                ids,
+                target,
+                None,
+                40.0,
+                "p=minecraft:glow;n=1.5;r=0.6;h=0.6;at=player;o=0,-8,0".to_string(),
+            ),
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24460,5 +24472,18 @@ mod tests {
             crate::memory::fixture_kind_of("minecraft:lightning_rod"),
             Some("lightning_rod")
         );
+    }
+
+    #[test]
+    fn light_below_the_boat_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("light_below_the_boat").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("minecraft:glow"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
     }
 }
