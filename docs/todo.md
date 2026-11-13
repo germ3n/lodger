@@ -3435,6 +3435,10 @@ The `[x]` lines above, summed up by day:
   indoors: a splash over their cauldron, seen and heard (`motes`). Tests: one in `act`. Was: no such
   event.
 
+- [x] **Leaves fall inside** (`docs/events_todo.md`, 358): `leaves_fall_inside`, stages 1 to 5,
+  indoors: falling leaves round them six seconds (`motes` at them). Tests: one in `act`. Was: no
+  such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

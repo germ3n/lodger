@@ -1028,6 +1028,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LightsOverTheSwamp
         | Action::SmokeSignals
         | Action::CauldronRipples
+        | Action::LeavesFallInside
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11447,6 +11448,18 @@ pub fn commands(
             ],
             None => vec![],
         },
+        // docs/events_todo.md, 358.
+        Action::LeavesFallInside => vec![(
+            motes(
+                ids,
+                target,
+                None,
+                6.0,
+                "p=minecraft:orange_poplar_leaves;n=0.6;r=1.5;h=0.2;at=player;o=0,2.2,0"
+                    .to_string(),
+            ),
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24612,6 +24625,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("minecraft:splash"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn leaves_fall_inside_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("leaves_fall_inside").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("poplar_leaves"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
     }
 }

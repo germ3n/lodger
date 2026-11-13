@@ -1429,6 +1429,8 @@ pub enum Action {
     SmokeSignals,
     /// The water in their cauldron splashing once, as if something dipped into it.
     CauldronRipples,
+    /// A few leaves drifting down from the ceiling of their room, on their screen alone.
+    LeavesFallInside,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8970,6 +8972,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CauldronRipples,
         true,
     ),
+    // docs/events_todo.md, 358: indoors, a few leaves drift down from the ceiling and are gone on the floor.
+    row(
+        "leaves_fall_inside",
+        1,
+        5,
+        &[Home, TargetIndoors],
+        2.0,
+        4,
+        Half,
+        Action::LeavesFallInside,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9673,6 +9687,7 @@ impl Event {
             | Action::LightsOverTheSwamp
             | Action::SmokeSignals
             | Action::CauldronRipples
+            | Action::LeavesFallInside
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10332,6 +10347,7 @@ impl Event {
             "lights_over_the_swamp" => "hang lights over the swamp that drift away",
             "smoke_signals" => "send their campfire's smoke up in signals",
             "cauldron_ripples" => "splash the water in their cauldron",
+            "leaves_fall_inside" => "drift a few leaves down from their ceiling",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
