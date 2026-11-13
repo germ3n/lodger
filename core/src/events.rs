@@ -1390,6 +1390,8 @@ pub enum Action {
     SkullTurned,
     /// A pet they left sitting got up where it sat, looking at the door (`stand_up`).
     PetGotUp,
+    /// A light behind one of their windows a few seconds, on their screen alone, as if someone carried a torch past.
+    LightInYourWindow,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8724,6 +8726,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PetGotUp,
         true,
     ),
+    // docs/events_todo.md, 328: at dusk, coming home, one window of their house glows a moment as if someone inside carried a torch past.
+    row(
+        "light_in_your_window",
+        2,
+        5,
+        &[Dusk, Pane, TargetApproachingDoor],
+        2.0,
+        3,
+        Half,
+        Action::LightInYourWindow,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9411,6 +9425,7 @@ impl Event {
             | Action::NameFromTheVoid
             | Action::EndGoesQuiet
             | Action::SmokeFromTheRoof
+            | Action::LightInYourWindow
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10053,6 +10068,7 @@ impl Event {
             "book_moved_on_shelf" => "move the books on their bookshelf one slot along",
             "skull_turned" => "turn the head they set out to face their bed",
             "pet_got_up" => "have the pet they left sitting stand up and look at the door",
+            "light_in_your_window" => "light a window of their house a moment from inside",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

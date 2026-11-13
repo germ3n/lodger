@@ -356,6 +356,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::SoundWarp
         | Action::CreeperBehind
         | Action::PrintsAroundTheHouse
+        | Action::LightInYourWindow
         | Action::WrongFooting
         | Action::SmokeFromTheRoof
         // Their breath showing is on their client alone.
@@ -484,6 +485,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::SoundWarp
         | Action::CreeperBehind
         | Action::PrintsAroundTheHouse
+        | Action::LightInYourWindow
         | Action::WrongFooting
         | Action::SmokeFromTheRoof => Some("screen"),
         Action::Figure(_, _, _)

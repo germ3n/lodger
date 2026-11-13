@@ -865,6 +865,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "skull_turned" {
         return memory.fixtures("head").next().map(|f| f.pos);
     }
+    // Their first window.
+    if event.id == "light_in_your_window" {
+        return windows_of(memory).first().copied();
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -980,6 +984,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BookMovedOnShelf
         | Action::SkullTurned
         | Action::PetGotUp
+        | Action::LightInYourWindow
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11028,6 +11033,31 @@ pub fn commands(
                 },
                 0,
             )],
+            _ => vec![],
+        },
+        // docs/events_todo.md, 328.
+        Action::LightInYourWindow => match (pos, memory.home.as_ref()) {
+            (Some(pane), Some(h)) => {
+                // The block inside the pane, toward the house's middle: a light there on their
+                // screen alone, lighting the room as a torch carried past would, and out again.
+                let way = step_toward(pane, h.center);
+                let inside = [pane[0] + way[0], pane[1], pane[2] + way[1]];
+                let ghost =
+                    |ids: &mut dyn FnMut() -> u64, block: &str, state: &str| Command::GhostBlock {
+                        id: ids(),
+                        player: target,
+                        pos: inside,
+                        block: block.to_string(),
+                        state: state.to_string(),
+                        only_air: true,
+                        head_of: None,
+                        face_player: false,
+                    };
+                vec![
+                    (ghost(ids, "minecraft:light", "level=13"), 0),
+                    (ghost(ids, "", ""), 70),
+                ]
+            }
             _ => vec![],
         },
         Action::SculkCreeps => {
@@ -23912,6 +23942,20 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::StandUp { entity, face, .. }, 0)] if *entity == pet && *face == door),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn light_in_your_window_glows_inside_a_pane_and_goes_out() {
+        let memory = rich_memory();
+        let event = find("light_in_your_window").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let pane = pos.unwrap();
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostBlock { block, only_air: true, pos: lit, .. }, 0), (Command::GhostBlock { block: out, .. }, 70)]
+            if block == "minecraft:light" && out.is_empty() && distance(*lit, pane) == 1.0),
             "{made:?}"
         );
     }

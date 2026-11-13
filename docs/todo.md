@@ -3363,6 +3363,11 @@ The `[x]` lines above, summed up by day:
   sitting pet got up where it sat, looking at the door (`stand_up`, a new command, ABI 57). Tests:
   one in `act`. Was: no such event.
 
+- [x] **A light in your window** (`docs/events_todo.md`, 328): `light_in_your_window`, stages 2 to
+  5, at dusk coming home: a light shown on their screen alone just inside a window of the house,
+  three and a half seconds (`ghost_block` of `minecraft:light`). Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
