@@ -1411,6 +1411,8 @@ pub enum Action {
     ThunderBehind,
     /// The creak of someone sitting down on their bed, no one on it.
     BedCreaks,
+    /// At the bottom of the world, a knock from under the bedrock, then two.
+    KnockFromBelow,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8841,6 +8843,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SoundAtFixture("brewing_stand", "minecraft:block.brewing_stand.brew"),
         true,
     ),
+    // docs/events_todo.md, 368: down at the bedrock, a knock from under it, where nothing can be; then two.
+    row(
+        "knock_from_below",
+        4,
+        5,
+        &[TargetUnderground, Below(-50)],
+        2.0,
+        2,
+        Full,
+        Action::KnockFromBelow,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9155,6 +9169,7 @@ impl Event {
             | Action::HeartbeatInTheStone
             | Action::ThunderBehind
             | Action::BedCreaks
+            | Action::KnockFromBelow
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -10185,6 +10200,7 @@ impl Event {
             "thunder_behind" => "strike lightning ahead and sound its thunder behind them",
             "bed_creaks" => "creak their bed as if someone sat on it",
             "stand_bubbles" => "bubble their brewing stand",
+            "knock_from_below" => "knock from under the bedrock",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

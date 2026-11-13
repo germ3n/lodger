@@ -1007,6 +1007,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::HeartbeatInTheStone
         | Action::ThunderBehind
         | Action::BedCreaks
+        | Action::KnockFromBelow
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11211,6 +11212,20 @@ pub fn commands(
             ],
             None => vec![],
         },
+        // docs/events_todo.md, 368.
+        Action::KnockFromBelow => {
+            let p = memory.last.pos;
+            let under = [p[0], p[1] - 3.0, p[2]];
+            [0u64, 50, 58]
+                .into_iter()
+                .map(|later| {
+                    (
+                        sound_at(ids, target, "minecraft:block.wooden_door.close", under, 1.0),
+                        later,
+                    )
+                })
+                .collect()
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24232,5 +24247,32 @@ mod tests {
             matches!(&made[..], [(Command::PlaySound { sound, .. }, _)] if sound.contains("brewing_stand")),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn knock_from_below_comes_from_under_their_feet() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, -58.0, 0.5];
+        memory.last.underground = true;
+        memory.last.online = true;
+        let event = find("knock_from_below").unwrap();
+        assert!(event.needs.iter().all(|n| crate::brain::offer::meets(
+            *n,
+            &memory,
+            &Now::default()
+        )));
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 3);
+        assert!(
+            made.iter()
+                .all(|(c, _)| matches!(c, Command::PlaySound { pos, .. } if pos[1] == -61.0)),
+            "{made:?}"
+        );
+        memory.last.pos[1] = 20.0;
+        assert!(!crate::brain::offer::meets(
+            crate::events::Need::Below(-50),
+            &memory,
+            &Now::default()
+        ));
     }
 }

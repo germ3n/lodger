@@ -3399,6 +3399,10 @@ The `[x]` lines above, summed up by day:
 - [x] **The stand bubbles** (`docs/events_todo.md`, 353): `stand_bubbles`, stages 1 to 5, indoors:
   their brewing stand heard brewing, the sound alone. Tests: one in `act`. Was: no such event.
 
+- [x] **A knock from below** (`docs/events_todo.md`, 368): `knock_from_below`, stages 4 and 5, at
+  the bedrock: a knock from under their feet, then two (`Below(-50)`, a need for how deep they are).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
