@@ -1060,6 +1060,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FliesBesideYou
         | Action::TheCityCandles
         | Action::GlowBerriesGoDark
+        | Action::LichenDims
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11859,6 +11860,19 @@ pub fn commands(
                 )
             })
             .collect(),
+        // docs/events_todo.md, 374.
+        Action::LichenDims => vec![(
+            ghost_near(
+                ids,
+                target,
+                "minecraft:glow_lichen",
+                "minecraft:sculk_vein",
+                20.0,
+                true,
+                "",
+            ),
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -25272,5 +25286,16 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 2);
         assert!(made.iter().all(|(c, _)| matches!(c, Command::GhostNear { state, in_turn: true, .. } if state == "berries=false")));
+    }
+
+    #[test]
+    fn lichen_dims_turns_the_lichen_dark_toward_them() {
+        let memory = rich_memory();
+        let event = find("lichen_dims").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostNear { of, block, in_turn: true, .. }, 0)] if of == "minecraft:glow_lichen" && block == "minecraft:sculk_vein"),
+            "{made:?}"
+        );
     }
 }

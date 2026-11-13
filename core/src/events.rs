@@ -1461,6 +1461,8 @@ pub enum Action {
     TheCityCandles,
     /// In a lush cave, the glow berries round them going dark one by one, on their screen alone.
     GlowBerriesGoDark,
+    /// Underground, the glow lichen near them going dark, on their screen alone.
+    LichenDims,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9198,6 +9200,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::GlowBerriesGoDark,
         false,
     ),
+    // docs/events_todo.md, 374: the glow lichen on the cave walls round them goes dark, and lights again later.
+    row(
+        "lichen_dims",
+        2,
+        5,
+        &[TargetUnderground],
+        2.0,
+        3,
+        Half,
+        Action::LichenDims,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9916,6 +9930,7 @@ impl Event {
             | Action::LanternDownTheRiver
             | Action::TheCityCandles
             | Action::GlowBerriesGoDark
+            | Action::LichenDims
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10592,6 +10607,7 @@ impl Event {
             "flies_beside_you" => "glide the figure beside them",
             "the_city_candles" => "light the city's candles one by one toward them",
             "glow_berries_go_dark" => "put out the glow berries round them",
+            "lichen_dims" => "dim the glow lichen round them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

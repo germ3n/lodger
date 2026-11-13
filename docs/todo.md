@@ -3499,6 +3499,10 @@ The `[x]` lines above, summed up by day:
   5, in a lush cave: the vines near them shown without berries one by one, forty seconds
   (`ghost_near`'s `state`). Tests: one in `act`. Was: no such event.
 
+- [x] **The lichen dims** (`docs/events_todo.md`, 374): `lichen_dims`, stages 2 to 5, underground:
+  the glow lichen near them shown dark twenty seconds, coming toward them (`ghost_near`). Tests: one
+  in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
