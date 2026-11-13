@@ -401,6 +401,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::OnTheExitPortal
         | Action::FigureInTheFlash
         | Action::FigureInYourField
+        | Action::AgainstTheSun
         | Action::DigInto(_)
         | Action::IntoTheDark
         | Action::Choke(_)
@@ -549,6 +550,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::OnTheExitPortal
         | Action::FigureInTheFlash
         | Action::FigureInYourField
+        | Action::AgainstTheSun
         | Action::DigInto(_)
         | Action::IntoTheDark
         | Action::RingOfFigures(_)

@@ -1056,6 +1056,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::DoorBangsInTheStorm
         | Action::FigureInTheFlash
         | Action::FigureInYourField
+        | Action::AgainstTheSun
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11770,6 +11771,22 @@ pub fn commands(
             }
             None => vec![],
         },
+        // docs/events_todo.md, 359.
+        Action::AgainstTheSun => {
+            // The sun's side: east before noon, west after; sixty blocks off on the ground there.
+            let p = block_of(memory.last.pos);
+            let east = now.day_time < 6_000;
+            let spot = [p[0] + if east { 60 } else { -60 }, -10_000, p[2]];
+            let mut shown = figure_shown(ids, memory, target, spot, 120.0, false);
+            if let Command::Figure {
+                held, once_seen, ..
+            } = &mut shown
+            {
+                *held = ItemStack::default();
+                *once_seen = true;
+            }
+            vec![(shown, 0)]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -25125,6 +25142,31 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Figure { swinging: true, vanish_within, held, .. }, 0)] if *vanish_within == 30.0 && held.id.ends_with("hoe")),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn against_the_sun_stands_on_the_sun_s_side() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("against_the_sun").unwrap();
+        let morning = Now {
+            day_time: 2_000,
+            ..Now::default()
+        };
+        let made = commands(event, None, &memory, &mut ids(), &morning, None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { pos, once_seen: true, .. }, 0)] if pos[0] == 60.5),
+            "{made:?}"
+        );
+        let afternoon = Now {
+            day_time: 9_000,
+            ..Now::default()
+        };
+        let made = commands(event, None, &memory, &mut ids(), &afternoon, None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { pos, .. }, 0)] if pos[0] == -59.5),
             "{made:?}"
         );
     }

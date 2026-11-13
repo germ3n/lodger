@@ -3483,6 +3483,10 @@ The `[x]` lines above, summed up by day:
   5, by day: the figure at the far edge of their field, a hoe swinging, gone within thirty blocks.
   Tests: one in `act`. Was: no such event.
 
+- [x] **Against the sun** (`docs/events_todo.md`, 359): `against_the_sun`, stages 3 to 5, by day:
+  the figure sixty blocks off on the sun's side, gone once seen. Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
