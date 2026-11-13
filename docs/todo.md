@@ -3491,6 +3491,10 @@ The `[x]` lines above, summed up by day:
   gliding: the figure four blocks to their right moving as they move fifteen seconds (`mirror`).
   Tests: one in `act`. Was: no such event.
 
+- [x] **The city's candles** (`docs/events_todo.md`, 389): `the_city_candles`, stages 4 and 5, in
+  the deep dark: the candles near them shown lit one by one toward them half a minute
+  (`ghost_near`'s new `state`, ABI 57). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

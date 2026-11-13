@@ -271,7 +271,8 @@ alone, gone before it would fire); `place_entity`'s `pos` with a y below -1000 c
 place's column, nothing tied to it) and `minecraft:trident`, for a while only, the trident thrown straight down
 into the ground, never to be picked up.
 
-ABI 57: `stand_up` (a tamed animal that sits got up where it sat, its head turned to a place).
+ABI 57: `stand_up` (a tamed animal that sits got up where it sat, its head turned to a place),
+and `ghost_near`'s `state` (properties set over the ones it keeps: candles shown lit).
 
 ## Resources
 

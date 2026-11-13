@@ -1058,6 +1058,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FigureInYourField
         | Action::AgainstTheSun
         | Action::FliesBesideYou
+        | Action::TheCityCandles
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2364,6 +2365,29 @@ pub fn light_near(memory: &Memory) -> Option<BlockPos> {
 }
 
 /// Two blocks behind the target, its feet at theirs (the figure stands one above the spot).
+/// Every `of` near the target shown to them alone as `block` a while, `state` over what the two
+/// share (`ghost_near`).
+fn ghost_near(
+    ids: &mut impl FnMut() -> u64,
+    target: u32,
+    of: &str,
+    block: &str,
+    seconds: f32,
+    in_turn: bool,
+    state: &str,
+) -> Command {
+    Command::GhostNear {
+        id: ids(),
+        player: target,
+        radius: 12,
+        of: of.to_string(),
+        block: block.to_string(),
+        seconds,
+        in_turn,
+        state: state.to_string(),
+    }
+}
+
 /// The block `blocks` ahead of where the target faces, `side` to their right, `up` over them.
 fn ahead_of(memory: &Memory, blocks: i32, side: i32, up: i32) -> BlockPos {
     let at = block_of(memory.last.pos);
@@ -9077,6 +9101,7 @@ pub fn commands(
                     block: "minecraft:open_eyeblossom".to_string(),
                     seconds: 60.0,
                     in_turn: false,
+                    state: String::new(),
                 },
                 0,
             ),
@@ -9154,6 +9179,7 @@ pub fn commands(
                 block: "minecraft:bush".to_string(),
                 seconds: 20.0,
                 in_turn: true,
+                state: String::new(),
             },
             0,
         )],
@@ -10444,6 +10470,7 @@ pub fn commands(
                     block: "minecraft:crying_obsidian".to_string(),
                     seconds: 90.0,
                     in_turn: true,
+                    state: String::new(),
                 },
                 0,
             )],
@@ -10593,6 +10620,7 @@ pub fn commands(
                     block: "minecraft:crying_obsidian".to_string(),
                     seconds: 60.0,
                     in_turn: true,
+                    state: String::new(),
                 },
                 0,
             ),
@@ -10778,6 +10806,7 @@ pub fn commands(
                 block: "minecraft:chorus_flower".to_string(),
                 seconds: 40.0,
                 in_turn: false,
+                state: String::new(),
             },
             0,
         )],
@@ -11804,6 +11833,21 @@ pub fn commands(
             }
             vec![(shown, 0)]
         }
+        // docs/events_todo.md, 389.
+        Action::TheCityCandles => [
+            "minecraft:candle",
+            "minecraft:white_candle",
+            "minecraft:light_gray_candle",
+            "minecraft:gray_candle",
+        ]
+        .into_iter()
+        .map(|kind| {
+            (
+                ghost_near(ids, target, kind, kind, 30.0, true, "lit=true"),
+                0,
+            )
+        })
+        .collect(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -25199,5 +25243,14 @@ mod tests {
             matches!(&made[..], [(Command::Figure { mirror: true, pos, .. }, 0)] if pos[1] == 120.0 && (pos[0] - 0.5).abs() == 4.0),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn the_city_candles_light_toward_them_on_their_screen() {
+        let memory = rich_memory();
+        let event = find("the_city_candles").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::GhostNear { state, in_turn: true, of, block, .. } if state == "lit=true" && of == block)), "{made:?}");
     }
 }

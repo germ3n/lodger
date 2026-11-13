@@ -1457,6 +1457,8 @@ pub enum Action {
     AgainstTheSun,
     /// Gliding on elytra, the figure gliding beside them, wingless, keeping pace.
     FliesBesideYou,
+    /// In an ancient city, the candles near them lighting one by one, on their screen alone.
+    TheCityCandles,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9170,6 +9172,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FliesBesideYou,
         false,
     ),
+    // docs/events_todo.md, 389: in an ancient city, the candles round them light one by one, coming toward them.
+    row(
+        "the_city_candles",
+        4,
+        5,
+        &[InBiome(&["deep_dark"]), TargetUnderground],
+        2.0,
+        2,
+        Half,
+        Action::TheCityCandles,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9886,6 +9900,7 @@ impl Event {
             | Action::SnowInTheHeat
             | Action::RainStays
             | Action::LanternDownTheRiver
+            | Action::TheCityCandles
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10560,6 +10575,7 @@ impl Event {
             "figure_in_your_field" => "have the figure tend their field far across it",
             "against_the_sun" => "stand the figure under the sun",
             "flies_beside_you" => "glide the figure beside them",
+            "the_city_candles" => "light the city's candles one by one toward them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

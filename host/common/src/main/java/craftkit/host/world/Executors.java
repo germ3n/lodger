@@ -3517,10 +3517,15 @@ public final class Executors {
 		for (int i = 0; i < found.size(); i++) {
 			BlockPos p = found.get(i);
 			BlockState shown = to.get().value().withPropertiesOf(level.getBlockState(p));
+			// With `state`, those properties set over the ones kept (ABI 57): a candle lit.
+			if (command.has("state")) {
+				shown = withState(shown, command.get("state").getAsString());
+			}
+			BlockState sent = shown;
 			if (inTurn && i > 0) {
-				context.later().at(i * 0.25f, () -> player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(p, shown)));
+				context.later().at(i * 0.25f, () -> player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(p, sent)));
 			} else {
-				player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(p, shown));
+				player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(p, sent));
 			}
 		}
 		float seconds = command.get("seconds").getAsFloat() + (inTurn ? found.size() * 0.25f : 0);

@@ -842,6 +842,9 @@ pub enum Command {
         /// each shown its `seconds` after the last.
         #[serde(default, skip_serializing_if = "is_false")]
         in_turn: bool,
+        /// Properties set over the ones kept (`lit=true`, `berries=false`). ABI 57.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        state: String,
     },
     /// A block shown at `pos` to `player` alone, `block` with `state` (`charges=4`), the world's
     /// own block untouched under it; `block` empty shows them what is really there again. Their
