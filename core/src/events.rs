@@ -1431,6 +1431,8 @@ pub enum Action {
     CauldronRipples,
     /// A few leaves drifting down from the ceiling of their room, on their screen alone.
     LeavesFallInside,
+    /// Far along the way ahead of them by day, a trail of dust as of someone walking toward them; no one there.
+    DustOnTheRoad,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8984,6 +8986,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LeavesFallInside,
         true,
     ),
+    // docs/events_todo.md, 366: by day, far ahead along their way, a trail of dust as of someone walking it toward them; no one there.
+    row(
+        "dust_on_the_road",
+        2,
+        5,
+        &[Day, Route, TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::DustOnTheRoad,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9688,6 +9702,7 @@ impl Event {
             | Action::SmokeSignals
             | Action::CauldronRipples
             | Action::LeavesFallInside
+            | Action::DustOnTheRoad
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10348,6 +10363,7 @@ impl Event {
             "smoke_signals" => "send their campfire's smoke up in signals",
             "cauldron_ripples" => "splash the water in their cauldron",
             "leaves_fall_inside" => "drift a few leaves down from their ceiling",
+            "dust_on_the_road" => "raise dust far along the road ahead",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

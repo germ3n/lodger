@@ -3439,6 +3439,10 @@ The `[x]` lines above, summed up by day:
   indoors: falling leaves round them six seconds (`motes` at them). Tests: one in `act`. Was: no
   such event.
 
+- [x] **Dust on the road** (`docs/events_todo.md`, 366): `dust_on_the_road`, stages 2 to 5, outdoors
+  by day: dust coming toward them far ahead, sixteen seconds (`motes` with `to`). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

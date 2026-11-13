@@ -1029,6 +1029,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SmokeSignals
         | Action::CauldronRipples
         | Action::LeavesFallInside
+        | Action::DustOnTheRoad
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11460,6 +11461,23 @@ pub fn commands(
             ),
             0,
         )],
+        // docs/events_todo.md, 366.
+        Action::DustOnTheRoad => {
+            let (from, to) = (ahead_of(memory, 48, 0, 0), ahead_of(memory, 22, 0, 0));
+            vec![(
+                motes(
+                    ids,
+                    target,
+                    Some(from),
+                    16.0,
+                    format!(
+                        "p=dust:B89F78:2.2;n=2.5;r=0.6;h=0.5;to={},{},{}",
+                        to[0], to[1], to[2]
+                    ),
+                ),
+                0,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24638,6 +24656,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("poplar_leaves"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn dust_on_the_road_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("dust_on_the_road").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("dust:B89F78"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
     }
 }
