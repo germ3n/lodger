@@ -1399,6 +1399,8 @@ pub enum Action {
     FurnaceGlows,
     /// A sheet of paper on the floor inside their door, on their screen alone, gone as they reach for it.
     PaperOnTheFloor,
+    /// Far off ahead of them in daylight, a light flashing three times on the ground, on their screen alone.
+    AGlintOnTheHill,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8769,6 +8771,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PaperOnTheFloor,
         true,
     ),
+    // docs/events_todo.md, 331: in daylight, far off ahead of them, a glint flashes three times, as of a spyglass looking back; then nothing there.
+    row(
+        "a_glint_on_the_hill",
+        2,
+        5,
+        &[Day, TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::AGlintOnTheHill,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9459,6 +9473,7 @@ impl Event {
             | Action::SmokeFromTheRoof
             | Action::LightInYourWindow
             | Action::PaperOnTheFloor
+            | Action::AGlintOnTheHill
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10104,6 +10119,7 @@ impl Event {
             "light_in_your_window" => "light a window of their house a moment from inside",
             "furnace_glows" => "light their cold furnace a moment",
             "paper_on_the_floor" => "leave a sheet of paper inside their door",
+            "a_glint_on_the_hill" => "flash a glint at them from far off",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

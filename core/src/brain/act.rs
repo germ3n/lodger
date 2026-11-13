@@ -999,6 +999,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LightInYourWindow
         | Action::FurnaceGlows
         | Action::PaperOnTheFloor
+        | Action::AGlintOnTheHill
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2761,6 +2762,9 @@ fn spinning_villager(memory: &Memory) -> Option<&crate::memory::Creature> {
 /// The figure that comes on while unseen (`while_unseen`), and how far behind them it starts.
 const UNSEEN_FIGURE: u32 = 61;
 const UNSEEN_BEHIND: f64 = 18.0;
+/// How near its place they must be for the sniffer there (`sniffer_at_its_place`), blocks.
+const SNIFFER_HEARD: f64 = 48.0;
+
 /// The peeking figures' numbers (`peeks_from_the_trees`), and the ticks between them.
 const PEEK_FIRST: u32 = 51;
 const PEEK_AGAIN_TICKS: u64 = 100;
@@ -9410,7 +9414,10 @@ pub fn commands(
             0,
         )],
         // docs/events_todo.md, 252.
+        // Only within earshot of its place (forty-eight blocks): from the mine, its sniffing at
+        // the house was for nobody (the stays test).
         Action::SnifferAtItsPlace => pos
+            .filter(|p| flat_distance(*p, memory.last.pos) <= SNIFFER_HEARD)
             .map(|p| {
                 let ground = [p[0] as f64 + 0.5, GROUND_Y as f64 + 1.0, p[2] as f64 + 0.5];
                 let near = guessed(memory, grounded(p));
@@ -11106,6 +11113,33 @@ pub fn commands(
             )],
             None => vec![],
         },
+        // docs/events_todo.md, 331.
+        Action::AGlintOnTheHill => {
+            // Fifty blocks ahead on the ground, a block up: a sea lantern on their screen alone,
+            // three blinks a second apart.
+            let at = block_of(memory.last.pos);
+            let way = facing_way(memory.last.yaw);
+            let spot = [at[0] + way[0] * 50, -9_999, at[2] + way[1] * 50];
+            let mut made = Vec::new();
+            for blink in 0..3u64 {
+                for (block, later) in [("minecraft:sea_lantern", 0), ("", 6)] {
+                    made.push((
+                        Command::GhostBlock {
+                            id: ids(),
+                            player: target,
+                            pos: spot,
+                            block: block.to_string(),
+                            state: String::new(),
+                            only_air: true,
+                            head_of: None,
+                            face_player: false,
+                        },
+                        blink * 20 + later,
+                    ));
+                }
+            }
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -22802,6 +22836,9 @@ mod tests {
             "{made:?}"
         );
         assert_eq!(made.len(), 9);
+        // Out of earshot of its place, nothing: no sniffing for nobody.
+        memory.last.pos = [12.5 + SNIFFER_HEARD + 10.0, 63.0, -20.5];
+        assert!(commands(event, pos, &memory, &mut ids(), &Now::default(), None).is_empty());
     }
 
     #[test]
@@ -24056,6 +24093,23 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::GhostItem { item, .. }, 0)] if item == "minecraft:paper"),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_glint_on_the_hill_blinks_three_times_far_ahead() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("a_glint_on_the_hill").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 6);
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::GhostBlock { pos, .. } if pos[2] == 50 && pos[1] == -9_999)), "{made:?}");
+        assert_eq!(
+            made.iter()
+                .filter(|(c, _)| matches!(c, Command::GhostBlock { block, .. } if block.is_empty()))
+                .count(),
+            3
         );
     }
 }

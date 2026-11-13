@@ -3376,6 +3376,15 @@ The `[x]` lines above, summed up by day:
   coming home: paper shown on the floor inside their door, gone as they reach it (`ghost_item`).
   Tests: one in `act`. Was: no such event.
 
+- [x] **A glint on the hill** (`docs/events_todo.md`, 331): `a_glint_on_the_hill`, stages 2 to 5,
+  outdoors by day: a glint fifty blocks ahead, three blinks (`ghost_block` shown and taken away).
+  Tests: one in `act`. Was: no such event.
+
+- [x] **The sniffer only within earshot** (`sniffer_at_its_place`): it comes only while they
+  are within forty-eight blocks of its place. Tests: its test in `act` asks nothing out of
+  earshot. Was: it came anywhere outdoors, so from the mine its sniffing at the house was for
+  nobody (the stays test caught it).
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
