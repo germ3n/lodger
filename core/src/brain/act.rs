@@ -1062,6 +1062,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::GlowBerriesGoDark
         | Action::LichenDims
         | Action::LavaBreathes
+        | Action::CoralGoesGrey
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11901,6 +11902,18 @@ pub fn commands(
                 120,
             ),
         ],
+        // docs/events_todo.md, 395.
+        Action::CoralGoesGrey => {
+            let mut made = Vec::new();
+            for kind in ["tube", "brain", "bubble", "fire", "horn"] {
+                for part in ["coral_block", "coral", "coral_fan", "coral_wall_fan"] {
+                    let of = format!("minecraft:{kind}_{part}");
+                    let dead = format!("minecraft:dead_{kind}_{part}");
+                    made.push((ghost_near(ids, target, &of, &dead, 5.0, false, ""), 0));
+                }
+            }
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -25336,5 +25349,14 @@ mod tests {
             made.iter().map(|(_, l)| *l).collect::<Vec<_>>(),
             vec![0, 120]
         );
+    }
+
+    #[test]
+    fn coral_goes_grey_shows_each_coral_dead() {
+        let memory = rich_memory();
+        let event = find("coral_goes_grey").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 20);
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::GhostNear { of, block, .. } if block.replace("dead_", "") == *of)));
     }
 }

@@ -1465,6 +1465,8 @@ pub enum Action {
     LichenDims,
     /// Underground, the lava near them crusting dark and glowing again, twice, as if breathing.
     LavaBreathes,
+    /// Over a reef, the coral round them grey and dead a moment, on their screen alone.
+    CoralGoesGrey,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9226,6 +9228,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LavaBreathes,
         false,
     ),
+    // docs/events_todo.md, 395: diving over a reef, the coral round them turns grey and dead, and a moment later is bright again.
+    row(
+        "coral_goes_grey",
+        3,
+        5,
+        &[TargetSwimming, InBiome(&["warm_ocean"])],
+        2.0,
+        2,
+        Half,
+        Action::CoralGoesGrey,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9946,6 +9960,7 @@ impl Event {
             | Action::GlowBerriesGoDark
             | Action::LichenDims
             | Action::LavaBreathes
+            | Action::CoralGoesGrey
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10624,6 +10639,7 @@ impl Event {
             "glow_berries_go_dark" => "put out the glow berries round them",
             "lichen_dims" => "dim the glow lichen round them",
             "lava_breathes" => "make the lava near them breathe",
+            "coral_goes_grey" => "turn the reef round them grey",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
