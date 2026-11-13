@@ -1477,6 +1477,8 @@ pub enum Action {
     ShipOnTheHorizon,
     /// Among the ice spikes, a dark figure standing frozen inside the ice, looking out at them.
     FigureInTheIce,
+    /// Underground, their name cut a block deep into the stone wall behind them.
+    NameInTheStone,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9310,6 +9312,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FigureInTheIce,
         false,
     ),
+    // docs/events_todo.md, 372: on the wall of their mine, their name cut into the stone a block deep.
+    row(
+        "name_in_the_stone",
+        4,
+        5,
+        &[TargetUnderground, Tunnel],
+        3.0,
+        1,
+        Full,
+        Action::NameInTheStone,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10039,6 +10053,7 @@ impl Event {
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
+            | Action::NameInTheStone
             | Action::DoorBangsInTheStorm
             | Action::SkullTurned
             | Action::LeavesAtTheDoor
@@ -10720,6 +10735,7 @@ impl Event {
             "bones_in_the_mesa" => "lay a person's bones in the ground ahead",
             "ship_on_the_horizon" => "show a ship far out on the sea",
             "figure_in_the_ice" => "freeze the figure in the ice ahead of them",
+            "name_in_the_stone" => "cut their name into the stone behind them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

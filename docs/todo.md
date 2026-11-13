@@ -3531,6 +3531,10 @@ The `[x]` lines above, summed up by day:
   among the ice spikes: the figure in two blocks of ice shown to them alone, gone within eight.
   Tests: one in `act`. Was: no such event.
 
+- [x] **The name in the stone** (`docs/events_todo.md`, 372): `name_in_the_stone`, stages 4 and 5,
+  underground: their name cut into the natural stone behind them (`name_in_netherrack`'s cutting,
+  now shared). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -1068,6 +1068,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BonesInTheMesa
         | Action::ShipOnTheHorizon
         | Action::FigureInTheIce
+        | Action::NameInTheStone
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2410,6 +2411,44 @@ fn ghost_at(ids: &mut impl FnMut() -> u64, target: u32, pos: BlockPos, block: &s
         head_of: None,
         face_player: false,
     }
+}
+
+/// Their name cut a block deep into the wall three behind them, each letter five high from
+/// their feet, into `into` alone (`name_in_netherrack`, `name_in_the_stone`).
+fn cut_name(ids: &mut impl FnMut() -> u64, memory: &Memory, into: &[&str]) -> Vec<(Command, u64)> {
+    let name: String = memory
+        .target_name
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .take(NAME_CUT_MOST)
+        .collect();
+    let way = facing_way(memory.last.yaw);
+    let side = [-way[1], way[0]];
+    let at = block_of(memory.last.pos);
+    // Three behind them, read from where they stand: the letters left to right as they
+    // face it, five high from their feet up.
+    let base = [at[0] - way[0] * 3, at[1], at[2] - way[1] * 3];
+    let width = name.chars().count() as i32 * 4 - 1;
+    let mut made = Vec::new();
+    for (i, letter) in name.chars().enumerate() {
+        for [lx, lz] in snow_letter(letter) {
+            let across = i as i32 * 4 + lx - width / 2;
+            made.push((
+                set(
+                    ids,
+                    [
+                        base[0] + side[0] * across,
+                        base[1] + 4 - lz,
+                        base[2] + side[1] * across,
+                    ],
+                    "minecraft:air",
+                    into,
+                ),
+                0,
+            ));
+        }
+    }
+    made
 }
 
 /// The block `blocks` ahead of where the target faces, `side` to their right, `up` over them.
@@ -10406,41 +10445,7 @@ pub fn commands(
             )]
         }
         // docs/events_todo.md, 275.
-        Action::NameInNetherrack => {
-            let name: String = memory
-                .target_name
-                .chars()
-                .filter(|c| c.is_ascii_alphanumeric())
-                .take(NAME_CUT_MOST)
-                .collect();
-            let way = facing_way(memory.last.yaw);
-            let side = [-way[1], way[0]];
-            let at = block_of(memory.last.pos);
-            // Three behind them, read from where they stand: the letters left to right as they
-            // face it, five high from their feet up.
-            let base = [at[0] - way[0] * 3, at[1], at[2] - way[1] * 3];
-            let width = name.chars().count() as i32 * 4 - 1;
-            let mut made = Vec::new();
-            for (i, letter) in name.chars().enumerate() {
-                for [lx, lz] in snow_letter(letter) {
-                    let across = i as i32 * 4 + lx - width / 2;
-                    made.push((
-                        set(
-                            ids,
-                            [
-                                base[0] + side[0] * across,
-                                base[1] + 4 - lz,
-                                base[2] + side[1] * across,
-                            ],
-                            "minecraft:air",
-                            &["minecraft:netherrack"],
-                        ),
-                        0,
-                    ));
-                }
-            }
-            made
-        }
+        Action::NameInNetherrack => cut_name(ids, memory, &["minecraft:netherrack"]),
         // docs/events_todo.md, 280.
         Action::PrintsInSoulSand => {
             let way = facing_way(memory.last.yaw);
@@ -12065,6 +12070,19 @@ pub fn commands(
                 (ice(ids, -9_998, ""), 1_800),
             ]
         }
+        // docs/events_todo.md, 372.
+        Action::NameInTheStone => cut_name(
+            ids,
+            memory,
+            &[
+                "minecraft:stone",
+                "minecraft:deepslate",
+                "minecraft:andesite",
+                "minecraft:diorite",
+                "minecraft:granite",
+                "minecraft:tuff",
+            ],
+        ),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -15999,6 +16017,8 @@ mod tests {
                 || event.id == "hoglins_part"
                 || event.id == "ghast_watches"
                 || event.id == "strider_turns_home"
+                // Their name, which this memory has not: its own test.
+                || event.id == "name_in_the_stone"
                 // A furnace left empty, which this memory has not: its own test.
                 || event.id == "furnace_glows"
             {
@@ -25569,5 +25589,17 @@ mod tests {
             matches!(&made[0].0, Command::Figure { vanish_within, .. } if *vanish_within == 8.0)
         );
         assert_eq!(made.iter().filter(|(c, _)| matches!(c, Command::GhostBlock { block, pos, .. } if block == "minecraft:ice" && pos[2] == 20)).count(), 2);
+    }
+
+    #[test]
+    fn name_in_the_stone_cuts_only_natural_stone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 20.0, 0.5];
+        memory.last.yaw = 0.0;
+        memory.target_name = "razor".to_string();
+        let event = find("name_in_the_stone").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::SetBlock { block, replace, .. } if block == "minecraft:air" && replace.iter().any(|r| r == "minecraft:deepslate") && !replace.iter().any(|r| r == "minecraft:netherrack"))));
     }
 }
