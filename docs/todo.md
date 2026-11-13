@@ -3527,6 +3527,10 @@ The `[x]` lines above, summed up by day:
   at night on the ocean: a ship's outline seventy blocks out forty seconds (`ghost_block`). Tests:
   one in `act`. Was: no such event.
 
+- [x] **The figure in the ice** (`docs/events_todo.md`, 392): `figure_in_the_ice`, stages 4 and 5,
+  among the ice spikes: the figure in two blocks of ice shown to them alone, gone within eight.
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

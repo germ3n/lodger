@@ -1475,6 +1475,8 @@ pub enum Action {
     BonesInTheMesa,
     /// At night on the ocean, a ship's outline far out, one lantern lit, on their screen alone.
     ShipOnTheHorizon,
+    /// Among the ice spikes, a dark figure standing frozen inside the ice, looking out at them.
+    FigureInTheIce,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9296,6 +9298,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ShipOnTheHorizon,
         false,
     ),
+    // docs/events_todo.md, 392: among the ice spikes, a figure frozen inside the ice, looking out at them; gone when they come close.
+    row(
+        "figure_in_the_ice",
+        4,
+        5,
+        &[InBiome(&["ice_spikes"]), TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::FigureInTheIce,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9987,6 +10001,7 @@ impl Event {
             | Action::FigureInYourField
             | Action::AgainstTheSun
             | Action::FliesBesideYou
+            | Action::FigureInTheIce
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -10704,6 +10719,7 @@ impl Event {
             "face_in_the_ore" => "lay ore out as a face in the wall ahead",
             "bones_in_the_mesa" => "lay a person's bones in the ground ahead",
             "ship_on_the_horizon" => "show a ship far out on the sea",
+            "figure_in_the_ice" => "freeze the figure in the ice ahead of them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

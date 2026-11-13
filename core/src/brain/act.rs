@@ -1067,6 +1067,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FaceInTheOre
         | Action::BonesInTheMesa
         | Action::ShipOnTheHorizon
+        | Action::FigureInTheIce
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12030,6 +12031,39 @@ pub fn commands(
                 made.push((ghost_at(ids, target, p, ""), 800));
             }
             made
+        }
+        // docs/events_todo.md, 392.
+        Action::FigureInTheIce => {
+            // Twenty blocks ahead on the ground, two blocks of ice round it on their screen alone.
+            let spot = ahead_of(memory, 20, 0, 0);
+            let ground = [spot[0], -10_000, spot[2]];
+            let mut shown = figure_shown(ids, memory, target, ground, 90.0, false);
+            if let Command::Figure {
+                held,
+                vanish_within,
+                ..
+            } = &mut shown
+            {
+                *held = ItemStack::default();
+                *vanish_within = 8.0;
+            }
+            let ice = |ids: &mut dyn FnMut() -> u64, y: i32, block: &str| Command::GhostBlock {
+                id: ids(),
+                player: target,
+                pos: [spot[0], y, spot[2]],
+                block: block.to_string(),
+                state: String::new(),
+                only_air: true,
+                head_of: None,
+                face_player: false,
+            };
+            vec![
+                (shown, 0),
+                (ice(ids, -9_999, "minecraft:ice"), 0),
+                (ice(ids, -9_998, "minecraft:ice"), 0),
+                (ice(ids, -9_999, ""), 1_800),
+                (ice(ids, -9_998, ""), 1_800),
+            ]
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -25522,5 +25556,18 @@ mod tests {
         assert!(made
             .iter()
             .all(|(c, _)| matches!(c, Command::GhostBlock { pos, .. } if pos[2] == 70)));
+    }
+
+    #[test]
+    fn figure_in_the_ice_stands_inside_ice_on_their_screen() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("figure_in_the_ice").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::Figure { vanish_within, .. } if *vanish_within == 8.0)
+        );
+        assert_eq!(made.iter().filter(|(c, _)| matches!(c, Command::GhostBlock { block, pos, .. } if block == "minecraft:ice" && pos[2] == 20)).count(), 2);
     }
 }
