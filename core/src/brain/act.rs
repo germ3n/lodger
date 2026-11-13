@@ -851,6 +851,12 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             _ => None,
         };
     }
+    // Smoke over the house's middle, a block over its top.
+    if event.id == "smoke_from_the_roof" {
+        return memory
+            .house_box()
+            .map(|(min, max)| [(min[0] + max[0]) / 2, max[1] + 1, (min[2] + max[2]) / 2]);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -961,6 +967,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ElytraAtHome
         | Action::OnTheExitPortal
         | Action::LeavesAtTheDoor
+        | Action::SmokeFromTheRoof
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2035,6 +2042,25 @@ fn sound_at(
         pos,
         volume,
         pitch: 1.0,
+    }
+}
+
+/// The `motes` hint: particles on the target's client alone at `pos` (or at them, by the
+/// detail's `at=player`), as the detail says (`Motes` in the host).
+fn motes(
+    ids: &mut impl FnMut() -> u64,
+    target: u32,
+    pos: Option<BlockPos>,
+    seconds: f32,
+    detail: String,
+) -> Command {
+    Command::Hint {
+        id: ids(),
+        player: target,
+        hint: "motes".to_string(),
+        pos,
+        seconds,
+        detail,
     }
 }
 
@@ -10928,6 +10954,21 @@ pub fn commands(
                 }
                 vec![(litter, 0)]
             }
+            None => vec![],
+        },
+        // docs/events_todo.md, 327.
+        Action::SmokeFromTheRoof => match pos {
+            Some(top) => vec![(
+                motes(
+                    ids,
+                    target,
+                    Some(top),
+                    40.0,
+                    "p=minecraft:campfire_cosy_smoke;n=0.5;r=0.25;h=0.2;v=0,0.03,0;every=2"
+                        .to_string(),
+                ),
+                0,
+            )],
             None => vec![],
         },
         Action::SculkCreeps => {
@@ -23696,5 +23737,20 @@ mod tests {
             matches!(&made[..], [(Command::SetBlock { block, state, rest: true, .. }, 0)] if block == "minecraft:leaf_litter" && state == "segment_amount=3"),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn smoke_from_the_roof_rises_over_the_house_on_their_screen_alone() {
+        let memory = rich_memory();
+        let event = find("smoke_from_the_roof").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let (_, max) = memory.house_box().unwrap();
+        assert_eq!(pos.map(|p| p[1]), Some(max[1] + 1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, detail, .. }, 0)] if hint == "motes" && detail.contains("campfire_cosy_smoke")),
+            "{made:?}"
+        );
+        assert!(!crate::rules::hidden_from_view(event.action));
     }
 }

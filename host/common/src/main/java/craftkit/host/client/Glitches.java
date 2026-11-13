@@ -299,6 +299,28 @@ public final class Glitches {
 						drawPrints(minecraft, active, hint);
 					}
 				}
+				// Particles on their client alone at a place, at them, or moving (`Motes`): the smoke
+				// over a roof, dust crossing a field, lights over a swamp, rain on them alone.
+				case "motes" -> {
+					Motes.Spec spec = Motes.parse(hint.detail());
+					var random = minecraft.level.getRandom();
+					int count = Motes.count(spec, minecraft.level.getGameTime(), random.nextDouble());
+					if (count > 0) {
+						Vec3 me = minecraft.player.position();
+						double[] from = hint.pos().map(p -> new double[] {p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5}).orElse(new double[] {me.x, me.y, me.z});
+						double[] c = Motes.centre(spec, from, new double[] {me.x, me.y, me.z}, active.progress(now));
+						net.minecraft.core.particles.ParticleOptions options = moteParticle(spec);
+						if (options != null) {
+							for (int i = 0; i < count; i++) {
+								minecraft.level.addParticle(options,
+										c[0] + (random.nextDouble() * 2 - 1) * spec.spread(),
+										c[1] + random.nextDouble() * spec.height(),
+										c[2] + (random.nextDouble() * 2 - 1) * spec.spread(),
+										spec.velocity()[0], spec.velocity()[1], spec.velocity()[2]);
+							}
+						}
+					}
+				}
 				// Two hands pressed on the glass from the house's side, renewed as the dust fades.
 				case "handprints" -> hint.pos().ifPresent(pos -> {
 					if (minecraft.level.getGameTime() % 6 != 0) {
@@ -1025,6 +1047,20 @@ public final class Glitches {
 	private static void fill(GuiGraphicsExtractor graphics, int width, int height, int rgb, float alpha) {
 		int a = Math.max(0, Math.min(255, (int) (alpha * 255)));
 		graphics.fill(0, 0, width, height, (a << 24) | rgb);
+	}
+
+	/** A mote's particle: dust of its colour, or any particle that takes no options; none for one it does not know. */
+	private static net.minecraft.core.particles.ParticleOptions moteParticle(Motes.Spec spec) {
+		if (spec.particle().equals("dust")) {
+			return new net.minecraft.core.particles.DustParticleOptions(spec.colour(), spec.size());
+		}
+		var id = net.minecraft.resources.Identifier.tryParse(spec.particle());
+		if (id == null) {
+			return null;
+		}
+		var type = net.minecraft.core.registries.BuiltInRegistries.PARTICLE_TYPE.getValue(id);
+
+		return type instanceof net.minecraft.core.particles.SimpleParticleType simple ? simple : null;
 	}
 
 	private static void once(Hints.Active active, Runnable run) {

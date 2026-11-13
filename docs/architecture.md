@@ -156,6 +156,10 @@ As little as possible, because the mod is about not knowing:
   compass held on a place),
   `false_glint` (what is in their main hand drawn shimmering as if enchanted),
   `compass_spins` (a compass spinning as in the Nether),
+  `motes` (particles on their client alone, a few a tick, at the hint's place, at them, or moving
+  from the place to another over its time; the detail says which: `p` the particle or
+  `dust:RRGGBB:size`, `n` a tick, `r` and `h` the spread, `v` the velocity, `to`, `at=player`,
+  `o` an offset, `every`; `Motes`),
   `enchant_six` (an enchanting table's offers drawn costing 6, the server's costs untouched),
   `the_poem_knows` (armed: the next end poem read ends with three lines of its own about them, by name),
   `title_splash` (armed: the next title screen's splash reads `we watched you sleep`, once),

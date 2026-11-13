@@ -1380,6 +1380,8 @@ pub enum Action {
     OnTheExitPortal,
     /// A little leaf litter on the step outside the door they use, as if blown in.
     LeavesAtTheDoor,
+    /// A thread of smoke over the top of their house, as from a chimney, on their screen alone.
+    SmokeFromTheRoof,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8639,6 +8641,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LeavesAtTheDoor,
         true,
     ),
+    // docs/events_todo.md, 327: coming home, smoke rises from the top of their house as from a chimney; nothing burns.
+    row(
+        "smoke_from_the_roof",
+        1,
+        5,
+        &[Home, TargetApproachingDoor, NotRaining],
+        2.0,
+        4,
+        Half,
+        Action::SmokeFromTheRoof,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9322,6 +9336,7 @@ impl Event {
             | Action::TitleYourName
             | Action::NameFromTheVoid
             | Action::EndGoesQuiet
+            | Action::SmokeFromTheRoof
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -9957,6 +9972,7 @@ impl Event {
             "on_the_exit_portal" => "stand the figure on the exit portal as the dragon dies",
             "the_poem_knows" => "arm the end poem to know them",
             "leaves_at_the_door" => "leave a little leaf litter on their doorstep",
+            "smoke_from_the_roof" => "send smoke up from the top of their house",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

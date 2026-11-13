@@ -3319,9 +3319,19 @@ The `[x]` lines above, summed up by day:
   last stopped, the glide and the seconds still. Tests: one in `offer`, one in `memory`. Was: the
   senses reported thunder and the biome, and no event could ask for either.
 
+- [x] **The `motes` hint** (`docs/events_todo.md`, 321 to 401): particles on the target's client
+  alone, at a place, at them or moving from one place to another over the hint's time, the
+  particle, count, spread, velocity and beat in its detail (`Motes`, `act::motes`), one hint for
+  the smoke, dust, lights and sparks of the events to come. Tests: `MotesTest`. Was: a hint of its
+  own for each kind of particle.
+
 - [x] **Leaves at the door** (`docs/events_todo.md`, 321): `leaves_at_the_door`, stages 1 to 5, the
   target away or asleep: leaf litter on the ground outside the door they use. Tests: one in `act`.
   Was: no such event.
+
+- [x] **Smoke from the roof** (`docs/events_todo.md`, 327): `smoke_from_the_roof`, stages 1 to 5,
+  walking home: campfire smoke over the middle of their house forty seconds, on their screen alone
+  (`motes`). Tests: one in `act`. Was: no such event.
 
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved

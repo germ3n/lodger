@@ -356,6 +356,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::SoundWarp
         | Action::CreeperBehind
         | Action::PrintsAroundTheHouse
+        | Action::SmokeFromTheRoof
         // Their breath showing is on their client alone.
         | Action::ColdHouse => config.events.glitches,
         // The bedside figure too: with the figures off, none comes to the bed (until now the
@@ -481,7 +482,8 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::TitleYourName
         | Action::SoundWarp
         | Action::CreeperBehind
-        | Action::PrintsAroundTheHouse => Some("screen"),
+        | Action::PrintsAroundTheHouse
+        | Action::SmokeFromTheRoof => Some("screen"),
         Action::Figure(_, _, _)
         | Action::FigureSwing(_)
         | Action::FigureWave
