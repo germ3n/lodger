@@ -3312,6 +3312,13 @@ The `[x]` lines above, summed up by day:
   loot is for your eyes alone, and three spoilers more (the Nether and the End, things only you
   see, chains and scenes). Was: the README of before the SDK split and the newest models.
 
+- [x] **Needs for the weather, the biome, gliding and standing still** (`docs/events_todo.md`,
+  321 to 401): `Thundering`, `InBiome(&[..])` (any biome whose id holds one of the words),
+  `RainJustEnded` (two minutes after the rain, out under the sky), `Gliding` (an elytra worn,
+  fast through the air) and `StoodStill(seconds)`; the memory keeps the thunder, the day the rain
+  last stopped, the glide and the seconds still. Tests: one in `offer`, one in `memory`. Was: the
+  senses reported thunder and the biome, and no event could ask for either.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

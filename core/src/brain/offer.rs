@@ -121,6 +121,21 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .any(|(_, id)| id.ends_with("glass_pane")),
         Need::Day => !night,
         Need::Raining => last.raining,
+        Need::Thundering => last.online && last.thundering,
+        Need::InBiome(kinds) => last.online && kinds.iter().any(|k| last.biome.contains(k)),
+        Need::RainJustEnded => {
+            last.online
+                && !last.raining
+                && !last.indoors
+                && !last.underground
+                && memory
+                    .rain_ended_day
+                    .is_some_and(|d| memory.today - d >= 0.0 && memory.today - d < 0.1)
+        }
+        Need::Gliding => last.online && last.gliding,
+        Need::StoodStill(seconds) => {
+            last.online && !last.sleeping && last.still_seconds >= seconds as f32
+        }
         Need::NotRaining => !last.raining,
         Need::Route => memory.route().is_some(),
         Need::Field => !memory.field_rows().is_empty(),
@@ -868,5 +883,44 @@ mod tests {
         }
         assert!(offered.len() >= 4, "{offered:?}");
         assert!(offered.contains("cut_music"));
+    }
+
+    #[test]
+    fn the_weather_the_biome_gliding_and_standing_still_are_read_from_the_last_look() {
+        let mut memory = Memory::default();
+        let now = Now::default();
+        memory.last.online = true;
+        assert!(!meets(Need::Thundering, &memory, &now));
+        memory.last.thundering = true;
+        assert!(meets(Need::Thundering, &memory, &now));
+
+        memory.last.biome = "minecraft:snowy_beach".to_string();
+        assert!(meets(Need::InBiome(&["beach"]), &memory, &now));
+        assert!(!meets(
+            Need::InBiome(&["desert", "badlands"]),
+            &memory,
+            &now
+        ));
+
+        // Two minutes after the rain, out under the sky; not a day later, not indoors.
+        memory.today = 3.05;
+        memory.rain_ended_day = Some(3.0);
+        assert!(meets(Need::RainJustEnded, &memory, &now));
+        memory.last.indoors = true;
+        assert!(!meets(Need::RainJustEnded, &memory, &now));
+        memory.last.indoors = false;
+        memory.today = 3.5;
+        assert!(!meets(Need::RainJustEnded, &memory, &now));
+
+        assert!(!meets(Need::Gliding, &memory, &now));
+        memory.last.gliding = true;
+        assert!(meets(Need::Gliding, &memory, &now));
+
+        memory.last.still_seconds = 59.0;
+        assert!(!meets(Need::StoodStill(60), &memory, &now));
+        memory.last.still_seconds = 61.0;
+        assert!(meets(Need::StoodStill(60), &memory, &now));
+        memory.last.sleeping = true;
+        assert!(!meets(Need::StoodStill(60), &memory, &now));
     }
 }

@@ -94,6 +94,11 @@ is more than the server knows anyway; the lodger reads no client state.
 - **The target's hours:** when they log in and out, in real time and in game time, and how long
   they idle.
 - **Dimension changes, deaths, respawns.**
+- **The weather and where they stand:** rain, a thunderstorm, the day the rain last stopped, and
+  the biome under them by id, so an event can ask for a storm (`Thundering`), the minutes after
+  one (`RainJustEnded`) or a desert, an ocean, a swamp (`InBiome`, any biome whose id holds the
+  word). A glide on elytra is read from what they wear and how fast they go (`Gliding`, the
+  senses have no flag for it), and how long they have stood still (`StoodStill`).
 - **What the target types in chat,** and what witnesses say within 32 blocks of them (owner). The memory keeps the last few lines about the lodger (lines that mention a
   door, a chest, a torch, the house, the figure, a question) and the situation text quotes one:
   `Yesterday the player said: "something keeps opening my chest"`. It is the server's own chat;

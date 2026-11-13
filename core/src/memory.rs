@@ -470,6 +470,15 @@ pub struct Snapshot {
     /// Turns of more than 120 degrees in the last minute.
     pub turns: u32,
     pub raining: bool,
+    /// A thunderstorm over the world now.
+    #[serde(default)]
+    pub thundering: bool,
+    /// Gliding on elytra: an elytra worn, off the ground and fast (the senses have no flag).
+    #[serde(default)]
+    pub gliding: bool,
+    /// How long they have stood still, in seconds.
+    #[serde(default)]
+    pub still_seconds: f32,
     /// Under the ground: no sky light and below the surface.
     pub underground: bool,
     /// The day they last ate, for the sound that answers it.
@@ -751,6 +760,9 @@ pub struct Memory {
     pub placed_obsidian: Vec<BlockPos>,
     /// What it builds, and how far each has got (`crate::building`).
     pub builds: Vec<crate::building::Build>,
+    /// The day the rain last stopped (`rain_stays`).
+    #[serde(default)]
+    pub rain_ended_day: Option<f32>,
     /// Where they last stood fishing (`dock`).
     pub last_fished: Option<BlockPos>,
 }
@@ -1377,7 +1389,11 @@ impl Memory {
                 .collect();
         }
         if let Some(world) = &observations.world {
+            if self.last.raining && !world.raining {
+                self.rain_ended_day = Some(day);
+            }
             self.last.raining = world.raining;
+            self.last.thundering = world.thundering;
             if !world.difficulty.is_empty() {
                 self.difficulty = world.difficulty.clone();
             }
@@ -2363,6 +2379,15 @@ impl Memory {
             .map(|a| a.id.clone())
             .collect();
         self.last.biome = player.biome.clone();
+        self.last.still_seconds = player.movement.still_seconds;
+        let fast = (player.velocity[0].powi(2) + player.velocity[2].powi(2)).sqrt() > 0.6;
+        self.last.gliding = player.armor.iter().any(|a| a.id == "minecraft:elytra")
+            && fast
+            && player.riding.is_empty()
+            && player.sky_light > 0
+            && player.velocity[1].abs() < 1.5
+            && !player.swimming
+            && player.velocity[1] < 0.2;
         self.last.sprint_bursts = player.movement.sprint_bursts;
         self.last.pace = player.movement.pace;
         self.last.look_backs = player.movement.look_backs;
@@ -3785,6 +3810,38 @@ mod tests {
             events,
             ..Observations::default()
         }
+    }
+
+    #[test]
+    fn the_storm_its_end_and_a_glide_on_elytra_are_kept_from_the_senses() {
+        let mut memory = Memory::default();
+        let mut o = obs(vec![player(3, [0.0, 90.0, 0.0], 0.0)], vec![]);
+        o.world = Some(craftkit::world::WorldState {
+            raining: true,
+            thundering: true,
+            ..Default::default()
+        });
+        memory.observe(&o, 2.0);
+        assert!(memory.last.thundering && memory.last.raining);
+        assert_eq!(memory.rain_ended_day, None);
+        o.world = Some(craftkit::world::WorldState::default());
+        memory.observe(&o, 2.5);
+        assert!(!memory.last.thundering);
+        assert_eq!(memory.rain_ended_day, Some(2.5));
+
+        // Fast through the air with an elytra on: gliding; the same speed without one is not.
+        let mut flier = player(3, [0.0, 90.0, 0.0], 0.0);
+        flier.velocity = [1.2, -0.1, 0.4];
+        flier.sky_light = 15;
+        memory.observe(&obs(vec![flier.clone()], vec![]), 2.6);
+        assert!(!memory.last.gliding);
+        flier.armor = vec![ItemStack {
+            id: "minecraft:elytra".to_string(),
+            count: 1,
+            slot: 2,
+        }];
+        memory.observe(&obs(vec![flier], vec![]), 2.7);
+        assert!(memory.last.gliding);
     }
 
     #[test]

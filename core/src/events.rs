@@ -291,6 +291,16 @@ pub enum Need {
     RedstoneAtHome,
     /// Underground, three lights of theirs or more within twenty-four blocks.
     TheirCaveLights,
+    /// A thunderstorm over the world now.
+    Thundering,
+    /// The target stands in a biome whose id holds one of these (`desert`, `ocean`).
+    InBiome(&'static [&'static str]),
+    /// The rain stopped in the last two minutes, and they are out under the sky.
+    RainJustEnded,
+    /// Gliding on elytra.
+    Gliding,
+    /// Standing still this many seconds or more, awake and out of bed.
+    StoodStill(u32),
 }
 
 impl Need {
@@ -322,6 +332,11 @@ impl Need {
                 | Need::Day
                 | Need::Dawn
                 | Need::Raining
+                | Need::Thundering
+                | Need::InBiome(_)
+                | Need::RainJustEnded
+                | Need::Gliding
+                | Need::StoodStill(_)
                 | Need::NotRaining
                 | Need::Creature(_)
                 | Need::TheirAnimal(_)
@@ -426,6 +441,11 @@ impl Need {
             Need::Night => "not night".to_string(),
             Need::Day => "not day".to_string(),
             Need::Raining => "not raining".to_string(),
+            Need::Thundering => "no thunderstorm".to_string(),
+            Need::InBiome(kinds) => format!("not in {}", kinds.join(" or ").replace('_', " ")),
+            Need::RainJustEnded => "no rain just ended".to_string(),
+            Need::Gliding => "not gliding".to_string(),
+            Need::StoodStill(seconds) => format!("not standing still {seconds} seconds"),
             Need::NotRaining => "raining".to_string(),
             Need::Route => "no route".to_string(),
             Need::Field => "no field".to_string(),
