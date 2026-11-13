@@ -1032,6 +1032,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::DustOnTheRoad
         | Action::TheGrassParts
         | Action::ACloudOfItsOwn
+        | Action::SnowInTheHeat
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11537,6 +11538,17 @@ pub fn commands(
             }
             made
         }
+        // docs/events_todo.md, 379.
+        Action::SnowInTheHeat => vec![(
+            motes(
+                ids,
+                target,
+                None,
+                30.0,
+                "p=minecraft:snowflake;n=2.5;r=4;h=0.5;v=0,-0.05,0;at=player;o=0,5,0".to_string(),
+            ),
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24754,6 +24766,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("falling_water"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn snow_in_the_heat_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("snow_in_the_heat").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("snowflake"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
     }
 }

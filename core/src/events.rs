@@ -1437,6 +1437,8 @@ pub enum Action {
     TheGrassParts,
     /// Under a clear sky, rain on them alone, a patch round them that follows them a minute.
     ACloudOfItsOwn,
+    /// In a warm place, a few snowflakes falling on them out of a clear sky.
+    SnowInTheHeat,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9026,6 +9028,22 @@ pub const CATALOGUE: &[Event] = &[
         Action::ACloudOfItsOwn,
         false,
     ),
+    // docs/events_todo.md, 379: in a warm place, a few snowflakes fall on them out of a clear sky.
+    row(
+        "snow_in_the_heat",
+        2,
+        5,
+        &[
+            InBiome(&["desert", "savanna", "badlands", "jungle"]),
+            NotRaining,
+            TargetOutdoors,
+        ],
+        2.0,
+        2,
+        Half,
+        Action::SnowInTheHeat,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9733,6 +9751,7 @@ impl Event {
             | Action::DustOnTheRoad
             | Action::TheGrassParts
             | Action::ACloudOfItsOwn
+            | Action::SnowInTheHeat
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10396,6 +10415,7 @@ impl Event {
             "dust_on_the_road" => "raise dust far along the road ahead",
             "the_grass_parts" => "part the grass in a line toward them",
             "a_cloud_of_its_own" => "rain on them alone under a clear sky",
+            "snow_in_the_heat" => "snow on them in the heat",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
