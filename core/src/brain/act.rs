@@ -1030,6 +1030,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::CauldronRipples
         | Action::LeavesFallInside
         | Action::DustOnTheRoad
+        | Action::TheGrassParts
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11477,6 +11478,36 @@ pub fn commands(
                 ),
                 0,
             )]
+        }
+        // docs/events_todo.md, 367.
+        Action::TheGrassParts => {
+            let (from, to) = (ahead_of(memory, 16, 0, 0), ahead_of(memory, 4, 0, 0));
+            let mut made = vec![(
+                motes(
+                    ids,
+                    target,
+                    Some(from),
+                    6.0,
+                    format!(
+                        "p=dust:4F7A28:1.1;n=3;r=0.4;h=0.9;to={},{},{}",
+                        to[0], to[1], to[2]
+                    ),
+                ),
+                0,
+            )];
+            for i in 0..6u64 {
+                let t = i as f64 / 5.0;
+                let p = [
+                    from[0] as f64 + (to[0] - from[0]) as f64 * t + 0.5,
+                    from[1] as f64,
+                    from[2] as f64 + (to[2] - from[2]) as f64 * t + 0.5,
+                ];
+                made.push((
+                    sound_at(ids, target, "minecraft:block.grass.step", p, 0.5),
+                    i * 24,
+                ));
+            }
+            made
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -24669,6 +24700,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("dust:B89F78"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn the_grass_parts_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("the_grass_parts").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("dust:4F7A28"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
     }
 }

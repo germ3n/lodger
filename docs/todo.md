@@ -3443,6 +3443,10 @@ The `[x]` lines above, summed up by day:
   by day: dust coming toward them far ahead, sixteen seconds (`motes` with `to`). Tests: one in
   `act`. Was: no such event.
 
+- [x] **The grass parts** (`docs/events_todo.md`, 367): `the_grass_parts`, stages 2 to 5, outdoors:
+  the grass stirring in a line toward them, steps in it, stopping short (`motes` with `to`, steps).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

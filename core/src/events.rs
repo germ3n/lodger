@@ -1433,6 +1433,8 @@ pub enum Action {
     LeavesFallInside,
     /// Far along the way ahead of them by day, a trail of dust as of someone walking toward them; no one there.
     DustOnTheRoad,
+    /// The tall grass parting in a line coming toward them, as if someone walked through it; nothing there.
+    TheGrassParts,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8998,6 +9000,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::DustOnTheRoad,
         false,
     ),
+    // docs/events_todo.md, 367: the grass bends apart in a line coming toward them, as if someone walks through it; it stops a few blocks off.
+    row(
+        "the_grass_parts",
+        2,
+        5,
+        &[TargetOutdoors, Around("trees")],
+        2.0,
+        3,
+        Half,
+        Action::TheGrassParts,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9703,6 +9717,7 @@ impl Event {
             | Action::CauldronRipples
             | Action::LeavesFallInside
             | Action::DustOnTheRoad
+            | Action::TheGrassParts
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10364,6 +10379,7 @@ impl Event {
             "cauldron_ripples" => "splash the water in their cauldron",
             "leaves_fall_inside" => "drift a few leaves down from their ceiling",
             "dust_on_the_road" => "raise dust far along the road ahead",
+            "the_grass_parts" => "part the grass in a line toward them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
