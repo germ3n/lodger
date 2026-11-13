@@ -1473,6 +1473,8 @@ pub enum Action {
     FaceInTheOre,
     /// In the badlands, a fossil the shape of a person lying in the ground ahead of them, on their screen alone.
     BonesInTheMesa,
+    /// At night on the ocean, a ship's outline far out, one lantern lit, on their screen alone.
+    ShipOnTheHorizon,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9282,6 +9284,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BonesInTheMesa,
         false,
     ),
+    // docs/events_todo.md, 385: on the ocean at night, a ship's outline far off, one lantern lit at its stern; gone after a while.
+    row(
+        "ship_on_the_horizon",
+        3,
+        5,
+        &[Night, InBiome(&["ocean"]), TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::ShipOnTheHorizon,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10006,6 +10020,7 @@ impl Event {
             | Action::VeinHides
             | Action::FaceInTheOre
             | Action::BonesInTheMesa
+            | Action::ShipOnTheHorizon
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10688,6 +10703,7 @@ impl Event {
             "vein_hides" => "hide the ore round them in plain stone",
             "face_in_the_ore" => "lay ore out as a face in the wall ahead",
             "bones_in_the_mesa" => "lay a person's bones in the ground ahead",
+            "ship_on_the_horizon" => "show a ship far out on the sea",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

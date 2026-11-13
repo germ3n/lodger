@@ -1066,6 +1066,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::VeinHides
         | Action::FaceInTheOre
         | Action::BonesInTheMesa
+        | Action::ShipOnTheHorizon
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12003,6 +12004,30 @@ pub fn commands(
                 let ground = [p[0], GROUND_Y, p[2]];
                 made.push((ghost_at(ids, target, ground, "minecraft:bone_block"), 0));
                 made.push((ghost_at(ids, target, ground, ""), 1_200));
+            }
+            made
+        }
+        // docs/events_todo.md, 385.
+        Action::ShipOnTheHorizon => {
+            // Seventy blocks out on the sea's surface, across the way they face: a hull nine long,
+            // a mast, a sail, a lantern at the stern; forty seconds.
+            let mut parts: Vec<(i32, i32, &str)> = Vec::new();
+            for along in -4..=4 {
+                parts.push((along, 63, "minecraft:dark_oak_planks"));
+            }
+            for up in 64..=68 {
+                parts.push((0, up, "minecraft:dark_oak_fence"));
+            }
+            for (along, up) in [(1, 66), (1, 67), (1, 68), (2, 66), (2, 67), (-1, 67)] {
+                parts.push((along, up, "minecraft:white_wool"));
+            }
+            parts.push((-4, 64, "minecraft:lantern"));
+            let mut made = Vec::new();
+            for (along, y, block) in parts {
+                let p = ahead_of(memory, 70, along, 0);
+                let p = [p[0], y, p[2]];
+                made.push((ghost_at(ids, target, p, block), 0));
+                made.push((ghost_at(ids, target, p, ""), 800));
             }
             made
         }
@@ -25481,5 +25506,21 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 18);
         assert!(made.iter().all(|(c, _)| matches!(c, Command::GhostBlock { pos, .. } if pos[1] == GROUND_Y && pos[2] >= 18)));
+    }
+
+    #[test]
+    fn ship_on_the_horizon_stands_far_out_and_goes() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 63.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("ship_on_the_horizon").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 42);
+        assert!(made.iter().any(
+            |(c, _)| matches!(c, Command::GhostBlock { block, .. } if block == "minecraft:lantern")
+        ));
+        assert!(made
+            .iter()
+            .all(|(c, _)| matches!(c, Command::GhostBlock { pos, .. } if pos[2] == 70)));
     }
 }
