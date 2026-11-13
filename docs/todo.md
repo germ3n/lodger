@@ -3519,6 +3519,10 @@ The `[x]` lines above, summed up by day:
   underground: ore shown in the wall ahead as a face three seconds (`ghost_block`). Tests: one in
   `act`. Was: no such event.
 
+- [x] **Bones in the mesa** (`docs/events_todo.md`, 384): `bones_in_the_mesa`, stages 3 to 5, in the
+  badlands: bone in the ground ahead in a person's shape a minute (`ghost_block`). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

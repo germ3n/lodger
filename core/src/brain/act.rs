@@ -1065,6 +1065,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::CoralGoesGrey
         | Action::VeinHides
         | Action::FaceInTheOre
+        | Action::BonesInTheMesa
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11978,6 +11979,30 @@ pub fn commands(
                 let p = ahead_of(memory, 2, side, up);
                 made.push((ghost_at(ids, target, p, ore), 0));
                 made.push((ghost_at(ids, target, p, ""), 60));
+            }
+            made
+        }
+        // docs/events_todo.md, 384.
+        Action::BonesInTheMesa => {
+            // Eighteen ahead, in the ground's own blocks, lying along the way they face: a head, a
+            // body, two arms, two legs; a minute, then the ground as it is.
+            let bones = [
+                (0, 0),
+                (1, 0),
+                (2, 0),
+                (1, -1),
+                (1, 1),
+                (3, -1),
+                (3, 1),
+                (4, -1),
+                (4, 1),
+            ];
+            let mut made = Vec::new();
+            for (along, side) in bones {
+                let p = ahead_of(memory, 18 + along, side, 0);
+                let ground = [p[0], GROUND_Y, p[2]];
+                made.push((ghost_at(ids, target, ground, "minecraft:bone_block"), 0));
+                made.push((ghost_at(ids, target, ground, ""), 1_200));
             }
             made
         }
@@ -25445,5 +25470,16 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 10);
         assert_eq!(made.iter().filter(|(c, _)| matches!(c, Command::GhostBlock { block, pos, .. } if block == "minecraft:iron_ore" && pos[2] == 2)).count(), 5);
+    }
+
+    #[test]
+    fn bones_in_the_mesa_lie_in_the_ground_ahead() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 70.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("bones_in_the_mesa").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 18);
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::GhostBlock { pos, .. } if pos[1] == GROUND_Y && pos[2] >= 18)));
     }
 }

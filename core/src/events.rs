@@ -1471,6 +1471,8 @@ pub enum Action {
     VeinHides,
     /// Underground, ore in the wall ahead of them laid out as two eyes and a mouth a moment, on their screen alone.
     FaceInTheOre,
+    /// In the badlands, a fossil the shape of a person lying in the ground ahead of them, on their screen alone.
+    BonesInTheMesa,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9268,6 +9270,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FaceInTheOre,
         false,
     ),
+    // docs/events_todo.md, 384: in the badlands, a fossil in the shape of a person lies in the ground ahead; up close it is plain earth.
+    row(
+        "bones_in_the_mesa",
+        3,
+        5,
+        &[InBiome(&["badlands"]), TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::BonesInTheMesa,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9991,6 +10005,7 @@ impl Event {
             | Action::CoralGoesGrey
             | Action::VeinHides
             | Action::FaceInTheOre
+            | Action::BonesInTheMesa
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10672,6 +10687,7 @@ impl Event {
             "coral_goes_grey" => "turn the reef round them grey",
             "vein_hides" => "hide the ore round them in plain stone",
             "face_in_the_ore" => "lay ore out as a face in the wall ahead",
+            "bones_in_the_mesa" => "lay a person's bones in the ground ahead",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
