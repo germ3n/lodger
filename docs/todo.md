@@ -3515,6 +3515,10 @@ The `[x]` lines above, summed up by day:
   ore near them shown as stone twenty-five seconds (`ghost_near`). Tests: one in `act`. Was: no such
   event.
 
+- [x] **A face in the ore** (`docs/events_todo.md`, 338): `face_in_the_ore`, stages 4 and 5,
+  underground: ore shown in the wall ahead as a face three seconds (`ghost_block`). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

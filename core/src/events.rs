@@ -1469,6 +1469,8 @@ pub enum Action {
     CoralGoesGrey,
     /// Underground, the ore near them shown as plain stone a while, on their screen alone.
     VeinHides,
+    /// Underground, ore in the wall ahead of them laid out as two eyes and a mouth a moment, on their screen alone.
+    FaceInTheOre,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9254,6 +9256,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::VeinHides,
         false,
     ),
+    // docs/events_todo.md, 338: the wall ahead of them shows ore laid out as two eyes and a mouth, looking at them; a blink later it is stone.
+    row(
+        "face_in_the_ore",
+        4,
+        5,
+        &[TargetUnderground],
+        2.0,
+        2,
+        Half,
+        Action::FaceInTheOre,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9976,6 +9990,7 @@ impl Event {
             | Action::LavaBreathes
             | Action::CoralGoesGrey
             | Action::VeinHides
+            | Action::FaceInTheOre
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10656,6 +10671,7 @@ impl Event {
             "lava_breathes" => "make the lava near them breathe",
             "coral_goes_grey" => "turn the reef round them grey",
             "vein_hides" => "hide the ore round them in plain stone",
+            "face_in_the_ore" => "lay ore out as a face in the wall ahead",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

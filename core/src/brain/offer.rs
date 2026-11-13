@@ -363,6 +363,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::SoundWarp
         | Action::CreeperBehind
         | Action::PrintsAroundTheHouse
+        | Action::FaceInTheOre
         | Action::VeinHides
         | Action::CoralGoesGrey
         | Action::LavaBreathes
@@ -523,6 +524,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::SoundWarp
         | Action::CreeperBehind
         | Action::PrintsAroundTheHouse
+        | Action::FaceInTheOre
         | Action::VeinHides
         | Action::CoralGoesGrey
         | Action::LavaBreathes

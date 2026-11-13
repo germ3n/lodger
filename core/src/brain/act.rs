@@ -1064,6 +1064,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LavaBreathes
         | Action::CoralGoesGrey
         | Action::VeinHides
+        | Action::FaceInTheOre
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2390,6 +2391,21 @@ fn ghost_near(
         seconds,
         in_turn,
         state: state.to_string(),
+    }
+}
+
+/// A block shown at `pos` to the target alone (`ghost_block`); `block` empty shows them what is
+/// really there again.
+fn ghost_at(ids: &mut impl FnMut() -> u64, target: u32, pos: BlockPos, block: &str) -> Command {
+    Command::GhostBlock {
+        id: ids(),
+        player: target,
+        pos,
+        block: block.to_string(),
+        state: String::new(),
+        only_air: false,
+        head_of: None,
+        face_player: false,
     }
 }
 
@@ -11945,6 +11961,23 @@ pub fn commands(
                     ),
                     0,
                 ));
+            }
+            made
+        }
+        // docs/events_todo.md, 338.
+        Action::FaceInTheOre => {
+            // Two blocks ahead: eyes over the mouth, of the ore they mine most, three seconds.
+            let ore = if memory.last.pos[1] < 0.0 {
+                "minecraft:deepslate_diamond_ore"
+            } else {
+                "minecraft:iron_ore"
+            };
+            let face = [(-1, 2), (1, 2), (-1, 0), (0, 0), (1, 0)];
+            let mut made = Vec::new();
+            for (side, up) in face {
+                let p = ahead_of(memory, 2, side, up);
+                made.push((ghost_at(ids, target, p, ore), 0));
+                made.push((ghost_at(ids, target, p, ""), 60));
             }
             made
         }
@@ -25401,5 +25434,16 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 16);
         assert!(made.iter().any(|(c, _)| matches!(c, Command::GhostNear { of, block, .. } if of == "minecraft:deepslate_diamond_ore" && block == "minecraft:deepslate")));
+    }
+
+    #[test]
+    fn face_in_the_ore_shows_two_eyes_and_a_mouth_ahead() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 30.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("face_in_the_ore").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 10);
+        assert_eq!(made.iter().filter(|(c, _)| matches!(c, Command::GhostBlock { block, pos, .. } if block == "minecraft:iron_ore" && pos[2] == 2)).count(), 5);
     }
 }
