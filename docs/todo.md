@@ -3423,6 +3423,10 @@ The `[x]` lines above, summed up by day:
   5, in a boat on the ocean at night: a glow eight blocks under them forty seconds (`motes` at
   them). Tests: one in `act`. Was: no such event.
 
+- [x] **Lights over the swamp** (`docs/events_todo.md`, 350): `lights_over_the_swamp`, stages 2 to
+  5, at night in a swamp: two lights drifting off ahead of them (`motes` with `to`). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

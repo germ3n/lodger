@@ -1017,6 +1017,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::DustDevil
         | Action::LightningRodSparks
         | Action::LightBelowTheBoat
+        | Action::LightsOverTheSwamp
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11358,6 +11359,39 @@ pub fn commands(
             ),
             0,
         )],
+        // docs/events_todo.md, 350.
+        Action::LightsOverTheSwamp => {
+            let (a, b) = (ahead_of(memory, 10, -4, 1), ahead_of(memory, 10, 5, 1));
+            let (a_to, b_to) = (ahead_of(memory, 34, -6, 2), ahead_of(memory, 34, 7, 2));
+            vec![
+                (
+                    motes(
+                        ids,
+                        target,
+                        Some(a),
+                        30.0,
+                        format!(
+                            "p=minecraft:glow;n=0.6;r=0.3;h=0.3;to={},{},{}",
+                            a_to[0], a_to[1], a_to[2]
+                        ),
+                    ),
+                    0,
+                ),
+                (
+                    motes(
+                        ids,
+                        target,
+                        Some(b),
+                        30.0,
+                        format!(
+                            "p=minecraft:glow;n=0.6;r=0.3;h=0.3;to={},{},{}",
+                            b_to[0], b_to[1], b_to[2]
+                        ),
+                    ),
+                    40,
+                ),
+            ]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24480,6 +24514,19 @@ mod tests {
         memory.last.pos = [0.5, 64.0, 0.5];
         memory.last.yaw = 0.0;
         let event = find("light_below_the_boat").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("minecraft:glow"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn lights_over_the_swamp_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("lights_over_the_swamp").unwrap();
         let pos = place(event, &memory, &mut Rng::new(1));
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());

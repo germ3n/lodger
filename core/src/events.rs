@@ -1423,6 +1423,8 @@ pub enum Action {
     LightningRodSparks,
     /// At night on the ocean, a pale light far under their boat keeping pace with them.
     LightBelowTheBoat,
+    /// At night in a swamp, small lights over the water drifting away ahead of them.
+    LightsOverTheSwamp,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8928,6 +8930,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LightBelowTheBoat,
         false,
     ),
+    // docs/events_todo.md, 350: at night in a swamp, small lights hang over the water and drift away as they come.
+    row(
+        "lights_over_the_swamp",
+        2,
+        5,
+        &[Night, InBiome(&["swamp"]), TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::LightsOverTheSwamp,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9628,6 +9642,7 @@ impl Event {
             | Action::DustDevil
             | Action::LightningRodSparks
             | Action::LightBelowTheBoat
+            | Action::LightsOverTheSwamp
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10284,6 +10299,7 @@ impl Event {
             "dust_devil" => "send a whirl of dust across the field at them",
             "lightning_rod_sparks" => "spark their lightning rod",
             "light_below_the_boat" => "keep a light under their boat",
+            "lights_over_the_swamp" => "hang lights over the swamp that drift away",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
