@@ -1059,6 +1059,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::AgainstTheSun
         | Action::FliesBesideYou
         | Action::TheCityCandles
+        | Action::GlowBerriesGoDark
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11848,6 +11849,16 @@ pub fn commands(
             )
         })
         .collect(),
+        // docs/events_todo.md, 393.
+        Action::GlowBerriesGoDark => ["minecraft:cave_vines", "minecraft:cave_vines_plant"]
+            .into_iter()
+            .map(|kind| {
+                (
+                    ghost_near(ids, target, kind, kind, 40.0, true, "berries=false"),
+                    0,
+                )
+            })
+            .collect(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -25252,5 +25263,14 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().all(|(c, _)| matches!(c, Command::GhostNear { state, in_turn: true, of, block, .. } if state == "lit=true" && of == block)), "{made:?}");
+    }
+
+    #[test]
+    fn glow_berries_go_dark_one_by_one() {
+        let memory = rich_memory();
+        let event = find("glow_berries_go_dark").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 2);
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::GhostNear { state, in_turn: true, .. } if state == "berries=false")));
     }
 }
