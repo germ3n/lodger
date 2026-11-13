@@ -3368,6 +3368,10 @@ The `[x]` lines above, summed up by day:
   three and a half seconds (`ghost_block` of `minecraft:light`). Tests: one in `act`. Was: no such
   event.
 
+- [x] **The furnace glows** (`docs/events_todo.md`, 329): `furnace_glows`, stages 1 to 5, indoors:
+  the furnace they use shown lit a moment and dark again, only one they left empty (`set_state` of
+  `lit`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

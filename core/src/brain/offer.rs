@@ -58,6 +58,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .in_used_container(|id| id.ends_with(suffix))
             .is_some(),
         Need::Furnace => memory.furnace().is_some(),
+        Need::ColdFurnace => memory.furnace().is_some_and(|f| f.contents.is_empty()),
         // A furnace whose input and output are free: a full input sent their raw thing to the
         // output slot, where it stopped what was smelting.
         Need::Smeltable => {

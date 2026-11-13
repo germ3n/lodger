@@ -301,6 +301,8 @@ pub enum Need {
     Gliding,
     /// Standing still this many seconds or more, awake and out of bed.
     StoodStill(u32),
+    /// The furnace they use, left empty (`furnace_glows`).
+    ColdFurnace,
 }
 
 impl Need {
@@ -420,6 +422,7 @@ impl Need {
             Need::Hole => "no hole of theirs near the home, or nothing dug to fill it".to_string(),
             Need::DoorUsed => "happens only as they open a door".to_string(),
             Need::Furnace => "no furnace used".to_string(),
+            Need::ColdFurnace => "no furnace of theirs left empty".to_string(),
             Need::Smeltable => "nothing to smelt with fuel".to_string(),
             Need::FurnaceOutput => "nothing finished in the furnace".to_string(),
             Need::Fixture(kind) => format!("no {} placed", kind.replace('_', " ")),
@@ -1392,6 +1395,8 @@ pub enum Action {
     PetGotUp,
     /// A light behind one of their windows a few seconds, on their screen alone, as if someone carried a torch past.
     LightInYourWindow,
+    /// Their cold furnace's front lit a moment and dark again, nothing in it.
+    FurnaceGlows,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8738,6 +8743,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LightInYourWindow,
         true,
     ),
+    // docs/events_todo.md, 329: their cold furnace's front glows lit a moment, and goes dark; nothing is in it.
+    row(
+        "furnace_glows",
+        1,
+        5,
+        &[ColdFurnace, TargetIndoors],
+        2.0,
+        3,
+        Half,
+        Action::FurnaceGlows,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9124,6 +9141,7 @@ impl Event {
             | Action::ElytraAtHome
             | Action::BookMovedOnShelf
             | Action::PetGotUp
+            | Action::FurnaceGlows
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -10069,6 +10087,7 @@ impl Event {
             "skull_turned" => "turn the head they set out to face their bed",
             "pet_got_up" => "have the pet they left sitting stand up and look at the door",
             "light_in_your_window" => "light a window of their house a moment from inside",
+            "furnace_glows" => "light their cold furnace a moment",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

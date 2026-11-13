@@ -869,6 +869,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "light_in_your_window" {
         return windows_of(memory).first().copied();
     }
+    // The furnace they use.
+    if event.id == "furnace_glows" {
+        return memory.furnace().map(|f| f.pos);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -985,6 +989,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SkullTurned
         | Action::PetGotUp
         | Action::LightInYourWindow
+        | Action::FurnaceGlows
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11060,6 +11065,20 @@ pub fn commands(
             }
             _ => vec![],
         },
+        // docs/events_todo.md, 329.
+        Action::FurnaceGlows => match (pos, memory.furnace()) {
+            // Only cold and empty as they left it: a lit one put out would show cold while it burned.
+            (Some(p), Some(f)) if f.contents.is_empty() => {
+                let lit = |ids: &mut dyn FnMut() -> u64, value: &str| Command::SetState {
+                    id: ids(),
+                    pos: p,
+                    property: "lit".to_string(),
+                    value: value.to_string(),
+                };
+                vec![(lit(ids, "true"), 0), (lit(ids, "false"), 25)]
+            }
+            _ => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -14993,6 +15012,8 @@ mod tests {
                 || event.id == "hoglins_part"
                 || event.id == "ghast_watches"
                 || event.id == "strider_turns_home"
+                // A furnace left empty, which this memory has not: its own test.
+                || event.id == "furnace_glows"
             {
                 continue;
             }
@@ -23957,6 +23978,40 @@ mod tests {
             matches!(&made[..], [(Command::GhostBlock { block, only_air: true, pos: lit, .. }, 0), (Command::GhostBlock { block: out, .. }, 70)]
             if block == "minecraft:light" && out.is_empty() && distance(*lit, pane) == 1.0),
             "{made:?}"
+        );
+    }
+
+    #[test]
+    fn furnace_glows_lights_their_empty_furnace_a_moment() {
+        let mut memory = rich_memory();
+        let event = find("furnace_glows").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert!(pos.is_some());
+        let p = pos.unwrap();
+        memory
+            .containers
+            .iter_mut()
+            .filter(|c| c.pos == p)
+            .for_each(|c| c.contents.clear());
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::SetState { value: on, .. }, 0), (Command::SetState { value: off, .. }, 25)] if on == "true" && off == "false"),
+            "{made:?}"
+        );
+        memory
+            .containers
+            .iter_mut()
+            .filter(|c| c.pos == p)
+            .for_each(|c| {
+                c.contents.push(ItemStack {
+                    id: "minecraft:coal".to_string(),
+                    count: 1,
+                    slot: 1,
+                })
+            });
+        assert!(
+            commands(event, pos, &memory, &mut ids(), &Now::default(), None).is_empty(),
+            "never one with something in it"
         );
     }
 }
