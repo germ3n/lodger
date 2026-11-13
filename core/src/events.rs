@@ -1455,6 +1455,8 @@ pub enum Action {
     FigureInYourField,
     /// By day, a dark figure on the skyline under the sun, cut out against the glare; gone once seen.
     AgainstTheSun,
+    /// Gliding on elytra, the figure gliding beside them, wingless, keeping pace.
+    FliesBesideYou,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9156,6 +9158,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::AgainstTheSun,
         false,
     ),
+    // docs/events_todo.md, 398: gliding on elytra, a figure glides beside them, wingless, keeping pace.
+    row(
+        "flies_beside_you",
+        4,
+        5,
+        &[Gliding],
+        2.0,
+        2,
+        Full,
+        Action::FliesBesideYou,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9846,6 +9860,7 @@ impl Event {
             | Action::FigureInTheFlash
             | Action::FigureInYourField
             | Action::AgainstTheSun
+            | Action::FliesBesideYou
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -10544,6 +10559,7 @@ impl Event {
             "figure_in_the_flash" => "show the figure in the lightning, nearer each flash",
             "figure_in_your_field" => "have the figure tend their field far across it",
             "against_the_sun" => "stand the figure under the sun",
+            "flies_beside_you" => "glide the figure beside them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

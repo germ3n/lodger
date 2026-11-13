@@ -1057,6 +1057,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FigureInTheFlash
         | Action::FigureInYourField
         | Action::AgainstTheSun
+        | Action::FliesBesideYou
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11784,6 +11785,22 @@ pub fn commands(
             {
                 *held = ItemStack::default();
                 *once_seen = true;
+            }
+            vec![(shown, 0)]
+        }
+        // docs/events_todo.md, 398.
+        Action::FliesBesideYou => {
+            // Four blocks to their right at their height, moving as they move (`mirror`).
+            let p = memory.last.pos;
+            let way = facing_way(memory.last.yaw);
+            let mut shown = figure_shown(ids, memory, target, block_of(p), 15.0, false);
+            if let Command::Figure {
+                held, mirror, pos, ..
+            } = &mut shown
+            {
+                *held = ItemStack::default();
+                *mirror = true;
+                *pos = [p[0] - way[1] as f64 * 4.0, p[1], p[2] + way[0] as f64 * 4.0];
             }
             vec![(shown, 0)]
         }
@@ -25167,6 +25184,19 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &afternoon, None);
         assert!(
             matches!(&made[..], [(Command::Figure { pos, .. }, 0)] if pos[0] == -59.5),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn flies_beside_you_keeps_pace_four_blocks_to_their_side() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 120.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("flies_beside_you").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { mirror: true, pos, .. }, 0)] if pos[1] == 120.0 && (pos[0] - 0.5).abs() == 4.0),
             "{made:?}"
         );
     }

@@ -3487,6 +3487,10 @@ The `[x]` lines above, summed up by day:
   the figure sixty blocks off on the sun's side, gone once seen. Tests: one in `act`. Was: no such
   event.
 
+- [x] **It flies beside you** (`docs/events_todo.md`, 398): `flies_beside_you`, stages 4 and 5,
+  gliding: the figure four blocks to their right moving as they move fifteen seconds (`mirror`).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
