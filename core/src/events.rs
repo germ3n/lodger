@@ -1415,6 +1415,8 @@ pub enum Action {
     KnockFromBelow,
     /// In a storm, five claps of thunder a beat apart, counting down, then none.
     ThunderCounts,
+    /// In the mountains, their name called far off and its echo from the peaks, in the subtitles.
+    NameEchoes,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8869,6 +8871,21 @@ pub const CATALOGUE: &[Event] = &[
         Action::ThunderCounts,
         false,
     ),
+    // docs/events_todo.md, 388: among mountains, someone calls their name far off, and it echoes back from the peaks.
+    row(
+        "name_echoes",
+        2,
+        5,
+        &[
+            InBiome(&["peaks", "slopes", "windswept", "grove"]),
+            TargetOutdoors,
+        ],
+        2.0,
+        2,
+        Half,
+        Action::NameEchoes,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9565,6 +9582,7 @@ impl Event {
             | Action::LightInYourWindow
             | Action::PaperOnTheFloor
             | Action::AGlintOnTheHill
+            | Action::NameEchoes
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10217,6 +10235,7 @@ impl Event {
             "stand_bubbles" => "bubble their brewing stand",
             "knock_from_below" => "knock from under the bedrock",
             "thunder_counts" => "count the thunder down from five",
+            "name_echoes" => "call their name across the mountains",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

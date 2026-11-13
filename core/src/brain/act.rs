@@ -1009,6 +1009,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BedCreaks
         | Action::KnockFromBelow
         | Action::ThunderCounts
+        | Action::NameEchoes
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11249,6 +11250,27 @@ pub fn commands(
                             1.0,
                         ),
                         i * 40,
+                    )
+                })
+                .collect()
+        }
+        // docs/events_todo.md, 388.
+        Action::NameEchoes => {
+            // Their name in the subtitles from far off, then twice more from other sides.
+            let p = block_of(memory.last.pos);
+            [(0u64, [40, 0, 0]), (30, [-30, 0, 25]), (55, [10, 0, -45])]
+                .into_iter()
+                .map(|(later, d)| {
+                    (
+                        Command::Hint {
+                            id: ids(),
+                            player: target,
+                            hint: "name_called".to_string(),
+                            pos: Some([p[0] + d[0], p[1] + 8, p[2] + d[2]]),
+                            seconds: 3.0,
+                            detail: memory.target_name.clone(),
+                        },
+                        later,
                     )
                 })
                 .collect()
@@ -24320,5 +24342,21 @@ mod tests {
             _ => 0.0,
         };
         assert!(far(&made[0].0) > far(&made[4].0));
+    }
+
+    #[test]
+    fn name_echoes_calls_their_name_three_times_from_far() {
+        let mut memory = rich_memory();
+        memory.last.biome = "minecraft:jagged_peaks".to_string();
+        memory.last.online = true;
+        let event = find("name_echoes").unwrap();
+        assert!(crate::brain::offer::meets(
+            event.needs[0],
+            &memory,
+            &Now::default()
+        ));
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 3);
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "name_called" && *detail == memory.target_name)));
     }
 }

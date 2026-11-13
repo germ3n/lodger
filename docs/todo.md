@@ -3407,6 +3407,10 @@ The `[x]` lines above, summed up by day:
   storm: five thunderclaps two seconds apart, coming nearer. Tests: one in `act`. Was: no such
   event.
 
+- [x] **The name echoes** (`docs/events_todo.md`, 388): `name_echoes`, stages 2 to 5, outdoors in
+  the mountains: their name in the subtitles from far off, echoed twice from other sides
+  (`name_called`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
