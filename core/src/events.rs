@@ -1441,6 +1441,8 @@ pub enum Action {
     SnowInTheHeat,
     /// Just after the rain, it goes on raining a minute for them alone, the drops and the sound.
     RainStays,
+    /// At night on a river, a small flame drifting past on the water, as of a lantern carried down it.
+    LanternDownTheRiver,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9058,6 +9060,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::RainStays,
         false,
     ),
+    // docs/events_todo.md, 390: on a river at night, a lit lantern floats past them on the water.
+    row(
+        "lantern_down_the_river",
+        3,
+        5,
+        &[Night, InBiome(&["river"]), TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::LanternDownTheRiver,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9767,6 +9781,7 @@ impl Event {
             | Action::ACloudOfItsOwn
             | Action::SnowInTheHeat
             | Action::RainStays
+            | Action::LanternDownTheRiver
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10432,6 +10447,7 @@ impl Event {
             "a_cloud_of_its_own" => "rain on them alone under a clear sky",
             "snow_in_the_heat" => "snow on them in the heat",
             "rain_stays" => "keep the rain on them after it stopped",
+            "lantern_down_the_river" => "float a light down the river past them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

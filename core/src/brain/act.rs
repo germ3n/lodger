@@ -1034,6 +1034,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ACloudOfItsOwn
         | Action::SnowInTheHeat
         | Action::RainStays
+        | Action::LanternDownTheRiver
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11576,6 +11577,38 @@ pub fn commands(
                 ));
             }
             made
+        }
+        // docs/events_todo.md, 390.
+        Action::LanternDownTheRiver => {
+            let (from, to) = (ahead_of(memory, 9, -16, -1), ahead_of(memory, 9, 16, -1));
+            vec![
+                (
+                    motes(
+                        ids,
+                        target,
+                        Some(from),
+                        24.0,
+                        format!(
+                            "p=minecraft:small_flame;n=1;r=0.05;h=0.1;to={},{},{}",
+                            to[0], to[1], to[2]
+                        ),
+                    ),
+                    0,
+                ),
+                (
+                    motes(
+                        ids,
+                        target,
+                        Some(from),
+                        24.0,
+                        format!(
+                            "p=minecraft:glow;n=0.5;r=0.2;h=0.2;to={},{},{}",
+                            to[0], to[1], to[2]
+                        ),
+                    ),
+                    0,
+                ),
+            ]
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -24820,6 +24853,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("falling_water"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn lantern_down_the_river_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("lantern_down_the_river").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("small_flame"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
     }
 }

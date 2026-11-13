@@ -3459,6 +3459,10 @@ The `[x]` lines above, summed up by day:
   rain: drops round them and the rain's sound a minute (`motes` at them). Tests: one in `act`. Was:
   no such event.
 
+- [x] **A lantern down the river** (`docs/events_todo.md`, 390): `lantern_down_the_river`, stages 3
+  to 5, by a river at night: a light moving across on the water (`motes` with `to`). Tests: one in
+  `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
