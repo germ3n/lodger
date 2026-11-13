@@ -1397,6 +1397,8 @@ pub enum Action {
     LightInYourWindow,
     /// Their cold furnace's front lit a moment and dark again, nothing in it.
     FurnaceGlows,
+    /// A sheet of paper on the floor inside their door, on their screen alone, gone as they reach for it.
+    PaperOnTheFloor,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8755,6 +8757,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FurnaceGlows,
         true,
     ),
+    // docs/events_todo.md, 330: a sheet of paper on the floor inside their door, as if slipped under it; reach for it and it is not there.
+    row(
+        "paper_on_the_floor",
+        2,
+        5,
+        &[Door, TargetApproachingDoor],
+        2.0,
+        3,
+        Half,
+        Action::PaperOnTheFloor,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9444,6 +9458,7 @@ impl Event {
             | Action::EndGoesQuiet
             | Action::SmokeFromTheRoof
             | Action::LightInYourWindow
+            | Action::PaperOnTheFloor
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10088,6 +10103,7 @@ impl Event {
             "pet_got_up" => "have the pet they left sitting stand up and look at the door",
             "light_in_your_window" => "light a window of their house a moment from inside",
             "furnace_glows" => "light their cold furnace a moment",
+            "paper_on_the_floor" => "leave a sheet of paper inside their door",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

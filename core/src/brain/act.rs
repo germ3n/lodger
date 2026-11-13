@@ -873,6 +873,14 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "furnace_glows" {
         return memory.furnace().map(|f| f.pos);
     }
+    // Just inside the door they use.
+    if event.id == "paper_on_the_floor" {
+        return home.and_then(|h| {
+            let door = memory.usual_door()?;
+            let out = out_of_door(memory, h.center, door);
+            Some([door[0] - out[0], door[1], door[2] - out[1]])
+        });
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -990,6 +998,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PetGotUp
         | Action::LightInYourWindow
         | Action::FurnaceGlows
+        | Action::PaperOnTheFloor
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11078,6 +11087,24 @@ pub fn commands(
                 vec![(lit(ids, "true"), 0), (lit(ids, "false"), 25)]
             }
             _ => vec![],
+        },
+        // docs/events_todo.md, 330.
+        Action::PaperOnTheFloor => match pos {
+            Some(inside) => vec![(
+                Command::GhostItem {
+                    id: ids(),
+                    player: target,
+                    pos: [
+                        inside[0] as f64 + 0.5,
+                        inside[1] as f64 + 0.05,
+                        inside[2] as f64 + 0.5,
+                    ],
+                    item: "minecraft:paper".to_string(),
+                    seconds: 300.0,
+                },
+                0,
+            )],
+            None => vec![],
         },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -24012,6 +24039,23 @@ mod tests {
         assert!(
             commands(event, pos, &memory, &mut ids(), &Now::default(), None).is_empty(),
             "never one with something in it"
+        );
+    }
+
+    #[test]
+    fn paper_on_the_floor_lies_inside_their_door_on_their_screen_alone() {
+        let memory = rich_memory();
+        let event = find("paper_on_the_floor").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let door = memory.usual_door().unwrap();
+        assert!(
+            matches!(pos, Some(p) if distance(p, door) == 1.0),
+            "{pos:?}"
+        );
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostItem { item, .. }, 0)] if item == "minecraft:paper"),
+            "{made:?}"
         );
     }
 }
