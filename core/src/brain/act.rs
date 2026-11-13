@@ -901,6 +901,18 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "door_bangs_in_the_storm" {
         return memory.usual_door();
     }
+    // The far edge of their field from them.
+    if event.id == "figure_in_your_field" {
+        return memory
+            .field_rows()
+            .iter()
+            .flatten()
+            .max_by(|a, b| {
+                distance(**a, block_of(memory.last.pos))
+                    .total_cmp(&distance(**b, block_of(memory.last.pos)))
+            })
+            .copied();
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1043,6 +1055,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BoltsInALine
         | Action::DoorBangsInTheStorm
         | Action::FigureInTheFlash
+        | Action::FigureInYourField
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11732,6 +11745,31 @@ pub fn commands(
             }
             made
         }
+        // docs/events_todo.md, 335.
+        Action::FigureInYourField => match pos {
+            Some(edge) => {
+                let mut shown = figure_shown(ids, memory, target, edge, 60.0, false);
+                if let Command::Figure {
+                    held,
+                    swinging,
+                    vanish_within,
+                    copy_crouch,
+                    ..
+                } = &mut shown
+                {
+                    *held = ItemStack {
+                        id: "minecraft:iron_hoe".to_string(),
+                        count: 1,
+                        slot: 0,
+                    };
+                    *swinging = true;
+                    *copy_crouch = false;
+                    *vanish_within = 30.0;
+                }
+                vec![(shown, 0)]
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -25075,6 +25113,19 @@ mod tests {
                 .filter(|(c, _)| matches!(c, Command::Lightning { .. }))
                 .count(),
             4
+        );
+    }
+
+    #[test]
+    fn figure_in_your_field_tends_its_far_edge() {
+        let memory = rich_memory();
+        let event = find("figure_in_your_field").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert!(pos.is_some_and(|p| memory.field_rows().iter().flatten().any(|f| *f == p)));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Figure { swinging: true, vanish_within, held, .. }, 0)] if *vanish_within == 30.0 && held.id.ends_with("hoe")),
+            "{made:?}"
         );
     }
 }

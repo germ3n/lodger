@@ -1451,6 +1451,8 @@ pub enum Action {
     DoorBangsInTheStorm,
     /// In a storm, each flash of lightning showing a figure in the field, nearer each time.
     FigureInTheFlash,
+    /// By day, far across their field, the figure bent over the crops as if tending them.
+    FigureInYourField,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9128,6 +9130,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FigureInTheFlash,
         false,
     ),
+    // docs/events_todo.md, 335: by day, far across their field, the figure is bent over the crops as if tending them; gone when they come near.
+    row(
+        "figure_in_your_field",
+        3,
+        5,
+        &[Day, Field, TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::FigureInYourField,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9816,6 +9830,7 @@ impl Event {
             | Action::LightningRoundYou
             | Action::BoltsInALine
             | Action::FigureInTheFlash
+            | Action::FigureInYourField
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -10512,6 +10527,7 @@ impl Event {
             "bolts_in_a_line" => "strike lightning in a line toward its place",
             "door_bangs_in_the_storm" => "bang their door with the thunder",
             "figure_in_the_flash" => "show the figure in the lightning, nearer each flash",
+            "figure_in_your_field" => "have the figure tend their field far across it",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -3479,6 +3479,10 @@ The `[x]` lines above, summed up by day:
   5, in a storm: four bolts that only show, the figure ahead of them half a second in each, nearer
   each time. Tests: one in `act`. Was: no such event.
 
+- [x] **The figure in your field** (`docs/events_todo.md`, 335): `figure_in_your_field`, stages 3 to
+  5, by day: the figure at the far edge of their field, a hoe swinging, gone within thirty blocks.
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
