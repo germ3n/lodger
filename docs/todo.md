@@ -3471,6 +3471,10 @@ The `[x]` lines above, summed up by day:
   storm: six bolts that only show, in a line from them toward its place. Tests: one in `act`. Was:
   no such event.
 
+- [x] **The door bangs in the storm** (`docs/events_todo.md`, 380): `door_bangs_in_the_storm`,
+  stages 3 to 5, in a storm, indoors: their door opened and shut on each of four thunderclaps, shut
+  at the end. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

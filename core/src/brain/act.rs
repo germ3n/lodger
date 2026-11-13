@@ -897,6 +897,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "cauldron_ripples" {
         return memory.fixtures("cauldron").next().map(|f| f.pos);
     }
+    // The door they use.
+    if event.id == "door_bangs_in_the_storm" {
+        return memory.usual_door();
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1037,6 +1041,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LanternDownTheRiver
         | Action::LightningRoundYou
         | Action::BoltsInALine
+        | Action::DoorBangsInTheStorm
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11657,6 +11662,44 @@ pub fn commands(
                 })
                 .collect()
         }
+        // docs/events_todo.md, 380.
+        Action::DoorBangsInTheStorm => match pos {
+            Some(door) => {
+                // Four claps, each with the door flung open and shut; shut as it was at the end.
+                let mut made = Vec::new();
+                for i in 0..4u64 {
+                    let at_door = at(door);
+                    made.push((
+                        sound_at(
+                            ids,
+                            target,
+                            "minecraft:entity.lightning_bolt.thunder",
+                            [at_door[0], at_door[1] + 20.0, at_door[2]],
+                            0.8,
+                        ),
+                        i * 60,
+                    ));
+                    made.push((
+                        Command::ToggleBlock {
+                            id: ids(),
+                            pos: door,
+                            to: Some(true),
+                        },
+                        i * 60 + 2,
+                    ));
+                    made.push((
+                        Command::ToggleBlock {
+                            id: ids(),
+                            pos: door,
+                            to: Some(false),
+                        },
+                        i * 60 + 12,
+                    ));
+                }
+                made
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24955,5 +24998,28 @@ mod tests {
             })
             .collect();
         assert!(xs.windows(2).all(|w| w[0] < w[1]) && xs[0] > 5.0, "{xs:?}");
+    }
+
+    #[test]
+    fn door_bangs_in_the_storm_opens_and_shuts_it_with_the_thunder() {
+        let memory = rich_memory();
+        let event = find("door_bangs_in_the_storm").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert_eq!(pos, memory.usual_door());
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 12);
+        assert!(
+            matches!(
+                made.last(),
+                Some((
+                    Command::ToggleBlock {
+                        to: Some(false),
+                        ..
+                    },
+                    _
+                ))
+            ),
+            "shut at the end"
+        );
     }
 }
