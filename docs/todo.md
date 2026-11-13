@@ -3511,6 +3511,10 @@ The `[x]` lines above, summed up by day:
   swimming over a warm reef: the coral near them shown dead five seconds (`ghost_near`). Tests: one
   in `act`. Was: no such event.
 
+- [x] **The vein hides** (`docs/events_todo.md`, 340): `vein_hides`, stages 3 to 5, underground: the
+  ore near them shown as stone twenty-five seconds (`ghost_near`). Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

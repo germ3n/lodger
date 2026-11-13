@@ -1467,6 +1467,8 @@ pub enum Action {
     LavaBreathes,
     /// Over a reef, the coral round them grey and dead a moment, on their screen alone.
     CoralGoesGrey,
+    /// Underground, the ore near them shown as plain stone a while, on their screen alone.
+    VeinHides,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9240,6 +9242,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CoralGoesGrey,
         false,
     ),
+    // docs/events_todo.md, 340: the ore they saw in a wall a moment ago is plain stone when they turn back to it.
+    row(
+        "vein_hides",
+        3,
+        5,
+        &[TargetUnderground],
+        2.0,
+        3,
+        Half,
+        Action::VeinHides,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9961,6 +9975,7 @@ impl Event {
             | Action::LichenDims
             | Action::LavaBreathes
             | Action::CoralGoesGrey
+            | Action::VeinHides
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10640,6 +10655,7 @@ impl Event {
             "lichen_dims" => "dim the glow lichen round them",
             "lava_breathes" => "make the lava near them breathe",
             "coral_goes_grey" => "turn the reef round them grey",
+            "vein_hides" => "hide the ore round them in plain stone",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -1063,6 +1063,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LichenDims
         | Action::LavaBreathes
         | Action::CoralGoesGrey
+        | Action::VeinHides
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11911,6 +11912,39 @@ pub fn commands(
                     let dead = format!("minecraft:dead_{kind}_{part}");
                     made.push((ghost_near(ids, target, &of, &dead, 5.0, false, ""), 0));
                 }
+            }
+            made
+        }
+        // docs/events_todo.md, 340.
+        Action::VeinHides => {
+            let mut made = Vec::new();
+            for ore in [
+                "coal", "iron", "copper", "gold", "redstone", "lapis", "diamond", "emerald",
+            ] {
+                made.push((
+                    ghost_near(
+                        ids,
+                        target,
+                        &format!("minecraft:{ore}_ore"),
+                        "minecraft:stone",
+                        25.0,
+                        false,
+                        "",
+                    ),
+                    0,
+                ));
+                made.push((
+                    ghost_near(
+                        ids,
+                        target,
+                        &format!("minecraft:deepslate_{ore}_ore"),
+                        "minecraft:deepslate",
+                        25.0,
+                        false,
+                        "",
+                    ),
+                    0,
+                ));
             }
             made
         }
@@ -25358,5 +25392,14 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.len(), 20);
         assert!(made.iter().all(|(c, _)| matches!(c, Command::GhostNear { of, block, .. } if block.replace("dead_", "") == *of)));
+    }
+
+    #[test]
+    fn vein_hides_shows_every_ore_as_its_stone() {
+        let memory = rich_memory();
+        let event = find("vein_hides").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 16);
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::GhostNear { of, block, .. } if of == "minecraft:deepslate_diamond_ore" && block == "minecraft:deepslate")));
     }
 }
