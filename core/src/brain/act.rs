@@ -1000,6 +1000,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FurnaceGlows
         | Action::PaperOnTheFloor
         | Action::AGlintOnTheHill
+        | Action::HeartbeatInTheStone
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11139,6 +11140,22 @@ pub fn commands(
                 }
             }
             made
+        }
+        // docs/events_todo.md, 343.
+        Action::HeartbeatInTheStone => {
+            // Six blocks ahead, in the stone: four beats a second and a half apart, the last quicker.
+            let at = block_of(memory.last.pos);
+            let way = facing_way(memory.last.yaw);
+            let ahead = block_center([at[0] + way[0] * 6, at[1], at[2] + way[1] * 6]);
+            [0u64, 30, 60, 80]
+                .into_iter()
+                .map(|later| {
+                    (
+                        sound_at(ids, target, "minecraft:entity.warden.heartbeat", ahead, 1.0),
+                        later,
+                    )
+                })
+                .collect()
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -24111,5 +24128,16 @@ mod tests {
                 .count(),
             3
         );
+    }
+
+    #[test]
+    fn heartbeat_in_the_stone_beats_ahead_of_them_four_times() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 20.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("heartbeat_in_the_stone").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 4);
+        assert!(made.iter().all(|(c, _)| matches!(c, Command::PlaySound { sound, pos, .. } if sound.ends_with("heartbeat") && pos[2] == 6.5)), "{made:?}");
     }
 }

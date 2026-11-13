@@ -3385,6 +3385,10 @@ The `[x]` lines above, summed up by day:
   earshot. Was: it came anywhere outdoors, so from the mine its sniffing at the house was for
   nobody (the stays test caught it).
 
+- [x] **A heartbeat in the stone** (`docs/events_todo.md`, 343): `heartbeat_in_the_stone`, stages 3
+  to 5, underground: four heartbeats from the rock ahead of them. Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

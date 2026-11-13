@@ -58,6 +58,7 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .in_used_container(|id| id.ends_with(suffix))
             .is_some(),
         Need::Furnace => memory.furnace().is_some(),
+        Need::Below(y) => last.online && last.pos[1] < y as f64,
         Need::ColdFurnace => memory.furnace().is_some_and(|f| f.contents.is_empty()),
         // A furnace whose input and output are free: a full input sent their raw thing to the
         // output slot, where it stopped what was smelting.
@@ -336,6 +337,7 @@ pub fn switched_on(event: &Event, config: &Config) -> bool {
         | Action::PurpurKnock
         | Action::ShipCreaks
         | Action::SomeoneWentThrough
+        | Action::HeartbeatInTheStone
         | Action::PotionAtTheWindow => config.events.sounds,
         // Their name in the ghasts' cries is a hint too: off with the glitches.
         // The lost hour begins with their screen black: a glitch too.
@@ -473,6 +475,7 @@ pub fn group(event: &Event) -> Option<&'static str> {
         | Action::PurpurKnock
         | Action::ShipCreaks
         | Action::SomeoneWentThrough
+        | Action::HeartbeatInTheStone
         | Action::PotionAtTheWindow => Some("sound"),
         Action::Hint(_, _)
         | Action::BossBarIt

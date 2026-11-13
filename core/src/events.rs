@@ -303,6 +303,8 @@ pub enum Need {
     StoodStill(u32),
     /// The furnace they use, left empty (`furnace_glows`).
     ColdFurnace,
+    /// The target's feet below this height (`knock_from_below` at the bedrock).
+    Below(i32),
 }
 
 impl Need {
@@ -339,6 +341,7 @@ impl Need {
                 | Need::RainJustEnded
                 | Need::Gliding
                 | Need::StoodStill(_)
+                | Need::Below(_)
                 | Need::NotRaining
                 | Need::Creature(_)
                 | Need::TheirAnimal(_)
@@ -423,6 +426,7 @@ impl Need {
             Need::DoorUsed => "happens only as they open a door".to_string(),
             Need::Furnace => "no furnace used".to_string(),
             Need::ColdFurnace => "no furnace of theirs left empty".to_string(),
+            Need::Below(y) => format!("not below {y}"),
             Need::Smeltable => "nothing to smelt with fuel".to_string(),
             Need::FurnaceOutput => "nothing finished in the furnace".to_string(),
             Need::Fixture(kind) => format!("no {} placed", kind.replace('_', " ")),
@@ -1401,6 +1405,8 @@ pub enum Action {
     PaperOnTheFloor,
     /// Far off ahead of them in daylight, a light flashing three times on the ground, on their screen alone.
     AGlintOnTheHill,
+    /// Underground, a slow heartbeat from inside the rock ahead of them.
+    HeartbeatInTheStone,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8783,6 +8789,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::AGlintOnTheHill,
         false,
     ),
+    // docs/events_todo.md, 343: deep down, a slow heartbeat from inside the rock ahead of them.
+    row(
+        "heartbeat_in_the_stone",
+        3,
+        5,
+        &[TargetUnderground],
+        2.0,
+        3,
+        Half,
+        Action::HeartbeatInTheStone,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9094,6 +9112,7 @@ impl Event {
             | Action::SomeoneWentThrough
             | Action::PotionAtTheWindow
             | Action::WrongFooting
+            | Action::HeartbeatInTheStone
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -10120,6 +10139,7 @@ impl Event {
             "furnace_glows" => "light their cold furnace a moment",
             "paper_on_the_floor" => "leave a sheet of paper inside their door",
             "a_glint_on_the_hill" => "flash a glint at them from far off",
+            "heartbeat_in_the_stone" => "beat a heart inside the rock ahead of them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
