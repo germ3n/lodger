@@ -841,6 +841,16 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "lodestone_wrong" {
         return memory.home.as_ref().and_then(|h| h.bed);
     }
+    // Leaf litter on the step outside the door they use, on the ground there.
+    if event.id == "leaves_at_the_door" {
+        return match (memory.usual_door(), home) {
+            (Some(door), Some(h)) => {
+                let out = out_of_door(memory, h.center, door);
+                Some([door[0] + out[0], -10_000, door[2] + out[1]])
+            }
+            _ => None,
+        };
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -950,6 +960,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BarterFromHome
         | Action::ElytraAtHome
         | Action::OnTheExitPortal
+        | Action::LeavesAtTheDoor
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -10907,6 +10918,18 @@ pub fn commands(
             }
             vec![(shown, 0)]
         }
+        // docs/events_todo.md, 321.
+        Action::LeavesAtTheDoor => match pos {
+            Some(step) => {
+                let mut litter = on_ground(ids, step, "minecraft:leaf_litter");
+                if let Command::SetBlock { state, settle, .. } = &mut litter {
+                    *state = "segment_amount=3".to_string();
+                    *settle = 3;
+                }
+                vec![(litter, 0)]
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -23656,5 +23679,22 @@ mod tests {
                 "f64::hypot in the mind: use a square root"
             );
         }
+    }
+
+    #[test]
+    fn leaves_at_the_door_lie_on_the_ground_outside_the_door_they_use() {
+        let memory = rich_memory();
+        let door = memory.home.as_ref().unwrap().doors[0];
+        let event = find("leaves_at_the_door").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert!(
+            matches!(pos, Some(p) if p[1] == -10_000 && (p[0] - door[0]).abs() + (p[2] - door[2]).abs() == 1),
+            "{pos:?}"
+        );
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::SetBlock { block, state, rest: true, .. }, 0)] if block == "minecraft:leaf_litter" && state == "segment_amount=3"),
+            "{made:?}"
+        );
     }
 }

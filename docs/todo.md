@@ -3319,6 +3319,10 @@ The `[x]` lines above, summed up by day:
   last stopped, the glide and the seconds still. Tests: one in `offer`, one in `memory`. Was: the
   senses reported thunder and the biome, and no event could ask for either.
 
+- [x] **Leaves at the door** (`docs/events_todo.md`, 321): `leaves_at_the_door`, stages 1 to 5, the
+  target away or asleep: leaf litter on the ground outside the door they use. Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

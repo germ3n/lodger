@@ -1378,6 +1378,8 @@ pub enum Action {
     ElytraAtHome,
     /// As the dragon dies, the figure standing on the exit portal's bedrock, facing them; gone as the portal opens.
     OnTheExitPortal,
+    /// A little leaf litter on the step outside the door they use, as if blown in.
+    LeavesAtTheDoor,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8625,6 +8627,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Hint("the_poem_knows", 1.0),
         false,
     ),
+    // docs/events_todo.md, 321: leaf litter on their doorstep, as if blown in, no tree by the door.
+    row(
+        "leaves_at_the_door",
+        1,
+        5,
+        &[Door, TargetAwayOrAsleep],
+        2.0,
+        4,
+        Half,
+        Action::LeavesAtTheDoor,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9311,6 +9325,7 @@ impl Event {
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
+            | Action::LeavesAtTheDoor
             | Action::CopperAges
             | Action::BedFenced
             | Action::TrapdoorToNothing
@@ -9941,6 +9956,7 @@ impl Event {
             "elytra_at_home" => "take the ship's elytra and hang it at their home",
             "on_the_exit_portal" => "stand the figure on the exit portal as the dragon dies",
             "the_poem_knows" => "arm the end poem to know them",
+            "leaves_at_the_door" => "leave a little leaf litter on their doorstep",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
