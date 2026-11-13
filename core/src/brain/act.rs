@@ -979,6 +979,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::WrongFooting
         | Action::BookMovedOnShelf
         | Action::SkullTurned
+        | Action::PetGotUp
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11015,6 +11016,18 @@ pub fn commands(
                     0,
                 )]
             }
+            _ => vec![],
+        },
+        // docs/events_todo.md, 326.
+        Action::PetGotUp => match (memory.pets().next(), memory.usual_door()) {
+            (Some(pet), Some(door)) => vec![(
+                Command::StandUp {
+                    id: ids(),
+                    entity: pet.id,
+                    face: door,
+                },
+                0,
+            )],
             _ => vec![],
         },
         Action::SculkCreeps => {
@@ -23887,6 +23900,19 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::SetState { value, .. }, 0)] if value == "4"),
             "west is a quarter: {made:?}"
+        );
+    }
+
+    #[test]
+    fn pet_got_up_stands_their_sitting_pet_looking_at_the_door() {
+        let memory = rich_memory();
+        let pet = memory.pets().next().unwrap().id;
+        let door = memory.usual_door().unwrap();
+        let event = find("pet_got_up").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::StandUp { entity, face, .. }, 0)] if *entity == pet && *face == door),
+            "{made:?}"
         );
     }
 }

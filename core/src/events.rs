@@ -1388,6 +1388,8 @@ pub enum Action {
     BookMovedOnShelf,
     /// A head or skull they set on the floor turned to face their bed (its `rotation`).
     SkullTurned,
+    /// A pet they left sitting got up where it sat, looking at the door (`stand_up`).
+    PetGotUp,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8710,6 +8712,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SkullTurned,
         true,
     ),
+    // docs/events_todo.md, 326: coming home, the pet they left sitting is standing where it sat, looking at the door.
+    row(
+        "pet_got_up",
+        1,
+        5,
+        &[Pet, Door, TargetApproachingDoor],
+        2.0,
+        3,
+        Half,
+        Action::PetGotUp,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9095,6 +9109,7 @@ impl Event {
             | Action::BarterFromHome
             | Action::ElytraAtHome
             | Action::BookMovedOnShelf
+            | Action::PetGotUp
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -10037,6 +10052,7 @@ impl Event {
             "plate_clicks" => "click one of their pressure plates down",
             "book_moved_on_shelf" => "move the books on their bookshelf one slot along",
             "skull_turned" => "turn the head they set out to face their bed",
+            "pet_got_up" => "have the pet they left sitting stand up and look at the door",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

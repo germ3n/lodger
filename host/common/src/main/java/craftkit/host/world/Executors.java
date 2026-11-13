@@ -194,6 +194,20 @@ public final class Executors {
 				case "ghost_block" -> ghostBlock(level, command, id, context);
 				case "ghost_near" -> ghostNear(level, command, id, context);
 				case "rotate_slots" -> rotateSlots(level, command, id);
+				case "stand_up" -> {
+					// A sitting pet up on its feet where it sat, looking at a place (ABI 57).
+					if (!(level.getEntity(command.get("entity").getAsInt()) instanceof net.minecraft.world.entity.TamableAnimal pet)) {
+						yield report(id, false, "no tamed animal there");
+					}
+					if (!pet.isOrderedToSit()) {
+						yield report(id, false, "it is not sitting");
+					}
+					pet.setOrderedToSit(false);
+					pet.setInSittingPose(false);
+					BlockPos face = blockPos(command.getAsJsonArray("face"));
+					pet.getLookControl().setLookAt(face.getX() + 0.5, face.getY() + 1, face.getZ() + 0.5);
+					yield report(id, true, "");
+				}
 				case "dye_item" -> {
 					// A dyeable thing of theirs dyed another colour where it lies (ABI 56).
 					net.minecraft.world.Container container = Senses.containerAt(level, blockPos(command.getAsJsonArray("pos")));

@@ -3359,6 +3359,10 @@ The `[x]` lines above, summed up by day:
   away or asleep: a head or skull of theirs turned to face the bed (`set_state` of `rotation`);
   heads and skulls a fixture kind (`head`). Tests: one in `act`. Was: no such event.
 
+- [x] **The pet got up** (`docs/events_todo.md`, 326): `pet_got_up`, stages 1 to 5, coming home: a
+  sitting pet got up where it sat, looking at the door (`stand_up`, a new command, ABI 57). Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

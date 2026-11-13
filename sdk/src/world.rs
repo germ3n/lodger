@@ -808,6 +808,13 @@ pub enum Command {
         dimension: String,
         command: Box<Command>,
     },
+    /// A tamed animal that sits (a dog, a cat, a parrot) got up, standing where it sat, its head
+    /// turned to `face`; refused when it is not sitting. ABI 57.
+    StandUp {
+        id: u64,
+        entity: u32,
+        face: BlockPos,
+    },
     /// Every armadillo within sixteen blocks of `player` rolled up at once, as if something it
     /// feared passed; each unrolls on its own, as after any fright. Refused with none. ABI 56.
     CurlUp {
@@ -1783,6 +1790,7 @@ impl Command {
             | Command::ShulkersPeek { id, .. }
             | Command::GatewayFlash { id, .. }
             | Command::RefuseFood { id, .. }
+            | Command::StandUp { id, .. }
             | Command::LateDrop { id, .. }
             | Command::ThrowBack { id, .. }
             | Command::PutInBundle { id, .. }
