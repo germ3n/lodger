@@ -3463,6 +3463,10 @@ The `[x]` lines above, summed up by day:
   to 5, by a river at night: a light moving across on the water (`motes` with `to`). Tests: one in
   `act`. Was: no such event.
 
+- [x] **Lightning round you** (`docs/events_todo.md`, 375): `lightning_round_you`, stages 4 and 5,
+  in a storm, the owner's idea: eight bolts that only show, round them in a ring closing from
+  fourteen blocks to a step and a half. Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

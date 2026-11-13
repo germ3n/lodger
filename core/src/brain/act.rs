@@ -1035,6 +1035,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SnowInTheHeat
         | Action::RainStays
         | Action::LanternDownTheRiver
+        | Action::LightningRoundYou
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2808,6 +2809,9 @@ fn spinning_villager(memory: &Memory) -> Option<&crate::memory::Creature> {
 /// The figure that comes on while unseen (`while_unseen`), and how far behind them it starts.
 const UNSEEN_FIGURE: u32 = 61;
 const UNSEEN_BEHIND: f64 = 18.0;
+/// How many bolts strike round them (`lightning_round_you`).
+const LIGHTNING_RING: u64 = 8;
+
 /// How near its place they must be for the sniffer there (`sniffer_at_its_place`), blocks.
 const SNIFFER_HEARD: f64 = 48.0;
 
@@ -11609,6 +11613,25 @@ pub fn commands(
                     0,
                 ),
             ]
+        }
+        // docs/events_todo.md, 375.
+        Action::LightningRoundYou => {
+            // Eight bolts a second and a half apart, each further round them and nearer, the
+            // last a step and a half away; bolts that only show, nothing burnt or hurt.
+            let p = memory.last.pos;
+            (0..LIGHTNING_RING)
+                .map(|i| {
+                    let angle = i as f64 * 2.4;
+                    let far = 14.0 - i as f64 * (12.5 / (LIGHTNING_RING - 1) as f64);
+                    (
+                        Command::Lightning {
+                            id: ids(),
+                            pos: [p[0] + angle.cos() * far, p[1], p[2] + angle.sin() * far],
+                        },
+                        i * 30,
+                    )
+                })
+                .collect()
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -24867,5 +24890,28 @@ mod tests {
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("small_flame"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn lightning_round_you_closes_in_bolt_by_bolt() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("lightning_round_you").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), LIGHTNING_RING as usize);
+        let far = |c: &Command| match c {
+            Command::Lightning { pos, .. } => {
+                ((pos[0] - 0.5).powi(2) + (pos[2] - 0.5).powi(2)).sqrt()
+            }
+            _ => f64::MAX,
+        };
+        assert!((far(&made[0].0) - 14.0).abs() < 0.01);
+        assert!(
+            (far(&made.last().unwrap().0) - 1.5).abs() < 0.01,
+            "the last a step and a half away"
+        );
+        assert!(made
+            .windows(2)
+            .all(|w| far(&w[0].0) > far(&w[1].0) && w[0].1 < w[1].1));
     }
 }

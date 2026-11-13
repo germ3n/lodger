@@ -1443,6 +1443,8 @@ pub enum Action {
     RainStays,
     /// At night on a river, a small flame drifting past on the water, as of a lantern carried down it.
     LanternDownTheRiver,
+    /// In a storm, lightning striking the ground round them again and again, in a ring that closes in.
+    LightningRoundYou,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9072,6 +9074,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LanternDownTheRiver,
         false,
     ),
+    // docs/events_todo.md, 375: in a storm, lightning strikes round them again and again in a closing ring, the last a step away (owner's idea).
+    row(
+        "lightning_round_you",
+        4,
+        5,
+        &[Thundering, TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::LightningRoundYou,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9757,6 +9771,7 @@ impl Event {
             | Action::VinesReach
             | Action::PortalGoesOut
             | Action::OnTheExitPortal
+            | Action::LightningRoundYou
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -10448,6 +10463,7 @@ impl Event {
             "snow_in_the_heat" => "snow on them in the heat",
             "rain_stays" => "keep the rain on them after it stopped",
             "lantern_down_the_river" => "float a light down the river past them",
+            "lightning_round_you" => "strike lightning round them in a closing ring",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
