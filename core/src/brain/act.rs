@@ -1036,6 +1036,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::RainStays
         | Action::LanternDownTheRiver
         | Action::LightningRoundYou
+        | Action::BoltsInALine
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11629,6 +11630,29 @@ pub fn commands(
                             pos: [p[0] + angle.cos() * far, p[1], p[2] + angle.sin() * far],
                         },
                         i * 30,
+                    )
+                })
+                .collect()
+        }
+        // docs/events_todo.md, 381.
+        Action::BoltsInALine => {
+            // Six bolts a second apart, from ten blocks out to sixty, toward its place (or home).
+            let to = memory.place.or(memory.home.as_ref().map(|h| h.center));
+            (0..6u64)
+                .map(|i| {
+                    // Standing at its place, the way they face.
+                    let step = far_toward(memory, to, 10.0 + i as f64 * 10.0)
+                        .unwrap_or_else(|| ahead_of(memory, 10 + i as i32 * 10, 0, 0));
+                    (
+                        Command::Lightning {
+                            id: ids(),
+                            pos: [
+                                step[0] as f64 + 0.5,
+                                memory.last.pos[1],
+                                step[2] as f64 + 0.5,
+                            ],
+                        },
+                        i * 20,
                     )
                 })
                 .collect()
@@ -24913,5 +24937,23 @@ mod tests {
         assert!(made
             .windows(2)
             .all(|w| far(&w[0].0) > far(&w[1].0) && w[0].1 < w[1].1));
+    }
+
+    #[test]
+    fn bolts_in_a_line_lead_toward_its_place() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.place = Some([200, 64, 0]);
+        let event = find("bolts_in_a_line").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 6);
+        let xs: Vec<f64> = made
+            .iter()
+            .map(|(c, _)| match c {
+                Command::Lightning { pos, .. } => pos[0],
+                _ => 0.0,
+            })
+            .collect();
+        assert!(xs.windows(2).all(|w| w[0] < w[1]) && xs[0] > 5.0, "{xs:?}");
     }
 }

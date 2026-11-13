@@ -3467,6 +3467,10 @@ The `[x]` lines above, summed up by day:
   in a storm, the owner's idea: eight bolts that only show, round them in a ring closing from
   fourteen blocks to a step and a half. Tests: one in `act`. Was: no such event.
 
+- [x] **Bolts in a line** (`docs/events_todo.md`, 381): `bolts_in_a_line`, stages 4 and 5, in a
+  storm: six bolts that only show, in a line from them toward its place. Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
