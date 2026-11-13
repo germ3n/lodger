@@ -3427,6 +3427,10 @@ The `[x]` lines above, summed up by day:
   5, at night in a swamp: two lights drifting off ahead of them (`motes` with `to`). Tests: one in
   `act`. Was: no such event.
 
+- [x] **Smoke signals** (`docs/events_todo.md`, 355): `smoke_signals`, stages 2 to 5, outdoors:
+  signal smoke over their campfire in nine puffs, short, long, short (`motes`). Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

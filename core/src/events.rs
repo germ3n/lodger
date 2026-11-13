@@ -1425,6 +1425,8 @@ pub enum Action {
     LightBelowTheBoat,
     /// At night in a swamp, small lights over the water drifting away ahead of them.
     LightsOverTheSwamp,
+    /// Their campfire's smoke rising in puffs: three short, three long, three short.
+    SmokeSignals,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -8942,6 +8944,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::LightsOverTheSwamp,
         false,
     ),
+    // docs/events_todo.md, 355: their campfire's smoke rises in puffs: three short, three long, three short.
+    row(
+        "smoke_signals",
+        2,
+        5,
+        &[Fixture("campfire"), TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::SmokeSignals,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9643,6 +9657,7 @@ impl Event {
             | Action::LightningRodSparks
             | Action::LightBelowTheBoat
             | Action::LightsOverTheSwamp
+            | Action::SmokeSignals
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10300,6 +10315,7 @@ impl Event {
             "lightning_rod_sparks" => "spark their lightning rod",
             "light_below_the_boat" => "keep a light under their boat",
             "lights_over_the_swamp" => "hang lights over the swamp that drift away",
+            "smoke_signals" => "send their campfire's smoke up in signals",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -889,6 +889,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "lightning_rod_sparks" {
         return memory.fixtures("lightning_rod").next().map(|f| f.pos);
     }
+    // Their campfire.
+    if event.id == "smoke_signals" {
+        return memory.fixtures("campfire").next().map(|f| f.pos);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1018,6 +1022,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::LightningRodSparks
         | Action::LightBelowTheBoat
         | Action::LightsOverTheSwamp
+        | Action::SmokeSignals
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -11392,6 +11397,31 @@ pub fn commands(
                 ),
             ]
         }
+        // docs/events_todo.md, 355.
+        Action::SmokeSignals => match pos {
+            Some(fire) => {
+                // Short puffs a second, long ones two and a half, a beat between.
+                let mut made = Vec::new();
+                let mut later = 0u64;
+                for long in [false, false, false, true, true, true, false, false, false] {
+                    let seconds = if long { 2.5 } else { 1.0 };
+                    made.push((
+                        motes(
+                            ids,
+                            target,
+                            Some([fire[0], fire[1] + 1, fire[2]]),
+                            seconds,
+                            "p=minecraft:campfire_signal_smoke;n=1.5;r=0.15;h=0.1;v=0,0.07,0"
+                                .to_string(),
+                        ),
+                        later,
+                    ));
+                    later += (seconds * 20.0) as u64 + 15;
+                }
+                made
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -24531,6 +24561,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(!made.is_empty());
         assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("minecraft:glow"))), "{made:?}");
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn smoke_signals_is_motes_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("smoke_signals").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(!made.is_empty());
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, detail, .. } if hint == "motes" && detail.contains("campfire_signal_smoke"))), "{made:?}");
         assert!(!crate::rules::hidden_from_view(event.action));
     }
 }
