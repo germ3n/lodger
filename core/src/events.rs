@@ -1513,6 +1513,8 @@ pub enum Action {
     FromTheWell,
     /// In a village by day, the children running up round them and all stopping at once to stare.
     ChildrenCircle,
+    /// Deep down, a skeleton with a pickaxe at the rock ahead of them, back to them, mining.
+    TheMiner,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9562,6 +9564,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ChildrenCircle,
         false,
     ),
+    // docs/events_todo.md, 369: deep down, a skeleton with a pickaxe at the rock ahead of them, mining; it does not turn.
+    row(
+        "the_miner",
+        3,
+        5,
+        &[TargetUnderground],
+        3.0,
+        2,
+        Full,
+        Action::TheMiner,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10258,6 +10272,7 @@ impl Event {
             | Action::FliesBesideYou
             | Action::FigureInTheIce
             | Action::ChildrenCircle
+            | Action::TheMiner
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -11008,6 +11023,7 @@ impl Event {
             "pot_wobbles" => "wobble one of their pots",
             "from_the_well" => "call their name up from the well",
             "children_circle" => "bring the village's children round them to stare",
+            "the_miner" => "set a skeleton mining ahead of them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

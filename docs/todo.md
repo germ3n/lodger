@@ -3616,6 +3616,10 @@ The `[x]` lines above, summed up by day:
   village by day: the children run up round them and stare (`approach`). Tests: one in `act`. Was:
   no such event.
 
+- [x] **The miner** (`docs/events_todo.md`, 369): `the_miner`, stages 3 to 5, underground: a still
+  skeleton with a pickaxe ahead of them half a minute, a pick's sound at the rock (`place_entity`'s
+  skeleton). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

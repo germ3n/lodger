@@ -1130,6 +1130,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PotWobbles
         | Action::FromTheWell
         | Action::ChildrenCircle
+        | Action::TheMiner
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12641,6 +12642,34 @@ pub fn commands(
                     0,
                 )]
             }
+        }
+        // docs/events_todo.md, 369.
+        Action::TheMiner => {
+            // Ten ahead, facing the way they face, its back to them; the pick's sound at the rock.
+            let spot = ahead_of(memory, 10, 0, 0);
+            let mut made = vec![(
+                Command::PlaceEntity {
+                    id: ids(),
+                    of: "minecraft:skeleton".to_string(),
+                    pos: [spot[0] as f64 + 0.5, spot[1] as f64, spot[2] as f64 + 0.5],
+                    yaw: memory.last.yaw,
+                    seconds: 30.0,
+                    kept: String::new(),
+                    face: None,
+                    targets: None,
+                    harm: 0.0,
+                    wears: Vec::new(),
+                },
+                0,
+            )];
+            let rock = block_center(ahead_of(memory, 11, 0, 1));
+            for i in 0..14u64 {
+                made.push((
+                    sound_at(ids, target, "minecraft:block.stone.hit", rock, 0.9),
+                    10 + i * 40,
+                ));
+            }
+            made
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -26423,5 +26452,19 @@ mod tests {
             matches!(&made[..], [(Command::Approach { entities, then, .. }, 0)] if entities.contains(&91) && then == "stare"),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn the_miner_stands_at_the_rock_ahead_with_its_back_to_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 20.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("the_miner").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::PlaceEntity { of, seconds, pos, yaw, .. } if of == "minecraft:skeleton" && *seconds == 30.0 && pos[2] == 10.5 && *yaw == 0.0),
+            "{made:?}"
+        );
+        assert_eq!(made.len(), 15);
     }
 }
