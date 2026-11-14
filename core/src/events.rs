@@ -1521,6 +1521,8 @@ pub enum Action {
     PrintsIntoTheSea,
     /// Walking in snow, a second line of prints beside theirs, a step to the side, going on ahead.
     PrintsBesideYou,
+    /// Standing still a while outdoors, the grass round them trampled in a ring, steps going round them.
+    CircledWhileStill,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9618,6 +9620,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PrintsBesideYou,
         false,
     ),
+    // docs/events_todo.md, 399: standing still a while outdoors, steps go round and round them, and the grass round them is trampled in a ring.
+    row(
+        "circled_while_still",
+        3,
+        5,
+        &[StoodStill(45), TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::CircledWhileStill,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10362,6 +10376,7 @@ impl Event {
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
+            | Action::CircledWhileStill
             | Action::TunnelFloods
             | Action::ASundial
             | Action::AWellByTheHouse
@@ -11072,6 +11087,7 @@ impl Event {
             "tunnel_floods" => "flood their tunnel from its end a minute",
             "prints_into_the_sea" => "lay prints down the beach into the sea",
             "prints_beside_you" => "lay prints beside theirs in the snow",
+            "circled_while_still" => "walk a ring round them in the grass",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

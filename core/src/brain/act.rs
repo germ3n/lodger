@@ -1138,6 +1138,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TunnelFloods
         | Action::PrintsIntoTheSea
         | Action::PrintsBesideYou
+        | Action::CircledWhileStill
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12728,6 +12729,44 @@ pub fn commands(
                 })
                 .collect();
             vec![(prints_hint(ids, target, &prints), 0)]
+        }
+        // docs/events_todo.md, 399.
+        Action::CircledWhileStill => {
+            // Steps going round them three blocks out, and the grass flattened where they went.
+            let p = block_of(memory.last.pos);
+            let mut made = Vec::new();
+            for i in 0..16u64 {
+                let angle = i as f64 * std::f64::consts::TAU / 16.0;
+                let at = [
+                    p[0] + (angle.cos() * 3.0).round() as i32,
+                    p[1],
+                    p[2] + (angle.sin() * 3.0).round() as i32,
+                ];
+                made.push((
+                    sound_at(
+                        ids,
+                        target,
+                        "minecraft:block.grass.step",
+                        block_center(at),
+                        0.6,
+                    ),
+                    i * 8,
+                ));
+                made.push((
+                    set(
+                        ids,
+                        at,
+                        "minecraft:air",
+                        &[
+                            "minecraft:short_grass",
+                            "minecraft:tall_grass",
+                            "minecraft:fern",
+                        ],
+                    ),
+                    i * 8,
+                ));
+            }
+            made
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -26571,5 +26610,21 @@ mod tests {
             matches!(&made[..], [(Command::Hint { hint, detail, .. }, _)] if hint == "footprints" && detail.starts_with("-0.5,")),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn circled_while_still_walks_a_ring_round_them() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        let event = find("circled_while_still").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 32);
+        assert!(made.iter().all(|(c, _)| match c {
+            Command::SetBlock { pos, replace, .. } =>
+                (pos[0].abs() + pos[2].abs()) >= 2
+                    && !replace.iter().any(|r| r == "minecraft:grass_block"),
+            Command::PlaySound { .. } => true,
+            _ => false,
+        }));
     }
 }
