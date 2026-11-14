@@ -134,7 +134,12 @@ pub const CHAINS: &[Chain] = &[
         id: "the_watcher",
         steps: &[
             step(
-                &["far_figure", "on_the_peak", "spyglass_figure"],
+                &[
+                    "far_figure",
+                    "against_the_sun",
+                    "on_the_peak",
+                    "spyglass_figure",
+                ],
                 0.0,
                 Always,
             ),
@@ -173,8 +178,8 @@ pub const CHAINS: &[Chain] = &[
         id: "the_vein",
         steps: &[
             step(&["ore_marked", "ore_counted", "scan_ore"], 0.0, Always),
-            step(&["late_drop"], 3.0, Always),
-            step(&["mined_out"], 3.0, Always),
+            step(&["late_drop", "block_comes_back"], 3.0, Always),
+            step(&["mined_out", "vein_hides"], 3.0, Always),
             step(&["dripstone_falls"], 3.0, Always),
         ],
         scene: false,
@@ -182,7 +187,7 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_tunnel",
         steps: &[
-            step(&["mining_sounds"], 0.0, Always),
+            step(&["mining_sounds", "heartbeat_in_the_stone"], 0.0, Always),
             step(&["mine_beside", "cart_overhead"], 3.0, Always),
             step(
                 &["tunnel_toward", "iron_door_below", "dripstone_in_tunnel"],
@@ -200,7 +205,7 @@ pub const CHAINS: &[Chain] = &[
             step(&["tunnel_sealed"], 3.0, Always),
             step(&["tunnel_goes_on"], 3.0, Always),
             step(&["torches_far_end"], 3.0, Always),
-            step(&["sign_deep"], 3.0, Always),
+            step(&["sign_deep", "name_in_the_stone"], 3.0, Always),
         ],
         scene: false,
     },
@@ -217,7 +222,7 @@ pub const CHAINS: &[Chain] = &[
         id: "the_pet",
         steps: &[
             step(&["pet_growl"], 0.0, Always),
-            step(&["pet_moved", "cat_gift"], 3.0, Always),
+            step(&["pet_moved", "cat_gift", "pet_got_up"], 3.0, Always),
             step(&["bark_from_home"], 3.0, Always),
             step(&["pet_outside", "pet_whines_at_door"], 3.0, Always),
         ],
@@ -292,7 +297,11 @@ pub const CHAINS: &[Chain] = &[
             step(&["prints_around_the_house", "trial_key_left"], 0.0, Always),
             step(&["red_trail"], 3.0, Always),
             step(
-                &["boots_at_the_door", "dried_ghast_on_doorstep"],
+                &[
+                    "boots_at_the_door",
+                    "dried_ghast_on_doorstep",
+                    "paper_on_the_floor",
+                ],
                 3.0,
                 Always,
             ),
@@ -325,7 +334,7 @@ pub const CHAINS: &[Chain] = &[
         id: "the_bed",
         steps: &[
             step(&["egg_on_bed", "egg_on_the_pillow"], 0.0, Always),
-            step(&["sheets_changed", "bed_fenced"], 3.0, Always),
+            step(&["sheets_changed", "bed_fenced", "bed_creaks"], 3.0, Always),
             step(&["under_the_bed"], 3.0, Always),
             step(&["lies_beside"], 3.0, Always),
         ],
@@ -368,7 +377,7 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["thunder_clear"], 0.0, Always),
             step(&["moon_wrong"], 3.0, Always),
-            step(&["clock_wrong", "compass_spins"], 3.0, Always),
+            step(&["clock_wrong", "compass_spins", "noon_holds"], 3.0, Always),
             step(&["stars_out", "red_petals"], 3.0, Always),
             step(&["red_rain", "ash_on_the_wind"], 3.0, Always),
             step(&["night_early"], 3.0, Always),
@@ -413,7 +422,15 @@ pub const CHAINS: &[Chain] = &[
             step(&["ripples"], 0.0, Always),
             step(&["boat_waiting"], 3.0, Always),
             step(&["on_the_water"], 3.0, Always),
-            step(&["swims_beneath", "beam_from_the_water"], 3.0, Always),
+            step(
+                &[
+                    "swims_beneath",
+                    "beam_from_the_water",
+                    "light_below_the_boat",
+                ],
+                3.0,
+                Always,
+            ),
             step(&["bell_underwater"], 3.0, Always),
             step(&["pulled_under"], 3.0, Always),
         ],
@@ -447,7 +464,7 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["figure_mirror"], 0.0, Always),
             step(&["reflection"], 3.0, Always),
-            step(&["shadow_on_the_wall"], 3.0, Always),
+            step(&["shadow_on_the_wall", "shadow_follows"], 3.0, Always),
             step(&["wears_your_face"], 3.0, Always),
             step(&["mirror_in_the_window"], 3.0, Always),
         ],
@@ -481,7 +498,7 @@ pub const CHAINS: &[Chain] = &[
             step(&["scarecrow"], 0.0, Always),
             step(&["row_withered"], 3.0, Always),
             step(&["field_word"], 3.0, Always),
-            step(&["face_the_house"], 3.0, Always),
+            step(&["face_the_house", "figure_in_your_field"], 3.0, Always),
             step(&["pale_horse_in_your_pen"], 3.0, Always),
         ],
         scene: false,
@@ -489,7 +506,11 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_chest",
         steps: &[
-            step(&["shuffle_chest", "shelf_shuffled"], 0.0, Always),
+            step(
+                &["shuffle_chest", "shelf_shuffled", "book_moved_on_shelf"],
+                0.0,
+                Always,
+            ),
             step(&["tidy_chest", "tools_laid_out"], 3.0, Always),
             step(&["chest_rattles", "shulker_lid_peeks"], 3.0, Always),
             step(&["the_bell_in_the_chest", "bundle_gains"], 3.0, Always),
@@ -557,7 +578,11 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_neglect",
         steps: &[
-            step(&["cobwebs", "mushrooms_in_corners"], 0.0, Always),
+            step(
+                &["cobwebs", "mushrooms_in_corners", "leaves_fall_inside"],
+                0.0,
+                Always,
+            ),
             step(&["cold_house"], 3.0, Always),
             step(&["frost_on_the_glass"], 3.0, Always),
             step(&["window_tinted", "copper_ages"], 3.0, Always),
@@ -621,7 +646,7 @@ pub const CHAINS: &[Chain] = &[
         id: "the_quiet_house",
         steps: &[
             step(&["sweeping_next_room"], 0.0, Always),
-            step(&["pot_shatters"], 3.0, Always),
+            step(&["pot_shatters", "pot_wobbles"], 3.0, Always),
             step(&["bulbs_clicking"], 3.0, Always),
             step(&["water_where_none"], 3.0, Always),
         ],
@@ -643,7 +668,7 @@ pub const CHAINS: &[Chain] = &[
             step(&["ice_cracks"], 0.0, Always),
             step(&["snowball_thrown"], 3.0, Always),
             step(&["snowball_comes_back"], 3.0, Always),
-            step(&["name_in_the_snow"], 3.0, Always),
+            step(&["name_in_the_snow", "prints_beside_you"], 3.0, Always),
             step(&["snow_shape"], 3.0, Always),
         ],
         scene: false,
@@ -664,7 +689,7 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["plant_flower"], 0.0, Always),
             step(&["flowers_potted"], 3.0, Always),
-            step(&["replant_other"], 3.0, Always),
+            step(&["replant_other", "flower_path"], 3.0, Always),
             step(&["flowers_wilted"], 3.0, Always),
         ],
         scene: false,
@@ -696,7 +721,7 @@ pub const CHAINS: &[Chain] = &[
             step(&["fish_on_line"], 0.0, Always),
             step(&["fishing_line"], 3.0, Always),
             step(&["fishing_figure"], 3.0, Always),
-            step(&["bucket_fish_changed"], 3.0, Always),
+            step(&["bucket_fish_changed", "reel_in_theirs"], 3.0, Always),
         ],
         scene: false,
     },
@@ -788,7 +813,7 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_redstone",
         steps: &[
-            step(&["lever_click"], 0.0, Always),
+            step(&["lever_click", "plate_clicks"], 0.0, Always),
             step(&["piston_once"], 3.0, Always),
             step(&["lamps_blink"], 3.0, Always),
             step(&["bulbs_clicking"], 3.0, Always),
@@ -799,7 +824,7 @@ pub const CHAINS: &[Chain] = &[
     Chain {
         id: "the_brewing",
         steps: &[
-            step(&["brewing_done"], 0.0, Always),
+            step(&["brewing_done", "stand_bubbles"], 0.0, Always),
             step(&["potion_changed"], 3.0, Always),
             step(&["brew_left"], 3.0, Always),
             step(&["their_own_potion"], 3.0, Always),
@@ -1115,7 +1140,7 @@ pub const CHAINS: &[Chain] = &[
         id: "the_storm",
         steps: &[
             step(&["thunder_clear"], 0.0, Always),
-            step(&["lightning_silent"], 3.0, Always),
+            step(&["lightning_silent", "thunder_behind"], 3.0, Always),
             step(&["boom_far"], 3.0, Always),
             step(&["falls_from_the_sky"], 3.0, Always),
         ],
@@ -1446,7 +1471,7 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["cook_one"], 0.0, Always),
             step(&["cold_furnace"], 3.0, Always),
-            step(&["cold_crackle"], 3.0, Always),
+            step(&["cold_crackle", "furnace_glows"], 3.0, Always),
             step(&["put_out_campfire"], 3.0, Always),
         ],
         scene: false,
@@ -1876,7 +1901,7 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["dusk_noon"], 0.0, Always),
             step(&["lamps_noon"], 3.0, Always),
-            step(&["sun_blink"], 3.0, Always),
+            step(&["sun_blink", "noon_holds"], 3.0, Always),
             step(&["night_early"], 3.0, Always),
         ],
         scene: false,
@@ -1996,7 +2021,7 @@ pub const CHAINS: &[Chain] = &[
         steps: &[
             step(&["horse_moved"], 0.0, Always),
             step(&["rides_their_horse"], 3.0, Always),
-            step(&["horse_balks"], 3.0, Always),
+            step(&["horse_balks", "horse_turns_home"], 3.0, Always),
             step(&["pale_horse_in_your_pen"], 3.0, Always),
         ],
         scene: false,
@@ -2090,6 +2115,350 @@ pub const CHAINS: &[Chain] = &[
             step(&["villagers_walk_out"], 3.0, Always),
         ],
         scene: false,
+    },
+    Chain {
+        id: "the_downpour",
+        steps: &[
+            step(&["thunder_behind"], 0.0, Always),
+            step(&["thunder_counts"], 3.0, Always),
+            step(&["door_bangs_in_the_storm"], 3.0, Always),
+            step(&["lightning_round_you"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_bolts",
+        steps: &[
+            step(&["thunder_clear"], 0.0, Always),
+            step(&["figure_in_the_flash"], 3.0, Always),
+            step(&["bolts_in_a_line"], 3.0, Always),
+            step(&["lightning_round_you"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_after_rain",
+        steps: &[
+            step(&["rain_stays"], 0.0, Always),
+            step(&["a_cloud_of_its_own"], 3.0, Always),
+            step(&["dry_beside_you"], 3.0, Always),
+            step(&["stands_in_the_rain"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_desert",
+        steps: &[
+            step(&["snow_in_the_heat"], 0.0, Always),
+            step(&["heat_shimmer"], 3.0, Always),
+            step(&["sandstorm"], 3.0, Always),
+            step(&["from_the_well"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_sea",
+        steps: &[
+            step(&["ship_on_the_horizon"], 0.0, Always),
+            step(&["light_below_the_boat"], 3.0, Always),
+            step(&["prints_into_the_sea"], 3.0, Always),
+            step(&["swims_beneath"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_swamp",
+        steps: &[
+            step(&["lights_over_the_swamp"], 0.0, Always),
+            step(&["witch_laughs"], 3.0, Always),
+            step(&["witch_hut_lit"], 3.0, Always),
+            step(&["lantern_down_the_river"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_heights",
+        steps: &[
+            step(&["name_echoes"], 0.0, Always),
+            step(&["against_the_sun"], 3.0, Always),
+            step(&["on_the_peak"], 3.0, Always),
+            step(&["rider_on_the_ridge"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_ice",
+        steps: &[
+            step(&["snow_hangs"], 0.0, Always),
+            step(&["prints_beside_you"], 3.0, Always),
+            step(&["figure_in_the_ice"], 3.0, Always),
+            step(&["name_in_the_snow"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_mesa",
+        steps: &[
+            step(&["bones_in_the_mesa"], 0.0, Always),
+            step(&["dust_devil"], 3.0, Always),
+            step(&["a_glint_on_the_hill"], 3.0, Always),
+            step(&["on_the_peak"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_deep",
+        steps: &[
+            step(&["heartbeat_in_the_stone"], 0.0, Always),
+            step(&["knock_from_below"], 3.0, Always),
+            step(&["the_city_candles"], 3.0, Always),
+            step(&["shriek_below"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_pickaxe",
+        steps: &[
+            step(&["mining_sounds"], 0.0, Always),
+            step(&["the_miner"], 3.0, Always),
+            step(&["mineshaft_kept"], 3.0, Always),
+            step(&["name_in_the_stone"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_tally",
+        steps: &[
+            step(&["tally_on_the_wall"], 0.0, Always),
+            step(&["face_in_the_ore"], 3.0, Always),
+            step(&["vein_hides"], 3.0, Always),
+            step(&["block_comes_back"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_going_dark",
+        steps: &[
+            step(&["lichen_dims"], 0.0, Always),
+            step(&["glow_berries_go_dark"], 3.0, Always),
+            step(&["cave_torches_flicker"], 3.0, Always),
+            step(&["eyes_in_the_dark"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_rising_water",
+        steps: &[
+            step(&["drip"], 0.0, Always),
+            step(&["water_where_none"], 3.0, Always),
+            step(&["tunnel_floods"], 3.0, Always),
+            step(&["bell_underwater"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_neighbour",
+        steps: &[
+            step(&["seat_by_the_door"], 0.0, Always),
+            step(&["washing_line"], 3.0, Always),
+            step(&["a_well_by_the_house"], 3.0, Always),
+            step(&["house_near"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_doorstep",
+        steps: &[
+            step(&["leaves_at_the_door"], 0.0, Always),
+            step(&["paper_on_the_floor"], 3.0, Always),
+            step(&["boots_at_the_door"], 3.0, Always),
+            step(&["door_wont_open"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_homecoming",
+        steps: &[
+            step(&["smoke_from_the_roof"], 0.0, Always),
+            step(&["light_in_your_window"], 3.0, Always),
+            step(&["pet_got_up"], 3.0, Always),
+            step(&["in_doorway"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_small_noises",
+        steps: &[
+            step(&["bed_creaks"], 0.0, Always),
+            step(&["plate_clicks"], 3.0, Always),
+            step(&["pot_wobbles"], 3.0, Always),
+            step(&["stand_bubbles"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_shadow",
+        steps: &[
+            step(&["shadow_follows"], 0.0, Always),
+            step(&["footsteps_follow"], 3.0, Always),
+            step(&["shadow_on_the_wall"], 3.0, Always),
+            step(&["hand_on_shoulder"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_field_hand",
+        steps: &[
+            step(&["dust_devil"], 0.0, Always),
+            step(&["the_grass_parts"], 3.0, Always),
+            step(&["figure_in_your_field"], 3.0, Always),
+            step(&["face_the_house"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_road",
+        steps: &[
+            step(&["dust_on_the_road"], 0.0, Always),
+            step(&["crossing_ahead"], 3.0, Always),
+            step(&["rider_on_the_ridge"], 3.0, Always),
+            step(&["lantern_in_the_woods"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_stood_still",
+        steps: &[
+            step(&["circled_while_still"], 0.0, Always),
+            step(&["the_grass_parts"], 3.0, Always),
+            step(&["peeks_from_the_trees"], 3.0, Always),
+            step(&["while_unseen"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_flight",
+        steps: &[
+            step(&["flies_beside_you"], 0.0, Always),
+            step(&["happy_ghast_overhead"], 3.0, Always),
+            step(&["falls_from_the_sky"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_answer",
+        steps: &[
+            step(&["horn_answered"], 0.0, Always),
+            step(&["name_echoes"], 3.0, Always),
+            step(&["witch_laughs"], 3.0, Always),
+            step(&["wolf_far"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_reel",
+        steps: &[
+            step(&["reel_in_theirs"], 0.0, Always),
+            step(&["fishing_figure"], 3.0, Always),
+            step(&["beam_from_the_water"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_signal",
+        steps: &[
+            step(&["smoke_signals"], 0.0, Always),
+            step(&["lightning_rod_sparks"], 3.0, Always),
+            step(&["firework_over_its_house"], 3.0, Always),
+            step(&["camp_nearby"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_held_day",
+        steps: &[
+            step(&["noon_holds"], 0.0, Always),
+            step(&["dusk_noon"], 3.0, Always),
+            step(&["lost_hour"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_cold_fire",
+        steps: &[
+            step(&["furnace_glows"], 0.0, Always),
+            step(&["cold_crackle"], 3.0, Always),
+            step(&["cold_furnace"], 3.0, Always),
+            step(&["put_out_campfire"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_shelves",
+        steps: &[
+            step(&["book_moved_on_shelf"], 0.0, Always),
+            step(&["shelf_shuffled"], 3.0, Always),
+            step(&["skull_turned"], 3.0, Always),
+            step(&["frames_turn"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_children",
+        steps: &[
+            step(&["children_circle"], 0.0, Always),
+            step(&["villagers_walk_out"], 3.0, Always),
+            step(&["village_abandoned"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_wet_house",
+        steps: &[
+            step(&["cauldron_ripples"], 0.0, Always),
+            step(&["rain_on_the_roof"], 3.0, Always),
+            step(&["wet_steps"], 3.0, Always),
+            step(&["water_where_none"], 3.0, Always),
+        ],
+        scene: true,
+    },
+    Chain {
+        id: "the_footing",
+        steps: &[
+            step(&["late_steps"], 0.0, Always),
+            step(&["wrong_footing"], 3.0, Always),
+            step(&["shadow_follows"], 3.0, Always),
+            step(&["hand_on_shoulder"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_ride_home",
+        steps: &[
+            step(&["horse_turns_home"], 0.0, Always),
+            step(&["hoofbeats_circling"], 3.0, Always),
+            step(&["rides_their_horse"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_bones",
+        steps: &[
+            step(&["bones_in_the_mesa"], 0.0, Always),
+            step(&["bones_underfoot"], 3.0, Always),
+            step(&["your_grave"], 3.0, Always),
+        ],
+        scene: false,
+    },
+    Chain {
+        id: "the_ore_face",
+        steps: &[
+            step(&["face_in_the_ore"], 0.0, Always),
+            step(&["vein_hides"], 3.0, Always),
+            step(&["breathing_in_the_wall"], 3.0, Always),
+            step(&["eyes_in_the_dark"], 3.0, Always),
+        ],
+        scene: true,
     },
 ];
 
@@ -2422,7 +2791,9 @@ mod tests {
         // Five the code names (the thing, the place, the watcher, the house, the diary),
         // seventy drawn again over the whole catalogue (owner: "make 75 total chains"), and the
         // branches down the triggers' other ways (owner: "fork/branches yes").
-        assert_eq!(CHAINS.len(), 189);
+        // And thirty-five more with the events 321 to 401 (owner: "update the chains/forks and add
+        // some more where appropriate").
+        assert_eq!(CHAINS.len(), 224);
         // No two chains alike (owner: "no duplicate chains, but an event that makes sense to be a
         // step in a chain if it already exists in another one is fine"): an event may be in
         // several, never two chains of the same events.
@@ -2448,7 +2819,7 @@ mod tests {
     #[test]
     fn the_scenes_are_the_short_beats_and_a_step_of_one_is_noted() {
         let scenes: Vec<&str> = CHAINS.iter().filter(|c| c.scene).map(|c| c.id).collect();
-        assert_eq!(scenes.len(), 37, "{scenes:?}");
+        assert_eq!(scenes.len(), 42, "{scenes:?}");
         assert!(CHAINS
             .iter()
             .filter(|c| c.scene)

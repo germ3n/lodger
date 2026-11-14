@@ -1300,13 +1300,50 @@ eighty-nine chains in all, seventy-five triggers going down two ways or three:
 - **The dimming.** `cave_air` → `torches_far_end` → `cave_torches_flicker` → `lights_out`.
 - **The bell.** `bell` → `bell_rings` → `the_count` → `bell_underwater`.
 - **The bell calls.** `bell` → `villager_at_door` → `village_abandoned` → `villagers_walk_out`.
+- **The downpour.** (a scene) `thunder_behind` → `thunder_counts` → `door_bangs_in_the_storm` → `lightning_round_you`.
+- **The bolts.** `thunder_clear` → `figure_in_the_flash` → `bolts_in_a_line` → `lightning_round_you`.
+- **After the rain.** `rain_stays` → `a_cloud_of_its_own` → `dry_beside_you` → `stands_in_the_rain`.
+- **The desert.** `snow_in_the_heat` → `heat_shimmer` → `sandstorm` → `from_the_well`.
+- **The sea.** `ship_on_the_horizon` → `light_below_the_boat` → `prints_into_the_sea` → `swims_beneath`.
+- **The swamp.** `lights_over_the_swamp` → `witch_laughs` → `witch_hut_lit` → `lantern_down_the_river`.
+- **The heights.** `name_echoes` → `against_the_sun` → `on_the_peak` → `rider_on_the_ridge`.
+- **The ice.** `snow_hangs` → `prints_beside_you` → `figure_in_the_ice` → `name_in_the_snow`.
+- **The mesa.** `bones_in_the_mesa` → `dust_devil` → `a_glint_on_the_hill` → `on_the_peak`.
+- **The deep.** `heartbeat_in_the_stone` → `knock_from_below` → `the_city_candles` → `shriek_below`.
+- **The pickaxe.** `mining_sounds` → `the_miner` → `mineshaft_kept` → `name_in_the_stone`.
+- **The tally.** `tally_on_the_wall` → `face_in_the_ore` → `vein_hides` → `block_comes_back`.
+- **The going dark.** (a scene) `lichen_dims` → `glow_berries_go_dark` → `cave_torches_flicker` → `eyes_in_the_dark`.
+- **The rising water.** `drip` → `water_where_none` → `tunnel_floods` → `bell_underwater`.
+- **The neighbour.** `seat_by_the_door` → `washing_line` → `a_well_by_the_house` → `house_near`.
+- **The doorstep.** `leaves_at_the_door` → `paper_on_the_floor` → `boots_at_the_door` → `door_wont_open`.
+- **The homecoming.** `smoke_from_the_roof` → `light_in_your_window` → `pet_got_up` → `in_doorway`.
+- **The small noises.** (a scene) `bed_creaks` → `plate_clicks` → `pot_wobbles` → `stand_bubbles`.
+- **The shadow.** `shadow_follows` → `footsteps_follow` → `shadow_on_the_wall` → `hand_on_shoulder`.
+- **The field hand.** `dust_devil` → `the_grass_parts` → `figure_in_your_field` → `face_the_house`.
+- **The road.** `dust_on_the_road` → `crossing_ahead` → `rider_on_the_ridge` → `lantern_in_the_woods`.
+- **The stood still.** `circled_while_still` → `the_grass_parts` → `peeks_from_the_trees` → `while_unseen`.
+- **The flight.** `flies_beside_you` → `happy_ghast_overhead` → `falls_from_the_sky`.
+- **The answer.** `horn_answered` → `name_echoes` → `witch_laughs` → `wolf_far`.
+- **The reel.** `reel_in_theirs` → `fishing_figure` → `beam_from_the_water`.
+- **The signal.** `smoke_signals` → `lightning_rod_sparks` → `firework_over_its_house` → `camp_nearby`.
+- **The held day.** `noon_holds` → `dusk_noon` → `lost_hour`.
+- **The cold fire.** `furnace_glows` → `cold_crackle` → `cold_furnace` → `put_out_campfire`.
+- **The shelves.** `book_moved_on_shelf` → `shelf_shuffled` → `skull_turned` → `frames_turn`.
+- **The children.** `children_circle` → `villagers_walk_out` → `village_abandoned`.
+- **The wet house.** (a scene) `cauldron_ripples` → `rain_on_the_roof` → `wet_steps` → `water_where_none`.
+- **The footing.** `late_steps` → `wrong_footing` → `shadow_follows` → `hand_on_shoulder`.
+- **The ride home.** `horse_turns_home` → `hoofbeats_circling` → `rides_their_horse`.
+- **The bones.** `bones_in_the_mesa` → `bones_underfoot` → `your_grave`.
+- **The ore face.** (a scene) `face_in_the_ore` → `vein_hides` → `breathing_in_the_wall` → `eyes_in_the_dark`.
+
+The events 321 to 401 joined the chains there were as other ways at a step: `against_the_sun` beside `far_figure` in the watcher, `shadow_follows` beside `shadow_on_the_wall` in the mirror, `book_moved_on_shelf` beside `shelf_shuffled` in the chest, `leaves_fall_inside` beside `mushrooms_in_corners` in the neglect, `noon_holds` beside `compass_spins` in the sky wrong, `bed_creaks` beside `bed_fenced` in the bed, `paper_on_the_floor` beside `dried_ghast_on_doorstep` in the visitor, `pet_got_up` beside `cat_gift` in the pet, `light_below_the_boat` beside `beam_from_the_water` in the water, `furnace_glows` beside `cold_crackle` in the cold hearth, `block_comes_back` beside `late_drop` in the vein, `vein_hides` beside `mined_out` in the vein, `name_in_the_stone` beside `sign_deep` in the way back, `figure_in_your_field` beside `face_the_house` in the field, `horse_turns_home` beside `horse_balks` in the horse, `reel_in_theirs` beside `bucket_fish_changed` in the fisher, `flower_path` beside `replant_other` in the garden, `plate_clicks` beside `lever_click` in the redstone, `pot_wobbles` beside `pot_shatters` in the quiet house, `noon_holds` beside `sun_blink` in the noon, `stand_bubbles` beside `brewing_done` in the brewing, `heartbeat_in_the_stone` beside `mining_sounds` in the tunnel, `thunder_behind` beside `lightning_silent` in the storm, `prints_beside_you` beside `name_in_the_snow` in the snow.
 
 A chain's steps still obey cooldowns and caps, and the budget; what a chain changes is the
 menu's weights and, for an exclusive step, the menu itself for a day or two. The scripted-stay
 tests check that a stay with the rule brain walks at least two chains end to end and that no
 follow-up is ever offered with its needs unmet.
 
-**As coded (`core/src/chains.rs`).** A hundred and eighty-nine, no two alike, an event in several where it fits, a trigger's chains its branches: the seventy and the branches listed above, and the nine of the design, with
+**As coded (`core/src/chains.rs`).** Two hundred and twenty-four, no two alike, an event in several where it fits, a trigger's chains its branches: the seventy and the branches listed above, and the nine of the design, with
 the catalogue's events: the thing (`take`,
 `place_taken`, `return_taken`, `sand_gives_back` or `pot_of_returns`, `at_the_chest`, `frame_emptied`), the vein (`ore_marked`,
 `mined_out`), the tunnel (`mining_sounds`, `mine_beside` or `cart_overhead`, `tunnel_toward` or `iron_door_below`, `cave_room`), the

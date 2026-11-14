@@ -3354,6 +3354,20 @@ The `[x]` lines above, summed up by day:
   the new events, most of them small ones the early stages lean to, the place's path of light
   reached the menu too seldom, and the place walked in one stay of three.
 
+- [x] **The chains with the events 321 to 401** (owner: "update the chains/forks and add some
+  more where appropriate"): twenty-four of them joined chains there were as another way at a step
+  (the shadow beside the one on the wall in the mirror, the glowing furnace beside the cold
+  crackle, the horse turning home beside the balking one, and the rest), and thirty-five new
+  chains, five of them scenes, some forks of triggers there were (`thunder_clear`,
+  `mining_sounds`, `late_steps`, `bones_in_the_mesa`, `dust_devil`): the downpour, the bolts,
+  after the rain, the desert, the sea, the swamp, the heights, the ice, the mesa, the deep, the
+  pickaxe, the tally, the going dark, the rising water, the neighbour, the doorstep, the
+  homecoming, the small noises, the shadow, the field hand, the road, the stood still, the flight,
+  the answer, the reel, the signal, the held day, the cold fire, the shelves, the children, the wet
+  house, the footing, the ride home, the bones, the ore face. Two hundred and twenty-four chains,
+  forty-two scenes. Tests: the chain count and the scenes' count in `chains` (189 to 224, 37 to
+  42). Was: 189 chains, 37 scenes, none with the new events.
+
 - [ ] **Near-twin events as one event with variants** (owner: "variants would be cool"; after
   321 to 401 and the chains): a scan found built events a player could not tell apart:
   `turn_bed`/`bed_turned`, `wave`/`figure_waves`, `torch_blue`/`soul_swap`,
