@@ -1497,6 +1497,8 @@ pub enum Action {
     NoonHolds,
     /// In the rain, the column beside them dry, as if someone stood there.
     DryBesideYou,
+    /// In falling snow, the flakes round them stopping in the air a few seconds.
+    SnowHangs,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9450,6 +9452,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::DryBesideYou,
         false,
     ),
+    // docs/events_todo.md, 382: in falling snow, the flakes round them stop in the air a few seconds, all at once, then fall on.
+    row(
+        "snow_hangs",
+        3,
+        5,
+        &[Raining, SnowyHere, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::SnowHangs,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10180,6 +10194,7 @@ impl Event {
             | Action::ShadowFollows
             | Action::NoonHolds
             | Action::DryBesideYou
+            | Action::SnowHangs
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10880,6 +10895,7 @@ impl Event {
             "shadow_follows" => "lay a second shadow behind them",
             "noon_holds" => "stop the sun at noon",
             "dry_beside_you" => "keep the rain off the place beside them",
+            "snow_hangs" => "hang the snow in the air round them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
