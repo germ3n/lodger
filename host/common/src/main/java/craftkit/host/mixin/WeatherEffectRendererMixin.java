@@ -7,6 +7,8 @@ import craftkit.host.client.Atmospheres;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Red rain: each drop's colour as it is set, red while `red_rain` is on. A wrap of the colour
@@ -26,5 +28,12 @@ public abstract class WeatherEffectRendererMixin {
 			return vertex.setColor(Atmospheres.rain(((colour >>> 24) & 0xFF) / 255f));
 		}
 		return original.call(vertex, colour);
+	}
+
+	/** The columns of rain and snow as gathered, changed for `dry_beside_you` and `snow_hangs`. */
+	@Inject(method = "extractRenderState", at = @At("TAIL"))
+	private void craftkit$columns(net.minecraft.client.multiplayer.ClientLevel level, float partialTick, net.minecraft.world.phys.Vec3 camera,
+			net.minecraft.client.renderer.state.level.WeatherRenderState state, CallbackInfo info) {
+		Atmospheres.weather(state);
 	}
 }

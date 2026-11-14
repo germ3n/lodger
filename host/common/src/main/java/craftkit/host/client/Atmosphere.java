@@ -20,6 +20,8 @@ public final class Atmosphere {
 	public static final Fog MIST = new Fog(0, 22, 0.74f, 0.76f, 0.80f);
 	/** Red mist: deep red, a little farther. */
 	public static final Fog RED_MIST = new Fog(0, 20, 0.42f, 0.04f, 0.04f);
+	/** A sandstorm: sand-coloured, close. */
+	public static final Fog SANDSTORM = new Fog(0, 16, 0.80f, 0.68f, 0.47f);
 	/** Darkness: black, a few blocks. */
 	public static final Fog DARKNESS = new Fog(0, 7, 0.0f, 0.0f, 0.0f);
 	/** Dusk at noon: the light drained, grey-violet, the distance gone. */
@@ -40,6 +42,7 @@ public final class Atmosphere {
 			case "mist", "fog_close" -> MIST;
 			case "red_mist" -> RED_MIST;
 			case "darkness" -> DARKNESS;
+			case "sandstorm" -> SANDSTORM;
 			case "dusk_noon" -> DUSK;
 			default -> null;
 		};

@@ -125,7 +125,8 @@ moved.
   - `SkyRenderer.extractRenderState` at its tail: the `SkyRenderState` fields (`starBrightness`,
     `moonPhase`, the sun, moon and star angles, `skyColor`).
   - `WeatherEffectRenderer.prepareInstances`: its `ARGB.white(float)` call, the drops' colour,
-    redirected for red rain.
+    redirected for red rain; and `extractRenderState` at its tail, the columns of rain and snow
+    as gathered, one left out for `dry_beside_you` and the snow held for `snow_hangs`.
   - `CompassAngleState.calculate`: its `CompassTarget.get` call, redirected for
     `compass_points`.
   - `PaintingRenderer.submit` at its head: the pose turned half round on the wall's normal for

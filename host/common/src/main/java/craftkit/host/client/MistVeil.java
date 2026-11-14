@@ -11,6 +11,8 @@ public final class MistVeil {
 	public static final float MIST = 0.28f;
 	public static final float FOG_CLOSE = 0.45f;
 	public static final float RED_MIST = 0.30f;
+	public static final float SANDSTORM = 0.34f;
+	public static final int SAND = 0xC8A870;
 	public static final int PALE = 0xC4C8CC;
 	public static final int RED = 0x701010;
 
@@ -26,6 +28,7 @@ public final class MistVeil {
 			case "fog_close" -> FOG_CLOSE;
 			case "red_mist" -> RED_MIST;
 			case "mist" -> MIST;
+			case "sandstorm" -> SANDSTORM;
 			default -> 0;
 		};
 		return full * Math.max(0, Math.min(1, weight));
@@ -43,6 +46,6 @@ public final class MistVeil {
 
 	/** The veil's colour for a mist of this kind. */
 	public static int colour(String kind) {
-		return kind.equals("red_mist") ? RED : PALE;
+		return kind.equals("red_mist") ? RED : kind.equals("sandstorm") ? SAND : PALE;
 	}
 }

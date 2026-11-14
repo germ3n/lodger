@@ -240,6 +240,7 @@ public final class Worlds {
 		figures.tick();
 		BossBars.tick();
 		LateDrops.tick(server);
+		BlockBacks.tick(server);
 		Returns.tick(server);
 		for (Gatherings.Bought sale : gatherings.takeBought()) {
 			if (open.containsKey(sale.level())) {

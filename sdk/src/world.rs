@@ -808,6 +808,19 @@ pub enum Command {
         dimension: String,
         command: Box<Command>,
     },
+    /// The next block `player` breaks within `seconds` (ten minutes at most) shown to them alone
+    /// again a blink after it breaks, then gone; the break itself untouched. ABI 57.
+    BlockBack {
+        id: u64,
+        player: u32,
+        seconds: f32,
+    },
+    /// The decorated pot at `pos` wobbling as if bumped, the game's own wobble and its sound;
+    /// refused where there is none. ABI 57.
+    WobblePot {
+        id: u64,
+        pos: BlockPos,
+    },
     /// A tamed animal that sits (a dog, a cat, a parrot) got up, standing where it sat, its head
     /// turned to `face`; refused when it is not sitting. ABI 57.
     StandUp {
@@ -1794,6 +1807,8 @@ impl Command {
             | Command::GatewayFlash { id, .. }
             | Command::RefuseFood { id, .. }
             | Command::StandUp { id, .. }
+            | Command::BlockBack { id, .. }
+            | Command::WobblePot { id, .. }
             | Command::LateDrop { id, .. }
             | Command::ThrowBack { id, .. }
             | Command::PutInBundle { id, .. }

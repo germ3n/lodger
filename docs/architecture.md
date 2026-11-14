@@ -156,6 +156,13 @@ As little as possible, because the mod is about not knowing:
   compass held on a place),
   `false_glint` (what is in their main hand drawn shimmering as if enchanted),
   `compass_spins` (a compass spinning as in the Nether),
+  `turn_toward` (their view, and what they ride with it, turned toward the hint's place three
+  degrees a tick), `shadow_follows` (a person's shadow on the ground along their trail behind
+  them, away from the sun or their light, shrinking once turned to; `ShadowFollow`), `tally`
+  (tally strokes on a wall's face, the detail's count; `Tally`), `noon_holds` (the sun, moon and
+  stars held where they stood), `sandstorm` (a sand-coloured fog, a veil with a shader pack),
+  `dry_beside_you` (the rain's column at their right hand left out) and `snow_hangs` (the snow's
+  columns held as they were, so the flakes hang; `Weather`, the weather hook),
   `motes` (particles on their client alone, a few a tick, at the hint's place, at them, or moving
   from the place to another over its time; the detail says which: `p` the particle or
   `dust:RRGGBB:size`, `n` a tick, `r` and `h` the spread, `v` the velocity, `to`, `at=player`,

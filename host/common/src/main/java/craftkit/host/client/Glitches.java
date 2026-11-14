@@ -299,6 +299,26 @@ public final class Glitches {
 						drawPrints(minecraft, active, hint);
 					}
 				}
+				// Their view, and what they ride, turned toward a place a few degrees a tick
+				// (`horse_turns_home`).
+				case "turn_toward" -> hint.pos().ifPresent(pos -> {
+					Vec3 to = Vec3.atCenterOf(pos).subtract(minecraft.player.position());
+					float wanted = (float) Math.toDegrees(Math.atan2(-to.x, to.z));
+					float delta = wrap(wanted - minecraft.player.getYRot());
+					minecraft.player.setYRot(minecraft.player.getYRot() + Math.signum(delta) * Math.min(3, Math.abs(delta)));
+				});
+				// A second shadow on the ground behind them, nothing casting it (`ShadowFollow`).
+				case "shadow_follows" -> {
+					if (minecraft.level.getGameTime() % 2 == 0) {
+						followingShadow(minecraft, active);
+					}
+				}
+				// Tally strokes on the wall at the hint's place, as many as the detail says (`Tally`).
+				case "tally" -> hint.pos().ifPresent(pos -> {
+					if (minecraft.level.getGameTime() % 8 == 0) {
+						tally(minecraft, pos, hint.detail());
+					}
+				});
 				// Particles on their client alone at a place, at them, or moving (`Motes`): the smoke
 				// over a roof, dust crossing a field, lights over a swamp, rain on them alone.
 				case "motes" -> {
@@ -729,7 +749,7 @@ public final class Glitches {
 				}
 				// With a shader pack on, which draws its own fog and leaves the game's unused, the
 				// mists are a veil over the screen instead (`MistVeil`), as thick as they have grown.
-				case "mist", "fog_close", "red_mist" -> {
+				case "mist", "fog_close", "red_mist", "sandstorm" -> {
 					String kind = active.hint().hint();
 					float alpha = MistVeil.alpha(kind, Atmospheres.weightOf(kind), shadersOn());
 					if (alpha > 0) {
@@ -1073,6 +1093,71 @@ public final class Glitches {
 		}
 
 		return sound;
+	}
+
+	/** Where each shadow has stood on their trail, by hint, and since when it has been seen. */
+	private static final java.util.Map<Long, java.util.ArrayDeque<Vec3>> SHADOW_TRAILS = new java.util.HashMap<>();
+	private static final java.util.Map<Long, Integer> SHADOW_SEEN = new java.util.HashMap<>();
+
+	private static void followingShadow(Minecraft minecraft, Hints.Active active) {
+		if (DONE_ONCE.contains(active.id())) {
+			return;
+		}
+		var player = minecraft.player;
+		var trail = SHADOW_TRAILS.computeIfAbsent(active.id(), k -> new java.util.ArrayDeque<>());
+		trail.addLast(player.position());
+		while (trail.size() > ShadowFollow.BEHIND_TICKS / 2) {
+			trail.removeFirst();
+		}
+		Vec3 feet = trail.peekFirst();
+		if (feet == null || feet.distanceTo(player.position()) < 1.5) {
+			return;
+		}
+		// By day away from the sun; at night away from them, at the edge of their light.
+		double[] way = minecraft.level.isBrightOutside() ? ShadowFollow.fromSun(minecraft.level.getOverworldClockTime())
+				: new double[] {feet.x - player.getX(), feet.z - player.getZ()};
+		Vec3 eye = player.getEyePosition();
+		Integer seen = SHADOW_SEEN.get(active.id());
+		if (seen == null && player.getViewVector(1f).dot(feet.subtract(eye).normalize()) > 0.85) {
+			SHADOW_SEEN.put(active.id(), 0);
+			seen = 0;
+		}
+		double scale = 1;
+		if (seen != null) {
+			// Turned round to: it stands a moment, then shrinks into the ground.
+			SHADOW_SEEN.put(active.id(), seen + 1);
+			scale = Math.max(0, 1 - Math.max(0, seen - 10) / 10.0);
+			if (scale <= 0) {
+				DONE_ONCE.add(active.id());
+				SHADOW_TRAILS.remove(active.id());
+				return;
+			}
+		}
+		double y = Math.floor(feet.y) + 0.05;
+		for (double[] p : Silhouette.points()) {
+			double[] at = ShadowFollow.ground(p[0], p[1], way[0], way[1], scale);
+			minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0x0A0A0A, 0.7f),
+					feet.x + at[0], y, feet.z + at[1], 0, 0, 0);
+		}
+	}
+
+	/** The tally's strokes on the face of the block at {@code pos} turned to them. */
+	private static void tally(Minecraft minecraft, net.minecraft.core.BlockPos pos, String detail) {
+		int count;
+		try {
+			count = Integer.parseInt(detail.trim());
+		} catch (NumberFormatException e) {
+			return;
+		}
+		Vec3 centre = Vec3.atCenterOf(pos);
+		Vec3 to = minecraft.player.position().subtract(centre);
+		// The face toward them, along the longer way across.
+		double nx = Math.abs(to.x) >= Math.abs(to.z) ? Math.signum(to.x) : 0;
+		double nz = nx == 0 ? Math.signum(to.z) : 0;
+		for (double[] p : Tally.points(count)) {
+			minecraft.level.addParticle(new net.minecraft.core.particles.DustParticleOptions(0xD9D4C8, 0.35f),
+					centre.x + nx * 0.52 - nz * p[0], pos.getY() + p[1], centre.z + nz * 0.52 + nx * p[0], 0, 0, 0);
+		}
 	}
 
 	/** A mote's particle: dust of its colour, or any particle that takes no options; none for one it does not know. */

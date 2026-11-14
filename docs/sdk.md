@@ -272,7 +272,10 @@ place's column, nothing tied to it) and `minecraft:trident`, for a while only, t
 into the ground, never to be picked up.
 
 ABI 57: `stand_up` (a tamed animal that sits got up where it sat, its head turned to a place),
-and `ghost_near`'s `state` (properties set over the ones it keeps: candles shown lit).
+`ghost_near`'s `state` (properties set over the ones it keeps: candles shown lit), `block_back` (the next
+block a player breaks shown to them again a blink), `wobble_pot` (a decorated pot wobbling as if bumped) and
+`place_entity`'s `minecraft:skeleton` (for a while only, still, its own mind off, an iron pickaxe in its hand
+it never drops).
 
 ## Resources
 

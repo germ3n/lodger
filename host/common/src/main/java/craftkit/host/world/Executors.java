@@ -266,6 +266,25 @@ public final class Executors {
 					Returns.arm(player.getUUID(), back, level.getGameTime() + (long) (Math.min(600, command.get("seconds").getAsFloat()) * 20));
 					yield report(id, true, "");
 				}
+				case "block_back" -> {
+					// The next block they break shown again to them a blink (ABI 57).
+					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
+					if (player == null) {
+						yield report(id, false, "the player is not here");
+					}
+					BlockBacks.arm(player.getUUID(), level.getGameTime() + (long) (Math.min(600, command.get("seconds").getAsFloat()) * 20));
+					yield report(id, true, "");
+				}
+				case "wobble_pot" -> {
+					// A decorated pot wobbling as if bumped, the game's own wobble and sound (ABI 57).
+					BlockPos at = blockPos(command.getAsJsonArray("pos"));
+					if (!(level.getBlockEntity(at) instanceof net.minecraft.world.level.block.entity.DecoratedPotBlockEntity pot)) {
+						yield report(id, false, "no decorated pot there");
+					}
+					pot.wobble(net.minecraft.world.level.block.entity.DecoratedPotBlockEntity.WobbleStyle.POSITIVE);
+					level.playSound(null, at, net.minecraft.sounds.SoundEvents.DECORATED_POT_INSERT, net.minecraft.sounds.SoundSource.BLOCKS, 1f, 1f);
+					yield report(id, true, "");
+				}
 				case "late_drop" -> {
 					ServerPlayer player = context.senses().player(level, command.get("player").getAsInt());
 					if (player == null) {
@@ -3061,6 +3080,16 @@ public final class Executors {
 			if (worn != null && !worn.isEmpty()) {
 				living.setItemSlot(living.getEquipmentSlotForItem(worn), worn);
 			}
+		}
+		// A skeleton only for a while, still, its own mind off, a pickaxe in its hand it never
+		// drops (`the_miner`, ABI 57): one that moved would shoot.
+		if (of.equals("minecraft:skeleton")) {
+			if (wanted <= 0 || !(entity instanceof net.minecraft.world.entity.Mob skeleton)) {
+				return report(id, false, "a skeleton is only ever placed for a while");
+			}
+			skeleton.setNoAi(true);
+			skeleton.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE));
+			skeleton.setDropChance(net.minecraft.world.entity.EquipmentSlot.MAINHAND, 0);
 		}
 		// A sniffer stands still, its own mind off, so it never digs up a seed from nothing.
 		if (entity instanceof net.minecraft.world.entity.Mob mob && of.equals("minecraft:sniffer")) {

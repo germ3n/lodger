@@ -371,6 +371,7 @@ public final class Senses {
 	}
 
 	public void noticedBrokeBlock(ServerPlayer player, BlockPos pos, BlockState state) {
+		craftkit.host.world.BlockBacks.broke(player, pos, state);
 		event(player, "broke_block", pos, blockId(state), null);
 	}
 

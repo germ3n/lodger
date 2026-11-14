@@ -95,6 +95,17 @@ public final class Atmospheres {
 			sky.sunAngle = sky.moonAngle;
 			sky.moonAngle = sun;
 		}
+		// The sun held where it stood when `noon_holds` came, the moon and stars with it.
+		if (weightOf("noon_holds") > 0) {
+			if (heldSky == null) {
+				heldSky = new float[] {sky.sunAngle, sky.moonAngle, sky.starAngle};
+			}
+			sky.sunAngle = heldSky[0];
+			sky.moonAngle = heldSky[1];
+			sky.starAngle = heldSky[2];
+		} else {
+			heldSky = null;
+		}
 		float later = weightOf("night_early");
 		if (later > 0) {
 			// Two hours of a twenty-four hour turn.
@@ -110,6 +121,35 @@ public final class Atmospheres {
 		}
 		if (later > 0) {
 			sky.skyColor = new Vector3f(sky.skyColor.x() * (1 - 0.4f * later), sky.skyColor.y() * (1 - 0.4f * later), sky.skyColor.z() * (1 - 0.3f * later));
+		}
+	}
+
+	private static float[] heldSky;
+	private static java.util.List<net.minecraft.client.renderer.WeatherEffectRenderer.ColumnInstance> heldSnow;
+
+	/**
+	 * The weather hook, the columns of rain and snow about to be drawn: with `dry_beside_you` on,
+	 * the column at their right side left out (someone standing there in the rain); with
+	 * `snow_hangs`, the snow's columns kept as they were when it came, so the flakes hang.
+	 */
+	public static void weather(net.minecraft.client.renderer.state.level.WeatherRenderState state) {
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.player == null) {
+			return;
+		}
+		if (weightOf("dry_beside_you") > 0) {
+			int[] beside = Weather.beside(minecraft.player.getX(), minecraft.player.getZ(), minecraft.player.getYRot());
+			state.rainColumns.removeIf(c -> c.x() == beside[0] && c.z() == beside[1]);
+			state.snowColumns.removeIf(c -> c.x() == beside[0] && c.z() == beside[1]);
+		}
+		if (weightOf("snow_hangs") > 0) {
+			if (heldSnow == null) {
+				heldSnow = new ArrayList<>(state.snowColumns);
+			}
+			state.snowColumns.clear();
+			state.snowColumns.addAll(heldSnow);
+		} else {
+			heldSnow = null;
 		}
 	}
 

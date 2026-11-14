@@ -3341,6 +3341,13 @@ The `[x]` lines above, summed up by day:
   pressure plate of theirs heard clicking down, the sound alone. Tests: one in `act`. Was: no such
   event.
 
+- [x] **The host's side of the last new events** (`docs/events_todo.md`, 321 to 401):
+  `block_back` (`BlockBacks`, a hook on the broken-block sense), `wobble_pot`, `place_entity`'s
+  still skeleton with a pickaxe, and the client hints `turn_toward`, `shadow_follows`
+  (`ShadowFollow`), `tally` (`Tally`), `noon_holds`, `sandstorm` (a fog of its own) and the weather
+  hook's `dry_beside_you` and `snow_hangs` (`Weather`, `extractRenderState` at its tail). ABI 57.
+  Tests: `ArmingTest`, `TallyTest`, `ShadowFollowTest`, `WeatherTest`. Was: none of these.
+
 - [x] **The design's chains begin likelier** (`chains::SPINE_WEIGHT`, `chains::starts_spine`): a
   first step of the thing, the place, the watcher, the house or the diary three times likelier
   again on the menu. Tests: one in `chains`; the stays test's chain walk passes again. Was: with
