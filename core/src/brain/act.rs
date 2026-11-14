@@ -1119,6 +1119,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::NoonHolds
         | Action::DryBesideYou
         | Action::SnowHangs
+        | Action::HorseTurnsHome
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12488,6 +12489,21 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 400.
+        Action::HorseTurnsHome => match memory.home.as_ref() {
+            Some(h) => vec![(
+                Command::Hint {
+                    id: ids(),
+                    player: target,
+                    hint: "turn_toward".to_string(),
+                    pos: Some(h.center),
+                    seconds: 4.0,
+                    detail: String::new(),
+                },
+                0,
+            )],
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26146,6 +26162,21 @@ mod tests {
         assert!(
             made.iter()
                 .any(|(c, _)| matches!(c, Command::Hint { hint, .. } if hint == "snow_hangs")),
+            "{made:?}"
+        );
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn horse_turns_home_is_its_hint_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("horse_turns_home").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            made.iter()
+                .any(|(c, _)| matches!(c, Command::Hint { hint, .. } if hint == "turn_toward")),
             "{made:?}"
         );
         assert!(!crate::rules::hidden_from_view(event.action));
