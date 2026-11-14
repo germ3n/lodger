@@ -3628,6 +3628,10 @@ The `[x]` lines above, summed up by day:
   a beach: footprints from beside them down into the water (`footprints`). Tests: one in `act`. Was:
   no such event.
 
+- [x] **Prints beside you** (`docs/events_todo.md`, 387): `prints_beside_you`, stages 3 to 5,
+  walking in snow: prints beside theirs going on ahead (`footprints`). Tests: one in `act`. Was: no
+  such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

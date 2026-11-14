@@ -1137,6 +1137,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TheMiner
         | Action::TunnelFloods
         | Action::PrintsIntoTheSea
+        | Action::PrintsBesideYou
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12709,6 +12710,25 @@ pub fn commands(
             }
             None => vec![],
         },
+        // docs/events_todo.md, 387.
+        Action::PrintsBesideYou => {
+            // A block to their right, from beside them on ahead twelve blocks, as if someone walked
+            // with them.
+            let way = facing_way(memory.last.yaw);
+            let p = memory.last.pos;
+            let yaw = memory.last.yaw;
+            let prints: Vec<crate::prints::Print> = (0..12)
+                .map(|i| crate::prints::Print {
+                    pos: [
+                        p[0] + way[0] as f64 * i as f64 - way[1] as f64,
+                        p[1],
+                        p[2] + way[1] as f64 * i as f64 + way[0] as f64,
+                    ],
+                    yaw,
+                })
+                .collect();
+            vec![(prints_hint(ids, target, &prints), 0)]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26536,6 +26556,19 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::Hint { hint, detail, .. }, _)] if hint == "footprints" && detail.split(';').count() > 5),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn prints_beside_you_run_a_step_to_their_side() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("prints_beside_you").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, detail, .. }, _)] if hint == "footprints" && detail.starts_with("-0.5,")),
             "{made:?}"
         );
     }
