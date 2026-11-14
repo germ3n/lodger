@@ -1139,6 +1139,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PrintsIntoTheSea
         | Action::PrintsBesideYou
         | Action::CircledWhileStill
+        | Action::HeatShimmer
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12767,6 +12768,39 @@ pub fn commands(
                 ));
             }
             made
+        }
+        // docs/events_todo.md, 334.
+        Action::HeatShimmer => {
+            let spot = ahead_of(memory, 40, 0, 0);
+            let mut shown = figure_shown(
+                ids,
+                memory,
+                target,
+                [spot[0], GROUND_Y, spot[2]],
+                60.0,
+                false,
+            );
+            if let Command::Figure {
+                held, once_seen, ..
+            } = &mut shown
+            {
+                *held = ItemStack::default();
+                *once_seen = true;
+            }
+            let haze = ahead_of(memory, 24, 0, 0);
+            vec![
+                (shown, 0),
+                (
+                    motes(
+                        ids,
+                        target,
+                        Some(haze),
+                        60.0,
+                        "p=minecraft:white_ash;n=3;r=6;h=2.5;v=0,0.02,0".to_string(),
+                    ),
+                    0,
+                ),
+            ]
         }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -26626,5 +26660,18 @@ mod tests {
             Command::PlaySound { .. } => true,
             _ => false,
         }));
+    }
+
+    #[test]
+    fn heat_shimmer_stands_the_figure_far_off_in_a_haze() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("heat_shimmer").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[0].0, Command::Figure { once_seen: true, pos, .. } if pos[2] == 40.5)
+        );
+        assert!(matches!(&made[1].0, Command::Hint { hint, .. } if hint == "motes"));
     }
 }

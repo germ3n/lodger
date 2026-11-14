@@ -3636,6 +3636,10 @@ The `[x]` lines above, summed up by day:
   standing still outdoors: steps round them and the grass in a ring taken (`StoodStill(45)`). Tests:
   one in `act`. Was: no such event.
 
+- [x] **The heat shimmer** (`docs/events_todo.md`, 334): `heat_shimmer`, stages 3 to 5, in a desert
+  by day: the figure forty blocks off in a haze, gone once seen. Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

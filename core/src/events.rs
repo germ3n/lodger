@@ -1523,6 +1523,8 @@ pub enum Action {
     PrintsBesideYou,
     /// Standing still a while outdoors, the grass round them trampled in a ring, steps going round them.
     CircledWhileStill,
+    /// At noon in a desert, the air shimmering far off, and in it a figure standing.
+    HeatShimmer,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9632,6 +9634,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::CircledWhileStill,
         false,
     ),
+    // docs/events_todo.md, 334: at noon in a desert, the air shimmers far off, and in the shimmer a figure stands; gone once seen.
+    row(
+        "heat_shimmer",
+        3,
+        5,
+        &[InBiome(&["desert"]), Day, TargetOutdoors],
+        2.0,
+        2,
+        Full,
+        Action::HeatShimmer,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10329,6 +10343,7 @@ impl Event {
             | Action::FigureInTheIce
             | Action::ChildrenCircle
             | Action::TheMiner
+            | Action::HeatShimmer
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -11088,6 +11103,7 @@ impl Event {
             "prints_into_the_sea" => "lay prints down the beach into the sea",
             "prints_beside_you" => "lay prints beside theirs in the snow",
             "circled_while_still" => "walk a ring round them in the grass",
+            "heat_shimmer" => "stand the figure in the heat far off",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
