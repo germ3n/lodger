@@ -1115,6 +1115,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::AWellByTheHouse
         | Action::ASundial
         | Action::MineshaftKept
+        | Action::ShadowFollows
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12436,6 +12437,18 @@ pub fn commands(
             ));
             made
         }
+        // docs/events_todo.md, 351.
+        Action::ShadowFollows => vec![(
+            Command::Hint {
+                id: ids(),
+                player: target,
+                hint: "shadow_follows".to_string(),
+                pos: None,
+                seconds: 45.0,
+                detail: String::new(),
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26037,5 +26050,20 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert_eq!(made.iter().filter(|(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:torch")).count(), 4);
         assert!(made.iter().any(|(c, _)| matches!(c, Command::SetSign { lines, .. } if lines.contains(&memory.target_name))), "{made:?}");
+    }
+
+    #[test]
+    fn shadow_follows_is_its_hint_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("shadow_follows").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            made.iter()
+                .any(|(c, _)| matches!(c, Command::Hint { hint, .. } if hint == "shadow_follows")),
+            "{made:?}"
+        );
+        assert!(!crate::rules::hidden_from_view(event.action));
     }
 }

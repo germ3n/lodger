@@ -3572,6 +3572,10 @@ The `[x]` lines above, summed up by day:
   mineshaft (a cave spider near): four torches ahead of them and a sign with their name. Tests: one
   in `act`. Was: no such event.
 
+- [x] **The shadow follows** (`docs/events_todo.md`, 351): `shadow_follows`, stages 3 to 5, walking
+  outdoors, the owner's idea: a person's shadow on the ground along their trail behind them, gone
+  once turned to (`shadow_follows`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

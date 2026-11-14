@@ -1491,6 +1491,8 @@ pub enum Action {
     ASundial,
     /// In an old mineshaft, a stretch ahead of them kept up: fresh torches, and a sign with their name at its end.
     MineshaftKept,
+    /// A second shadow on the ground behind them along their way, a person's, nothing casting it.
+    ShadowFollows,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9408,6 +9410,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::MineshaftKept,
         false,
     ),
+    // docs/events_todo.md, 351: a person's shadow on the ground behind them, keeping their pace along their way; nothing casts it (owner's idea).
+    row(
+        "shadow_follows",
+        3,
+        5,
+        &[TargetWalking, TargetOutdoors],
+        2.0,
+        3,
+        Half,
+        Action::ShadowFollows,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10135,6 +10149,7 @@ impl Event {
             | Action::FaceInTheOre
             | Action::BonesInTheMesa
             | Action::ShipOnTheHorizon
+            | Action::ShadowFollows
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10832,6 +10847,7 @@ impl Event {
             "a_well_by_the_house" => "dig a well near their house",
             "a_sundial" => "set a sundial by their door",
             "mineshaft_kept" => "keep up the mineshaft ahead of them",
+            "shadow_follows" => "lay a second shadow behind them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
