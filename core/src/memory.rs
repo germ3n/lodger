@@ -876,6 +876,8 @@ fn fixture_kind(id: &str) -> Option<&'static str> {
         "ender_chest",
         // A crafter (`crafter_clicks`).
         "crafter",
+        // A decorated pot (`pot_wobbles`).
+        "decorated_pot",
         // A lightning rod (`lightning_rod_sparks`).
         "lightning_rod",
         // A chiseled bookshelf (`book_moved_on_shelf`).

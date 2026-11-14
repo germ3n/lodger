@@ -3604,6 +3604,10 @@ The `[x]` lines above, summed up by day:
   underground: their next break shown again a blink (`block_back`, ABI 57). Tests: one in `act`.
   Was: no such event.
 
+- [x] **The pot wobbles** (`docs/events_todo.md`, 356): `pot_wobbles`, stages 1 to 5, indoors: a
+  decorated pot of theirs wobbling (`wobble_pot`, ABI 57); the decorated pot a fixture kind. Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

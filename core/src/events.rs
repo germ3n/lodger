@@ -1507,6 +1507,8 @@ pub enum Action {
     TallyOnTheWall,
     /// Mining, the next block they break there again a blink on their screen, then gone.
     BlockComesBack,
+    /// A decorated pot of theirs wobbling as if bumped, with its sound.
+    PotWobbles,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9520,6 +9522,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::BlockComesBack,
         true,
     ),
+    // docs/events_todo.md, 356: a decorated pot of theirs wobbles as if bumped, and is still.
+    row(
+        "pot_wobbles",
+        1,
+        5,
+        &[Fixture("decorated_pot"), TargetIndoors],
+        2.0,
+        4,
+        Half,
+        Action::PotWobbles,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9914,6 +9928,7 @@ impl Event {
             | Action::FurnaceGlows
             | Action::MineshaftKept
             | Action::BlockComesBack
+            | Action::PotWobbles
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -10960,6 +10975,7 @@ impl Event {
             "sandstorm" => "raise a sandstorm round them",
             "tally_on_the_wall" => "scratch a tally of their time down here on the wall",
             "block_comes_back" => "bring back the next block they break a blink",
+            "pot_wobbles" => "wobble one of their pots",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

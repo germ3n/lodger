@@ -953,6 +953,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             ])
         });
     }
+    // Their decorated pot.
+    if event.id == "pot_wobbles" {
+        return memory.fixtures("decorated_pot").next().map(|f| f.pos);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1123,6 +1127,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::Sandstorm
         | Action::TallyOnTheWall
         | Action::BlockComesBack
+        | Action::PotWobbles
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12561,6 +12566,10 @@ pub fn commands(
             },
             0,
         )],
+        // docs/events_todo.md, 356.
+        Action::PotWobbles => pos
+            .map(|p| vec![(Command::WobblePot { id: ids(), pos: p }, 0)])
+            .unwrap_or_default(),
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -15692,6 +15701,7 @@ mod tests {
             ("head", [2, 64, -3]),
             ("chiseled_bookshelf", [-4, 65, 3]),
             ("lightning_rod", [0, 70, 0]),
+            ("decorated_pot", [3, 64, -1]),
             // A plate by the door, for `plate_clicks`.
             ("pressure_plate", [1, 64, -1]),
         ] {
@@ -26279,6 +26289,31 @@ mod tests {
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::BlockBack { seconds, .. }, 0)] if *seconds == 120.0),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn pot_wobbles_wobbles_their_decorated_pot() {
+        assert_eq!(
+            crate::memory::fixture_kind_of("minecraft:decorated_pot"),
+            Some("decorated_pot")
+        );
+        let memory = rich_memory();
+        let event = find("pot_wobbles").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(
+                &made[..],
+                [(
+                    Command::WobblePot {
+                        pos: [3, 64, -1],
+                        ..
+                    },
+                    0
+                )]
+            ),
             "{made:?}"
         );
     }
