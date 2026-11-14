@@ -86,7 +86,7 @@ dependencies = [
 
 [[package]]
 name = "craftkit"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "serde",
  "serde_json",
@@ -220,7 +220,7 @@ dependencies = [
 
 [[package]]
 name = "lodger-core"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "craftkit",
  "llama-cpp-2",

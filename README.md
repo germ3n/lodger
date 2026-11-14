@@ -7,7 +7,7 @@ it noticed: a thing of yours is gone and turns up somewhere that means something
 not place lights the way to somewhere, and a figure far off, wearing your skin, walks the path you
 walked yesterday.
 
-**Status:** playable, version 0.1.3, for Minecraft Java 26.3 on Fabric and NeoForge. What is left
+**Status:** playable, version 0.1.4, for Minecraft Java 26.3 on Fabric and NeoForge. What is left
 is in [Todo](docs/todo.md).
 
 ## What is in it

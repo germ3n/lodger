@@ -3666,6 +3666,10 @@ The `[x]` lines above, summed up by day:
   in a swamp: the empty cauldron near them shown glowing a minute, its light on their screen
   (`ghost_near`). Tests: one in `act`. Was: no such event.
 
+- [x] **Version 0.1.4** (owner: "can you bump version to 0.1.4"): the mind, the SDK, the host and the
+  content jar, the least host the manifests ask for (`craftkit >= 0.1.4`) and the README's status
+  line. Was: 0.1.3.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
