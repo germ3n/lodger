@@ -59,6 +59,8 @@ pub fn meets(need: Need, memory: &Memory, now: &Now) -> bool {
             .is_some(),
         Need::Furnace => memory.furnace().is_some(),
         Need::Below(y) => last.online && last.pos[1] < y as f64,
+        // Started by the catch or the horn itself (`Brain::tick`), never the menu.
+        Need::JustFished | Need::BlewHorn => false,
         Need::ColdFurnace => memory.furnace().is_some_and(|f| f.contents.is_empty()),
         // A furnace whose input and output are free: a full input sent their raw thing to the
         // output slot, where it stopped what was smelting.

@@ -321,6 +321,12 @@ pub const WOKE_EVENTS: &[&str] = &[
 ];
 /// The events crouching still may bring, one picked whose stage it is (`breath`, `edge_tug`).
 pub const CROUCH_EVENTS: &[&str] = &["breath", "edge_tug"];
+/// What a catch fishing starts, and how likely (`reel_in_theirs`).
+pub const FISHED_EVENTS: &[&str] = &["reel_in_theirs"];
+const REEL_CHANCE: f64 = 0.2;
+/// What a horn blown starts, and how likely (`horn_answered`).
+pub const HORN_EVENTS: &[&str] = &["horn_answered"];
+const HORN_CHANCE: f64 = 0.5;
 /// The chance crouching still ten seconds brings the breathing at their ear (`breath`).
 pub const BREATH_CHANCE: f64 = 0.3;
 /// The bold things that may have happened at home while they were in another dimension
@@ -1086,6 +1092,33 @@ impl Brain {
                 woken[(self.rng.next_f64() * woken.len() as f64) as usize % woken.len()]
             };
             self.consider_started(pick, WOKE_CHANCE, now, day, memory, arc, config, log);
+        }
+
+        // They caught something: perhaps a thing of theirs on the line.
+        if std::mem::take(&mut memory.fished_now) && !held_back {
+            self.consider_started(
+                "reel_in_theirs",
+                REEL_CHANCE,
+                now,
+                day,
+                memory,
+                arc,
+                config,
+                log,
+            );
+        }
+        // They blew a horn: perhaps one answers, far off.
+        if std::mem::take(&mut memory.horn_now) && !held_back {
+            self.consider_started(
+                "horn_answered",
+                HORN_CHANCE,
+                now,
+                day,
+                memory,
+                arc,
+                config,
+                log,
+            );
         }
 
         // They came to the offer's figure: what it held out is at their feet, given back.
@@ -1864,6 +1897,8 @@ impl Brain {
                             | events::Need::RangBell
                             | events::Need::CrouchedStill
                             | events::Need::Knocked
+                            | events::Need::JustFished
+                            | events::Need::BlewHorn
                     )
                 })
                 .all(|n| offer::meets(*n, memory, now))
@@ -4910,6 +4945,20 @@ mod tests {
                 assert!(
                     WOKE_EVENTS.contains(&event.id),
                     "{} needs waking and is not woken",
+                    event.id
+                );
+            }
+            if event.needs.contains(&events::Need::JustFished) {
+                assert!(
+                    FISHED_EVENTS.contains(&event.id),
+                    "{} needs a catch and none brings it",
+                    event.id
+                );
+            }
+            if event.needs.contains(&events::Need::BlewHorn) {
+                assert!(
+                    HORN_EVENTS.contains(&event.id),
+                    "{} needs a horn and none brings it",
                     event.id
                 );
             }

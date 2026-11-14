@@ -3640,6 +3640,10 @@ The `[x]` lines above, summed up by day:
   by day: the figure forty blocks off in a haze, gone once seen. Tests: one in `act`. Was: no such
   event.
 
+- [x] **Reeled in theirs** (`docs/events_todo.md`, 396): `reel_in_theirs`, stages 3 to 5, as they
+  catch something: one thing from their chest taken and dropped at their feet (`JustFished`, the
+  catch's trigger). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

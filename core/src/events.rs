@@ -303,6 +303,10 @@ pub enum Need {
     StoodStill(u32),
     /// The furnace they use, left empty (`furnace_glows`).
     ColdFurnace,
+    /// They just caught something fishing; met only at that moment (`reel_in_theirs`).
+    JustFished,
+    /// They just blew a goat horn; met only at that moment (`horn_answered`).
+    BlewHorn,
     /// The target's feet below this height (`knock_from_below` at the bedrock).
     Below(i32),
 }
@@ -426,6 +430,8 @@ impl Need {
             Need::DoorUsed => "happens only as they open a door".to_string(),
             Need::Furnace => "no furnace used".to_string(),
             Need::ColdFurnace => "no furnace of theirs left empty".to_string(),
+            Need::JustFished => "happens only as they catch something".to_string(),
+            Need::BlewHorn => "happens only as they blow a horn".to_string(),
             Need::Below(y) => format!("not below {y}"),
             Need::Smeltable => "nothing to smelt with fuel".to_string(),
             Need::FurnaceOutput => "nothing finished in the furnace".to_string(),
@@ -1525,6 +1531,8 @@ pub enum Action {
     CircledWhileStill,
     /// At noon in a desert, the air shimmering far off, and in it a figure standing.
     HeatShimmer,
+    /// Fishing, they reel in something of their own from the chest at home.
+    ReelInTheirs,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9646,6 +9654,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::HeatShimmer,
         false,
     ),
+    // docs/events_todo.md, 396: fishing, they reel in something of their own from the chest at home.
+    row(
+        "reel_in_theirs",
+        3,
+        5,
+        &[JustFished, UsedContainer],
+        3.0,
+        1,
+        Full,
+        Action::ReelInTheirs,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10041,6 +10061,7 @@ impl Event {
             | Action::MineshaftKept
             | Action::BlockComesBack
             | Action::PotWobbles
+            | Action::ReelInTheirs
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -11104,6 +11125,7 @@ impl Event {
             "prints_beside_you" => "lay prints beside theirs in the snow",
             "circled_while_still" => "walk a ring round them in the grass",
             "heat_shimmer" => "stand the figure in the heat far off",
+            "reel_in_theirs" => "put a thing of theirs on their line",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -604,6 +604,14 @@ pub struct Memory {
     /// the brain on its next tick (`busy_away`). Not saved.
     #[serde(skip)]
     pub back_after: Option<f32>,
+    /// They just caught something fishing, taken by the brain on its next tick
+    /// (`reel_in_theirs`). Not saved.
+    #[serde(skip)]
+    pub fished_now: bool,
+    /// They just blew a goat horn, taken by the brain on its next tick (`horn_answered`). Not
+    /// saved.
+    #[serde(skip)]
+    pub horn_now: bool,
     /// The target just woke, taken by the brain on its next tick (`foot_of_bed`). Not saved.
     #[serde(skip)]
     pub woke_now: bool,
@@ -2020,7 +2028,11 @@ impl Memory {
                 EventKind::FightWon => self.fight_ended = Some("won".to_string()),
                 EventKind::FightLost => self.fight_ended = Some("lost".to_string()),
                 EventKind::FightFled => self.fight_ended = Some("fled".to_string()),
-                EventKind::Fished => self.last_fished = Some(block(self.last.pos)),
+                EventKind::Fished => {
+                    self.last_fished = Some(block(self.last.pos));
+                    self.fished_now = true;
+                }
+                EventKind::UsedItem if event.detail.ends_with("goat_horn") => self.horn_now = true,
                 EventKind::UsedDoor => {
                     self.door_used_now = event.pos;
                     if let Some(pos) = event.pos {

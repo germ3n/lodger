@@ -961,6 +961,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "tunnel_floods" {
         return memory.tunnel_at_target().map(|t| t.end());
     }
+    // Where they stand fishing.
+    if event.id == "reel_in_theirs" {
+        return Some(block_of(memory.last.pos));
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1140,6 +1144,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::PrintsBesideYou
         | Action::CircledWhileStill
         | Action::HeatShimmer
+        | Action::ReelInTheirs
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12802,6 +12807,42 @@ pub fn commands(
                 ),
             ]
         }
+        // docs/events_todo.md, 396.
+        Action::ReelInTheirs => match memory
+            .used_container()
+            .and_then(|c| c.contents.first().map(|s| (c.pos, s.clone())))
+        {
+            Some((chest, stack)) => {
+                let p = memory.last.pos;
+                vec![
+                    (
+                        Command::TakeItem {
+                            id: ids(),
+                            from: chest,
+                            slot: stack.slot,
+                            count: 1,
+                            keep: "reel_in_theirs".to_string(),
+                            expect: stack.id.clone(),
+                        },
+                        0,
+                    ),
+                    (
+                        Command::DropItem {
+                            id: ids(),
+                            pos: [p[0], p[1] + 0.5, p[2]],
+                            item: ItemStack {
+                                id: stack.id.clone(),
+                                count: 1,
+                                slot: 0,
+                            },
+                            kept: "reel_in_theirs".to_string(),
+                        },
+                        6,
+                    ),
+                ]
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26673,5 +26714,18 @@ mod tests {
             matches!(&made[0].0, Command::Figure { once_seen: true, pos, .. } if pos[2] == 40.5)
         );
         assert!(matches!(&made[1].0, Command::Hint { hint, .. } if hint == "motes"));
+    }
+
+    #[test]
+    fn reel_in_theirs_brings_a_thing_from_their_chest_to_their_feet() {
+        let memory = rich_memory();
+        let event = find("reel_in_theirs").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        assert!(pos.is_some());
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::TakeItem { keep, .. }, 0), (Command::DropItem { kept, .. }, 6)] if keep == "reel_in_theirs" && kept == keep),
+            "{made:?}"
+        );
     }
 }
