@@ -3549,6 +3549,10 @@ The `[x]` lines above, summed up by day:
   or asleep: eight flowers in a line from their door out sixteen blocks. Tests: one in `act`. Was:
   no such event.
 
+- [x] **A washing line** (`docs/events_todo.md`, 360): `washing_line`, stages 2 to 5, the target
+  away or asleep: posts, a rail and cloth by the house (`place_blueprint`). Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

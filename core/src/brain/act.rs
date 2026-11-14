@@ -933,6 +933,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             Some([door[0] + out[0] * 2, -10_000, door[2] + out[1] * 2])
         });
     }
+    // A spot by the house, on the ground.
+    if event.id == "washing_line" {
+        return spot(memory, &mut Rng::new(memory.done.len() as u64)).map(grounded);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1091,6 +1095,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::NameInTheStone
         | Action::SeatByTheDoor
         | Action::FlowerPath
+        | Action::WashingLine
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12146,6 +12151,70 @@ pub fn commands(
                     .collect()
             }
             _ => vec![],
+        },
+        // docs/events_todo.md, 360.
+        Action::WashingLine => match pos {
+            Some(site) => vec![(
+                Command::PlaceBlueprint {
+                    id: ids(),
+                    at: site,
+                    parts: vec![
+                        craftkit::BlueprintPart {
+                            at: [0, 1, 0],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [0, 2, 0],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [4, 1, 0],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [4, 2, 0],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 2, 0],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [2, 2, 0],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [3, 2, 0],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 3, 0],
+                            block: "minecraft:white_carpet".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [2, 3, 0],
+                            block: "minecraft:light_gray_carpet".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [3, 3, 0],
+                            block: "minecraft:white_carpet".to_string(),
+                            state: "".to_string(),
+                        },
+                    ],
+                    replace: crate::building::replaceable(event.id),
+                },
+                0,
+            )],
+            None => vec![],
         },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
@@ -25699,5 +25768,17 @@ mod tests {
         assert!(made.iter().all(
             |(c, _)| matches!(c, Command::SetBlock { pos, rest: true, .. } if pos[1] == -9_999)
         ));
+    }
+
+    #[test]
+    fn washing_line_stands_by_the_house() {
+        let memory = rich_memory();
+        let event = find("washing_line").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PlaceBlueprint { parts, at, .. }, 0)] if parts.len() == 10 && at[1] == GROUND_Y),
+            "{made:?}"
+        );
     }
 }

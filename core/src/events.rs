@@ -1483,6 +1483,8 @@ pub enum Action {
     SeatByTheDoor,
     /// A line of fresh flowers from their door out into the meadow, stopping in the middle of it.
     FlowerPath,
+    /// A washing line by their house: two posts, a rail between, cloth over it, its own work.
+    WashingLine,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9352,6 +9354,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FlowerPath,
         false,
     ),
+    // docs/events_todo.md, 360: by their house, a line between two posts with cloth over it like washing, its own work.
+    row(
+        "washing_line",
+        2,
+        5,
+        &[Home, TargetAwayOrAsleep],
+        3.0,
+        1,
+        Half,
+        Action::WashingLine,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10081,6 +10095,7 @@ impl Event {
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
+            | Action::WashingLine
             | Action::FlowerPath
             | Action::SeatByTheDoor
             | Action::NameInTheStone
@@ -10768,6 +10783,7 @@ impl Event {
             "name_in_the_stone" => "cut their name into the stone behind them",
             "seat_by_the_door" => "set a seat beside their door",
             "flower_path" => "plant a line of flowers from their door",
+            "washing_line" => "hang a washing line by their house",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
