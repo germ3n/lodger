@@ -692,6 +692,10 @@ pub fn offer<'a>(
         if chain_next.contains(&event.id) || chain_starts.contains(&event.id) {
             weight *= crate::chains::WEIGHT;
         }
+        // The design's own chains begin likelier again (`chains::SPINE_WEIGHT`).
+        if chain_starts.contains(&event.id) && crate::chains::starts_spine(event.id) {
+            weight *= crate::chains::SPINE_WEIGHT;
+        }
         eligible.push((event, weight));
     }
 

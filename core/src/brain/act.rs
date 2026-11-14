@@ -925,6 +925,14 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
             ])
         });
     }
+    // Two out from the door they use.
+    if event.id == "flower_path" {
+        return home.and_then(|h| {
+            let door = memory.usual_door()?;
+            let out = out_of_door(memory, h.center, door);
+            Some([door[0] + out[0] * 2, -10_000, door[2] + out[1] * 2])
+        });
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1082,6 +1090,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FigureInTheIce
         | Action::NameInTheStone
         | Action::SeatByTheDoor
+        | Action::FlowerPath
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2934,8 +2943,9 @@ const UNSEEN_BEHIND: f64 = 18.0;
 /// How many bolts strike round them (`lightning_round_you`).
 const LIGHTNING_RING: u64 = 8;
 
-/// How near its place they must be for the sniffer there (`sniffer_at_its_place`), blocks.
-const SNIFFER_HEARD: f64 = 48.0;
+/// How near its place they must be for what happens there to be seen and heard (the sniffer,
+/// the figure digging), blocks.
+const ITS_PLACE_HEARD: f64 = 48.0;
 
 /// The peeking figures' numbers (`peeks_from_the_trees`), and the ticks between them.
 const PEEK_FIRST: u32 = 51;
@@ -9295,7 +9305,9 @@ pub fn commands(
             0,
         )],
         // docs/events_todo.md, 242.
+        // Within earshot of its place, as the sniffer: from the mine it dug for nobody.
         Action::FigureDigging => pos
+            .filter(|p| flat_distance(*p, memory.last.pos) <= ITS_PLACE_HEARD)
             .map(|p| {
                 let mut shown = figure_shown(ids, memory, target, grounded(p), 60.0, false);
                 if let Command::Figure {
@@ -9591,7 +9603,7 @@ pub fn commands(
         // Only within earshot of its place (forty-eight blocks): from the mine, its sniffing at
         // the house was for nobody (the stays test).
         Action::SnifferAtItsPlace => pos
-            .filter(|p| flat_distance(*p, memory.last.pos) <= SNIFFER_HEARD)
+            .filter(|p| flat_distance(*p, memory.last.pos) <= ITS_PLACE_HEARD)
             .map(|p| {
                 let ground = [p[0] as f64 + 0.5, GROUND_Y as f64 + 1.0, p[2] as f64 + 0.5];
                 let near = guessed(memory, grounded(p));
@@ -12108,6 +12120,30 @@ pub fn commands(
                     *state = format!("facing={facing}");
                 }
                 vec![(chair, 0)]
+            }
+            _ => vec![],
+        },
+        // docs/events_todo.md, 336.
+        Action::FlowerPath => match (pos, memory.usual_door(), memory.home.as_ref()) {
+            (Some(first), Some(door), Some(h)) => {
+                // Every second block for sixteen, on the grass alone, cornflowers and poppies.
+                let out = out_of_door(memory, h.center, door);
+                (0..8)
+                    .map(|i| {
+                        let p = [first[0] + out[0] * i * 2, -9_999, first[2] + out[1] * i * 2];
+                        let flower = if i % 2 == 0 {
+                            "minecraft:cornflower"
+                        } else {
+                            "minecraft:poppy"
+                        };
+                        let mut f =
+                            set(ids, p, flower, &["minecraft:air", "minecraft:short_grass"]);
+                        if let Command::SetBlock { rest, .. } = &mut f {
+                            *rest = true;
+                        }
+                        (f, 0)
+                    })
+                    .collect()
             }
             _ => vec![],
         },
@@ -23646,6 +23682,11 @@ mod tests {
             DIG_SOUNDS
         );
         assert_eq!(made.iter().filter(|(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:air")).count(), 2);
+        // Out of earshot of its place, nothing: no digging for nobody.
+        let mut far = memory.clone();
+        let p = pos.unwrap();
+        far.last.pos = [p[0] as f64 + ITS_PLACE_HEARD + 10.0, 64.0, p[2] as f64];
+        assert!(commands(event, pos, &far, &mut ids(), &Now::default(), None).is_empty());
     }
 
     #[test]
@@ -23811,7 +23852,7 @@ mod tests {
         );
         assert_eq!(made.len(), 9);
         // Out of earshot of its place, nothing: no sniffing for nobody.
-        memory.last.pos = [12.5 + SNIFFER_HEARD + 10.0, 63.0, -20.5];
+        memory.last.pos = [12.5 + ITS_PLACE_HEARD + 10.0, 63.0, -20.5];
         assert!(commands(event, pos, &memory, &mut ids(), &Now::default(), None).is_empty());
     }
 
@@ -25646,5 +25687,17 @@ mod tests {
             matches!(&made[..], [(Command::SetBlock { block, state, .. }, 0)] if block == "minecraft:oak_stairs" && state.starts_with("facing=")),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn flower_path_leads_out_from_their_door() {
+        let memory = rich_memory();
+        let event = find("flower_path").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.len(), 8);
+        assert!(made.iter().all(
+            |(c, _)| matches!(c, Command::SetBlock { pos, rest: true, .. } if pos[1] == -9_999)
+        ));
     }
 }

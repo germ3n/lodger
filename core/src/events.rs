@@ -1481,6 +1481,8 @@ pub enum Action {
     NameInTheStone,
     /// A stair set as a chair beside their door, facing out, as if someone sat there to watch.
     SeatByTheDoor,
+    /// A line of fresh flowers from their door out into the meadow, stopping in the middle of it.
+    FlowerPath,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9338,6 +9340,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::SeatByTheDoor,
         false,
     ),
+    // docs/events_todo.md, 336: a line of fresh flowers leads from their door out into the meadow and stops in the middle of it.
+    row(
+        "flower_path",
+        2,
+        5,
+        &[Door, TargetAwayOrAsleep],
+        3.0,
+        1,
+        Half,
+        Action::FlowerPath,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10067,6 +10081,7 @@ impl Event {
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
+            | Action::FlowerPath
             | Action::SeatByTheDoor
             | Action::NameInTheStone
             | Action::DoorBangsInTheStorm
@@ -10752,6 +10767,7 @@ impl Event {
             "figure_in_the_ice" => "freeze the figure in the ice ahead of them",
             "name_in_the_stone" => "cut their name into the stone behind them",
             "seat_by_the_door" => "set a seat beside their door",
+            "flower_path" => "plant a line of flowers from their door",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

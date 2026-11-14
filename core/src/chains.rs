@@ -2095,6 +2095,18 @@ pub const CHAINS: &[Chain] = &[
 
 /// How much likelier an open chain's next step is on the menu.
 pub const WEIGHT: f64 = 4.0;
+/// How much likelier again a first step of the design's own chains ([`SPINE`]) is: with six
+/// hundred events and more, most of them small ones the early stages lean to, the place's path
+/// of light reached the menu too seldom to begin (the stays test).
+pub const SPINE_WEIGHT: f64 = 3.0;
+
+/// Whether an event is the first step of one of the design's own chains ([`SPINE`]).
+pub fn starts_spine(event: &str) -> bool {
+    CHAINS
+        .iter()
+        .filter(|c| SPINE.contains(&c.id))
+        .any(|c| c.steps.first().is_some_and(|s| s.events.contains(&event)))
+}
 
 /// A chain under way: the steps landed, and the day the last one did.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -2701,5 +2713,23 @@ mod tests {
         });
         memory.chains_tick(5.5, 3);
         assert!(memory.chains.is_empty(), "chased: the watcher ends");
+    }
+
+    #[test]
+    fn the_design_s_chains_begin_weighed_up_again_and_no_other() {
+        assert!(
+            starts_spine("light_path"),
+            "the place begins with its path of light"
+        );
+        for chain in CHAINS.iter().filter(|c| !SPINE.contains(&c.id)) {
+            for first in chain.steps[0].events {
+                let in_spine = CHAINS
+                    .iter()
+                    .filter(|c| SPINE.contains(&c.id))
+                    .any(|c| c.steps[0].events.contains(first));
+                assert_eq!(starts_spine(first), in_spine, "{first}");
+            }
+        }
+        assert!(!starts_spine("wait"));
     }
 }

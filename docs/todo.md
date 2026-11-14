@@ -3341,6 +3341,12 @@ The `[x]` lines above, summed up by day:
   pressure plate of theirs heard clicking down, the sound alone. Tests: one in `act`. Was: no such
   event.
 
+- [x] **The design's chains begin likelier** (`chains::SPINE_WEIGHT`, `chains::starts_spine`): a
+  first step of the thing, the place, the watcher, the house or the diary three times likelier
+  again on the menu. Tests: one in `chains`; the stays test's chain walk passes again. Was: with
+  the new events, most of them small ones the early stages lean to, the place's path of light
+  reached the menu too seldom, and the place walked in one stay of three.
+
 - [ ] **Near-twin events as one event with variants** (owner: "variants would be cool"; after
   321 to 401 and the chains): a scan found built events a player could not tell apart:
   `turn_bed`/`bed_turned`, `wave`/`figure_waves`, `torch_blue`/`soul_swap`,
@@ -3380,8 +3386,8 @@ The `[x]` lines above, summed up by day:
   outdoors by day: a glint fifty blocks ahead, three blinks (`ghost_block` shown and taken away).
   Tests: one in `act`. Was: no such event.
 
-- [x] **The sniffer only within earshot** (`sniffer_at_its_place`): it comes only while they
-  are within forty-eight blocks of its place. Tests: its test in `act` asks nothing out of
+- [x] **The sniffer only within earshot** (`sniffer_at_its_place`, and `figure_digging` the same):
+  it comes only while they are within forty-eight blocks of its place (`ITS_PLACE_HEARD`). Tests: its test in `act` asks nothing out of
   earshot. Was: it came anywhere outdoors, so from the mine its sniffing at the house was for
   nobody (the stays test caught it).
 
@@ -3538,6 +3544,10 @@ The `[x]` lines above, summed up by day:
 - [x] **A seat by the door** (`docs/events_todo.md`, 332): `seat_by_the_door`, stages 2 to 5, the
   target away or asleep: an oak stair as a chair beside their door, facing out. Tests: one in `act`.
   Was: no such event.
+
+- [x] **A flower path** (`docs/events_todo.md`, 336): `flower_path`, stages 2 to 5, the target away
+  or asleep: eight flowers in a line from their door out sixteen blocks. Tests: one in `act`. Was:
+  no such event.
 
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
