@@ -1150,6 +1150,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::HeatShimmer
         | Action::ReelInTheirs
         | Action::HornAnswered
+        | Action::WitchHutLit
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12863,6 +12864,19 @@ pub fn commands(
                 90,
             )]
         }
+        // docs/events_todo.md, 391.
+        Action::WitchHutLit => vec![(
+            ghost_near(
+                ids,
+                target,
+                "minecraft:cauldron",
+                "minecraft:lava_cauldron",
+                60.0,
+                false,
+                "",
+            ),
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26765,6 +26779,17 @@ mod tests {
         );
         assert!(
             matches!(&made[..], [(Command::PlaySound { sound, pos, .. }, 90)] if sound.contains("goat_horn") && pos[2] == -59.5),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn witch_hut_lit_glows_the_cauldron_near_them() {
+        let memory = rich_memory();
+        let event = find("witch_hut_lit").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::GhostNear { of, block, seconds, .. }, 0)] if of == "minecraft:cauldron" && block == "minecraft:lava_cauldron" && *seconds == 60.0),
             "{made:?}"
         );
     }

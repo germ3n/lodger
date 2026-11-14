@@ -3648,6 +3648,10 @@ The `[x]` lines above, summed up by day:
   blow a goat horn: a horn's call answers from far behind them (`BlewHorn`, the `used_item` sense,
   ABI 57). Tests: one in `act`. Was: no such event.
 
+- [x] **The witch's hut lit** (`docs/events_todo.md`, 391): `witch_hut_lit`, stages 3 to 5, at night
+  in a swamp: the empty cauldron near them shown glowing a minute, its light on their screen
+  (`ghost_near`). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -1535,6 +1535,8 @@ pub enum Action {
     ReelInTheirs,
     /// They blow a goat horn, and far off another horn answers.
     HornAnswered,
+    /// At night in a swamp, the empty cauldron near them glowing as if lit, lighting the hut round it, on their screen alone.
+    WitchHutLit,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9680,6 +9682,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::HornAnswered,
         false,
     ),
+    // docs/events_todo.md, 391: at night by a swamp hut, its cauldron glows as if someone were home; no one is there.
+    row(
+        "witch_hut_lit",
+        3,
+        5,
+        &[InBiome(&["swamp"]), Night, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::WitchHutLit,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10424,6 +10438,7 @@ impl Event {
             | Action::FromTheWell
             | Action::PrintsIntoTheSea
             | Action::PrintsBesideYou
+            | Action::WitchHutLit
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -11142,6 +11157,7 @@ impl Event {
             "heat_shimmer" => "stand the figure in the heat far off",
             "reel_in_theirs" => "put a thing of theirs on their line",
             "horn_answered" => "answer their horn from far off",
+            "witch_hut_lit" => "light the cauldron in the swamp hut near them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
