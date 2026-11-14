@@ -1533,6 +1533,8 @@ pub enum Action {
     HeatShimmer,
     /// Fishing, they reel in something of their own from the chest at home.
     ReelInTheirs,
+    /// They blow a goat horn, and far off another horn answers.
+    HornAnswered,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9666,6 +9668,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ReelInTheirs,
         false,
     ),
+    // docs/events_todo.md, 401: they blow a goat horn, and far off another horn answers.
+    row(
+        "horn_answered",
+        3,
+        5,
+        &[BlewHorn],
+        2.0,
+        3,
+        Half,
+        Action::HornAnswered,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9982,6 +9996,7 @@ impl Event {
             | Action::BedCreaks
             | Action::KnockFromBelow
             | Action::ThunderCounts
+            | Action::HornAnswered
             | Action::Footsteps => "sounds",
             Action::FramesShow | Action::BrewLeft | Action::PotionChanged => "things",
             Action::Sign
@@ -11126,6 +11141,7 @@ impl Event {
             "circled_while_still" => "walk a ring round them in the grass",
             "heat_shimmer" => "stand the figure in the heat far off",
             "reel_in_theirs" => "put a thing of theirs on their line",
+            "horn_answered" => "answer their horn from far off",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

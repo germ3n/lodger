@@ -965,6 +965,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "reel_in_theirs" {
         return Some(block_of(memory.last.pos));
     }
+    // Where they blew it.
+    if event.id == "horn_answered" {
+        return Some(block_of(memory.last.pos));
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1145,6 +1149,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::CircledWhileStill
         | Action::HeatShimmer
         | Action::ReelInTheirs
+        | Action::HornAnswered
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12843,6 +12848,21 @@ pub fn commands(
             }
             None => vec![],
         },
+        // docs/events_todo.md, 401.
+        Action::HornAnswered => {
+            // Sixty blocks off behind them, a few seconds after theirs.
+            let p = memory.last.pos;
+            let way = facing_way(memory.last.yaw);
+            let far = [
+                p[0] - way[0] as f64 * 60.0,
+                p[1] + 10.0,
+                p[2] - way[1] as f64 * 60.0,
+            ];
+            vec![(
+                sound_at(ids, target, "minecraft:item.goat_horn.sound.0", far, 4.0),
+                90,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26725,6 +26745,26 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::TakeItem { keep, .. }, 0), (Command::DropItem { kept, .. }, 6)] if keep == "reel_in_theirs" && kept == keep),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn horn_answered_answers_from_far_behind() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 64.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("horn_answered").unwrap();
+        let made = commands(
+            event,
+            Some([0, 64, 0]),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::PlaySound { sound, pos, .. }, 90)] if sound.contains("goat_horn") && pos[2] == -59.5),
             "{made:?}"
         );
     }

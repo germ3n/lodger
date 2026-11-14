@@ -3644,6 +3644,10 @@ The `[x]` lines above, summed up by day:
   catch something: one thing from their chest taken and dropped at their feet (`JustFished`, the
   catch's trigger). Tests: one in `act`. Was: no such event.
 
+- [x] **The horn answered** (`docs/events_todo.md`, 401): `horn_answered`, stages 3 to 5, as they
+  blow a goat horn: a horn's call answers from far behind them (`BlewHorn`, the `used_item` sense,
+  ABI 57). Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
