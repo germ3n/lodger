@@ -3592,6 +3592,10 @@ The `[x]` lines above, summed up by day:
   riding a horse: their view, and the horse with it, turned toward home four seconds
   (`turn_toward`). Tests: one in `act`. Was: no such event.
 
+- [x] **A sandstorm** (`docs/events_todo.md`, 394): `sandstorm`, stages 3 to 5, in a desert by day:
+  a sand fog and blown sand two minutes (`sandstorm`, `motes`). Tests: one in `act`. Was: no such
+  event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

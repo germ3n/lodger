@@ -1501,6 +1501,8 @@ pub enum Action {
     SnowHangs,
     /// Riding, their horse turning of itself toward home a few seconds.
     HorseTurnsHome,
+    /// In a desert, a sandstorm: sand blowing across everything, and they can barely see.
+    Sandstorm,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9478,6 +9480,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::HorseTurnsHome,
         false,
     ),
+    // docs/events_todo.md, 394: in a desert, the wind gets up: sand blows across everything and they can barely see.
+    row(
+        "sandstorm",
+        3,
+        5,
+        &[InBiome(&["desert"]), Day, TargetOutdoors],
+        2.0,
+        2,
+        Half,
+        Action::Sandstorm,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10210,6 +10224,7 @@ impl Event {
             | Action::DryBesideYou
             | Action::SnowHangs
             | Action::HorseTurnsHome
+            | Action::Sandstorm
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10912,6 +10927,7 @@ impl Event {
             "dry_beside_you" => "keep the rain off the place beside them",
             "snow_hangs" => "hang the snow in the air round them",
             "horse_turns_home" => "turn their horse toward home",
+            "sandstorm" => "raise a sandstorm round them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

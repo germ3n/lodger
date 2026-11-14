@@ -1120,6 +1120,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::DryBesideYou
         | Action::SnowHangs
         | Action::HorseTurnsHome
+        | Action::Sandstorm
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12504,6 +12505,30 @@ pub fn commands(
             )],
             None => vec![],
         },
+        // docs/events_todo.md, 394.
+        Action::Sandstorm => vec![
+            (
+                Command::Hint {
+                    id: ids(),
+                    player: target,
+                    hint: "sandstorm".to_string(),
+                    pos: None,
+                    seconds: 120.0,
+                    detail: String::new(),
+                },
+                0,
+            ),
+            (
+                motes(
+                    ids,
+                    target,
+                    None,
+                    115.0,
+                    "p=dust:D8C08A:1.6;n=8;r=10;h=4;v=0.35,0,0.05;at=player;o=-6,0,0".to_string(),
+                ),
+                0,
+            ),
+        ],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26177,6 +26202,21 @@ mod tests {
         assert!(
             made.iter()
                 .any(|(c, _)| matches!(c, Command::Hint { hint, .. } if hint == "turn_toward")),
+            "{made:?}"
+        );
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn sandstorm_is_its_hint_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("sandstorm").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            made.iter()
+                .any(|(c, _)| matches!(c, Command::Hint { hint, .. } if hint == "sandstorm")),
             "{made:?}"
         );
         assert!(!crate::rules::hidden_from_view(event.action));
