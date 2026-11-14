@@ -957,6 +957,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "pot_wobbles" {
         return memory.fixtures("decorated_pot").next().map(|f| f.pos);
     }
+    // The end of the tunnel they stand in.
+    if event.id == "tunnel_floods" {
+        return memory.tunnel_at_target().map(|t| t.end());
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1131,6 +1135,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FromTheWell
         | Action::ChildrenCircle
         | Action::TheMiner
+        | Action::TunnelFloods
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12671,6 +12676,14 @@ pub fn commands(
             }
             made
         }
+        // docs/events_todo.md, 370.
+        Action::TunnelFloods => match pos {
+            Some(end) => vec![
+                (set(ids, end, "minecraft:water", &["minecraft:air"]), 0),
+                (set(ids, end, "minecraft:air", &["minecraft:water"]), 1_200),
+            ],
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26466,5 +26479,24 @@ mod tests {
             "{made:?}"
         );
         assert_eq!(made.len(), 15);
+    }
+
+    #[test]
+    fn tunnel_floods_from_its_end_and_drains() {
+        let memory = rich_memory();
+        let event = find("tunnel_floods").unwrap();
+        let made = commands(
+            event,
+            Some([9, 30, 0]),
+            &memory,
+            &mut ids(),
+            &Now::default(),
+            None,
+        );
+        assert!(
+            matches!(&made[..], [(Command::SetBlock { block: w, .. }, 0), (Command::SetBlock { block: a, replace, .. }, 1_200)]
+            if w == "minecraft:water" && a == "minecraft:air" && replace == &vec!["minecraft:water".to_string()]),
+            "{made:?}"
+        );
     }
 }

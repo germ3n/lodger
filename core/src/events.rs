@@ -1515,6 +1515,8 @@ pub enum Action {
     ChildrenCircle,
     /// Deep down, a skeleton with a pickaxe at the rock ahead of them, back to them, mining.
     TheMiner,
+    /// Water running into their tunnel from its end, and draining away a minute later.
+    TunnelFloods,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9576,6 +9578,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TheMiner,
         false,
     ),
+    // docs/events_todo.md, 370: water runs into their tunnel from the end, ankle-deep, and drains away a minute later.
+    row(
+        "tunnel_floods",
+        4,
+        5,
+        &[InTunnel],
+        3.0,
+        1,
+        Full,
+        Action::TunnelFloods,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10318,6 +10332,7 @@ impl Event {
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
+            | Action::TunnelFloods
             | Action::ASundial
             | Action::AWellByTheHouse
             | Action::WashingLine
@@ -11024,6 +11039,7 @@ impl Event {
             "from_the_well" => "call their name up from the well",
             "children_circle" => "bring the village's children round them to stare",
             "the_miner" => "set a skeleton mining ahead of them",
+            "tunnel_floods" => "flood their tunnel from its end a minute",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
