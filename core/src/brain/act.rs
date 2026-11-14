@@ -1114,6 +1114,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::WashingLine
         | Action::AWellByTheHouse
         | Action::ASundial
+        | Action::MineshaftKept
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12417,6 +12418,24 @@ pub fn commands(
             )],
             None => vec![],
         },
+        // docs/events_todo.md, 371.
+        Action::MineshaftKept => {
+            // Four torches ahead of them every four blocks, and their name on a sign past them.
+            let mut made: Vec<(Command, u64)> = (1..=4)
+                .map(|i| (torch(ids, ahead_of(memory, 4 * i, 0, 0), 3), 0))
+                .collect();
+            made.extend(sign_at(
+                ids,
+                ahead_of(memory, 18, 0, 0),
+                vec![
+                    String::new(),
+                    memory.target_name.clone(),
+                    String::new(),
+                    String::new(),
+                ],
+            ));
+            made
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26007,5 +26026,16 @@ mod tests {
             if parts.len() == 9 && parts.iter().filter(|p| p.state == "face=floor").count() == 8),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn mineshaft_kept_lights_the_way_ahead_to_their_name() {
+        let mut memory = rich_memory();
+        memory.last.pos = [0.5, 20.0, 0.5];
+        memory.last.yaw = 0.0;
+        let event = find("mineshaft_kept").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert_eq!(made.iter().filter(|(c, _)| matches!(c, Command::SetBlock { block, .. } if block == "minecraft:torch")).count(), 4);
+        assert!(made.iter().any(|(c, _)| matches!(c, Command::SetSign { lines, .. } if lines.contains(&memory.target_name))), "{made:?}");
     }
 }

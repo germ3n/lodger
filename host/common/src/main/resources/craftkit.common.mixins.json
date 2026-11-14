@@ -7,6 +7,7 @@
 		"AnimalFeedMixin",
 		"ButtonSignalMixin",
 		"EnderpearlMixin",
+		"InstrumentItemMixin",
 		"LeverSignalMixin",
 		"PopResourceMixin",
 		"SnowballMixin",

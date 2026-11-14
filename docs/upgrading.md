@@ -116,6 +116,8 @@ moved.
   sleep, death (and the killer, read off the damage source), respawn, dimension change,
   attack, chat, and a block struck (Fabric's `AttackBlockCallback`, NeoForge's
   `LeftClickBlock` at `START`) for the `knocked` sense.
+- **The horn's hook** (`InstrumentItemMixin`, server side): `InstrumentItem.use` at its return, a
+  horn blown queued for the senses' `used_item` (`UsedItems`).
 - **The render hooks** (`host/common/src/main/java/craftkit/host/mixin/`, the
   `craftkit.common.mixins.json` both loaders name,): each is one line into
   `craftkit.host.client.Atmospheres`, and with `defaultRequire` 1 a hook that no longer matches

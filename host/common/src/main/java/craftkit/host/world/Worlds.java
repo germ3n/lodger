@@ -240,6 +240,7 @@ public final class Worlds {
 		figures.tick();
 		BossBars.tick();
 		LateDrops.tick(server);
+		craftkit.host.senses.UsedItems.report(senses());
 		BlockBacks.tick(server);
 		Returns.tick(server);
 		for (Gatherings.Bought sale : gatherings.takeBought()) {

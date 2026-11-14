@@ -375,6 +375,10 @@ public final class Senses {
 		event(player, "broke_block", pos, blockId(state), null);
 	}
 
+	public void noticedUsedItem(ServerPlayer player, String item) {
+		event(player, "used_item", player.blockPosition(), item, null);
+	}
+
 	public void noticedSleepRefused(ServerPlayer player, BlockPos pos, String why) {
 		event(player, "sleep_refused", pos, why, null);
 	}

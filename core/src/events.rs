@@ -1489,6 +1489,8 @@ pub enum Action {
     AWellByTheHouse,
     /// By their door, a post in a ring of small stones, like a sundial, its own work.
     ASundial,
+    /// In an old mineshaft, a stretch ahead of them kept up: fresh torches, and a sign with their name at its end.
+    MineshaftKept,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9394,6 +9396,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::ASundial,
         false,
     ),
+    // docs/events_todo.md, 371: in an abandoned mineshaft, one stretch ahead is kept up: fresh torches, and a sign with their name at the end.
+    row(
+        "mineshaft_kept",
+        3,
+        5,
+        &[TargetUnderground, MobNear("cave_spider")],
+        3.0,
+        1,
+        Full,
+        Action::MineshaftKept,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9786,6 +9800,7 @@ impl Event {
             | Action::BookMovedOnShelf
             | Action::PetGotUp
             | Action::FurnaceGlows
+            | Action::MineshaftKept
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -10816,6 +10831,7 @@ impl Event {
             "washing_line" => "hang a washing line by their house",
             "a_well_by_the_house" => "dig a well near their house",
             "a_sundial" => "set a sundial by their door",
+            "mineshaft_kept" => "keep up the mineshaft ahead of them",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

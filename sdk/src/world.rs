@@ -208,6 +208,8 @@ pub enum EventKind {
     SleepRefused,
     Ate,
     Fished,
+    /// The player used an item that sounds (a goat horn): `detail` its id. ABI 57.
+    UsedItem,
     Mounted,
     Dismounted,
     Died,
