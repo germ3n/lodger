@@ -1129,6 +1129,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::BlockComesBack
         | Action::PotWobbles
         | Action::FromTheWell
+        | Action::ChildrenCircle
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12612,6 +12613,35 @@ pub fn commands(
             }
             None => vec![],
         },
+        // docs/events_todo.md, 361.
+        Action::ChildrenCircle => {
+            let children: Vec<u32> = memory
+                .last
+                .creatures_near
+                .iter()
+                .filter(|c| c.baby && c.kind.ends_with("villager"))
+                .map(|c| c.id)
+                .collect();
+            if children.is_empty() {
+                vec![]
+            } else {
+                vec![(
+                    Command::Approach {
+                        id: ids(),
+                        entities: children,
+                        player: target,
+                        stop: 2.5,
+                        seconds: 20.0,
+                        pace: Some(1.4),
+                        then: "stare".to_string(),
+                        damage: 0.0,
+                        kept: String::new(),
+                        to: None,
+                    },
+                    0,
+                )]
+            }
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -16551,6 +16581,8 @@ mod tests {
                 || event.id == "name_in_the_stone"
                 // Water within six blocks, which this memory has not: its own test.
                 || event.id == "from_the_well"
+                // A villager's child, which this memory has not: its own test.
+                || event.id == "children_circle"
                 // A furnace left empty, which this memory has not: its own test.
                 || event.id == "furnace_glows"
             {
@@ -26373,5 +26405,23 @@ mod tests {
         } else {
             assert!(made.is_empty());
         }
+    }
+
+    #[test]
+    fn children_circle_brings_the_children_to_stare() {
+        let mut memory = rich_memory();
+        memory.last.creatures_near.push(crate::memory::Creature {
+            id: 91,
+            kind: "villager".to_string(),
+            pos: [5.0, 64.0, 5.0],
+            baby: true,
+            ..Default::default()
+        });
+        let event = find("children_circle").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Approach { entities, then, .. }, 0)] if entities.contains(&91) && then == "stare"),
+            "{made:?}"
+        );
     }
 }

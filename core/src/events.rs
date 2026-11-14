@@ -1511,6 +1511,8 @@ pub enum Action {
     PotWobbles,
     /// In a desert, at water, their name coming up from under it, in the subtitles.
     FromTheWell,
+    /// In a village by day, the children running up round them and all stopping at once to stare.
+    ChildrenCircle,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9548,6 +9550,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::FromTheWell,
         false,
     ),
+    // docs/events_todo.md, 361: in a village by day, the children run up round them, then all stop at once and stare up at them.
+    row(
+        "children_circle",
+        3,
+        5,
+        &[Day, BabyNear, Villagers],
+        2.0,
+        2,
+        Half,
+        Action::ChildrenCircle,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10243,6 +10257,7 @@ impl Event {
             | Action::AgainstTheSun
             | Action::FliesBesideYou
             | Action::FigureInTheIce
+            | Action::ChildrenCircle
             | Action::Charge(..) => "seen",
             Action::Hint(_, _)
             | Action::GhastName
@@ -10992,6 +11007,7 @@ impl Event {
             "block_comes_back" => "bring back the next block they break a blink",
             "pot_wobbles" => "wobble one of their pots",
             "from_the_well" => "call their name up from the well",
+            "children_circle" => "bring the village's children round them to stare",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

@@ -3612,6 +3612,10 @@ The `[x]` lines above, summed up by day:
   desert: their name from under it twice and bubbling (`name_called`). Tests: one in `act`. Was: no
   such event.
 
+- [x] **The children circle** (`docs/events_todo.md`, 361): `children_circle`, stages 3 to 5, in a
+  village by day: the children run up round them and stare (`approach`). Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
