@@ -1128,6 +1128,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::TallyOnTheWall
         | Action::BlockComesBack
         | Action::PotWobbles
+        | Action::FromTheWell
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12570,6 +12571,47 @@ pub fn commands(
         Action::PotWobbles => pos
             .map(|p| vec![(Command::WobblePot { id: ids(), pos: p }, 0)])
             .unwrap_or_default(),
+        // docs/events_todo.md, 348.
+        Action::FromTheWell => match memory.water_near(6.0) {
+            Some((water, _)) => {
+                let deep = [water[0], water[1] - 4, water[2]];
+                vec![
+                    (
+                        Command::Hint {
+                            id: ids(),
+                            player: target,
+                            hint: "name_called".to_string(),
+                            pos: Some(deep),
+                            seconds: 3.0,
+                            detail: memory.target_name.clone(),
+                        },
+                        0,
+                    ),
+                    (
+                        sound_at(
+                            ids,
+                            target,
+                            "minecraft:block.bubble_column.upwards_ambient",
+                            at(water),
+                            0.8,
+                        ),
+                        0,
+                    ),
+                    (
+                        Command::Hint {
+                            id: ids(),
+                            player: target,
+                            hint: "name_called".to_string(),
+                            pos: Some(deep),
+                            seconds: 3.0,
+                            detail: memory.target_name.clone(),
+                        },
+                        50,
+                    ),
+                ]
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -16507,6 +16549,8 @@ mod tests {
                 || event.id == "strider_turns_home"
                 // Their name, which this memory has not: its own test.
                 || event.id == "name_in_the_stone"
+                // Water within six blocks, which this memory has not: its own test.
+                || event.id == "from_the_well"
                 // A furnace left empty, which this memory has not: its own test.
                 || event.id == "furnace_glows"
             {
@@ -26316,5 +26360,18 @@ mod tests {
             ),
             "{made:?}"
         );
+    }
+
+    #[test]
+    fn from_the_well_calls_their_name_from_under_the_water() {
+        let mut memory = rich_memory();
+        memory.target_name = "razor".to_string();
+        let event = find("from_the_well").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        if let Some((water, _)) = memory.water_near(6.0) {
+            assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, pos: Some(p), detail, .. } if hint == "name_called" && p[1] == water[1] - 4 && detail == "razor")), "{made:?}");
+        } else {
+            assert!(made.is_empty());
+        }
     }
 }

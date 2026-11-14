@@ -1509,6 +1509,8 @@ pub enum Action {
     BlockComesBack,
     /// A decorated pot of theirs wobbling as if bumped, with its sound.
     PotWobbles,
+    /// In a desert, at water, their name coming up from under it, in the subtitles.
+    FromTheWell,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9534,6 +9536,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::PotWobbles,
         true,
     ),
+    // docs/events_todo.md, 348: at a desert well, a voice comes up from the water, saying their name, far down.
+    row(
+        "from_the_well",
+        3,
+        5,
+        &[InBiome(&["desert"]), WaterNear(6), TargetOutdoors],
+        3.0,
+        1,
+        Half,
+        Action::FromTheWell,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10270,6 +10284,7 @@ impl Event {
             | Action::HorseTurnsHome
             | Action::Sandstorm
             | Action::TallyOnTheWall
+            | Action::FromTheWell
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10976,6 +10991,7 @@ impl Event {
             "tally_on_the_wall" => "scratch a tally of their time down here on the wall",
             "block_comes_back" => "bring back the next block they break a blink",
             "pot_wobbles" => "wobble one of their pots",
+            "from_the_well" => "call their name up from the well",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
