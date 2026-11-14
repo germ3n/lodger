@@ -18,9 +18,9 @@ is in [Todo](docs/todo.md).
 - **About six hundred events**, each with the stages it fits, what it needs (your bed, your chest,
   night, rain, you underground), how often it may come and what it costs of the day's budget.
   The catalogue is [The lodger](docs/entity.md).
-- **A hundred and eighty-nine chains**: one thing leading to the next over days. Chains that start
+- **Two hundred and twenty-four chains**: one thing leading to the next over days. Chains that start
   from the same event are **forks**, so the same event goes down different ways in different
-  stays; thirty-seven are **scenes**, whose beats come one straight after another. At most three
+  stays; forty-two are **scenes**, whose beats come one straight after another. At most three
   run at once, so the story stays legible.
 - **The Nether and the End** have events of their own, done there and counted at home.
 - **A temper**: how you treat it (chasing it, breaking what it built, ignoring it) changes how it
