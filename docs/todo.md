@@ -3600,6 +3600,10 @@ The `[x]` lines above, summed up by day:
   their tunnel: tally strokes on the wall beside them, their time down there counted (`tally`).
   Tests: one in `act`. Was: no such event.
 
+- [x] **The block comes back** (`docs/events_todo.md`, 342): `block_comes_back`, stages 2 to 5,
+  underground: their next break shown again a blink (`block_back`, ABI 57). Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

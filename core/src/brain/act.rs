@@ -1122,6 +1122,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::HorseTurnsHome
         | Action::Sandstorm
         | Action::TallyOnTheWall
+        | Action::BlockComesBack
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12551,6 +12552,15 @@ pub fn commands(
                 0,
             )]
         }
+        // docs/events_todo.md, 342.
+        Action::BlockComesBack => vec![(
+            Command::BlockBack {
+                id: ids(),
+                player: target,
+                seconds: 120.0,
+            },
+            0,
+        )],
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26259,6 +26269,17 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::Hint { detail, .. }, 0)] if detail == "1"),
             "one at least"
+        );
+    }
+
+    #[test]
+    fn block_comes_back_arms_their_next_break() {
+        let memory = rich_memory();
+        let event = find("block_comes_back").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::BlockBack { seconds, .. }, 0)] if *seconds == 120.0),
+            "{made:?}"
         );
     }
 }

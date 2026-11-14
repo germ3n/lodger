@@ -1505,6 +1505,8 @@ pub enum Action {
     Sandstorm,
     /// In their mine, tally strokes scratched on the wall beside them, as many as their long whiles down there.
     TallyOnTheWall,
+    /// Mining, the next block they break there again a blink on their screen, then gone.
+    BlockComesBack,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9506,6 +9508,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TallyOnTheWall,
         false,
     ),
+    // docs/events_todo.md, 342: as they mine, the stone they just broke is there again for a blink, then gone.
+    row(
+        "block_comes_back",
+        2,
+        5,
+        &[TargetUnderground],
+        2.0,
+        3,
+        Half,
+        Action::BlockComesBack,
+        true,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -9899,6 +9913,7 @@ impl Event {
             | Action::PetGotUp
             | Action::FurnaceGlows
             | Action::MineshaftKept
+            | Action::BlockComesBack
             | Action::PushVehicle(..) => "things",
             Action::ToggleDoor
             | Action::ToggleFixture(_)
@@ -10944,6 +10959,7 @@ impl Event {
             "horse_turns_home" => "turn their horse toward home",
             "sandstorm" => "raise a sandstorm round them",
             "tally_on_the_wall" => "scratch a tally of their time down here on the wall",
+            "block_comes_back" => "bring back the next block they break a blink",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
