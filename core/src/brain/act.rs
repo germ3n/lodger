@@ -941,6 +941,18 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "a_well_by_the_house" {
         return spot(memory, &mut Rng::new(memory.done.len() as u64 + 3)).map(grounded);
     }
+    // Out from the door they use, to its other side.
+    if event.id == "a_sundial" {
+        return home.and_then(|h| {
+            let door = memory.usual_door()?;
+            let out = out_of_door(memory, h.center, door);
+            Some([
+                door[0] + out[0] * 4 + out[1] * -3,
+                -10_000,
+                door[2] + out[1] * 4 + out[0] * -3,
+            ])
+        });
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1101,6 +1113,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::FlowerPath
         | Action::WashingLine
         | Action::AWellByTheHouse
+        | Action::ASundial
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12337,6 +12350,65 @@ pub fn commands(
                             at: [1, 3, 1],
                             block: "minecraft:oak_slab".to_string(),
                             state: "".to_string(),
+                        },
+                    ],
+                    replace: crate::building::replaceable(event.id),
+                },
+                0,
+            )],
+            None => vec![],
+        },
+        // docs/events_todo.md, 365.
+        Action::ASundial => match pos {
+            Some(site) => vec![(
+                Command::PlaceBlueprint {
+                    id: ids(),
+                    at: site,
+                    parts: vec![
+                        craftkit::BlueprintPart {
+                            at: [0, 1, 0],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-2, 1, 0],
+                            block: "minecraft:stone_button".to_string(),
+                            state: "face=floor".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [2, 1, 0],
+                            block: "minecraft:stone_button".to_string(),
+                            state: "face=floor".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [0, 1, -2],
+                            block: "minecraft:stone_button".to_string(),
+                            state: "face=floor".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [0, 1, 2],
+                            block: "minecraft:stone_button".to_string(),
+                            state: "face=floor".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 1, -1],
+                            block: "minecraft:stone_button".to_string(),
+                            state: "face=floor".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 1, -1],
+                            block: "minecraft:stone_button".to_string(),
+                            state: "face=floor".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 1, 1],
+                            block: "minecraft:stone_button".to_string(),
+                            state: "face=floor".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 1, 1],
+                            block: "minecraft:stone_button".to_string(),
+                            state: "face=floor".to_string(),
                         },
                     ],
                     replace: crate::building::replaceable(event.id),
@@ -25920,6 +25992,19 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::PlaceBlueprint { parts, .. }, 0)]
             if parts.iter().any(|p| p.block == "minecraft:water" && p.at == [0, 0, 0]) && parts.iter().filter(|p| p.block == "minecraft:cobblestone").count() == 8),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_sundial_is_a_post_in_a_ring_of_stones() {
+        let memory = rich_memory();
+        let event = find("a_sundial").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PlaceBlueprint { parts, .. }, 0)]
+            if parts.len() == 9 && parts.iter().filter(|p| p.state == "face=floor").count() == 8),
             "{made:?}"
         );
     }
