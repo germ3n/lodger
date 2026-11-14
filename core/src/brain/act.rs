@@ -1117,6 +1117,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::MineshaftKept
         | Action::ShadowFollows
         | Action::NoonHolds
+        | Action::DryBesideYou
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12458,6 +12459,18 @@ pub fn commands(
                 hint: "noon_holds".to_string(),
                 pos: None,
                 seconds: 180.0,
+                detail: String::new(),
+            },
+            0,
+        )],
+        // docs/events_todo.md, 377.
+        Action::DryBesideYou => vec![(
+            Command::Hint {
+                id: ids(),
+                player: target,
+                hint: "dry_beside_you".to_string(),
+                pos: None,
+                seconds: 30.0,
                 detail: String::new(),
             },
             0,
@@ -26090,6 +26103,21 @@ mod tests {
         assert!(
             made.iter()
                 .any(|(c, _)| matches!(c, Command::Hint { hint, .. } if hint == "noon_holds")),
+            "{made:?}"
+        );
+        assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn dry_beside_you_is_its_hint_on_their_screen_alone() {
+        let mut memory = rich_memory();
+        memory.last.online = true;
+        let event = find("dry_beside_you").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            made.iter()
+                .any(|(c, _)| matches!(c, Command::Hint { hint, .. } if hint == "dry_beside_you")),
             "{made:?}"
         );
         assert!(!crate::rules::hidden_from_view(event.action));

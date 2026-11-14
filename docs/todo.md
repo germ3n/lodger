@@ -3580,6 +3580,10 @@ The `[x]` lines above, summed up by day:
   the sun held three minutes on their screen (`noon_holds`). Tests: one in `act`. Was: no such
   event.
 
+- [x] **Dry beside you** (`docs/events_todo.md`, 377): `dry_beside_you`, stages 3 to 5, outdoors in
+  the rain: the rain's column at their right hand left out half a minute (`dry_beside_you`). Tests:
+  one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'
