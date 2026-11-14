@@ -1503,6 +1503,8 @@ pub enum Action {
     HorseTurnsHome,
     /// In a desert, a sandstorm: sand blowing across everything, and they can barely see.
     Sandstorm,
+    /// In their mine, tally strokes scratched on the wall beside them, as many as their long whiles down there.
+    TallyOnTheWall,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9492,6 +9494,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::Sandstorm,
         false,
     ),
+    // docs/events_todo.md, 337: in their mine, a tally scratched on the wall beside them, a stroke for every long while they have spent down there.
+    row(
+        "tally_on_the_wall",
+        3,
+        5,
+        &[TargetUnderground, Tunnel],
+        3.0,
+        1,
+        Half,
+        Action::TallyOnTheWall,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10225,6 +10239,7 @@ impl Event {
             | Action::SnowHangs
             | Action::HorseTurnsHome
             | Action::Sandstorm
+            | Action::TallyOnTheWall
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -10928,6 +10943,7 @@ impl Event {
             "snow_hangs" => "hang the snow in the air round them",
             "horse_turns_home" => "turn their horse toward home",
             "sandstorm" => "raise a sandstorm round them",
+            "tally_on_the_wall" => "scratch a tally of their time down here on the wall",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",

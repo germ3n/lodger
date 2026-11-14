@@ -3596,6 +3596,10 @@ The `[x]` lines above, summed up by day:
   a sand fog and blown sand two minutes (`sandstorm`, `motes`). Tests: one in `act`. Was: no such
   event.
 
+- [x] **A tally on the wall** (`docs/events_todo.md`, 337): `tally_on_the_wall`, stages 3 to 5, in
+  their tunnel: tally strokes on the wall beside them, their time down there counted (`tally`).
+  Tests: one in `act`. Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

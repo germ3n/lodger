@@ -1121,6 +1121,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SnowHangs
         | Action::HorseTurnsHome
         | Action::Sandstorm
+        | Action::TallyOnTheWall
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -2970,6 +2971,9 @@ fn spinning_villager(memory: &Memory) -> Option<&crate::memory::Creature> {
 /// The figure that comes on while unseen (`while_unseen`), and how far behind them it starts.
 const UNSEEN_FIGURE: u32 = 61;
 const UNSEEN_BEHIND: f64 = 18.0;
+/// The looks underground for one stroke of the tally (`tally_on_the_wall`).
+const TALLY_PER_STROKE: u32 = 100;
+
 /// How many bolts strike round them (`lightning_round_you`).
 const LIGHTNING_RING: u64 = 8;
 
@@ -12529,6 +12533,24 @@ pub fn commands(
                 0,
             ),
         ],
+        // docs/events_todo.md, 337.
+        Action::TallyOnTheWall => {
+            // A stroke for every hundred looks the habits took of them underground, one at least.
+            let down: u32 = memory.habits.hours.iter().map(|q| q[1]).sum();
+            let strokes = (down / TALLY_PER_STROKE).clamp(1, 40);
+            let wall = ahead_of(memory, 0, 1, 1);
+            vec![(
+                Command::Hint {
+                    id: ids(),
+                    player: target,
+                    hint: "tally".to_string(),
+                    pos: Some(wall),
+                    seconds: 120.0,
+                    detail: strokes.to_string(),
+                },
+                0,
+            )]
+        }
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -26220,5 +26242,23 @@ mod tests {
             "{made:?}"
         );
         assert!(!crate::rules::hidden_from_view(event.action));
+    }
+
+    #[test]
+    fn tally_on_the_wall_counts_their_time_down_there() {
+        let mut memory = rich_memory();
+        memory.habits.hours = [[0, 250, 0, 0, 0], [0, 100, 0, 0, 0], [0; 5], [0; 5]];
+        let event = find("tally_on_the_wall").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, detail, pos: Some(_), .. }, 0)] if hint == "tally" && detail == "3"),
+            "{made:?}"
+        );
+        memory.habits.hours = [[0; 5]; 4];
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { detail, .. }, 0)] if detail == "1"),
+            "one at least"
+        );
     }
 }
