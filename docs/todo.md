@@ -3624,6 +3624,10 @@ The `[x]` lines above, summed up by day:
   tunnel: water set at its end a minute and taken away again. Tests: one in `act`. Was: no such
   event.
 
+- [x] **Prints into the sea** (`docs/events_todo.md`, 386): `prints_into_the_sea`, stages 3 to 5, on
+  a beach: footprints from beside them down into the water (`footprints`). Tests: one in `act`. Was:
+  no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

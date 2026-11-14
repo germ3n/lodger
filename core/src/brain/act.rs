@@ -1136,6 +1136,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::ChildrenCircle
         | Action::TheMiner
         | Action::TunnelFloods
+        | Action::PrintsIntoTheSea
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12684,6 +12685,30 @@ pub fn commands(
             ],
             None => vec![],
         },
+        // docs/events_todo.md, 386.
+        Action::PrintsIntoTheSea => match memory.water_near(24.0) {
+            Some((water, _)) => {
+                // From four blocks beside them to the water's edge, a step a block.
+                let p = memory.last.pos;
+                let from = [p[0] + 4.0, p[1], p[2]];
+                let to = [water[0] as f64 + 0.5, p[1], water[2] as f64 + 0.5];
+                let (dx, dz) = (to[0] - from[0], to[2] - from[2]);
+                let length = (dx * dx + dz * dz).sqrt().max(1.0);
+                let yaw = (-dx).atan2(dz).to_degrees() as f32;
+                let steps = (length as usize).min(24);
+                let prints: Vec<crate::prints::Print> = (0..steps)
+                    .map(|i| {
+                        let t = i as f64 / length;
+                        crate::prints::Print {
+                            pos: [from[0] + dx * t, from[1], from[2] + dz * t],
+                            yaw,
+                        }
+                    })
+                    .collect();
+                vec![(prints_hint(ids, target, &prints), 0)]
+            }
+            None => vec![],
+        },
         Action::SculkCreeps => {
             let reach = ((memory.times(event.id) + 1) * 2).min(12);
             let mut cells = inside_walls(memory, -8, 2, 12);
@@ -16625,6 +16650,8 @@ mod tests {
                 || event.id == "from_the_well"
                 // A villager's child, which this memory has not: its own test.
                 || event.id == "children_circle"
+                // Water within twenty-four blocks of them, which this memory is not: its own test.
+                || event.id == "prints_into_the_sea"
                 // A furnace left empty, which this memory has not: its own test.
                 || event.id == "furnace_glows"
             {
@@ -26440,13 +26467,14 @@ mod tests {
     fn from_the_well_calls_their_name_from_under_the_water() {
         let mut memory = rich_memory();
         memory.target_name = "razor".to_string();
+        memory.last.pos = [26.5, 64.0, 0.5];
         let event = find("from_the_well").unwrap();
         let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
-        if let Some((water, _)) = memory.water_near(6.0) {
-            assert!(made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, pos: Some(p), detail, .. } if hint == "name_called" && p[1] == water[1] - 4 && detail == "razor")), "{made:?}");
-        } else {
-            assert!(made.is_empty());
-        }
+        let (water, _) = memory.water_near(6.0).unwrap();
+        assert!(
+            made.iter().any(|(c, _)| matches!(c, Command::Hint { hint, pos: Some(p), detail, .. } if hint == "name_called" && p[1] == water[1] - 4 && detail == "razor")),
+            "{made:?}"
+        );
     }
 
     #[test]
@@ -26496,6 +26524,18 @@ mod tests {
         assert!(
             matches!(&made[..], [(Command::SetBlock { block: w, .. }, 0), (Command::SetBlock { block: a, replace, .. }, 1_200)]
             if w == "minecraft:water" && a == "minecraft:air" && replace == &vec!["minecraft:water".to_string()]),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn prints_into_the_sea_lead_toward_the_water() {
+        let mut memory = rich_memory();
+        memory.last.pos = [14.5, 64.0, 0.5];
+        let event = find("prints_into_the_sea").unwrap();
+        let made = commands(event, None, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::Hint { hint, detail, .. }, _)] if hint == "footprints" && detail.split(';').count() > 5),
             "{made:?}"
         );
     }

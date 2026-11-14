@@ -1517,6 +1517,8 @@ pub enum Action {
     TheMiner,
     /// Water running into their tunnel from its end, and draining away a minute later.
     TunnelFloods,
+    /// On a beach, fresh footprints leading down the sand into the sea and not coming back.
+    PrintsIntoTheSea,
     /// What it took from them, held in this block (suspicious sand, a decorated pot) for them to
     /// find: brushed or broken, it gives it back.
     KeepIn(&'static str),
@@ -9590,6 +9592,18 @@ pub const CATALOGUE: &[Event] = &[
         Action::TunnelFloods,
         false,
     ),
+    // docs/events_todo.md, 386: on a beach, a line of fresh footprints leads down the sand into the sea and does not come back.
+    row(
+        "prints_into_the_sea",
+        3,
+        5,
+        &[InBiome(&["beach"]), WaterNear(24)],
+        3.0,
+        1,
+        Half,
+        Action::PrintsIntoTheSea,
+        false,
+    ),
     // docs/events_todo.md, 164: a second of static over the screen, a hiss with it.
     row(
         "static",
@@ -10329,6 +10343,7 @@ impl Event {
             | Action::Sandstorm
             | Action::TallyOnTheWall
             | Action::FromTheWell
+            | Action::PrintsIntoTheSea
             | Action::CracksInTheWall => "sky",
             Action::EnderHolds => "seen",
             Action::WhileAway
@@ -11040,6 +11055,7 @@ impl Event {
             "children_circle" => "bring the village's children round them to stare",
             "the_miner" => "set a skeleton mining ahead of them",
             "tunnel_floods" => "flood their tunnel from its end a minute",
+            "prints_into_the_sea" => "lay prints down the beach into the sea",
             "cracks_in_the_wall" => "crack a block of their wall as if from the other side",
             "sculk_creeps" => "spread sculk over their walls low down",
             "axolotls_play_dead" => "make every axolotl near them play dead",
