@@ -3553,6 +3553,10 @@ The `[x]` lines above, summed up by day:
   away or asleep: posts, a rail and cloth by the house (`place_blueprint`). Tests: one in `act`.
   Was: no such event.
 
+- [x] **A well by the house** (`docs/events_todo.md`, 362): `a_well_by_the_house`, stages 3 to 5,
+  the target away or asleep: a small well near the house (`place_blueprint`). Tests: one in `act`.
+  Was: no such event.
+
 - [ ] **The host in Rust, behind a thin Java wrapper** (owner): what decides or
   keeps state in the host (the timers, holds, loot offerings, reads, the debug model) moved
   into Rust beside the SDK, the Java left as the Minecraft-facing edge alone (the loaders'

@@ -937,6 +937,10 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
     if event.id == "washing_line" {
         return spot(memory, &mut Rng::new(memory.done.len() as u64)).map(grounded);
     }
+    // A spot by the house, on the ground.
+    if event.id == "a_well_by_the_house" {
+        return spot(memory, &mut Rng::new(memory.done.len() as u64 + 3)).map(grounded);
+    }
     // The bell that counts rings at their house.
     if event.id == "the_count" {
         return home.map(|h| h.center);
@@ -1096,6 +1100,7 @@ pub fn place(event: &Event, memory: &Memory, rng: &mut Rng) -> Option<BlockPos> 
         | Action::SeatByTheDoor
         | Action::FlowerPath
         | Action::WashingLine
+        | Action::AWellByTheHouse
         | Action::CracksInTheWall
         | Action::DripleafSteps
         | Action::AxolotlsPlayDead
@@ -12207,6 +12212,130 @@ pub fn commands(
                         craftkit::BlueprintPart {
                             at: [3, 3, 0],
                             block: "minecraft:white_carpet".to_string(),
+                            state: "".to_string(),
+                        },
+                    ],
+                    replace: crate::building::replaceable(event.id),
+                },
+                0,
+            )],
+            None => vec![],
+        },
+        // docs/events_todo.md, 362.
+        Action::AWellByTheHouse => match pos {
+            Some(site) => vec![(
+                Command::PlaceBlueprint {
+                    id: ids(),
+                    at: site,
+                    parts: vec![
+                        craftkit::BlueprintPart {
+                            at: [0, 0, 0],
+                            block: "minecraft:water".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 0, -1],
+                            block: "minecraft:cobblestone".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 1, -1],
+                            block: "minecraft:cobblestone_wall".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [0, 0, -1],
+                            block: "minecraft:cobblestone".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [0, 1, -1],
+                            block: "minecraft:cobblestone_wall".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 0, -1],
+                            block: "minecraft:cobblestone".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 1, -1],
+                            block: "minecraft:cobblestone_wall".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 0, 0],
+                            block: "minecraft:cobblestone".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 1, 0],
+                            block: "minecraft:cobblestone_wall".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 0, 0],
+                            block: "minecraft:cobblestone".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 1, 0],
+                            block: "minecraft:cobblestone_wall".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 0, 1],
+                            block: "minecraft:cobblestone".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 1, 1],
+                            block: "minecraft:cobblestone_wall".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [0, 0, 1],
+                            block: "minecraft:cobblestone".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [0, 1, 1],
+                            block: "minecraft:cobblestone_wall".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 0, 1],
+                            block: "minecraft:cobblestone".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 1, 1],
+                            block: "minecraft:cobblestone_wall".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 2, -1],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 2, 1],
+                            block: "minecraft:oak_fence".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [-1, 3, -1],
+                            block: "minecraft:oak_slab".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [0, 3, 0],
+                            block: "minecraft:oak_slab".to_string(),
+                            state: "".to_string(),
+                        },
+                        craftkit::BlueprintPart {
+                            at: [1, 3, 1],
+                            block: "minecraft:oak_slab".to_string(),
                             state: "".to_string(),
                         },
                     ],
@@ -25778,6 +25907,19 @@ mod tests {
         let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
         assert!(
             matches!(&made[..], [(Command::PlaceBlueprint { parts, at, .. }, 0)] if parts.len() == 10 && at[1] == GROUND_Y),
+            "{made:?}"
+        );
+    }
+
+    #[test]
+    fn a_well_by_the_house_has_water_in_a_ring_of_stone() {
+        let memory = rich_memory();
+        let event = find("a_well_by_the_house").unwrap();
+        let pos = place(event, &memory, &mut Rng::new(1));
+        let made = commands(event, pos, &memory, &mut ids(), &Now::default(), None);
+        assert!(
+            matches!(&made[..], [(Command::PlaceBlueprint { parts, .. }, 0)]
+            if parts.iter().any(|p| p.block == "minecraft:water" && p.at == [0, 0, 0]) && parts.iter().filter(|p| p.block == "minecraft:cobblestone").count() == 8),
             "{made:?}"
         );
     }
